@@ -30,6 +30,7 @@ import (
 
 func TestPostNewContractAPI(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mds := &definitionsmocks.Sender{}
 	o.On("DefinitionSender").Return(mds)
 	input := core.Datatype{}
@@ -47,6 +48,7 @@ func TestPostNewContractAPI(t *testing.T) {
 
 func TestPostNewContractAPISync(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mds := &definitionsmocks.Sender{}
 	o.On("DefinitionSender").Return(mds)
 	input := core.Datatype{}

@@ -28,6 +28,7 @@ import (
 
 func TestGetVerifierByID(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/verifiers/hashid1", nil)

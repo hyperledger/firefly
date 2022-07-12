@@ -55,7 +55,7 @@ type SubscriptionMatcher func(core.SubscriptionRef) bool
 
 type Callbacks interface {
 
-	// RegisterConnection can be fired as often as requied.
+	// RegisterConnection can be fired as often as required.
 	// Dispatchers will be started against this connection for all persisted subscriptions that match via the supplied function.
 	// It can be fired multiple times for the same connection ID, to update the subscription list
 	// For a "connect-out" style plugin (MQTT/AMQP/JMS broker), you might fire it at startup (from Init) for each target queue, with a subscription match

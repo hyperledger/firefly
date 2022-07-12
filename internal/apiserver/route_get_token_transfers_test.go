@@ -29,6 +29,7 @@ import (
 
 func TestGetTokenTransfers(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/tokens/transfers", nil)
@@ -44,6 +45,7 @@ func TestGetTokenTransfers(t *testing.T) {
 
 func TestGetTokenTransfersFromOrTo(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/tokens/transfers?fromOrTo=0x1", nil)

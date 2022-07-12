@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/httpserver"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/apiservermocks"
@@ -175,7 +176,8 @@ func TestNotFound(t *testing.T) {
 }
 
 func TestFilterTooMany(t *testing.T) {
-	mgr, _, as := newTestServer()
+	mgr, o, as := newTestServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	handler := as.routeHandler(as.handlerFactory(), mgr, "", getBatches)
 
 	req := httptest.NewRequest("GET", "http://localhost:12345/test?limit=99999999999", nil)
@@ -185,6 +187,20 @@ func TestFilterTooMany(t *testing.T) {
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
 	assert.Regexp(t, "FF10184", resJSON["error"])
+}
+
+func TestUnauthorized(t *testing.T) {
+	mgr, o, as := newTestServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(i18n.NewError(context.Background(), i18n.MsgUnauthorized))
+	handler := as.routeHandler(as.handlerFactory(), mgr, "", getBatches)
+
+	req := httptest.NewRequest("GET", "http://localhost:12345/test", nil)
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	assert.Equal(t, 401, res.Result().StatusCode)
+	var resJSON map[string]interface{}
+	json.NewDecoder(res.Body).Decode(&resJSON)
+	assert.Regexp(t, "FF00169", resJSON["error"])
 }
 
 func TestSwaggerYAML(t *testing.T) {
@@ -204,7 +220,8 @@ func TestSwaggerYAML(t *testing.T) {
 }
 
 func TestSwaggerJSON(t *testing.T) {
-	_, r := newTestAPIServer()
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	s := httptest.NewServer(r)
 	defer s.Close()
 
@@ -342,7 +359,8 @@ func TestContractAPISwaggerJSONBadNamespace(t *testing.T) {
 }
 
 func TestContractAPISwaggerUI(t *testing.T) {
-	_, r := newTestAPIServer()
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	s := httptest.NewServer(r)
 	defer s.Close()
 
@@ -396,6 +414,7 @@ func TestFormDataBadNamespace(t *testing.T) {
 
 func TestJSONDisabledRoute(t *testing.T) {
 	mgr, o, as := newTestServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	r := as.createMuxRouter(context.Background(), mgr)
 	s := httptest.NewServer(r)
 	defer s.Close()
@@ -414,6 +433,7 @@ func TestJSONDisabledRoute(t *testing.T) {
 
 func TestFormDataDisabledRoute(t *testing.T) {
 	mgr, o, as := newTestServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	r := as.createMuxRouter(context.Background(), mgr)
 	s := httptest.NewServer(r)
 	defer s.Close()

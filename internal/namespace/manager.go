@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/auth"
+	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -56,6 +58,7 @@ var (
 	sharedstorageConfig = config.RootArray("plugins.sharedstorage")
 	dataexchangeConfig  = config.RootArray("plugins.dataexchange")
 	identityConfig      = config.RootArray("plugins.identity")
+	authConfig          = config.RootArray("plugins.auth")
 
 	// Deprecated configs
 	deprecatedTokensConfig        = config.RootArray("tokens")
@@ -75,6 +78,7 @@ type Manager interface {
 	GetNamespaces(ctx context.Context) ([]*core.Namespace, error)
 	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
 	ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error
+	Authorize(ctx context.Context, authReq *fftypes.AuthReq) error
 }
 
 type namespace struct {
@@ -97,6 +101,7 @@ type namespaceManager struct {
 		dataexchange  map[string]dataExchangePlugin
 		tokens        map[string]tokensPlugin
 		events        map[string]eventsPlugin
+		auth          map[string]authPlugin
 	}
 	metricsEnabled bool
 	metrics        metrics.Manager
@@ -139,6 +144,11 @@ type eventsPlugin struct {
 	plugin events.Plugin
 }
 
+type authPlugin struct {
+	config config.Section
+	plugin auth.Plugin
+}
+
 func NewNamespaceManager(withDefaults bool) Manager {
 	nm := &namespaceManager{
 		namespaces:     make(map[string]*namespace),
@@ -159,6 +169,7 @@ func NewNamespaceManager(withDefaults bool) Manager {
 	iifactory.InitConfig(identityConfig)
 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	tifactory.InitConfig(tokensConfig)
+	authfactory.InitConfigArray(authConfig)
 
 	return nm
 }
@@ -303,6 +314,13 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 
 	if nm.plugins.events == nil {
 		nm.plugins.events, err = nm.getEventPlugins(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	if nm.plugins.auth == nil {
+		nm.plugins.auth, err = nm.getAuthPlugin(ctx)
 		if err != nil {
 			return err
 		}
@@ -606,6 +624,11 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
+	for name, entry := range nm.plugins.auth {
+		if err = entry.plugin.Init(nm.ctx, name, entry.config); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -805,6 +828,13 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 			}
 			continue
 		}
+		if instance, ok := nm.plugins.auth[pluginName]; ok {
+			result.Auth = orchestrator.AuthPlugin{
+				Name:   pluginName,
+				Plugin: instance.plugin,
+			}
+			continue
+		}
 
 		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
 	}
@@ -853,6 +883,13 @@ func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, nam
 				Name:   pluginName,
 				Plugin: instance.plugin,
 			})
+			continue
+		}
+		if instance, ok := nm.plugins.auth[pluginName]; ok {
+			result.Auth = orchestrator.AuthPlugin{
+				Name:   pluginName,
+				Plugin: instance.plugin,
+			}
 			continue
 		}
 
@@ -936,4 +973,32 @@ func (nm *namespaceManager) getEventPlugins(ctx context.Context) (plugins map[st
 		}
 	}
 	return plugins, err
+}
+
+func (nm *namespaceManager) getAuthPlugin(ctx context.Context) (plugins map[string]authPlugin, err error) {
+	plugins = make(map[string]authPlugin)
+
+	authConfigArraySize := authConfig.ArraySize()
+	for i := 0; i < authConfigArraySize; i++ {
+		config := authConfig.ArrayEntry(i)
+		name, pluginType, err := nm.validatePluginConfig(ctx, config, "auth")
+		if err != nil {
+			return nil, err
+		}
+
+		plugin, err := authfactory.GetPlugin(ctx, pluginType)
+		if err != nil {
+			return nil, err
+		}
+
+		plugins[name] = authPlugin{
+			config: config.SubSection(pluginType),
+			plugin: plugin,
+		}
+	}
+	return plugins, err
+}
+
+func (nm *namespaceManager) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
+	return nm.Orchestrator(authReq.Namespace).Authorize(ctx, authReq)
 }

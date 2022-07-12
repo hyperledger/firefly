@@ -30,6 +30,7 @@ import (
 
 func TestPostNetworkAction(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	input := core.NetworkAction{}
 	var buf bytes.Buffer

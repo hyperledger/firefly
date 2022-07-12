@@ -32,6 +32,7 @@ import (
 
 func TestGetDataBlob(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})

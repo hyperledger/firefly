@@ -31,6 +31,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/httpserver"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -249,6 +250,19 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 		if err != nil {
 			return nil, err
 		}
+
+		// Authorize the request
+		authReq := &fftypes.AuthReq{
+			Method: r.Req.Method,
+			URL:    r.Req.URL,
+			Header: r.Req.Header,
+		}
+		if or != nil {
+			if err := or.Authorize(r.Req.Context(), authReq); err != nil {
+				return nil, err
+			}
+		}
+
 		if ce.EnabledIf != nil && !ce.EnabledIf(or) {
 			return nil, i18n.NewError(r.Req.Context(), coremsgs.MsgActionNotSupported)
 		}
@@ -330,6 +344,7 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	ws, _ := eifactory.GetPlugin(ctx, "websockets")
+	ws.(*websockets.WebSockets).SetAuthorizer(mgr)
 	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
 
 	uiPath := config.GetString(coreconfig.UIPath)
