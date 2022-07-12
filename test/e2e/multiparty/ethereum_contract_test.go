@@ -108,13 +108,15 @@ func simpleStorageFFIGet() *fftypes.FFIMethod {
 	}
 }
 
-func deployContract(t *testing.T, stackName string) string {
-	out, err := exec.Command("ff", "deploy", "ethereum", stackName, "../../data/simplestorage/simple_storage.json").Output()
+func deployContract(t *testing.T, stackName, contract string) string {
+	out, err := exec.Command("ff", "deploy", "ethereum", stackName, "../../data/contracts/"+contract).Output()
 	require.NoError(t, err)
 	var output map[string]interface{}
 	err = json.Unmarshal(out, &output)
 	require.NoError(t, err)
-	return output["address"].(string)
+	address := output["address"].(string)
+	t.Logf("Contract address: %s", address)
+	return address
 }
 
 type EthereumContractTestSuite struct {
@@ -132,7 +134,7 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.ethClient = e2e.NewResty(suite.T())
 	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
 	suite.ethIdentity = suite.testState.org1key.Value
-	suite.contractAddress = deployContract(suite.T(), stack.Name)
+	suite.contractAddress = deployContract(suite.T(), stack.Name, "simplestorage/simple_storage.json")
 
 	res, err := e2e.CreateFFI(suite.T(), suite.testState.client1, simpleStorageFFI())
 	suite.interfaceID = fftypes.MustParseUUID(res.(map[string]interface{})["id"].(string))
