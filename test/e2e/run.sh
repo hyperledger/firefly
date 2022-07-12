@@ -65,12 +65,8 @@ if [ -z "${MULTIPARTY_ENABLED}" ]; then
   MULTIPARTY_ENABLED=true
 fi
 
-if [ -z "${STACK_FILE}" ]; then
-  STACK_FILE=$STACKS_DIR/$STACK_NAME/stack.json
-fi
-
-if [ -z "${STACK_STATE}" ]; then
-  STACK_STATE=$STACKS_DIR/$STACK_NAME/runtime/stackState.json
+if [ -z "${STACK_DIR}" ]; then
+  STACK_DIR=$STACKS_DIR/$STACK_NAME
 fi
 
 if [ -z "${BLOCKCHAIN_PROVIDER}" ]; then
@@ -129,8 +125,7 @@ create_accounts
 $CLI info $STACK_NAME
 checkOk $?
 
-export STACK_FILE
-export STACK_STATE
+export STACK_DIR
 
 runTest() {
   go clean -testcache && go test -v -p 1 ./multiparty ./gateway -run $TEST_SUITE

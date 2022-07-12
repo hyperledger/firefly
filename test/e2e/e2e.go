@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -82,21 +83,21 @@ func PickTopic(i int, options []string) string {
 }
 
 func ReadStack(t *testing.T) *Stack {
-	stackFile := os.Getenv("STACK_FILE")
-	if stackFile == "" {
-		t.Fatal("STACK_FILE must be set")
+	stackDir := os.Getenv("STACK_DIR")
+	if stackDir == "" {
+		t.Fatal("STACK_DIR must be set")
 	}
-	stack, err := ReadStackFile(stackFile)
+	stack, err := ReadStackFile(filepath.Join(stackDir, "stack.json"))
 	assert.NoError(t, err)
 	return stack
 }
 
 func ReadStackState(t *testing.T) *StackState {
-	stackFile := os.Getenv("STACK_STATE")
-	if stackFile == "" {
-		t.Fatal("STACK_STATE must be set")
+	stackDir := os.Getenv("STACK_DIR")
+	if stackDir == "" {
+		t.Fatal("STACK_DIR must be set")
 	}
-	stackState, err := ReadStackStateFile(stackFile)
+	stackState, err := ReadStackStateFile(filepath.Join(stackDir, "runtime", "stackState.json"))
 	assert.NoError(t, err)
 	return stackState
 }
