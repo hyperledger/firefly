@@ -53,9 +53,7 @@ func TestNetworkAction(t *testing.T) {
 		return be.ProtocolID == "0001"
 	})).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
-	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
-	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.MultipartyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	mmp.On("TerminateContract", em.ctx, location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
 	err := em.BlockchainNetworkAction("terminate", location, event, verifier)
 	assert.NoError(t, err)
@@ -145,22 +143,6 @@ func TestNetworkActionUnknown(t *testing.T) {
 	mii.AssertExpectations(t)
 }
 
-func TestActionTerminateQueryFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	location := fftypes.JSONAnyPtr("{}")
-
-	mdi := em.database.(*databasemocks.Plugin)
-
-	mdi.On("GetNamespace", em.ctx, "ns1").Return(nil, fmt.Errorf("pop"))
-
-	err := em.actionTerminate(location, &blockchain.Event{})
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-}
-
 func TestActionTerminateFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -170,28 +152,7 @@ func TestActionTerminateFail(t *testing.T) {
 	mmp := em.multiparty.(*multipartymocks.Manager)
 	mdi := em.database.(*databasemocks.Plugin)
 
-	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
-	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.MultipartyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
-
-	err := em.actionTerminate(location, &blockchain.Event{})
-	assert.EqualError(t, err, "pop")
-
-	mmp.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-}
-
-func TestActionTerminateUpsertFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	location := fftypes.JSONAnyPtr("{}")
-
-	mmp := em.multiparty.(*multipartymocks.Manager)
-	mdi := em.database.(*databasemocks.Plugin)
-
-	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
-	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
-	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.MultipartyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	mmp.On("TerminateContract", em.ctx, location, mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
 
 	err := em.actionTerminate(location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")

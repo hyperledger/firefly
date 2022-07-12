@@ -39,15 +39,15 @@ type Manager interface {
 	RootOrg() RootOrg
 
 	// ConfigureContract initializes the subscription to the FireFly contract
-	// - Checks the provided contract info against the plugin's configuration, and updates it as needed
+	// - Checks the namespace contract info against the plugin's configuration, and updates it as needed
 	// - Initializes the contract info for performing BatchPin transactions, and initializes subscriptions for BatchPin events
-	ConfigureContract(ctx context.Context, contracts *core.MultipartyContracts) (err error)
+	ConfigureContract(ctx context.Context) (err error)
 
 	// TerminateContract marks the given event as the last one to be parsed on the current FireFly contract
 	// - Validates that the event came from the currently active FireFly contract
 	// - Re-initializes the plugin against the next configured FireFly contract
-	// - Updates the provided contract info to record the point of termination and the newly active contract
-	TerminateContract(ctx context.Context, contracts *core.MultipartyContracts, location *fftypes.JSONAny, termination *blockchain.Event) (err error)
+	// - Updates the namespace contract info to record the point of termination and the newly active contract
+	TerminateContract(ctx context.Context, location *fftypes.JSONAny, termination *blockchain.Event) (err error)
 
 	// GetNetworkVersion returns the network version of the active FireFly contract
 	GetNetworkVersion() int
@@ -82,22 +82,17 @@ type Contract struct {
 
 type multipartyManager struct {
 	ctx            context.Context
-	namespace      core.NamespaceRef
+	namespace      *core.Namespace
 	database       database.Plugin
 	blockchain     blockchain.Plugin
 	operations     operations.Manager
 	metrics        metrics.Manager
 	txHelper       txcommon.Helper
 	config         Config
-	activeContract struct {
-		location       *fftypes.JSONAny
-		firstEvent     string
-		networkVersion int
-		subscription   string
-	}
+	networkVersion int
 }
 
-func NewMultipartyManager(ctx context.Context, ns core.NamespaceRef, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
+func NewMultipartyManager(ctx context.Context, ns *core.Namespace, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
 	if di == nil || bi == nil || mm == nil || om == nil || th == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "MultipartyManager")
 	}
@@ -125,7 +120,8 @@ func (mm *multipartyManager) RootOrg() RootOrg {
 	return mm.config.Org
 }
 
-func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *core.MultipartyContracts) (err error) {
+func (mm *multipartyManager) ConfigureContract(ctx context.Context) (err error) {
+	contracts := &mm.namespace.Contracts
 	log.L(ctx).Infof("Resolving FireFly contract at index %d", contracts.Active.Index)
 	location, firstEvent, err := mm.resolveFireFlyContract(ctx, contracts.Active.Index)
 	if err != nil {
@@ -137,12 +133,13 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 		return err
 	}
 
+	if !contracts.Active.Location.IsNil() && contracts.Active.Location.String() != location.String() {
+		log.L(ctx).Warnf("FireFly contract location changed from %s to %s", contracts.Active.Location, location)
+	}
+
 	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.RemoteName, location, firstEvent)
 	if err == nil {
-		mm.activeContract.location = location
-		mm.activeContract.firstEvent = firstEvent
-		mm.activeContract.networkVersion = version
-		mm.activeContract.subscription = subID
+		mm.networkVersion = version
 		contracts.Active = core.MultipartyContract{
 			Location:   location,
 			FirstEvent: firstEvent,
@@ -150,6 +147,7 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 				Subscription: subID,
 			},
 		}
+		err = mm.database.UpsertNamespace(ctx, mm.namespace, true)
 	}
 	return err
 }
@@ -157,7 +155,8 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contractIndex int) (location *fftypes.JSONAny, firstEvent string, err error) {
 	if len(mm.config.Contracts) > 0 {
 		if contractIndex >= len(mm.config.Contracts) {
-			return nil, "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex, fmt.Sprintf("%s.multiparty.contracts[%d]", mm.namespace, contractIndex))
+			return nil, "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex,
+				fmt.Sprintf("%s.multiparty.contracts[%d]", mm.namespace.LocalName, contractIndex))
 		}
 		active := mm.config.Contracts[contractIndex]
 		location = active.Location
@@ -173,8 +172,8 @@ func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contrac
 	return location, firstEvent, err
 }
 
-func (mm *multipartyManager) TerminateContract(ctx context.Context, contracts *core.MultipartyContracts, location *fftypes.JSONAny, termination *blockchain.Event) (err error) {
-	// TODO: Investigate if it better to consolidate DB termination here
+func (mm *multipartyManager) TerminateContract(ctx context.Context, location *fftypes.JSONAny, termination *blockchain.Event) (err error) {
+	contracts := &mm.namespace.Contracts
 	if contracts.Active.Location.String() != location.String() {
 		log.L(ctx).Warnf("Ignoring termination event from contract at '%s', which does not match active '%s'", location, contracts.Active.Location)
 		return nil
@@ -183,15 +182,15 @@ func (mm *multipartyManager) TerminateContract(ctx context.Context, contracts *c
 	contracts.Active.Info.FinalEvent = termination.ProtocolID
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
 	contracts.Active = core.MultipartyContract{Index: contracts.Active.Index + 1}
-	err = mm.blockchain.RemoveFireflySubscription(ctx, mm.activeContract.subscription)
+	err = mm.blockchain.RemoveFireflySubscription(ctx, contracts.Active.Info.Subscription)
 	if err != nil {
 		return err
 	}
-	return mm.ConfigureContract(ctx, contracts)
+	return mm.ConfigureContract(ctx)
 }
 
 func (mm *multipartyManager) GetNetworkVersion() int {
-	return mm.activeContract.networkVersion
+	return mm.networkVersion
 }
 
 func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction) error {

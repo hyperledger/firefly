@@ -111,10 +111,11 @@ func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.Prepared
 
 		// Only include namespace for V1 networks
 		var namespace string
-		if mm.activeContract.networkVersion == 1 {
+		if mm.networkVersion == 1 {
 			namespace = mm.namespace.RemoteName
 		}
 
+		contract := mm.namespace.Contracts.Active
 		return nil, false, mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Key, &blockchain.BatchPin{
 			Namespace:       namespace,
 			TransactionID:   batch.TX.ID,
@@ -122,10 +123,11 @@ func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.Prepared
 			BatchHash:       batch.Hash,
 			BatchPayloadRef: data.PayloadRef,
 			Contexts:        data.Contexts,
-		}, mm.activeContract.location)
+		}, contract.Location)
 
 	case networkActionData:
-		return nil, false, mm.blockchain.SubmitNetworkAction(ctx, op.NamespacedIDString(), data.Key, data.Type, mm.activeContract.location)
+		contract := mm.namespace.Contracts.Active
+		return nil, false, mm.blockchain.SubmitNetworkAction(ctx, op.NamespacedIDString(), data.Key, data.Type, contract.Location)
 
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)

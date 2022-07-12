@@ -205,13 +205,29 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 }
 
 func (nm *namespaceManager) initNamespace(name string, ns *namespace) error {
-	or := nm.utOrchestrator
-	if or == nil {
-		or = orchestrator.NewOrchestrator(&core.Namespace{
+	stored, err := ns.plugins.Database.Plugin.GetNamespace(nm.ctx, name)
+	switch {
+	case err != nil:
+		return err
+	case stored != nil:
+		stored.RemoteName = ns.remoteName
+		stored.Description = ns.description
+		// TODO: should we check for discrepancies in the multiparty contract config?
+	default:
+		stored = &core.Namespace{
 			LocalName:   name,
 			RemoteName:  ns.remoteName,
 			Description: ns.description,
-		}, ns.config, ns.plugins, nm.metrics)
+			Created:     fftypes.Now(),
+		}
+	}
+	if err = ns.plugins.Database.Plugin.UpsertNamespace(nm.ctx, stored, true); err != nil {
+		return err
+	}
+
+	or := nm.utOrchestrator
+	if or == nil {
+		or = orchestrator.NewOrchestrator(stored, ns.config, ns.plugins, nm.metrics)
 	}
 	if err := or.Init(nm.ctx, nm.cancelCtx); err != nil {
 		return err

@@ -178,7 +178,7 @@ func TestPrepareOperationBatchPinNotFound(t *testing.T) {
 func TestRunBatchPinV1(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
-	mp.activeContract.networkVersion = 1
+	mp.networkVersion = 1
 
 	op := &core.Operation{
 		Type:      core.OpTypeBlockchainPinBatch,

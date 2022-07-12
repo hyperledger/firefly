@@ -245,29 +245,8 @@ func (or *orchestrator) tokens() map[string]tokens.Plugin {
 }
 
 func (or *orchestrator) Start() (err error) {
-	ns, err := or.database().GetNamespace(or.ctx, or.namespace.LocalName)
-	if ns == nil {
-		ns = or.namespace
-		ns.Created = fftypes.Now()
-	}
 	if or.config.Multiparty.Enabled {
-		var ns *core.Namespace
-		ns, err = or.database().GetNamespace(or.ctx, or.namespace.LocalName)
-		if err == nil {
-			if ns == nil {
-				ns = &core.Namespace{
-					LocalName: or.namespace.LocalName,
-					Created:   fftypes.Now(),
-				}
-			}
-			err = or.multiparty.ConfigureContract(or.ctx, &ns.Contracts)
-		}
-	}
-	if err == nil {
-		err = or.database().UpsertNamespace(or.ctx, ns, true)
-	}
-
-	if or.config.Multiparty.Enabled {
+		err = or.multiparty.ConfigureContract(or.ctx)
 		if err == nil {
 			err = or.batch.Start()
 		}
@@ -412,7 +391,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.config.Multiparty.Enabled {
 		if or.multiparty == nil {
-			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace.Ref(), or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
+			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
 			if err != nil {
 				return err
 			}
