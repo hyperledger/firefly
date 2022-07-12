@@ -245,6 +245,7 @@ func (or *orchestrator) tokens() map[string]tokens.Plugin {
 }
 
 func (or *orchestrator) Start() (err error) {
+	or.data.Start()
 	if or.config.Multiparty.Enabled {
 		err = or.multiparty.ConfigureContract(or.ctx)
 		if err == nil {
@@ -287,6 +288,10 @@ func (or *orchestrator) WaitStop() {
 	if or.sharedDownload != nil {
 		or.sharedDownload.WaitStop()
 		or.sharedDownload = nil
+	}
+	if or.events != nil {
+		or.events.WaitStop()
+		or.events = nil
 	}
 	if or.operations != nil {
 		or.operations.WaitStop()
