@@ -2613,6 +2613,60 @@
     </tr>
   </tbody>
 </table>
+      <h2 id="httpauth">
+        
+        
+          <a href="#httpauth" class="anchor-heading" aria-labelledby="httpauth"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> http.auth
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>type</td>
+      <td>The auth plugin to use for server side authentication of requests</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="httpauthbasic">
+        
+        
+          <a href="#httpauthbasic" class="anchor-heading" aria-labelledby="httpauthbasic"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> http.auth.basic
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>passwordfile</td>
+      <td>The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
       <h2 id="httptls">
         
         
@@ -3000,6 +3054,60 @@
       <td>The maximum time to wait when writing to an HTTP connection</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">15s</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="metricsauth">
+        
+        
+          <a href="#metricsauth" class="anchor-heading" aria-labelledby="metricsauth"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> metrics.auth
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>type</td>
+      <td>The auth plugin to use for server side authentication of requests</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="metricsauthbasic">
+        
+        
+          <a href="#metricsauthbasic" class="anchor-heading" aria-labelledby="metricsauthbasic"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> metrics.auth.basic
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>passwordfile</td>
+      <td>The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
   </tbody>
 </table>
@@ -3440,6 +3548,12 @@
   </thead>
   <tbody>
     <tr>
+      <td>auth</td>
+      <td>Authorization plugin configuration</td>
+      <td><code class="language-plaintext highlighter-rouge">map[string]string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>blockchain</td>
       <td>The list of configured Blockchain plugins</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
@@ -3472,6 +3586,66 @@
     <tr>
       <td>tokens</td>
       <td>The tokens plugin configurations. This will be used to configure tokens connectors</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="pluginsauth">
+        
+        
+          <a href="#pluginsauth" class="anchor-heading" aria-labelledby="pluginsauth"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.auth[]
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>name</td>
+      <td>The name of the auth plugin to use</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>type</td>
+      <td>The type of the auth plugin to use</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="pluginsauthbasic">
+        
+        
+          <a href="#pluginsauthbasic" class="anchor-heading" aria-labelledby="pluginsauthbasic"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.auth[].basic
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>passwordfile</td>
+      <td>The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -6123,6 +6297,60 @@
       <td>The maximum time to wait when writing to an HTTP connection</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">15s</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="spiauth">
+        
+        
+          <a href="#spiauth" class="anchor-heading" aria-labelledby="spiauth"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> spi.auth
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>type</td>
+      <td>The auth plugin to use for server side authentication of requests</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="spiauthbasic">
+        
+        
+          <a href="#spiauthbasic" class="anchor-heading" aria-labelledby="spiauthbasic"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> spi.auth.basic
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>passwordfile</td>
+      <td>The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
   </tbody>
 </table>
