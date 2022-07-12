@@ -96,6 +96,7 @@ func TestDefineTokenPoolOk(t *testing.T) {
 			Type:      core.TokenTypeNonFungible,
 			Locator:   "N1",
 			Symbol:    "COIN",
+			Connector: "connector1",
 		},
 	}
 

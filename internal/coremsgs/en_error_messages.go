@@ -258,4 +258,5 @@ var (
 	MsgInvalidSubscriptionForNetwork      = ffe("FF10416", "Subscription name '%s' is invalid according to multiparty network rules in effect (network version=%d)")
 	MsgBlockchainNotConfigured            = ffe("FF10417", "No blockchain plugin configured")
 	MsgInvalidBatchPinEvent               = ffe("FF10418", "BatchPin event is not valid - %s (%s): %s")
+	MsgDuplicatePluginRemoteName          = ffe("FF10419", "Invalid %s plugin remote name: %s - remote names must be unique")
 )

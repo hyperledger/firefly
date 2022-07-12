@@ -43,6 +43,7 @@ func newPoolAnnouncement() *core.TokenPoolAnnouncement {
 			Type: core.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
 		},
+		Connector: "remote1",
 	}
 	return &core.TokenPoolAnnouncement{
 		Pool: pool,
@@ -78,7 +79,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	mam := sh.assets.(*assetmocks.Manager)
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
-		return *p.ID == *pool.ID && p.Message == msg.Header.ID
+		return *p.ID == *pool.ID && p.Message == msg.Header.ID && p.Connector == "connector1"
 	})).Return(nil)
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
 

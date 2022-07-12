@@ -19,10 +19,18 @@ package definitions
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
+	// Map token connector name -> remote name
+	if remoteName, exists := bm.tokenRemoteNames[pool.Pool.Connector]; exists {
+		pool.Pool.Connector = remoteName
+	} else {
+		log.L(ctx).Infof("Could not find remote name for token connector: %s", pool.Pool.Connector)
+	}
+
 	if bm.multiparty {
 		if err := pool.Pool.Validate(ctx); err != nil {
 			return err

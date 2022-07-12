@@ -105,10 +105,11 @@ type namespaceManager struct {
 		events        map[string]eventsPlugin
 		auth          map[string]authPlugin
 	}
-	metricsEnabled bool
-	metrics        metrics.Manager
-	adminEvents    spievents.Manager
-	utOrchestrator orchestrator.Orchestrator
+	metricsEnabled   bool
+	metrics          metrics.Manager
+	adminEvents      spievents.Manager
+	utOrchestrator   orchestrator.Orchestrator
+	tokenRemoteNames map[string]string
 }
 
 type blockchainPlugin struct {
@@ -153,8 +154,9 @@ type authPlugin struct {
 
 func NewNamespaceManager(withDefaults bool) Manager {
 	nm := &namespaceManager{
-		namespaces:     make(map[string]*namespace),
-		metricsEnabled: config.GetBool(coreconfig.MetricsEnabled),
+		namespaces:       make(map[string]*namespace),
+		metricsEnabled:   config.GetBool(coreconfig.MetricsEnabled),
+		tokenRemoteNames: make(map[string]string),
 	}
 
 	InitConfig(withDefaults)
@@ -347,6 +349,8 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 
 func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[string]tokensPlugin, err error) {
 	plugins = make(map[string]tokensPlugin)
+	// Remote names must be unique
+	remoteNames := make(map[string]bool)
 
 	tokensConfigArraySize := tokensConfig.ArraySize()
 	for i := 0; i < tokensConfigArraySize; i++ {
@@ -355,6 +359,16 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[s
 		if err != nil {
 			return nil, err
 		}
+		remoteName := config.GetString(coreconfig.PluginRemoteName)
+		// If there is no remote name, use the plugin name
+		if remoteName == "" {
+			remoteName = name
+		}
+		if _, exists := remoteNames[remoteName]; exists {
+			return nil, i18n.NewError(ctx, coremsgs.MsgDuplicatePluginRemoteName, "tokens", remoteName)
+		}
+		remoteNames[remoteName] = true
+		nm.tokenRemoteNames[name] = remoteName
 
 		plugin, err := tifactory.GetPlugin(ctx, pluginType)
 		if err != nil {
@@ -742,7 +756,8 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}
 
 	config := orchestrator.Config{
-		DefaultKey: conf.GetString(coreconfig.NamespaceDefaultKey),
+		DefaultKey:       conf.GetString(coreconfig.NamespaceDefaultKey),
+		TokenRemoteNames: nm.tokenRemoteNames,
 	}
 	var p *orchestrator.Plugins
 	var err error
