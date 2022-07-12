@@ -19,7 +19,8 @@ package gateway
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"os/exec"
+	"testing"
 
 	"github.com/aidarkhanov/nanoid"
 	"github.com/go-resty/resty/v2"
@@ -27,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/test/e2e"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -106,6 +108,17 @@ func simpleStorageFFIGet() *fftypes.FFIMethod {
 	}
 }
 
+func deployContract(t *testing.T, stackName, contract string) string {
+	out, err := exec.Command("ff", "deploy", "ethereum", stackName, "../../data/contracts/"+contract).Output()
+	require.NoError(t, err)
+	var output map[string]interface{}
+	err = json.Unmarshal(out, &output)
+	require.NoError(t, err)
+	address := output["address"].(string)
+	t.Logf("Contract address: %s", address)
+	return address
+}
+
 type EthereumContractTestSuite struct {
 	suite.Suite
 	testState       *testState
@@ -123,11 +136,7 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
 	account := stackState.Accounts[0].(map[string]interface{})
 	suite.ethIdentity = account["address"].(string)
-	suite.contractAddress = os.Getenv("CONTRACT_ADDRESS")
-	if suite.contractAddress == "" {
-		suite.T().Fatal("CONTRACT_ADDRESS must be set")
-	}
-	suite.T().Logf("contractAddress: %s", suite.contractAddress)
+	suite.contractAddress = deployContract(suite.T(), stack.Name, "simplestorage/simple_storage.json")
 
 	res, err := e2e.CreateFFI(suite.T(), suite.testState.client1, simpleStorageFFI())
 	suite.interfaceID = fftypes.MustParseUUID(res.(map[string]interface{})["id"].(string))

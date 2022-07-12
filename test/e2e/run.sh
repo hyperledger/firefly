@@ -124,10 +124,6 @@ if [ "$CREATE_STACK" == "true" ]; then
   checkOk $?
 fi
 
-if [ "$TEST_SUITE" == "TestEthereumMultipartyE2ESuite" ] || [ "$TEST_SUITE" == "TestEthereumGatewayE2ESuite" ]; then
-  export CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/simplestorage/simple_storage.json | jq -r '.address')
-fi
-
 create_accounts
 
 $CLI info $STACK_NAME
