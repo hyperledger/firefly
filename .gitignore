@@ -6,8 +6,8 @@ smart_contracts/ethereum/solidity_firefly/build
 smart_contracts/ethereum/solidity_firefly/package-lock.json
 utils/kat-client/node_modules
 **/*.jar
-firefly
-firefly-nocgo
+/firefly
+/firefly-nocgo
 coverage.txt
 **/debug.test
 .DS_Store

@@ -68,6 +68,9 @@ var (
 	urlBlockchainEvents  = "/blockchainevents"
 	urlOperations        = "/operations"
 	urlGetOrganizations  = "/network/organizations"
+	urlOrganizationsSelf = "/network/organizations/self"
+	urlNodesSelf         = "/network/nodes/self"
+	urlNetworkAction     = "/network/action"
 	urlGetOrgKeys        = "/identities/%s/verifiers"
 )
 
@@ -217,6 +220,28 @@ func (client *FireFlyClient) GetOrgs(t *testing.T, expectedStatus int) (orgs []*
 	return orgs
 }
 
+func (client *FireFlyClient) RegisterSelfOrg(t *testing.T, confirm bool) {
+	path := client.namespaced(urlOrganizationsSelf)
+	input := make(map[string]interface{})
+	resp, err := client.Client.R().
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetBody(input).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func (client *FireFlyClient) RegisterSelfNode(t *testing.T, confirm bool) {
+	path := client.namespaced(urlNodesSelf)
+	input := make(map[string]interface{})
+	resp, err := client.Client.R().
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetBody(input).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
 func (client *FireFlyClient) GetIdentityBlockchainKeys(t *testing.T, identityID *fftypes.UUID, expectedStatus int) (verifiers []*core.Verifier) {
 	path := client.namespaced(fmt.Sprintf(urlGetOrgKeys, identityID))
 	resp, err := client.Client.R().
@@ -284,7 +309,7 @@ func (client *FireFlyClient) BroadcastMessageAsIdentity(t *testing.T, did, topic
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		SetResult(&msg).
 		Post(client.namespaced(urlBroadcastMessage))
-	t.Logf("Sent broadcast msg: %s", msg.Header.ID)
+	client.logger.Logf("Sent broadcast msg: %s", msg.Header.ID)
 	return res, err
 }
 
@@ -306,7 +331,7 @@ func (client *FireFlyClient) ClaimCustomIdentity(t *testing.T, key, name, desc s
 		Post(client.namespaced(urlIdentities))
 	assert.NoError(t, err)
 	assert.True(t, res.IsSuccess())
-	t.Logf("Identity creation initiated with key %s: %s (%s)", key, identity.ID, identity.DID)
+	client.logger.Logf("Identity creation initiated with key %s: %s (%s)", key, identity.ID, identity.DID)
 	return &identity
 }
 
@@ -337,7 +362,7 @@ func (client *FireFlyClient) CreateBlob(t *testing.T, dt *core.DatatypeRef) *cor
 		blob[i] = byte('a' + i%26)
 	}
 	var blobHash fftypes.Bytes32 = sha256.Sum256(blob)
-	t.Logf("Blob size=%d hash=%s", len(blob), &blobHash)
+	client.logger.Logf("Blob size=%d hash=%s", len(blob), &blobHash)
 	var data core.Data
 	formData := map[string]string{}
 	if dt == nil {
@@ -359,7 +384,7 @@ func (client *FireFlyClient) CreateBlob(t *testing.T, dt *core.DatatypeRef) *cor
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 201, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	t.Logf("Data created: %s", data.ID)
+	client.logger.Logf("Data created: %s", data.ID)
 	if dt == nil {
 		assert.Equal(t, "data", data.Value.JSONObject().GetString("mymeta"))
 		assert.Equal(t, "myfile.txt", data.Value.JSONObject().GetString("filename"))
@@ -833,26 +858,37 @@ func (client *FireFlyClient) CreateContractAPIListener(t *testing.T, apiName, ev
 	return &listener, err
 }
 
-func (client *FireFlyClient) GetEvent(t *testing.T, eventID string) (interface{}, error) {
-	var res interface{}
+func (client *FireFlyClient) GetEvent(t *testing.T, eventID string) *core.Event {
+	var ev core.Event
 	path := client.namespaced(fmt.Sprintf("%s/%s", urlGetEvents, eventID))
 	resp, err := client.Client.R().
-		SetResult(&res).
+		SetResult(&ev).
 		Get(path)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
+	return &ev
 }
 
-func (client *FireFlyClient) GetBlockchainEvent(t *testing.T, eventID string) (interface{}, error) {
-	var res interface{}
-	path := client.namespaced(fmt.Sprintf("%s/%s", urlBlockchainEvents, eventID))
+func (client *FireFlyClient) GetBlockchainEvents(t *testing.T, startTime time.Time) (events []*core.BlockchainEvent) {
+	path := client.namespaced(urlBlockchainEvents)
 	resp, err := client.Client.R().
-		SetResult(&res).
+		SetQueryParam("timestamp", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&events).
 		Get(path)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
+	return events
+}
+
+func (client *FireFlyClient) GetBlockchainEvent(t *testing.T, eventID string) *core.BlockchainEvent {
+	var ev core.BlockchainEvent
+	path := client.namespaced(fmt.Sprintf("%s/%s", urlBlockchainEvents, eventID))
+	resp, err := client.Client.R().
+		SetResult(&ev).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &ev
 }
 
 func (client *FireFlyClient) GetOperations(t *testing.T, startTime time.Time) (operations []*core.Operation) {
@@ -864,4 +900,14 @@ func (client *FireFlyClient) GetOperations(t *testing.T, startTime time.Time) (o
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return operations
+}
+
+func (client *FireFlyClient) NetworkAction(t *testing.T, action core.NetworkActionType) {
+	path := client.namespaced(urlNetworkAction)
+	input := &core.NetworkAction{Type: action}
+	resp, err := client.Client.R().
+		SetBody(input).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
