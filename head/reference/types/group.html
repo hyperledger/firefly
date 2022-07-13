@@ -388,6 +388,7 @@ the private data (which might arrive later)</li>
             </span><span class="nl">"node"</span><span class="p">:</span><span class="w"> </span><span class="s2">"61a99af8-c1f7-48ea-8fcc-489e4822a0ed"</span><span class="w">
         </span><span class="p">}</span><span class="w">
     </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"localNamespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ns1"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0b9dfb76-103d-443d-92fd-b114fe07c54d"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"hash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c52ad6c034cf5c7382d9a294f49297096a52eb55cc2da696c564b2a276633b95"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-16T01:23:16Z"</span><span class="w">
@@ -413,7 +414,7 @@ the private data (which might arrive later)</li>
   <tbody>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">namespace</code></td>
-      <td>The namespace of the group</td>
+      <td>The namespace of the group within the multiparty network</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
     <tr>
@@ -425,6 +426,11 @@ the private data (which might arrive later)</li>
       <td><code class="language-plaintext highlighter-rouge">members</code></td>
       <td>The list of members in this privacy group</td>
       <td><a href="#member"><code class="language-plaintext highlighter-rouge">Member[]</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">localNamespace</code></td>
+      <td>The local namespace of the group</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">message</code></td>
