@@ -23,11 +23,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/gorilla/websocket"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -73,15 +77,17 @@ type Logger interface {
 
 type FireFlyClient struct {
 	logger    Logger
+	Hostname  string
 	Namespace string
 	Client    *resty.Client
 }
 
-func NewFireFly(l Logger, baseURL, namespace string) *FireFlyClient {
+func NewFireFly(l Logger, hostname, namespace string) *FireFlyClient {
 	client := NewResty(l)
-	client.SetBaseURL(baseURL)
+	client.SetBaseURL(hostname + "/api/v1")
 	return &FireFlyClient{
 		logger:    l,
+		Hostname:  hostname,
 		Namespace: namespace,
 		Client:    client,
 	}
@@ -109,6 +115,26 @@ func NewResty(l Logger) *resty.Client {
 
 func (client *FireFlyClient) namespaced(url string) string {
 	return "/namespaces/" + client.Namespace + url
+}
+
+func (client *FireFlyClient) WebSocket(t *testing.T, query string, authHeader http.Header) *websocket.Conn {
+	u, _ := url.Parse(client.Hostname)
+	scheme := "ws"
+	if strings.Contains(client.Hostname, "https") {
+		scheme = "wss"
+	}
+	wsURL := url.URL{
+		Scheme:   scheme,
+		Host:     u.Host,
+		Path:     "/ws",
+		RawQuery: query,
+	}
+	ws, resp, err := websocket.DefaultDialer.Dial(wsURL.String(), authHeader)
+	require.NoError(t, err)
+	if resp != nil {
+		resp.Body.Close()
+	}
+	return ws
 }
 
 func (client *FireFlyClient) GetNamespaces() (*resty.Response, error) {

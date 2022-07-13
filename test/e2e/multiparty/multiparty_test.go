@@ -22,7 +22,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -33,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly/test/e2e"
 	"github.com/hyperledger/firefly/test/e2e/client"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 type testState struct {
@@ -72,16 +70,12 @@ func beforeE2ETest(t *testing.T) *testState {
 	var authHeader2 http.Header
 
 	httpProtocolClient1 := "http"
-	websocketProtocolClient1 := "ws"
 	httpProtocolClient2 := "http"
-	websocketProtocolClient2 := "ws"
 	if stack.Members[0].UseHTTPS {
 		httpProtocolClient1 = "https"
-		websocketProtocolClient1 = "wss"
 	}
 	if stack.Members[1].UseHTTPS {
 		httpProtocolClient2 = "https"
-		websocketProtocolClient2 = "wss"
 	}
 
 	member0WithPort := ""
@@ -93,8 +87,8 @@ func beforeE2ETest(t *testing.T) *testState {
 		member1WithPort = fmt.Sprintf(":%d", stack.Members[1].ExposedFireflyPort)
 	}
 
-	base1 := fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
-	base2 := fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient2, stack.Members[1].FireflyHostname, member1WithPort)
+	base1 := fmt.Sprintf("%s://%s%s", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
+	base2 := fmt.Sprintf("%s://%s%s", httpProtocolClient2, stack.Members[1].FireflyHostname, member1WithPort)
 	namespace := os.Getenv("NAMESPACE")
 	if namespace == "" {
 		namespace = "default"
@@ -166,32 +160,8 @@ func beforeE2ETest(t *testing.T) *testState {
 
 	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", ts.namespace, eventNames)
-
-	wsUrl1 := url.URL{
-		Scheme:   websocketProtocolClient1,
-		Host:     fmt.Sprintf("%s%s", stack.Members[0].FireflyHostname, member0WithPort),
-		Path:     "/ws",
-		RawQuery: queryString,
-	}
-	wsUrl2 := url.URL{
-		Scheme:   websocketProtocolClient2,
-		Host:     fmt.Sprintf("%s%s", stack.Members[1].FireflyHostname, member1WithPort),
-		Path:     "/ws",
-		RawQuery: queryString,
-	}
-
-	t.Logf("Websocket 1: " + wsUrl1.String())
-	t.Logf("Websocket 2: " + wsUrl2.String())
-
-	var err error
-	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), authHeader1)
-	if err != nil {
-		t.Logf(err.Error())
-	}
-	require.NoError(t, err)
-
-	ts.ws2, _, err = websocket.DefaultDialer.Dial(wsUrl2.String(), authHeader2)
-	require.NoError(t, err)
+	ts.ws1 = ts.client1.WebSocket(t, queryString, authHeader1)
+	ts.ws2 = ts.client2.WebSocket(t, queryString, authHeader2)
 
 	ts.done = func() {
 		ts.ws1.Close()

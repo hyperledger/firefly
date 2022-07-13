@@ -20,7 +20,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -28,7 +27,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/hyperledger/firefly/test/e2e"
 	"github.com/hyperledger/firefly/test/e2e/client"
-	"github.com/stretchr/testify/require"
 )
 
 type testState struct {
@@ -60,10 +58,8 @@ func beforeE2ETest(t *testing.T) *testState {
 	var authHeader1 http.Header
 
 	httpProtocolClient1 := "http"
-	websocketProtocolClient1 := "ws"
 	if stack.Members[0].UseHTTPS {
 		httpProtocolClient1 = "https"
-		websocketProtocolClient1 = "wss"
 	}
 
 	member0WithPort := ""
@@ -71,7 +67,7 @@ func beforeE2ETest(t *testing.T) *testState {
 		member0WithPort = fmt.Sprintf(":%d", stack.Members[0].ExposedFireflyPort)
 	}
 
-	baseURL := fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
+	baseURL := fmt.Sprintf("%s://%s%s", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
 	namespace := os.Getenv("NAMESPACE")
 	if namespace == "" {
 		namespace = "default"
@@ -106,22 +102,7 @@ func beforeE2ETest(t *testing.T) *testState {
 
 	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", ts.namespace, eventNames)
-
-	wsUrl1 := url.URL{
-		Scheme:   websocketProtocolClient1,
-		Host:     fmt.Sprintf("%s%s", stack.Members[0].FireflyHostname, member0WithPort),
-		Path:     "/ws",
-		RawQuery: queryString,
-	}
-
-	t.Logf("Websocket 1: " + wsUrl1.String())
-
-	var err error
-	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), authHeader1)
-	if err != nil {
-		t.Logf(err.Error())
-	}
-	require.NoError(t, err)
+	ts.ws1 = ts.client1.WebSocket(t, queryString, authHeader1)
 
 	ts.done = func() {
 		ts.ws1.Close()
