@@ -251,7 +251,7 @@ var (
 	MsgDefRejectedWrongAuthor             = ffe("FF10409", "Rejected %s '%s' - wrong author: %s")
 	MsgDefRejectedHashMismatch            = ffe("FF10410", "Rejected %s '%s' - hash mismatch: %s != %s")
 	MsgInvalidNamespaceUUID               = ffe("FF10411", "Expected 'namespace:' prefix on ID '%s'", 400)
-	MsgSubscriptionIDInvalid              = ffe("FF10412", "Invalid subscription ID: %s")
+	MsgBadNetworkVersion                  = ffe("FF10412", "Bad network version: %s")
 	MsgDefinitionRejected                 = ffe("FF10413", "Definition rejected")
 	MsgActionNotSupported                 = ffe("FF10414", "This action is not supported in this namespace", 400)
 	MsgMessagesNotSupported               = ffe("FF10415", "Messages are not supported in this namespace", 400)

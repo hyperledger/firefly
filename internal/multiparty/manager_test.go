@@ -79,6 +79,7 @@ func TestNewMultipartyManager(t *testing.T) {
 	config := Config{Contracts: []Contract{}}
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, []core.OpType{
 		core.OpTypeBlockchainPinBatch,
+		core.OpTypeBlockchainNetworkAction,
 	}).Return()
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
 	nm, err := NewMultipartyManager(context.Background(), ns, config, mdi, mbi, mom, mmi, mth)
@@ -580,7 +581,7 @@ func TestTerminateContractError(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return()
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
@@ -590,7 +591,7 @@ func TestTerminateContractError(t *testing.T) {
 	}
 
 	err := mp.TerminateContract(context.Background(), cf, location, &blockchain.Event{})
-	assert.Regexp(t, "pop", err)
+	assert.Regexp(t, "FF10396", err)
 }
 
 func TestTerminateContractWrongAddress(t *testing.T) {

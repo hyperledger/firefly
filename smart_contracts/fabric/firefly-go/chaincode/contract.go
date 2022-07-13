@@ -17,14 +17,14 @@ type SmartContract struct {
 type BatchPinEvent struct {
 	Signer     string               `json:"signer"`
 	Timestamp  *timestamp.Timestamp `json:"timestamp"`
-	Namespace  string               `json:"namespace"`
+	Action     string               `json:"action"`
 	Uuids      string               `json:"uuids"`
 	BatchHash  string               `json:"batchHash"`
 	PayloadRef string               `json:"payloadRef"`
 	Contexts   []string             `json:"contexts"`
 }
 
-func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, namespace, uuids, batchHash, payloadRef string, contexts []string) error {
+func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, uuids, batchHash, payloadRef string, contexts []string) error {
 	cid := ctx.GetClientIdentity()
 	id, err := cid.GetID()
 	if err != nil {
@@ -45,7 +45,7 @@ func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, na
 	event := BatchPinEvent{
 		Signer:     fmt.Sprintf("%s::%s", mspId, idString),
 		Timestamp:  timestamp,
-		Namespace:  namespace,
+		Action:     "",
 		Uuids:      uuids,
 		BatchHash:  batchHash,
 		PayloadRef: payloadRef,
@@ -59,6 +59,41 @@ func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, na
 	return nil
 }
 
+func (s *SmartContract) NetworkAction(ctx contractapi.TransactionContextInterface, action, payload string) error {
+	cid := ctx.GetClientIdentity()
+	id, err := cid.GetID()
+	if err != nil {
+		return fmt.Errorf("Failed to obtain client identity's ID: %s", err)
+	}
+	idString, err := base64.StdEncoding.DecodeString(id)
+	if err != nil {
+		return fmt.Errorf("Failed to decode client identity ID: %s", err)
+	}
+	mspId, err := cid.GetMSPID()
+	if err != nil {
+		return fmt.Errorf("Failed to obtain client identity's MSP ID: %s", err)
+	}
+	timestamp, err := ctx.GetStub().GetTxTimestamp()
+	if err != nil {
+		return fmt.Errorf("Failed to get transaction timestamp: %s", err)
+	}
+	event := BatchPinEvent{
+		Signer:     fmt.Sprintf("%s::%s", mspId, idString),
+		Timestamp:  timestamp,
+		Action:     action,
+		Uuids:      "",
+		BatchHash:  "",
+		PayloadRef: payload,
+		Contexts:   []string{},
+	}
+	bytes, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("Failed to marshal event: %s", err)
+	}
+	ctx.GetStub().SetEvent("BatchPin", bytes)
+	return nil
+}
+
 func (s *SmartContract) NetworkVersion() int {
-	return 1
+	return 2
 }

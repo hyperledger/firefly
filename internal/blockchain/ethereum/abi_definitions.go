@@ -18,7 +18,7 @@ package ethereum
 
 import "github.com/hyperledger/firefly-signer/pkg/abi"
 
-var batchPinMethodABI = &abi.Entry{
+var batchPinMethodABIV1 = &abi.Entry{
 	Name: "pinBatch",
 	Type: "function",
 	Inputs: abi.ParameterArray{
@@ -46,6 +46,50 @@ var batchPinMethodABI = &abi.Entry{
 			InternalType: "bytes32[]",
 			Name:         "contexts",
 			Type:         "bytes32[]",
+		},
+	},
+}
+
+var batchPinMethodABI = &abi.Entry{
+	Name: "pinBatch",
+	Type: "function",
+	Inputs: abi.ParameterArray{
+		{
+			InternalType: "bytes32",
+			Name:         "uuids",
+			Type:         "bytes32",
+		},
+		{
+			InternalType: "bytes32",
+			Name:         "batchHash",
+			Type:         "bytes32",
+		},
+		{
+			InternalType: "string",
+			Name:         "payloadRef",
+			Type:         "string",
+		},
+		{
+			InternalType: "bytes32[]",
+			Name:         "contexts",
+			Type:         "bytes32[]",
+		},
+	},
+}
+
+var networkActionMethodABI = &abi.Entry{
+	Name: "networkAction",
+	Type: "function",
+	Inputs: abi.ParameterArray{
+		{
+			InternalType: "string",
+			Name:         "action",
+			Type:         "string",
+		},
+		{
+			InternalType: "string",
+			Name:         "payload",
+			Type:         "string",
 		},
 	},
 }

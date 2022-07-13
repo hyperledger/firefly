@@ -23,20 +23,18 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/karlseguin/ccache"
 )
 
 type streamManager struct {
-	client                   *resty.Client
-	signer                   string
-	subscriptionNameCache    *ccache.Cache
-	subscriptionNameCacheTTL time.Duration
+	client   *resty.Client
+	signer   string
+	cache    *ccache.Cache
+	cacheTTL time.Duration
 }
 
 type eventStream struct {
@@ -65,17 +63,13 @@ type eventFilter struct {
 	EventFilter string `json:"eventFilter"`
 }
 
-func newStreamManager(client *resty.Client, signer string) *streamManager {
-	manager := &streamManager{
-		client:                   client,
-		signer:                   signer,
-		subscriptionNameCacheTTL: config.GetDuration(coreconfig.CacheBlockchainTTL),
+func newStreamManager(client *resty.Client, signer string, cache *ccache.Cache, cacheTTL time.Duration) *streamManager {
+	return &streamManager{
+		client:   client,
+		signer:   signer,
+		cache:    cache,
+		cacheTTL: cacheTTL,
 	}
-	manager.subscriptionNameCache = ccache.New(
-		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.CacheBlockchainSize)),
-	)
-	return manager
 }
 
 func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventStream, err error) {
@@ -146,9 +140,9 @@ func (s *streamManager) getSubscription(ctx context.Context, subID string) (sub 
 }
 
 func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (string, error) {
-	cached := s.subscriptionNameCache.Get(subID)
+	cached := s.cache.Get("sub:" + subID)
 	if cached != nil {
-		cached.Extend(s.subscriptionNameCacheTTL)
+		cached.Extend(s.cacheTTL)
 		return cached.Value().(string), nil
 	}
 
@@ -156,7 +150,7 @@ func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (
 	if err != nil {
 		return "", err
 	}
-	s.subscriptionNameCache.Set(subID, sub.Name, s.subscriptionNameCacheTTL)
+	s.cache.Set("sub:"+subID, sub.Name, s.cacheTTL)
 	return sub.Name, nil
 }
 
