@@ -56,7 +56,6 @@ func (m *testState) Done() func() {
 func beforeE2ETest(t *testing.T) *testState {
 	stack := e2e.ReadStack(t)
 	stackState := e2e.ReadStackState(t)
-	namespace := "default"
 
 	var authHeader1 http.Header
 
@@ -73,11 +72,15 @@ func beforeE2ETest(t *testing.T) *testState {
 	}
 
 	baseURL := fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
+	namespace := os.Getenv("NAMESPACE")
+	if namespace == "" {
+		namespace = "default"
+	}
 
 	ts := &testState{
 		t:                    t,
 		startTime:            time.Now(),
-		client1:              client.NewFireFly(t, baseURL),
+		client1:              client.NewFireFly(t, baseURL, namespace),
 		unregisteredAccounts: stackState.Accounts[2:],
 		namespace:            namespace,
 	}

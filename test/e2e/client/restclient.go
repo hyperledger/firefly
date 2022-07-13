@@ -23,9 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
-	"os"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -38,35 +36,35 @@ import (
 
 var (
 	urlGetNamespaces     = "/namespaces"
-	urlUploadData        = "/namespaces/default/data"
-	urlGetMessages       = "/namespaces/default/messages"
-	urlBroadcastMessage  = "/namespaces/default/messages/broadcast"
-	urlPrivateMessage    = "/namespaces/default/messages/private"
-	urlRequestMessage    = "/namespaces/default/messages/requestreply"
-	urlGetData           = "/namespaces/default/data"
-	urlGetDataBlob       = "/namespaces/default/data/%s/blob"
-	urlGetEvents         = "/namespaces/default/events"
-	urlSubscriptions     = "/namespaces/default/subscriptions"
-	urlDatatypes         = "/namespaces/default/datatypes"
-	urlIdentities        = "/namespaces/default/identities"
-	urlIdentity          = "/namespaces/default/identities/%s"
-	urlVerifiers         = "/namespaces/default/verifiers"
-	urlTokenPools        = "/namespaces/default/tokens/pools"
-	urlTokenMint         = "/namespaces/default/tokens/mint"
-	urlTokenBurn         = "/namespaces/default/tokens/burn"
-	urlTokenTransfers    = "/namespaces/default/tokens/transfers"
-	urlTokenApprovals    = "/namespaces/default/tokens/approvals"
-	urlTokenAccounts     = "/namespaces/default/tokens/accounts"
-	urlTokenBalances     = "/namespaces/default/tokens/balances"
-	urlContractInvoke    = "/namespaces/default/contracts/invoke"
-	urlContractQuery     = "/namespaces/default/contracts/query"
-	urlContractInterface = "/namespaces/default/contracts/interfaces"
-	urlContractListeners = "/namespaces/default/contracts/listeners"
-	urlContractAPI       = "/namespaces/default/apis"
-	urlBlockchainEvents  = "/namespaces/default/blockchainevents"
-	urlOperations        = "/namespaces/default/operations"
-	urlGetOrganizations  = "/namespaces/default/network/organizations"
-	urlGetOrgKeys        = "/namespaces/default/identities/%s/verifiers"
+	urlUploadData        = "/data"
+	urlGetMessages       = "/messages"
+	urlBroadcastMessage  = "/messages/broadcast"
+	urlPrivateMessage    = "/messages/private"
+	urlRequestMessage    = "/messages/requestreply"
+	urlGetData           = "/data"
+	urlGetDataBlob       = "/data/%s/blob"
+	urlGetEvents         = "/events"
+	urlSubscriptions     = "/subscriptions"
+	urlDatatypes         = "/datatypes"
+	urlIdentities        = "/identities"
+	urlIdentity          = "/identities/%s"
+	urlVerifiers         = "/verifiers"
+	urlTokenPools        = "/tokens/pools"
+	urlTokenMint         = "/tokens/mint"
+	urlTokenBurn         = "/tokens/burn"
+	urlTokenTransfers    = "/tokens/transfers"
+	urlTokenApprovals    = "/tokens/approvals"
+	urlTokenAccounts     = "/tokens/accounts"
+	urlTokenBalances     = "/tokens/balances"
+	urlContractInvoke    = "/contracts/invoke"
+	urlContractQuery     = "/contracts/query"
+	urlContractInterface = "/contracts/interfaces"
+	urlContractListeners = "/contracts/listeners"
+	urlContractAPI       = "/apis"
+	urlBlockchainEvents  = "/blockchainevents"
+	urlOperations        = "/operations"
+	urlGetOrganizations  = "/network/organizations"
+	urlGetOrgKeys        = "/identities/%s/verifiers"
 )
 
 type Logger interface {
@@ -74,25 +72,24 @@ type Logger interface {
 }
 
 type FireFlyClient struct {
-	logger Logger
-	Client *resty.Client
+	logger    Logger
+	Namespace string
+	Client    *resty.Client
 }
 
-func NewFireFly(l Logger, baseURL string) *FireFlyClient {
+func NewFireFly(l Logger, baseURL, namespace string) *FireFlyClient {
 	client := NewResty(l)
 	client.SetBaseURL(baseURL)
 	return &FireFlyClient{
-		logger: l,
-		Client: client,
+		logger:    l,
+		Namespace: namespace,
+		Client:    client,
 	}
 }
 
 func NewResty(l Logger) *resty.Client {
 	client := resty.New()
 	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
-		if os.Getenv("NAMESPACE") != "" {
-			req.URL = strings.Replace(req.URL, "/namespaces/default", "/namespaces/"+os.Getenv("NAMESPACE"), 1)
-		}
 		l.Logf("==> %s %s %s", req.Method, req.URL, req.QueryParam)
 		return nil
 	})
@@ -110,6 +107,10 @@ func NewResty(l Logger) *resty.Client {
 	return client
 }
 
+func (client *FireFlyClient) namespaced(url string) string {
+	return "/namespaces/" + client.Namespace + url
+}
+
 func (client *FireFlyClient) GetNamespaces() (*resty.Response, error) {
 	return client.Client.R().
 		SetResult(&[]core.Namespace{}).
@@ -117,7 +118,7 @@ func (client *FireFlyClient) GetNamespaces() (*resty.Response, error) {
 }
 
 func (client *FireFlyClient) GetMessageEvents(t *testing.T, startTime time.Time, topic string, expectedStatus int) (events []*core.EnrichedEvent) {
-	path := urlGetEvents
+	path := client.namespaced(urlGetEvents)
 	resp, err := client.Client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetQueryParam("topic", topic).
@@ -131,7 +132,7 @@ func (client *FireFlyClient) GetMessageEvents(t *testing.T, startTime time.Time,
 }
 
 func (client *FireFlyClient) GetMessages(t *testing.T, startTime time.Time, msgType core.MessageType, topic string, expectedStatus int) (msgs []*core.Message) {
-	path := urlGetMessages
+	path := client.namespaced(urlGetMessages)
 	resp, err := client.Client.R().
 		SetQueryParam("type", string(msgType)).
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
@@ -145,7 +146,7 @@ func (client *FireFlyClient) GetMessages(t *testing.T, startTime time.Time, msgT
 }
 
 func (client *FireFlyClient) GetData(t *testing.T, startTime time.Time, expectedStatus int) (data core.DataArray) {
-	path := urlGetData
+	path := client.namespaced(urlGetData)
 	resp, err := client.Client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetResult(&data).
@@ -156,7 +157,7 @@ func (client *FireFlyClient) GetData(t *testing.T, startTime time.Time, expected
 }
 
 func (client *FireFlyClient) GetDataForMessage(t *testing.T, startTime time.Time, msgID *fftypes.UUID) (data core.DataArray) {
-	path := urlGetMessages
+	path := client.namespaced(urlGetMessages)
 	path += "/" + msgID.String() + "/data"
 	resp, err := client.Client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
@@ -168,7 +169,7 @@ func (client *FireFlyClient) GetDataForMessage(t *testing.T, startTime time.Time
 }
 
 func (client *FireFlyClient) GetBlob(t *testing.T, data *core.Data, expectedStatus int) []byte {
-	path := fmt.Sprintf(urlGetDataBlob, data.ID)
+	path := client.namespaced(fmt.Sprintf(urlGetDataBlob, data.ID))
 	resp, err := client.Client.R().
 		SetDoNotParseResponse(true).
 		Get(path)
@@ -180,7 +181,7 @@ func (client *FireFlyClient) GetBlob(t *testing.T, data *core.Data, expectedStat
 }
 
 func (client *FireFlyClient) GetOrgs(t *testing.T, expectedStatus int) (orgs []*core.Identity) {
-	path := urlGetOrganizations
+	path := client.namespaced(urlGetOrganizations)
 	resp, err := client.Client.R().
 		SetQueryParam("sort", "created").
 		SetResult(&orgs).
@@ -191,7 +192,7 @@ func (client *FireFlyClient) GetOrgs(t *testing.T, expectedStatus int) (orgs []*
 }
 
 func (client *FireFlyClient) GetIdentityBlockchainKeys(t *testing.T, identityID *fftypes.UUID, expectedStatus int) (verifiers []*core.Verifier) {
-	path := fmt.Sprintf(urlGetOrgKeys, identityID)
+	path := client.namespaced(fmt.Sprintf(urlGetOrgKeys, identityID))
 	resp, err := client.Client.R().
 		SetQueryParam("type", fmt.Sprintf("!=%s", core.VerifierTypeFFDXPeerID)).
 		SetResult(&verifiers).
@@ -202,7 +203,7 @@ func (client *FireFlyClient) GetIdentityBlockchainKeys(t *testing.T, identityID 
 }
 
 func (client *FireFlyClient) CreateSubscription(t *testing.T, input interface{}, expectedStatus int) *core.Subscription {
-	path := urlSubscriptions
+	path := client.namespaced(urlSubscriptions)
 	var sub core.Subscription
 	resp, err := client.Client.R().
 		SetBody(input).
@@ -216,7 +217,7 @@ func (client *FireFlyClient) CreateSubscription(t *testing.T, input interface{},
 
 func (client *FireFlyClient) CleanupExistingSubscription(t *testing.T, namespace, name string) {
 	var subs []*core.Subscription
-	path := urlSubscriptions
+	path := client.namespaced(urlSubscriptions)
 	resp, err := client.Client.R().
 		SetResult(&subs).
 		Get(path)
@@ -230,7 +231,7 @@ func (client *FireFlyClient) CleanupExistingSubscription(t *testing.T, namespace
 }
 
 func (client *FireFlyClient) DeleteSubscription(t *testing.T, id *fftypes.UUID) {
-	path := fmt.Sprintf("%s/%s", urlSubscriptions, id)
+	path := client.namespaced(fmt.Sprintf("%s/%s", urlSubscriptions, id))
 	resp, err := client.Client.R().Delete(path)
 	require.NoError(t, err)
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
@@ -256,7 +257,7 @@ func (client *FireFlyClient) BroadcastMessageAsIdentity(t *testing.T, did, topic
 		}).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		SetResult(&msg).
-		Post(urlBroadcastMessage)
+		Post(client.namespaced(urlBroadcastMessage))
 	t.Logf("Sent broadcast msg: %s", msg.Header.ID)
 	return res, err
 }
@@ -276,7 +277,7 @@ func (client *FireFlyClient) ClaimCustomIdentity(t *testing.T, key, name, desc s
 		}).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		SetResult(&identity).
-		Post(urlIdentities)
+		Post(client.namespaced(urlIdentities))
 	assert.NoError(t, err)
 	assert.True(t, res.IsSuccess())
 	t.Logf("Identity creation initiated with key %s: %s (%s)", key, identity.ID, identity.DID)
@@ -287,7 +288,7 @@ func (client *FireFlyClient) GetIdentity(t *testing.T, id *fftypes.UUID) *core.I
 	var identity core.Identity
 	res, err := client.Client.R().
 		SetResult(&identity).
-		Get(fmt.Sprintf(urlIdentity, id))
+		Get(client.namespaced(fmt.Sprintf(urlIdentity, id)))
 	assert.NoError(t, err)
 	assert.True(t, res.IsSuccess())
 	return &identity
@@ -297,7 +298,7 @@ func (client *FireFlyClient) GetVerifiers(t *testing.T) []*core.Verifier {
 	var verifiers []*core.Verifier
 	res, err := client.Client.R().
 		SetResult(&verifiers).
-		Get(urlVerifiers)
+		Get(client.namespaced(urlVerifiers))
 	assert.NoError(t, err)
 	assert.True(t, res.IsSuccess())
 	return verifiers
@@ -324,13 +325,14 @@ func (client *FireFlyClient) CreateBlob(t *testing.T, dt *core.DatatypeRef) *cor
 		formData["datatype.name"] = dt.Name
 		formData["datatype.version"] = dt.Version
 	}
+	path := client.namespaced(urlUploadData)
 	resp, err := client.Client.R().
 		SetFormData(formData).
 		SetFileReader("file", "myfile.txt", bytes.NewReader(blob)).
 		SetResult(&data).
-		Post(urlUploadData)
+		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 201, resp.StatusCode(), "POST %s [%d]: %s", urlUploadData, resp.StatusCode(), resp.String())
+	require.Equal(t, 201, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	t.Logf("Data created: %s", data.ID)
 	if dt == nil {
 		assert.Equal(t, "data", data.Value.JSONObject().GetString("mymeta"))
@@ -358,7 +360,7 @@ func (client *FireFlyClient) BroadcastBlobMessage(t *testing.T, topic string) (*
 				{DataRef: core.DataRef{ID: data.ID}},
 			},
 		}).
-		Post(urlBroadcastMessage)
+		Post(client.namespaced(urlBroadcastMessage))
 	return data, res, err
 }
 
@@ -386,7 +388,7 @@ func (client *FireFlyClient) PrivateBlobMessageDatatypeTagged(t *testing.T, topi
 				Name:    fmt.Sprintf("test_%d", startTime.UnixNano()),
 			},
 		}).
-		Post(urlPrivateMessage)
+		Post(client.namespaced(urlPrivateMessage))
 	return data, res, err
 }
 
@@ -423,7 +425,7 @@ func (client *FireFlyClient) PrivateMessageWithKey(key, topic string, data *core
 		SetBody(msg).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		SetResult(&msg.Message).
-		Post(urlPrivateMessage)
+		Post(client.namespaced(urlPrivateMessage))
 	client.logger.Logf("Sent private message %s to %+v", msg.Header.ID, msg.Group.Members)
 	return res, err
 }
@@ -449,19 +451,20 @@ func (client *FireFlyClient) RequestReply(t *testing.T, data *core.DataRefOrValu
 			Name:    fmt.Sprintf("test_%d", startTime.UnixNano()),
 		},
 	}
+	path := client.namespaced(urlRequestMessage)
 	var replyMsg core.MessageInOut
 	resp, err := client.Client.R().
 		SetBody(msg).
 		SetResult(&replyMsg).
-		Post(urlRequestMessage)
+		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", urlUploadData, resp.StatusCode(), resp.String())
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &replyMsg
 }
 
 func (client *FireFlyClient) CreateDatatype(t *testing.T, datatype *core.Datatype, confirm bool) *core.Datatype {
 	var dtReturn core.Datatype
-	path := urlDatatypes
+	path := client.namespaced(urlDatatypes)
 	resp, err := client.Client.R().
 		SetBody(datatype).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
@@ -478,7 +481,7 @@ func (client *FireFlyClient) CreateDatatype(t *testing.T, datatype *core.Datatyp
 
 func (client *FireFlyClient) CreateTokenPool(t *testing.T, pool *core.TokenPool, confirm bool) *core.TokenPool {
 	var poolOut core.TokenPool
-	path := urlTokenPools
+	path := client.namespaced(urlTokenPools)
 	resp, err := client.Client.R().
 		SetBody(pool).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
@@ -494,7 +497,7 @@ func (client *FireFlyClient) CreateTokenPool(t *testing.T, pool *core.TokenPool,
 }
 
 func (client *FireFlyClient) GetTokenPools(t *testing.T, startTime time.Time) (pools []*core.TokenPool) {
-	path := urlTokenPools
+	path := client.namespaced(urlTokenPools)
 	resp, err := client.Client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetResult(&pools).
@@ -506,7 +509,7 @@ func (client *FireFlyClient) GetTokenPools(t *testing.T, startTime time.Time) (p
 
 func (client *FireFlyClient) MintTokens(t *testing.T, mint *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
-	path := urlTokenMint
+	path := client.namespaced(urlTokenMint)
 	resp, err := client.Client.R().
 		SetBody(mint).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
@@ -523,7 +526,7 @@ func (client *FireFlyClient) MintTokens(t *testing.T, mint *core.TokenTransferIn
 
 func (client *FireFlyClient) BurnTokens(t *testing.T, burn *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
-	path := urlTokenBurn
+	path := client.namespaced(urlTokenBurn)
 	resp, err := client.Client.R().
 		SetBody(burn).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
@@ -540,7 +543,7 @@ func (client *FireFlyClient) BurnTokens(t *testing.T, burn *core.TokenTransferIn
 
 func (client *FireFlyClient) TransferTokens(t *testing.T, transfer *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
-	path := urlTokenTransfers
+	path := client.namespaced(urlTokenTransfers)
 	resp, err := client.Client.R().
 		SetBody(transfer).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
@@ -556,7 +559,7 @@ func (client *FireFlyClient) TransferTokens(t *testing.T, transfer *core.TokenTr
 }
 
 func (client *FireFlyClient) GetTokenTransfers(t *testing.T, poolID *fftypes.UUID) (transfers []*core.TokenTransfer) {
-	path := urlTokenTransfers
+	path := client.namespaced(urlTokenTransfers)
 	resp, err := client.Client.R().
 		SetQueryParam("pool", poolID.String()).
 		SetResult(&transfers).
@@ -568,7 +571,7 @@ func (client *FireFlyClient) GetTokenTransfers(t *testing.T, poolID *fftypes.UUI
 
 func (client *FireFlyClient) TokenApproval(t *testing.T, approval *core.TokenApprovalInput, confirm bool) *core.TokenApproval {
 	var approvalOut core.TokenApproval
-	path := urlTokenApprovals
+	path := client.namespaced(urlTokenApprovals)
 	resp, err := client.Client.R().
 		SetBody(approval).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
@@ -584,7 +587,7 @@ func (client *FireFlyClient) TokenApproval(t *testing.T, approval *core.TokenApp
 }
 
 func (client *FireFlyClient) GetTokenApprovals(t *testing.T, poolID *fftypes.UUID) (approvals []*core.TokenApproval) {
-	path := urlTokenApprovals
+	path := client.namespaced(urlTokenApprovals)
 	resp, err := client.Client.R().
 		SetQueryParam("pool", poolID.String()).
 		SetQueryParam("active", "true").
@@ -596,7 +599,7 @@ func (client *FireFlyClient) GetTokenApprovals(t *testing.T, poolID *fftypes.UUI
 }
 
 func (client *FireFlyClient) GetTokenAccounts(t *testing.T, poolID *fftypes.UUID) (accounts []*core.TokenAccount) {
-	path := urlTokenAccounts
+	path := client.namespaced(urlTokenAccounts)
 	resp, err := client.Client.R().
 		SetResult(&accounts).
 		Get(path)
@@ -606,7 +609,7 @@ func (client *FireFlyClient) GetTokenAccounts(t *testing.T, poolID *fftypes.UUID
 }
 
 func (client *FireFlyClient) GetTokenAccountPools(t *testing.T, identity string) (pools []*core.TokenAccountPool) {
-	path := urlTokenAccounts + "/" + identity + "/pools"
+	path := client.namespaced(urlTokenAccounts + "/" + identity + "/pools")
 	resp, err := client.Client.R().
 		SetQueryParam("sort", "-updated").
 		SetResult(&pools).
@@ -618,7 +621,7 @@ func (client *FireFlyClient) GetTokenAccountPools(t *testing.T, identity string)
 
 func (client *FireFlyClient) GetTokenBalance(t *testing.T, poolID *fftypes.UUID, tokenIndex, key string) (account *core.TokenBalance) {
 	var accounts []*core.TokenBalance
-	path := urlTokenBalances
+	path := client.namespaced(urlTokenBalances)
 	resp, err := client.Client.R().
 		SetQueryParam("pool", poolID.String()).
 		SetQueryParam("tokenIndex", tokenIndex).
@@ -642,7 +645,7 @@ func (client *FireFlyClient) CreateContractListener(t *testing.T, event *fftypes
 		},
 	}
 	var sub core.ContractListener
-	path := urlContractListeners
+	path := client.namespaced(urlContractListeners)
 	resp, err := client.Client.R().
 		SetBody(&body).
 		SetResult(&sub).
@@ -662,7 +665,7 @@ func (client *FireFlyClient) CreateFFIContractListener(t *testing.T, ffiReferenc
 		EventPath: eventPath,
 	}
 	var listener core.ContractListener
-	path := urlContractListeners
+	path := client.namespaced(urlContractListeners)
 	resp, err := client.Client.R().
 		SetBody(&body).
 		SetResult(&listener).
@@ -673,7 +676,7 @@ func (client *FireFlyClient) CreateFFIContractListener(t *testing.T, ffiReferenc
 }
 
 func (client *FireFlyClient) GetContractListeners(t *testing.T, startTime time.Time) (subs []*core.ContractListener) {
-	path := urlContractListeners
+	path := client.namespaced(urlContractListeners)
 	resp, err := client.Client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetResult(&subs).
@@ -684,7 +687,7 @@ func (client *FireFlyClient) GetContractListeners(t *testing.T, startTime time.T
 }
 
 func (client *FireFlyClient) GetContractEvents(t *testing.T, startTime time.Time, subscriptionID *fftypes.UUID) (events []*core.BlockchainEvent) {
-	path := urlBlockchainEvents
+	path := client.namespaced(urlBlockchainEvents)
 	resp, err := client.Client.R().
 		SetQueryParam("timestamp", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetQueryParam("subscriptionId", subscriptionID.String()).
@@ -696,7 +699,7 @@ func (client *FireFlyClient) GetContractEvents(t *testing.T, startTime time.Time
 }
 
 func (client *FireFlyClient) DeleteContractListener(t *testing.T, id *fftypes.UUID) {
-	path := urlContractListeners + "/" + id.String()
+	path := client.namespaced(urlContractListeners + "/" + id.String())
 	resp, err := client.Client.R().Delete(path)
 	require.NoError(t, err)
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
@@ -704,7 +707,7 @@ func (client *FireFlyClient) DeleteContractListener(t *testing.T, id *fftypes.UU
 
 func (client *FireFlyClient) InvokeContractMethod(t *testing.T, req *core.ContractCallRequest) (interface{}, error) {
 	var res interface{}
-	path := urlContractInvoke
+	path := client.namespaced(urlContractInvoke)
 	resp, err := client.Client.R().
 		SetBody(req).
 		SetResult(&res).
@@ -716,7 +719,7 @@ func (client *FireFlyClient) InvokeContractMethod(t *testing.T, req *core.Contra
 
 func (client *FireFlyClient) QueryContractMethod(t *testing.T, req *core.ContractCallRequest) (interface{}, error) {
 	var res interface{}
-	path := urlContractQuery
+	path := client.namespaced(urlContractQuery)
 	resp, err := client.Client.R().
 		SetBody(req).
 		SetResult(&res).
@@ -728,7 +731,7 @@ func (client *FireFlyClient) QueryContractMethod(t *testing.T, req *core.Contrac
 
 func (client *FireFlyClient) CreateFFI(t *testing.T, ffi *fftypes.FFI) (interface{}, error) {
 	var res interface{}
-	path := urlContractInterface
+	path := client.namespaced(urlContractInterface)
 	resp, err := client.Client.R().
 		SetBody(ffi).
 		SetResult(&res).
@@ -747,7 +750,7 @@ func (client *FireFlyClient) CreateContractAPI(t *testing.T, name string, ffiRef
 	}
 
 	var res interface{}
-	path := urlContractAPI
+	path := client.namespaced(urlContractAPI)
 	resp, err := client.Client.R().
 		SetBody(apiReqBody).
 		SetResult(&res).
@@ -763,7 +766,7 @@ func (client *FireFlyClient) InvokeContractAPIMethod(t *testing.T, apiName strin
 		"input": input,
 	}
 	var res interface{}
-	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractAPI, apiName, methodName)
+	path := client.namespaced(fmt.Sprintf("%s/%s/invoke/%s", urlContractAPI, apiName, methodName))
 	resp, err := client.Client.R().
 		SetBody(apiReqBody).
 		SetResult(&res).
@@ -779,7 +782,7 @@ func (client *FireFlyClient) QueryContractAPIMethod(t *testing.T, apiName string
 		"input": input,
 	}
 	var res interface{}
-	path := fmt.Sprintf("%s/%s/query/%s", urlContractAPI, apiName, methodName)
+	path := client.namespaced(fmt.Sprintf("%s/%s/query/%s", urlContractAPI, apiName, methodName))
 	resp, err := client.Client.R().
 		SetBody(apiReqBody).
 		SetResult(&res).
@@ -794,7 +797,7 @@ func (client *FireFlyClient) CreateContractAPIListener(t *testing.T, apiName, ev
 		"topic": topic,
 	}
 	var listener core.ContractListener
-	path := fmt.Sprintf("%s/%s/listeners/%s", urlContractAPI, apiName, eventName)
+	path := client.namespaced(fmt.Sprintf("%s/%s/listeners/%s", urlContractAPI, apiName, eventName))
 	resp, err := client.Client.R().
 		SetBody(apiReqBody).
 		SetResult(&listener).
@@ -806,7 +809,7 @@ func (client *FireFlyClient) CreateContractAPIListener(t *testing.T, apiName, ev
 
 func (client *FireFlyClient) GetEvent(t *testing.T, eventID string) (interface{}, error) {
 	var res interface{}
-	path := fmt.Sprintf("%s/%s", urlGetEvents, eventID)
+	path := client.namespaced(fmt.Sprintf("%s/%s", urlGetEvents, eventID))
 	resp, err := client.Client.R().
 		SetResult(&res).
 		Get(path)
@@ -817,7 +820,7 @@ func (client *FireFlyClient) GetEvent(t *testing.T, eventID string) (interface{}
 
 func (client *FireFlyClient) GetBlockchainEvent(t *testing.T, eventID string) (interface{}, error) {
 	var res interface{}
-	path := fmt.Sprintf("%s/%s", urlBlockchainEvents, eventID)
+	path := client.namespaced(fmt.Sprintf("%s/%s", urlBlockchainEvents, eventID))
 	resp, err := client.Client.R().
 		SetResult(&res).
 		Get(path)
@@ -827,7 +830,7 @@ func (client *FireFlyClient) GetBlockchainEvent(t *testing.T, eventID string) (i
 }
 
 func (client *FireFlyClient) GetOperations(t *testing.T, startTime time.Time) (operations []*core.Operation) {
-	path := urlOperations
+	path := client.namespaced(urlOperations)
 	resp, err := client.Client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetResult(&operations).
