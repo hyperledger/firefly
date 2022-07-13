@@ -25,9 +25,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/websocket"
 	"github.com/hyperledger/firefly/test/e2e"
+	"github.com/hyperledger/firefly/test/e2e/client"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,7 +36,7 @@ type testState struct {
 	startTime            time.Time
 	done                 func()
 	ws1                  *websocket.Conn
-	client1              *resty.Client
+	client1              *client.FireFlyClient
 	unregisteredAccounts []interface{}
 	namespace            string
 }
@@ -60,14 +60,6 @@ func beforeE2ETest(t *testing.T) *testState {
 
 	var authHeader1 http.Header
 
-	ts := &testState{
-		t:                    t,
-		startTime:            time.Now(),
-		client1:              e2e.NewResty(t),
-		unregisteredAccounts: stackState.Accounts[2:],
-		namespace:            namespace,
-	}
-
 	httpProtocolClient1 := "http"
 	websocketProtocolClient1 := "ws"
 	if stack.Members[0].UseHTTPS {
@@ -80,13 +72,21 @@ func beforeE2ETest(t *testing.T) *testState {
 		member0WithPort = fmt.Sprintf(":%d", stack.Members[0].ExposedFireflyPort)
 	}
 
-	ts.client1.SetBaseURL(fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort))
+	baseURL := fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
+
+	ts := &testState{
+		t:                    t,
+		startTime:            time.Now(),
+		client1:              client.NewFireFly(t, baseURL),
+		unregisteredAccounts: stackState.Accounts[2:],
+		namespace:            namespace,
+	}
 
 	t.Logf("Blockchain provider: %s", stack.BlockchainProvider)
 
 	if stack.Members[0].Username != "" && stack.Members[0].Password != "" {
 		t.Log("Setting auth for user 1")
-		ts.client1.SetBasicAuth(stack.Members[0].Username, stack.Members[0].Password)
+		ts.client1.Client.SetBasicAuth(stack.Members[0].Username, stack.Members[0].Password)
 		authHeader1 = http.Header{
 			"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.Members[0].Username, stack.Members[0].Password))))},
 		}
@@ -98,7 +98,7 @@ func beforeE2ETest(t *testing.T) *testState {
 		ts.namespace = namespace
 	}
 
-	t.Logf("Client 1: " + ts.client1.HostURL)
+	t.Logf("Client 1: " + ts.client1.Client.HostURL)
 	e2e.PollForUp(t, ts.client1)
 
 	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
