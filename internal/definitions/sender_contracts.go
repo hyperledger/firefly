@@ -25,7 +25,6 @@ import (
 
 func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm bool) error {
 	ffi.ID = fftypes.NewUUID()
-	ffi.Namespace = bm.namespace
 	for _, method := range ffi.Methods {
 		method.ID = fftypes.NewUUID()
 	}
@@ -34,14 +33,17 @@ func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, wai
 	}
 
 	if bm.multiparty {
+		ffi.Namespace = bm.namespace // TODO: change validation to not check namespace
 		if err := bm.contracts.ResolveFFI(ctx, ffi); err != nil {
 			return err
 		}
 
+		ffi.Namespace = ""
 		msg, err := bm.sendDefinitionDefault(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
 		if msg != nil {
 			ffi.Message = msg.Header.ID
 		}
+		ffi.Namespace = bm.namespace
 		return err
 	}
 
@@ -52,17 +54,19 @@ func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, wai
 
 func (bm *definitionSender) DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error {
 	api.ID = fftypes.NewUUID()
-	api.Namespace = bm.namespace
 
 	if bm.multiparty {
+		api.Namespace = bm.namespace // TODO: change validation to not check namespace
 		if err := bm.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
 			return err
 		}
 
+		api.Namespace = ""
 		msg, err := bm.sendDefinitionDefault(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
 		if msg != nil {
 			api.Message = msg.Header.ID
 		}
+		api.Namespace = bm.namespace
 		return err
 	}
 

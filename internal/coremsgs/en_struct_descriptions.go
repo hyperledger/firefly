@@ -53,20 +53,21 @@ var (
 	MessageHeaderType      = ffm("MessageHeader.type", "The type of the message")
 	MessageHeaderTxType    = ffm("MessageHeader.txtype", "The type of transaction used to order/deliver this message")
 	MessageHeaderCreated   = ffm("MessageHeader.created", "The creation time of the message")
-	MessageHeaderNamespace = ffm("MessageHeader.namespace", "The namespace of the message")
+	MessageHeaderNamespace = ffm("MessageHeader.namespace", "The namespace of the message within the multiparty network")
 	MessageHeaderGroup     = ffm("MessageHeader.group", "Private messages only - the identifier hash of the privacy group. Derived from the name and member list of the group")
 	MessageHeaderTopics    = ffm("MessageHeader.topics", "A message topic associates this message with an ordered stream of data. A custom topic should be assigned - using the default topic is discouraged")
 	MessageHeaderTag       = ffm("MessageHeader.tag", "The message tag indicates the purpose of the message to the applications that process it")
 	MessageHeaderDataHash  = ffm("MessageHeader.datahash", "A single hash representing all data in the message. Derived from the array of data ids+hashes attached to this message")
 
 	// Message field descriptions
-	MessageHeader    = ffm("Message.header", "The message header contains all fields that are used to build the message hash")
-	MessageHash      = ffm("Message.hash", "The hash of the message. Derived from the header, which includes the data hash")
-	MessageBatchID   = ffm("Message.batch", "The UUID of the batch in which the message was pinned/transferred")
-	MessageState     = ffm("Message.state", "The current state of the message")
-	MessageConfirmed = ffm("Message.confirmed", "The timestamp of when the message was confirmed/rejected")
-	MessageData      = ffm("Message.data", "The list of data elements attached to the message")
-	MessagePins      = ffm("Message.pins", "For private messages, a unique pin hash:nonce is assigned for each topic")
+	MessageHeader         = ffm("Message.header", "The message header contains all fields that are used to build the message hash")
+	MessageLocalNamespace = ffm("Message.localNamespace", "The local namespace of the message")
+	MessageHash           = ffm("Message.hash", "The hash of the message. Derived from the header, which includes the data hash")
+	MessageBatchID        = ffm("Message.batch", "The UUID of the batch in which the message was pinned/transferred")
+	MessageState          = ffm("Message.state", "The current state of the message")
+	MessageConfirmed      = ffm("Message.confirmed", "The timestamp of when the message was confirmed/rejected")
+	MessageData           = ffm("Message.data", "The list of data elements attached to the message")
+	MessagePins           = ffm("Message.pins", "For private messages, a unique pin hash:nonce is assigned for each topic")
 
 	// MessageInOut field descriptions
 	MessageInOutData  = ffm("MessageInOut.data", "For input allows you to specify data in-line in the message, that will be turned into data attachments. For output when fetchdata is used on API calls, includes the in-line data payloads of all data attachments")
@@ -87,12 +88,13 @@ var (
 	MessageRefHash = ffm("MessageRef.hash", "The hash of the referenced message")
 
 	// Group field descriptions
-	GroupNamespace = ffm("Group.namespace", "The namespace of the group")
-	GroupName      = ffm("Group.name", "The optional name of the group, allowing multiple unique groups to exist with the same list of recipients")
-	GroupMembers   = ffm("Group.members", "The list of members in this privacy group")
-	GroupMessage   = ffm("Group.message", "The message used to broadcast this group privately to the members")
-	GroupHash      = ffm("Group.hash", "The identifier hash of this group. Derived from the name and group members")
-	GroupCreated   = ffm("Group.created", "The time when the group was first used to send a message in the network")
+	GroupNamespace      = ffm("Group.namespace", "The namespace of the group within the multiparty network")
+	GroupLocalNamespace = ffm("Group.localNamespace", "The local namespace of the group")
+	GroupName           = ffm("Group.name", "The optional name of the group, allowing multiple unique groups to exist with the same list of recipients")
+	GroupMembers        = ffm("Group.members", "The list of members in this privacy group")
+	GroupMessage        = ffm("Group.message", "The message used to broadcast this group privately to the members")
+	GroupHash           = ffm("Group.hash", "The identifier hash of this group. Derived from the name and group members")
+	GroupCreated        = ffm("Group.created", "The time when the group was first used to send a message in the network")
 
 	// MemberInput field descriptions
 	MemberInputIdentity = ffm("MemberInput.identity", "The DID of the group member. On input can be a UUID or org name, and will be resolved to a DID")

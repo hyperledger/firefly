@@ -49,8 +49,9 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 				{Identity: "0x23456", Node: fftypes.NewUUID()},
 			},
 		},
-		Hash:    groupHash,
-		Created: fftypes.Now(),
+		LocalNamespace: "ns1",
+		Hash:           groupHash,
+		Created:        fftypes.Now(),
 	}
 
 	s.callbacks.On("HashCollectionNSEvent", database.CollectionGroups, core.ChangeEventTypeCreated, "ns1", groupHash, mock.Anything).Return()
@@ -74,9 +75,10 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 			Namespace: "ns1",
 			Members:   group.Members,
 		},
-		Created: fftypes.Now(),
-		Message: fftypes.NewUUID(),
-		Hash:    groupHash,
+		LocalNamespace: "ns1",
+		Created:        fftypes.Now(),
+		Message:        fftypes.NewUUID(),
+		Hash:           groupHash,
 	}
 
 	err = s.UpsertGroup(context.Background(), groupUpdated, database.UpsertOptimizationExisting)
@@ -325,7 +327,7 @@ func TestGetGroupByIDLoadMembersFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(nil, "ns1", "name1", fftypes.NewRandB32(), fftypes.Now()))
+		AddRow(nil, "ns1", "ns1", "name1", fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetGroupByHash(context.Background(), "ns1", groupID)
 	assert.Regexp(t, "FF10115", err)
@@ -360,7 +362,7 @@ func TestGetGroupsReadGroupFail(t *testing.T) {
 func TestGetGroupsLoadMembersFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(nil, "ns1", "group1", fftypes.NewRandB32(), fftypes.Now()))
+		AddRow(nil, "ns1", "ns1", "group1", fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Gt("created", "0")
 	_, _, err := s.GetGroups(context.Background(), "ns1", f)

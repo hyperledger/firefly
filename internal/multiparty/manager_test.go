@@ -58,7 +58,7 @@ func newTestMultipartyManager() *testMultipartyManager {
 		mth: &txcommonmocks.Helper{},
 		multipartyManager: multipartyManager{
 			ctx:       context.Background(),
-			namespace: "ns1",
+			namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 		},
 	}
 
@@ -80,7 +80,8 @@ func TestNewMultipartyManager(t *testing.T) {
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, []core.OpType{
 		core.OpTypeBlockchainPinBatch,
 	}).Return()
-	nm, err := NewMultipartyManager(context.Background(), "namespace", config, mdi, mbi, mom, mmi, mth)
+	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	nm, err := NewMultipartyManager(context.Background(), ns, config, mdi, mbi, mom, mmi, mth)
 	assert.NotNil(t, nm)
 	assert.NoError(t, err)
 	assert.Equal(t, "MultipartyManager", nm.Name())
@@ -89,7 +90,7 @@ func TestNewMultipartyManager(t *testing.T) {
 
 func TestInitFail(t *testing.T) {
 	config := Config{Contracts: []Contract{}}
-	_, err := NewMultipartyManager(context.Background(), "namespace", config, nil, nil, nil, nil, nil)
+	_, err := NewMultipartyManager(context.Background(), core.NamespaceRef{}, config, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -132,6 +133,7 @@ func TestConfigureContractOldestBlock(t *testing.T) {
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
+	mp.namespace.LocalName = core.LegacySystemNamespace
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
@@ -301,8 +303,6 @@ func TestSubmitNetworkAction(t *testing.T) {
 		Active: core.FireFlyContractInfo{Index: 0},
 	}
 
-	mp.namespace = core.LegacySystemNamespace
-
 	err := mp.ConfigureContract(context.Background(), cf)
 	assert.NoError(t, err)
 	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
@@ -336,8 +336,6 @@ func TestSubmitNetworkActionTXFail(t *testing.T) {
 	cf := &core.FireFlyContracts{
 		Active: core.FireFlyContractInfo{Index: 0},
 	}
-
-	mp.namespace = core.LegacySystemNamespace
 
 	err := mp.ConfigureContract(context.Background(), cf)
 	assert.NoError(t, err)
@@ -375,8 +373,6 @@ func TestSubmitNetworkActionOpFail(t *testing.T) {
 		Active: core.FireFlyContractInfo{Index: 0},
 	}
 
-	mp.namespace = core.LegacySystemNamespace
-
 	err := mp.ConfigureContract(context.Background(), cf)
 	assert.NoError(t, err)
 	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
@@ -408,8 +404,6 @@ func TestSubmitNetworkActionBadType(t *testing.T) {
 	cf := &core.FireFlyContracts{
 		Active: core.FireFlyContractInfo{Index: 0},
 	}
-
-	mp.namespace = core.LegacySystemNamespace
 
 	err := mp.ConfigureContract(context.Background(), cf)
 	assert.NoError(t, err)

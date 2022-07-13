@@ -28,10 +28,12 @@ func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 			return err
 		}
 
+		pool.Pool.Namespace = ""
 		msg, err := bm.sendDefinitionDefault(ctx, pool, core.SystemTagDefinePool, waitConfirm)
 		if msg != nil {
 			pool.Pool.Message = msg.Header.ID
 		}
+		pool.Pool.Namespace = bm.namespace
 		return err
 	}
 

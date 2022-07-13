@@ -61,7 +61,7 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, bp.ID, po.Data.(uploadBatchData).Batch.ID)
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, bp))
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
 
 	assert.True(t, complete)
 	assert.NoError(t, err)
@@ -178,7 +178,7 @@ func TestRunOperationBatchBroadcastInvalidData(t *testing.T) {
 		},
 	}
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, &core.BatchPersisted{}))
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10137", err)
@@ -198,7 +198,7 @@ func TestRunOperationBatchBroadcastPublishFail(t *testing.T) {
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, &core.BatchPersisted{}))
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
 
 	assert.False(t, complete)
 	assert.EqualError(t, err, "pop")
@@ -221,8 +221,7 @@ func TestRunOperationBatchBroadcast(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 
-	bp := &core.BatchPersisted{}
-	outputs, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, bp))
+	outputs, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
 	assert.Equal(t, "123", outputs["payloadRef"])
 
 	assert.True(t, complete)

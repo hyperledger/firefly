@@ -40,15 +40,11 @@ func (em *eventManager) BatchPinComplete(batchPin *blockchain.BatchPin, signingK
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
 	}
-
-	if err := fftypes.ValidateFFNameField(em.ctx, batchPin.Namespace, "namespace"); err != nil {
-		log.L(em.ctx).Errorf("Invalid transaction ID='%s' - invalid namespace '%s': %a", batchPin.TransactionID, batchPin.Namespace, err)
-		return nil // move on
-	}
-	if batchPin.Namespace != em.namespace {
+	if batchPin.Namespace != em.namespace.RemoteName {
 		log.L(em.ctx).Debugf("Ignoring batch pin from different namespace '%s'", batchPin.Namespace)
 		return nil // move on
 	}
+	batchPin.Namespace = em.namespace.LocalName
 
 	log.L(em.ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, signingKey.Value)
 	defer func() {

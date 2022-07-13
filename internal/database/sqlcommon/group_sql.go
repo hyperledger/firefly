@@ -33,6 +33,7 @@ var (
 	groupColumns = []string{
 		"message_id",
 		"namespace",
+		"namespace_local",
 		"name",
 		"hash",
 		"created",
@@ -104,13 +105,12 @@ func (s *SQLCommon) attemptGroupUpdate(ctx context.Context, tx *txWrapper, group
 	return s.updateTx(ctx, groupsTable, tx,
 		sq.Update(groupsTable).
 			Set("message_id", group.Message).
-			Set("namespace", group.Namespace).
 			Set("name", group.Name).
 			Set("hash", group.Hash).
 			Set("created", group.Created).
 			Where(sq.Eq{"hash": group.Hash}),
 		func() {
-			s.callbacks.HashCollectionNSEvent(database.CollectionGroups, core.ChangeEventTypeUpdated, group.Namespace, group.Hash)
+			s.callbacks.HashCollectionNSEvent(database.CollectionGroups, core.ChangeEventTypeUpdated, group.LocalNamespace, group.Hash)
 		},
 	)
 }
@@ -122,12 +122,13 @@ func (s *SQLCommon) attemptGroupInsert(ctx context.Context, tx *txWrapper, group
 			Values(
 				group.Message,
 				group.Namespace,
+				group.LocalNamespace,
 				group.Name,
 				group.Hash,
 				group.Created,
 			),
 		func() {
-			s.callbacks.HashCollectionNSEvent(database.CollectionGroups, core.ChangeEventTypeCreated, group.Namespace, group.Hash)
+			s.callbacks.HashCollectionNSEvent(database.CollectionGroups, core.ChangeEventTypeCreated, group.LocalNamespace, group.Hash)
 		},
 		requestConflictEmptyResult,
 	)
@@ -233,6 +234,7 @@ func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*core.Group
 	err := row.Scan(
 		&group.Message,
 		&group.Namespace,
+		&group.LocalNamespace,
 		&group.Name,
 		&group.Hash,
 		&group.Created,
@@ -248,7 +250,7 @@ func (s *SQLCommon) GetGroupByHash(ctx context.Context, namespace string, hash *
 	rows, _, err := s.query(ctx, groupsTable,
 		sq.Select(groupColumns...).
 			From(groupsTable).
-			Where(sq.Eq{"hash": hash, "namespace": namespace}),
+			Where(sq.Eq{"hash": hash, "namespace_local": namespace}),
 	)
 	if err != nil {
 		return nil, err
@@ -274,7 +276,8 @@ func (s *SQLCommon) GetGroupByHash(ctx context.Context, namespace string, hash *
 }
 
 func (s *SQLCommon) GetGroups(ctx context.Context, namespace string, filter database.Filter) (group []*core.Group, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(groupColumns...).From(groupsTable), filter, groupFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(groupColumns...).From(groupsTable),
+		filter, groupFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace_local": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

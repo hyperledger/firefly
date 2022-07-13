@@ -135,6 +135,7 @@ func (dh *definitionHandler) confirmVerificationForClaim(ctx context.Context, st
 			if !dh.getSystemBroadcastPayload(ctx, candidate, data, &verification) {
 				return nil, nil
 			}
+			verification.Identity.Namespace = dh.namespace
 			identityMatches = verification.Identity.Equals(ctx, &identity.IdentityBase)
 			verificationID = verification.Claim.ID
 			verificationHash = verification.Claim.Hash
@@ -151,6 +152,7 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 	l := log.L(ctx)
 
 	identity := identityClaim.Identity
+	identity.Namespace = dh.namespace
 	parent, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
 	if err != nil {
 		if retryable {

@@ -379,6 +379,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 		},
 
 		&core.Message{
+			LocalNamespace: "ns1",
 			Header: core.MessageHeader{
 				ID:     fftypes.MustParseUUID("4ea27cce-a103-4187-b318-f7b20fd87bf3"),
 				Type:   core.MessageTypePrivate,
@@ -470,8 +471,9 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 					},
 				},
 			},
-			Message: fftypes.MustParseUUID("0b9dfb76-103d-443d-92fd-b114fe07c54d"),
-			Created: fftypes.UnixTime(1652664196),
+			LocalNamespace: "ns1",
+			Message:        fftypes.MustParseUUID("0b9dfb76-103d-443d-92fd-b114fe07c54d"),
+			Created:        fftypes.UnixTime(1652664196),
 		},
 
 		&core.Batch{

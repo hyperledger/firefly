@@ -43,7 +43,7 @@ func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, ap
 		fb.Eq("tx", tx),
 		fb.Eq("type", core.OpTypeTokenApproval),
 	)
-	operations, _, err := em.database.GetOperations(ctx, em.namespace, filter)
+	operations, _, err := em.database.GetOperations(ctx, em.namespace.LocalName, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, ap
 			log.L(ctx).Warnf("Failed to read operation inputs for token approval '%s': %s", approval.Subject, err)
 		} else if input != nil && input.Connector == approval.Connector && input.Pool.Equals(approval.Pool) {
 			// Check if the LocalID has already been used
-			if existing, err := em.database.GetTokenApprovalByID(ctx, em.namespace, input.LocalID); err != nil {
+			if existing, err := em.database.GetTokenApprovalByID(ctx, em.namespace.LocalName, input.LocalID); err != nil {
 				return nil, err
 			} else if existing == nil {
 				// Everything matches - use the LocalID that was assigned up-front when the operation was submitted
@@ -70,7 +70,7 @@ func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, ap
 func (em *eventManager) persistTokenApproval(ctx context.Context, approval *tokens.TokenApproval) (valid bool, err error) {
 	// Check that this is from a known pool
 	// TODO: should cache this lookup for efficiency
-	pool, err := em.database.GetTokenPoolByLocator(ctx, em.namespace, approval.Connector, approval.PoolLocator)
+	pool, err := em.database.GetTokenPoolByLocator(ctx, em.namespace.LocalName, approval.Connector, approval.PoolLocator)
 	if err != nil {
 		return false, err
 	}
@@ -78,15 +78,11 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		log.L(ctx).Infof("Token approval received for unknown pool '%s' - ignoring: %s", approval.PoolLocator, approval.Event.ProtocolID)
 		return false, nil
 	}
-	if pool.Namespace != em.namespace {
-		log.L(em.ctx).Debugf("Ignoring token approval from different namespace '%s'", pool.Namespace)
-		return false, nil
-	}
 	approval.Namespace = pool.Namespace
 	approval.Pool = pool.ID
 
 	// Check that approval has not already been recorded
-	if existing, err := em.database.GetTokenApprovalByProtocolID(ctx, em.namespace, approval.Connector, approval.ProtocolID); err != nil {
+	if existing, err := em.database.GetTokenApprovalByProtocolID(ctx, em.namespace.LocalName, approval.Connector, approval.ProtocolID); err != nil {
 		return false, err
 	} else if existing != nil {
 		log.L(ctx).Warnf("Token approval '%s' has already been recorded - ignoring", approval.ProtocolID)

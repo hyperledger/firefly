@@ -81,7 +81,7 @@ func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, o
 		fb.Eq("tx", tx),
 		fb.Eq("type", opType),
 	)
-	if operations, _, err := em.database.GetOperations(ctx, em.namespace, filter); err != nil {
+	if operations, _, err := em.database.GetOperations(ctx, em.namespace.LocalName, filter); err != nil {
 		return nil, err
 	} else if len(operations) > 0 {
 		return operations[0], nil
@@ -90,7 +90,7 @@ func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, o
 }
 
 func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
-	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
+	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace.LocalName, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
 		return existingPool, err
 	}
 	if err = addPoolDetailsFromPlugin(existingPool, pool); err != nil {
@@ -147,10 +147,6 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				return err
 			}
 			if existingPool != nil {
-				if existingPool.Namespace != em.namespace {
-					log.L(em.ctx).Debugf("Ignoring token pool from different namespace '%s'", existingPool.Namespace)
-					return nil
-				}
 				if existingPool.State == core.TokenPoolStateConfirmed {
 					return nil // already confirmed
 				}
@@ -167,11 +163,6 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			if announcePool, err = em.shouldAnnounce(ctx, pool); err != nil {
 				return err
 			} else if announcePool != nil {
-				if announcePool.Namespace != em.namespace {
-					log.L(em.ctx).Debugf("Ignoring token pool from different namespace '%s'", announcePool.Namespace)
-					announcePool = nil
-					return nil
-				}
 				return nil // trigger announce after completion of database transaction
 			}
 

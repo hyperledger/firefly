@@ -62,7 +62,7 @@ type privateMessaging struct {
 	groupManager
 
 	ctx                   context.Context
-	namespace             string
+	namespace             core.NamespaceRef
 	database              database.Plugin
 	identity              identity.Manager
 	exchange              dataexchange.Plugin
@@ -85,7 +85,7 @@ type blobTransferTracker struct {
 	op       *core.PreparedOperation
 }
 
-func NewPrivateMessaging(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
+func NewPrivateMessaging(ctx context.Context, ns core.NamespaceRef, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "PrivateMessaging")
 	}
@@ -176,6 +176,7 @@ func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, state *ba
 
 func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batch.DispatchState) error {
 	batch := state.Persisted.GenInflight(state.Messages, state.Data)
+	batch.Namespace = pm.namespace.RemoteName
 	tw := &core.TransportWrapper{
 		Batch: batch,
 	}
@@ -275,11 +276,11 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *core.TransportWrap
 	for i, node := range nodes {
 
 		if node.Parent.Equals(localOrg.ID) {
-			l.Debugf("Skipping send of batch for local node %s:%s for group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
+			l.Debugf("Skipping send of batch for local node %s for group=%s node=%s (%d/%d)", batch.ID, batch.Group, node.ID, i+1, len(nodes))
 			continue
 		}
 
-		l.Debugf("Sending batch %s:%s to group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
+		l.Debugf("Sending batch %s to group=%s node=%s (%d/%d)", batch.ID, batch.Group, node.ID, i+1, len(nodes))
 
 		var blobTrackers []*blobTransferTracker
 		var sendBatchOp *core.PreparedOperation

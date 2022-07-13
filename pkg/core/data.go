@@ -79,13 +79,11 @@ func (d *Data) BatchData(batchType BatchType) *Data {
 	return &Data{
 		ID:        d.ID,
 		Validator: d.Validator,
-		Namespace: d.Namespace,
 		Hash:      d.Hash,
 		Created:   d.Created,
 		Datatype:  d.Datatype,
 		Value:     d.Value,
 		Blob:      d.Blob.BatchBlobRef(batchType),
-
 		ValueSize: d.ValueSize,
 	}
 }

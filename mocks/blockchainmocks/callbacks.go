@@ -57,8 +57,3 @@ func (_m *Callbacks) BlockchainNetworkAction(action string, location *fftypes.JS
 
 	return r0
 }
-
-// BlockchainOpUpdate provides a mock function with given fields: plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput
-func (_m *Callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
-	_m.Called(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
-}

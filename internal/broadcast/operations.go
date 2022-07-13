@@ -31,8 +31,7 @@ import (
 )
 
 type uploadBatchData struct {
-	BatchPersisted *core.BatchPersisted `json:"batchPersisted"`
-	Batch          *core.Batch          `json:"batch"`
+	Batch *core.Batch `json:"batch"`
 }
 
 type uploadBlobData struct {
@@ -79,7 +78,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 		if err != nil {
 			return nil, err
 		}
-		bp, err := bm.database.GetBatchByID(ctx, bm.namespace, id)
+		bp, err := bm.database.GetBatchByID(ctx, bm.namespace.LocalName, id)
 		if err != nil {
 			return nil, err
 		} else if bp == nil {
@@ -89,14 +88,14 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 		if err != nil {
 			return nil, err
 		}
-		return opUploadBatch(op, batch, bp), nil
+		return opUploadBatch(op, batch), nil
 
 	case core.OpTypeSharedStorageUploadBlob:
 		dataID, err := retrieveUploadBlobInputs(ctx, op)
 		if err != nil {
 			return nil, err
 		}
-		d, err := bm.database.GetDataByID(ctx, bm.namespace, dataID, false)
+		d, err := bm.database.GetDataByID(ctx, bm.namespace.LocalName, dataID, false)
 		if err != nil {
 			return nil, err
 		} else if d == nil || d.Blob == nil {
@@ -129,6 +128,7 @@ func (bm *broadcastManager) RunOperation(ctx context.Context, op *core.PreparedO
 // uploadBatch uploads the serialized batch to public storage
 func (bm *broadcastManager) uploadBatch(ctx context.Context, data uploadBatchData) (outputs fftypes.JSONObject, complete bool, err error) {
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
+	data.Batch.Namespace = bm.namespace.RemoteName
 	payload, err := json.Marshal(data.Batch)
 	if err != nil {
 		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
@@ -173,12 +173,12 @@ func (bm *broadcastManager) OnOperationUpdate(ctx context.Context, op *core.Oper
 	return nil
 }
 
-func opUploadBatch(op *core.Operation, batch *core.Batch, batchPersisted *core.BatchPersisted) *core.PreparedOperation {
+func opUploadBatch(op *core.Operation, batch *core.Batch) *core.PreparedOperation {
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,
-		Data:      uploadBatchData{Batch: batch, BatchPersisted: batchPersisted},
+		Data:      uploadBatchData{Batch: batch},
 	}
 }
 

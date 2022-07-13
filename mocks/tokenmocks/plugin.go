@@ -152,6 +152,11 @@ func (_m *Plugin) SetHandler(namespace string, handler tokens.Callbacks) error {
 	return r0
 }
 
+// SetOperationHandler provides a mock function with given fields: namespace, handler
+func (_m *Plugin) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
+	_m.Called(namespace, handler)
+}
+
 // Start provides a mock function with given fields:
 func (_m *Plugin) Start() error {
 	ret := _m.Called()

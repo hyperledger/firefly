@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/coremocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -829,20 +830,20 @@ func TestReceiptEvents(t *testing.T) {
 	err := h.Start()
 	assert.NoError(t, err)
 
-	mcb := &tokenmocks.Callbacks{}
-	h.SetHandler("ns1", mcb)
+	mcb := &coremocks.OperationCallbacks{}
+	h.SetOperationHandler("ns1", mcb)
 	opID := fftypes.NewUUID()
 
 	// receipt: bad ID - passed through
-	mcb.On("TokenOpUpdate", h, "wrong", core.OpStatusFailed, "", "", mock.Anything).Return(nil).Once()
+	mcb.On("OperationUpdate", h, "wrong", core.OpStatusFailed, "", "", mock.Anything).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "3",
 		"event": "receipt",
-		"data":  fftypes.JSONObject{"id": "wrong"}, // passed through to TokenOpUpdate to ignore
+		"data":  fftypes.JSONObject{"id": "wrong"}, // passed through to OperationUpdate to ignore
 	}.String()
 
 	// receipt: success
-	mcb.On("TokenOpUpdate", h, "ns1:"+opID.String(), core.OpStatusSucceeded, "0xffffeeee", "", mock.Anything).Return(nil).Once()
+	mcb.On("OperationUpdate", h, "ns1:"+opID.String(), core.OpStatusSucceeded, "0xffffeeee", "", mock.Anything).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "4",
 		"event": "receipt",
@@ -854,7 +855,7 @@ func TestReceiptEvents(t *testing.T) {
 	}.String()
 
 	// receipt: failure
-	mcb.On("TokenOpUpdate", h, "ns1:"+opID.String(), core.OpStatusFailed, "0xffffeeee", "", mock.Anything).Return(nil).Once()
+	mcb.On("OperationUpdate", h, "ns1:"+opID.String(), core.OpStatusFailed, "0xffffeeee", "", mock.Anything).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "5",
 		"event": "receipt",
@@ -1316,7 +1317,7 @@ func TestCallbacksWrongNamespace(t *testing.T) {
 	h, _, _, _, done := newTestFFTokens(t)
 	defer done()
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	h.callbacks.TokenOpUpdate(context.Background(), h, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
+	h.callbacks.OperationUpdate(context.Background(), h, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
 	h.callbacks.TokenPoolCreated(context.Background(), "ns1", h, nil)
 	h.callbacks.TokensTransferred(context.Background(), "ns1", h, nil)
 	h.callbacks.TokensApproved(context.Background(), "ns1", h, nil)

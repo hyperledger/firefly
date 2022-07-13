@@ -42,12 +42,11 @@ func newTestBatchProcessor(t *testing.T, dispatch DispatchHandler) (func(), *dat
 	mni := bm.ni.(*sysmessagingmocks.LocalNodeInfo)
 	mdm := bm.data.(*datamocks.Manager)
 	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
-	mni.On("GetNodeUUID", mock.Anything, "ns1").Return(fftypes.NewUUID()).Maybe()
+	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID()).Maybe()
 	bp := newBatchProcessor(bm, &batchProcessorConf{
-		namespace: "ns1",
-		txType:    core.TransactionTypeBatchPin,
-		signer:    core.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
-		dispatch:  dispatch,
+		txType:   core.TransactionTypeBatchPin,
+		signer:   core.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
+		dispatch: dispatch,
 		DispatcherOptions: DispatcherOptions{
 			BatchMaxSize:   10,
 			BatchMaxBytes:  1024 * 1024,

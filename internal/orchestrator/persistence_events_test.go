@@ -30,7 +30,7 @@ import (
 func TestMessageCreated(t *testing.T) {
 	mb := &batchmocks.Manager{}
 	o := &orchestrator{
-		namespace: "ns1",
+		namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 		batch:     mb,
 	}
 	mb.On("NewMessages").Return((chan<- int64)(make(chan int64, 1)))
@@ -41,7 +41,7 @@ func TestMessageCreated(t *testing.T) {
 func TestPinCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	o := &orchestrator{
-		namespace: "ns1",
+		namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 		events:    mem,
 	}
 	mem.On("NewPins").Return((chan<- int64)(make(chan int64, 1)))
@@ -52,7 +52,7 @@ func TestPinCreated(t *testing.T) {
 func TestEventCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	o := &orchestrator{
-		namespace: "ns1",
+		namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 		events:    mem,
 	}
 	mem.On("NewEvents").Return((chan<- int64)(make(chan int64, 1)))
@@ -63,7 +63,7 @@ func TestEventCreated(t *testing.T) {
 func TestSubscriptionCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	o := &orchestrator{
-		namespace: "ns1",
+		namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 		events:    mem,
 	}
 	mem.On("NewSubscriptions").Return((chan<- *fftypes.UUID)(make(chan *fftypes.UUID, 1)))
@@ -74,7 +74,7 @@ func TestSubscriptionCreated(t *testing.T) {
 func TestSubscriptionUpdated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	o := &orchestrator{
-		namespace: "ns1",
+		namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 		events:    mem,
 	}
 	mem.On("SubscriptionUpdates").Return((chan<- *fftypes.UUID)(make(chan *fftypes.UUID, 1)))
@@ -85,7 +85,7 @@ func TestSubscriptionUpdated(t *testing.T) {
 func TestSubscriptionDeleted(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	o := &orchestrator{
-		namespace: "ns1",
+		namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 		events:    mem,
 	}
 	mem.On("DeletedSubscriptions").Return((chan<- *fftypes.UUID)(make(chan *fftypes.UUID, 1)))
@@ -96,7 +96,7 @@ func TestSubscriptionDeleted(t *testing.T) {
 func TestOrderedUUIDCollectionWrongNS(t *testing.T) {
 	o := &orchestrator{
 		ctx:       context.Background(),
-		namespace: "ns1",
+		namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 	}
 	o.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, "ns2", fftypes.NewUUID(), 1)
 }
@@ -104,7 +104,7 @@ func TestOrderedUUIDCollectionWrongNS(t *testing.T) {
 func TestOrderedCollectionWrongNS(t *testing.T) {
 	o := &orchestrator{
 		ctx:       context.Background(),
-		namespace: "ns1",
+		namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 	}
 	o.OrderedCollectionNSEvent(database.CollectionPins, core.ChangeEventTypeCreated, "ns2", 1)
 }
@@ -112,7 +112,7 @@ func TestOrderedCollectionWrongNS(t *testing.T) {
 func TestUUIDCollectionWrongNS(t *testing.T) {
 	o := &orchestrator{
 		ctx:       context.Background(),
-		namespace: "ns1",
+		namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 	}
 	o.UUIDCollectionNSEvent(database.CollectionSubscriptions, core.ChangeEventTypeCreated, "ns2", fftypes.NewUUID())
 }

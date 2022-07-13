@@ -58,14 +58,15 @@ func newTestDownloadManager(t *testing.T) (*downloadManager, func()) {
 	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewDownloadManager(ctx, "ns1", mdi, mss, mdx, operations, mci)
+	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	pm, err := NewDownloadManager(ctx, ns, mdi, mss, mdx, operations, mci)
 	assert.NoError(t, err)
 
 	return pm.(*downloadManager), cancel
 }
 
 func TestNewDownloadManagerMissingDeps(t *testing.T) {
-	_, err := NewDownloadManager(context.Background(), "", nil, nil, nil, nil, nil)
+	_, err := NewDownloadManager(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
