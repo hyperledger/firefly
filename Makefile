@@ -37,6 +37,7 @@ endef
 $(eval $(call makemock, $$(WSCLIENT_PATH),         WSClient,           wsmocks))
 $(eval $(call makemock, pkg/blockchain,            Plugin,             blockchainmocks))
 $(eval $(call makemock, pkg/blockchain,            Callbacks,          blockchainmocks))
+$(eval $(call makemock, pkg/core,                  OperationCallbacks, coremocks))
 $(eval $(call makemock, pkg/database,              Plugin,             databasemocks))
 $(eval $(call makemock, pkg/database,              Callbacks,          databasemocks))
 $(eval $(call makemock, pkg/sharedstorage,         Plugin,             sharedstoragemocks))

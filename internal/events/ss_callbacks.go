@@ -44,10 +44,11 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, pa
 	}
 	l.Infof("Shared storage batch downloaded from %s '%s' id=%s (len=%d)", ss.Name(), payloadRef, batch.ID, len(data))
 
-	if batch.Namespace != em.namespace {
-		l.Errorf("Invalid batch '%s'. Namespace in batch '%s' does not match pin namespace '%s'", batch.ID, batch.Namespace, em.namespace)
+	if batch.Namespace != em.namespace.RemoteName {
+		log.L(em.ctx).Debugf("Ignoring shared storage batch from different namespace '%s'", batch.Namespace)
 		return nil, nil // This is not retryable. skip this batch
 	}
+	batch.Namespace = em.namespace.LocalName
 
 	err = em.retry.Do(em.ctx, "persist batch", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {

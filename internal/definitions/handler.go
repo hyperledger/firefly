@@ -80,16 +80,16 @@ type definitionHandler struct {
 	namespace  string
 	multiparty bool
 	database   database.Plugin
-	blockchain blockchain.Plugin
+	blockchain blockchain.Plugin   // optional
 	exchange   dataexchange.Plugin // optional
 	data       data.Manager
 	identity   identity.Manager
 	assets     assets.Manager
-	contracts  contracts.Manager
+	contracts  contracts.Manager // optional
 }
 
 func newDefinitionHandler(ctx context.Context, ns string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) (*definitionHandler, error) {
-	if di == nil || bi == nil || dm == nil || im == nil || am == nil || cm == nil {
+	if di == nil || dm == nil || im == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DefinitionHandler")
 	}
 	return &definitionHandler{

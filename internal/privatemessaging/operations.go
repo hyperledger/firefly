@@ -103,13 +103,13 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 		} else if node == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		group, err := pm.database.GetGroupByHash(ctx, pm.namespace, groupHash)
+		group, err := pm.database.GetGroupByHash(ctx, pm.namespace.LocalName, groupHash)
 		if err != nil {
 			return nil, err
 		} else if group == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		bp, err := pm.database.GetBatchByID(ctx, pm.namespace, batchID)
+		bp, err := pm.database.GetBatchByID(ctx, pm.namespace.LocalName, batchID)
 		if err != nil {
 			return nil, err
 		} else if bp == nil {

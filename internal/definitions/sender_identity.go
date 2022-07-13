@@ -25,7 +25,7 @@ import (
 
 // ClaimIdentity is a special form of CreateDefinition where the signing identity does not need to have been pre-registered
 // The blockchain "key" will be normalized, but the "author" will pass through unchecked
-func (bm *definitionSender) ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error {
+func (bm *definitionSender) ClaimIdentity(ctx context.Context, claim *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error {
 	if bm.multiparty {
 		var err error
 		signingIdentity.Key, err = bm.identity.NormalizeSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
@@ -33,11 +33,12 @@ func (bm *definitionSender) ClaimIdentity(ctx context.Context, def *core.Identit
 			return err
 		}
 
-		claimMsg, err := bm.sendDefinitionCommon(ctx, def, signingIdentity, core.SystemTagIdentityClaim, waitConfirm)
+		claim.Identity.Namespace = ""
+		claimMsg, err := bm.sendDefinitionCommon(ctx, claim, signingIdentity, core.SystemTagIdentityClaim, waitConfirm)
 		if err != nil {
 			return err
 		}
-		def.Identity.Messages.Claim = claimMsg.Header.ID
+		claim.Identity.Messages.Claim = claimMsg.Header.ID
 
 		// Send the verification if one is required.
 		if parentSigner != nil {
@@ -46,19 +47,20 @@ func (bm *definitionSender) ClaimIdentity(ctx context.Context, def *core.Identit
 					ID:   claimMsg.Header.ID,
 					Hash: claimMsg.Hash,
 				},
-				Identity: def.Identity.IdentityBase,
+				Identity: claim.Identity.IdentityBase,
 			}, parentSigner, core.SystemTagIdentityVerification, false)
 			if err != nil {
 				return err
 			}
-			def.Identity.Messages.Verification = verifyMsg.Header.ID
+			claim.Identity.Messages.Verification = verifyMsg.Header.ID
 		}
 
 		return nil
 	}
 
+	claim.Identity.Namespace = bm.namespace
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		return bm.handler.handleIdentityClaim(ctx, state, &identityMsgInfo{SignerRef: *signingIdentity}, def)
+		return bm.handler.handleIdentityClaim(ctx, state, &identityMsgInfo{SignerRef: *signingIdentity}, claim)
 	})
 }
 

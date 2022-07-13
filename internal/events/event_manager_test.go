@@ -89,13 +89,14 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	if metrics {
 		mmi.On("TransferConfirmed", mock.Anything)
 	}
-	mni.On("GetNodeUUID", mock.Anything, "ns1").Return(testNodeID).Maybe()
+	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
 	mev.On("SetHandler", "ns1", mock.Anything).Return(nil).Maybe()
 	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
-	emi, err := NewEventManager(ctx, "ns1", mni, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, mdd, mmi, txHelper, events, mmp)
+	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	emi, err := NewEventManager(ctx, ns, mni, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, mdd, mmi, txHelper, events, mmp)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	mockRunAsGroupPassthrough(mdi)
@@ -130,7 +131,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -157,7 +158,8 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	mev.On("SetHandler", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := NewEventManager(context.Background(), "ns1", mni, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, txHelper, events, mmp)
+	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	_, err := NewEventManager(context.Background(), ns, mni, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, txHelper, events, mmp)
 	assert.EqualError(t, err, "pop")
 }
 

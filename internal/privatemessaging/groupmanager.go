@@ -40,7 +40,7 @@ type GroupManager interface {
 }
 
 type groupManager struct {
-	namespace     string
+	namespace     core.NamespaceRef
 	database      database.Plugin
 	identity      identity.Manager
 	data          data.Manager
@@ -63,7 +63,7 @@ func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *core.Group)
 	// the group via the blockchain.
 	// So this method checks if a group exists, and if it doesn't inserts it.
 	// We do assume the other side has sent the batch init of the group (rather than generating a second one)
-	if g, err := gm.database.GetGroupByHash(ctx, gm.namespace, group.Hash); err != nil {
+	if g, err := gm.database.GetGroupByHash(ctx, gm.namespace.LocalName, group.Hash); err != nil {
 		return false, err
 	} else if g != nil {
 		// The group already exists
@@ -72,7 +72,7 @@ func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *core.Group)
 
 	err = group.Validate(ctx, true)
 	if err != nil {
-		log.L(ctx).Errorf("Attempt to insert invalid group %s:%s: %s", group.Namespace, group.Hash, err)
+		log.L(ctx).Errorf("Attempt to insert invalid group %s: %s", group.Hash, err)
 		return false, nil
 	}
 	err = gm.database.UpsertGroup(ctx, group, database.UpsertOptimizationNew /* it could have been created by another thread, but we think we're first */)
@@ -88,7 +88,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 	data := &core.Data{
 		Validator: core.ValidatorTypeSystemDefinition,
 		ID:        fftypes.NewUUID(),
-		Namespace: group.Namespace, // must go in the same ordering context as the message
+		Namespace: gm.namespace.LocalName, // must go in the same ordering context as the message
 		Created:   fftypes.Now(),
 	}
 	b, err := json.Marshal(&group)
@@ -118,10 +118,11 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 
 	// Create a private send message referring to the data
 	msg := &core.Message{
-		State: core.MessageStateReady,
+		State:          core.MessageStateReady,
+		LocalNamespace: gm.namespace.LocalName,
 		Header: core.MessageHeader{
 			Group:     group.Hash,
-			Namespace: group.Namespace, // Must go into the same ordering context as the message itself
+			Namespace: gm.namespace.RemoteName, // Must go into the same ordering context as the message itself
 			Type:      core.MessageTypeGroupInit,
 			SignerRef: *signer,
 			Tag:       core.SystemTagDefineGroup,
@@ -151,11 +152,11 @@ func (gm *groupManager) GetGroupByID(ctx context.Context, hash string) (*core.Gr
 	if err != nil {
 		return nil, err
 	}
-	return gm.database.GetGroupByHash(ctx, gm.namespace, h)
+	return gm.database.GetGroupByHash(ctx, gm.namespace.LocalName, h)
 }
 
 func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter) ([]*core.Group, *database.FilterResult, error) {
-	return gm.database.GetGroups(ctx, gm.namespace, filter)
+	return gm.database.GetGroups(ctx, gm.namespace.LocalName, filter)
 }
 
 func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32, allowNil bool) (*core.Group, []*core.Identity, error) {
@@ -166,7 +167,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 		return ghe.group, ghe.nodes, nil
 	}
 
-	group, err := gm.database.GetGroupByHash(ctx, gm.namespace, groupHash)
+	group, err := gm.database.GetGroupByHash(ctx, gm.namespace.LocalName, groupHash)
 	if err != nil || (allowNil && group == nil) {
 		return nil, nil, err
 	}
@@ -236,12 +237,12 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *core.Message)
 	}
 
 	// Get the existing group
-	group, err := gm.database.GetGroupByHash(ctx, gm.namespace, msg.Header.Group)
+	group, err := gm.database.GetGroupByHash(ctx, gm.namespace.LocalName, msg.Header.Group)
 	if err != nil {
 		return group, err
 	}
 	if group == nil {
-		log.L(ctx).Warnf("Group %s not found for first message in context. type=%s namespace=%s", msg.Header.Group, msg.Header.Type, msg.Header.Namespace)
+		log.L(ctx).Warnf("Group %s not found for first message in context. type=%s", msg.Header.Group, msg.Header.Type)
 		return nil, nil
 	}
 	return group, nil

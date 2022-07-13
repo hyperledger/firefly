@@ -41,7 +41,8 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 		Concurrency: true,
 	})
 	mdx := &dataexchangemocks.Plugin{}
-	dm, err := NewDataManager(ctx, "ns1", mdi, mdx)
+	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	dm, err := NewDataManager(ctx, ns, mdi, mdx)
 	assert.NoError(t, err)
 	return dm.(*dataManager), ctx, func() {
 		cancel()
@@ -211,7 +212,7 @@ func TestWriteNewMessageE2E(t *testing.T) {
 }
 
 func TestInitBadDeps(t *testing.T) {
-	_, err := NewDataManager(context.Background(), "", nil, nil)
+	_, err := NewDataManager(context.Background(), core.NamespaceRef{}, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

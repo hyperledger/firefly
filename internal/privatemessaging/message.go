@@ -98,7 +98,8 @@ func (s *messageSender) SendAndWait(ctx context.Context) error {
 func (s *messageSender) setDefaults() {
 	msg := s.msg.Message
 	msg.Header.ID = fftypes.NewUUID()
-	msg.Header.Namespace = s.mgr.namespace
+	msg.Header.Namespace = s.mgr.namespace.RemoteName
+	msg.LocalNamespace = s.mgr.namespace.LocalName
 	msg.State = core.MessageStateReady
 	if msg.Header.Type == "" {
 		msg.Header.Type = core.MessageTypePrivate
@@ -172,7 +173,7 @@ func (s *messageSender) sendInternal(ctx context.Context, method sendMethod) err
 	if err := s.mgr.data.WriteNewMessage(ctx, s.msg); err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Sent private message %s:%s sequence=%d", msg.Header.Namespace, msg.Header.ID, msg.Sequence)
+	log.L(ctx).Infof("Sent private message %s sequence=%d", msg.Header.ID, msg.Sequence)
 
 	return nil
 }

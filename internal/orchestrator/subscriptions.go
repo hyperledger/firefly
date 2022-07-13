@@ -38,7 +38,7 @@ func (or *orchestrator) CreateUpdateSubscription(ctx context.Context, subDef *co
 func (or *orchestrator) createUpdateSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (*core.Subscription, error) {
 	subDef.ID = fftypes.NewUUID()
 	subDef.Created = fftypes.Now()
-	subDef.Namespace = or.namespace
+	subDef.Namespace = or.namespace.LocalName
 	subDef.Ephemeral = false
 	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, subDef.Name, "name"); err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (or *orchestrator) DeleteSubscription(ctx context.Context, id string) error
 	if err != nil {
 		return err
 	}
-	sub, err := or.database().GetSubscriptionByID(ctx, or.namespace, u)
+	sub, err := or.database().GetSubscriptionByID(ctx, or.namespace.LocalName, u)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (or *orchestrator) DeleteSubscription(ctx context.Context, id string) error
 }
 
 func (or *orchestrator) GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error) {
-	return or.database().GetSubscriptions(ctx, or.namespace, filter)
+	return or.database().GetSubscriptions(ctx, or.namespace.LocalName, filter)
 }
 
 func (or *orchestrator) GetSubscriptionByID(ctx context.Context, id string) (*core.Subscription, error) {
@@ -74,5 +74,5 @@ func (or *orchestrator) GetSubscriptionByID(ctx context.Context, id string) (*co
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetSubscriptionByID(ctx, or.namespace, u)
+	return or.database().GetSubscriptionByID(ctx, or.namespace.LocalName, u)
 }

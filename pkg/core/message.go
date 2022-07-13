@@ -86,14 +86,15 @@ type MessageHeader struct {
 // Data is passed by reference in these messages, and a chain of hashes covering the data and the
 // details of the message, provides a verification against tampering.
 type Message struct {
-	Header    MessageHeader    `ffstruct:"Message" json:"header"`
-	Hash      *fftypes.Bytes32 `ffstruct:"Message" json:"hash,omitempty" ffexcludeinput:"true"`
-	BatchID   *fftypes.UUID    `ffstruct:"Message" json:"batch,omitempty" ffexcludeinput:"true"`
-	State     MessageState     `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate" ffexcludeinput:"true"`
-	Confirmed *fftypes.FFTime  `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
-	Data      DataRefs         `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
-	Pins      FFStringArray    `ffstruct:"Message" json:"pins,omitempty" ffexcludeinput:"true"`
-	Sequence  int64            `ffstruct:"Message" json:"-"` // Local database sequence used internally for batch assembly
+	Header         MessageHeader    `ffstruct:"Message" json:"header"`
+	LocalNamespace string           `ffstruct:"Message" json:"localNamespace,omitempty" ffexcludeinput:"true"`
+	Hash           *fftypes.Bytes32 `ffstruct:"Message" json:"hash,omitempty" ffexcludeinput:"true"`
+	BatchID        *fftypes.UUID    `ffstruct:"Message" json:"batch,omitempty" ffexcludeinput:"true"`
+	State          MessageState     `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate" ffexcludeinput:"true"`
+	Confirmed      *fftypes.FFTime  `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
+	Data           DataRefs         `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
+	Pins           FFStringArray    `ffstruct:"Message" json:"pins,omitempty" ffexcludeinput:"true"`
+	Sequence       int64            `ffstruct:"Message" json:"-"` // Local database sequence used internally for batch assembly
 }
 
 // BatchMessage is the fields in a message record that are assured to be consistent on all parties.

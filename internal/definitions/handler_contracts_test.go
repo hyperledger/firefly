@@ -215,7 +215,6 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	}
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
@@ -226,6 +225,31 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 	bs.assertNoFinalizers()
+
+	mdi.AssertExpectations(t)
+	mcm.AssertExpectations(t)
+}
+
+func TestHandleFFIBroadcastResolveFail(t *testing.T) {
+	dh, bs := newTestDefinitionHandler(t)
+	ffi := testFFI()
+	b, err := json.Marshal(ffi)
+	assert.NoError(t, err)
+	data := &core.Data{
+		Value: fftypes.JSONAnyPtrBytes(b),
+	}
+	mcm := dh.contracts.(*contractmocks.Manager)
+	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineFFI,
+		},
+	}, core.DataArray{data}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Regexp(t, "pop", err)
+	bs.assertNoFinalizers()
+
+	mcm.AssertExpectations(t)
 }
 
 func TestHandleContractAPIBroadcastOk(t *testing.T) {
@@ -357,5 +381,29 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 	bs.assertNoFinalizers()
 
 	mdi.AssertExpectations(t)
+	mcm.AssertExpectations(t)
+}
+
+func TestHandleContractAPIBroadcastResolveFail(t *testing.T) {
+	dh, bs := newTestDefinitionHandler(t)
+	ffi := testFFI()
+	b, err := json.Marshal(ffi)
+	assert.NoError(t, err)
+	data := &core.Data{
+		Value: fftypes.JSONAnyPtrBytes(b),
+	}
+	mcm := dh.contracts.(*contractmocks.Manager)
+	mcm.On("ResolveContractAPI", context.Background(), "", mock.Anything).Return(fmt.Errorf("pop"))
+
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineContractAPI,
+		},
+	}, core.DataArray{data}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Regexp(t, "pop", err)
+
+	bs.assertNoFinalizers()
+
 	mcm.AssertExpectations(t)
 }

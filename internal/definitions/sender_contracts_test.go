@@ -100,17 +100,11 @@ func TestDefineFFIOk(t *testing.T) {
 func TestDefineFFINonMultiparty(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	dh := ds.handler
 
 	ffi := &fftypes.FFI{}
 
-	mcm := dh.contracts.(*contractmocks.Manager)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(fmt.Errorf("pop"))
-
 	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.Regexp(t, "FF10403", err)
-
-	mcm.AssertExpectations(t)
 }
 
 func TestDefineContractAPIResolveFail(t *testing.T) {
@@ -182,16 +176,10 @@ func TestDefineContractAPIOk(t *testing.T) {
 func TestDefineContractAPINonMultiparty(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	dh := ds.handler
 
 	url := "http://firefly"
 	api := &core.ContractAPI{}
 
-	mcm := dh.contracts.(*contractmocks.Manager)
-	mcm.On("ResolveContractAPI", context.Background(), url, api).Return(fmt.Errorf("pop"))
-
 	err := ds.DefineContractAPI(context.Background(), url, api, false)
 	assert.Regexp(t, "FF10403", err)
-
-	mcm.AssertExpectations(t)
 }

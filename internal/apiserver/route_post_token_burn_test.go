@@ -30,6 +30,7 @@ import (
 
 func TestPostTokenBurn(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
 	input := core.TokenTransferInput{}

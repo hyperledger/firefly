@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/coremocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -93,6 +94,7 @@ func newTestEthereum() (*Ethereum, func()) {
 		cache:       ccache.New(ccache.Configure().MaxSize(100)),
 	}
 	e.callbacks.handlers = make(map[string]blockchain.Callbacks)
+	e.callbacks.opHandlers = make(map[string]core.OperationCallbacks)
 	return e, func() {
 		cancel()
 		if e.closed != nil {
@@ -977,8 +979,9 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: callbacks{handlers: make(map[string]blockchain.Callbacks)},
 	}
+	e.SetHandler("ns1", em)
 
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
@@ -1547,12 +1550,12 @@ func TestEventLoopSendClosed(t *testing.T) {
 }
 
 func TestHandleReceiptTXSuccess(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
+	em := &coremocks.OperationCallbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: callbacks{opHandlers: map[string]core.OperationCallbacks{"ns1": em}},
 		wsconn:    wsm,
 	}
 
@@ -1581,7 +1584,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"transactionIndex": "0"
   }`)
 
-	em.On("BlockchainOpUpdate",
+	em.On("OperationUpdate",
 		e,
 		"ns1:"+operationID.String(),
 		core.OpStatusSucceeded,
@@ -1621,9 +1624,9 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 		"requestPayload": "{\"from\":\"0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635\",\"gas\":0,\"gasPrice\":0,\"headers\":{\"id\":\"6fb94fff-81d3-4094-567d-e031b1871694\",\"type\":\"SendTransaction\"},\"method\":{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"txnId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"batchId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"payloadRef\",\"type\":\"bytes32\"}],\"name\":\"broadcastBatch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},\"params\":[\"12345\",\"!\",\"!\"],\"to\":\"0xd3266a857285fb75eb7df37353b4a15c8bb828f5\",\"value\":0}"
 	}`)
 
-	em := &blockchainmocks.Callbacks{}
-	e.SetHandler("ns1", em)
-	txsu := em.On("BlockchainOpUpdate",
+	em := &coremocks.OperationCallbacks{}
+	e.SetOperationHandler("ns1", em)
+	txsu := em.On("OperationUpdate",
 		e,
 		"ns1:"+operationID.String(),
 		core.OpStatusFailed,
@@ -3341,7 +3344,7 @@ func TestRemoveInvalidSubscription(t *testing.T) {
 func TestCallbacksWrongNamespace(t *testing.T) {
 	e, _ := newTestEthereum()
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	e.callbacks.BlockchainOpUpdate(context.Background(), e, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
+	e.callbacks.OperationUpdate(context.Background(), e, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
 	e.callbacks.BatchPinComplete(context.Background(), &blockchain.BatchPin{Namespace: "ns1"}, nil)
 	e.callbacks.BlockchainNetworkAction(context.Background(), "ns1", "terminate", nil, nil, nil)
 }

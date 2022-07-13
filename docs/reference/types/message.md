@@ -40,6 +40,7 @@ nav_order: 15
         "tag": "blue_message",
         "datahash": "c07be180b147049baced0b6219d9ce7a84ab48f2ca7ca7ae949abb3fe6491b54"
     },
+    "localNamespace": "ns1",
     "state": "confirmed",
     "confirmed": "2022-05-16T01:23:16Z",
     "data": [
@@ -56,6 +57,7 @@ nav_order: 15
 | Field Name | Description | Type |
 |------------|-------------|------|
 | `header` | The message header contains all fields that are used to build the message hash | [`MessageHeader`](#messageheader) |
+| `localNamespace` | The local namespace of the message | `string` |
 | `hash` | The hash of the message. Derived from the header, which includes the data hash | `Bytes32` |
 | `batch` | The UUID of the batch in which the message was pinned/transferred | [`UUID`](simpletypes#uuid) |
 | `state` | The current state of the message | `FFEnum`:<br/>`"staged"`<br/>`"ready"`<br/>`"sent"`<br/>`"pending"`<br/>`"confirmed"`<br/>`"rejected"` |
@@ -74,7 +76,7 @@ nav_order: 15
 | `author` | The DID of identity of the submitter | `string` |
 | `key` | The on-chain signing key used to sign the transaction | `string` |
 | `created` | The creation time of the message | [`FFTime`](simpletypes#fftime) |
-| `namespace` | The namespace of the message | `string` |
+| `namespace` | The namespace of the message within the multiparty network | `string` |
 | `topics` | A message topic associates this message with an ordered stream of data. A custom topic should be assigned - using the default topic is discouraged | `string[]` |
 | `tag` | The message tag indicates the purpose of the message to the applications that process it | `string` |
 | `datahash` | A single hash representing all data in the message. Derived from the array of data ids+hashes attached to this message | `Bytes32` |

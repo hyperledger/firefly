@@ -72,9 +72,7 @@ func TestBoundCallbacks(t *testing.T) {
 		Output:         info,
 	}).Return()
 
-	bc.BlockchainOpUpdate(mbi, nsOpID, core.OpStatusFailed, "0xffffeeee", "error info", info)
-
-	bc.TokenOpUpdate(mti, nsOpID, core.OpStatusFailed, "0xffffeeee", "error info", info)
+	bc.OperationUpdate(mbi, nsOpID, core.OpStatusFailed, "0xffffeeee", "error info", info)
 
 	mde := &dataexchangemocks.DXEvent{}
 	mom.On("TransferResult", mdx, mde).Return()

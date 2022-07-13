@@ -383,25 +383,6 @@ func TestBatchPinCompleteNoTX(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBatchPinCompleteBadNamespace(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	batch := &blockchain.BatchPin{
-		Namespace:     "!bad",
-		TransactionID: fftypes.NewUUID(),
-		Event: blockchain.Event{
-			BlockchainTXID: "0x12345",
-		},
-	}
-
-	err := em.BatchPinComplete(batch, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "0x12345",
-	})
-	assert.NoError(t, err)
-}
-
 func TestBatchPinCompleteWrongNamespace(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()

@@ -30,6 +30,7 @@ import (
 
 func TestPostNewMessagePrivate(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mpm := &privatemessagingmocks.Manager{}
 	o.On("PrivateMessaging").Return(mpm)
 	input := core.MessageInOut{}
@@ -48,6 +49,7 @@ func TestPostNewMessagePrivate(t *testing.T) {
 
 func TestPostNewMessagePrivateSync(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mpm := &privatemessagingmocks.Manager{}
 	o.On("PrivateMessaging").Return(mpm)
 	input := core.MessageInOut{}

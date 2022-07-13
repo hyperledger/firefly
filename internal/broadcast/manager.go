@@ -57,7 +57,7 @@ type Manager interface {
 
 type broadcastManager struct {
 	ctx                   context.Context
-	namespace             string
+	namespace             core.NamespaceRef
 	database              database.Plugin
 	identity              identity.Manager
 	data                  data.Manager
@@ -71,7 +71,7 @@ type broadcastManager struct {
 	operations            operations.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, im identity.Manager, dm data.Manager, ba batch.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, im identity.Manager, dm data.Manager, ba batch.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BroadcastManager")
 	}
@@ -141,7 +141,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	// We are in an (indefinite) retry cycle from the batch processor to dispatch this batch, that is only
 	// termianted with shutdown. So we leave the operation pending on failure, as it is still being retried.
 	// The user will still have the failure details recorded.
-	outputs, err := bm.operations.RunOperation(ctx, opUploadBatch(op, batch, &state.Persisted), operations.RemainPendingOnFailure)
+	outputs, err := bm.operations.RunOperation(ctx, opUploadBatch(op, batch), operations.RemainPendingOnFailure)
 	if err != nil {
 		return err
 	}
