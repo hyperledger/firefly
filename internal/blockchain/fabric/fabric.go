@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
+	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
@@ -421,42 +422,9 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 		namespace = subInfo.namespace
 	}
 
-	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
-	if err != nil || len(hexUUIDs) != 32 {
-		log.L(ctx).Errorf("BatchPin event is not valid - bad uuids (%s): %s", sUUIDs, err)
-		return nil // move on
-	}
-	var txnID fftypes.UUID
-	copy(txnID[:], hexUUIDs[0:16])
-	var batchID fftypes.UUID
-	copy(batchID[:], hexUUIDs[16:32])
-
-	var batchHash fftypes.Bytes32
-	err = batchHash.UnmarshalText([]byte(sBatchHash))
+	batch, err := common.BuildBatchPin(ctx, namespace, event, sUUIDs, sBatchHash, sContexts, sPayloadRef)
 	if err != nil {
-		log.L(ctx).Errorf("BatchPin event is not valid - bad batchHash (%s): %s", sBatchHash, err)
 		return nil // move on
-	}
-
-	contexts := make([]*fftypes.Bytes32, len(sContexts))
-	for i, sHash := range sContexts {
-		var hash fftypes.Bytes32
-		err = hash.UnmarshalText([]byte(sHash))
-		if err != nil {
-			log.L(ctx).Errorf("BatchPin event is not valid - bad pin %d (%s): %s", i, sHash, err)
-			return nil // move on
-		}
-		contexts[i] = &hash
-	}
-
-	batch := &blockchain.BatchPin{
-		Namespace:       namespace,
-		TransactionID:   &txnID,
-		BatchID:         &batchID,
-		BatchHash:       &batchHash,
-		BatchPayloadRef: sPayloadRef,
-		Contexts:        contexts,
-		Event:           *event,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown

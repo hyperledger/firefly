@@ -257,4 +257,5 @@ var (
 	MsgMessagesNotSupported               = ffe("FF10415", "Messages are not supported in this namespace", 400)
 	MsgInvalidSubscriptionForNetwork      = ffe("FF10416", "Subscription name '%s' is invalid according to multiparty network rules in effect (network version=%d)")
 	MsgBlockchainNotConfigured            = ffe("FF10417", "No blockchain plugin configured")
+	MsgInvalidBatchPinEvent               = ffe("FF10418", "BatchPin event is not valid - %s (%s): %s")
 )
