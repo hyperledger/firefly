@@ -36,7 +36,8 @@ echo BASE_TAG=$BASE_TAG
 echo UI_TAG=$UI_TAG
 echo UI_RELEASE=$UI_RELEASE
 
-docker build \
+docker buildx create --name firefly --use
+docker buildx build \
     -t hyperledger/firefly \
     --build-arg FIREFLY_BUILDER_TAG=$FIREFLY_BUILDER_TAG \
     --build-arg FABRIC_BUILDER_TAG=$FABRIC_BUILDER_TAG \
@@ -47,3 +48,4 @@ docker build \
     --build-arg UI_RELEASE=$UI_RELEASE \
     $@ \
     .
+docker buildx rm firefly
