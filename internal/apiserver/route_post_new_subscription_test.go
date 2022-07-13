@@ -29,6 +29,7 @@ import (
 
 func TestPostNewSubscription(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	input := core.Subscription{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

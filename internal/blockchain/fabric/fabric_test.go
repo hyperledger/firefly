@@ -1629,7 +1629,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	assert.Regexp(t, "FF10284.*pop", err)
 }
 
-func TestHandleMessageContractEvent(t *testing.T) {
+func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 	data := []byte(`
 [
 	{
@@ -1645,9 +1645,18 @@ func TestHandleMessageContractEvent(t *testing.T) {
 ]`)
 
 	em := &blockchainmocks.Callbacks{}
-	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
-	}
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sb-cb37cc07-e873-4f58-44ab-55add6bba320",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "old-sub-name",
+		}))
+
+	e.streams = newStreamManager(e.client, e.signer)
+	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1694,6 +1703,138 @@ func TestHandleMessageContractEvent(t *testing.T) {
 	em.AssertExpectations(t)
 }
 
+func TestHandleMessageContractEventNamespacedHandlers(t *testing.T) {
+	data := []byte(`
+[
+	{
+		"chaincodeId": "basic",
+	  "blockNumber": 10,
+		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
+		"transactionIndex": 20,
+		"eventIndex": 30,
+		"eventName": "AssetCreated",
+		"payload": "eyJBcHByYWlzZWRWYWx1ZSI6MTAsIkNvbG9yIjoicmVkIiwiSUQiOiIxMjM0IiwiT3duZXIiOiJtZSIsIlNpemUiOjN9",
+		"subId": "sb-cb37cc07-e873-4f58-44ab-55add6bba320"
+	},
+	{
+		"chaincodeId": "basic",
+	  "blockNumber": 10,
+		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746f",
+		"transactionIndex": 20,
+		"eventIndex": 30,
+		"eventName": "AssetCreated",
+		"payload": "eyJBcHByYWlzZWRWYWx1ZSI6MTAsIkNvbG9yIjoicmVkIiwiSUQiOiIxMjM0IiwiT3duZXIiOiJtZSIsIlNpemUiOjN9",
+		"subId": "sb-cb37cc07-e873-4f58-44ab-55add6bba320"
+	}
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sb-cb37cc07-e873-4f58-44ab-55add6bba320",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "ff-sub-ns1-11232312312",
+		}))
+
+	e.streams = newStreamManager(e.client, e.signer)
+	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		channel:   "firefly",
+		version:   1,
+	}
+
+	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
+		assert.Equal(t, "000000000010/000020/000030", e.Event.ProtocolID)
+		return true
+	})).Return(nil)
+
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+
+	ev := em.Calls[0].Arguments[0].(*blockchain.EventWithSubscription)
+	assert.Equal(t, "sb-cb37cc07-e873-4f58-44ab-55add6bba320", ev.Subscription)
+	assert.Equal(t, "AssetCreated", ev.Event.Name)
+
+	outputs := fftypes.JSONObject{
+		"AppraisedValue": float64(10),
+		"Color":          "red",
+		"ID":             "1234",
+		"Owner":          "me",
+		"Size":           float64(3),
+	}
+	assert.Equal(t, outputs, ev.Event.Output)
+
+	info := fftypes.JSONObject{
+		"blockNumber":      float64(10),
+		"chaincodeId":      "basic",
+		"eventName":        "AssetCreated",
+		"subId":            "sb-cb37cc07-e873-4f58-44ab-55add6bba320",
+		"transactionId":    "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
+		"transactionIndex": float64(20),
+		"eventIndex":       float64(30),
+	}
+	assert.Equal(t, info, ev.Event.Info)
+
+	em.AssertExpectations(t)
+}
+
+func TestHandleMessageContractEventNoNamespacedHandlers(t *testing.T) {
+	data := []byte(`
+[
+	{
+		"chaincodeId": "basic",
+	  "blockNumber": 10,
+		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
+		"transactionIndex": 20,
+		"eventIndex": 30,
+		"eventName": "AssetCreated",
+		"payload": "eyJBcHByYWlzZWRWYWx1ZSI6MTAsIkNvbG9yIjoicmVkIiwiSUQiOiIxMjM0IiwiT3duZXIiOiJtZSIsIlNpemUiOjN9",
+		"subId": "sb-cb37cc07-e873-4f58-44ab-55add6bba320"
+	}
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sb-cb37cc07-e873-4f58-44ab-55add6bba320",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "ff-sub-ns1-11232312312",
+		}))
+
+	e.streams = newStreamManager(e.client, e.signer)
+	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns2": em}}
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		channel:   "firefly",
+		version:   1,
+	}
+
+	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
+		assert.Equal(t, "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d", e.BlockchainTXID)
+		assert.Equal(t, "000000000010/000020/000030", e.Event.ProtocolID)
+		return true
+	})).Return(nil)
+
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(em.Calls))
+}
+
 func TestHandleMessageContractEventNoPayload(t *testing.T) {
 	data := []byte(`
 [
@@ -1708,10 +1849,20 @@ func TestHandleMessageContractEventNoPayload(t *testing.T) {
 	}
 ]`)
 
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sb-cb37cc07-e873-4f58-44ab-55add6bba320",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "ff-sub-ns1-11232312312",
+		}))
+
 	em := &blockchainmocks.Callbacks{}
-	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
-	}
+	e.streams = newStreamManager(e.client, e.signer)
+	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
+
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1759,7 +1910,7 @@ func TestHandleMessageContractEventBadPayload(t *testing.T) {
 	em.AssertExpectations(t)
 }
 
-func TestHandleMessageContractEventError(t *testing.T) {
+func TestHandleMessageContractOldSubError(t *testing.T) {
 	data := []byte(`
 [
 	{
@@ -1772,10 +1923,19 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	}
 ]`)
 
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sb-cb37cc07-e873-4f58-44ab-55add6bba320",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "oldsubname",
+		}))
+
 	em := &blockchainmocks.Callbacks{}
-	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
-	}
+	e.streams = newStreamManager(e.client, e.signer)
+	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1790,6 +1950,90 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.EqualError(t, err, "pop")
+
+	em.AssertExpectations(t)
+}
+
+func TestHandleMessageContractEventError(t *testing.T) {
+	data := []byte(`
+[
+	{
+		"chaincodeId": "basic",
+	  "blockNumber": 10,
+		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
+		"eventName": "AssetCreated",
+		"payload": "eyJBcHByYWlzZWRWYWx1ZSI6MTAsIkNvbG9yIjoicmVkIiwiSUQiOiIxMjM0IiwiT3duZXIiOiJtZSIsIlNpemUiOjN9",
+		"subId": "sb-cb37cc07-e873-4f58-44ab-55add6bba320"
+	}
+]`)
+
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sb-cb37cc07-e873-4f58-44ab-55add6bba320",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "ff-sub-ns1-11232312312",
+		}))
+
+	em := &blockchainmocks.Callbacks{}
+	e.streams = newStreamManager(e.client, e.signer)
+	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		channel:   "firefly",
+		version:   1,
+	}
+
+	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
+
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.EqualError(t, err, "pop")
+
+	em.AssertExpectations(t)
+}
+
+func TestHandleMessageContractGetSubError(t *testing.T) {
+	data := []byte(`
+[
+	{
+		"chaincodeId": "basic",
+	  "blockNumber": 10,
+		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
+		"eventName": "AssetCreated",
+		"payload": "eyJBcHByYWlzZWRWYWx1ZSI6MTAsIkNvbG9yIjoicmVkIiwiSUQiOiIxMjM0IiwiT3duZXIiOiJtZSIsIlNpemUiOjN9",
+		"subId": "sb-cb37cc07-e873-4f58-44ab-55add6bba320"
+	}
+]`)
+
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sb-cb37cc07-e873-4f58-44ab-55add6bba320",
+		httpmock.NewJsonResponderOrPanic(500, fabError{Error: "pop"}))
+
+	em := &blockchainmocks.Callbacks{}
+	e.streams = newStreamManager(e.client, e.signer)
+	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		channel:   "firefly",
+		version:   1,
+	}
+
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.Regexp(t, "FF10284", err)
 
 	em.AssertExpectations(t)
 }

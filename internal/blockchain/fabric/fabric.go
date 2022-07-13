@@ -107,13 +107,20 @@ func (cb *callbacks) BlockchainNetworkAction(ctx context.Context, namespace, act
 	return nil
 }
 
-func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	for _, cb := range cb.handlers {
-		// Send the event to all handlers and let them match it to a contract listener
-		// TODO: can we push more listener/namespace knowledge down to this layer?
-		if err := cb.BlockchainEvent(event); err != nil {
-			return err
+func (cb *callbacks) BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error {
+	if namespace == "" {
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
+		for _, cb := range cb.handlers {
+			// Send the event to all handlers and let them match it to a contract listener
+			if err := cb.BlockchainEvent(event); err != nil {
+				return err
+			}
 		}
+	} else {
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.BlockchainEvent(event)
+		}
+		log.L(ctx).Errorf("No handler found for blockchain event on namespace '%s'", namespace)
 	}
 	return nil
 }
@@ -243,7 +250,7 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 		return err
 	}
 
-	f.streams = &streamManager{client: f.client, signer: f.signer}
+	f.streams = newStreamManager(f.client, f.signer)
 	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
 	batchTimeout := uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
 	stream, err := f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout)
@@ -424,11 +431,16 @@ func (f *Fabric) buildEventLocationString(chaincode string) string {
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	subName, err := f.streams.getSubscriptionName(ctx, msgJSON.GetString("subId"))
+	if err != nil {
+		return err
+	}
+	namespace := f.streams.getNamespaceFromSubName(subName)
 	event := f.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on
 	}
-	return f.callbacks.BlockchainEvent(&blockchain.EventWithSubscription{
+	return f.callbacks.BlockchainEvent(ctx, namespace, &blockchain.EventWithSubscription{
 		Event:        *event,
 		Subscription: msgJSON.GetString("subId"),
 	})
@@ -858,7 +870,9 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *core.Contrac
 	if err != nil {
 		return err
 	}
-	result, err := f.streams.createSubscription(ctx, location, f.streamID, "", listener.Event.Name, listener.Options.FirstEvent)
+
+	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
+	result, err := f.streams.createSubscription(ctx, location, f.streamID, subName, listener.Event.Name, listener.Options.FirstEvent)
 	if err != nil {
 		return err
 	}

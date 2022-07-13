@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/mocks/authmocks"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
@@ -432,4 +434,19 @@ func TestNetworkActionNonMultiparty(t *testing.T) {
 	or.multiparty = nil
 	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.Regexp(t, "FF10414", err)
+}
+
+func TestAuthorize(t *testing.T) {
+	or := newTestOrchestrator()
+	auth := &authmocks.Plugin{}
+	auth.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	or.plugins.Auth.Plugin = auth
+	err := or.Authorize(context.Background(), &fftypes.AuthReq{})
+	assert.NoError(t, err)
+}
+
+func TestAuthorizeNoPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	err := or.Authorize(context.Background(), &fftypes.AuthReq{})
+	assert.NoError(t, err)
 }

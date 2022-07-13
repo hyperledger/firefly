@@ -30,6 +30,7 @@ import (
 
 func TestPostNewMessageRequestReply(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	o.On("PrivateMessaging").Return(&privatemessagingmocks.Manager{})
 	o.On("RequestReply", mock.Anything, mock.Anything).Return(&core.MessageInOut{}, nil)
 	input := &core.MessageInOut{}

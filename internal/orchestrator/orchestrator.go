@@ -19,6 +19,7 @@ package orchestrator
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/auth"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -116,6 +117,9 @@ type Orchestrator interface {
 
 	// Network Operations
 	SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error
+
+	// Authorizer
+	Authorize(ctx context.Context, authReq *fftypes.AuthReq) error
 }
 
 type BlockchainPlugin struct {
@@ -148,6 +152,11 @@ type IdentityPlugin struct {
 	Plugin idplugin.Plugin
 }
 
+type AuthPlugin struct {
+	Name   string
+	Plugin auth.Plugin
+}
+
 type Plugins struct {
 	Blockchain    BlockchainPlugin
 	Identity      IdentityPlugin
@@ -156,6 +165,7 @@ type Plugins struct {
 	Database      DatabasePlugin
 	Tokens        []TokensPlugin
 	Events        map[string]eventsplugin.Plugin
+	Auth          AuthPlugin
 }
 
 type Config struct {
@@ -454,10 +464,12 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.namespace.LocalName, or.database(), or.blockchain(), or.identity, or.operations, or.txHelper, or.syncasync)
-		if err != nil {
-			return err
+	if or.blockchain() != nil {
+		if or.contracts == nil {
+			or.contracts, err = contracts.NewContractManager(ctx, or.namespace.LocalName, or.database(), or.blockchain(), or.identity, or.operations, or.txHelper, or.syncasync)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -511,4 +523,12 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.Ne
 		return err
 	}
 	return or.multiparty.SubmitNetworkAction(ctx, key, action)
+}
+
+func (or *orchestrator) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
+	authReq.Namespace = or.namespace.LocalName
+	if or.plugins.Auth.Plugin != nil {
+		return or.plugins.Auth.Plugin.Authorize(ctx, authReq)
+	}
+	return nil
 }

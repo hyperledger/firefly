@@ -125,7 +125,7 @@ if [ "$CREATE_STACK" == "true" ]; then
 fi
 
 if [ "$TEST_SUITE" == "TestEthereumMultipartyE2ESuite" ] || [ "$TEST_SUITE" == "TestEthereumGatewayE2ESuite" ]; then
-    export CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/simplestorage/simple_storage.json | jq -r '.address')
+  export CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/simplestorage/simple_storage.json | jq -r '.address')
 fi
 
 create_accounts
@@ -136,8 +136,11 @@ checkOk $?
 export STACK_FILE
 export STACK_STATE
 
-go clean -testcache && go test -v ./multiparty ./gateway -run $TEST_SUITE
-checkOk $?
+runTest() {
+  go clean -testcache && go test -v -p 1 ./multiparty ./gateway -run $TEST_SUITE
+  checkOk $?
+}
+runTest
 
 if [ "$RESTART" == "true" ]; then
   $CLI stop $STACK_NAME
@@ -147,7 +150,5 @@ if [ "$RESTART" == "true" ]; then
   checkOk $?
 
   create_accounts
-
-  go clean -testcache && go test -v ./multiparty ./gateway -run $TEST_SUITE
-  checkOk $?
+  runTest
 fi

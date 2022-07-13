@@ -29,6 +29,7 @@ import (
 
 func TestGetContractListenerByNameOrID(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
 	id := fftypes.NewUUID()

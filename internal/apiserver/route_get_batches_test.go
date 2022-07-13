@@ -27,6 +27,7 @@ import (
 
 func TestGetBatches(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/batches", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()

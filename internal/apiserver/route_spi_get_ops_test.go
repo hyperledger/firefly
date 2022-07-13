@@ -27,6 +27,7 @@ import (
 
 func TestSPIGetOperations(t *testing.T) {
 	or, r := newTestSPIServer()
+	or.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	req := httptest.NewRequest("GET", "/spi/v1/namespaces/ns1/operations", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
