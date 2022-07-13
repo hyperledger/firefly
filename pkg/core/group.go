@@ -35,9 +35,10 @@ type GroupIdentity struct {
 
 type Group struct {
 	GroupIdentity
-	Message *fftypes.UUID    `ffstruct:"Group" json:"message,omitempty"`
-	Hash    *fftypes.Bytes32 `ffstruct:"Group" json:"hash,omitempty"`
-	Created *fftypes.FFTime  `ffstruct:"Group" json:"created,omitempty"`
+	LocalNamespace string           `ffstruct:"Group" json:"localNamespace,omitempty"`
+	Message        *fftypes.UUID    `ffstruct:"Group" json:"message,omitempty"`
+	Hash           *fftypes.Bytes32 `ffstruct:"Group" json:"hash,omitempty"`
+	Created        *fftypes.FFTime  `ffstruct:"Group" json:"created,omitempty"`
 }
 
 type Members []*Member

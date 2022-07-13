@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/mocks/authmocks"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
@@ -112,7 +114,7 @@ func newTestOrchestrator() *testOrchestrator {
 		orchestrator: orchestrator{
 			ctx:       ctx,
 			cancelCtx: cancel,
-			namespace: "ns",
+			namespace: core.NamespaceRef{LocalName: "ns", RemoteName: "ns"},
 		},
 		mdi: &databasemocks.Plugin{},
 		mdm: &datamocks.Manager{},
@@ -180,7 +182,7 @@ func newTestOrchestrator() *testOrchestrator {
 
 func TestNewOrchestrator(t *testing.T) {
 	or := NewOrchestrator(
-		"ns1",
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 		Config{},
 		Plugins{},
 		&metricsmocks.Manager{},
@@ -191,13 +193,16 @@ func TestNewOrchestrator(t *testing.T) {
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.namespace.RemoteName = "ns2"
 	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
-	or.mbi.On("SetHandler", "ns", mock.Anything).Return()
+	or.mbi.On("SetHandler", "ns2", mock.Anything).Return()
+	or.mbi.On("SetOperationHandler", "ns", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{{}}, nil, nil)
-	or.mdx.On("SetHandler", "ns", mock.Anything).Return()
+	or.mdx.On("SetHandler", "ns2", mock.Anything).Return()
 	or.mdx.On("SetNodes", mock.Anything).Return()
-	or.mps.On("SetHandler", "ns", mock.Anything).Return()
+	or.mps.On("SetHandler", "ns2", mock.Anything).Return()
 	or.mti.On("SetHandler", "ns", mock.Anything).Return(nil)
+	or.mti.On("SetOperationHandler", "ns", mock.Anything).Return(nil)
 	err := or.Init(or.ctx)
 	assert.NoError(t, err)
 
@@ -219,6 +224,7 @@ func TestInitTokenListenerFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
 	or.mbi.On("SetHandler", "ns", mock.Anything).Return()
+	or.mbi.On("SetOperationHandler", "ns", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{{}}, nil, nil)
 	or.mdx.On("SetHandler", "ns", mock.Anything).Return()
 	or.mdx.On("SetNodes", mock.Anything).Return()
@@ -233,6 +239,7 @@ func TestInitDataexchangeNodesFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
 	or.mbi.On("SetHandler", "ns", mock.Anything).Return()
+	or.mbi.On("SetOperationHandler", "ns", mock.Anything).Return()
 	or.mps.On("SetHandler", "ns", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	ctx := context.Background()
@@ -405,7 +412,7 @@ func TestStartStopOk(t *testing.T) {
 
 func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
-	or.namespace = core.LegacySystemNamespace
+	or.namespace.LocalName = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action).Return(nil)
@@ -415,7 +422,7 @@ func TestNetworkAction(t *testing.T) {
 
 func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
-	or.namespace = core.LegacySystemNamespace
+	or.namespace.LocalName = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	err := or.SubmitNetworkAction(context.Background(), action)
@@ -435,4 +442,19 @@ func TestStop(t *testing.T) {
 	or.onStop = func() { called = true }
 	or.stop()
 	assert.True(t, called)
+}
+
+func TestAuthorize(t *testing.T) {
+	or := newTestOrchestrator()
+	auth := &authmocks.Plugin{}
+	auth.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	or.plugins.Auth.Plugin = auth
+	err := or.Authorize(context.Background(), &fftypes.AuthReq{})
+	assert.NoError(t, err)
+}
+
+func TestAuthorizeNoPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	err := or.Authorize(context.Background(), &fftypes.AuthReq{})
+	assert.NoError(t, err)
 }

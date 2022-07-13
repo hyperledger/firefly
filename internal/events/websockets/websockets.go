@@ -37,6 +37,7 @@ type WebSockets struct {
 	connections  map[string]*websocketConnection
 	connMux      sync.Mutex
 	upgrader     websocket.Upgrader
+	auth         core.Authorizer
 }
 
 func (ws *WebSockets) Name() string { return "websockets" }
@@ -57,6 +58,10 @@ func (ws *WebSockets) Init(ctx context.Context, config config.Section) error {
 		},
 	}
 	return nil
+}
+
+func (ws *WebSockets) SetAuthorizer(auth core.Authorizer) {
+	ws.auth = auth
 }
 
 func (ws *WebSockets) SetHandler(namespace string, handler events.Callbacks) error {
@@ -96,7 +101,7 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 
 	ws.connMux.Lock()
-	wc := newConnection(ws.ctx, ws, wsConn, req)
+	wc := newConnection(ws.ctx, ws, wsConn, req, ws.auth)
 	ws.connections[wc.connID] = wc
 	ws.connMux.Unlock()
 

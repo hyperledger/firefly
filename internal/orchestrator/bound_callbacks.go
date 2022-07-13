@@ -34,20 +34,10 @@ type boundCallbacks struct {
 	om operations.Manager
 }
 
-func (bc *boundCallbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+func (bc *boundCallbacks) OperationUpdate(plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	bc.om.SubmitOperationUpdate(plugin, &operations.OperationUpdate{
 		NamespacedOpID: nsOpID,
-		Status:         txState,
-		BlockchainTXID: blockchainTXID,
-		ErrorMessage:   errorMessage,
-		Output:         opOutput,
-	})
-}
-
-func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
-	bc.om.SubmitOperationUpdate(plugin, &operations.OperationUpdate{
-		NamespacedOpID: nsOpID,
-		Status:         txState,
+		Status:         status,
 		BlockchainTXID: blockchainTXID,
 		ErrorMessage:   errorMessage,
 		Output:         opOutput,

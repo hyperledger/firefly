@@ -87,7 +87,8 @@ func (s *broadcastSender) SendAndWait(ctx context.Context) error {
 func (s *broadcastSender) setDefaults() {
 	msg := s.msg.Message
 	msg.Header.ID = fftypes.NewUUID()
-	msg.Header.Namespace = s.mgr.namespace
+	msg.Header.Namespace = s.mgr.namespace.RemoteName
+	msg.LocalNamespace = s.mgr.namespace.LocalName
 	msg.State = core.MessageStateReady
 	if msg.Header.Type == "" {
 		msg.Header.Type = core.MessageTypeBroadcast
@@ -148,7 +149,7 @@ func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (
 	if err := s.mgr.data.WriteNewMessage(ctx, s.msg); err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d datacount=%d", msg.Header.Namespace, msg.Header.ID, msg.Sequence, len(s.msg.AllData))
+	log.L(ctx).Infof("Sent broadcast message %s sequence=%d datacount=%d", msg.Header.ID, msg.Sequence, len(s.msg.AllData))
 
 	return err
 }

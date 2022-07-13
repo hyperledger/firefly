@@ -87,7 +87,7 @@ func (mm *multipartyManager) PrepareOperation(ctx context.Context, op *core.Oper
 		if err != nil {
 			return nil, err
 		}
-		batch, err := mm.database.GetBatchByID(ctx, mm.namespace, batchID)
+		batch, err := mm.database.GetBatchByID(ctx, mm.namespace.LocalName, batchID)
 		if err != nil {
 			return nil, err
 		} else if batch == nil {
@@ -108,7 +108,6 @@ func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.Prepared
 	switch data := op.Data.(type) {
 	case batchPinData:
 		batch := data.Batch
-
 		return nil, false, mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Key, &blockchain.BatchPin{
 			Namespace:       batch.Namespace,
 			TransactionID:   batch.TX.ID,

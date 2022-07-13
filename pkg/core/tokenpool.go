@@ -66,9 +66,6 @@ type TokenPoolAnnouncement struct {
 }
 
 func (t *TokenPool) Validate(ctx context.Context) (err error) {
-	if err = fftypes.ValidateFFNameField(ctx, t.Namespace, "namespace"); err != nil {
-		return err
-	}
 	if err = fftypes.ValidateFFNameFieldNoUUID(ctx, t.Name, "name"); err != nil {
 		return err
 	}

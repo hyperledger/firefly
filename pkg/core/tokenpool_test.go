@@ -26,17 +26,10 @@ import (
 
 func TestTokenPoolValidation(t *testing.T) {
 	pool := &TokenPool{
-		Namespace: "!wrong",
-		Name:      "ok",
-	}
-	err := pool.Validate(context.Background())
-	assert.Regexp(t, "FF00140.*'namespace'", err)
-
-	pool = &TokenPool{
 		Namespace: "ok",
 		Name:      "!wrong",
 	}
-	err = pool.Validate(context.Background())
+	err := pool.Validate(context.Background())
 	assert.Regexp(t, "FF00140.*'name'", err)
 
 	pool = &TokenPool{

@@ -81,6 +81,11 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, w
 		log.L(em.ctx).Errorf("Ignoring private batch from non-multiparty network!")
 		return "", nil
 	}
+	if batch.Namespace != em.namespace.RemoteName {
+		log.L(em.ctx).Debugf("Ignoring private batch from different namespace '%s'", batch.Namespace)
+		return "", nil
+	}
+	batch.Namespace = em.namespace.LocalName
 
 	// Retry for persistence errors (not validation errors)
 	err = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
@@ -189,12 +194,6 @@ func (em *eventManager) messageReceived(dx dataexchange.Plugin, event dataexchan
 	mr := event.MessageReceived()
 	l.Infof("Private batch received from %s peer '%s'", dx.Name(), mr.PeerID)
 
-	if mr.Transport.Batch.Namespace != em.namespace {
-		log.L(em.ctx).Debugf("Ignoring batch from different namespace '%s'", mr.Transport.Batch.Namespace)
-		event.AckWithManifest("")
-		return
-	}
-
 	manifestString, err := em.privateBatchReceived(mr.PeerID, mr.Transport.Batch, mr.Transport.Group)
 	if err != nil {
 		l.Warnf("Exited while persisting batch: %s", err)
@@ -213,7 +212,7 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 		event.Ack() // Still confirm the event
 		return
 	}
-	if br.Namespace != em.namespace {
+	if br.Namespace != em.namespace.RemoteName {
 		log.L(em.ctx).Debugf("Ignoring blob from different namespace '%s'", br.Namespace)
 		event.Ack() // Still confirm the event
 		return

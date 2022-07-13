@@ -31,6 +31,7 @@ import (
 
 func TestPostTokenApproval(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
 	input := fftypes.JSONObject{}
@@ -50,6 +51,7 @@ func TestPostTokenApproval(t *testing.T) {
 
 func TestPostTokenApprovalUnapprove(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
 	input := fftypes.JSONObject{"approved": false}

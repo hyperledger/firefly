@@ -28,6 +28,7 @@ import (
 
 func TestGetIdentityByDID(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	nmn := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(nmn)
 	req := httptest.NewRequest("GET", "/api/v1/identities/did:firefly:org/org_1", nil)
@@ -43,6 +44,7 @@ func TestGetIdentityByDID(t *testing.T) {
 
 func TestGetIdentityByDIDWithVerifiers(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	nmn := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(nmn)
 	req := httptest.NewRequest("GET", "/api/v1/identities/did:firefly:org/org_1?fetchverifiers", nil)

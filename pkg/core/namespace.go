@@ -62,6 +62,11 @@ type FireFlyContractInfo struct {
 	Subscription string           `ffstruct:"FireFlyContractInfo" json:"subscription,omitempty"`
 }
 
+type NamespaceRef struct {
+	LocalName  string
+	RemoteName string
+}
+
 // NetworkActionType is a type of action to perform
 type NetworkActionType = fftypes.FFEnum
 

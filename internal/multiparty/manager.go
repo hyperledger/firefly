@@ -83,7 +83,7 @@ type Contract struct {
 type multipartyManager struct {
 	ctx            context.Context
 	stop           func()
-	namespace      string
+	namespace      core.NamespaceRef
 	database       database.Plugin
 	blockchain     blockchain.Plugin
 	operations     operations.Manager
@@ -98,7 +98,7 @@ type multipartyManager struct {
 	}
 }
 
-func NewMultipartyManager(ctx context.Context, stop func(), ns string, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
+func NewMultipartyManager(ctx context.Context, stop func(), ns core.NamespaceRef, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
 	if di == nil || bi == nil || mm == nil || om == nil || th == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "MultipartyManager")
 	}
@@ -140,13 +140,13 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 		return err
 	}
 
-	if mm.namespace == core.LegacySystemNamespace && version > 1 {
+	if mm.namespace.LocalName == core.LegacySystemNamespace && version > 1 {
 		// ff_system namespace should stop its orchestrator for network V2+
 		mm.stop()
 		return nil
 	}
 
-	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace, location, firstEvent)
+	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.LocalName, location, firstEvent)
 	if err == nil {
 		mm.activeContract.location = location
 		mm.activeContract.firstEvent = firstEvent
@@ -210,7 +210,7 @@ func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey
 
 	op := core.NewOperation(
 		mm.blockchain,
-		mm.namespace,
+		mm.namespace.LocalName,
 		txid,
 		core.OpTypeBlockchainNetworkAction)
 	addNetworkActionInputs(op, action.Type, signingKey)

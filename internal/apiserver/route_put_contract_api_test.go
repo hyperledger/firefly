@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -30,8 +31,10 @@ import (
 
 func TestPutContractAPI(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mds := &definitionsmocks.Sender{}
 	o.On("DefinitionSender").Return(mds)
+	o.On("Contracts").Return(&contractmocks.Manager{})
 	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -47,8 +50,10 @@ func TestPutContractAPI(t *testing.T) {
 
 func TestPutContractAPISync(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mds := &definitionsmocks.Sender{}
 	o.On("DefinitionSender").Return(mds)
+	o.On("Contracts").Return(&contractmocks.Manager{})
 	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

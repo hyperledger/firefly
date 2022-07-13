@@ -42,6 +42,6 @@ func (ed *eventDispatcher) sendReply(ctx context.Context, event *core.Event, rep
 	if err != nil {
 		log.L(ctx).Errorf("Failed to send reply: %s", err)
 	} else {
-		log.L(ctx).Infof("Sent reply %s:%s (%s) cid=%s to event '%s'", reply.Header.Namespace, reply.Header.ID, reply.Header.Type, reply.Header.CID, event.ID)
+		log.L(ctx).Infof("Sent reply %s (%s) cid=%s to event '%s'", reply.Header.ID, reply.Header.Type, reply.Header.CID, event.ID)
 	}
 }

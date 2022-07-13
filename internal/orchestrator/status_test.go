@@ -138,8 +138,8 @@ func TestGetStatusRegistered(t *testing.T) {
 	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
 	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
 
-	assert.True(t, or.GetNodeUUID(or.ctx, "ns").Equals(nodeID))
-	assert.True(t, or.GetNodeUUID(or.ctx, "ns").Equals(nodeID)) // cached
+	assert.True(t, or.GetNodeUUID(or.ctx).Equals(nodeID))
+	assert.True(t, or.GetNodeUUID(or.ctx).Equals(nodeID)) // cached
 
 }
 
@@ -259,7 +259,7 @@ func TestGetStatusUnregistered(t *testing.T) {
 	assert.Equal(t, "node1", status.Node.Name)
 	assert.False(t, status.Node.Registered)
 
-	assert.Nil(t, or.GetNodeUUID(or.ctx, "ns"))
+	assert.Nil(t, or.GetNodeUUID(or.ctx))
 
 }
 
@@ -315,7 +315,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
 	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
 
-	assert.Nil(t, or.GetNodeUUID(or.ctx, "ns"))
+	assert.Nil(t, or.GetNodeUUID(or.ctx))
 }
 
 func TestGetStatusNodeError(t *testing.T) {
@@ -350,6 +350,6 @@ func TestGetStatusNodeError(t *testing.T) {
 	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")
 
-	assert.Nil(t, or.GetNodeUUID(or.ctx, "ns"))
+	assert.Nil(t, or.GetNodeUUID(or.ctx))
 
 }

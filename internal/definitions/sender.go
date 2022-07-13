@@ -53,7 +53,7 @@ type definitionSender struct {
 	broadcast  broadcast.Manager // optional
 	identity   identity.Manager
 	data       data.Manager
-	contracts  contracts.Manager
+	contracts  contracts.Manager // optional
 	handler    *definitionHandler
 }
 
@@ -71,8 +71,8 @@ func fakeBatch(ctx context.Context, handler func(context.Context, *core.BatchSta
 }
 
 func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, am assets.Manager, cm contracts.Manager) (Sender, Handler, error) {
-	if di == nil || im == nil || dm == nil || cm == nil {
-		return nil, nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+	if di == nil || im == nil || dm == nil {
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DefinitionSender")
 	}
 	ds := &definitionSender{
 		ctx:        ctx,
@@ -117,7 +117,6 @@ func (bm *definitionSender) sendDefinitionCommon(ctx context.Context, def core.D
 	message := &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
-				Namespace: bm.namespace,
 				Type:      core.MessageTypeDefinition,
 				Topics:    core.FFStringArray{def.Topic()},
 				Tag:       tag,

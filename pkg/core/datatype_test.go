@@ -33,12 +33,6 @@ func TestDatatypeValidation(t *testing.T) {
 
 	dt = &Datatype{
 		Validator: ValidatorTypeJSON,
-		Namespace: "!wrong",
-	}
-	assert.Regexp(t, "FF00140.*namespace", dt.Validate(context.Background(), false))
-
-	dt = &Datatype{
-		Validator: ValidatorTypeJSON,
 		Namespace: "ok",
 		Name:      "!wrong",
 	}

@@ -166,9 +166,6 @@ func (i *IdentityBase) Validate(ctx context.Context) (err error) {
 	if i.ID == nil {
 		return i18n.NewError(ctx, i18n.MsgNilID)
 	}
-	if err = fftypes.ValidateFFNameFieldNoUUID(ctx, i.Namespace, "namespace"); err != nil {
-		return err
-	}
 	if err = fftypes.ValidateFFNameFieldNoUUID(ctx, i.Name, "name"); err != nil {
 		return err
 	}

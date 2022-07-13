@@ -99,6 +99,7 @@ func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batc
 		if valid, err = em.checkAndInitiateBlobDownloads(ctx, batch, i, data); !valid || err != nil {
 			return false, err
 		}
+		data.Namespace = em.namespace.LocalName
 		dataByID[*data.ID] = data
 	}
 
@@ -107,6 +108,7 @@ func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batc
 		if valid = em.validateBatchMessage(ctx, batch, i, msg); !valid {
 			return false, nil
 		}
+		msg.LocalNamespace = em.namespace.LocalName
 	}
 
 	// We require that the batch contains exactly the set of data that is in the messages - no more or less.
@@ -211,7 +213,7 @@ func (em *eventManager) validateBatchMessage(ctx context.Context, batch *core.Ba
 }
 
 func (em *eventManager) sentByUs(ctx context.Context, batch *core.Batch) bool {
-	localNode := em.ni.GetNodeUUID(ctx, batch.Namespace)
+	localNode := em.ni.GetNodeUUID(ctx)
 	if batch.Node == nil {
 		// This is from a node that hasn't yet completed registration, so we can't optimize
 		return false

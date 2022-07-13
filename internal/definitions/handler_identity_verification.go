@@ -30,6 +30,7 @@ func (dh *definitionHandler) handleIdentityVerificationBroadcast(ctx context.Con
 	if !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity verification", verifyMsg.Header.ID)
 	}
+	verification.Identity.Namespace = dh.namespace
 	err := verification.Identity.Validate(ctx)
 	if err != nil || verification.Identity.Parent == nil || verification.Claim.ID == nil || verification.Claim.Hash == nil {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "identity verification", verifyMsg.Header.ID, err)

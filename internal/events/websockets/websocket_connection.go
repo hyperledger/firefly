@@ -53,9 +53,11 @@ type websocketConnection struct {
 	closed       bool
 	remoteAddr   string
 	userAgent    string
+	header       http.Header
+	auth         core.Authorizer
 }
 
-func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn, req *http.Request) *websocketConnection {
+func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn, req *http.Request, auth core.Authorizer) *websocketConnection {
 	connID := fftypes.NewUUID().String()
 	ctx := log.WithLogField(pCtx, "websocket", connID)
 	ctx, cancelCtx := context.WithCancel(ctx)
@@ -70,6 +72,8 @@ func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn,
 		receiverDone: make(chan struct{}),
 		remoteAddr:   req.RemoteAddr,
 		userAgent:    req.UserAgent(),
+		header:       req.Header,
+		auth:         auth,
 	}
 	go wc.sendLoop()
 	go wc.receiveLoop()
@@ -153,12 +157,18 @@ func (wc *websocketConnection) receiveLoop() {
 			var msg core.WSStart
 			err = json.Unmarshal(msgData, &msg)
 			if err == nil {
-				err = wc.handleStart(&msg)
+				err = wc.authorizeMessage(msg.Namespace)
+				if err == nil {
+					err = wc.handleStart(&msg)
+				}
 			}
 		case core.WSClientActionAck:
 			var msg core.WSAck
 			err = json.Unmarshal(msgData, &msg)
 			if err == nil {
+				// acks are not authenticated because they will only be accepted for
+				// messages that were sent by FireFly on this connection, which would
+				// have previously checked authorization in the start message
 				err = wc.handleAck(&msg)
 			}
 		default:
@@ -334,4 +344,19 @@ func (wc *websocketConnection) close() {
 func (wc *websocketConnection) waitClose() {
 	<-wc.senderDone
 	<-wc.receiverDone
+}
+
+func (wc *websocketConnection) authorizeMessage(ns string) error {
+	wc.mux.Lock()
+	defer wc.mux.Unlock()
+	authReq := &fftypes.AuthReq{
+		Namespace: ns,
+		Header:    wc.header,
+	}
+	if wc.auth != nil {
+		if err := wc.auth.Authorize(wc.ctx, authReq); err != nil {
+			return err
+		}
+	}
+	return nil
 }

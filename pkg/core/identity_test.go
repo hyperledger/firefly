@@ -94,10 +94,6 @@ func TestIdentityValidationOrgs(t *testing.T) {
 	assert.Regexp(t, "FF00114", o.Validate(ctx))
 
 	o = testOrg()
-	o.Namespace = "!namespace"
-	assert.Regexp(t, "FF00140", o.Validate(ctx))
-
-	o = testOrg()
 	o.Name = "!name"
 	assert.Regexp(t, "FF00140", o.Validate(ctx))
 

@@ -31,6 +31,7 @@ func (dh *definitionHandler) handleDatatypeBroadcast(ctx context.Context, state 
 	if !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "datatype", msg.Header.ID)
 	}
+	dt.Namespace = dh.namespace
 	if err := dt.Validate(ctx, true); err != nil {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "datatype", dt.ID, err)
 	}

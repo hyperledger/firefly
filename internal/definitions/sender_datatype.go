@@ -29,7 +29,6 @@ func (bm *definitionSender) DefineDatatype(ctx context.Context, datatype *core.D
 	// Validate the input data definition data
 	datatype.ID = fftypes.NewUUID()
 	datatype.Created = fftypes.Now()
-	datatype.Namespace = bm.namespace
 	if datatype.Validator == "" {
 		datatype.Validator = core.ValidatorTypeJSON
 	}
@@ -44,10 +43,12 @@ func (bm *definitionSender) DefineDatatype(ctx context.Context, datatype *core.D
 			return err
 		}
 
+		datatype.Namespace = ""
 		msg, err := bm.sendDefinitionDefault(ctx, datatype, core.SystemTagDefineDatatype, waitConfirm)
 		if msg != nil {
 			datatype.Message = msg.Header.ID
 		}
+		datatype.Namespace = bm.namespace
 		return err
 	}
 

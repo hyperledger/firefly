@@ -28,6 +28,7 @@ import (
 
 func TestGetOrg(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	nmn := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(nmn)
 	req := httptest.NewRequest("GET", "/api/v1/network/organizations/org12345", nil)

@@ -22,6 +22,8 @@ import (
 
 	events "github.com/hyperledger/firefly/internal/events"
 
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
+
 	mock "github.com/stretchr/testify/mock"
 
 	multiparty "github.com/hyperledger/firefly/internal/multiparty"
@@ -49,6 +51,20 @@ func (_m *Orchestrator) Assets() assets.Manager {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(assets.Manager)
 		}
+	}
+
+	return r0
+}
+
+// Authorize provides a mock function with given fields: ctx, authReq
+func (_m *Orchestrator) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
+	ret := _m.Called(ctx, authReq)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.AuthReq) error); ok {
+		r0 = rf(ctx, authReq)
+	} else {
+		r0 = ret.Error(0)
 	}
 
 	return r0

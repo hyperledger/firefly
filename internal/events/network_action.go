@@ -26,7 +26,7 @@ import (
 )
 
 func (em *eventManager) actionTerminate(location *fftypes.JSONAny, event *blockchain.Event) error {
-	namespace, err := em.database.GetNamespace(em.ctx, em.namespace)
+	namespace, err := em.database.GetNamespace(em.ctx, em.namespace.LocalName)
 	if err != nil {
 		return err
 	}

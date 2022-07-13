@@ -51,9 +51,6 @@ func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
 	if dt.Validator != ValidatorTypeJSON {
 		return i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "validator", dt.Validator)
 	}
-	if err = fftypes.ValidateFFNameField(ctx, dt.Namespace, "namespace"); err != nil {
-		return err
-	}
 	if err = fftypes.ValidateFFNameFieldNoUUID(ctx, dt.Name, "name"); err != nil {
 		return err
 	}
