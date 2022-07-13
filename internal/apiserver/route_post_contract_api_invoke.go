@@ -22,6 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -41,6 +42,9 @@ var postContractAPIInvoke = &ffapi.Route{
 	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},
 	Extensions: &coreExtensions{
+		EnabledIf: func(or orchestrator.Orchestrator) bool {
+			return or.Contracts() != nil
+		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)

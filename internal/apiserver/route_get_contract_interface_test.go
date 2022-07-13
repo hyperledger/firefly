@@ -32,6 +32,7 @@ import (
 func TestGetContractInterfaceBadID(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	o.On("Contracts").Return(&contractmocks.Manager{})
 	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
