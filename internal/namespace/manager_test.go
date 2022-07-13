@@ -29,7 +29,6 @@ import (
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
-	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -1117,6 +1116,9 @@ func TestStart(t *testing.T) {
 	nm.namespaces = map[string]*namespace{
 		"ns": {orchestrator: mo},
 	}
+	nm.plugins.blockchain = nil
+	nm.plugins.dataexchange = nil
+	nm.plugins.tokens = nil
 	nm.metricsEnabled = true
 
 	mo.On("Start").Return(nil)
@@ -1131,16 +1133,14 @@ func TestStartBlockchainFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
+	mo := &orchestratormocks.Orchestrator{}
 	nm.namespaces = map[string]*namespace{
 		"ns": {
-			plugins: orchestrator.Plugins{
-				Blockchain: orchestrator.BlockchainPlugin{
-					Plugin: nm.mbi,
-				},
-			},
+			orchestrator: mo,
 		},
 	}
 
+	mo.On("Start").Return(nil)
 	nm.mbi.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.Start()
@@ -1152,16 +1152,15 @@ func TestStartDataExchangeFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
+	mo := &orchestratormocks.Orchestrator{}
 	nm.namespaces = map[string]*namespace{
 		"ns": {
-			plugins: orchestrator.Plugins{
-				DataExchange: orchestrator.DataExchangePlugin{
-					Plugin: nm.mdx,
-				},
-			},
+			orchestrator: mo,
 		},
 	}
+	nm.plugins.blockchain = nil
 
+	mo.On("Start").Return(nil)
 	nm.mdx.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.Start()
@@ -1173,16 +1172,16 @@ func TestStartTokensFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
+	mo := &orchestratormocks.Orchestrator{}
 	nm.namespaces = map[string]*namespace{
 		"ns": {
-			plugins: orchestrator.Plugins{
-				Tokens: []orchestrator.TokensPlugin{{
-					Plugin: nm.mti,
-				}},
-			},
+			orchestrator: mo,
 		},
 	}
+	nm.plugins.blockchain = nil
+	nm.plugins.dataexchange = nil
 
+	mo.On("Start").Return(nil)
 	nm.mti.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.Start()
