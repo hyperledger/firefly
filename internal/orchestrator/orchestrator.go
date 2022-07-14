@@ -52,8 +52,8 @@ import (
 
 // Orchestrator is the main interface behind the API, implementing the actions
 type Orchestrator interface {
-	Init(ctx context.Context) error
-	Start(onStop func()) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc) error
+	Start() error
 	WaitStop() // The close itself is performed by canceling the context
 
 	MultiParty() multiparty.Manager             // only for multiparty
@@ -177,7 +177,6 @@ type Config struct {
 type orchestrator struct {
 	ctx            context.Context
 	cancelCtx      context.CancelFunc
-	onStop         func()
 	started        bool
 	namespace      core.NamespaceRef
 	config         Config
@@ -213,7 +212,7 @@ func NewOrchestrator(ns core.NamespaceRef, config Config, plugins Plugins, metri
 	return or
 }
 
-func (or *orchestrator) Init(ctx context.Context) (err error) {
+func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
 	namespaceLog := or.namespace.LocalName
 	if or.namespace.RemoteName != or.namespace.LocalName {
 		namespaceLog += "->" + or.namespace.RemoteName
@@ -255,8 +254,7 @@ func (or *orchestrator) tokens() map[string]tokens.Plugin {
 	return result
 }
 
-func (or *orchestrator) Start(onStop func()) (err error) {
-	or.onStop = onStop
+func (or *orchestrator) Start() (err error) {
 	if or.config.Multiparty.Enabled {
 		var ns *core.Namespace
 		ns, err = or.database().GetNamespace(or.ctx, or.namespace.LocalName)
@@ -290,13 +288,6 @@ func (or *orchestrator) Start(onStop func()) (err error) {
 	}
 	or.started = true
 	return err
-}
-
-func (or *orchestrator) stop() {
-	or.cancelCtx()
-	if or.onStop != nil {
-		or.onStop()
-	}
 }
 
 func (or *orchestrator) WaitStop() {
@@ -422,7 +413,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.config.Multiparty.Enabled {
 		if or.multiparty == nil {
-			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.stop, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
+			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.cancelCtx, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
 			if err != nil {
 				return err
 			}

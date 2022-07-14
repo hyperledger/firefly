@@ -70,9 +70,10 @@ var (
 )
 
 type Manager interface {
-	Init(ctx context.Context) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc) error
 	Start() error
 	WaitStop()
+	Reset(ctx context.Context)
 
 	Orchestrator(ns string) orchestrator.Orchestrator
 	SPIEvents() spievents.Manager
@@ -92,6 +93,7 @@ type namespace struct {
 
 type namespaceManager struct {
 	ctx         context.Context
+	cancelCtx   context.CancelFunc
 	nsMux       sync.Mutex
 	namespaces  map[string]*namespace
 	pluginNames map[string]bool
@@ -178,8 +180,9 @@ func NewNamespaceManager(withDefaults bool) Manager {
 	return nm
 }
 
-func (nm *namespaceManager) Init(ctx context.Context) (err error) {
+func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
 	nm.ctx = ctx
+	nm.cancelCtx = cancelCtx
 
 	if err = nm.loadPlugins(ctx); err != nil {
 		return err
@@ -223,9 +226,16 @@ func (nm *namespaceManager) initNamespace(name string, ns *namespace) error {
 		names := core.NamespaceRef{LocalName: name, RemoteName: ns.remoteName}
 		or = orchestrator.NewOrchestrator(names, ns.config, ns.plugins, nm.metrics)
 	}
-	if err := or.Init(nm.ctx); err != nil {
+	orCtx, orCancel := context.WithCancel(nm.ctx)
+	if err := or.Init(orCtx, orCancel); err != nil {
 		return err
 	}
+	go func() {
+		<-orCtx.Done()
+		nm.nsMux.Lock()
+		defer nm.nsMux.Unlock()
+		delete(nm.namespaces, name)
+	}()
 	ns.orchestrator = or
 	return nil
 }
@@ -236,13 +246,8 @@ func (nm *namespaceManager) Start() error {
 		metrics.Registry()
 	}
 	// Orchestrators must be started before plugins so as not to miss events
-	for name, ns := range nm.namespaces {
-		onStop := func() {
-			nm.nsMux.Lock()
-			defer nm.nsMux.Unlock()
-			delete(nm.namespaces, name)
-		}
-		if err := ns.orchestrator.Start(onStop); err != nil {
+	for _, ns := range nm.namespaces {
+		if err := ns.orchestrator.Start(); err != nil {
 			return err
 		}
 	}
@@ -276,6 +281,14 @@ func (nm *namespaceManager) WaitStop() {
 		ns.orchestrator.WaitStop()
 	}
 	nm.adminEvents.WaitStop()
+}
+
+func (nm *namespaceManager) Reset(ctx context.Context) {
+	// Restart the current context to pick up the configuration change
+	go func() {
+		<-ctx.Done()
+		nm.cancelCtx()
+	}()
 }
 
 func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
