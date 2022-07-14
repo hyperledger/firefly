@@ -100,7 +100,7 @@ func (suite *ContractMigrationTestSuite) AfterTest(suiteName, testName string) {
 func (suite *ContractMigrationTestSuite) TestContractMigration() {
 	defer suite.testState.Done()
 
-	address1 := deployContract(suite.T(), suite.stackName, "firefly/Firefly.json")
+	address1 := deployContract(suite.T(), suite.stackName, "firefly/FireflyV1.json")
 	address2 := deployContract(suite.T(), suite.stackName, "firefly/Firefly.json")
 	testNamespace := randomName(suite.T())
 	suite.T().Logf("Test namespace: %s", testNamespace)
