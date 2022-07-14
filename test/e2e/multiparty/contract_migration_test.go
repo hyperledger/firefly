@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -72,6 +71,8 @@ type ContractMigrationTestSuite struct {
 	suite.Suite
 	testState   *testState
 	stackName   string
+	adminHost1  string
+	adminHost2  string
 	configFile1 string
 	configFile2 string
 }
@@ -80,6 +81,17 @@ func (suite *ContractMigrationTestSuite) SetupSuite() {
 	suite.testState = beforeE2ETest(suite.T())
 	stack := e2e.ReadStack(suite.T())
 	suite.stackName = stack.Name
+
+	adminProtocol1 := "http"
+	if stack.Members[0].UseHTTPS {
+		adminProtocol1 = "https"
+	}
+	adminProtocol2 := "http"
+	if stack.Members[1].UseHTTPS {
+		adminProtocol2 = "https"
+	}
+	suite.adminHost1 = fmt.Sprintf("%s://%s:%d", adminProtocol1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedAdminPort)
+	suite.adminHost2 = fmt.Sprintf("%s://%s:%d", adminProtocol2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedAdminPort)
 
 	stackDir := os.Getenv("STACK_DIR")
 	if stackDir == "" {
@@ -134,14 +146,22 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 	addNamespace(data2, namespaceInfo)
 	writeConfig(suite.T(), suite.configFile2, data2)
 
-	cmd := exec.Command("ff", "stop", suite.stackName)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	assert.NoError(suite.T(), cmd.Run())
-	cmd = exec.Command("ff", "start", suite.stackName)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	assert.NoError(suite.T(), cmd.Run())
+	admin1 := client.NewResty(suite.T())
+	admin1.SetBaseURL(suite.adminHost1 + "/spi/v1")
+	admin2 := client.NewResty(suite.T())
+	admin2.SetBaseURL(suite.adminHost2 + "/spi/v1")
+
+	resp, err := admin1.R().
+		SetBody(map[string]interface{}{}).
+		Post("/reset")
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 204, resp.StatusCode())
+	resp, err = admin2.R().
+		SetBody(map[string]interface{}{}).
+		Post("/reset")
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 204, resp.StatusCode())
+
 	e2e.PollForUp(suite.T(), suite.testState.client1)
 	e2e.PollForUp(suite.T(), suite.testState.client2)
 
@@ -162,7 +182,7 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 	data := &core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`"test"`),
 	}
-	resp, err := client1.BroadcastMessage(suite.T(), "topic", data, false)
+	resp, err = client1.BroadcastMessage(suite.T(), "topic", data, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
