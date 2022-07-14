@@ -54,7 +54,7 @@ type Ethereum struct {
 	prefixShort     string
 	prefixLong      string
 	capabilities    *blockchain.Capabilities
-	callbacks       callbacks
+	callbacks       common.BlockchainCallbacks
 	client          *resty.Client
 	fftmClient      *resty.Client
 	streams         *streamManager
@@ -72,63 +72,6 @@ type Ethereum struct {
 type subscriptionInfo struct {
 	namespace string
 	version   int
-}
-
-type callbacks struct {
-	handlers   map[string]blockchain.Callbacks
-	opHandlers map[string]core.OperationCallbacks
-}
-
-func (cb *callbacks) OperationUpdate(ctx context.Context, plugin blockchain.Plugin, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
-	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
-	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(plugin, nsOpID, status, blockchainTXID, errorMessage, opOutput)
-		return
-	}
-	log.L(ctx).Errorf("No handler found for blockchain operation '%s'", nsOpID)
-}
-
-func (cb *callbacks) BatchPinComplete(ctx context.Context, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	if handler, ok := cb.handlers[batch.Namespace]; ok {
-		return handler.BatchPinComplete(batch, signingKey)
-	}
-	log.L(ctx).Errorf("No handler found for blockchain batch pin on namespace '%s'", batch.Namespace)
-	return nil
-}
-
-func (cb *callbacks) BlockchainNetworkAction(ctx context.Context, namespace, action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	if namespace == "" {
-		// V1 networks don't populate namespace, so deliver the event to every handler
-		for _, handler := range cb.handlers {
-			if err := handler.BlockchainNetworkAction(action, location, event, signingKey); err != nil {
-				return err
-			}
-		}
-	} else {
-		if handler, ok := cb.handlers[namespace]; ok {
-			return handler.BlockchainNetworkAction(action, location, event, signingKey)
-		}
-		log.L(ctx).Errorf("No handler found for blockchain network action on namespace '%s'", namespace)
-	}
-	return nil
-}
-
-func (cb *callbacks) BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error {
-	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every handler
-		for _, cb := range cb.handlers {
-			// Send the event to all handlers and let them match it to a contract listener
-			if err := cb.BlockchainEvent(event); err != nil {
-				return err
-			}
-		}
-	} else {
-		if handler, ok := cb.handlers[namespace]; ok {
-			return handler.BlockchainEvent(event)
-		}
-		log.L(ctx).Errorf("No handler found for blockchain event on namespace '%s'", namespace)
-	}
-	return nil
 }
 
 type eventStreamWebsocket struct {
@@ -188,8 +131,7 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.metrics = metrics
 	e.capabilities = &blockchain.Capabilities{}
-	e.callbacks.handlers = make(map[string]blockchain.Callbacks)
-	e.callbacks.opHandlers = make(map[string]core.OperationCallbacks)
+	e.callbacks = common.NewBlockchainCallbacks()
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
 		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
@@ -243,11 +185,11 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 }
 
 func (e *Ethereum) SetHandler(namespace string, handler blockchain.Callbacks) {
-	e.callbacks.handlers[namespace] = handler
+	e.callbacks.SetHandler(namespace, handler)
 }
 
 func (e *Ethereum) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
-	e.callbacks.opHandlers[namespace] = handler
+	e.callbacks.SetOperationalHandler(namespace, handler)
 }
 
 func (e *Ethereum) Start() (err error) {
