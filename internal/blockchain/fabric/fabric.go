@@ -440,7 +440,7 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	if err != nil {
 		return err
 	}
-	namespace := f.streams.getNamespaceFromSubName(subName)
+	namespace := common.GetNamespaceFromSubName(subName)
 	event := f.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on

@@ -430,7 +430,7 @@ func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSON
 		return err
 	}
 
-	namespace := e.streams.getNamespaceFromSubName(subName)
+	namespace := common.GetNamespaceFromSubName(subName)
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event != nil {
 		err = e.callbacks.BlockchainEvent(ctx, namespace, &blockchain.EventWithSubscription{
