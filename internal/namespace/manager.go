@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/hyperledger/firefly-common/pkg/auth"
 	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
@@ -69,7 +70,7 @@ var (
 )
 
 type Manager interface {
-	Init(ctx context.Context, cancelCtx context.CancelFunc) error
+	Init(ctx context.Context) error
 	Start() error
 	WaitStop()
 
@@ -91,7 +92,7 @@ type namespace struct {
 
 type namespaceManager struct {
 	ctx         context.Context
-	cancelCtx   context.CancelFunc
+	nsMux       sync.Mutex
 	namespaces  map[string]*namespace
 	pluginNames map[string]bool
 	plugins     struct {
@@ -175,9 +176,8 @@ func NewNamespaceManager(withDefaults bool) Manager {
 	return nm
 }
 
-func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
+func (nm *namespaceManager) Init(ctx context.Context) (err error) {
 	nm.ctx = ctx
-	nm.cancelCtx = cancelCtx
 
 	if err = nm.loadPlugins(ctx); err != nil {
 		return err
@@ -221,7 +221,7 @@ func (nm *namespaceManager) initNamespace(name string, ns *namespace) error {
 		names := core.NamespaceRef{LocalName: name, RemoteName: ns.remoteName}
 		or = orchestrator.NewOrchestrator(names, ns.config, ns.plugins, nm.metrics)
 	}
-	if err := or.Init(nm.ctx, nm.cancelCtx); err != nil {
+	if err := or.Init(nm.ctx); err != nil {
 		return err
 	}
 	ns.orchestrator = or
@@ -234,8 +234,13 @@ func (nm *namespaceManager) Start() error {
 		metrics.Registry()
 	}
 	// Orchestrators must be started before plugins so as not to miss events
-	for _, ns := range nm.namespaces {
-		if err := ns.orchestrator.Start(); err != nil {
+	for name, ns := range nm.namespaces {
+		onStop := func() {
+			nm.nsMux.Lock()
+			defer nm.nsMux.Unlock()
+			delete(nm.namespaces, name)
+		}
+		if err := ns.orchestrator.Start(onStop); err != nil {
 			return err
 		}
 	}
@@ -258,7 +263,14 @@ func (nm *namespaceManager) Start() error {
 }
 
 func (nm *namespaceManager) WaitStop() {
-	for _, ns := range nm.namespaces {
+	nm.nsMux.Lock()
+	namespaces := make(map[string]*namespace, len(nm.namespaces))
+	for k, v := range nm.namespaces {
+		namespaces[k] = v
+	}
+	nm.nsMux.Unlock()
+
+	for _, ns := range namespaces {
 		ns.orchestrator.WaitStop()
 	}
 	nm.adminEvents.WaitStop()
@@ -917,6 +929,8 @@ func (nm *namespaceManager) SPIEvents() spievents.Manager {
 }
 
 func (nm *namespaceManager) Orchestrator(ns string) orchestrator.Orchestrator {
+	nm.nsMux.Lock()
+	defer nm.nsMux.Unlock()
 	if namespace, ok := nm.namespaces[ns]; ok {
 		return namespace.orchestrator
 	}
@@ -924,6 +938,8 @@ func (nm *namespaceManager) Orchestrator(ns string) orchestrator.Orchestrator {
 }
 
 func (nm *namespaceManager) GetNamespaces(ctx context.Context) ([]*core.Namespace, error) {
+	nm.nsMux.Lock()
+	defer nm.nsMux.Unlock()
 	results := make([]*core.Namespace, 0, len(nm.namespaces))
 	for name, ns := range nm.namespaces {
 		results = append(results, &core.Namespace{
