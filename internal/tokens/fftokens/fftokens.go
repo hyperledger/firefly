@@ -526,25 +526,28 @@ func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (err err
 	}
 
 	l.Debugf("Received %s event %s", msg.Event, msg.ID)
+	eventCtx, done := context.WithCancel(ctx)
+	defer done()
+
 	switch msg.Event {
 	case messageReceipt:
-		ft.handleReceipt(ctx, msg.Data)
+		ft.handleReceipt(eventCtx, msg.Data)
 	case messageBatch:
 		for _, msg := range msg.Data.GetObjectArray("events") {
-			if err = ft.handleMessage(ctx, []byte(msg.String())); err != nil {
+			if err = ft.handleMessage(eventCtx, []byte(msg.String())); err != nil {
 				break
 			}
 		}
 	case messageTokenPool:
-		err = ft.handleTokenPoolCreate(ctx, msg.Data)
+		err = ft.handleTokenPoolCreate(eventCtx, msg.Data)
 	case messageTokenMint:
-		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeMint, msg.Data)
+		err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeMint, msg.Data)
 	case messageTokenBurn:
-		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeBurn, msg.Data)
+		err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeBurn, msg.Data)
 	case messageTokenTransfer:
-		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeTransfer, msg.Data)
+		err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeTransfer, msg.Data)
 	case messageTokenApproval:
-		err = ft.handleTokenApproval(ctx, msg.Data)
+		err = ft.handleTokenApproval(eventCtx, msg.Data)
 	default:
 		l.Errorf("Message unexpected: %s", msg.Event)
 	}
