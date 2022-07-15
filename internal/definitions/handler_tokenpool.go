@@ -37,7 +37,8 @@ func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state
 	if localName, ok := dh.tokenNames[pool.Connector]; ok {
 		pool.Connector = localName
 	} else {
-		log.L(ctx).Infof("Could not find local name for token connector remote name: %s", pool.Connector)
+		log.L(ctx).Infof("Could not find local name for token connector: %s", pool.Connector)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, pool.Connector, "token")
 	}
 
 	pool.Message = msg.Header.ID

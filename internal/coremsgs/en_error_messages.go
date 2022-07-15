@@ -259,4 +259,5 @@ var (
 	MsgBlockchainNotConfigured            = ffe("FF10417", "No blockchain plugin configured")
 	MsgInvalidBatchPinEvent               = ffe("FF10418", "BatchPin event is not valid - %s (%s): %s")
 	MsgDuplicatePluginRemoteName          = ffe("FF10419", "Invalid %s plugin remote name: %s - remote names must be unique")
+	MsgInvalidConnectorName               = ffe("FF10420", "Could not find name %s for %s connector")
 )

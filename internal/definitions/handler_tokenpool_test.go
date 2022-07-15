@@ -93,6 +93,26 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestHandleDefinitionBroadcastTokenPoolBadConnector(t *testing.T) {
+	sh, bs := newTestDefinitionHandler(t)
+
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	pool.Name = "//bad"
+	msg, data, err := buildPoolDefinitionMessage(announce)
+	assert.NoError(t, err)
+
+	mam := sh.assets.(*assetmocks.Manager)
+	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
+
+	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionReject, CustomCorrelator: pool.ID}, action)
+	assert.Regexp(t, "FF10403", err)
+
+	err = bs.RunPreFinalize(context.Background())
+	assert.NoError(t, err)
+}
+
 func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
