@@ -22,6 +22,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
@@ -36,6 +37,9 @@ var getContractInterfaces = &ffapi.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
+		EnabledIf: func(or orchestrator.Orchestrator) bool {
+			return or.Contracts() != nil
+		},
 		FilterFactory: database.FFIQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			return filterResult(cr.or.Contracts().GetFFIs(cr.ctx, cr.filter))

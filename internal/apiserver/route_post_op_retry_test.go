@@ -31,6 +31,7 @@ import (
 
 func TestPostOpRetry(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mom := &operationmocks.Manager{}
 	o.On("Operations").Return(mom)
 	input := core.EmptyInput{}
@@ -49,7 +50,8 @@ func TestPostOpRetry(t *testing.T) {
 }
 
 func TestPostOpRetryBadID(t *testing.T) {
-	_, r := newTestAPIServer()
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	input := core.EmptyInput{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

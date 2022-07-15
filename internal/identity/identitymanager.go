@@ -56,7 +56,7 @@ type Manager interface {
 
 type identityManager struct {
 	database               database.Plugin
-	blockchain             blockchain.Plugin
+	blockchain             blockchain.Plugin  // optional
 	multiparty             multiparty.Manager // optional
 	namespace              string
 	defaultKey             string
@@ -69,7 +69,7 @@ type identityManager struct {
 }
 
 func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager) (Manager, error) {
-	if di == nil || bi == nil {
+	if di == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "IdentityManager")
 	}
 	im := &identityManager{
@@ -106,6 +106,14 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 // or when the author is known by the caller and should not / cannot be confirmed prior to sending (identity claims)
 func (im *identityManager) NormalizeSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error) {
 	if inputKey == "" {
+		if im.blockchain == nil {
+			if im.defaultKey == "" {
+				return "", i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+			}
+
+			return im.defaultKey, nil
+		}
+
 		verifierRef, err := im.getDefaultVerifier(ctx)
 		if err != nil {
 			return "", err
@@ -129,6 +137,10 @@ func (im *identityManager) NormalizeSigningKey(ctx context.Context, inputKey str
 // include author or key or both), and updates it with fully resolved and normalized values
 func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, signerRef *core.SignerRef) (err error) {
 	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", signerRef.Key, signerRef.Author)
+
+	if im.blockchain == nil {
+		return i18n.NewError(ctx, coremsgs.MsgBlockchainNotConfigured)
+	}
 
 	var verifier *core.VerifierRef
 	switch {
@@ -259,6 +271,11 @@ func (im *identityManager) normalizeKeyViaBlockchainPlugin(ctx context.Context, 
 	if inputKey == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainKeyNotSet)
 	}
+
+	if im.blockchain == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainNotConfigured)
+	}
+
 	if cached := im.signingKeyCache.Get(inputKey); cached != nil {
 		cached.Extend(im.identityCacheTTL)
 		return cached.Value().(*core.VerifierRef), nil

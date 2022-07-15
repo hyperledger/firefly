@@ -82,6 +82,7 @@ type Contract struct {
 
 type multipartyManager struct {
 	ctx            context.Context
+	stop           func()
 	namespace      *core.Namespace
 	database       database.Plugin
 	blockchain     blockchain.Plugin
@@ -92,12 +93,13 @@ type multipartyManager struct {
 	networkVersion int
 }
 
-func NewMultipartyManager(ctx context.Context, ns *core.Namespace, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
+func NewMultipartyManager(ctx context.Context, stop func(), ns *core.Namespace, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
 	if di == nil || bi == nil || mm == nil || om == nil || th == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "MultipartyManager")
 	}
 	mp := &multipartyManager{
 		ctx:        ctx,
+		stop:       stop,
 		namespace:  ns,
 		config:     config,
 		database:   di,
@@ -108,6 +110,7 @@ func NewMultipartyManager(ctx context.Context, ns *core.Namespace, config Config
 	}
 	om.RegisterHandler(ctx, mp, []core.OpType{
 		core.OpTypeBlockchainPinBatch,
+		core.OpTypeBlockchainNetworkAction,
 	})
 	return mp, nil
 }
@@ -137,7 +140,13 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context) (err error) 
 		log.L(ctx).Warnf("FireFly contract location changed from %s to %s", contracts.Active.Location, location)
 	}
 
-	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.RemoteName, location, firstEvent)
+	if mm.namespace.LocalName == core.LegacySystemNamespace && version > 1 {
+		// ff_system namespace should stop its orchestrator for network V2+
+		mm.stop()
+		return nil
+	}
+
+	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.LocalName, location, firstEvent)
 	if err == nil {
 		mm.networkVersion = version
 		contracts.Active = core.MultipartyContract{
@@ -153,7 +162,7 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context) (err error) 
 }
 
 func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contractIndex int) (location *fftypes.JSONAny, firstEvent string, err error) {
-	if len(mm.config.Contracts) > 0 {
+	if len(mm.config.Contracts) > 0 || contractIndex > 0 {
 		if contractIndex >= len(mm.config.Contracts) {
 			return nil, "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex,
 				fmt.Sprintf("%s.multiparty.contracts[%d]", mm.namespace.LocalName, contractIndex))
@@ -182,10 +191,7 @@ func (mm *multipartyManager) TerminateContract(ctx context.Context, location *ff
 	contracts.Active.Info.FinalEvent = termination.ProtocolID
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
 	contracts.Active = core.MultipartyContract{Index: contracts.Active.Index + 1}
-	err = mm.blockchain.RemoveFireflySubscription(ctx, contracts.Active.Info.Subscription)
-	if err != nil {
-		return err
-	}
+	mm.blockchain.RemoveFireflySubscription(ctx, contracts.Active.Info.Subscription)
 	return mm.ConfigureContract(ctx)
 }
 

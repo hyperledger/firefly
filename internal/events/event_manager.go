@@ -99,12 +99,12 @@ type eventManager struct {
 	data                  data.Manager
 	subManager            *subscriptionManager
 	retry                 retry.Retry
-	aggregator            *aggregator
+	aggregator            *aggregator              // optional
 	broadcast             broadcast.Manager        // optional
 	messaging             privatemessaging.Manager // optional
 	assets                assets.Manager
 	sharedDownload        shareddownload.Manager // optional
-	blobReceiver          *blobReceiver
+	blobReceiver          *blobReceiver          // optional
 	newEventNotifier      *eventNotifier
 	newPinNotifier        *eventNotifier
 	defaultTransport      string
@@ -116,7 +116,7 @@ type eventManager struct {
 }
 
 func NewEventManager(ctx context.Context, ns core.NamespaceRef, ni sysmessaging.LocalNodeInfo, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
-	if ni == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || ds == nil || am == nil {
+	if ni == nil || di == nil || im == nil || dh == nil || dm == nil || ds == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -144,14 +144,16 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, ni sysmessaging.
 		defaultTransport:      config.GetString(coreconfig.EventTransportsDefault),
 		newEventNotifier:      newEventNotifier,
 		newPinNotifier:        newPinNotifier,
-		aggregator:            newAggregator(ctx, ns.LocalName, di, bi, pm, dh, im, dm, newPinNotifier, mm),
 		metrics:               mm,
 		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.EventListenerTopicCacheSize))),
 		chainListenerCacheTTL: config.GetDuration(coreconfig.EventListenerTopicCacheTTL),
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)
-	em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
+	if bi != nil {
+		em.aggregator = newAggregator(ctx, ns.LocalName, di, bi, pm, dh, im, dm, newPinNotifier, mm)
+		em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
+	}
 
 	var err error
 	if em.subManager, err = newSubscriptionManager(ctx, ns.LocalName, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
@@ -164,8 +166,10 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, ni sysmessaging.
 func (em *eventManager) Start() (err error) {
 	err = em.subManager.start()
 	if err == nil {
-		em.aggregator.start()
-		em.blobReceiver.start()
+		if em.aggregator != nil {
+			em.aggregator.start()
+			em.blobReceiver.start()
+		}
 	}
 	return err
 }

@@ -19,6 +19,7 @@ package orchestrator
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/auth"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -51,8 +52,8 @@ import (
 
 // Orchestrator is the main interface behind the API, implementing the actions
 type Orchestrator interface {
-	Init(ctx context.Context, cancelCtx context.CancelFunc) error
-	Start() error
+	Init(ctx context.Context) error
+	Start(onStop func()) error
 	WaitStop() // The close itself is performed by canceling the context
 
 	MultiParty() multiparty.Manager             // only for multiparty
@@ -116,6 +117,9 @@ type Orchestrator interface {
 
 	// Network Operations
 	SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error
+
+	// Authorizer
+	Authorize(ctx context.Context, authReq *fftypes.AuthReq) error
 }
 
 type BlockchainPlugin struct {
@@ -148,6 +152,11 @@ type IdentityPlugin struct {
 	Plugin idplugin.Plugin
 }
 
+type AuthPlugin struct {
+	Name   string
+	Plugin auth.Plugin
+}
+
 type Plugins struct {
 	Blockchain    BlockchainPlugin
 	Identity      IdentityPlugin
@@ -156,6 +165,7 @@ type Plugins struct {
 	Database      DatabasePlugin
 	Tokens        []TokensPlugin
 	Events        map[string]eventsplugin.Plugin
+	Auth          AuthPlugin
 }
 
 type Config struct {
@@ -166,6 +176,7 @@ type Config struct {
 type orchestrator struct {
 	ctx            context.Context
 	cancelCtx      context.CancelFunc
+	onStop         func()
 	started        bool
 	namespace      *core.Namespace
 	config         Config
@@ -201,13 +212,12 @@ func NewOrchestrator(ns *core.Namespace, config Config, plugins Plugins, metrics
 	return or
 }
 
-func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
+func (or *orchestrator) Init(ctx context.Context) (err error) {
 	namespaceLog := or.namespace.LocalName
 	if or.namespace.RemoteName != or.namespace.LocalName {
 		namespaceLog += "->" + or.namespace.RemoteName
 	}
-	or.ctx = log.WithLogField(ctx, "ns", namespaceLog)
-	or.cancelCtx = cancelCtx
+	or.ctx, or.cancelCtx = context.WithCancel(log.WithLogField(ctx, "ns", namespaceLog))
 	err = or.initPlugins(or.ctx)
 	if err == nil {
 		err = or.initComponents(or.ctx)
@@ -244,7 +254,8 @@ func (or *orchestrator) tokens() map[string]tokens.Plugin {
 	return result
 }
 
-func (or *orchestrator) Start() (err error) {
+func (or *orchestrator) Start(onStop func()) (err error) {
+	or.onStop = onStop
 	or.data.Start()
 	if or.config.Multiparty.Enabled {
 		err = or.multiparty.ConfigureContract(or.ctx)
@@ -267,6 +278,13 @@ func (or *orchestrator) Start() (err error) {
 
 	or.started = true
 	return err
+}
+
+func (or *orchestrator) stop() {
+	or.cancelCtx()
+	if or.onStop != nil {
+		or.onStop()
+	}
 }
 
 func (or *orchestrator) WaitStop() {
@@ -396,7 +414,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.config.Multiparty.Enabled {
 		if or.multiparty == nil {
-			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
+			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.stop, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
 			if err != nil {
 				return err
 			}
@@ -447,10 +465,12 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.namespace.LocalName, or.database(), or.blockchain(), or.identity, or.operations, or.txHelper, or.syncasync)
-		if err != nil {
-			return err
+	if or.blockchain() != nil {
+		if or.contracts == nil {
+			or.contracts, err = contracts.NewContractManager(ctx, or.namespace.LocalName, or.database(), or.blockchain(), or.identity, or.operations, or.txHelper, or.syncasync)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -504,4 +524,12 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.Ne
 		return err
 	}
 	return or.multiparty.SubmitNetworkAction(ctx, key, action)
+}
+
+func (or *orchestrator) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
+	authReq.Namespace = or.namespace.LocalName
+	if or.plugins.Auth.Plugin != nil {
+		return or.plugins.Auth.Plugin.Authorize(ctx, authReq)
+	}
+	return nil
 }

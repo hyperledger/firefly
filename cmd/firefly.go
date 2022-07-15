@@ -118,25 +118,27 @@ func run() error {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
-		rootCtx, rootCancelCtx := context.WithCancel(ctx)
 		mgr := getRootManager()
 		as := apiserver.NewAPIServer()
-		go startFirefly(rootCtx, rootCancelCtx, mgr, as, errChan)
+		go startFirefly(ctx, mgr, as, errChan)
 		select {
 		case sig := <-sigs:
 			log.L(ctx).Infof("Shutting down due to %s", sig.String())
 			cancelCtx()
 			mgr.WaitStop()
 			return nil
-		case <-rootCtx.Done():
-			log.L(ctx).Infof("Restarting due to configuration change")
-			mgr.WaitStop()
-			// Re-read the configuration
-			coreconfig.Reset()
-			if err := config.ReadConfig(configSuffix, cfgFile); err != nil {
-				cancelCtx()
-				return err
-			}
+		/*
+			// TODO: seems useful, but there's currently no way to trigger this
+			case <-ctx.Done():
+				log.L(ctx).Infof("Restarting due to configuration change")
+				mgr.WaitStop()
+				// Re-read the configuration
+				coreconfig.Reset()
+				if err := config.ReadConfig(configSuffix, cfgFile); err != nil {
+					cancelCtx()
+					return err
+				}
+		*/
 		case err := <-errChan:
 			cancelCtx()
 			return err
@@ -144,7 +146,7 @@ func run() error {
 	}
 }
 
-func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespace.Manager, as apiserver.Server, errChan chan error) {
+func startFirefly(ctx context.Context, mgr namespace.Manager, as apiserver.Server, errChan chan error) {
 	var err error
 	// Start debug listener
 	debugPort := config.GetInt(coreconfig.DebugPort)
@@ -161,7 +163,7 @@ func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespa
 		log.L(ctx).Debugf("Debug HTTP endpoint listening on localhost:%d", debugPort)
 	}
 
-	if err = mgr.Init(ctx, cancelCtx); err != nil {
+	if err = mgr.Init(ctx); err != nil {
 		errChan <- err
 		return
 	}

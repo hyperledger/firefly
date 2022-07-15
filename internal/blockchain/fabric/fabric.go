@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -32,10 +33,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -60,6 +63,8 @@ type Fabric struct {
 	metrics        metrics.Manager
 	fabconnectConf config.Section
 	subs           map[string]subscriptionInfo
+	cache          *ccache.Cache
+	cacheTTL       time.Duration
 }
 
 type subscriptionInfo struct {
@@ -107,13 +112,20 @@ func (cb *callbacks) BlockchainNetworkAction(ctx context.Context, namespace, act
 	return nil
 }
 
-func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	for _, cb := range cb.handlers {
-		// Send the event to all handlers and let them match it to a contract listener
-		// TODO: can we push more listener/namespace knowledge down to this layer?
-		if err := cb.BlockchainEvent(event); err != nil {
-			return err
+func (cb *callbacks) BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error {
+	if namespace == "" {
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
+		for _, cb := range cb.handlers {
+			// Send the event to all handlers and let them match it to a contract listener
+			if err := cb.BlockchainEvent(event); err != nil {
+				return err
+			}
 		}
+	} else {
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.BlockchainEvent(event)
+		}
+		log.L(ctx).Errorf("No handler found for blockchain event on namespace '%s'", namespace)
 	}
 	return nil
 }
@@ -172,7 +184,8 @@ type Location struct {
 
 var batchPinEvent = "BatchPin"
 var batchPinMethodName = "PinBatch"
-var batchPinPrefixItems = []*PrefixItem{
+var networkActionMethodName = "NetworkAction"
+var batchPinPrefixItemsV1 = []*PrefixItem{
 	{
 		Name: "namespace",
 		Type: "string",
@@ -194,6 +207,34 @@ var batchPinPrefixItems = []*PrefixItem{
 		Type: "string",
 	},
 }
+var batchPinPrefixItems = []*PrefixItem{
+	{
+		Name: "uuids",
+		Type: "string",
+	},
+	{
+		Name: "batchHash",
+		Type: "string",
+	},
+	{
+		Name: "payloadRef",
+		Type: "string",
+	},
+	{
+		Name: "contexts",
+		Type: "string",
+	},
+}
+var networkActionPrefixItems = []*PrefixItem{
+	{
+		Name: "action",
+		Type: "string",
+	},
+	{
+		Name: "payload",
+		Type: "string",
+	},
+}
 var networkVersionMethodName = "NetworkVersion"
 
 var fullIdentityPattern = regexp.MustCompile(".+::x509::(.+)::.+")
@@ -208,8 +249,8 @@ func (f *Fabric) VerifierType() core.VerifierType {
 	return core.VerifierTypeMSPIdentity
 }
 
-func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metrics.Manager) (err error) {
-	f.InitConfig(config)
+func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.Manager) (err error) {
+	f.InitConfig(conf)
 	fabconnectConf := f.fabconnectConf
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
@@ -243,7 +284,10 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 		return err
 	}
 
-	f.streams = &streamManager{client: f.client, signer: f.signer}
+	f.cacheTTL = config.GetDuration(coreconfig.CacheBlockchainTTL)
+	f.cache = ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.CacheBlockchainSize)))
+
+	f.streams = newStreamManager(f.client, f.signer, f.cache, f.cacheTTL)
 	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
 	batchTimeout := uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
 	stream, err := f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout)
@@ -424,11 +468,16 @@ func (f *Fabric) buildEventLocationString(chaincode string) string {
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	subName, err := f.streams.getSubscriptionName(ctx, msgJSON.GetString("subId"))
+	if err != nil {
+		return err
+	}
+	namespace := f.streams.getNamespaceFromSubName(subName)
 	event := f.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on
 	}
-	return f.callbacks.BlockchainEvent(&blockchain.EventWithSubscription{
+	return f.callbacks.BlockchainEvent(ctx, namespace, &blockchain.EventWithSubscription{
 		Event:        *event,
 		Subscription: msgJSON.GetString("subId"),
 	})
@@ -482,16 +531,15 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 	return sub.ID, nil
 }
 
-func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) error {
+func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) {
 	// Don't actually delete the subscription from fabconnect, as this may be called while processing
 	// events from the subscription (and handling that scenario cleanly could be difficult for fabconnect).
 	// TODO: can old subscriptions be somehow cleaned up later?
 	if _, ok := f.subs[subID]; ok {
 		delete(f.subs, subID)
-		return nil
+	} else {
+		log.L(ctx).Debugf("Invalid subscription ID: %s", subID)
 	}
-
-	return i18n.NewError(ctx, coremsgs.MsgSubscriptionIDInvalid, subID)
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {
@@ -691,15 +739,36 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey s
 	var uuids fftypes.Bytes32
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
-	pinInput := map[string]interface{}{
-		"namespace":  batch.Namespace,
-		"uuids":      hexFormatB32(&uuids),
-		"batchHash":  hexFormatB32(batch.BatchHash),
-		"payloadRef": batch.BatchPayloadRef,
-		"contexts":   hashes,
+
+	version, err := f.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
 	}
+
+	var prefixItems []*PrefixItem
+	var pinInput map[string]interface{}
+
+	if version == 1 {
+		prefixItems = batchPinPrefixItemsV1
+		pinInput = map[string]interface{}{
+			"namespace":  batch.Namespace,
+			"uuids":      hexFormatB32(&uuids),
+			"batchHash":  hexFormatB32(batch.BatchHash),
+			"payloadRef": batch.BatchPayloadRef,
+			"contexts":   hashes,
+		}
+	} else {
+		prefixItems = batchPinPrefixItems
+		pinInput = map[string]interface{}{
+			"uuids":      hexFormatB32(&uuids),
+			"batchHash":  hexFormatB32(batch.BatchHash),
+			"payloadRef": batch.BatchPayloadRef,
+			"contexts":   hashes,
+		}
+	}
+
 	input, _ := jsonEncodeInput(pinInput)
-	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, prefixItems, input, nil)
 }
 
 func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
@@ -708,15 +777,36 @@ func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signing
 		return err
 	}
 
-	pinInput := map[string]interface{}{
-		"namespace":  "firefly:" + action,
-		"uuids":      hexFormatB32(nil),
-		"batchHash":  hexFormatB32(nil),
-		"payloadRef": "",
-		"contexts":   []string{},
+	version, err := f.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
 	}
+
+	var methodName string
+	var prefixItems []*PrefixItem
+	var pinInput map[string]interface{}
+
+	if version == 1 {
+		methodName = batchPinMethodName
+		prefixItems = batchPinPrefixItemsV1
+		pinInput = map[string]interface{}{
+			"namespace":  "firefly:" + action,
+			"uuids":      hexFormatB32(nil),
+			"batchHash":  hexFormatB32(nil),
+			"payloadRef": "",
+			"contexts":   []string{},
+		}
+	} else {
+		methodName = networkActionMethodName
+		prefixItems = networkActionPrefixItems
+		pinInput = map[string]interface{}{
+			"action":  "firefly:" + action,
+			"payload": "",
+		}
+	}
+
 	input, _ := jsonEncodeInput(pinInput)
-	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, methodName, signingKey, nsOpID, prefixItems, input, nil)
 }
 
 func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (map[string]interface{}, error) {
@@ -858,7 +948,9 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *core.Contrac
 	if err != nil {
 		return err
 	}
-	result, err := f.streams.createSubscription(ctx, location, f.streamID, "", listener.Event.Name, listener.Options.FirstEvent)
+
+	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
+	result, err := f.streams.createSubscription(ctx, location, f.streamID, subName, listener.Event.Name, listener.Options.FirstEvent)
 	if err != nil {
 		return err
 	}
@@ -883,10 +975,16 @@ func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIE
 	return event.Name
 }
 
-func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error) {
+func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (version int, err error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return 0, err
+	}
+
+	cacheKey := "version:" + fabricOnChainLocation.Channel + ":" + fabricOnChainLocation.Chaincode
+	if cached := f.cache.Get(cacheKey); cached != nil {
+		cached.Extend(f.cacheTTL)
+		return cached.Value().(int), nil
 	}
 
 	res, err := f.queryContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, networkVersionMethodName, f.signer, "", []*PrefixItem{}, map[string]interface{}{}, nil)
@@ -902,7 +1000,17 @@ func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAn
 	if err = json.Unmarshal(res.Body(), output); err != nil {
 		return 0, err
 	}
-	return int(output.Result.(float64)), nil
+
+	switch result := output.Result.(type) {
+	case float64:
+		version = int(result)
+		if err == nil {
+			f.cache.Set(cacheKey, version, f.cacheTTL)
+		}
+	default:
+		err = i18n.NewError(ctx, coremsgs.MsgBadNetworkVersion, output.Result)
+	}
+	return version, err
 }
 
 func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error) {

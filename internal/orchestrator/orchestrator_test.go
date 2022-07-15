@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/mocks/authmocks"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
@@ -201,7 +203,7 @@ func TestInitOK(t *testing.T) {
 	or.mps.On("SetHandler", "ns2", mock.Anything).Return()
 	or.mti.On("SetHandler", "ns", mock.Anything).Return(nil)
 	or.mti.On("SetOperationHandler", "ns", mock.Anything).Return(nil)
-	err := or.Init(or.ctx, or.cancelCtx)
+	err := or.Init(or.ctx)
 	assert.NoError(t, err)
 
 	assert.Equal(t, or.mba, or.BatchManager())
@@ -228,7 +230,7 @@ func TestInitTokenListenerFail(t *testing.T) {
 	or.mdx.On("SetNodes", mock.Anything).Return()
 	or.mps.On("SetHandler", "ns", mock.Anything).Return()
 	or.mti.On("SetHandler", "ns", mock.Anything).Return(fmt.Errorf("pop"))
-	err := or.Init(or.ctx, or.cancelCtx)
+	err := or.Init(or.ctx)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -370,7 +372,7 @@ func TestStartBatchFail(t *testing.T) {
 	or.mdm.On("Start").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything).Return(nil)
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
-	err := or.Start()
+	err := or.Start(func() {})
 	assert.EqualError(t, err, "pop")
 }
 
@@ -380,7 +382,7 @@ func TestStartBlockchainsConfigureFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.mdm.On("Start").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything).Return(fmt.Errorf("pop"))
-	err := or.Start()
+	err := or.Start(func() {})
 	assert.EqualError(t, err, "pop")
 }
 
@@ -401,7 +403,7 @@ func TestStartStopOk(t *testing.T) {
 	or.msd.On("WaitStop").Return(nil)
 	or.mom.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
-	err := or.Start()
+	err := or.Start(func() {})
 	assert.NoError(t, err)
 	or.WaitStop()
 	or.WaitStop() // swallows dups
@@ -431,4 +433,27 @@ func TestNetworkActionNonMultiparty(t *testing.T) {
 	or.multiparty = nil
 	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.Regexp(t, "FF10414", err)
+}
+
+func TestStop(t *testing.T) {
+	or := newTestOrchestrator()
+	called := false
+	or.onStop = func() { called = true }
+	or.stop()
+	assert.True(t, called)
+}
+
+func TestAuthorize(t *testing.T) {
+	or := newTestOrchestrator()
+	auth := &authmocks.Plugin{}
+	auth.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	or.plugins.Auth.Plugin = auth
+	err := or.Authorize(context.Background(), &fftypes.AuthReq{})
+	assert.NoError(t, err)
+}
+
+func TestAuthorizeNoPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	err := or.Authorize(context.Background(), &fftypes.AuthReq{})
+	assert.NoError(t, err)
 }

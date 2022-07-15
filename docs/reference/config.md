@@ -280,6 +280,13 @@ nav_order: 2
 |size|The maximum number of messages that can be packed into a batch|`int`|`<nil>`
 |timeout|The timeout to wait for a batch to fill, before sending|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
+## cache.blockchain
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|size|Size of blockchain cache|`string`|`<nil>`
+|ttl|Time to live for blockchain cache items|`string`|`<nil>`
+
 ## cors
 
 |Key|Description|Type|Default Value|
@@ -487,6 +494,18 @@ nav_order: 2
 |shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 
+## http.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|type|The auth plugin to use for server side authentication of requests|`string`|`<nil>`
+
+## http.auth.basic
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|passwordfile|The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.|`string`|`<nil>`
+
 ## http.tls
 
 |Key|Description|Type|Default Value|
@@ -563,6 +582,18 @@ nav_order: 2
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 |shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
+
+## metrics.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|type|The auth plugin to use for server side authentication of requests|`string`|`<nil>`
+
+## metrics.auth.basic
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|passwordfile|The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.|`string`|`<nil>`
 
 ## metrics.tls
 
@@ -654,12 +685,26 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|auth|Authorization plugin configuration|`map[string]string`|`<nil>`
 |blockchain|The list of configured Blockchain plugins|`string`|`<nil>`
 |database|The list of configured Database plugins|`string`|`<nil>`
 |dataexchange|The array of configured Data Exchange plugins |`string`|`<nil>`
 |identity|The list of available Identity plugins|`string`|`<nil>`
 |sharedstorage|The list of configured Shared Storage plugins|`string`|`<nil>`
 |tokens|The tokens plugin configurations. This will be used to configure tokens connectors|`string`|`<nil>`
+
+## plugins.auth[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of the auth plugin to use|`string`|`<nil>`
+|type|The type of the auth plugin to use|`string`|`<nil>`
+
+## plugins.auth[].basic
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|passwordfile|The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.|`string`|`<nil>`
 
 ## plugins.blockchain[]
 
@@ -1190,6 +1235,18 @@ nav_order: 2
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 |shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
+
+## spi.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|type|The auth plugin to use for server side authentication of requests|`string`|`<nil>`
+
+## spi.auth.basic
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|passwordfile|The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.|`string`|`<nil>`
 
 ## spi.tls
 

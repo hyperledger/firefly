@@ -24,6 +24,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -34,10 +35,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -61,6 +64,8 @@ type Ethereum struct {
 	metrics         metrics.Manager
 	ethconnectConf  config.Section
 	subs            map[string]subscriptionInfo
+	cache           *ccache.Cache
+	cacheTTL        time.Duration
 }
 
 type subscriptionInfo struct {
@@ -107,13 +112,20 @@ func (cb *callbacks) BlockchainNetworkAction(ctx context.Context, namespace, act
 	return nil
 }
 
-func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	for _, cb := range cb.handlers {
-		// Send the event to all handlers and let them match it to a contract listener
-		// TODO: can we push more listener/namespace knowledge down to this layer?
-		if err := cb.BlockchainEvent(event); err != nil {
-			return err
+func (cb *callbacks) BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error {
+	if namespace == "" {
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
+		for _, cb := range cb.handlers {
+			// Send the event to all handlers and let them match it to a contract listener
+			if err := cb.BlockchainEvent(event); err != nil {
+				return err
+			}
 		}
+	} else {
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.BlockchainEvent(event)
+		}
+		log.L(ctx).Errorf("No handler found for blockchain event on namespace '%s'", namespace)
 	}
 	return nil
 }
@@ -166,11 +178,11 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metrics.Manager) (err error) {
-	e.InitConfig(config)
+func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metrics.Manager) (err error) {
+	e.InitConfig(conf)
 	ethconnectConf := e.ethconnectConf
-	addressResolverConf := config.SubSection(AddressResolverConfigKey)
-	fftmConf := config.SubSection(FFTMConfigKey)
+	addressResolverConf := conf.SubSection(AddressResolverConfigKey)
+	fftmConf := conf.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.metrics = metrics
@@ -209,7 +221,10 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metr
 		return err
 	}
 
-	e.streams = &streamManager{client: e.client}
+	e.cacheTTL = config.GetDuration(coreconfig.CacheBlockchainTTL)
+	e.cache = ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.CacheBlockchainSize)))
+
+	e.streams = newStreamManager(e.client, e.cache, e.cacheTTL)
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
 	stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)
@@ -276,16 +291,15 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace string,
 	return sub.ID, nil
 }
 
-func (e *Ethereum) RemoveFireflySubscription(ctx context.Context, subID string) error {
+func (e *Ethereum) RemoveFireflySubscription(ctx context.Context, subID string) {
 	// Don't actually delete the subscription from ethconnect, as this may be called while processing
 	// events from the subscription (and handling that scenario cleanly could be difficult for ethconnect).
 	// TODO: can old subscriptions be somehow cleaned up later?
 	if _, ok := e.subs[subID]; ok {
 		delete(e.subs, subID)
-		return nil
+	} else {
+		log.L(ctx).Debugf("Invalid subscription ID: %s", subID)
 	}
-
-	return i18n.NewError(ctx, coremsgs.MsgSubscriptionIDInvalid, subID)
 }
 
 func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error {
@@ -353,7 +367,10 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 	}
 
 	authorAddress := event.Output.GetString("author")
-	nsOrAction := event.Output.GetString("namespace")
+	nsOrAction := event.Output.GetString("action")
+	if nsOrAction == "" {
+		nsOrAction = event.Output.GetString("namespace")
+	}
 	sUUIDs := event.Output.GetString("uuids")
 	sBatchHash := event.Output.GetString("batchHash")
 	sPayloadRef := event.Output.GetString("payloadRef")
@@ -440,9 +457,15 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	subName, err := e.streams.getSubscriptionName(ctx, msgJSON.GetString("subId"))
+	if err != nil {
+		return err
+	}
+
+	namespace := e.streams.getNamespaceFromSubName(subName)
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event != nil {
-		err = e.callbacks.BlockchainEvent(&blockchain.EventWithSubscription{
+		err = e.callbacks.BlockchainEvent(ctx, namespace, &blockchain.EventWithSubscription{
 			Event:        *event,
 			Subscription: msgJSON.GetString("subId"),
 		})
@@ -668,6 +691,11 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 }
 
 func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+	ethLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -675,35 +703,68 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey
 	var uuids fftypes.Bytes32
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
-	input := []interface{}{
-		batch.Namespace,
-		ethHexFormatB32(&uuids),
-		ethHexFormatB32(batch.BatchHash),
-		batch.BatchPayloadRef,
-		ethHashes,
-	}
 
-	ethLocation, err := parseContractLocation(ctx, location)
+	version, err := e.GetNetworkVersion(ctx, location)
 	if err != nil {
 		return err
 	}
 
-	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, batchPinMethodABI, nsOpID, input, nil)
+	var input []interface{}
+	var method *abi.Entry
+
+	if version == 1 {
+		method = batchPinMethodABIV1
+		input = []interface{}{
+			batch.Namespace,
+			ethHexFormatB32(&uuids),
+			ethHexFormatB32(batch.BatchHash),
+			batch.BatchPayloadRef,
+			ethHashes,
+		}
+	} else {
+		method = batchPinMethodABI
+		input = []interface{}{
+			ethHexFormatB32(&uuids),
+			ethHexFormatB32(batch.BatchHash),
+			batch.BatchPayloadRef,
+			ethHashes,
+		}
+	}
+	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, nil)
 }
 
 func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
-	input := []interface{}{
-		blockchain.FireFlyActionPrefix + action,
-		ethHexFormatB32(nil),
-		ethHexFormatB32(nil),
-		"",
-		[]string{},
-	}
 	ethLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
 	}
-	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, batchPinMethodABI, nsOpID, input, nil)
+
+	version, err := e.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	var input []interface{}
+	var method *abi.Entry
+
+	if version == 1 {
+		method = batchPinMethodABIV1
+		input = []interface{}{
+			blockchain.FireFlyActionPrefix + action,
+			ethHexFormatB32(nil),
+			ethHexFormatB32(nil),
+			"",
+			[]string{},
+		}
+	} else {
+		method = networkActionMethodABI
+		input = []interface{}{
+			blockchain.FireFlyActionPrefix + action,
+			"",
+		}
+	}
+
+	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, nil)
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
@@ -779,7 +840,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 		return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
 	}
 
-	subName := fmt.Sprintf("ff-sub-%s", listener.ID)
+	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
 	firstEvent := string(core.SubOptsFirstEventNewest)
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent
@@ -847,10 +908,16 @@ func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.F
 	return ffi2abi.ConvertABIToFFI(ctx, generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
 }
 
-func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error) {
+func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (version int, err error) {
 	ethLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return 0, err
+	}
+
+	cacheKey := "version:" + ethLocation.Address
+	if cached := e.cache.Get(cacheKey); cached != nil {
+		cached.Extend(e.cacheTTL)
+		return cached.Value().(int), nil
 	}
 
 	res, err := e.queryContractMethod(ctx, ethLocation.Address, networkVersionMethodABI, []interface{}{}, nil)
@@ -865,7 +932,17 @@ func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSON
 	if err = json.Unmarshal(res.Body(), output); err != nil {
 		return 0, err
 	}
-	return strconv.Atoi(output.Output.(string))
+
+	switch result := output.Output.(type) {
+	case string:
+		version, err = strconv.Atoi(result)
+		if err == nil {
+			e.cache.Set(cacheKey, version, e.cacheTTL)
+		}
+	default:
+		err = i18n.NewError(ctx, coremsgs.MsgBadNetworkVersion, output.Output)
+	}
+	return version, err
 }
 
 func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error) {

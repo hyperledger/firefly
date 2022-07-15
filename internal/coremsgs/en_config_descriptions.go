@@ -92,6 +92,9 @@ var (
 	ConfigBlockchainFabricFabconnectURL          = ffc("config.blockchain.fabric.fabconnect.url", "The URL of the Fabconnect instance", "URL "+i18n.StringType)
 	ConfigBlockchainFabricFabconnectProxyURL     = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
 
+	ConfigCacheBlockchainTTL  = ffc("config.cache.blockchain.ttl", "Time to live for blockchain cache items", i18n.StringType)
+	ConfigCacheBlockchainSize = ffc("config.cache.blockchain.size", "Size of blockchain cache", i18n.StringType)
+
 	ConfigPluginDatabase     = ffc("config.plugins.database", "The list of configured Database plugins", i18n.StringType)
 	ConfigPluginDatabaseName = ffc("config.plugins.database[].name", "The name of the Database plugin", i18n.StringType)
 	ConfigPluginDatabaseType = ffc("config.plugins.database[].type", "The type of the configured Database plugin", i18n.StringType)
@@ -318,4 +321,10 @@ var (
 
 	ConfigSPIWebSocketBlockedWarnInternal = ffc("config.spi.ws.blockedWarnInterval", "How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events", i18n.TimeDurationType)
 	ConfigSPIWebSocketEventQueueLength    = ffc("config.spi.ws.eventQueueLength", "Server-side queue length for events waiting for delivery over an admin change event listener websocket", i18n.IntType)
+
+	ConfigPluginsAuth     = ffc("config.plugins.auth", "Authorization plugin configuration", i18n.MapStringStringType)
+	ConfigPluginsAuthName = ffc("config.plugins.auth[].name", "The name of the auth plugin to use", i18n.StringType)
+	ConfigPluginsAuthType = ffc("config.plugins.auth[].type", "The type of the auth plugin to use", i18n.StringType)
+
+	ConfigGlobalAuthBasicPasswordFile = ffc("config.global.basic.passwordfile", "The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.", i18n.StringType)
 )

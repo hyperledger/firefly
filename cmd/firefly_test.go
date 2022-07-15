@@ -91,58 +91,6 @@ func TestExecOkExitSIGINT(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestExecOkRestartThenExit(t *testing.T) {
-	o := &namespacemocks.Manager{}
-	var orContext context.Context
-	initCount := 0
-	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	init.RunFn = func(a mock.Arguments) {
-		orContext = a[0].(context.Context)
-		cancelOrContext := a[1].(context.CancelFunc)
-		initCount++
-		if initCount == 2 {
-			init.ReturnArguments = mock.Arguments{fmt.Errorf("second run")}
-		}
-		cancelOrContext()
-	}
-	o.On("Start").Return(nil)
-	ws := o.On("WaitStop")
-	ws.RunFn = func(a mock.Arguments) {
-		<-orContext.Done()
-	}
-	_utManager = o
-	defer func() { _utManager = nil }()
-
-	os.Chdir(configDir)
-	err := Execute()
-	assert.EqualError(t, err, "second run")
-}
-
-func TestExecOkRestartConfigProblem(t *testing.T) {
-	o := &namespacemocks.Manager{}
-	tmpDir, err := os.MkdirTemp(os.TempDir(), "ut")
-	assert.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-	var orContext context.Context
-	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	init.RunFn = func(a mock.Arguments) {
-		orContext = a[0].(context.Context)
-		cancelOrContext := a[1].(context.CancelFunc)
-		cancelOrContext()
-	}
-	o.On("Start").Return(nil)
-	o.On("WaitStop").Run(func(args mock.Arguments) {
-		<-orContext.Done()
-		os.Chdir(tmpDir) // this will mean we fail to read the config
-	})
-	_utManager = o
-	defer func() { _utManager = nil }()
-
-	os.Chdir(configDir)
-	err = Execute()
-	assert.Regexp(t, "Config File.*Not Found", err)
-}
-
 func TestAPIServerError(t *testing.T) {
 	o := &namespacemocks.Manager{}
 	o.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -151,7 +99,7 @@ func TestAPIServerError(t *testing.T) {
 	as.On("Serve", mock.Anything, o).Return(fmt.Errorf("pop"))
 
 	errChan := make(chan error)
-	go startFirefly(context.Background(), func() {}, o, as, errChan)
+	go startFirefly(context.Background(), o, as, errChan)
 	err := <-errChan
 	assert.EqualError(t, err, "pop")
 }

@@ -28,6 +28,7 @@ import (
 
 func TestGetNode(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	nmn := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(nmn)
 	req := httptest.NewRequest("GET", "/api/v1/network/nodes/node12345", nil)

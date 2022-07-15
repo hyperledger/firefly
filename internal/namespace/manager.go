@@ -20,7 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
+	"github.com/hyperledger/firefly-common/pkg/auth"
+	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -56,6 +59,7 @@ var (
 	sharedstorageConfig = config.RootArray("plugins.sharedstorage")
 	dataexchangeConfig  = config.RootArray("plugins.dataexchange")
 	identityConfig      = config.RootArray("plugins.identity")
+	authConfig          = config.RootArray("plugins.auth")
 
 	// Deprecated configs
 	deprecatedTokensConfig        = config.RootArray("tokens")
@@ -66,7 +70,7 @@ var (
 )
 
 type Manager interface {
-	Init(ctx context.Context, cancelCtx context.CancelFunc) error
+	Init(ctx context.Context) error
 	Start() error
 	WaitStop()
 
@@ -75,6 +79,7 @@ type Manager interface {
 	GetNamespaces(ctx context.Context) ([]*core.Namespace, error)
 	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
 	ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error
+	Authorize(ctx context.Context, authReq *fftypes.AuthReq) error
 }
 
 type namespace struct {
@@ -87,7 +92,7 @@ type namespace struct {
 
 type namespaceManager struct {
 	ctx         context.Context
-	cancelCtx   context.CancelFunc
+	nsMux       sync.Mutex
 	namespaces  map[string]*namespace
 	pluginNames map[string]bool
 	plugins     struct {
@@ -98,6 +103,7 @@ type namespaceManager struct {
 		dataexchange  map[string]dataExchangePlugin
 		tokens        map[string]tokensPlugin
 		events        map[string]eventsPlugin
+		auth          map[string]authPlugin
 	}
 	metricsEnabled bool
 	metrics        metrics.Manager
@@ -140,6 +146,11 @@ type eventsPlugin struct {
 	plugin events.Plugin
 }
 
+type authPlugin struct {
+	config config.Section
+	plugin auth.Plugin
+}
+
 func NewNamespaceManager(withDefaults bool) Manager {
 	nm := &namespaceManager{
 		namespaces:     make(map[string]*namespace),
@@ -160,13 +171,13 @@ func NewNamespaceManager(withDefaults bool) Manager {
 	iifactory.InitConfig(identityConfig)
 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	tifactory.InitConfig(tokensConfig)
+	authfactory.InitConfigArray(authConfig)
 
 	return nm
 }
 
-func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
+func (nm *namespaceManager) Init(ctx context.Context) (err error) {
 	nm.ctx = ctx
-	nm.cancelCtx = cancelCtx
 
 	if err = nm.loadPlugins(ctx); err != nil {
 		return err
@@ -229,7 +240,7 @@ func (nm *namespaceManager) initNamespace(name string, ns *namespace) error {
 	if or == nil {
 		or = orchestrator.NewOrchestrator(stored, ns.config, ns.plugins, nm.metrics)
 	}
-	if err := or.Init(nm.ctx, nm.cancelCtx); err != nil {
+	if err := or.Init(nm.ctx); err != nil {
 		return err
 	}
 	ns.orchestrator = or
@@ -241,23 +252,29 @@ func (nm *namespaceManager) Start() error {
 		// Ensure metrics are registered
 		metrics.Registry()
 	}
-	for _, ns := range nm.namespaces {
-		if ns.plugins.Blockchain.Plugin != nil {
-			if err := ns.plugins.Blockchain.Plugin.Start(); err != nil {
-				return err
-			}
+	// Orchestrators must be started before plugins so as not to miss events
+	for name, ns := range nm.namespaces {
+		onStop := func() {
+			nm.nsMux.Lock()
+			defer nm.nsMux.Unlock()
+			delete(nm.namespaces, name)
 		}
-		if ns.plugins.DataExchange.Plugin != nil {
-			if err := ns.plugins.DataExchange.Plugin.Start(); err != nil {
-				return err
-			}
+		if err := ns.orchestrator.Start(onStop); err != nil {
+			return err
 		}
-		for _, plugin := range ns.plugins.Tokens {
-			if err := plugin.Plugin.Start(); err != nil {
-				return err
-			}
+	}
+	for _, plugin := range nm.plugins.blockchain {
+		if err := plugin.plugin.Start(); err != nil {
+			return err
 		}
-		if err := ns.orchestrator.Start(); err != nil {
+	}
+	for _, plugin := range nm.plugins.dataexchange {
+		if err := plugin.plugin.Start(); err != nil {
+			return err
+		}
+	}
+	for _, plugin := range nm.plugins.tokens {
+		if err := plugin.plugin.Start(); err != nil {
 			return err
 		}
 	}
@@ -265,7 +282,14 @@ func (nm *namespaceManager) Start() error {
 }
 
 func (nm *namespaceManager) WaitStop() {
-	for _, ns := range nm.namespaces {
+	nm.nsMux.Lock()
+	namespaces := make(map[string]*namespace, len(nm.namespaces))
+	for k, v := range nm.namespaces {
+		namespaces[k] = v
+	}
+	nm.nsMux.Unlock()
+
+	for _, ns := range namespaces {
 		ns.orchestrator.WaitStop()
 	}
 	nm.adminEvents.WaitStop()
@@ -325,6 +349,13 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 
 	if nm.plugins.events == nil {
 		nm.plugins.events, err = nm.getEventPlugins(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	if nm.plugins.auth == nil {
+		nm.plugins.auth, err = nm.getAuthPlugin(ctx)
 		if err != nil {
 			return err
 		}
@@ -628,6 +659,11 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
+	for name, entry := range nm.plugins.auth {
+		if err = entry.plugin.Init(nm.ctx, name, entry.config); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -832,6 +868,13 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 			}
 			continue
 		}
+		if instance, ok := nm.plugins.auth[pluginName]; ok {
+			result.Auth = orchestrator.AuthPlugin{
+				Name:   pluginName,
+				Plugin: instance.plugin,
+			}
+			continue
+		}
 
 		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
 	}
@@ -882,6 +925,13 @@ func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, nam
 			})
 			continue
 		}
+		if instance, ok := nm.plugins.auth[pluginName]; ok {
+			result.Auth = orchestrator.AuthPlugin{
+				Name:   pluginName,
+				Plugin: instance.plugin,
+			}
+			continue
+		}
 
 		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
 	}
@@ -898,6 +948,8 @@ func (nm *namespaceManager) SPIEvents() spievents.Manager {
 }
 
 func (nm *namespaceManager) Orchestrator(ns string) orchestrator.Orchestrator {
+	nm.nsMux.Lock()
+	defer nm.nsMux.Unlock()
 	if namespace, ok := nm.namespaces[ns]; ok {
 		return namespace.orchestrator
 	}
@@ -905,6 +957,8 @@ func (nm *namespaceManager) Orchestrator(ns string) orchestrator.Orchestrator {
 }
 
 func (nm *namespaceManager) GetNamespaces(ctx context.Context) ([]*core.Namespace, error) {
+	nm.nsMux.Lock()
+	defer nm.nsMux.Unlock()
 	results := make([]*core.Namespace, 0, len(nm.namespaces))
 	for _, ns := range nm.namespaces {
 		results = append(results, ns.orchestrator.GetNamespace(ctx))
@@ -960,4 +1014,32 @@ func (nm *namespaceManager) getEventPlugins(ctx context.Context) (plugins map[st
 		}
 	}
 	return plugins, err
+}
+
+func (nm *namespaceManager) getAuthPlugin(ctx context.Context) (plugins map[string]authPlugin, err error) {
+	plugins = make(map[string]authPlugin)
+
+	authConfigArraySize := authConfig.ArraySize()
+	for i := 0; i < authConfigArraySize; i++ {
+		config := authConfig.ArrayEntry(i)
+		name, pluginType, err := nm.validatePluginConfig(ctx, config, "auth")
+		if err != nil {
+			return nil, err
+		}
+
+		plugin, err := authfactory.GetPlugin(ctx, pluginType)
+		if err != nil {
+			return nil, err
+		}
+
+		plugins[name] = authPlugin{
+			config: config.SubSection(pluginType),
+			plugin: plugin,
+		}
+	}
+	return plugins, err
+}
+
+func (nm *namespaceManager) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
+	return nm.Orchestrator(authReq.Namespace).Authorize(ctx, authReq)
 }

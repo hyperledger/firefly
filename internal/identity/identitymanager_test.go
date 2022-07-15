@@ -112,6 +112,17 @@ func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 
 }
 
+func TestResolveInputSigningIdentityMissingBlockchain(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
+
+	msgIdentity := &core.SignerRef{
+		Key: "mykey123",
+	}
+	err := im.ResolveInputSigningIdentity(ctx, msgIdentity)
+	assert.Regexp(t, "FF10417", err)
+}
+
 func TestResolveInputSigningIdentityByKeyOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
@@ -440,20 +451,54 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 }
 
 func TestNormalizeSigningKeyDefault(t *testing.T) {
-
 	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
 
 	im.defaultKey = "key123"
 
-	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
+	assert.NoError(t, err)
+	assert.Equal(t, "key123", resolvedKey)
+}
+
+func TestGetDefaultVerifierNoBlockchain(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
+	im.defaultKey = "test"
+
+	verifier, err := im.getDefaultVerifier(ctx)
+	assert.Regexp(t, "FF10417", err)
+	assert.Nil(t, verifier)
+}
+
+func TestNormalizeSigningKeyNoDefaultNoBlockchain(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
+
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
+	assert.Regexp(t, "FF10354", err)
+	assert.Equal(t, "", resolvedKey)
+
+}
+
+func TestNormalizeSigningKeyDefaultNoBlockchainInputFallback(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
+	im.defaultKey = "key123"
+
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "testKey", KeyNormalizationBlockchainPlugin)
+	assert.Regexp(t, "FF10417", err)
+	assert.Equal(t, "", resolvedKey)
+}
+
+func TestNormalizeSigningKeyDefaultNoBlockchainDefaultKeyFallback(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
+	im.defaultKey = "key123"
 
 	resolvedKey, err := im.NormalizeSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
 	assert.NoError(t, err)
-	assert.Equal(t, "fullkey123", resolvedKey)
-
-	mbi.AssertExpectations(t)
-
+	assert.Equal(t, "key123", resolvedKey)
 }
 
 func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
@@ -660,6 +705,16 @@ func TestNormalizeKeyViaBlockchainPluginEmptyRequest(t *testing.T) {
 
 	_, err := im.normalizeKeyViaBlockchainPlugin(ctx, "")
 	assert.Regexp(t, "FF10352", err)
+
+}
+
+func TestNormalizeKeyViaBlockchainPluginMissingBlockchain(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
+
+	_, err := im.normalizeKeyViaBlockchainPlugin(ctx, "testKey")
+	assert.Regexp(t, "FF10417", err)
 
 }
 
