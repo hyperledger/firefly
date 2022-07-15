@@ -203,6 +203,9 @@ func TestInitOK(t *testing.T) {
 	or.mps.On("SetHandler", "ns2", mock.Anything).Return()
 	or.mti.On("SetHandler", "ns", mock.Anything).Return(nil)
 	or.mti.On("SetOperationHandler", "ns", mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.Init(or.ctx, or.cancelCtx)
 	assert.NoError(t, err)
 
@@ -369,20 +372,7 @@ func TestStartBatchFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
-	err := or.Start()
-	assert.EqualError(t, err, "pop")
-}
-
-func TestStartBlockchainsConfigureFail(t *testing.T) {
-	coreconfig.Reset()
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
-	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -391,9 +381,6 @@ func TestStartStopOk(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)

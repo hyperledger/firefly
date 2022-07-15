@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"sync"
 
 	"github.com/hyperledger/firefly-common/pkg/auth"
@@ -84,6 +85,7 @@ type Manager interface {
 }
 
 type namespace struct {
+	name         string
 	remoteName   string
 	description  string
 	orchestrator orchestrator.Orchestrator
@@ -194,36 +196,51 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		return err
 	}
 
-	defaultNS := config.GetString(coreconfig.NamespacesDefault)
-	var systemNS *namespace
+	if nm.metricsEnabled {
+		// Ensure metrics are registered
+		metrics.Registry()
+	}
+
+	defaultName := config.GetString(coreconfig.NamespacesDefault)
+	var v1Namespace *namespace
 
 	// Start an orchestrator per namespace
-	for name, ns := range nm.namespaces {
-		if err := nm.initNamespace(name, ns); err != nil {
+	for _, ns := range nm.namespaces {
+		if err := nm.initNamespace(ns); err != nil {
 			return err
 		}
-
-		// If the default namespace is a multiparty V1 namespace, insert the legacy ff_system namespace
-		if name == defaultNS && ns.config.Multiparty.Enabled && ns.orchestrator.MultiParty().GetNetworkVersion() == 1 {
-			systemNS = &namespace{}
-			*systemNS = *ns
-			systemNS.remoteName = core.LegacySystemNamespace
-			if err := nm.initNamespace(core.LegacySystemNamespace, systemNS); err != nil {
-				return err
+		multiparty := ns.config.Multiparty.Enabled
+		version := "n/a"
+		if multiparty {
+			version = fmt.Sprintf("%d", ns.orchestrator.MultiParty().GetNetworkVersion())
+		}
+		log.L(ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.name, strconv.FormatBool(multiparty), version)
+		if multiparty && ns.orchestrator.MultiParty().GetNetworkVersion() == 1 {
+			if v1Namespace == nil || ns.name == defaultName {
+				v1Namespace = ns
 			}
 		}
 	}
 
-	if systemNS != nil {
-		nm.namespaces[core.LegacySystemNamespace] = systemNS
+	// If any namespace is a multiparty V1 namespace, insert the legacy ff_system namespace.
+	// The plugin and contract config for ff_system will be copied from:
+	// - the default namespace (if it is a multiparty V1 namespace) OR
+	// - the first multiparty V1 namespace found in the config
+	if v1Namespace != nil {
+		systemNS := *v1Namespace
+		systemNS.name = core.LegacySystemNamespace
+		systemNS.remoteName = core.LegacySystemNamespace
+		log.L(ctx).Infof("Initializing legacy '%s' namespace as a copy of %s", core.LegacySystemNamespace, v1Namespace.name)
+		err = nm.initNamespace(&systemNS)
+		nm.namespaces[core.LegacySystemNamespace] = &systemNS
 	}
-	return nil
+	return err
 }
 
-func (nm *namespaceManager) initNamespace(name string, ns *namespace) error {
+func (nm *namespaceManager) initNamespace(ns *namespace) error {
 	or := nm.utOrchestrator
 	if or == nil {
-		names := core.NamespaceRef{LocalName: name, RemoteName: ns.remoteName}
+		names := core.NamespaceRef{LocalName: ns.name, RemoteName: ns.remoteName}
 		or = orchestrator.NewOrchestrator(names, ns.config, ns.plugins, nm.metrics)
 	}
 	orCtx, orCancel := context.WithCancel(nm.ctx)
@@ -234,17 +251,13 @@ func (nm *namespaceManager) initNamespace(name string, ns *namespace) error {
 		<-orCtx.Done()
 		nm.nsMux.Lock()
 		defer nm.nsMux.Unlock()
-		delete(nm.namespaces, name)
+		delete(nm.namespaces, ns.name)
 	}()
 	ns.orchestrator = or
 	return nil
 }
 
 func (nm *namespaceManager) Start() error {
-	if nm.metricsEnabled {
-		// Ensure metrics are registered
-		metrics.Registry()
-	}
 	// Orchestrators must be started before plugins so as not to miss events
 	for _, ns := range nm.namespaces {
 		if err := ns.orchestrator.Start(); err != nil {
@@ -676,28 +689,27 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 }
 
 func (nm *namespaceManager) loadNamespaces(ctx context.Context) (err error) {
-	defaultNS := config.GetString(coreconfig.NamespacesDefault)
+	defaultName := config.GetString(coreconfig.NamespacesDefault)
 	size := namespacePredefined.ArraySize()
 	foundDefault := false
-	names := make(map[string]bool, size)
 	for i := 0; i < size; i++ {
 		nsConfig := namespacePredefined.ArrayEntry(i)
 		name := nsConfig.GetString(coreconfig.NamespaceName)
 		if name == "" {
+			log.L(ctx).Warnf("Skipping unnamed entry at namespaces.predefined[%d]", i)
 			continue
 		}
-		if _, ok := names[name]; ok {
+		if _, ok := nm.namespaces[name]; ok {
 			log.L(ctx).Warnf("Duplicate predefined namespace (ignored): %s", name)
 			continue
 		}
-		names[name] = true
-		foundDefault = foundDefault || name == defaultNS
+		foundDefault = foundDefault || name == defaultName
 		if nm.namespaces[name], err = nm.loadNamespace(ctx, name, i, nsConfig); err != nil {
 			return err
 		}
 	}
 	if !foundDefault {
-		return i18n.NewError(ctx, coremsgs.MsgDefaultNamespaceNotFound, defaultNS)
+		return i18n.NewError(ctx, coremsgs.MsgDefaultNamespaceNotFound, defaultName)
 	}
 	return err
 }
@@ -813,6 +825,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}
 
 	return &namespace{
+		name:        name,
 		remoteName:  remoteName,
 		description: conf.GetString(coreconfig.NamespaceDescription),
 		config:      config,

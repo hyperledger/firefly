@@ -256,20 +256,6 @@ func (or *orchestrator) tokens() map[string]tokens.Plugin {
 
 func (or *orchestrator) Start() (err error) {
 	if or.config.Multiparty.Enabled {
-		var ns *core.Namespace
-		ns, err = or.database().GetNamespace(or.ctx, or.namespace.LocalName)
-		if err == nil {
-			if ns == nil {
-				ns = &core.Namespace{
-					Name:    or.namespace.LocalName,
-					Created: fftypes.Now(),
-				}
-			}
-			err = or.multiparty.ConfigureContract(or.ctx, &ns.Contracts)
-		}
-		if err == nil {
-			err = or.database().UpsertNamespace(or.ctx, ns, true)
-		}
 		if err == nil {
 			err = or.batch.Start()
 		}
@@ -490,6 +476,26 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	return nil
 }
 
+func (or *orchestrator) initMultipartyContract(ctx context.Context) (err error) {
+	if or.config.Multiparty.Enabled {
+		var ns *core.Namespace
+		ns, err = or.database().GetNamespace(ctx, or.namespace.LocalName)
+		if err == nil {
+			if ns == nil {
+				ns = &core.Namespace{
+					Name:    or.namespace.LocalName,
+					Created: fftypes.Now(),
+				}
+			}
+			err = or.multiparty.ConfigureContract(ctx, &ns.Contracts)
+		}
+		if err == nil {
+			err = or.database().UpsertNamespace(ctx, ns, true)
+		}
+	}
+	return err
+}
+
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	if or.data == nil {
 		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.dataexchange())
@@ -511,7 +517,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	or.syncasync.Init(or.events)
 
-	return nil
+	return or.initMultipartyContract(ctx)
 }
 
 func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
