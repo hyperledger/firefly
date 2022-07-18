@@ -233,7 +233,7 @@ func TestInitTokenListenerFail(t *testing.T) {
 	or.mdx.On("SetNodes", mock.Anything).Return()
 	or.mps.On("SetHandler", "ns", mock.Anything).Return()
 	or.mti.On("SetHandler", "ns", mock.Anything).Return(fmt.Errorf("pop"))
-	err := or.Init(or.ctx, or.cancelCtx)
+	err := or.initHandlers(context.Background())
 	assert.EqualError(t, err, "pop")
 }
 
@@ -246,7 +246,7 @@ func TestInitDataexchangeNodesFail(t *testing.T) {
 	or.mps.On("SetHandler", "ns", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	ctx := context.Background()
-	err := or.initPlugins(ctx)
+	err := or.initHandlers(ctx)
 	assert.EqualError(t, err, "pop")
 }
 

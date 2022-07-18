@@ -218,9 +218,9 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 		namespaceLog += "->" + or.namespace.RemoteName
 	}
 	or.ctx, or.cancelCtx = context.WithCancel(log.WithLogField(ctx, "ns", namespaceLog))
-	err = or.initPlugins(or.ctx)
+	err = or.initComponents(or.ctx)
 	if err == nil {
-		err = or.initComponents(or.ctx)
+		err = or.initHandlers(or.ctx)
 	}
 	// Bind together the blockchain interface callbacks, with the events manager
 	or.bc.ei = or.events
@@ -347,11 +347,11 @@ func (or *orchestrator) MultiParty() multiparty.Manager {
 	return or.multiparty
 }
 
-func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
+func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 	or.plugins.Database.Plugin.SetHandler(or.namespace.LocalName, or)
 
 	if or.plugins.Blockchain.Plugin != nil {
-		or.plugins.Blockchain.Plugin.SetHandler(or.namespace.RemoteName, &or.bc)
+		or.plugins.Blockchain.Plugin.SetHandler(or.namespace.RemoteName, or.events)
 		or.plugins.Blockchain.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
 	}
 
@@ -376,7 +376,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	for _, token := range or.plugins.Tokens {
-		if err := token.Plugin.SetHandler(or.namespace.LocalName, &or.bc); err != nil {
+		if err := token.Plugin.SetHandler(or.namespace.LocalName, or.events); err != nil {
 			return err
 		}
 		token.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
