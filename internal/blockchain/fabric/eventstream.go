@@ -19,7 +19,6 @@ package fabric
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -221,14 +220,4 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 
 	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)
 	return sub, subNS, nil
-}
-
-func (s *streamManager) getNamespaceFromSubName(subName string) string {
-	var parts = strings.Split(subName, "-")
-	// Subscription names post version 1.1 are in the format `ff-sub-<namespace>-<listener ID>`
-	if len(parts) != 4 {
-		// Assume older subscription and return empty string
-		return ""
-	}
-	return parts[2]
 }
