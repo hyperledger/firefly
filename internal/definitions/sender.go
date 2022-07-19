@@ -46,15 +46,16 @@ type Sender interface {
 }
 
 type definitionSender struct {
-	ctx        context.Context
-	namespace  string
-	multiparty bool
-	database   database.Plugin
-	broadcast  broadcast.Manager // optional
-	identity   identity.Manager
-	data       data.Manager
-	contracts  contracts.Manager // optional
-	handler    *definitionHandler
+	ctx              context.Context
+	namespace        string
+	multiparty       bool
+	database         database.Plugin
+	broadcast        broadcast.Manager // optional
+	identity         identity.Manager
+	data             data.Manager
+	contracts        contracts.Manager // optional
+	handler          *definitionHandler
+	tokenRemoteNames map[string]string // mapping of token connector name => remote name
 }
 
 // Definitions that get processed immediately will create a temporary batch state and then finalize it inline
@@ -70,23 +71,33 @@ func fakeBatch(ctx context.Context, handler func(context.Context, *core.BatchSta
 	return err
 }
 
-func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, am assets.Manager, cm contracts.Manager) (Sender, Handler, error) {
+func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, am assets.Manager, cm contracts.Manager, tokenRemoteNames map[string]string) (Sender, Handler, error) {
 	if di == nil || im == nil || dm == nil {
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DefinitionSender")
 	}
 	ds := &definitionSender{
-		ctx:        ctx,
-		namespace:  ns,
-		multiparty: multiparty,
-		database:   di,
-		broadcast:  bm,
-		identity:   im,
-		data:       dm,
-		contracts:  cm,
+		ctx:              ctx,
+		namespace:        ns,
+		multiparty:       multiparty,
+		database:         di,
+		broadcast:        bm,
+		identity:         im,
+		data:             dm,
+		contracts:        cm,
+		tokenRemoteNames: tokenRemoteNames,
 	}
-	dh, err := newDefinitionHandler(ctx, ns, multiparty, di, bi, dx, dm, im, am, cm)
+	dh, err := newDefinitionHandler(ctx, ns, multiparty, di, bi, dx, dm, im, am, cm, reverseMap(tokenRemoteNames))
 	ds.handler = dh
 	return ds, dh, err
+}
+
+// reverseMap reverses the key/values of a given map
+func reverseMap(orderedMap map[string]string) map[string]string {
+	reverseMap := make(map[string]string, len(orderedMap))
+	for k, v := range orderedMap {
+		reverseMap[v] = k
+	}
+	return reverseMap
 }
 
 func (bm *definitionSender) Name() string {
