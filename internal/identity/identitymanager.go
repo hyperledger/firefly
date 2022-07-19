@@ -61,7 +61,6 @@ type identityManager struct {
 	namespace              string
 	defaultKey             string
 	multipartyRootVerifier *core.VerifierRef
-	multipartyRootOrg      *core.Identity
 	identityCacheTTL       time.Duration
 	identityCache          *ccache.Cache
 	signingKeyCacheTTL     time.Duration
@@ -303,9 +302,6 @@ func (im *identityManager) FindIdentityForVerifier(ctx context.Context, iTypes [
 
 // GetMultipartyRootOrg returns the identity of the organization that owns the node, if fully registered within the given namespace
 func (im *identityManager) GetMultipartyRootOrg(ctx context.Context) (*core.Identity, error) {
-	if im.multipartyRootOrg != nil {
-		return im.multipartyRootOrg, nil
-	}
 	verifierRef, err := im.GetMultipartyRootVerifier(ctx)
 	if err != nil {
 		return nil, err
@@ -320,7 +316,6 @@ func (im *identityManager) GetMultipartyRootOrg(ctx context.Context) (*core.Iden
 	if identity.Type != core.IdentityTypeOrg || identity.Name != orgName {
 		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
 	}
-	im.multipartyRootOrg = identity
 	return identity, nil
 }
 

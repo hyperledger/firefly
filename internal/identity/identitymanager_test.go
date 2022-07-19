@@ -738,17 +738,6 @@ func TestNormalizeKeyViaBlockchainPluginCached(t *testing.T) {
 
 }
 
-func TestGetMultipartyRootOrgCached(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-	im.multipartyRootOrg = &core.Identity{}
-
-	id, err := im.GetMultipartyRootOrg(ctx)
-	assert.NoError(t, err)
-	assert.NotNil(t, id)
-
-}
-
 func TestGetMultipartyRootVerifierNotSet(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)

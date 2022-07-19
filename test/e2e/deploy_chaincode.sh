@@ -11,7 +11,7 @@ if [ -z "$CHAINCODE_NAME" ]; then
 fi
 
 TEST_DIR="$(cd "$(dirname $0)/.." && pwd)"
-CHAINCODE="$TEST_DIR/data/assetcreator"
+CHAINCODE="$TEST_DIR/data/contracts/assetcreator"
 CHAINCODE_VERSION=1.0
 
 CHANNEL=firefly

@@ -21,10 +21,10 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/test/e2e"
+	"github.com/hyperledger/firefly/test/e2e/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -50,7 +50,7 @@ func (suite *TokensTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *TokensTestSuite) AfterTest(suiteName, testName string) {
-	e2e.VerifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1}, suite.testState.startTime)
+	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1}, suite.testState.startTime)
 }
 
 func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
@@ -58,7 +58,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 
 	received1 := e2e.WsReader(suite.testState.ws1, false)
 
-	pools := e2e.GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
+	pools := suite.testState.client1.GetTokenPools(suite.T(), time.Unix(0, 0))
 	rand.Seed(time.Now().UnixNano())
 	poolName := fmt.Sprintf("pool%d", rand.Intn(10000))
 	suite.T().Logf("Pool name: %s", poolName)
@@ -69,11 +69,11 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		Config: fftypes.JSONObject{},
 	}
 
-	poolResp := e2e.CreateTokenPool(suite.T(), suite.testState.client1, pool, false)
+	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, false)
 	poolID := poolResp.ID
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolID)
-	pools = e2e.GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
+	pools = suite.testState.client1.GetTokenPools(suite.T(), suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
 	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
@@ -85,7 +85,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		TokenTransfer: core.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
 		Pool:          poolName,
 	}
-	transferOut := e2e.MintTokens(suite.T(), suite.testState.client1, transfer, false)
+	transferOut := suite.testState.client1.MintTokens(suite.T(), transfer, false)
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeTransferConfirmed, transferOut.LocalID)
 	e2e.ValidateAccountBalances(suite.T(), suite.testState.client1, poolID, "", map[string]int64{
 		suite.key: 1,
@@ -95,7 +95,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		TokenTransfer: core.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
 		Pool:          poolName,
 	}
-	transferOut = e2e.BurnTokens(suite.T(), suite.testState.client1, transfer, false)
+	transferOut = suite.testState.client1.BurnTokens(suite.T(), transfer, false)
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeTransferConfirmed, transferOut.LocalID)
 	e2e.ValidateAccountBalances(suite.T(), suite.testState.client1, poolID, "", map[string]int64{
 		suite.key: 0,

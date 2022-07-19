@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/test/e2e"
+	"github.com/hyperledger/firefly/test/e2e/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -46,7 +47,7 @@ func (suite *OnChainOffChainTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *OnChainOffChainTestSuite) AfterTest(suiteName, testName string) {
-	e2e.VerifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
 }
 
 func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
@@ -68,7 +69,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 
 		expectedData[topic] = append(expectedData[topic], data)
 
-		resp, err := e2e.BroadcastMessage(suite.T(), suite.testState.client1, topic, data, false)
+		resp, err := suite.testState.client1.BroadcastMessage(suite.T(), topic, data, false)
 		require.NoError(suite.T(), err)
 		assert.Equal(suite.T(), 202, resp.StatusCode())
 	}
@@ -110,7 +111,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	}
 
 	// Should be rejected as datatype not known
-	resp, err := e2e.BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
+	resp, err := suite.testState.client1.BroadcastMessage(suite.T(), "topic1", &data, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10195") // datatype not found
@@ -120,9 +121,9 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 		Version: version,
 		Value:   fftypes.JSONAnyPtrBytes(e2e.WidgetSchemaJSON),
 	}
-	dt = e2e.CreateDatatype(suite.T(), suite.testState.client1, dt, true)
+	dt = suite.testState.client1.CreateDatatype(suite.T(), dt, true)
 
-	resp, err = e2e.BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
+	resp, err = suite.testState.client1.BroadcastMessage(suite.T(), "topic1", &data, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10198") // does not conform
@@ -132,7 +133,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 		"name": "mywidget"
 	}`)
 
-	resp, err = e2e.BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
+	resp, err = suite.testState.client1.BroadcastMessage(suite.T(), "topic1", &data, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
@@ -159,10 +160,10 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	}
 
 	// Should be rejected as datatype not known
-	resp, err := e2e.PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
+	resp, err := suite.testState.client1.PrivateMessage("topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "", core.TransactionTypeBatchPin, true)
+	}, "", core.TransactionTypeBatchPin, true, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10195") // datatype not found
@@ -172,12 +173,12 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 		Version: version,
 		Value:   fftypes.JSONAnyPtrBytes(e2e.WidgetSchemaJSON),
 	}
-	dt = e2e.CreateDatatype(suite.T(), suite.testState.client1, dt, true)
+	dt = suite.testState.client1.CreateDatatype(suite.T(), dt, true)
 
-	resp, err = e2e.PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
+	resp, err = suite.testState.client1.PrivateMessage("topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "", core.TransactionTypeBatchPin, false)
+	}, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10198") // does not conform
@@ -187,10 +188,10 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 		"name": "mywidget"
 	}`)
 
-	resp, err = e2e.PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
+	resp, err = suite.testState.client1.PrivateMessage("topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "", core.TransactionTypeBatchPin, true)
+	}, "", core.TransactionTypeBatchPin, true, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
@@ -218,10 +219,10 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 
 		expectedData[topic] = append(expectedData[topic], data)
 
-		resp, err := e2e.PrivateMessage(suite.testState, suite.testState.client1, topic, data, []string{
+		resp, err := suite.testState.client1.PrivateMessage(topic, data, []string{
 			suite.testState.org1.Name,
 			suite.testState.org2.Name,
-		}, "", core.TransactionTypeBatchPin, false)
+		}, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 		require.NoError(suite.T(), err)
 		assert.Equal(suite.T(), 202, resp.StatusCode())
 	}
@@ -252,7 +253,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcastBlob() {
 
 	var resp *resty.Response
 
-	data, resp, err := e2e.BroadcastBlobMessage(suite.T(), suite.testState.client1, "topic1")
+	data, resp, err := suite.testState.client1.BroadcastBlobMessage(suite.T(), "topic1")
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
@@ -278,10 +279,10 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 
 	var resp *resty.Response
 
-	data, resp, err := e2e.PrivateBlobMessageDatatypeTagged(suite.testState, suite.testState.client1, "topic1", []string{
+	data, resp, err := suite.testState.client1.PrivateBlobMessageDatatypeTagged(suite.T(), "topic1", []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	})
+	}, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	assert.Empty(suite.T(), data.Blob.Name)
@@ -321,8 +322,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 			"tag": "myrequest"
 		}
 	}`, suite.testState.namespace)
-	e2e.CleanupExistingSubscription(suite.T(), suite.testState.client2, suite.testState.namespace, "myhook")
-	sub := e2e.CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
+	suite.testState.client2.CleanupExistingSubscription(suite.T(), suite.testState.namespace, "myhook")
+	sub := suite.testState.client2.CreateSubscription(suite.T(), subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
 	data := core.DataRefOrValue{
@@ -330,10 +331,10 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	}
 
 	var resp *resty.Response
-	resp, err := e2e.PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
+	resp, err := suite.testState.client1.PrivateMessage("topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "myrequest", core.TransactionTypeBatchPin, false)
+	}, "myrequest", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
@@ -377,18 +378,18 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 			"tag": "myrequest"
 		}
 	}`, suite.testState.namespace)
-	e2e.CleanupExistingSubscription(suite.T(), suite.testState.client2, suite.testState.namespace, "myhook")
-	sub := e2e.CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
+	suite.testState.client2.CleanupExistingSubscription(suite.T(), suite.testState.namespace, "myhook")
+	sub := suite.testState.client2.CreateSubscription(suite.T(), subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
 	data := core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 
-	reply := e2e.RequestReply(suite.testState, suite.testState.client1, &data, []string{
+	reply := suite.testState.client1.RequestReply(suite.T(), &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "myrequest", core.TransactionTypeUnpinned)
+	}, "myrequest", core.TransactionTypeUnpinned, suite.testState.startTime)
 	assert.NotNil(suite.T(), reply)
 
 	bodyData := reply.InlineData[0].Value.JSONObject().GetString("body")

@@ -22,10 +22,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/test/e2e"
+	"github.com/hyperledger/firefly/test/e2e/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +41,7 @@ func (suite *IdentityTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *IdentityTestSuite) AfterTest(suiteName, testName string) {
-	e2e.VerifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
 }
 
 func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
@@ -55,8 +55,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	ts := time.Now().Unix()
 	for i := 0; i < totalIdentities; i++ {
 		key := getUnregisteredAccount(suite, suite.testState.org1.Name)
-		e2e.ClaimCustomIdentity(suite.T(),
-			suite.testState.client1,
+		suite.testState.client1.ClaimCustomIdentity(suite.T(),
 			key,
 			fmt.Sprintf("custom_%d_%d", ts, i),
 			fmt.Sprintf("Description %d", i),
@@ -78,15 +77,15 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 
 	identities := make(map[string]*core.Identity)
 	for identityID := range identityIDs {
-		identityNode1 := e2e.GetIdentity(suite.T(), suite.testState.client1, &identityID)
-		identityNode2 := e2e.GetIdentity(suite.T(), suite.testState.client1, &identityID)
+		identityNode1 := suite.testState.client1.GetIdentity(suite.T(), &identityID)
+		identityNode2 := suite.testState.client2.GetIdentity(suite.T(), &identityID)
 		assert.True(suite.T(), identityNode1.IdentityBase.Equals(ctx, &identityNode2.IdentityBase))
 		identities[identityNode1.DID] = identityNode1
 	}
 
 	// Send a broadcast from each custom identity
 	for did := range identities {
-		resp, err := e2e.BroadcastMessageAsIdentity(suite.T(), suite.testState.client1, did, "identitytest", &core.DataRefOrValue{
+		resp, err := suite.testState.client1.BroadcastMessageAsIdentity(suite.T(), did, "identitytest", &core.DataRefOrValue{
 			Value: fftypes.JSONAnyPtr(`{"some": "data"}`),
 		}, false)
 		require.NoError(suite.T(), err)
@@ -109,16 +108,14 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	org2key := getUnregisteredAccount(suite, suite.testState.org2.Name)
 
 	ts := time.Now().Unix()
-	custom1 := e2e.ClaimCustomIdentity(suite.T(),
-		suite.testState.client1,
+	custom1 := suite.testState.client1.ClaimCustomIdentity(suite.T(),
 		org1key,
 		fmt.Sprintf("custom_%d_org1priv", ts),
 		fmt.Sprintf("Description org1priv"),
 		nil,
 		suite.testState.org1.ID,
 		true)
-	custom2 := e2e.ClaimCustomIdentity(suite.T(),
-		suite.testState.client2,
+	custom2 := suite.testState.client2.ClaimCustomIdentity(suite.T(),
 		org2key,
 		fmt.Sprintf("custom_%d_org2priv", ts),
 		fmt.Sprintf("Description org2priv"),
@@ -130,9 +127,9 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 		e2e.WaitForIdentityConfirmed(suite.T(), received2)
 	}
 
-	resp, err := e2e.PrivateMessageWithKey(suite.testState, suite.testState.client1, org1key, "topic1", &core.DataRefOrValue{
+	resp, err := suite.testState.client1.PrivateMessageWithKey(org1key, "topic1", &core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`"test private custom identity"`),
-	}, []string{custom1.DID, custom2.DID}, "tag1", core.TransactionTypeBatchPin, true)
+	}, []string{custom1.DID, custom2.DID}, "tag1", core.TransactionTypeBatchPin, true, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
@@ -141,7 +138,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 }
 
 func getUnregisteredAccount(suite *IdentityTestSuite, orgName string) string {
-	verifiers := e2e.GetVerifiers(suite.T(), suite.testState.client1)
+	verifiers := suite.testState.client1.GetVerifiers(suite.T())
 	suite.T().Logf("checking for account with orgName: %s", orgName)
 	for i, account := range suite.testState.unregisteredAccounts {
 		alreadyRegistered := false

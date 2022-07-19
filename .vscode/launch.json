@@ -11,8 +11,7 @@
       "mode": "test",
       "program": "${fileDirname}",
       "env": {
-        "STACK_FILE": "${env:HOME}/.firefly/stacks/firefly_e2e/stack.json",
-        "STACK_STATE": "${env:HOME}/.firefly/stacks/firefly_e2e/runtime/stackState.json"
+        "STACK_DIR": "${env:HOME}/.firefly/stacks/firefly_e2e"
       },
       "showLog": true
     },

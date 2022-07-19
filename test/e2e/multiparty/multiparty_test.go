@@ -22,18 +22,16 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/websocket"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/test/e2e"
+	"github.com/hyperledger/firefly/test/e2e/client"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 type testState struct {
@@ -46,8 +44,8 @@ type testState struct {
 	org1key              *core.Verifier
 	org2                 *core.Identity
 	org2key              *core.Verifier
-	client1              *resty.Client
-	client2              *resty.Client
+	client1              *client.FireFlyClient
+	client2              *client.FireFlyClient
 	unregisteredAccounts []interface{}
 	namespace            string
 }
@@ -67,31 +65,17 @@ func (m *testState) Done() func() {
 func beforeE2ETest(t *testing.T) *testState {
 	stack := e2e.ReadStack(t)
 	stackState := e2e.ReadStackState(t)
-	namespace := "default"
 
 	var authHeader1 http.Header
 	var authHeader2 http.Header
 
-	ts := &testState{
-		t:                    t,
-		startTime:            time.Now(),
-		client1:              e2e.NewResty(t),
-		client2:              e2e.NewResty(t),
-		unregisteredAccounts: stackState.Accounts[2:],
-		namespace:            namespace,
-	}
-
 	httpProtocolClient1 := "http"
-	websocketProtocolClient1 := "ws"
 	httpProtocolClient2 := "http"
-	websocketProtocolClient2 := "ws"
 	if stack.Members[0].UseHTTPS {
 		httpProtocolClient1 = "https"
-		websocketProtocolClient1 = "wss"
 	}
 	if stack.Members[1].UseHTTPS {
 		httpProtocolClient2 = "https"
-		websocketProtocolClient2 = "wss"
 	}
 
 	member0WithPort := ""
@@ -103,14 +87,27 @@ func beforeE2ETest(t *testing.T) *testState {
 		member1WithPort = fmt.Sprintf(":%d", stack.Members[1].ExposedFireflyPort)
 	}
 
-	ts.client1.SetBaseURL(fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort))
-	ts.client2.SetBaseURL(fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient2, stack.Members[1].FireflyHostname, member1WithPort))
+	base1 := fmt.Sprintf("%s://%s%s", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
+	base2 := fmt.Sprintf("%s://%s%s", httpProtocolClient2, stack.Members[1].FireflyHostname, member1WithPort)
+	namespace := os.Getenv("NAMESPACE")
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	ts := &testState{
+		t:                    t,
+		startTime:            time.Now(),
+		client1:              client.NewFireFly(t, base1, namespace),
+		client2:              client.NewFireFly(t, base2, namespace),
+		unregisteredAccounts: stackState.Accounts[2:],
+		namespace:            namespace,
+	}
 
 	t.Logf("Blockchain provider: %s", stack.BlockchainProvider)
 
 	if stack.Members[0].Username != "" && stack.Members[0].Password != "" {
 		t.Log("Setting auth for user 1")
-		ts.client1.SetBasicAuth(stack.Members[0].Username, stack.Members[0].Password)
+		ts.client1.Client.SetBasicAuth(stack.Members[0].Username, stack.Members[0].Password)
 		authHeader1 = http.Header{
 			"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.Members[0].Username, stack.Members[0].Password))))},
 		}
@@ -118,7 +115,7 @@ func beforeE2ETest(t *testing.T) *testState {
 
 	if stack.Members[1].Username != "" && stack.Members[1].Password != "" {
 		t.Log("Setting auth for user 2")
-		ts.client2.SetBasicAuth(stack.Members[1].Username, stack.Members[1].Password)
+		ts.client2.Client.SetBasicAuth(stack.Members[1].Username, stack.Members[1].Password)
 		authHeader2 = http.Header{
 			"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.Members[1].Username, stack.Members[1].Password))))},
 		}
@@ -130,14 +127,14 @@ func beforeE2ETest(t *testing.T) *testState {
 		ts.namespace = namespace
 	}
 
-	t.Logf("Client 1: " + ts.client1.HostURL)
-	t.Logf("Client 2: " + ts.client2.HostURL)
+	t.Logf("Client 1: " + ts.client1.Client.HostURL)
+	t.Logf("Client 2: " + ts.client2.Client.HostURL)
 	e2e.PollForUp(t, ts.client1)
 	e2e.PollForUp(t, ts.client2)
 
 	for {
-		orgsC1 := e2e.GetOrgs(t, ts.client1, 200)
-		orgsC2 := e2e.GetOrgs(t, ts.client2, 200)
+		orgsC1 := ts.client1.GetOrgs(t, 200)
+		orgsC2 := ts.client2.GetOrgs(t, 200)
 		if len(orgsC1) >= 2 && len(orgsC2) >= 2 {
 			// in case there are more than two orgs in the network we need to ensure
 			// we select the same two that were provided in the first two elements
@@ -156,39 +153,15 @@ func beforeE2ETest(t *testing.T) *testState {
 		t.Logf("Waiting for 2 orgs to appear. Currently have: node1=%d node2=%d", len(orgsC1), len(orgsC2))
 		time.Sleep(3 * time.Second)
 	}
-	ts.org1key = e2e.GetIdentityBlockchainKeys(t, ts.client1, ts.org1.ID, 200)[0]
-	ts.org2key = e2e.GetIdentityBlockchainKeys(t, ts.client2, ts.org2.ID, 200)[0]
+	ts.org1key = ts.client1.GetIdentityBlockchainKeys(t, ts.org1.ID, 200)[0]
+	ts.org2key = ts.client2.GetIdentityBlockchainKeys(t, ts.org2.ID, 200)[0]
 	t.Logf("Org1: ID=%s DID=%s Key=%s", ts.org1.DID, ts.org1.ID, ts.org1key.Value)
 	t.Logf("Org2: ID=%s DID=%s Key=%s", ts.org2.DID, ts.org2.ID, ts.org2key.Value)
 
 	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", ts.namespace, eventNames)
-
-	wsUrl1 := url.URL{
-		Scheme:   websocketProtocolClient1,
-		Host:     fmt.Sprintf("%s%s", stack.Members[0].FireflyHostname, member0WithPort),
-		Path:     "/ws",
-		RawQuery: queryString,
-	}
-	wsUrl2 := url.URL{
-		Scheme:   websocketProtocolClient2,
-		Host:     fmt.Sprintf("%s%s", stack.Members[1].FireflyHostname, member1WithPort),
-		Path:     "/ws",
-		RawQuery: queryString,
-	}
-
-	t.Logf("Websocket 1: " + wsUrl1.String())
-	t.Logf("Websocket 2: " + wsUrl2.String())
-
-	var err error
-	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), authHeader1)
-	if err != nil {
-		t.Logf(err.Error())
-	}
-	require.NoError(t, err)
-
-	ts.ws2, _, err = websocket.DefaultDialer.Dial(wsUrl2.String(), authHeader2)
-	require.NoError(t, err)
+	ts.ws1 = ts.client1.WebSocket(t, queryString, authHeader1)
+	ts.ws2 = ts.client2.WebSocket(t, queryString, authHeader2)
 
 	ts.done = func() {
 		ts.ws1.Close()
@@ -198,10 +171,10 @@ func beforeE2ETest(t *testing.T) *testState {
 	return ts
 }
 
-func validateReceivedMessages(ts *testState, client *resty.Client, topic string, msgType core.MessageType, txtype core.TransactionType, count int) (data core.DataArray) {
+func validateReceivedMessages(ts *testState, client *client.FireFlyClient, topic string, msgType core.MessageType, txtype core.TransactionType, count int) (data core.DataArray) {
 	var group *fftypes.Bytes32
 	var messages []*core.Message
-	events := e2e.GetMessageEvents(ts.t, client, ts.startTime, topic, 200)
+	events := client.GetMessageEvents(ts.t, ts.startTime, topic, 200)
 	for i, event := range events {
 		if event.Message != nil {
 			message := event.Message
@@ -224,7 +197,7 @@ func validateReceivedMessages(ts *testState, client *resty.Client, topic string,
 		assert.Equal(ts.t, core.FFStringArray{topic}, (messages)[idx].Header.Topics)
 		assert.Equal(ts.t, topic, (messages)[idx].Header.Topics[0])
 
-		data := e2e.GetDataForMessage(ts.t, client, ts.startTime, (messages)[idx].Header.ID)
+		data := client.GetDataForMessage(ts.t, ts.startTime, (messages)[idx].Header.ID)
 		var msgData *core.Data
 		for i, d := range data {
 			ts.t.Logf("Data %d: %+v", i, *d)
@@ -244,7 +217,7 @@ func validateReceivedMessages(ts *testState, client *resty.Client, topic string,
 		assert.Equal(ts.t, *expectedHash, *msgData.Hash)
 
 		if msgData.Blob != nil {
-			blob := e2e.GetBlob(ts.t, client, msgData, 200)
+			blob := client.GetBlob(ts.t, msgData, 200)
 			assert.NotNil(ts.t, blob)
 			var hash fftypes.Bytes32 = sha256.Sum256(blob)
 			assert.Equal(ts.t, *msgData.Blob.Hash, hash)
