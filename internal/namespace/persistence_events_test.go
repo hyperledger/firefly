@@ -86,16 +86,6 @@ func TestSubscriptionDeleted(t *testing.T) {
 	mae.AssertExpectations(t)
 }
 
-func TestUUIDCollectionEventFull(t *testing.T) {
-	mae := &spieventsmocks.Manager{}
-	nm := &namespaceManager{
-		adminEvents: mae,
-	}
-	mae.On("Dispatch", mock.Anything).Return()
-	nm.UUIDCollectionEvent(database.CollectionNamespaces, core.ChangeEventTypeDeleted, fftypes.NewUUID())
-	mae.AssertExpectations(t)
-}
-
 func TestHashCollectionNSEventOk(t *testing.T) {
 	mae := &spieventsmocks.Manager{}
 	nm := &namespaceManager{

@@ -376,55 +376,61 @@ var (
 	VerifierCreated   = ffm("Verifier.created", "The time this verifier was created on this node")
 
 	// Namespace field descriptions
-	NamespaceID                 = ffm("Namespace.id", "The UUID of the namespace. For locally established namespaces will be different on each node in the network. For broadcast namespaces, will be the same on every node")
-	NamespaceMessage            = ffm("Namespace.message", "The UUID of broadcast message used to establish the namespace. Unset for local namespaces")
-	NamespaceName               = ffm("Namespace.name", "The namespace name")
-	NamespaceDescription        = ffm("Namespace.description", "A description of the namespace")
-	NamespaceType               = ffm("Namespace.type", "The type of the namespace")
-	NamespaceCreated            = ffm("Namespace.created", "The time the namespace was created")
-	NamespaceContract           = ffm("Namespace.fireflyContract", "Info on the FireFly smart contract configured for this namespace")
-	FireFlyContractsActive      = ffm("FireFlyContracts.active", "The currently active FireFly smart contract")
-	FireFlyContractsTerminated  = ffm("FireFlyContracts.terminated", "Previously-terminated FireFly smart contracts")
-	FireFlyContractIndex        = ffm("FireFlyContractInfo.index", "The index of this contract in the config file")
-	FireFlyContractFinalEvent   = ffm("FireFlyContractInfo.finalEvent", "The identifier for the final blockchain event received from this contract before termination")
-	FireFlyContractFirstEvent   = ffm("FireFlyContractInfo.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors")
-	FireFlyContractLocation     = ffm("FireFlyContractInfo.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
-	FireFlyContractSubscription = ffm("FireFlyContractInfo.subscription", "The backend identifier of the subscription for the FireFly BatchPin contract")
-	NetworkActionType           = ffm("NetworkAction.type", "The action to be performed")
+	NamespaceID                    = ffm("Namespace.id", "The UUID of the namespace. For locally established namespaces will be different on each node in the network. For broadcast namespaces, will be the same on every node")
+	NamespaceMessage               = ffm("Namespace.message", "The UUID of broadcast message used to establish the namespace. Unset for local namespaces")
+	NamespaceName                  = ffm("Namespace.name", "The local namespace name")
+	NamespaceRemoteName            = ffm("Namespace.remoteName", "The namespace name within the multiparty network")
+	NamespaceDescription           = ffm("Namespace.description", "A description of the namespace")
+	NamespaceType                  = ffm("Namespace.type", "The type of the namespace")
+	NamespaceCreated               = ffm("Namespace.created", "The time the namespace was created")
+	MultipartyContractsActive      = ffm("MultipartyContracts.active", "The currently active FireFly smart contract")
+	MultipartyContractsTerminated  = ffm("MultipartyContracts.terminated", "Previously-terminated FireFly smart contracts")
+	MultipartyContractIndex        = ffm("MultipartyContract.index", "The index of this contract in the config file")
+	MultipartyContractFinalEvent   = ffm("MultipartyContract.finalEvent", "The identifier for the final blockchain event received from this contract before termination")
+	MultipartyContractFirstEvent   = ffm("MultipartyContract.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors")
+	MultipartyContractLocation     = ffm("MultipartyContract.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
+	MultipartyContractSubscription = ffm("MultipartyContract.subscription", "The backend identifier of the subscription for the FireFly BatchPin contract")
+	MultipartyContractInfo         = ffm("MultipartyContract.info", "Additional info about the current status of the multi-party contract")
+	NetworkActionType              = ffm("NetworkAction.type", "The action to be performed")
 
-	// NodeStatus field descriptions
-	NodeNamespace  = ffm("NodeStatus.namespace", "The namespace that this status applies to")
-	NodeStatusNode = ffm("NodeStatus.node", "Details of the local node")
-	NodeStatusOrg  = ffm("NodeStatus.org", "Details of the organization identity that operates this node")
-	NodePlugins    = ffm("NodeStatus.plugins", "Information about plugins configured on this node")
+	// NamespaceStatus field descriptions
+	NodeNamespace       = ffm("NamespaceStatus.namespace", "The namespace that this status applies to")
+	NamespaceStatusNode = ffm("NamespaceStatus.node", "Details of the local node")
+	NamespaceStatusOrg  = ffm("NamespaceStatus.org", "Details of the root organization identity registered for this namespace on the local node")
+	NamespacePlugins    = ffm("NamespaceStatus.plugins", "Information about plugins configured on this namespace")
+	NamespaceMultiparty = ffm("NamespaceStatus.multiparty", "Information about the multi-party system configured on this namespace")
 
-	// NodeStatusNode field descriptions
-	NodeStatusNodeName       = ffm("NodeStatusNode.name", "The name of this node, as specified in the local configuration")
-	NodeStatusNodeRegistered = ffm("NodeStatusNode.registered", "Whether the node has been successfully registered")
-	NodeStatusNodeID         = ffm("NodeStatusNode.id", "The UUID of the node, if registered")
+	// NamespaceStatusNode field descriptions
+	NamespaceStatusNodeName       = ffm("NamespaceStatusNode.name", "The name of this node, as specified in the local configuration")
+	NamespaceStatusNodeRegistered = ffm("NamespaceStatusNode.registered", "Whether the node has been successfully registered")
+	NamespaceStatusNodeID         = ffm("NamespaceStatusNode.id", "The UUID of the node, if registered")
 
-	// NodeStatusOrg field descriptions
-	NodeStatusOrgName       = ffm("NodeStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
-	NodeStatusOrgRegistered = ffm("NodeStatusOrg.registered", "Whether the organization has been successfully registered")
-	NodeStatusOrgDID        = ffm("NodeStatusOrg.did", "The DID of the organization identity, if registered")
-	NodeStatusOrgID         = ffm("NodeStatusOrg.id", "The UUID of the organization, if registered")
-	NodeStatusOrgVerifiers  = ffm("NodeStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
+	// NamespaceStatusOrg field descriptions
+	NamespaceStatusOrgName       = ffm("NamespaceStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
+	NamespaceStatusOrgRegistered = ffm("NamespaceStatusOrg.registered", "Whether the organization has been successfully registered")
+	NamespaceStatusOrgDID        = ffm("NamespaceStatusOrg.did", "The DID of the organization identity, if registered")
+	NamespaceStatusOrgID         = ffm("NamespaceStatusOrg.id", "The UUID of the organization, if registered")
+	NamespaceStatusOrgVerifiers  = ffm("NamespaceStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
 
-	// NodeStatusDefaults field descriptions
-	NodeStatusDefaultsNamespace = ffm("NodeStatusDefaults.namespace", "The default namespace on this node")
+	// NamespaceStatusDefaults field descriptions
+	NamespaceStatusDefaultsNamespace = ffm("NamespaceStatusDefaults.namespace", "The default namespace on this node")
 
-	// NodeStatusPlugins field descriptions
-	NodeStatusPluginsBlockchain    = ffm("NodeStatusPlugins.blockchain", "The blockchain plugins on this node")
-	NodeStatusPluginsDatabase      = ffm("NodeStatusPlugins.database", "The database plugins on this node")
-	NodeStatusPluginsDataExchange  = ffm("NodeStatusPlugins.dataExchange", "The data exchange plugins on this node")
-	Events                         = ffm("NodeStatusPlugins.events", "The event plugins on this node")
-	NodeStatusPluginsIdentity      = ffm("NodeStatusPlugins.identity", "The identity plugins on this node")
-	NodeStatusPluginsSharedStorage = ffm("NodeStatusPlugins.sharedStorage", "The shared storage plugins on this node")
-	NodeStatusPluginsTokens        = ffm("NodeStatusPlugins.tokens", "The token plugins on this node")
+	// NamespaceStatusPlugins field descriptions
+	NamespaceStatusPluginsBlockchain    = ffm("NamespaceStatusPlugins.blockchain", "The blockchain plugins on this namespace")
+	NamespaceStatusPluginsDatabase      = ffm("NamespaceStatusPlugins.database", "The database plugins on this namespace")
+	NamespaceStatusPluginsDataExchange  = ffm("NamespaceStatusPlugins.dataExchange", "The data exchange plugins on this namespace")
+	NamespacePluginsEvents              = ffm("NamespaceStatusPlugins.events", "The event plugins on this namespace")
+	NamespaceStatusPluginsIdentity      = ffm("NamespaceStatusPlugins.identity", "The identity plugins on this namespace")
+	NamespaceStatusPluginsSharedStorage = ffm("NamespaceStatusPlugins.sharedStorage", "The shared storage plugins on this namespace")
+	NamespaceStatusPluginsTokens        = ffm("NamespaceStatusPlugins.tokens", "The token plugins on this namespace")
 
-	// NodeStatusPlugin field descriptions
-	NodeStatusPluginName = ffm("NodeStatusPlugin.name", "The name of the plugin")
-	NodeStatusPluginType = ffm("NodeStatusPlugin.pluginType", "The type of the plugin")
+	// NamespaceStatusPlugin field descriptions
+	NamespaceStatusPluginName = ffm("NamespaceStatusPlugin.name", "The name of the plugin")
+	NamespaceStatusPluginType = ffm("NamespaceStatusPlugin.pluginType", "The type of the plugin")
+
+	// NamespaceStatusMultiparty field descriptions
+	NamespaceMultipartyEnabled  = ffm("NamespaceStatusMultiparty.enabled", "Whether multi-party mode is enabled for this namespace")
+	NamespaceMultipartyContract = ffm("NamespaceStatusMultiparty.contract", "Information about the multi-party smart contract configured for this namespace")
 
 	// BatchManagerStatus field descriptions
 	BatchManagerStatusProcessors = ffm("BatchManagerStatus.processors", "An array of currently active batch processors")

@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -152,6 +153,8 @@ func TestInit(t *testing.T) {
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := nm.Init(context.Background())
@@ -290,6 +293,8 @@ func TestInitOrchestratorFail(t *testing.T) {
 	nm.mps.On("SetHandler", "default", mock.Anything).Return()
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := nm.Init(context.Background())
@@ -318,6 +323,10 @@ func TestInitVersion1(t *testing.T) {
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
+	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
 	err := nm.Init(context.Background())
 	assert.NoError(t, err)
@@ -352,10 +361,51 @@ func TestInitVersion1Fail(t *testing.T) {
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
+	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+
 	err := nm.Init(context.Background())
 	assert.EqualError(t, err, "pop")
 
 	mo.AssertExpectations(t)
+}
+
+func TestInitNamespaceQueryFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	ns := &namespace{
+		plugins: orchestrator.Plugins{
+			Database: orchestrator.DatabasePlugin{
+				Plugin: nm.mdi,
+			},
+		},
+	}
+
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, fmt.Errorf("pop"))
+
+	err := nm.initNamespace("default", ns)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestInitNamespaceExistingUpsertFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	ns := &namespace{
+		plugins: orchestrator.Plugins{
+			Database: orchestrator.DatabasePlugin{
+				Plugin: nm.mdi,
+			},
+		},
+	}
+
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(&core.Namespace{}, nil)
+	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
+
+	err := nm.initNamespace("default", ns)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestDeprecatedDatabasePlugin(t *testing.T) {
@@ -1419,9 +1469,14 @@ func TestGetNamespaces(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
+	mo := &orchestratormocks.Orchestrator{}
 	nm.namespaces = map[string]*namespace{
-		"default": {},
+		"default": {
+			orchestrator: mo,
+		},
 	}
+
+	mo.On("GetNamespace", context.Background()).Return(&core.Namespace{})
 
 	results, err := nm.GetNamespaces(context.Background())
 	assert.Nil(t, err)

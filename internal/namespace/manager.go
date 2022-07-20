@@ -218,10 +218,29 @@ func (nm *namespaceManager) Init(ctx context.Context) (err error) {
 }
 
 func (nm *namespaceManager) initNamespace(name string, ns *namespace) error {
+	stored, err := ns.plugins.Database.Plugin.GetNamespace(nm.ctx, name)
+	switch {
+	case err != nil:
+		return err
+	case stored != nil:
+		stored.RemoteName = ns.remoteName
+		stored.Description = ns.description
+		// TODO: should we check for discrepancies in the multiparty contract config?
+	default:
+		stored = &core.Namespace{
+			LocalName:   name,
+			RemoteName:  ns.remoteName,
+			Description: ns.description,
+			Created:     fftypes.Now(),
+		}
+	}
+	if err = ns.plugins.Database.Plugin.UpsertNamespace(nm.ctx, stored, true); err != nil {
+		return err
+	}
+
 	or := nm.utOrchestrator
 	if or == nil {
-		names := core.NamespaceRef{LocalName: name, RemoteName: ns.remoteName}
-		or = orchestrator.NewOrchestrator(names, ns.config, ns.plugins, nm.metrics)
+		or = orchestrator.NewOrchestrator(stored, ns.config, ns.plugins, nm.metrics)
 	}
 	if err := or.Init(nm.ctx); err != nil {
 		return err
@@ -956,11 +975,8 @@ func (nm *namespaceManager) GetNamespaces(ctx context.Context) ([]*core.Namespac
 	nm.nsMux.Lock()
 	defer nm.nsMux.Unlock()
 	results := make([]*core.Namespace, 0, len(nm.namespaces))
-	for name, ns := range nm.namespaces {
-		results = append(results, &core.Namespace{
-			Name:        name,
-			Description: ns.description,
-		})
+	for _, ns := range nm.namespaces {
+		results = append(results, ns.orchestrator.GetNamespace(ctx))
 	}
 	return results, nil
 }

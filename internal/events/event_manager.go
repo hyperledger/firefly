@@ -81,7 +81,7 @@ type EventManager interface {
 	TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error
 	TokensApproved(ti tokens.Plugin, approval *tokens.TokenApproval) error
 
-	GetPlugins() []*core.NodeStatusPlugin
+	GetPlugins() []*core.NamespaceStatusPlugin
 
 	// Internal events
 	sysmessaging.SystemEvents
@@ -256,12 +256,12 @@ func (em *eventManager) AddSystemEventListener(ns string, el system.EventListene
 	return em.internalEvents.AddListener(ns, el)
 }
 
-func (em *eventManager) GetPlugins() []*core.NodeStatusPlugin {
-	eventsArray := make([]*core.NodeStatusPlugin, 0)
+func (em *eventManager) GetPlugins() []*core.NamespaceStatusPlugin {
+	eventsArray := make([]*core.NamespaceStatusPlugin, 0)
 	plugins := em.subManager.transports
 
 	for name := range plugins {
-		eventsArray = append(eventsArray, &core.NodeStatusPlugin{
+		eventsArray = append(eventsArray, &core.NamespaceStatusPlugin{
 			PluginType: name,
 		})
 	}

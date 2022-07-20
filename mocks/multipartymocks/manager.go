@@ -21,13 +21,13 @@ type Manager struct {
 	mock.Mock
 }
 
-// ConfigureContract provides a mock function with given fields: ctx, contracts
-func (_m *Manager) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) error {
-	ret := _m.Called(ctx, contracts)
+// ConfigureContract provides a mock function with given fields: ctx
+func (_m *Manager) ConfigureContract(ctx context.Context) error {
+	ret := _m.Called(ctx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FireFlyContracts) error); ok {
-		r0 = rf(ctx, contracts)
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -158,13 +158,13 @@ func (_m *Manager) SubmitNetworkAction(ctx context.Context, signingKey string, a
 	return r0
 }
 
-// TerminateContract provides a mock function with given fields: ctx, contracts, location, termination
-func (_m *Manager) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, location *fftypes.JSONAny, termination *blockchain.Event) error {
-	ret := _m.Called(ctx, contracts, location, termination)
+// TerminateContract provides a mock function with given fields: ctx, location, termination
+func (_m *Manager) TerminateContract(ctx context.Context, location *fftypes.JSONAny, termination *blockchain.Event) error {
+	ret := _m.Called(ctx, location, termination)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FireFlyContracts, *fftypes.JSONAny, *blockchain.Event) error); ok {
-		r0 = rf(ctx, contracts, location, termination)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *blockchain.Event) error); ok {
+		r0 = rf(ctx, location, termination)
 	} else {
 		r0 = ret.Error(0)
 	}

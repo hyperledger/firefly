@@ -133,15 +133,15 @@ func (_m *EventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 }
 
 // GetPlugins provides a mock function with given fields:
-func (_m *EventManager) GetPlugins() []*core.NodeStatusPlugin {
+func (_m *EventManager) GetPlugins() []*core.NamespaceStatusPlugin {
 	ret := _m.Called()
 
-	var r0 []*core.NodeStatusPlugin
-	if rf, ok := ret.Get(0).(func() []*core.NodeStatusPlugin); ok {
+	var r0 []*core.NamespaceStatusPlugin
+	if rf, ok := ret.Get(0).(func() []*core.NamespaceStatusPlugin); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*core.NodeStatusPlugin)
+			r0 = ret.Get(0).([]*core.NamespaceStatusPlugin)
 		}
 	}
 

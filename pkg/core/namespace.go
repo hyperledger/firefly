@@ -25,46 +25,43 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 )
 
-// NamespaceType describes when the namespace was created from local configuration, or broadcast through the network
-type NamespaceType = fftypes.FFEnum
-
-var (
-	// NamespaceTypeLocal is a namespace that only exists because it was defined in the local configuration of the node
-	NamespaceTypeLocal = fftypes.FFEnumValue("namespacetype", "local")
-	// NamespaceTypeBroadcast is a namespace that was broadcast through the network. Broadcast namespaces can overwrite a local namespace
-	NamespaceTypeBroadcast = fftypes.FFEnumValue("namespacetype", "broadcast")
-	// NamespaceTypeSystem is a reserved namespace used by FireFly itself
-	NamespaceTypeSystem = fftypes.FFEnumValue("namespacetype", "system")
-)
-
-// Namespace is a isolate set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
+// Namespace is an isolated set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
-	ID          *fftypes.UUID    `ffstruct:"Namespace" json:"id" ffexcludeinput:"true"`
-	Message     *fftypes.UUID    `ffstruct:"Namespace" json:"message,omitempty" ffexcludeinput:"true"`
-	Name        string           `ffstruct:"Namespace" json:"name"`
-	Description string           `ffstruct:"Namespace" json:"description"`
-	Type        NamespaceType    `ffstruct:"Namespace" json:"type" ffenum:"namespacetype" ffexcludeinput:"true"`
-	Created     *fftypes.FFTime  `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
-	Contracts   FireFlyContracts `ffstruct:"Namespace" json:"fireflyContract" ffexcludeinput:"true"`
+	LocalName   string              `ffstruct:"Namespace" json:"name"`
+	RemoteName  string              `ffstruct:"Namespace" json:"remoteName"`
+	Description string              `ffstruct:"Namespace" json:"description"`
+	Created     *fftypes.FFTime     `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
+	Contracts   MultipartyContracts `ffstruct:"Namespace" json:"-"`
 }
 
-type FireFlyContracts struct {
-	Active     FireFlyContractInfo   `ffstruct:"FireFlyContracts" json:"active"`
-	Terminated []FireFlyContractInfo `ffstruct:"FireFlyContracts" json:"terminated,omitempty"`
+type MultipartyContracts struct {
+	Active     MultipartyContract   `ffstruct:"MultipartyContracts" json:"active"`
+	Terminated []MultipartyContract `ffstruct:"MultipartyContracts" json:"terminated,omitempty"`
 }
 
-type FireFlyContractInfo struct {
-	Index        int              `ffstruct:"FireFlyContractInfo" json:"index"`
-	FinalEvent   string           `ffstruct:"FireFlyContractInfo" json:"finalEvent,omitempty"`
-	Location     *fftypes.JSONAny `ffstruct:"FireFlyContractInfo" json:"location,omitempty"`
-	FirstEvent   string           `ffstruct:"FireFlyContractInfo" json:"firstEvent,omitempty"`
-	Subscription string           `ffstruct:"FireFlyContractInfo" json:"subscription,omitempty"`
+type MultipartyContract struct {
+	Index      int                    `ffstruct:"MultipartyContract" json:"index"`
+	Location   *fftypes.JSONAny       `ffstruct:"MultipartyContract" json:"location,omitempty"`
+	FirstEvent string                 `ffstruct:"MultipartyContract" json:"firstEvent,omitempty"`
+	Info       MultipartyContractInfo `ffstruct:"MultipartyContract" json:"info"`
+}
+
+type MultipartyContractInfo struct {
+	Subscription string `ffstruct:"MultipartyContract" json:"subscription,omitempty"`
+	FinalEvent   string `ffstruct:"MultipartyContract" json:"finalEvent,omitempty"`
 }
 
 type NamespaceRef struct {
 	LocalName  string
 	RemoteName string
+}
+
+func (n *Namespace) Ref() NamespaceRef {
+	return NamespaceRef{
+		LocalName:  n.LocalName,
+		RemoteName: n.RemoteName,
+	}
 }
 
 // NetworkActionType is a type of action to perform
@@ -79,31 +76,8 @@ type NetworkAction struct {
 	Type NetworkActionType `ffstruct:"NetworkAction" json:"type" ffenum:"networkactiontype"`
 }
 
-func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
-	if err = fftypes.ValidateFFNameField(ctx, ns.Name, "name"); err != nil {
-		return err
-	}
-	if err = fftypes.ValidateLength(ctx, ns.Description, "description", 4096); err != nil {
-		return err
-	}
-	if existing {
-		if ns.ID == nil {
-			return i18n.NewError(ctx, i18n.MsgNilID)
-		}
-	}
-	return nil
-}
-
-func (ns *Namespace) Topic() string {
-	return fftypes.TypeNamespaceNameTopicHash("namespace", ns.Name, "")
-}
-
-func (ns *Namespace) SetBroadcastMessage(msgID *fftypes.UUID) {
-	ns.Message = msgID
-}
-
 // Scan implements sql.Scanner
-func (fc *FireFlyContracts) Scan(src interface{}) error {
+func (fc *MultipartyContracts) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case []byte:
 		if len(src) == 0 {
@@ -118,6 +92,6 @@ func (fc *FireFlyContracts) Scan(src interface{}) error {
 }
 
 // Value implements sql.Valuer
-func (fc FireFlyContracts) Value() (driver.Value, error) {
+func (fc MultipartyContracts) Value() (driver.Value, error) {
 	return json.Marshal(fc)
 }

@@ -58,7 +58,7 @@ func newTestMultipartyManager() *testMultipartyManager {
 		mth: &txcommonmocks.Helper{},
 		multipartyManager: multipartyManager{
 			ctx:       context.Background(),
-			namespace: core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+			namespace: &core.Namespace{LocalName: "ns1", RemoteName: "ns1"},
 		},
 	}
 
@@ -81,7 +81,7 @@ func TestNewMultipartyManager(t *testing.T) {
 		core.OpTypeBlockchainPinBatch,
 		core.OpTypeBlockchainNetworkAction,
 	}).Return()
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{LocalName: "ns1", RemoteName: "ns1"}
 	nm, err := NewMultipartyManager(context.Background(), func() {}, ns, config, mdi, mbi, mom, mmi, mth)
 	assert.NotNil(t, nm)
 	assert.NoError(t, err)
@@ -91,47 +91,66 @@ func TestNewMultipartyManager(t *testing.T) {
 
 func TestInitFail(t *testing.T) {
 	config := Config{Contracts: []Contract{}}
-	_, err := NewMultipartyManager(context.Background(), func() {}, core.NamespaceRef{}, config, nil, nil, nil, nil, nil)
+	_, err := NewMultipartyManager(context.Background(), func() {}, &core.Namespace{}, config, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
 func TestConfigureContract(t *testing.T) {
-	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
 
-	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
-	mp.multipartyManager.config.Contracts = contracts
+	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location,
+	}}
+
+	err := mp.ConfigureContract(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestConfigureContractLocationChanged(t *testing.T) {
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+	location2 := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x456",
+	}.String())
+
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
+	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
+	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{
+			Index:    0,
+			Location: location,
+		},
 	}
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location2,
+	}}
 
-	err := mp.ConfigureContract(context.Background(), cf)
+	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
 }
 
 func TestConfigureContractTerminateSystem(t *testing.T) {
-	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
 
-	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 	stopped := false
@@ -139,13 +158,16 @@ func TestConfigureContractTerminateSystem(t *testing.T) {
 	mp.namespace.LocalName = core.LegacySystemNamespace
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(2, nil)
-	mp.multipartyManager.config.Contracts = contracts
 
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 0},
 	}
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location,
+	}}
 
-	err := mp.ConfigureContract(context.Background(), cf)
+	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
 	assert.True(t, stopped)
 }
@@ -191,73 +213,67 @@ func TestResolveContractDeprecatedConfigNewestBlock(t *testing.T) {
 }
 
 func TestConfigureContractBadIndex(t *testing.T) {
-	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
 
-	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	mp.multipartyManager.config.Contracts = contracts
-
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 1},
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 1},
 	}
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location,
+	}}
 
-	err := mp.ConfigureContract(context.Background(), cf)
+	err := mp.ConfigureContract(context.Background())
 	assert.Regexp(t, "FF10396", err)
 }
 
 func TestConfigureContractNetworkVersionFail(t *testing.T) {
-	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
 
-	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(0, fmt.Errorf("pop"))
-	mp.multipartyManager.config.Contracts = contracts
 
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 0},
 	}
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location,
+	}}
 
-	err := mp.ConfigureContract(context.Background(), cf)
+	err := mp.ConfigureContract(context.Background())
 	assert.Regexp(t, "pop", err)
 }
 
 func TestSubmitNetworkAction(t *testing.T) {
-	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
 	txid := fftypes.NewUUID()
 
-	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	mp.multipartyManager.config.Contracts = contracts
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 0},
+	}
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location,
+	}}
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction).Return(txid, nil)
 	mp.mbi.On("Name").Return("ut")
 	mp.mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
@@ -272,11 +288,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 		return op.Type == core.OpTypeBlockchainNetworkAction && data.Type == core.NetworkActionTerminate
 	})).Return(nil, nil)
 
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
-	}
-
-	err := mp.ConfigureContract(context.Background(), cf)
+	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
 	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.Nil(t, err)
@@ -287,30 +299,27 @@ func TestSubmitNetworkAction(t *testing.T) {
 }
 
 func TestSubmitNetworkActionTXFail(t *testing.T) {
-	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
 
-	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	mp.multipartyManager.config.Contracts = contracts
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 0},
+	}
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location,
+	}}
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction).Return(nil, fmt.Errorf("pop"))
 
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
-	}
-
-	err := mp.ConfigureContract(context.Background(), cf)
+	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
 	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.EqualError(t, err, "pop")
@@ -320,33 +329,30 @@ func TestSubmitNetworkActionTXFail(t *testing.T) {
 }
 
 func TestSubmitNetworkActionOpFail(t *testing.T) {
-	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
 	txid := fftypes.NewUUID()
 
-	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	mp.multipartyManager.config.Contracts = contracts
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 0},
+	}
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location,
+	}}
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction).Return(txid, nil)
 	mp.mbi.On("Name").Return("ut")
 	mp.mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
-	}
-
-	err := mp.ConfigureContract(context.Background(), cf)
+	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
 	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.EqualError(t, err, "pop")
@@ -357,28 +363,26 @@ func TestSubmitNetworkActionOpFail(t *testing.T) {
 }
 
 func TestSubmitNetworkActionBadType(t *testing.T) {
-	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
 
-	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
-	mp.multipartyManager.config.Contracts = contracts
+	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 0},
 	}
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location,
+	}}
 
-	err := mp.ConfigureContract(context.Background(), cf)
+	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
 	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: "BAD"})
 	assert.Regexp(t, "FF10397", err)
@@ -487,28 +491,26 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 }
 
 func TestGetNetworkVersion(t *testing.T) {
-	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
 
-	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
-	mp.multipartyManager.config.Contracts = contracts
+	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 0},
 	}
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location,
+	}}
 
-	err := mp.ConfigureContract(context.Background(), cf)
+	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
 
 	version := mp.GetNetworkVersion()
@@ -516,36 +518,33 @@ func TestGetNetworkVersion(t *testing.T) {
 }
 
 func TestConfgureAndTerminateContract(t *testing.T) {
-	contracts := make([]Contract, 2)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
-	contract2 := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
 
-	contracts[0] = contract
-	contracts[1] = contract2
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return(nil)
-	mp.multipartyManager.config.Contracts = contracts
 
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 0},
 	}
-	err := mp.ConfigureContract(context.Background(), cf)
+	mp.multipartyManager.config.Contracts = []Contract{{
+		FirstEvent: "0",
+		Location:   location,
+	}, {
+		FirstEvent: "0",
+		Location:   location,
+	}}
+
+	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
 
-	err = mp.TerminateContract(context.Background(), cf, location, &blockchain.Event{})
+	err = mp.TerminateContract(context.Background(), location, &blockchain.Event{})
 	assert.NoError(t, err)
 }
 
@@ -558,11 +557,12 @@ func TestTerminateContractError(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0, Location: location},
+
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 0, Location: location},
 	}
 
-	err := mp.TerminateContract(context.Background(), cf, location, &blockchain.Event{})
+	err := mp.TerminateContract(context.Background(), location, &blockchain.Event{})
 	assert.Regexp(t, "FF10396", err)
 }
 
@@ -573,10 +573,11 @@ func TestTerminateContractWrongAddress(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0, Location: location},
+
+	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
+		Active: core.MultipartyContract{Index: 0, Location: location},
 	}
 
-	err := mp.TerminateContract(context.Background(), cf, fftypes.JSONAnyPtr("{}"), &blockchain.Event{})
+	err := mp.TerminateContract(context.Background(), fftypes.JSONAnyPtr("{}"), &blockchain.Event{})
 	assert.NoError(t, err)
 }

@@ -501,10 +501,9 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 		},
 
 		&core.Namespace{
-			ID:          fftypes.MustParseUUID("7b2d9c7e-3d60-452c-a409-05e77c855d3a"),
-			Name:        "default",
+			LocalName:   "default",
+			RemoteName:  "default",
 			Description: "Default predefined namespace",
-			Type:        core.NamespaceTypeLocal,
 			Created:     fftypes.UnixTime(1652664196),
 		},
 
