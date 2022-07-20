@@ -95,9 +95,10 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 		mev:  &eventsmocks.Plugin{},
 		auth: &authmocks.Plugin{},
 		namespaceManager: namespaceManager{
-			ctx:         context.Background(),
-			namespaces:  make(map[string]*namespace),
-			pluginNames: make(map[string]bool),
+			ctx:              context.Background(),
+			namespaces:       make(map[string]*namespace),
+			pluginNames:      make(map[string]bool),
+			tokenRemoteNames: make(map[string]string),
 		},
 	}
 	nm.plugins.blockchain = map[string]blockchainPlugin{
@@ -718,6 +719,58 @@ func TestTokensPlugin(t *testing.T) {
 	tokensConfig.AddKnownKey(coreconfig.PluginConfigType, "fftokens")
 	plugins, err := nm.getTokensPlugins(context.Background())
 	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestTokensPluginDuplicateRemoteName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	tifactory.InitConfig(tokensConfig)
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  plugins:
+    tokens:
+    - name: test1
+      remotename: remote1
+      type: fftokens
+      fftokens:
+        url: http://tokens:3000
+    - name: test2
+      remotename: remote1
+      type: fftokens
+      fftokens:
+        url: http://tokens:3000
+  `))
+	assert.NoError(t, err)
+
+	plugins, err := nm.getTokensPlugins(context.Background())
+	assert.Nil(t, plugins)
+	assert.Regexp(t, "FF10419", err)
+}
+
+func TestMultipleTokensPluginsWithRemoteName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	tifactory.InitConfig(tokensConfig)
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  plugins:
+    tokens:
+    - name: test1
+      remotename: remote1
+      type: fftokens
+      fftokens:
+        url: http://tokens:3000
+    - name: test2
+      remotename: remote2
+      type: fftokens
+      fftokens:
+        url: http://tokens:3000
+  `))
+	assert.NoError(t, err)
+
+	plugins, err := nm.getTokensPlugins(context.Background())
+	assert.Equal(t, 2, len(plugins))
 	assert.NoError(t, err)
 }
 

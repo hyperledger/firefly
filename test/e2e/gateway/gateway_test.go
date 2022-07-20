@@ -20,15 +20,13 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/websocket"
 	"github.com/hyperledger/firefly/test/e2e"
-	"github.com/stretchr/testify/require"
+	"github.com/hyperledger/firefly/test/e2e/client"
 )
 
 type testState struct {
@@ -36,7 +34,7 @@ type testState struct {
 	startTime            time.Time
 	done                 func()
 	ws1                  *websocket.Conn
-	client1              *resty.Client
+	client1              *client.FireFlyClient
 	unregisteredAccounts []interface{}
 	namespace            string
 }
@@ -56,23 +54,12 @@ func (m *testState) Done() func() {
 func beforeE2ETest(t *testing.T) *testState {
 	stack := e2e.ReadStack(t)
 	stackState := e2e.ReadStackState(t)
-	namespace := "default"
 
 	var authHeader1 http.Header
 
-	ts := &testState{
-		t:                    t,
-		startTime:            time.Now(),
-		client1:              e2e.NewResty(t),
-		unregisteredAccounts: stackState.Accounts[2:],
-		namespace:            namespace,
-	}
-
 	httpProtocolClient1 := "http"
-	websocketProtocolClient1 := "ws"
 	if stack.Members[0].UseHTTPS {
 		httpProtocolClient1 = "https"
-		websocketProtocolClient1 = "wss"
 	}
 
 	member0WithPort := ""
@@ -80,13 +67,25 @@ func beforeE2ETest(t *testing.T) *testState {
 		member0WithPort = fmt.Sprintf(":%d", stack.Members[0].ExposedFireflyPort)
 	}
 
-	ts.client1.SetBaseURL(fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort))
+	baseURL := fmt.Sprintf("%s://%s%s", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
+	namespace := os.Getenv("NAMESPACE")
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	ts := &testState{
+		t:                    t,
+		startTime:            time.Now(),
+		client1:              client.NewFireFly(t, baseURL, namespace),
+		unregisteredAccounts: stackState.Accounts[2:],
+		namespace:            namespace,
+	}
 
 	t.Logf("Blockchain provider: %s", stack.BlockchainProvider)
 
 	if stack.Members[0].Username != "" && stack.Members[0].Password != "" {
 		t.Log("Setting auth for user 1")
-		ts.client1.SetBasicAuth(stack.Members[0].Username, stack.Members[0].Password)
+		ts.client1.Client.SetBasicAuth(stack.Members[0].Username, stack.Members[0].Password)
 		authHeader1 = http.Header{
 			"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.Members[0].Username, stack.Members[0].Password))))},
 		}
@@ -98,27 +97,12 @@ func beforeE2ETest(t *testing.T) *testState {
 		ts.namespace = namespace
 	}
 
-	t.Logf("Client 1: " + ts.client1.HostURL)
+	t.Logf("Client 1: " + ts.client1.Client.HostURL)
 	e2e.PollForUp(t, ts.client1)
 
 	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", ts.namespace, eventNames)
-
-	wsUrl1 := url.URL{
-		Scheme:   websocketProtocolClient1,
-		Host:     fmt.Sprintf("%s%s", stack.Members[0].FireflyHostname, member0WithPort),
-		Path:     "/ws",
-		RawQuery: queryString,
-	}
-
-	t.Logf("Websocket 1: " + wsUrl1.String())
-
-	var err error
-	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), authHeader1)
-	if err != nil {
-		t.Logf(err.Error())
-	}
-	require.NoError(t, err)
+	ts.ws1 = ts.client1.WebSocket(t, queryString, authHeader1)
 
 	ts.done = func() {
 		ts.ws1.Close()

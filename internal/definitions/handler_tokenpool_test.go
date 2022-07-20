@@ -43,6 +43,7 @@ func newPoolAnnouncement() *core.TokenPoolAnnouncement {
 			Type: core.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
 		},
+		Connector: "remote1",
 	}
 	return &core.TokenPoolAnnouncement{
 		Pool: pool,
@@ -78,7 +79,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	mam := sh.assets.(*assetmocks.Manager)
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
-		return *p.ID == *pool.ID && p.Message == msg.Header.ID
+		return *p.ID == *pool.ID && p.Message == msg.Header.ID && p.Connector == "connector1"
 	})).Return(nil)
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
 
@@ -90,6 +91,26 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestHandleDefinitionBroadcastTokenPoolBadConnector(t *testing.T) {
+	sh, bs := newTestDefinitionHandler(t)
+
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	pool.Name = "//bad"
+	msg, data, err := buildPoolDefinitionMessage(announce)
+	assert.NoError(t, err)
+
+	mam := sh.assets.(*assetmocks.Manager)
+	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
+
+	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionReject, CustomCorrelator: pool.ID}, action)
+	assert.Regexp(t, "FF10403", err)
+
+	err = bs.RunPreFinalize(context.Background())
+	assert.NoError(t, err)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {

@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
+	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/coremocks"
@@ -67,7 +68,7 @@ func newTestFabric() (*Fabric, func()) {
 		wsconn:         wsm,
 		cache:          ccache.New(ccache.Configure().MaxSize(100)),
 	}
-	e.callbacks.handlers = make(map[string]blockchain.Callbacks)
+	e.callbacks = common.NewBlockchainCallbacks()
 	return e, func() {
 		cancel()
 		if e.closed != nil {
@@ -982,8 +983,9 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1045,8 +1047,9 @@ func TestHandleMessageBatchPinV2(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1106,8 +1109,9 @@ func TestHandleMessageBatchPinMissingChaincodeID(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1138,8 +1142,9 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1190,8 +1195,9 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1228,8 +1234,9 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1259,8 +1266,9 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1279,8 +1287,9 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1307,8 +1316,9 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1335,8 +1345,9 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1363,8 +1374,9 @@ func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
 func TestHandleMessageBatchPinBadPayloadUUIDs(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1391,8 +1403,9 @@ func TestHandleMessageBatchPinBadPayloadUUIDs(t *testing.T) {
 func TestHandleMessageBatchBadJSON(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	err := e.handleMessageBatch(context.Background(), []interface{}{10, 20})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(em.Calls))
@@ -1488,7 +1501,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	e := &Fabric{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: callbacks{opHandlers: make(map[string]core.OperationCallbacks)},
+		callbacks: common.NewBlockchainCallbacks(),
 		wsconn:    wsm,
 	}
 	e.SetOperationHandler("ns1", em)
@@ -1530,9 +1543,10 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 	e := &Fabric{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 		wsconn:    wsm,
 	}
+	e.SetHandler("ns1", em)
 
 	var reply fftypes.JSONObject
 	data := []byte(`{}`)
@@ -1547,9 +1561,10 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 	e := &Fabric{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: callbacks{opHandlers: map[string]core.OperationCallbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 		wsconn:    wsm,
 	}
+	e.SetOperationHandler("ns1", em)
 
 	var reply fftypes.JSONObject
 	operationID := fftypes.NewUUID()
@@ -1751,7 +1766,8 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 		}))
 
 	e.streams = newTestStreamManager(e.client, e.signer)
-	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
+	e.callbacks = common.NewBlockchainCallbacks()
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1835,7 +1851,8 @@ func TestHandleMessageContractEventNamespacedHandlers(t *testing.T) {
 		}))
 
 	e.streams = newTestStreamManager(e.client, e.signer)
-	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
+	e.callbacks = common.NewBlockchainCallbacks()
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1908,7 +1925,8 @@ func TestHandleMessageContractEventNoNamespacedHandlers(t *testing.T) {
 		}))
 
 	e.streams = newTestStreamManager(e.client, e.signer)
-	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns2": em}}
+	e.callbacks = common.NewBlockchainCallbacks()
+	e.SetHandler("ns2", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
 		namespace: "ns1",
@@ -1956,7 +1974,8 @@ func TestHandleMessageContractEventNoPayload(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e.streams = newTestStreamManager(e.client, e.signer)
-	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
+	e.callbacks = common.NewBlockchainCallbacks()
+	e.SetHandler("ns1", em)
 
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
@@ -1987,8 +2006,9 @@ func TestHandleMessageContractEventBadPayload(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-cb37cc07-e873-4f58-44ab-55add6bba320"] = subscriptionInfo{
 		namespace: "ns1",
@@ -2030,7 +2050,8 @@ func TestHandleMessageContractOldSubError(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e.streams = newTestStreamManager(e.client, e.signer)
-	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
+	e.callbacks = common.NewBlockchainCallbacks()
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
 		namespace: "ns1",
@@ -2074,7 +2095,8 @@ func TestHandleMessageContractEventError(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e.streams = newTestStreamManager(e.client, e.signer)
-	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
+	e.callbacks = common.NewBlockchainCallbacks()
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
 		namespace: "ns1",
@@ -2116,7 +2138,8 @@ func TestHandleMessageContractGetSubError(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e.streams = newTestStreamManager(e.client, e.signer)
-	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
+	e.callbacks = common.NewBlockchainCallbacks()
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
 		namespace: "ns1",
@@ -2492,8 +2515,9 @@ func TestHandleNetworkAction(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
@@ -2536,8 +2560,9 @@ func TestHandleNetworkActionV2(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
@@ -2580,8 +2605,9 @@ func TestHandleNetworkActionFail(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: common.NewBlockchainCallbacks(),
 	}
+	e.SetHandler("ns1", em)
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"] = subscriptionInfo{
 		namespace: "ns1",

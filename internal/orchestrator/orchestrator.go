@@ -169,8 +169,9 @@ type Plugins struct {
 }
 
 type Config struct {
-	DefaultKey string
-	Multiparty multiparty.Config
+	DefaultKey       string
+	Multiparty       multiparty.Config
+	TokenRemoteNames map[string]string
 }
 
 type orchestrator struct {
@@ -475,7 +476,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.defsender == nil {
-		or.defsender, or.defhandler, err = definitions.NewDefinitionSender(ctx, or.namespace.LocalName, or.config.Multiparty.Enabled, or.database(), or.blockchain(), or.dataexchange(), or.broadcast, or.identity, or.data, or.assets, or.contracts)
+		or.defsender, or.defhandler, err = definitions.NewDefinitionSender(ctx, or.namespace.LocalName, or.config.Multiparty.Enabled, or.database(), or.blockchain(), or.dataexchange(), or.broadcast, or.identity, or.data, or.assets, or.contracts, or.config.TokenRemoteNames)
 		if err != nil {
 			return err
 		}

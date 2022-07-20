@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/test/e2e/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -56,11 +58,11 @@ var WidgetSchemaJSON = []byte(`{
 	"additionalProperties": false
 }`)
 
-func PollForUp(t *testing.T, client *resty.Client) {
+func PollForUp(t *testing.T, client *client.FireFlyClient) {
 	var resp *resty.Response
 	var err error
 	for i := 0; i < 3; i++ {
-		resp, err = GetNamespaces(client)
+		resp, err = client.GetNamespaces()
 		if err == nil && resp.StatusCode() == 200 {
 			break
 		}
@@ -70,9 +72,9 @@ func PollForUp(t *testing.T, client *resty.Client) {
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
-func ValidateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex string, balances map[string]int64) {
+func ValidateAccountBalances(t *testing.T, client *client.FireFlyClient, poolID *fftypes.UUID, tokenIndex string, balances map[string]int64) {
 	for key, balance := range balances {
-		account := GetTokenBalance(t, client, poolID, tokenIndex, key)
+		account := client.GetTokenBalance(t, poolID, tokenIndex, key)
 		assert.Equal(t, balance, account.Balance.Int().Int64())
 	}
 }
@@ -82,21 +84,21 @@ func PickTopic(i int, options []string) string {
 }
 
 func ReadStack(t *testing.T) *Stack {
-	stackFile := os.Getenv("STACK_FILE")
-	if stackFile == "" {
-		t.Fatal("STACK_FILE must be set")
+	stackDir := os.Getenv("STACK_DIR")
+	if stackDir == "" {
+		t.Fatal("STACK_DIR must be set")
 	}
-	stack, err := ReadStackFile(stackFile)
+	stack, err := ReadStackFile(filepath.Join(stackDir, "stack.json"))
 	assert.NoError(t, err)
 	return stack
 }
 
 func ReadStackState(t *testing.T) *StackState {
-	stackFile := os.Getenv("STACK_STATE")
-	if stackFile == "" {
-		t.Fatal("STACK_STATE must be set")
+	stackDir := os.Getenv("STACK_DIR")
+	if stackDir == "" {
+		t.Fatal("STACK_DIR must be set")
 	}
-	stackState, err := ReadStackStateFile(stackFile)
+	stackState, err := ReadStackStateFile(filepath.Join(stackDir, "runtime", "stackState.json"))
 	assert.NoError(t, err)
 	return stackState
 }
@@ -162,11 +164,11 @@ func WaitForIdentityConfirmed(t *testing.T, c chan *core.EventDelivery) *core.Ev
 	}
 }
 
-func WaitForContractEvent(t *testing.T, client *resty.Client, c chan *core.EventDelivery, match map[string]interface{}) map[string]interface{} {
+func WaitForContractEvent(t *testing.T, client *client.FireFlyClient, c chan *core.EventDelivery, match map[string]interface{}) map[string]interface{} {
 	for {
 		eventDelivery := <-c
 		if eventDelivery.Type == core.EventTypeBlockchainEventReceived {
-			event, err := GetBlockchainEvent(t, client, eventDelivery.Event.Reference.String())
+			event, err := client.GetBlockchainEvent(t, eventDelivery.Event.Reference.String())
 			if err != nil {
 				t.Logf("WARN: unable to get event: %v", err.Error())
 				continue
@@ -224,7 +226,7 @@ func checkObject(t *testing.T, expected interface{}, actual interface{}) bool {
 	return match
 }
 
-func VerifyAllOperationsSucceeded(t *testing.T, clients []*resty.Client, startTime time.Time) {
+func VerifyAllOperationsSucceeded(t *testing.T, clients []*client.FireFlyClient, startTime time.Time) {
 	tries := 3
 	delay := 2 * time.Second
 
@@ -232,9 +234,9 @@ func VerifyAllOperationsSucceeded(t *testing.T, clients []*resty.Client, startTi
 	for i := 0; i < tries; i++ {
 		pending = ""
 		for _, client := range clients {
-			for _, op := range GetOperations(t, client, startTime) {
+			for _, op := range client.GetOperations(t, startTime) {
 				if op.Status != core.OpStatusSucceeded {
-					pending += fmt.Sprintf("Operation '%s' (%s) on '%s' is not successful\n", op.ID, op.Type, client.BaseURL)
+					pending += fmt.Sprintf("Operation '%s' (%s) on '%s' is not successful\n", op.ID, op.Type, client.Client.BaseURL)
 				}
 			}
 		}

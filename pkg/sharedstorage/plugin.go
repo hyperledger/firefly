@@ -35,7 +35,7 @@ type Plugin interface {
 	Init(ctx context.Context, config config.Section) error
 
 	// SetHandler registers a handler to receive callbacks
-	// If namespace is set, plugin will attempt to deliver only events for that namespace
+	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace
 	SetHandler(namespace string, handler Callbacks)
 
 	// Capabilities returns capabilities - not called until after Init

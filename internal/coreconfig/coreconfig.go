@@ -29,6 +29,8 @@ const (
 	PluginConfigName = "name"
 	// PluginConfigType is the type of the plugin to be loaded
 	PluginConfigType = "type"
+	// PluginRemoteName is the plugin name to be sent in plugin calls
+	PluginRemoteName = "remotename"
 	// NamespaceName is the short name for a pre-defined namespace
 	NamespaceName = "name"
 	// NamespaceName is the long description for a pre-defined namespace

@@ -21,10 +21,10 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/test/e2e"
+	"github.com/hyperledger/firefly/test/e2e/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -46,7 +46,7 @@ func (suite *TokensTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *TokensTestSuite) AfterTest(suiteName, testName string) {
-	e2e.VerifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
 }
 
 func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
@@ -55,7 +55,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	received1 := e2e.WsReader(suite.testState.ws1, false)
 	received2 := e2e.WsReader(suite.testState.ws2, false)
 
-	pools := e2e.GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
+	pools := suite.testState.client1.GetTokenPools(suite.T(), time.Unix(0, 0))
 	rand.Seed(time.Now().UnixNano())
 	poolName := fmt.Sprintf("pool%d", rand.Intn(10000))
 	suite.T().Logf("Pool name: %s", poolName)
@@ -66,11 +66,11 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		Config: fftypes.JSONObject{},
 	}
 
-	poolResp := e2e.CreateTokenPool(suite.T(), suite.testState.client1, pool, false)
+	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, false)
 	poolID := poolResp.ID
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolID)
-	pools = e2e.GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
+	pools = suite.testState.client1.GetTokenPools(suite.T(), suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
 	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
@@ -79,7 +79,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.NotEmpty(suite.T(), pools[0].Locator)
 
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypePoolConfirmed, poolID)
-	pools = e2e.GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
+	pools = suite.testState.client1.GetTokenPools(suite.T(), suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
 	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
@@ -95,10 +95,10 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		},
 		Pool: poolName,
 	}
-	approvalOut := e2e.TokenApproval(suite.T(), suite.testState.client1, approval, false)
+	approvalOut := suite.testState.client1.TokenApproval(suite.T(), approval, false)
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeApprovalConfirmed, approvalOut.LocalID)
-	approvals := e2e.GetTokenApprovals(suite.T(), suite.testState.client1, poolID)
+	approvals := suite.testState.client1.GetTokenApprovals(suite.T(), poolID)
 	assert.Equal(suite.T(), 1, len(approvals))
 	assert.Equal(suite.T(), suite.connector, approvals[0].Connector)
 	assert.Equal(suite.T(), true, approvals[0].Approved)
@@ -107,10 +107,10 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		TokenTransfer: core.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
 		Pool:          poolName,
 	}
-	transferOut := e2e.MintTokens(suite.T(), suite.testState.client1, transfer, false)
+	transferOut := suite.testState.client1.MintTokens(suite.T(), transfer, false)
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeTransferConfirmed, transferOut.LocalID)
-	transfers := e2e.GetTokenTransfers(suite.T(), suite.testState.client1, poolID)
+	transfers := suite.testState.client1.GetTokenTransfers(suite.T(), poolID)
 	assert.Equal(suite.T(), 1, len(transfers))
 	assert.Equal(suite.T(), suite.connector, transfers[0].Connector)
 	assert.Equal(suite.T(), core.TokenTransferTypeMint, transfers[0].Type)
@@ -120,7 +120,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	})
 
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypeTransferConfirmed, nil)
-	transfers = e2e.GetTokenTransfers(suite.T(), suite.testState.client2, poolID)
+	transfers = suite.testState.client2.GetTokenTransfers(suite.T(), poolID)
 	assert.Equal(suite.T(), 1, len(transfers))
 	assert.Equal(suite.T(), suite.connector, transfers[0].Connector)
 	assert.Equal(suite.T(), core.TokenTransferTypeMint, transfers[0].Type)
@@ -145,15 +145,15 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			},
 		},
 	}
-	transferOut = e2e.TransferTokens(suite.T(), suite.testState.client2, transfer, false)
+	transferOut = suite.testState.client2.TransferTokens(suite.T(), transfer, false)
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeMessageConfirmed, transferOut.Message)
-	transfers = e2e.GetTokenTransfers(suite.T(), suite.testState.client1, poolID)
+	transfers = suite.testState.client1.GetTokenTransfers(suite.T(), poolID)
 	assert.Equal(suite.T(), 2, len(transfers))
 	assert.Equal(suite.T(), suite.connector, transfers[0].Connector)
 	assert.Equal(suite.T(), core.TokenTransferTypeTransfer, transfers[0].Type)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	data := e2e.GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transfers[0].Message)
+	data := suite.testState.client1.GetDataForMessage(suite.T(), suite.testState.startTime, transfers[0].Message)
 	assert.Equal(suite.T(), 1, len(data))
 	assert.Equal(suite.T(), `"token approval - payment for data"`, data[0].Value.String())
 	e2e.ValidateAccountBalances(suite.T(), suite.testState.client1, poolID, "", map[string]int64{
@@ -162,7 +162,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	})
 
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypeMessageConfirmed, transferOut.Message)
-	transfers = e2e.GetTokenTransfers(suite.T(), suite.testState.client2, poolID)
+	transfers = suite.testState.client2.GetTokenTransfers(suite.T(), poolID)
 	assert.Equal(suite.T(), 2, len(transfers))
 	assert.Equal(suite.T(), suite.connector, transfers[0].Connector)
 	assert.Equal(suite.T(), core.TokenTransferTypeTransfer, transfers[0].Type)
@@ -176,10 +176,10 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		TokenTransfer: core.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
 		Pool:          poolName,
 	}
-	transferOut = e2e.BurnTokens(suite.T(), suite.testState.client2, transfer, false)
+	transferOut = suite.testState.client2.BurnTokens(suite.T(), transfer, false)
 
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypeTransferConfirmed, transferOut.LocalID)
-	transfers = e2e.GetTokenTransfers(suite.T(), suite.testState.client2, poolID)
+	transfers = suite.testState.client2.GetTokenTransfers(suite.T(), poolID)
 	assert.Equal(suite.T(), 3, len(transfers))
 	assert.Equal(suite.T(), suite.connector, transfers[0].Connector)
 	assert.Equal(suite.T(), core.TokenTransferTypeBurn, transfers[0].Type)
@@ -191,7 +191,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	})
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeTransferConfirmed, nil)
-	transfers = e2e.GetTokenTransfers(suite.T(), suite.testState.client1, poolID)
+	transfers = suite.testState.client1.GetTokenTransfers(suite.T(), poolID)
 	assert.Equal(suite.T(), 3, len(transfers))
 	assert.Equal(suite.T(), suite.connector, transfers[0].Connector)
 	assert.Equal(suite.T(), core.TokenTransferTypeBurn, transfers[0].Type)
@@ -202,18 +202,18 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		suite.testState.org2key.Value: 0,
 	})
 
-	accounts := e2e.GetTokenAccounts(suite.T(), suite.testState.client1, poolID)
+	accounts := suite.testState.client1.GetTokenAccounts(suite.T(), poolID)
 	assert.Equal(suite.T(), 2, len(accounts))
 	assert.Equal(suite.T(), suite.testState.org2key.Value, accounts[0].Key)
 	assert.Equal(suite.T(), suite.testState.org1key.Value, accounts[1].Key)
-	accounts = e2e.GetTokenAccounts(suite.T(), suite.testState.client2, poolID)
+	accounts = suite.testState.client2.GetTokenAccounts(suite.T(), poolID)
 	assert.Equal(suite.T(), 2, len(accounts))
 	assert.Equal(suite.T(), suite.testState.org2key.Value, accounts[0].Key)
 	assert.Equal(suite.T(), suite.testState.org1key.Value, accounts[1].Key)
 
-	accountPools := e2e.GetTokenAccountPools(suite.T(), suite.testState.client1, suite.testState.org1key.Value)
+	accountPools := suite.testState.client1.GetTokenAccountPools(suite.T(), suite.testState.org1key.Value)
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
-	accountPools = e2e.GetTokenAccountPools(suite.T(), suite.testState.client2, suite.testState.org2key.Value)
+	accountPools = suite.testState.client2.GetTokenAccountPools(suite.T(), suite.testState.org2key.Value)
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
 }
 
@@ -223,7 +223,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	received1 := e2e.WsReader(suite.testState.ws1, false)
 	received2 := e2e.WsReader(suite.testState.ws2, false)
 
-	pools := e2e.GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
+	pools := suite.testState.client1.GetTokenPools(suite.T(), time.Unix(0, 0))
 	rand.Seed(time.Now().UnixNano())
 	poolName := fmt.Sprintf("pool%d", rand.Intn(10000))
 	suite.T().Logf("Pool name: %s", poolName)
@@ -234,7 +234,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		Config: fftypes.JSONObject{},
 	}
 
-	poolOut := e2e.CreateTokenPool(suite.T(), suite.testState.client1, pool, true)
+	poolOut := suite.testState.client1.CreateTokenPool(suite.T(), pool, true)
 	assert.Equal(suite.T(), suite.testState.namespace, poolOut.Namespace)
 	assert.Equal(suite.T(), poolName, poolOut.Name)
 	assert.Equal(suite.T(), core.TokenTypeNonFungible, poolOut.Type)
@@ -244,7 +244,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolID)
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypePoolConfirmed, poolID)
-	pools = e2e.GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
+	pools = suite.testState.client1.GetTokenPools(suite.T(), suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
 	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
@@ -259,10 +259,10 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		},
 		Pool: poolName,
 	}
-	approvalOut := e2e.TokenApproval(suite.T(), suite.testState.client1, approval, true)
+	approvalOut := suite.testState.client1.TokenApproval(suite.T(), approval, true)
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeApprovalConfirmed, approvalOut.LocalID)
-	approvals := e2e.GetTokenApprovals(suite.T(), suite.testState.client1, poolID)
+	approvals := suite.testState.client1.GetTokenApprovals(suite.T(), poolID)
 	assert.Equal(suite.T(), 1, len(approvals))
 	assert.Equal(suite.T(), suite.connector, approvals[0].Connector)
 	assert.Equal(suite.T(), true, approvals[0].Approved)
@@ -274,7 +274,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		},
 		Pool: poolName,
 	}
-	transferOut := e2e.MintTokens(suite.T(), suite.testState.client1, transfer, true)
+	transferOut := suite.testState.client1.MintTokens(suite.T(), transfer, true)
 	assert.Equal(suite.T(), core.TokenTransferTypeMint, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)
 	assert.Equal(suite.T(), int64(1), transferOut.Amount.Int().Int64())
@@ -284,7 +284,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeTransferConfirmed, transferOut.LocalID)
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypeTransferConfirmed, nil)
-	transfers := e2e.GetTokenTransfers(suite.T(), suite.testState.client2, poolID)
+	transfers := suite.testState.client2.GetTokenTransfers(suite.T(), poolID)
 	assert.Equal(suite.T(), 1, len(transfers))
 	assert.Equal(suite.T(), core.TokenTransferTypeMint, transfers[0].Type)
 	assert.Equal(suite.T(), "1", transfers[0].TokenIndex)
@@ -310,11 +310,11 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 			},
 		},
 	}
-	transferOut = e2e.TransferTokens(suite.T(), suite.testState.client1, transfer, true)
+	transferOut = suite.testState.client1.TransferTokens(suite.T(), transfer, true)
 	assert.Equal(suite.T(), core.TokenTransferTypeTransfer, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)
 	assert.Equal(suite.T(), int64(1), transferOut.Amount.Int().Int64())
-	data := e2e.GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transferOut.Message)
+	data := suite.testState.client1.GetDataForMessage(suite.T(), suite.testState.startTime, transferOut.Message)
 	assert.Equal(suite.T(), 1, len(data))
 	assert.Equal(suite.T(), `"ownership change"`, data[0].Value.String())
 	e2e.ValidateAccountBalances(suite.T(), suite.testState.client1, poolID, "1", map[string]int64{
@@ -324,7 +324,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeMessageConfirmed, transferOut.Message)
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypeMessageConfirmed, transferOut.Message)
-	transfers = e2e.GetTokenTransfers(suite.T(), suite.testState.client2, poolID)
+	transfers = suite.testState.client2.GetTokenTransfers(suite.T(), poolID)
 	assert.Equal(suite.T(), 2, len(transfers))
 	assert.Equal(suite.T(), core.TokenTransferTypeTransfer, transfers[0].Type)
 	assert.Equal(suite.T(), "1", transfers[0].TokenIndex)
@@ -341,7 +341,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		},
 		Pool: poolName,
 	}
-	transferOut = e2e.BurnTokens(suite.T(), suite.testState.client2, transfer, true)
+	transferOut = suite.testState.client2.BurnTokens(suite.T(), transfer, true)
 	assert.Equal(suite.T(), core.TokenTransferTypeBurn, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)
 	assert.Equal(suite.T(), int64(1), transferOut.Amount.Int().Int64())
@@ -352,7 +352,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypeTransferConfirmed, transferOut.LocalID)
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeTransferConfirmed, nil)
-	transfers = e2e.GetTokenTransfers(suite.T(), suite.testState.client1, poolID)
+	transfers = suite.testState.client1.GetTokenTransfers(suite.T(), poolID)
 	assert.Equal(suite.T(), 3, len(transfers))
 	assert.Equal(suite.T(), core.TokenTransferTypeBurn, transfers[0].Type)
 	assert.Equal(suite.T(), "1", transfers[0].TokenIndex)
@@ -362,17 +362,17 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		suite.testState.org2key.Value: 0,
 	})
 
-	accounts := e2e.GetTokenAccounts(suite.T(), suite.testState.client1, poolID)
+	accounts := suite.testState.client1.GetTokenAccounts(suite.T(), poolID)
 	assert.Equal(suite.T(), 2, len(accounts))
 	assert.Equal(suite.T(), suite.testState.org2key.Value, accounts[0].Key)
 	assert.Equal(suite.T(), suite.testState.org1key.Value, accounts[1].Key)
-	accounts = e2e.GetTokenAccounts(suite.T(), suite.testState.client2, poolID)
+	accounts = suite.testState.client2.GetTokenAccounts(suite.T(), poolID)
 	assert.Equal(suite.T(), 2, len(accounts))
 	assert.Equal(suite.T(), suite.testState.org2key.Value, accounts[0].Key)
 	assert.Equal(suite.T(), suite.testState.org1key.Value, accounts[1].Key)
 
-	accountPools := e2e.GetTokenAccountPools(suite.T(), suite.testState.client1, suite.testState.org1key.Value)
+	accountPools := suite.testState.client1.GetTokenAccountPools(suite.T(), suite.testState.org1key.Value)
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
-	accountPools = e2e.GetTokenAccountPools(suite.T(), suite.testState.client2, suite.testState.org2key.Value)
+	accountPools = suite.testState.client2.GetTokenAccountPools(suite.T(), suite.testState.org2key.Value)
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
 }

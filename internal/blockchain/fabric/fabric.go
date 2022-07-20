@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
+	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
@@ -53,7 +54,7 @@ type Fabric struct {
 	prefixShort    string
 	prefixLong     string
 	capabilities   *blockchain.Capabilities
-	callbacks      callbacks
+	callbacks      common.BlockchainCallbacks
 	client         *resty.Client
 	streams        *streamManager
 	streamID       string
@@ -71,63 +72,6 @@ type subscriptionInfo struct {
 	namespace string
 	channel   string
 	version   int
-}
-
-type callbacks struct {
-	handlers   map[string]blockchain.Callbacks
-	opHandlers map[string]core.OperationCallbacks
-}
-
-func (cb *callbacks) OperationUpdate(ctx context.Context, plugin blockchain.Plugin, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
-	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
-	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(plugin, nsOpID, status, blockchainTXID, errorMessage, opOutput)
-	} else {
-		log.L(ctx).Errorf("No handler found for blockchain operation '%s'", nsOpID)
-	}
-}
-
-func (cb *callbacks) BatchPinComplete(ctx context.Context, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	if handler, ok := cb.handlers[batch.Namespace]; ok {
-		return handler.BatchPinComplete(batch, signingKey)
-	}
-	log.L(ctx).Errorf("No handler found for blockchain batch pin on namespace '%s'", batch.Namespace)
-	return nil
-}
-
-func (cb *callbacks) BlockchainNetworkAction(ctx context.Context, namespace, action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	if namespace == "" {
-		// Older networks don't populate namespace, so deliver the event to every handler
-		for _, handler := range cb.handlers {
-			if err := handler.BlockchainNetworkAction(action, location, event, signingKey); err != nil {
-				return err
-			}
-		}
-	} else {
-		if handler, ok := cb.handlers[namespace]; ok {
-			return handler.BlockchainNetworkAction(action, location, event, signingKey)
-		}
-		log.L(ctx).Errorf("No handler found for blockchain network action on namespace '%s'", namespace)
-	}
-	return nil
-}
-
-func (cb *callbacks) BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error {
-	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every handler
-		for _, cb := range cb.handlers {
-			// Send the event to all handlers and let them match it to a contract listener
-			if err := cb.BlockchainEvent(event); err != nil {
-				return err
-			}
-		}
-	} else {
-		if handler, ok := cb.handlers[namespace]; ok {
-			return handler.BlockchainEvent(event)
-		}
-		log.L(ctx).Errorf("No handler found for blockchain event on namespace '%s'", namespace)
-	}
-	return nil
 }
 
 type eventStreamWebsocket struct {
@@ -257,8 +201,7 @@ func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
-	f.callbacks.handlers = make(map[string]blockchain.Callbacks)
-	f.callbacks.opHandlers = make(map[string]core.OperationCallbacks)
+	f.callbacks = common.NewBlockchainCallbacks()
 
 	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
@@ -305,11 +248,11 @@ func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.
 }
 
 func (f *Fabric) SetHandler(namespace string, handler blockchain.Callbacks) {
-	f.callbacks.handlers[namespace] = handler
+	f.callbacks.SetHandler(namespace, handler)
 }
 
 func (f *Fabric) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
-	f.callbacks.opHandlers[namespace] = handler
+	f.callbacks.SetOperationalHandler(namespace, handler)
 }
 
 func (f *Fabric) Start() (err error) {
@@ -421,42 +364,9 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 		namespace = subInfo.namespace
 	}
 
-	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
-	if err != nil || len(hexUUIDs) != 32 {
-		log.L(ctx).Errorf("BatchPin event is not valid - bad uuids (%s): %s", sUUIDs, err)
-		return nil // move on
-	}
-	var txnID fftypes.UUID
-	copy(txnID[:], hexUUIDs[0:16])
-	var batchID fftypes.UUID
-	copy(batchID[:], hexUUIDs[16:32])
-
-	var batchHash fftypes.Bytes32
-	err = batchHash.UnmarshalText([]byte(sBatchHash))
+	batch, err := common.BuildBatchPin(ctx, namespace, event, sUUIDs, sBatchHash, sContexts, sPayloadRef)
 	if err != nil {
-		log.L(ctx).Errorf("BatchPin event is not valid - bad batchHash (%s): %s", sBatchHash, err)
 		return nil // move on
-	}
-
-	contexts := make([]*fftypes.Bytes32, len(sContexts))
-	for i, sHash := range sContexts {
-		var hash fftypes.Bytes32
-		err = hash.UnmarshalText([]byte(sHash))
-		if err != nil {
-			log.L(ctx).Errorf("BatchPin event is not valid - bad pin %d (%s): %s", i, sHash, err)
-			return nil // move on
-		}
-		contexts[i] = &hash
-	}
-
-	batch := &blockchain.BatchPin{
-		Namespace:       namespace,
-		TransactionID:   &txnID,
-		BatchID:         &batchID,
-		BatchHash:       &batchHash,
-		BatchPayloadRef: sPayloadRef,
-		Contexts:        contexts,
-		Event:           *event,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
@@ -472,7 +382,7 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	if err != nil {
 		return err
 	}
-	namespace := f.streams.getNamespaceFromSubName(subName)
+	namespace := common.GetNamespaceFromSubName(subName)
 	event := f.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on
