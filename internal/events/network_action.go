@@ -17,8 +17,6 @@
 package events
 
 import (
-	"context"
-
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -33,13 +31,7 @@ func (em *eventManager) actionTerminate(location *fftypes.JSONAny, event *blockc
 	if err := em.multiparty.TerminateContract(em.ctx, &namespace.Contracts, location, event); err != nil {
 		return err
 	}
-	// Currently, a termination event is implied to apply to ALL namespaces
-	return em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-		if err := em.database.UpsertNamespace(em.ctx, namespace, true); err != nil {
-			return err
-		}
-		return nil
-	})
+	return em.database.UpsertNamespace(em.ctx, namespace, true)
 }
 
 func (em *eventManager) BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {

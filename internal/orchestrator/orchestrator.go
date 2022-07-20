@@ -180,7 +180,7 @@ type orchestrator struct {
 	started        bool
 	namespace      core.NamespaceRef
 	config         Config
-	plugins        Plugins
+	plugins        *Plugins
 	multiparty     multiparty.Manager       // only for multiparty
 	batch          batch.Manager            // only for multiparty
 	broadcast      broadcast.Manager        // only for multiparty
@@ -202,7 +202,7 @@ type orchestrator struct {
 	txHelper       txcommon.Helper
 }
 
-func NewOrchestrator(ns core.NamespaceRef, config Config, plugins Plugins, metrics metrics.Manager) Orchestrator {
+func NewOrchestrator(ns core.NamespaceRef, config Config, plugins *Plugins, metrics metrics.Manager) Orchestrator {
 	or := &orchestrator{
 		namespace: ns,
 		config:    config,
@@ -399,7 +399,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.config.Multiparty.Enabled {
 		if or.multiparty == nil {
-			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.cancelCtx, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
+			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
 			if err != nil {
 				return err
 			}

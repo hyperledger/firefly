@@ -90,7 +90,7 @@ type namespace struct {
 	description  string
 	orchestrator orchestrator.Orchestrator
 	config       orchestrator.Config
-	plugins      orchestrator.Plugins
+	plugins      []string
 }
 
 type namespaceManager struct {
@@ -156,6 +156,18 @@ type authPlugin struct {
 	plugin auth.Plugin
 }
 
+func stringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func NewNamespaceManager(withDefaults bool) Manager {
 	nm := &namespaceManager{
 		namespaces:       make(map[string]*namespace),
@@ -201,10 +213,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		metrics.Registry()
 	}
 
-	defaultName := config.GetString(coreconfig.NamespacesDefault)
 	var v1Namespace *namespace
-
-	// Start an orchestrator per namespace
 	for _, ns := range nm.namespaces {
 		if err := nm.initNamespace(ns); err != nil {
 			return err
@@ -216,16 +225,29 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		}
 		log.L(ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.name, strconv.FormatBool(multiparty), version)
 		if multiparty && ns.orchestrator.MultiParty().GetNetworkVersion() == 1 {
-			if v1Namespace == nil || ns.name == defaultName {
+			// TODO:
+			// We should check the contract address too, AND should check previously-terminated contracts
+			// in addition to the active contract. That implies:
+			// - we must cache the address and version of each contract on the namespace in the database
+			// - when the orchestrator loads that info from the database (triggered from Orchestrator.Init),
+			//   it needs to somehow be available here
+			//
+			// In short, if any namespace was EVER pointed at a V1 contract, that contract and that namespace's plugins
+			// become the de facto configuration for ff_system as well. There can only be one V1 contract in the history
+			// of a given FireFly node, because it's impossible to re-create ff_system against a different contract
+			// or different set of plugins.
+			if v1Namespace == nil {
 				v1Namespace = ns
+			} else if !stringSlicesEqual(v1Namespace.plugins, ns.plugins) {
+				// TODO: localize error
+				return fmt.Errorf("could not initialize legacy '%s' namespace - found conflicting V1 multi-party config in %s and %s",
+					core.LegacySystemNamespace, v1Namespace.name, ns.name)
 			}
 		}
 	}
 
 	// If any namespace is a multiparty V1 namespace, insert the legacy ff_system namespace.
-	// The plugin and contract config for ff_system will be copied from:
-	// - the default namespace (if it is a multiparty V1 namespace) OR
-	// - the first multiparty V1 namespace found in the config
+	// Note that the contract address and plugin list must match for ALL V1 namespaces.
 	if v1Namespace != nil {
 		systemNS := *v1Namespace
 		systemNS.name = core.LegacySystemNamespace
@@ -237,11 +259,20 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	return err
 }
 
-func (nm *namespaceManager) initNamespace(ns *namespace) error {
+func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 	or := nm.utOrchestrator
 	if or == nil {
 		names := core.NamespaceRef{LocalName: ns.name, RemoteName: ns.remoteName}
-		or = orchestrator.NewOrchestrator(names, ns.config, ns.plugins, nm.metrics)
+		var plugins *orchestrator.Plugins
+		if ns.config.Multiparty.Enabled {
+			plugins, err = nm.validateMultiPartyConfig(nm.ctx, ns.name, ns.plugins)
+		} else {
+			plugins, err = nm.validateNonMultipartyConfig(nm.ctx, ns.name, ns.plugins)
+		}
+		if err != nil {
+			return err
+		}
+		or = orchestrator.NewOrchestrator(names, ns.config, plugins, nm.metrics)
 	}
 	orCtx, orCancel := context.WithCancel(nm.ctx)
 	if err := or.Init(orCtx, orCancel); err != nil {
@@ -784,8 +815,6 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		DefaultKey:       conf.GetString(coreconfig.NamespaceDefaultKey),
 		TokenRemoteNames: nm.tokenRemoteNames,
 	}
-	var p *orchestrator.Plugins
-	var err error
 	if multipartyEnabled.(bool) {
 		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
 		contractConfArraySize := contractsConf.ArraySize()
@@ -811,17 +840,6 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		config.Multiparty.Org.Key = orgKey
 		config.Multiparty.Org.Description = orgDesc
 		config.Multiparty.Contracts = contracts
-		p, err = nm.validateMultiPartyConfig(ctx, name, plugins)
-	} else {
-		p, err = nm.validateNonMultipartyConfig(ctx, name, plugins)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	p.Events = make(map[string]events.Plugin, len(nm.plugins.events))
-	for name, entry := range nm.plugins.events {
-		p.Events[name] = entry.plugin
 	}
 
 	return &namespace{
@@ -829,7 +847,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		remoteName:  remoteName,
 		description: conf.GetString(coreconfig.NamespaceDescription),
 		config:      config,
-		plugins:     *p,
+		plugins:     plugins,
 	}, nil
 }
 
@@ -908,6 +926,10 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsMultiparty, name)
 	}
 
+	result.Events = make(map[string]events.Plugin, len(nm.plugins.events))
+	for name, entry := range nm.plugins.events {
+		result.Events[name] = entry.plugin
+	}
 	return &result, nil
 }
 
@@ -962,6 +984,10 @@ func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, nam
 		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceNoDatabase, name)
 	}
 
+	result.Events = make(map[string]events.Plugin, len(nm.plugins.events))
+	for name, entry := range nm.plugins.events {
+		result.Events[name] = entry.plugin
+	}
 	return &result, nil
 }
 

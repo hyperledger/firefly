@@ -60,6 +60,7 @@ type FireFlyContractInfo struct {
 	Location     *fftypes.JSONAny `ffstruct:"FireFlyContractInfo" json:"location,omitempty"`
 	FirstEvent   string           `ffstruct:"FireFlyContractInfo" json:"firstEvent,omitempty"`
 	Subscription string           `ffstruct:"FireFlyContractInfo" json:"subscription,omitempty"`
+	// TODO: add Version
 }
 
 type NamespaceRef struct {

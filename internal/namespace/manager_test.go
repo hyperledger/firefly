@@ -137,6 +137,7 @@ func TestNewNamespaceManager(t *testing.T) {
 func TestInit(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
+	nm.metricsEnabled = true
 
 	mo := &orchestratormocks.Orchestrator{}
 	mmp := &multipartymocks.Manager{}

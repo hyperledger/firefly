@@ -24,7 +24,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/test/e2e"
@@ -65,6 +67,14 @@ func addNamespace(data map[string]interface{}, ns map[string]interface{}) {
 	namespaces := data["namespaces"].(map[interface{}]interface{})
 	predefined := namespaces["predefined"].([]interface{})
 	namespaces["predefined"] = append(predefined, ns)
+}
+
+func resetFireFly(t *testing.T, client *resty.Client) {
+	resp, err := client.R().
+		SetBody(map[string]interface{}{}).
+		Post("/reset")
+	require.NoError(t, err)
+	assert.Equal(t, 204, resp.StatusCode())
 }
 
 type ContractMigrationTestSuite struct {
@@ -134,6 +144,7 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 		},
 	}
 
+	// Add the new namespace to both config files
 	data1 := readConfig(suite.T(), suite.configFile1)
 	org["name"] = suite.testState.org1.Name
 	org["key"] = suite.testState.org1key.Value
@@ -147,30 +158,30 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 	writeConfig(suite.T(), suite.configFile2, data2)
 
 	admin1 := client.NewResty(suite.T())
-	admin1.SetBaseURL(suite.adminHost1 + "/spi/v1")
 	admin2 := client.NewResty(suite.T())
+	admin1.SetBaseURL(suite.adminHost1 + "/spi/v1")
 	admin2.SetBaseURL(suite.adminHost2 + "/spi/v1")
 
-	resp, err := admin1.R().
-		SetBody(map[string]interface{}{}).
-		Post("/reset")
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), 204, resp.StatusCode())
-	resp, err = admin2.R().
-		SetBody(map[string]interface{}{}).
-		Post("/reset")
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), 204, resp.StatusCode())
-
+	// Reset both nodes to pick up the new namespace
+	resetFireFly(suite.T(), admin1)
+	resetFireFly(suite.T(), admin2)
 	e2e.PollForUp(suite.T(), suite.testState.client1)
 	e2e.PollForUp(suite.T(), suite.testState.client2)
 
+	systemClient1 := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, "ff_system")
+	systemClient2 := client.NewFireFly(suite.T(), suite.testState.client2.Hostname, "ff_system")
 	client1 := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, testNamespace)
-	client1.RegisterSelfOrg(suite.T(), true)
-	client1.RegisterSelfNode(suite.T(), true)
 	client2 := client.NewFireFly(suite.T(), suite.testState.client2.Hostname, testNamespace)
-	client2.RegisterSelfOrg(suite.T(), true)
-	client2.RegisterSelfNode(suite.T(), true)
+
+	// Register org/node identities on ff_system if not registered (but not on the new namespace)
+	if systemClient1.GetOrganization(suite.T(), suite.testState.org1.Name) == nil {
+		systemClient1.RegisterSelfOrg(suite.T(), true)
+		systemClient1.RegisterSelfNode(suite.T(), true)
+	}
+	if systemClient2.GetOrganization(suite.T(), suite.testState.org2.Name) == nil {
+		systemClient2.RegisterSelfOrg(suite.T(), true)
+		systemClient2.RegisterSelfNode(suite.T(), true)
+	}
 
 	eventNames := "message_confirmed"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", testNamespace, eventNames)
@@ -179,18 +190,27 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 	received1 := e2e.WsReader(ws1, true)
 	received2 := e2e.WsReader(ws2, true)
 
-	data := &core.DataRefOrValue{
-		Value: fftypes.JSONAnyPtr(`"test"`),
-	}
-	resp, err = client1.BroadcastMessage(suite.T(), "topic", data, false)
+	// Verify that a broadcast on the new namespace succeeds under the V1 contract
+	data := &core.DataRefOrValue{Value: fftypes.JSONAnyPtr(`"test"`)}
+	resp, err := client1.BroadcastMessage(suite.T(), "topic", data, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
 	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
 	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
 
+	// Register org/node identities on the new namespace and then migrate to the V2 contract
+	client1.RegisterSelfOrg(suite.T(), true)
+	client1.RegisterSelfNode(suite.T(), true)
+	client2.RegisterSelfOrg(suite.T(), true)
+	client2.RegisterSelfNode(suite.T(), true)
 	client1.NetworkAction(suite.T(), core.NetworkActionTerminate)
 
+	// TODO: remove
+	// We should actually change the ws listener to listen for blockchain events too, and wait for the "terminate" events on ff_system
+	time.Sleep(5 * time.Second)
+
+	// Verify that a broadcast on the new namespace succeeds under the V2 contract
 	resp, err = client1.BroadcastMessage(suite.T(), "topic", data, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
@@ -198,6 +218,7 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
 	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
 
+	// Verify the contract addresses for both blockchain events
 	events := client1.GetBlockchainEvents(suite.T(), suite.testState.startTime)
 	assert.Equal(suite.T(), address2, strings.ToLower(events[0].Info["address"].(string)))
 	assert.Equal(suite.T(), address1, strings.ToLower(events[1].Info["address"].(string)))

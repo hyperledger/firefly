@@ -209,14 +209,14 @@ func (client *FireFlyClient) GetBlob(t *testing.T, data *core.Data, expectedStat
 	return blob
 }
 
-func (client *FireFlyClient) GetOrgs(t *testing.T, expectedStatus int) (orgs []*core.Identity) {
+func (client *FireFlyClient) GetOrgs(t *testing.T) (orgs []*core.Identity) {
 	path := client.namespaced(urlGetOrganizations)
 	resp, err := client.Client.R().
 		SetQueryParam("sort", "created").
 		SetResult(&orgs).
 		Get(path)
 	require.NoError(t, err)
-	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return orgs
 }
 
@@ -341,6 +341,19 @@ func (client *FireFlyClient) GetIdentity(t *testing.T, id *fftypes.UUID) *core.I
 		SetResult(&identity).
 		Get(client.namespaced(fmt.Sprintf(urlIdentity, id)))
 	assert.NoError(t, err)
+	assert.True(t, res.IsSuccess())
+	return &identity
+}
+
+func (client *FireFlyClient) GetOrganization(t *testing.T, idOrName string) *core.Identity {
+	var identity core.Identity
+	res, err := client.Client.R().
+		SetResult(&identity).
+		Get(client.namespaced(fmt.Sprintf("%s/%s", urlGetOrganizations, idOrName)))
+	assert.NoError(t, err)
+	if res.StatusCode() == 404 {
+		return nil
+	}
 	assert.True(t, res.IsSuccess())
 	return &identity
 }

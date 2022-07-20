@@ -81,8 +81,6 @@ type Contract struct {
 }
 
 type multipartyManager struct {
-	ctx            context.Context
-	stop           func()
 	namespace      core.NamespaceRef
 	database       database.Plugin
 	blockchain     blockchain.Plugin
@@ -98,13 +96,11 @@ type multipartyManager struct {
 	}
 }
 
-func NewMultipartyManager(ctx context.Context, stop func(), ns core.NamespaceRef, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
+func NewMultipartyManager(ctx context.Context, ns core.NamespaceRef, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
 	if di == nil || bi == nil || mm == nil || om == nil || th == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "MultipartyManager")
 	}
 	mp := &multipartyManager{
-		ctx:        ctx,
-		stop:       stop,
 		namespace:  ns,
 		config:     config,
 		database:   di,
@@ -138,12 +134,6 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 	version, err := mm.blockchain.GetNetworkVersion(ctx, location)
 	if err != nil {
 		return err
-	}
-
-	if mm.namespace.LocalName == core.LegacySystemNamespace && version > 1 {
-		// ff_system namespace should stop its orchestrator for network V2+
-		mm.stop()
-		return nil
 	}
 
 	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.LocalName, location, firstEvent)
