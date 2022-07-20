@@ -5400,7 +5400,6 @@ paths:
                       - transaction_submitted
                       - message_confirmed
                       - message_rejected
-                      - namespace_confirmed
                       - datatype_confirmed
                       - identity_confirmed
                       - identity_updated
@@ -5504,7 +5503,6 @@ paths:
                     - transaction_submitted
                     - message_confirmed
                     - message_rejected
-                    - namespace_confirmed
                     - datatype_confirmed
                     - identity_confirmed
                     - identity_updated
@@ -7521,7 +7519,6 @@ paths:
                       - transaction_submitted
                       - message_confirmed
                       - message_rejected
-                      - namespace_confirmed
                       - datatype_confirmed
                       - identity_confirmed
                       - identity_updated
@@ -8790,86 +8787,11 @@ paths:
                     description:
                       description: A description of the namespace
                       type: string
-                    fireflyContract:
-                      description: Info on the FireFly smart contract configured for
-                        this namespace
-                      properties:
-                        active:
-                          description: The currently active FireFly smart contract
-                          properties:
-                            finalEvent:
-                              description: The identifier for the final blockchain
-                                event received from this contract before termination
-                              type: string
-                            firstEvent:
-                              description: A blockchain specific string, such as a
-                                block number, to start listening from. The special
-                                strings 'oldest' and 'newest' are supported by all
-                                blockchain connectors
-                              type: string
-                            index:
-                              description: The index of this contract in the config
-                                file
-                              type: integer
-                            location:
-                              description: A blockchain specific contract identifier.
-                                For example an Ethereum contract address, or a Fabric
-                                chaincode name and channel
-                            subscription:
-                              description: The backend identifier of the subscription
-                                for the FireFly BatchPin contract
-                              type: string
-                          type: object
-                        terminated:
-                          description: Previously-terminated FireFly smart contracts
-                          items:
-                            description: Previously-terminated FireFly smart contracts
-                            properties:
-                              finalEvent:
-                                description: The identifier for the final blockchain
-                                  event received from this contract before termination
-                                type: string
-                              firstEvent:
-                                description: A blockchain specific string, such as
-                                  a block number, to start listening from. The special
-                                  strings 'oldest' and 'newest' are supported by all
-                                  blockchain connectors
-                                type: string
-                              index:
-                                description: The index of this contract in the config
-                                  file
-                                type: integer
-                              location:
-                                description: A blockchain specific contract identifier.
-                                  For example an Ethereum contract address, or a Fabric
-                                  chaincode name and channel
-                              subscription:
-                                description: The backend identifier of the subscription
-                                  for the FireFly BatchPin contract
-                                type: string
-                            type: object
-                          type: array
-                      type: object
-                    id:
-                      description: The UUID of the namespace. For locally established
-                        namespaces will be different on each node in the network.
-                        For broadcast namespaces, will be the same on every node
-                      format: uuid
-                      type: string
-                    message:
-                      description: The UUID of broadcast message used to establish
-                        the namespace. Unset for local namespaces
-                      format: uuid
-                      type: string
                     name:
-                      description: The namespace name
+                      description: The local namespace name
                       type: string
-                    type:
-                      description: The type of the namespace
-                      enum:
-                      - local
-                      - broadcast
-                      - system
+                    remoteName:
+                      description: The namespace name within the multiparty network
                       type: string
                   type: object
                 type: array
@@ -8910,86 +8832,11 @@ paths:
                   description:
                     description: A description of the namespace
                     type: string
-                  fireflyContract:
-                    description: Info on the FireFly smart contract configured for
-                      this namespace
-                    properties:
-                      active:
-                        description: The currently active FireFly smart contract
-                        properties:
-                          finalEvent:
-                            description: The identifier for the final blockchain event
-                              received from this contract before termination
-                            type: string
-                          firstEvent:
-                            description: A blockchain specific string, such as a block
-                              number, to start listening from. The special strings
-                              'oldest' and 'newest' are supported by all blockchain
-                              connectors
-                            type: string
-                          index:
-                            description: The index of this contract in the config
-                              file
-                            type: integer
-                          location:
-                            description: A blockchain specific contract identifier.
-                              For example an Ethereum contract address, or a Fabric
-                              chaincode name and channel
-                          subscription:
-                            description: The backend identifier of the subscription
-                              for the FireFly BatchPin contract
-                            type: string
-                        type: object
-                      terminated:
-                        description: Previously-terminated FireFly smart contracts
-                        items:
-                          description: Previously-terminated FireFly smart contracts
-                          properties:
-                            finalEvent:
-                              description: The identifier for the final blockchain
-                                event received from this contract before termination
-                              type: string
-                            firstEvent:
-                              description: A blockchain specific string, such as a
-                                block number, to start listening from. The special
-                                strings 'oldest' and 'newest' are supported by all
-                                blockchain connectors
-                              type: string
-                            index:
-                              description: The index of this contract in the config
-                                file
-                              type: integer
-                            location:
-                              description: A blockchain specific contract identifier.
-                                For example an Ethereum contract address, or a Fabric
-                                chaincode name and channel
-                            subscription:
-                              description: The backend identifier of the subscription
-                                for the FireFly BatchPin contract
-                              type: string
-                          type: object
-                        type: array
-                    type: object
-                  id:
-                    description: The UUID of the namespace. For locally established
-                      namespaces will be different on each node in the network. For
-                      broadcast namespaces, will be the same on every node
-                    format: uuid
-                    type: string
-                  message:
-                    description: The UUID of broadcast message used to establish the
-                      namespace. Unset for local namespaces
-                    format: uuid
-                    type: string
                   name:
-                    description: The namespace name
+                    description: The local namespace name
                     type: string
-                  type:
-                    description: The type of the namespace
-                    enum:
-                    - local
-                    - broadcast
-                    - system
+                  remoteName:
+                    description: The namespace name within the multiparty network
                     type: string
                 type: object
           description: Success
@@ -14818,7 +14665,6 @@ paths:
                       - transaction_submitted
                       - message_confirmed
                       - message_rejected
-                      - namespace_confirmed
                       - datatype_confirmed
                       - identity_confirmed
                       - identity_updated
@@ -14929,7 +14775,6 @@ paths:
                     - transaction_submitted
                     - message_confirmed
                     - message_rejected
-                    - namespace_confirmed
                     - datatype_confirmed
                     - identity_confirmed
                     - identity_updated
@@ -17037,7 +16882,6 @@ paths:
                       - transaction_submitted
                       - message_confirmed
                       - message_rejected
-                      - namespace_confirmed
                       - datatype_confirmed
                       - identity_confirmed
                       - identity_updated
@@ -20567,7 +20411,7 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/status:
     get:
-      description: Gets the status of this node
+      description: Gets the status of this namespace
       operationId: getStatusNamespace
       parameters:
       - description: The namespace which scopes this request
@@ -20590,9 +20434,102 @@ paths:
             application/json:
               schema:
                 properties:
+                  multiparty:
+                    description: Information about the multi-party system configured
+                      on this namespace
+                    properties:
+                      contract:
+                        description: Information about the multi-party smart contract
+                          configured for this namespace
+                        properties:
+                          active:
+                            description: The currently active FireFly smart contract
+                            properties:
+                              firstEvent:
+                                description: A blockchain specific string, such as
+                                  a block number, to start listening from. The special
+                                  strings 'oldest' and 'newest' are supported by all
+                                  blockchain connectors
+                                type: string
+                              index:
+                                description: The index of this contract in the config
+                                  file
+                                type: integer
+                              info:
+                                description: Additional info about the current status
+                                  of the multi-party contract
+                                properties:
+                                  finalEvent:
+                                    description: The identifier for the final blockchain
+                                      event received from this contract before termination
+                                    type: string
+                                  subscription:
+                                    description: The backend identifier of the subscription
+                                      for the FireFly BatchPin contract
+                                    type: string
+                                type: object
+                              location:
+                                description: A blockchain specific contract identifier.
+                                  For example an Ethereum contract address, or a Fabric
+                                  chaincode name and channel
+                            type: object
+                          terminated:
+                            description: Previously-terminated FireFly smart contracts
+                            items:
+                              description: Previously-terminated FireFly smart contracts
+                              properties:
+                                firstEvent:
+                                  description: A blockchain specific string, such
+                                    as a block number, to start listening from. The
+                                    special strings 'oldest' and 'newest' are supported
+                                    by all blockchain connectors
+                                  type: string
+                                index:
+                                  description: The index of this contract in the config
+                                    file
+                                  type: integer
+                                info:
+                                  description: Additional info about the current status
+                                    of the multi-party contract
+                                  properties:
+                                    finalEvent:
+                                      description: The identifier for the final blockchain
+                                        event received from this contract before termination
+                                      type: string
+                                    subscription:
+                                      description: The backend identifier of the subscription
+                                        for the FireFly BatchPin contract
+                                      type: string
+                                  type: object
+                                location:
+                                  description: A blockchain specific contract identifier.
+                                    For example an Ethereum contract address, or a
+                                    Fabric chaincode name and channel
+                              type: object
+                            type: array
+                        type: object
+                      enabled:
+                        description: Whether multi-party mode is enabled for this
+                          namespace
+                        type: boolean
+                    type: object
                   namespace:
                     description: The namespace that this status applies to
-                    type: string
+                    properties:
+                      created:
+                        description: The time the namespace was created
+                        format: date-time
+                        type: string
+                      description:
+                        description: A description of the namespace
+                        type: string
+                      name:
+                        description: The local namespace name
+                        type: string
+                      remoteName:
+                        description: The namespace name within the multiparty network
+                        type: string
+                    type: object
                   node:
                     description: Details of the local node
                     properties:
@@ -20609,8 +20546,8 @@ paths:
                         type: boolean
                     type: object
                   org:
-                    description: Details of the organization identity that operates
-                      this node
+                    description: Details of the root organization identity registered
+                      for this namespace on the local node
                     properties:
                       did:
                         description: The DID of the organization identity, if registered
@@ -20649,12 +20586,12 @@ paths:
                         type: array
                     type: object
                   plugins:
-                    description: Information about plugins configured on this node
+                    description: Information about plugins configured on this namespace
                     properties:
                       blockchain:
-                        description: The blockchain plugins on this node
+                        description: The blockchain plugins on this namespace
                         items:
-                          description: The blockchain plugins on this node
+                          description: The blockchain plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -20665,9 +20602,9 @@ paths:
                           type: object
                         type: array
                       dataExchange:
-                        description: The data exchange plugins on this node
+                        description: The data exchange plugins on this namespace
                         items:
-                          description: The data exchange plugins on this node
+                          description: The data exchange plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -20678,9 +20615,9 @@ paths:
                           type: object
                         type: array
                       database:
-                        description: The database plugins on this node
+                        description: The database plugins on this namespace
                         items:
-                          description: The database plugins on this node
+                          description: The database plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -20691,9 +20628,9 @@ paths:
                           type: object
                         type: array
                       events:
-                        description: The event plugins on this node
+                        description: The event plugins on this namespace
                         items:
-                          description: The event plugins on this node
+                          description: The event plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -20704,9 +20641,9 @@ paths:
                           type: object
                         type: array
                       identity:
-                        description: The identity plugins on this node
+                        description: The identity plugins on this namespace
                         items:
-                          description: The identity plugins on this node
+                          description: The identity plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -20717,9 +20654,9 @@ paths:
                           type: object
                         type: array
                       sharedStorage:
-                        description: The shared storage plugins on this node
+                        description: The shared storage plugins on this namespace
                         items:
-                          description: The shared storage plugins on this node
+                          description: The shared storage plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -20730,9 +20667,9 @@ paths:
                           type: object
                         type: array
                       tokens:
-                        description: The token plugins on this node
+                        description: The token plugins on this namespace
                         items:
-                          description: The token plugins on this node
+                          description: The token plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -28035,7 +27972,7 @@ paths:
       - Default Namespace
   /status:
     get:
-      description: Gets the status of this node
+      description: Gets the status of this namespace
       operationId: getStatus
       parameters:
       - description: Server-side request timeout (milliseconds, or set a custom suffix
@@ -28051,9 +27988,102 @@ paths:
             application/json:
               schema:
                 properties:
+                  multiparty:
+                    description: Information about the multi-party system configured
+                      on this namespace
+                    properties:
+                      contract:
+                        description: Information about the multi-party smart contract
+                          configured for this namespace
+                        properties:
+                          active:
+                            description: The currently active FireFly smart contract
+                            properties:
+                              firstEvent:
+                                description: A blockchain specific string, such as
+                                  a block number, to start listening from. The special
+                                  strings 'oldest' and 'newest' are supported by all
+                                  blockchain connectors
+                                type: string
+                              index:
+                                description: The index of this contract in the config
+                                  file
+                                type: integer
+                              info:
+                                description: Additional info about the current status
+                                  of the multi-party contract
+                                properties:
+                                  finalEvent:
+                                    description: The identifier for the final blockchain
+                                      event received from this contract before termination
+                                    type: string
+                                  subscription:
+                                    description: The backend identifier of the subscription
+                                      for the FireFly BatchPin contract
+                                    type: string
+                                type: object
+                              location:
+                                description: A blockchain specific contract identifier.
+                                  For example an Ethereum contract address, or a Fabric
+                                  chaincode name and channel
+                            type: object
+                          terminated:
+                            description: Previously-terminated FireFly smart contracts
+                            items:
+                              description: Previously-terminated FireFly smart contracts
+                              properties:
+                                firstEvent:
+                                  description: A blockchain specific string, such
+                                    as a block number, to start listening from. The
+                                    special strings 'oldest' and 'newest' are supported
+                                    by all blockchain connectors
+                                  type: string
+                                index:
+                                  description: The index of this contract in the config
+                                    file
+                                  type: integer
+                                info:
+                                  description: Additional info about the current status
+                                    of the multi-party contract
+                                  properties:
+                                    finalEvent:
+                                      description: The identifier for the final blockchain
+                                        event received from this contract before termination
+                                      type: string
+                                    subscription:
+                                      description: The backend identifier of the subscription
+                                        for the FireFly BatchPin contract
+                                      type: string
+                                  type: object
+                                location:
+                                  description: A blockchain specific contract identifier.
+                                    For example an Ethereum contract address, or a
+                                    Fabric chaincode name and channel
+                              type: object
+                            type: array
+                        type: object
+                      enabled:
+                        description: Whether multi-party mode is enabled for this
+                          namespace
+                        type: boolean
+                    type: object
                   namespace:
                     description: The namespace that this status applies to
-                    type: string
+                    properties:
+                      created:
+                        description: The time the namespace was created
+                        format: date-time
+                        type: string
+                      description:
+                        description: A description of the namespace
+                        type: string
+                      name:
+                        description: The local namespace name
+                        type: string
+                      remoteName:
+                        description: The namespace name within the multiparty network
+                        type: string
+                    type: object
                   node:
                     description: Details of the local node
                     properties:
@@ -28070,8 +28100,8 @@ paths:
                         type: boolean
                     type: object
                   org:
-                    description: Details of the organization identity that operates
-                      this node
+                    description: Details of the root organization identity registered
+                      for this namespace on the local node
                     properties:
                       did:
                         description: The DID of the organization identity, if registered
@@ -28110,12 +28140,12 @@ paths:
                         type: array
                     type: object
                   plugins:
-                    description: Information about plugins configured on this node
+                    description: Information about plugins configured on this namespace
                     properties:
                       blockchain:
-                        description: The blockchain plugins on this node
+                        description: The blockchain plugins on this namespace
                         items:
-                          description: The blockchain plugins on this node
+                          description: The blockchain plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -28126,9 +28156,9 @@ paths:
                           type: object
                         type: array
                       dataExchange:
-                        description: The data exchange plugins on this node
+                        description: The data exchange plugins on this namespace
                         items:
-                          description: The data exchange plugins on this node
+                          description: The data exchange plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -28139,9 +28169,9 @@ paths:
                           type: object
                         type: array
                       database:
-                        description: The database plugins on this node
+                        description: The database plugins on this namespace
                         items:
-                          description: The database plugins on this node
+                          description: The database plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -28152,9 +28182,9 @@ paths:
                           type: object
                         type: array
                       events:
-                        description: The event plugins on this node
+                        description: The event plugins on this namespace
                         items:
-                          description: The event plugins on this node
+                          description: The event plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -28165,9 +28195,9 @@ paths:
                           type: object
                         type: array
                       identity:
-                        description: The identity plugins on this node
+                        description: The identity plugins on this namespace
                         items:
-                          description: The identity plugins on this node
+                          description: The identity plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -28178,9 +28208,9 @@ paths:
                           type: object
                         type: array
                       sharedStorage:
-                        description: The shared storage plugins on this node
+                        description: The shared storage plugins on this namespace
                         items:
-                          description: The shared storage plugins on this node
+                          description: The shared storage plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -28191,9 +28221,9 @@ paths:
                           type: object
                         type: array
                       tokens:
-                        description: The token plugins on this node
+                        description: The token plugins on this namespace
                         items:
-                          description: The token plugins on this node
+                          description: The token plugins on this namespace
                           properties:
                             name:
                               description: The name of the plugin
@@ -33197,7 +33227,7 @@ paths:
       - Default Namespace
   /websockets:
     get:
-      description: Gets the status of the current WebSocket connections to this node
+      description: Gets a list of the current WebSocket connections to this node
       operationId: getWebSockets
       parameters:
       - description: Server-side request timeout (milliseconds, or set a custom suffix

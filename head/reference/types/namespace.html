@@ -256,8 +256,6 @@
       <li><a href="#field-descriptions" id="markdown-toc-field-descriptions">Field Descriptions</a></li>
     </ol>
   </li>
-  <li><a href="#fireflycontracts" id="markdown-toc-fireflycontracts">FireFlyContracts</a></li>
-  <li><a href="#fireflycontractinfo" id="markdown-toc-fireflycontractinfo">FireFlyContractInfo</a></li>
 </ol><hr />
       <h2 id="namespace-1">
         
@@ -285,16 +283,10 @@ FireFly node.</p>
     
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
-    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"7b2d9c7e-3d60-452c-a409-05e77c855d3a"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"remoteName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Default predefined namespace"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"local"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-16T01:23:16Z"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"fireflyContract"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-        </span><span class="nl">"active"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-            </span><span class="nl">"index"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w">
-        </span><span class="p">}</span><span class="w">
-    </span><span class="p">}</span><span class="w">
+    </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-16T01:23:16Z"</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
       <h3 id="field-descriptions">
@@ -316,18 +308,13 @@ FireFly node.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">id</code></td>
-      <td>The UUID of the namespace. For locally established namespaces will be different on each node in the network. For broadcast namespaces, will be the same on every node</td>
-      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">message</code></td>
-      <td>The UUID of broadcast message used to establish the namespace. Unset for local namespaces</td>
-      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
-    </tr>
-    <tr>
       <td><code class="language-plaintext highlighter-rouge">name</code></td>
-      <td>The namespace name</td>
+      <td>The local namespace name</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">remoteName</code></td>
+      <td>The namespace name within the multiparty network</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
     <tr>
@@ -336,94 +323,9 @@ FireFly node.</p>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">type</code></td>
-      <td>The type of the namespace</td>
-      <td><code class="language-plaintext highlighter-rouge">FFEnum</code>:<br /><code class="language-plaintext highlighter-rouge">"local"</code><br /><code class="language-plaintext highlighter-rouge">"broadcast"</code><br /><code class="language-plaintext highlighter-rouge">"system"</code></td>
-    </tr>
-    <tr>
       <td><code class="language-plaintext highlighter-rouge">created</code></td>
       <td>The time the namespace was created</td>
       <td><a href="simpletypes#fftime"><code class="language-plaintext highlighter-rouge">FFTime</code></a></td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">fireflyContract</code></td>
-      <td>Info on the FireFly smart contract configured for this namespace</td>
-      <td><a href="#fireflycontracts"><code class="language-plaintext highlighter-rouge">FireFlyContracts</code></a></td>
-    </tr>
-  </tbody>
-</table>
-      <h2 id="fireflycontracts">
-        
-        
-          <a href="#fireflycontracts" class="anchor-heading" aria-labelledby="fireflycontracts"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FireFlyContracts
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Field Name</th>
-      <th>Description</th>
-      <th>Type</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">active</code></td>
-      <td>The currently active FireFly smart contract</td>
-      <td><a href="#fireflycontractinfo"><code class="language-plaintext highlighter-rouge">FireFlyContractInfo</code></a></td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">terminated</code></td>
-      <td>Previously-terminated FireFly smart contracts</td>
-      <td><a href="#fireflycontractinfo"><code class="language-plaintext highlighter-rouge">FireFlyContractInfo[]</code></a></td>
-    </tr>
-  </tbody>
-</table>
-      <h2 id="fireflycontractinfo">
-        
-        
-          <a href="#fireflycontractinfo" class="anchor-heading" aria-labelledby="fireflycontractinfo"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FireFlyContractInfo
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Field Name</th>
-      <th>Description</th>
-      <th>Type</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">index</code></td>
-      <td>The index of this contract in the config file</td>
-      <td><code class="language-plaintext highlighter-rouge">int</code></td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">finalEvent</code></td>
-      <td>The identifier for the final blockchain event received from this contract before termination</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">location</code></td>
-      <td>A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel</td>
-      <td><a href="simpletypes#jsonany"><code class="language-plaintext highlighter-rouge">JSONAny</code></a></td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">firstEvent</code></td>
-      <td>A blockchain specific string, such as a block number, to start listening from. The special strings ‘oldest’ and ‘newest’ are supported by all blockchain connectors</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
-    </tr>
-    <tr>
-      <td><code class="language-plaintext highlighter-rouge">subscription</code></td>
-      <td>The backend identifier of the subscription for the FireFly BatchPin contract</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
   </tbody>
 </table>
