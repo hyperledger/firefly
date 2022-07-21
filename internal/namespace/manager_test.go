@@ -143,6 +143,7 @@ func TestInit(t *testing.T) {
 	mmp := &multipartymocks.Manager{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
 	mo.On("MultiParty").Return(mmp)
+	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{})
 	mmp.On("GetNetworkVersion").Return(2)
 	nm.utOrchestrator = mo
 

@@ -224,7 +224,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 			version = fmt.Sprintf("%d", ns.orchestrator.MultiParty().GetNetworkVersion())
 		}
 		log.L(ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.name, strconv.FormatBool(multiparty), version)
-		if multiparty && ns.orchestrator.MultiParty().GetNetworkVersion() == 1 {
+		if multiparty && nm.checkForV1Contract(ctx, ns) {
 			// TODO:
 			// We should check the contract address too, AND should check previously-terminated contracts
 			// in addition to the active contract. That implies:
@@ -236,6 +236,8 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 			// become the de facto configuration for ff_system as well. There can only be one V1 contract in the history
 			// of a given FireFly node, because it's impossible to re-create ff_system against a different contract
 			// or different set of plugins.
+
+			//TODO: still need to understand why we should check the contract address
 			if v1Namespace == nil {
 				v1Namespace = ns
 			} else if !stringSlicesEqual(v1Namespace.plugins, ns.plugins) {
@@ -257,6 +259,22 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		nm.namespaces[core.LegacySystemNamespace] = &systemNS
 	}
 	return err
+}
+
+func (nm *namespaceManager) checkForV1Contract(ctx context.Context, ns *namespace) bool {
+	if ns.orchestrator.MultiParty().GetNetworkVersion() == 1 {
+		return true
+	}
+
+	// check previously terminated contracts to see if they were ever V1
+	stored := ns.orchestrator.GetNamespace(ctx)
+	for _, contract := range stored.Contracts.Terminated {
+		if contract.Version == 1 {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
