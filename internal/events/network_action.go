@@ -24,14 +24,7 @@ import (
 )
 
 func (em *eventManager) actionTerminate(location *fftypes.JSONAny, event *blockchain.Event) error {
-	namespace, err := em.database.GetNamespace(em.ctx, em.namespace.LocalName)
-	if err != nil {
-		return err
-	}
-	if err := em.multiparty.TerminateContract(em.ctx, &namespace.Contracts, location, event); err != nil {
-		return err
-	}
-	return em.database.UpsertNamespace(em.ctx, namespace, true)
+	return em.multiparty.TerminateContract(em.ctx, location, event)
 }
 
 func (em *eventManager) BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {

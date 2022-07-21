@@ -27,8 +27,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (or *orchestrator) GetNamespace(ctx context.Context, ns string) (*core.Namespace, error) {
-	return or.database().GetNamespace(ctx, ns)
+func (or *orchestrator) GetNamespace(ctx context.Context) *core.Namespace {
+	return or.namespace
 }
 
 func (or *orchestrator) GetTransactionByID(ctx context.Context, id string) (*core.Transaction, error) {

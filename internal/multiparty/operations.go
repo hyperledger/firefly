@@ -108,6 +108,7 @@ func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.Prepared
 	switch data := op.Data.(type) {
 	case batchPinData:
 		batch := data.Batch
+		contract := mm.namespace.Contracts.Active
 		return nil, false, mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Key, &blockchain.BatchPin{
 			Namespace:       batch.Namespace,
 			TransactionID:   batch.TX.ID,
@@ -115,10 +116,11 @@ func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.Prepared
 			BatchHash:       batch.Hash,
 			BatchPayloadRef: data.PayloadRef,
 			Contexts:        data.Contexts,
-		}, mm.activeContract.location)
+		}, contract.Location)
 
 	case networkActionData:
-		return nil, false, mm.blockchain.SubmitNetworkAction(ctx, op.NamespacedIDString(), data.Key, data.Type, mm.activeContract.location)
+		contract := mm.namespace.Contracts.Active
+		return nil, false, mm.blockchain.SubmitNetworkAction(ctx, op.NamespacedIDString(), data.Key, data.Type, contract.Location)
 
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)

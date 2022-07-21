@@ -51,6 +51,7 @@ type Manager interface {
 	UploadBlob(ctx context.Context, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error)
 	DownloadBlob(ctx context.Context, dataID string) (*core.Blob, io.ReadCloser, error)
 	HydrateBatch(ctx context.Context, persistedBatch *core.BatchPersisted) (*core.Batch, error)
+	Start()
 	WaitStop()
 }
 
@@ -123,8 +124,11 @@ func NewDataManager(ctx context.Context, ns core.NamespaceRef, di database.Plugi
 		batchTimeout: config.GetDuration(coreconfig.MessageWriterBatchTimeout),
 		maxInserts:   config.GetInt(coreconfig.MessageWriterBatchMaxInserts),
 	})
-	dm.messageWriter.start()
 	return dm, nil
+}
+
+func (dm *dataManager) Start() {
+	dm.messageWriter.start()
 }
 
 func (dm *dataManager) CheckDatatype(ctx context.Context, datatype *core.Datatype) error {

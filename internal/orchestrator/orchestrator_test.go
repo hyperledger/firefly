@@ -114,7 +114,7 @@ func newTestOrchestrator() *testOrchestrator {
 		orchestrator: orchestrator{
 			ctx:       ctx,
 			cancelCtx: cancel,
-			namespace: core.NamespaceRef{LocalName: "ns", RemoteName: "ns"},
+			namespace: &core.Namespace{LocalName: "ns", RemoteName: "ns"},
 		},
 		mdi: &databasemocks.Plugin{},
 		mdm: &datamocks.Manager{},
@@ -192,7 +192,7 @@ func newTestOrchestrator() *testOrchestrator {
 
 func TestNewOrchestrator(t *testing.T) {
 	or := NewOrchestrator(
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{LocalName: "ns1", RemoteName: "ns1"},
 		Config{},
 		&Plugins{},
 		&metricsmocks.Manager{},
@@ -382,6 +382,8 @@ func TestStartBatchFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.mdm.On("Start").Return(nil)
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -391,6 +393,8 @@ func TestStartStopOk(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
+	or.mdm.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
@@ -401,6 +405,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mdm.On("WaitStop").Return(nil)
 	or.msd.On("WaitStop").Return(nil)
 	or.mom.On("WaitStop").Return(nil)
+	or.mem.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()

@@ -220,6 +220,11 @@ func (_m *Manager) ResolveInlineData(ctx context.Context, msg *data.NewMessage) 
 	return r0
 }
 
+// Start provides a mock function with given fields:
+func (_m *Manager) Start() {
+	_m.Called()
+}
+
 // UpdateMessageCache provides a mock function with given fields: msg, _a1
 func (_m *Manager) UpdateMessageCache(msg *core.Message, _a1 core.DataArray) {
 	_m.Called(msg, _a1)

@@ -33,7 +33,7 @@ func TestGetStatus(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetStatus", mock.Anything).
-		Return(&core.NodeStatus{}, nil)
+		Return(&core.NamespaceStatus{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

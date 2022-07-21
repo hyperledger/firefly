@@ -61,10 +61,6 @@ func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS,
 	}
 }
 
-func (or *orchestrator) UUIDCollectionEvent(resType database.UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID) {
-	// do nothing
-}
-
 func (or *orchestrator) HashCollectionNSEvent(resType database.HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32) {
 	// do nothing
 }

@@ -55,14 +55,6 @@ func (nm *namespaceManager) UUIDCollectionNSEvent(resType database.UUIDCollectio
 	})
 }
 
-func (nm *namespaceManager) UUIDCollectionEvent(resType database.UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID) {
-	nm.adminEvents.Dispatch(&core.ChangeEvent{
-		Collection: string(resType),
-		Type:       eventType,
-		ID:         id,
-	})
-}
-
 func (nm *namespaceManager) HashCollectionNSEvent(resType database.HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32) {
 	nm.adminEvents.Dispatch(&core.ChangeEvent{
 		Collection: string(resType),

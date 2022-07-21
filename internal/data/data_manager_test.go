@@ -44,6 +44,7 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
 	dm, err := NewDataManager(ctx, ns, mdi, mdx)
 	assert.NoError(t, err)
+	dm.Start()
 	return dm.(*dataManager), ctx, func() {
 		cancel()
 		dm.WaitStop()

@@ -260,19 +260,39 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 }
 
 func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
+	var plugins *orchestrator.Plugins
+	if ns.config.Multiparty.Enabled {
+		plugins, err = nm.validateMultiPartyConfig(nm.ctx, ns.name, ns.plugins)
+	} else {
+		plugins, err = nm.validateNonMultipartyConfig(nm.ctx, ns.name, ns.plugins)
+	}
+	if err != nil {
+		return err
+	}
+
+	stored, err := plugins.Database.Plugin.GetNamespace(nm.ctx, ns.name)
+	switch {
+	case err != nil:
+		return err
+	case stored != nil:
+		stored.RemoteName = ns.remoteName
+		stored.Description = ns.description
+		// TODO: should we check for discrepancies in the multiparty contract config?
+	default:
+		stored = &core.Namespace{
+			LocalName:   ns.name,
+			RemoteName:  ns.remoteName,
+			Description: ns.description,
+			Created:     fftypes.Now(),
+		}
+	}
+	if err = plugins.Database.Plugin.UpsertNamespace(nm.ctx, stored, true); err != nil {
+		return err
+	}
+
 	or := nm.utOrchestrator
 	if or == nil {
-		names := core.NamespaceRef{LocalName: ns.name, RemoteName: ns.remoteName}
-		var plugins *orchestrator.Plugins
-		if ns.config.Multiparty.Enabled {
-			plugins, err = nm.validateMultiPartyConfig(nm.ctx, ns.name, ns.plugins)
-		} else {
-			plugins, err = nm.validateNonMultipartyConfig(nm.ctx, ns.name, ns.plugins)
-		}
-		if err != nil {
-			return err
-		}
-		or = orchestrator.NewOrchestrator(names, ns.config, plugins, nm.metrics)
+		or = orchestrator.NewOrchestrator(stored, ns.config, plugins, nm.metrics)
 	}
 	orCtx, orCancel := context.WithCancel(nm.ctx)
 	if err := or.Init(orCtx, orCancel); err != nil {
@@ -1008,11 +1028,8 @@ func (nm *namespaceManager) GetNamespaces(ctx context.Context) ([]*core.Namespac
 	nm.nsMux.Lock()
 	defer nm.nsMux.Unlock()
 	results := make([]*core.Namespace, 0, len(nm.namespaces))
-	for name, ns := range nm.namespaces {
-		results = append(results, &core.Namespace{
-			Name:        name,
-			Description: ns.description,
-		})
+	for _, ns := range nm.namespaces {
+		results = append(results, ns.orchestrator.GetNamespace(ctx))
 	}
 	return results, nil
 }

@@ -75,12 +75,6 @@ func (cb *callbacks) UUIDCollectionNSEvent(resType database.UUIDCollectionNS, ev
 	}
 }
 
-func (cb *callbacks) UUIDCollectionEvent(resType database.UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID) {
-	if cb, ok := cb.handlers[database.GlobalHandler]; ok {
-		cb.UUIDCollectionEvent(resType, eventType, id)
-	}
-}
-
 func (cb *callbacks) HashCollectionNSEvent(resType database.HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32) {
 	if cb, ok := cb.handlers[ns]; ok {
 		cb.HashCollectionNSEvent(resType, eventType, ns, hash)

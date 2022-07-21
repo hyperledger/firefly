@@ -400,55 +400,6 @@ func TestEnrichIdentityConfirmedFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestEnrichNamespaceConfirmed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
-	ctx := context.Background()
-
-	// Setup the IDs
-	ref1 := fftypes.NewUUID()
-	ev1 := fftypes.NewUUID()
-
-	// Setup enrichment
-	mdi.On("GetNamespaceByID", mock.Anything, ref1).Return(&core.Namespace{
-		ID: ref1,
-	}, nil)
-
-	event := &core.Event{
-		ID:        ev1,
-		Type:      core.EventTypeNamespaceConfirmed,
-		Reference: ref1,
-	}
-
-	enriched, err := txHelper.EnrichEvent(ctx, event)
-	assert.NoError(t, err)
-	assert.Equal(t, ref1, enriched.NamespaceDetails.ID)
-}
-
-func TestEnrichNamespaceConfirmedFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
-	ctx := context.Background()
-
-	// Setup the IDs
-	ref1 := fftypes.NewUUID()
-	ev1 := fftypes.NewUUID()
-
-	// Setup enrichment
-	mdi.On("GetNamespaceByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
-
-	event := &core.Event{
-		ID:        ev1,
-		Type:      core.EventTypeNamespaceConfirmed,
-		Reference: ref1,
-	}
-
-	_, err := txHelper.EnrichEvent(ctx, event)
-	assert.EqualError(t, err, "pop")
-}
-
 func TestEnrichTokenPoolConfirmed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
