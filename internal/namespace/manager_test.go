@@ -287,23 +287,22 @@ func TestInitOrchestratorFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
+	nm.mdi.On("Capabilities").Return(&database.Capabilities{
+		Concurrency: true,
+	})
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mdi.On("SetHandler", "default", mock.Anything).Return()
-	nm.mdi.On("GetIdentities", mock.Anything, "default", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mbi.On("SetHandler", "default", mock.Anything).Return()
-	nm.mbi.On("SetOperationHandler", "default", mock.Anything).Return()
+	nm.mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, fmt.Errorf("pop"))
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mps.On("SetHandler", "default", mock.Anything).Return()
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "pop")
+	assert.Regexp(t, "pop", err)
 }
 
 func TestInitVersion1(t *testing.T) {
@@ -967,7 +966,23 @@ func TestLoadNamespacesNonMultipartyNoDatabase(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10392", err)
 }
 
@@ -981,13 +996,29 @@ func TestLoadNamespacesMultipartyUnknownPlugin(t *testing.T) {
     default: ns1
     predefined:
     - name: ns1
-      plugins: [bad]
+      plugins: [basicauth, bad]
       multiparty:
         enabled: true
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10390.*unknown", err)
 }
 
@@ -1007,7 +1038,23 @@ func TestLoadNamespacesMultipartyMultipleBlockchains(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10394.*blockchain", err)
 }
 
@@ -1027,7 +1074,23 @@ func TestLoadNamespacesMultipartyMultipleDX(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10394.*dataexchange", err)
 }
 
@@ -1047,7 +1110,23 @@ func TestLoadNamespacesMultipartyMultipleSS(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10394.*sharedstorage", err)
 }
 
@@ -1067,11 +1146,27 @@ func TestLoadNamespacesMultipartyMultipleDB(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10394.*database", err)
 }
 
-func TestLoadNamespacesMultipartyWithAuth(t *testing.T) {
+func TestInitNamespacesMultipartyWithAuth(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -1159,7 +1254,23 @@ func TestLoadNamespacesNonMultipartyMultipleDB(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10394.*database", err)
 }
 
@@ -1177,7 +1288,23 @@ func TestLoadNamespacesNonMultipartyMultipleBlockchains(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10394.*blockchain", err)
 }
 
@@ -1197,7 +1324,23 @@ func TestLoadNamespacesMultipartyMissingPlugins(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10391", err)
 }
 
@@ -1215,7 +1358,23 @@ func TestLoadNamespacesNonMultipartyWithDX(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10393", err)
 }
 
@@ -1233,7 +1392,23 @@ func TestLoadNamespacesNonMultipartyWithSharedStorage(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10393", err)
 }
 
@@ -1247,11 +1422,27 @@ func TestLoadNamespacesNonMultipartyUnknownPlugin(t *testing.T) {
     default: ns1
     predefined:
     - name: ns1
-      plugins: [bad]
+      plugins: [basicauth, erc721, bad]
   `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10390.*unknown", err)
 }
 
@@ -1555,5 +1746,23 @@ func TestAuthorize(t *testing.T) {
 	err := nm.Authorize(context.Background(), &fftypes.AuthReq{
 		Namespace: "ns1",
 	})
+	assert.NoError(t, err)
+}
+
+func TestValidateNonMultipartyConfig(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+    namespaces:
+      default: ns1
+      predefined:
+      - name: ns1
+        plugins: [postgres, erc721]
+    `))
+	assert.NoError(t, err)
+
+	_, err = nm.validateNonMultipartyConfig(nm.ctx, "ns1", []string{"postgres", "erc721"})
 	assert.NoError(t, err)
 }

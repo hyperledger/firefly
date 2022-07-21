@@ -157,14 +157,24 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.defhandler = tor.mdh
 	tor.orchestrator.defsender = tor.mds
 	tor.orchestrator.config.Multiparty.Enabled = true
-	tor.orchestrator.plugins.Blockchain.Plugin = tor.mbi
-	tor.orchestrator.plugins.SharedStorage.Plugin = tor.mps
-	tor.orchestrator.plugins.DataExchange.Plugin = tor.mdx
-	tor.orchestrator.plugins.Database.Plugin = tor.mdi
-	tor.orchestrator.plugins.Tokens = []TokensPlugin{{
-		Name:   "token",
-		Plugin: tor.mti,
-	}}
+	tor.orchestrator.plugins = &Plugins{
+		Blockchain: BlockchainPlugin{
+			Plugin: tor.mbi,
+		},
+		SharedStorage: SharedStoragePlugin{
+			Plugin: tor.mps,
+		},
+		DataExchange: DataExchangePlugin{
+			Plugin: tor.mdx,
+		},
+		Database: DatabasePlugin{
+			Plugin: tor.mdi,
+		},
+		Tokens: []TokensPlugin{{
+			Name:   "token",
+			Plugin: tor.mti,
+		}},
+	}
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -184,7 +194,7 @@ func TestNewOrchestrator(t *testing.T) {
 	or := NewOrchestrator(
 		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
 		Config{},
-		Plugins{},
+		&Plugins{},
 		&metricsmocks.Manager{},
 	)
 	assert.NotNil(t, or)
