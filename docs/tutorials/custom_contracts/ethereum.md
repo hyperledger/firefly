@@ -7,7 +7,6 @@ nav_order: 1
 ---
 
 # Work with Ethereum smart contracts
-
 {: .no_toc }
 
 This guide describes the steps to deploy a smart contract to an Ethereum blockchain and use FireFly to interact with it in order to submit transactions, query for states and listening for events.

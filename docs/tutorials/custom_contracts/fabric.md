@@ -7,7 +7,6 @@ nav_order: 2
 ---
 
 # Work with Hyperledger Fabric chaincodes
-
 {: .no_toc }
 
 This guide describes the steps to deploy a chaincode to a Hyperledger Fabric blockchain and use FireFly to interact with it in order to submit transactions, query for states and listening for events.
@@ -368,6 +367,13 @@ We will use the FFI JSON constructed above and `POST` that to the `/contracts/in
 }
 ```
 
+> **NOTE**: We can broadcast this contract interface conveniently with the help of FireFly Sandbox running at `http://127.0.0.1:5108`
+* Go to the `Contracts Section`
+* Click on `Define a Contract Interface`
+* Select `FFI - FireFly Interface` in the `Interface Fromat` dropdown
+* Copy the `FFI JSON` crafted by you into the `Schema` Field
+* Click on `Run`
+
 ## Create an HTTP API for the contract
 
 Now comes the fun part where we see some of the powerful, developer-friendly features of FireFly. The next thing we're going to do is tell FireFly to build an HTTP API for this chaincode, complete with an OpenAPI Specification and Swagger UI. As part of this, we'll also tell FireFly where the chaincode is on the blockchain.
@@ -416,6 +422,14 @@ We need to copy the `id` field we got in the response from the previous step to 
   }
 }
 ```
+> **NOTE**: We can create this Http API conveniently with the help of FireFly Sandbox running at `http://127.0.0.1:5108`
+* Go to the `Contracts Section`
+* Click on `Register a Contract API`
+* Select the name of your broadcasted FFI in the `Contract Interface` dropdown
+* In the `Name` Field, give a name that will be part of the URL for your Http API
+* In the `Chaincode` Field, give your chaincode name for which you wrote the FFI
+* In the `Channel` Field, give the channel name where your chaincode is deployed
+* Click on `Run`
 
 ## View OpenAPI spec for the contract
 

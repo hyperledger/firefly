@@ -202,7 +202,7 @@ version: 1.1.0%
 
 > **NOTE:** If you had multiple members in your stack, with each member representing a different fabric organizational entity, then you would need to add separate ccp.yml files for all of them in a similar manner.
 
-## Setting up Batchpin chaincode and Running your stack
+## Setting up Batchpin chaincode and running your stack
 
 ### Deploying batchpin chaincode to fabric network
 
@@ -218,7 +218,7 @@ In `$HOME/.firefly/stacks/my-remote-fabric/init/config`, you will find a firefly
 
 In this file, under the fabconnect section of blockchain-fabric section, you need to change the chaincode value to your batchpin chaincode name, and the channel value to the channel name where your batchpin chaincode was deployed in the previous step.
 
-### Start your stack
+### Starting your FireFly stack
 
 To start your stack now, simply run:
 
@@ -246,179 +246,10 @@ ff logs my-remote-fabric
 
 ```
 
-## Define and Broadcast FireFly Interface Document for your chaincode
+## Integrate your FireFly stack with your Fabric chaincode 
 
-In order to teach FireFly how to interact with chaincode deployed in your remote fabric network, a FireFly Interface (FFI) document is needed. While Ethereum (or other EVM based blockchains) requires an Application Binary Interface (ABI) to govern the interaction between the client and the smart contract, which is specific to each smart contract interface design, Fabric defines a generic [chaincode interface](https://hyperledger-fabric.readthedocs.io/en/release-2.0/chaincode4ade.html#chaincode-api) and leaves the encoding and decoding of the parameter values to the discretion of the chaincode developer.
+Once your stack is up and running, you can define and broadcast FireFly Interface Document for your remote fabric chaincode. You can refer to [Broadcast the Contract Interface(Fabric)](http://localhost:4000/firefly/tutorials/custom_contracts/fabric.html#broadcast-the-contract-interface) guide for this.
 
-As a result, the FFI document for a Fabric chaincode must be hand-crafted. For more details on  it, you can refer to this [guide](https://hyperledger.github.io/firefly/tutorials/custom_contracts/fabric.html#the-firefly-interface-format).
+You can also now create an HTTP API for your fabric chaincode which will help you easily query/invoke all your chaincode methods with your organizational context that you set up in fabconnect. You can refer to [Create an HTTP API for the contract(Fabric)](http://localhost:4000/firefly/tutorials/custom_contracts/fabric.html#broadcast-the-contract-interface) guide for this.
 
-Once you have a FireFly Interface representation of your chaincode, you need to broadcast that to the entire network. This broadcast will be pinned to the blockchain, so you can always refer to this specific name and version, and everyone in the network will know exactly which contract interface we are talking about.
-
-We will be making this broadcast conveniently with the help of FireFly Sandbox running at `http://127.0.0.1:5108`
-
-* Go to the `Contracts Section`
-* Click on `Define a Contract Interface`
-* Select `FFI - FireFly Interface` in the `Interface Fromat` dropdown
-* Copy the `FFI JSON` created by you into the `Schema` Field
-* Click on `Run`
-
-This will broadcast your chaincode FFI to the entire firefly network, and also pin the broadcast to your blockchain.
-
-## Create an HTTP API for the contract
-
-Now comes the fun part where we see some of the powerful, developer-friendly features of FireFly. The next thing we're going to do is tell FireFly to build an HTTP API for this chaincode, complete with an OpenAPI Specification and Swagger UI. As part of this, we'll also tell FireFly where the chaincode is on the blockchain.
-
-Like the interface broadcast above, this will also generate a broadcast which will be pinned to the blockchain so all the members of the network will be aware of and able to interact with this API.
-
-We will be making this broadcast also conveniently with the help of FireFly Sandbox running at `http://127.0.0.1:5108`
-
-* Go to the `Contracts Section`
-* Click on `Register a Contract API`
-* Select the name of your previously broadcasted FFI in the `Contract Interface` dropdown
-* Input a name in the `Name` Field that will be part of the URL for our HTTP API
-* In the `Chaincode` Field, give the name of your chaincode for which you wrote the FFI and want to interact with
-* In the `Channel` Field, give the name of the channel of your fabric network where your chaincode is deployed
-* Click on `Run`
-
-This will broadcast your API to the entire firefly network, and also pin the broadcast to our blockchain.
-
-Now if you go to FireFly UI running at `http://127.0.0.1:5000/ui`, under the APIs sub-section of the Blockchain section of sidebar, you will find the API details for your contract. In the UI column, click on the link button to go the Swagger UI.
-
-From here, you can easily query/invoke all your chaincode methods with your organizational context.
-
-### /invoke/\* endpoints
-
-The `/invoke` endpoints in the generated API are for submitting transactions. These endpoints will be mapped to the `POST /transactions` endpoint of the [FabConnect API](https://github.com/hyperledger/firefly-fabconnect).
-
-### /query/\* endpoints
-
-The `/query` endpoints in the generated API, on the other hand, are for sending query requests. These endpoints will be mapped to the `POST /query` endpoint of the Fabconnect API, which under the cover only sends chaincode endorsement requests to the target peer node without sending a trasaction payload to the orderer node.
-
-## Invoke/Query the chaincode
-
-### Invoke
-
-Now that we've got everything set up, it's time to use our chaincode!
-
-> **NOTE:** Suppose the chaincode deployed in our remote fabric network is the classic `asset_transfer` chaincode.
-
-We're going to make a `POST` request to the `invoke/CreateAsset` endpoint to create a new asset.
-
-#### Request
-
-`POST` `http://localhost:5000/api/v1/namespaces/default/apis/asset_transfer/invoke/CreateAsset`
-
-```json
-{
-  "input": {
-    "color": "blue",
-    "id": "asset-01",
-    "owner": "Harry",
-    "size": "30",
-    "value": "23400"
-  }
-}
-```
-
-#### Response
-
-```json
-{
-  "id": "b8e905cc-bc23-434a-af7d-13c6d85ae545",
-  "namespace": "default",
-  "tx": "79d2668e-4626-4634-9448-1b40fa0d9dfd",
-  "type": "blockchain_invoke",
-  "status": "Pending",
-  "plugin": "fabric",
-  "input": {
-    "input": {
-      "color": "blue",
-      "id": "asset-02",
-      "owner": "Harry",
-      "size": "30",
-      "value": "23400"
-    },
-    "interface": "f1e5522c-59a5-4787-bbfd-89975e5b0954",
-    "key": "Org1MSP::x509::CN=org_0,OU=client::CN=fabric_ca.org1.example.com,OU=Hyperledger FireFly,O=org1.example.com,L=Raleigh,ST=North Carolina,C=US",
-    "location": {
-      "chaincode": "asset_transfer",
-      "channel": "firefly"
-    },
-    "method": {
-      "description": "",
-      "id": "e5a170d1-0be1-4697-800b-f4bcfaf71cf6",
-      "interface": "f1e5522c-59a5-4787-bbfd-89975e5b0954",
-      "name": "CreateAsset",
-      "namespace": "default",
-      "params": [
-        {
-          "name": "id",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "color",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "size",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "owner",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "value",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "pathname": "CreateAsset",
-      "returns": []
-    },
-    "methodPath": "CreateAsset",
-    "type": "invoke"
-  },
-  "created": "2022-05-02T17:08:40.811630044Z",
-  "updated": "2022-05-02T17:08:40.811630044Z"
-}
-```
-
-You'll notice that we got an ID back with status `Pending`, and that's expected due to the asynchronous programming model of working with custom onchain logic in FireFly. To see what the latest state is now, we can query the chaincode. In a little bit, we'll also subscribe to the events emitted by this chaincode so we can know when the state is updated in realtime.
-
-### Query
-
-To make a read-only request to the blockchain to check the current list of assets, we can make a `POST` to the `query/GetAllAssets` endpoint.
-
-#### Request
-
-`POST` `http://localhost:5000/api/v1/namespaces/default/apis/asset_transfer/query/GetAllAssets`
-
-```json
-{}
-```
-
-#### Response
-
-```json
-[
-  {
-    "AppraisedValue": 23400,
-    "Color": "blue",
-    "ID": "asset-01",
-    "Owner": "Harry",
-    "Size": 30
-  }
-]
-```
-
-> **NOTE:** Some chaincodes may have queries that require input parameters. That's why the query endpoint is a `POST`, rather than a `GET` so that parameters can be passed as JSON in the request body. This particular function does not have any parameters, so we just pass an empty JSON object.
+To view the OpenAPI spec for your contract, or to submit transactions, query for states and listen for events, you can further refer to [Work with Hyperledger Fabric chaincodes](http://localhost:4000/firefly/tutorials/custom_contracts/fabric.html#work-with-hyperledger-fabric-chaincodes) guide.
