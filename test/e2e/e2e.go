@@ -168,18 +168,14 @@ func WaitForContractEvent(t *testing.T, client *client.FireFlyClient, c chan *co
 	for {
 		eventDelivery := <-c
 		if eventDelivery.Type == core.EventTypeBlockchainEventReceived {
-			event, err := client.GetBlockchainEvent(t, eventDelivery.Event.Reference.String())
-			if err != nil {
-				t.Logf("WARN: unable to get event: %v", err.Error())
-				continue
-			}
-			eventJSON, ok := event.(map[string]interface{})
-			if !ok {
-				t.Logf("WARN: unable to parse changeEvent: %v", event)
-				continue
-			}
-			if checkObject(t, match, eventJSON) {
-				return eventJSON
+			event := client.GetBlockchainEvent(t, eventDelivery.Event.Reference.String())
+			eventJSON, err := json.Marshal(&event)
+			require.NoError(t, err)
+			var eventMap map[string]interface{}
+			err = json.Unmarshal(eventJSON, &eventMap)
+			require.NoError(t, err)
+			if checkObject(t, match, eventMap) {
+				return eventMap
 			}
 		}
 	}

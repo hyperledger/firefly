@@ -39,6 +39,7 @@ func makeTestIntervals(start int, numIntervals int) (intervals []core.ChartHisto
 }
 
 func TestGetHistogramBadIntervalMin(t *testing.T) {
+	newTestOrchestrator()
 	or := newTestOrchestrator()
 	_, err := or.GetChartHistogram(context.Background(), 1234567890, 9876543210, core.ChartHistogramMinBuckets-1, database.CollectionName("test"))
 	assert.Regexp(t, "FF10298", err)

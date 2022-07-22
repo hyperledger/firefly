@@ -386,6 +386,7 @@ var (
 	MultipartyContractsActive      = ffm("MultipartyContracts.active", "The currently active FireFly smart contract")
 	MultipartyContractsTerminated  = ffm("MultipartyContracts.terminated", "Previously-terminated FireFly smart contracts")
 	MultipartyContractIndex        = ffm("MultipartyContract.index", "The index of this contract in the config file")
+	MultipartyContractVersion      = ffm("MultipartyContract.version", "The version of this multiparty contract")
 	MultipartyContractFinalEvent   = ffm("MultipartyContract.finalEvent", "The identifier for the final blockchain event received from this contract before termination")
 	MultipartyContractFirstEvent   = ffm("MultipartyContract.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors")
 	MultipartyContractLocation     = ffm("MultipartyContract.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")

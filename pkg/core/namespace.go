@@ -42,6 +42,7 @@ type MultipartyContracts struct {
 
 type MultipartyContract struct {
 	Index      int                    `ffstruct:"MultipartyContract" json:"index"`
+	Version    int                    `ffstruct:"MultipartyContract" json:"version,omitempty"`
 	Location   *fftypes.JSONAny       `ffstruct:"MultipartyContract" json:"location,omitempty"`
 	FirstEvent string                 `ffstruct:"MultipartyContract" json:"firstEvent,omitempty"`
 	Info       MultipartyContractInfo `ffstruct:"MultipartyContract" json:"info"`

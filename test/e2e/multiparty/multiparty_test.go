@@ -133,8 +133,8 @@ func beforeE2ETest(t *testing.T) *testState {
 	e2e.PollForUp(t, ts.client2)
 
 	for {
-		orgsC1 := ts.client1.GetOrgs(t, 200)
-		orgsC2 := ts.client2.GetOrgs(t, 200)
+		orgsC1 := ts.client1.GetOrgs(t)
+		orgsC2 := ts.client2.GetOrgs(t)
 		if len(orgsC1) >= 2 && len(orgsC2) >= 2 {
 			// in case there are more than two orgs in the network we need to ensure
 			// we select the same two that were provided in the first two elements

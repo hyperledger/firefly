@@ -20472,6 +20472,9 @@ paths:
                                 description: A blockchain specific contract identifier.
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
+                              version:
+                                description: The version of this multiparty contract
+                                type: integer
                             type: object
                           terminated:
                             description: Previously-terminated FireFly smart contracts
@@ -20505,6 +20508,9 @@ paths:
                                   description: A blockchain specific contract identifier.
                                     For example an Ethereum contract address, or a
                                     Fabric chaincode name and channel
+                                version:
+                                  description: The version of this multiparty contract
+                                  type: integer
                               type: object
                             type: array
                         type: object
@@ -28026,6 +28032,9 @@ paths:
                                 description: A blockchain specific contract identifier.
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
+                              version:
+                                description: The version of this multiparty contract
+                                type: integer
                             type: object
                           terminated:
                             description: Previously-terminated FireFly smart contracts
@@ -28059,6 +28068,9 @@ paths:
                                   description: A blockchain specific contract identifier.
                                     For example an Ethereum contract address, or a
                                     Fabric chaincode name and channel
+                                version:
+                                  description: The version of this multiparty contract
+                                  type: integer
                               type: object
                             type: array
                         type: object

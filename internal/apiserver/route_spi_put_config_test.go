@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2021 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,15 +16,24 @@
 
 package apiserver
 
-import "github.com/hyperledger/firefly-common/pkg/ffapi"
+import (
+	"bytes"
+	"net/http/httptest"
+	"testing"
 
-// The Service Provider Interface (SPI) allows external microservices (such as the FireFly Transaction Manager)
-// to act as augmented components to the core.
-var spiRoutes = []*ffapi.Route{
-	spiGetNamespaceByName,
-	spiGetNamespaces,
-	spiGetOpByID,
-	spiGetOps,
-	spiPatchOpByID,
-	spiPostReset,
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+func TestAdminPostResetConfig(t *testing.T) {
+	mgr, _, as := newTestServer()
+	r := as.createAdminMuxRouter(mgr)
+	req := httptest.NewRequest("POST", "/spi/v1/reset", bytes.NewReader([]byte(`{}`)))
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	mgr.On("Reset", mock.Anything).Return()
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 204, res.Result().StatusCode)
 }

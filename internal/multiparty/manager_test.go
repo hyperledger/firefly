@@ -57,7 +57,6 @@ func newTestMultipartyManager() *testMultipartyManager {
 		mmi: &metricsmocks.Manager{},
 		mth: &txcommonmocks.Helper{},
 		multipartyManager: multipartyManager{
-			ctx:       context.Background(),
 			namespace: &core.Namespace{LocalName: "ns1", RemoteName: "ns1"},
 		},
 	}
@@ -82,7 +81,7 @@ func TestNewMultipartyManager(t *testing.T) {
 		core.OpTypeBlockchainNetworkAction,
 	}).Return()
 	ns := &core.Namespace{LocalName: "ns1", RemoteName: "ns1"}
-	nm, err := NewMultipartyManager(context.Background(), func() {}, ns, config, mdi, mbi, mom, mmi, mth)
+	nm, err := NewMultipartyManager(context.Background(), ns, config, mdi, mbi, mom, mmi, mth)
 	assert.NotNil(t, nm)
 	assert.NoError(t, err)
 	assert.Equal(t, "MultipartyManager", nm.Name())
@@ -91,7 +90,7 @@ func TestNewMultipartyManager(t *testing.T) {
 
 func TestInitFail(t *testing.T) {
 	config := Config{Contracts: []Contract{}}
-	_, err := NewMultipartyManager(context.Background(), func() {}, &core.Namespace{}, config, nil, nil, nil, nil, nil)
+	_, err := NewMultipartyManager(context.Background(), &core.Namespace{}, config, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -144,32 +143,6 @@ func TestConfigureContractLocationChanged(t *testing.T) {
 
 	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
-}
-
-func TestConfigureContractTerminateSystem(t *testing.T) {
-	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
-		"address": "0x123",
-	}.String())
-
-	mp := newTestMultipartyManager()
-	defer mp.cleanup(t)
-	stopped := false
-	mp.stop = func() { stopped = true }
-	mp.namespace.LocalName = core.LegacySystemNamespace
-
-	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(2, nil)
-
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 0},
-	}
-	mp.multipartyManager.config.Contracts = []Contract{{
-		FirstEvent: "0",
-		Location:   location,
-	}}
-
-	err := mp.ConfigureContract(context.Background())
-	assert.NoError(t, err)
-	assert.True(t, stopped)
 }
 
 func TestResolveContractDeprecatedConfig(t *testing.T) {
