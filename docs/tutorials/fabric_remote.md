@@ -6,10 +6,9 @@ nav_order:
 ---
 
 # Work with remote Hyperledger Fabric Network
-
 {: .no_toc }
 
-This guide describes the steps to use FireFly to interact with a chaincode deployed to an external Hyperledger Fabric blockchain network (not created by Firefly) in order to submit transactions and query for states.
+The FireFly CLI makes it quick and easy to create an entire FireFly development environment on your local machine, including a new blockchain from scratch. However, sometimes a developer may want to connect their local FireFly development environment to a Fabric network that already exists on their machine or elsewhere. This guide describes the steps to connect FireFly to an external Hyperledger Fabric blockchain network (not created by the FireFly CLI), including interacting with a custom chaincode in order to submit transactions and query for state.
 
 > **NOTE:** This guide assumes that you are already running a Hyperledger Fabric blockchain network and have a chaicode deployed in that network that you want to connect to with FireFly.
 
