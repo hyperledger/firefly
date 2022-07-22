@@ -116,7 +116,8 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 		"tbd": {plugin: &identitymocks.Plugin{}},
 	}
 	nm.plugins.tokens = map[string]tokensPlugin{
-		"erc721": {plugin: nm.mti},
+		"erc721":  {plugin: nm.mti},
+		"erc1155": {plugin: nm.mti},
 	}
 	nm.plugins.events = map[string]eventsPlugin{
 		"websockets": {plugin: nm.mev},
@@ -344,6 +345,237 @@ func TestInitVersion1(t *testing.T) {
 	assert.Equal(t, mo, nm.Orchestrator("default"))
 	assert.Nil(t, nm.Orchestrator("unknown"))
 	assert.NotNil(t, nm.Orchestrator(core.LegacySystemNamespace))
+
+	mo.AssertExpectations(t)
+}
+
+func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.metricsEnabled = true
+
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
+		LocalName:   "default",
+		RemoteName:  "default",
+		Description: "used to be V1",
+		Contracts: core.MultipartyContracts{
+			Active: core.MultipartyContract{
+				Version: 2,
+			},
+			Terminated: []core.MultipartyContract{{
+				Version: 1,
+			}},
+		},
+	})
+	mmp.On("GetNetworkVersion").Return(2)
+	nm.utOrchestrator = mo
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
+	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, mo, nm.Orchestrator("default"))
+	assert.Nil(t, nm.Orchestrator("unknown"))
+
+	mo.AssertExpectations(t)
+}
+
+func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.metricsEnabled = true
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: default
+    predefined:
+    - name: default
+      plugins: [ethereum, postgres, erc721, ipfs, ffdx]
+      multiparty:
+        enabled: true
+    - name: ns2
+      plugins: [ethereum, postgres, erc1155, ipfs, ffdx]
+      multiparty:
+        enabled: true
+  `))
+	assert.NoError(t, err)
+
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
+		Description: "used to be V1",
+		Contracts: core.MultipartyContracts{
+			Active: core.MultipartyContract{
+				Version: 2,
+			},
+			Terminated: []core.MultipartyContract{{
+				Version: 1,
+			}},
+		},
+	})
+	mmp.On("GetNetworkVersion").Return(2)
+	nm.utOrchestrator = mo
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
+	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10421", err)
+
+	assert.Equal(t, mo, nm.Orchestrator("default"))
+	assert.Nil(t, nm.Orchestrator("unknown"))
+
+	mo.AssertExpectations(t)
+}
+
+func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.metricsEnabled = true
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: default
+    predefined:
+    - name: default
+      plugins: [ethereum, postgres, erc721, ipfs, ffdx]
+      multiparty:
+        enabled: true
+    - name: ns2
+      plugins: [ethereum, postgres, erc1155, erc721, ipfs, ffdx]
+      multiparty:
+        enabled: true
+  `))
+	assert.NoError(t, err)
+
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
+		Description: "used to be V1",
+		Contracts: core.MultipartyContracts{
+			Active: core.MultipartyContract{
+				Version: 2,
+			},
+			Terminated: []core.MultipartyContract{{
+				Version: 1,
+			}},
+		},
+	})
+	mmp.On("GetNetworkVersion").Return(2)
+	nm.utOrchestrator = mo
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
+	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10421", err)
+
+	assert.Equal(t, mo, nm.Orchestrator("default"))
+	assert.Nil(t, nm.Orchestrator("unknown"))
+
+	mo.AssertExpectations(t)
+}
+
+func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.metricsEnabled = true
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: default
+    predefined:
+    - name: default
+      plugins: [ethereum, postgres, erc721, ipfs, ffdx]
+      multiparty:
+        enabled: true
+    - name: ns2
+      plugins: [ethereum, postgres, erc721, ipfs, ffdx]
+      multiparty:
+        enabled: true
+  `))
+	assert.NoError(t, err)
+
+	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
+		Description: "used to be V1",
+		Contracts: core.MultipartyContracts{
+			Active: core.MultipartyContract{
+				Version: 2,
+			},
+			Terminated: []core.MultipartyContract{{
+				Version: 1,
+			}},
+		},
+	})
+	mmp.On("GetNetworkVersion").Return(2)
+	nm.utOrchestrator = mo
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
+	nm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
+	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, mo, nm.Orchestrator("default"))
+	assert.Nil(t, nm.Orchestrator("unknown"))
 
 	mo.AssertExpectations(t)
 }

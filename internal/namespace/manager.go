@@ -224,26 +224,16 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 			version = fmt.Sprintf("%d", ns.orchestrator.MultiParty().GetNetworkVersion())
 		}
 		log.L(ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.name, strconv.FormatBool(multiparty), version)
+		// If any namespace was EVER pointed at a V1 contract, that contract and that namespace's plugins
+		// become the de facto configuration for ff_system as well. There can only be one V1 contract in the history
+		// of a given FireFly node, because it's impossible to re-create ff_system against a different contract
+		// or different set of plugins.
+		// TODO: still need to understand why we should check the contract address
 		if multiparty && nm.checkForV1Contract(ctx, ns) {
-			// TODO:
-			// We should check the contract address too, AND should check previously-terminated contracts
-			// in addition to the active contract. That implies:
-			// - we must cache the address and version of each contract on the namespace in the database
-			// - when the orchestrator loads that info from the database (triggered from Orchestrator.Init),
-			//   it needs to somehow be available here
-			//
-			// In short, if any namespace was EVER pointed at a V1 contract, that contract and that namespace's plugins
-			// become the de facto configuration for ff_system as well. There can only be one V1 contract in the history
-			// of a given FireFly node, because it's impossible to re-create ff_system against a different contract
-			// or different set of plugins.
-
-			//TODO: still need to understand why we should check the contract address
 			if v1Namespace == nil {
 				v1Namespace = ns
 			} else if !stringSlicesEqual(v1Namespace.plugins, ns.plugins) {
-				// TODO: localize error
-				return fmt.Errorf("could not initialize legacy '%s' namespace - found conflicting V1 multi-party config in %s and %s",
-					core.LegacySystemNamespace, v1Namespace.name, ns.name)
+				return i18n.NewError(ctx, coremsgs.MsgCannotInitLegacyNS, core.LegacySystemNamespace, v1Namespace.name, ns.name)
 			}
 		}
 	}
