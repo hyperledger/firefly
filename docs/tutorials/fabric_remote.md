@@ -248,8 +248,8 @@ ff logs my-remote-fabric
 
 ## Integrate your FireFly stack with your Fabric chaincode 
 
-Once your stack is up and running, you can define and broadcast FireFly Interface Document for your remote fabric chaincode. You can refer to [Broadcast the Contract Interface(Fabric)](http://localhost:4000/firefly/tutorials/custom_contracts/fabric.html#broadcast-the-contract-interface) guide for this.
+Once your stack is up and running, you can define and broadcast FireFly Interface Document for your remote fabric chaincode. You can refer to [Broadcast the Contract Interface(Fabric)](./custom_contracts/fabric.html#broadcast-the-contract-interface) guide for this.
 
-You can also now create an HTTP API for your fabric chaincode which will help you easily query/invoke all your chaincode methods with your organizational context that you set up in fabconnect. You can refer to [Create an HTTP API for the contract(Fabric)](http://localhost:4000/firefly/tutorials/custom_contracts/fabric.html#broadcast-the-contract-interface) guide for this.
+You can also now create an HTTP API for your fabric chaincode which will help you easily query/invoke all your chaincode methods with your organizational context that you set up in fabconnect. You can refer to [Create an HTTP API for the contract(Fabric)](./custom_contracts/fabric.html#create-an-http-api-for-the-contract) guide for this.
 
-To view the OpenAPI spec for your contract, or to submit transactions, query for states and listen for events, you can further refer to [Work with Hyperledger Fabric chaincodes](http://localhost:4000/firefly/tutorials/custom_contracts/fabric.html#work-with-hyperledger-fabric-chaincodes) guide.
+To view the OpenAPI spec for your contract, or to submit transactions, query for states and listen for events, you can further refer to [Work with Hyperledger Fabric chaincodes](./custom_contracts/fabric.html#work-with-hyperledger-fabric-chaincodes) guide.
