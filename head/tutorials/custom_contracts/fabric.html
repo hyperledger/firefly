@@ -102,7 +102,7 @@
                     <a href="/firefly/head/tutorials/custom_contracts/ethereum.html" class="nav-list-link">Ethereum</a>
                   </li><li class="nav-list-item  active">
                     <a href="/firefly/head/tutorials/custom_contracts/fabric.html" class="nav-list-link active">Fabric</a>
-                  </li></ul></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
+                  </li></ul></li><li class="nav-list-item "><a href="/firefly/head/tutorials/fabric_remote.html" class="nav-list-link">Work with remote fabric network</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
                     <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
                   </li><li class="nav-list-item ">
                     <a href="/firefly/head/reference/types/event.html" class="nav-list-link">Event</a>
@@ -233,7 +233,7 @@
       
       <div id="main-content" class="main-content" role="main">
         
-          <h1 id="work-with-hyperledger-fabric-chaincodes">
+          <h1 class="no_toc" id="work-with-hyperledger-fabric-chaincodes">
         
         
           <a href="#work-with-hyperledger-fabric-chaincodes" class="anchor-heading" aria-labelledby="work-with-hyperledger-fabric-chaincodes"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Work with Hyperledger Fabric chaincodes
@@ -242,7 +242,7 @@
       </h1>
     
 
-<p class="no_toc">This guide describes the steps to deploy a chaincode to a Hyperledger Fabric blockchain and use FireFly to interact with it in order to submit transactions, query for states and listening for events.</p>
+<p>This guide describes the steps to deploy a chaincode to a Hyperledger Fabric blockchain and use FireFly to interact with it in order to submit transactions, query for states and listening for events.</p>
 
 <blockquote>
   <p><strong>NOTE:</strong> This guide assumes that you are running a local FireFly stack with at least 2 members and a Fabric blockchain created by the FireFly CLI. If you need help getting that set up, please see the <a href="https://nguyer.github.io/firefly/gettingstarted/setup_env.html">Getting Started guide to Start your environment</a>.</p>
@@ -257,55 +257,52 @@
     
 
 <ol id="markdown-toc">
-  <li><a href="#work-with-hyperledger-fabric-chaincodes" id="markdown-toc-work-with-hyperledger-fabric-chaincodes">Work with Hyperledger Fabric chaincodes</a>    <ol>
-      <li><a href="#example-smart-contract" id="markdown-toc-example-smart-contract">Example smart contract</a></li>
-      <li><a href="#create-the-chaincode-package" id="markdown-toc-create-the-chaincode-package">Create the chaincode package</a></li>
-      <li><a href="#contract-deployment" id="markdown-toc-contract-deployment">Contract deployment</a></li>
-      <li><a href="#the-firefly-interface-format" id="markdown-toc-the-firefly-interface-format">The FireFly Interface Format</a>        <ol>
-          <li><a href="#input-parameters" id="markdown-toc-input-parameters">Input parameters</a></li>
-          <li><a href="#return-values" id="markdown-toc-return-values">Return values</a></li>
-          <li><a href="#event-payloads" id="markdown-toc-event-payloads">Event payloads</a></li>
-        </ol>
-      </li>
-      <li><a href="#broadcast-the-contract-interface" id="markdown-toc-broadcast-the-contract-interface">Broadcast the contract interface</a>        <ol>
-          <li><a href="#request" id="markdown-toc-request">Request</a></li>
-          <li><a href="#response" id="markdown-toc-response">Response</a></li>
-        </ol>
-      </li>
-      <li><a href="#create-an-http-api-for-the-contract" id="markdown-toc-create-an-http-api-for-the-contract">Create an HTTP API for the contract</a>        <ol>
-          <li><a href="#request-1" id="markdown-toc-request-1">Request</a></li>
-          <li><a href="#response-1" id="markdown-toc-response-1">Response</a></li>
-        </ol>
-      </li>
-      <li><a href="#view-openapi-spec-for-the-contract" id="markdown-toc-view-openapi-spec-for-the-contract">View OpenAPI spec for the contract</a>        <ol>
-          <li><a href="#invoke-endpoints" id="markdown-toc-invoke-endpoints">/invoke/* endpoints</a></li>
-          <li><a href="#query-endpoints" id="markdown-toc-query-endpoints">/query/* endpoints</a></li>
-        </ol>
-      </li>
-      <li><a href="#invoke-the-chaincode" id="markdown-toc-invoke-the-chaincode">Invoke the chaincode</a>        <ol>
-          <li><a href="#request-2" id="markdown-toc-request-2">Request</a></li>
-          <li><a href="#response-2" id="markdown-toc-response-2">Response</a></li>
-        </ol>
-      </li>
-      <li><a href="#query-the-current-state" id="markdown-toc-query-the-current-state">Query the current state</a>        <ol>
-          <li><a href="#request-3" id="markdown-toc-request-3">Request</a></li>
-          <li><a href="#response-3" id="markdown-toc-response-3">Response</a></li>
-        </ol>
-      </li>
-      <li><a href="#create-a-blockchain-event-listener" id="markdown-toc-create-a-blockchain-event-listener">Create a blockchain event listener</a>        <ol>
-          <li><a href="#request-4" id="markdown-toc-request-4">Request</a></li>
-          <li><a href="#response-4" id="markdown-toc-response-4">Response</a></li>
-        </ol>
-      </li>
-      <li><a href="#subscribe-to-events-from-our-contract" id="markdown-toc-subscribe-to-events-from-our-contract">Subscribe to events from our contract</a>        <ol>
-          <li><a href="#request-5" id="markdown-toc-request-5">Request</a></li>
-          <li><a href="#response-5" id="markdown-toc-response-5">Response</a></li>
-        </ol>
-      </li>
-      <li><a href="#receive-custom-smart-contract-events" id="markdown-toc-receive-custom-smart-contract-events">Receive custom smart contract events</a>        <ol>
-          <li><a href="#websocket-event" id="markdown-toc-websocket-event">WebSocket event</a></li>
-        </ol>
-      </li>
+  <li><a href="#example-smart-contract" id="markdown-toc-example-smart-contract">Example smart contract</a></li>
+  <li><a href="#create-the-chaincode-package" id="markdown-toc-create-the-chaincode-package">Create the chaincode package</a></li>
+  <li><a href="#contract-deployment" id="markdown-toc-contract-deployment">Contract deployment</a></li>
+  <li><a href="#the-firefly-interface-format" id="markdown-toc-the-firefly-interface-format">The FireFly Interface Format</a>    <ol>
+      <li><a href="#input-parameters" id="markdown-toc-input-parameters">Input parameters</a></li>
+      <li><a href="#return-values" id="markdown-toc-return-values">Return values</a></li>
+      <li><a href="#event-payloads" id="markdown-toc-event-payloads">Event payloads</a></li>
+    </ol>
+  </li>
+  <li><a href="#broadcast-the-contract-interface" id="markdown-toc-broadcast-the-contract-interface">Broadcast the contract interface</a>    <ol>
+      <li><a href="#request" id="markdown-toc-request">Request</a></li>
+      <li><a href="#response" id="markdown-toc-response">Response</a></li>
+    </ol>
+  </li>
+  <li><a href="#create-an-http-api-for-the-contract" id="markdown-toc-create-an-http-api-for-the-contract">Create an HTTP API for the contract</a>    <ol>
+      <li><a href="#request-1" id="markdown-toc-request-1">Request</a></li>
+      <li><a href="#response-1" id="markdown-toc-response-1">Response</a></li>
+    </ol>
+  </li>
+  <li><a href="#view-openapi-spec-for-the-contract" id="markdown-toc-view-openapi-spec-for-the-contract">View OpenAPI spec for the contract</a>    <ol>
+      <li><a href="#invoke-endpoints" id="markdown-toc-invoke-endpoints">/invoke/* endpoints</a></li>
+      <li><a href="#query-endpoints" id="markdown-toc-query-endpoints">/query/* endpoints</a></li>
+    </ol>
+  </li>
+  <li><a href="#invoke-the-chaincode" id="markdown-toc-invoke-the-chaincode">Invoke the chaincode</a>    <ol>
+      <li><a href="#request-2" id="markdown-toc-request-2">Request</a></li>
+      <li><a href="#response-2" id="markdown-toc-response-2">Response</a></li>
+    </ol>
+  </li>
+  <li><a href="#query-the-current-state" id="markdown-toc-query-the-current-state">Query the current state</a>    <ol>
+      <li><a href="#request-3" id="markdown-toc-request-3">Request</a></li>
+      <li><a href="#response-3" id="markdown-toc-response-3">Response</a></li>
+    </ol>
+  </li>
+  <li><a href="#create-a-blockchain-event-listener" id="markdown-toc-create-a-blockchain-event-listener">Create a blockchain event listener</a>    <ol>
+      <li><a href="#request-4" id="markdown-toc-request-4">Request</a></li>
+      <li><a href="#response-4" id="markdown-toc-response-4">Response</a></li>
+    </ol>
+  </li>
+  <li><a href="#subscribe-to-events-from-our-contract" id="markdown-toc-subscribe-to-events-from-our-contract">Subscribe to events from our contract</a>    <ol>
+      <li><a href="#request-5" id="markdown-toc-request-5">Request</a></li>
+      <li><a href="#response-5" id="markdown-toc-response-5">Response</a></li>
+    </ol>
+  </li>
+  <li><a href="#receive-custom-smart-contract-events" id="markdown-toc-receive-custom-smart-contract-events">Receive custom smart contract events</a>    <ol>
+      <li><a href="#websocket-event" id="markdown-toc-websocket-event">WebSocket event</a></li>
     </ol>
   </li>
 </ol><hr />
@@ -714,6 +711,17 @@ committing chaincode
   </span><span class="p">]</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
+
+<blockquote>
+  <p><strong>NOTE</strong>: We can broadcast this contract interface conveniently with the help of FireFly Sandbox running at <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5108</code></p>
+  <ul>
+    <li>Go to the <code class="language-plaintext highlighter-rouge">Contracts Section</code></li>
+    <li>Click on <code class="language-plaintext highlighter-rouge">Define a Contract Interface</code></li>
+    <li>Select <code class="language-plaintext highlighter-rouge">FFI - FireFly Interface</code> in the <code class="language-plaintext highlighter-rouge">Interface Fromat</code> dropdown</li>
+    <li>Copy the <code class="language-plaintext highlighter-rouge">FFI JSON</code> crafted by you into the <code class="language-plaintext highlighter-rouge">Schema</code> Field</li>
+    <li>Click on <code class="language-plaintext highlighter-rouge">Run</code></li>
+  </ul>
+</blockquote>
       <h2 id="create-an-http-api-for-the-contract">
         
         
@@ -781,6 +789,18 @@ committing chaincode
   </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
+<blockquote>
+  <p><strong>NOTE</strong>: We can create this Http API conveniently with the help of FireFly Sandbox running at <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5108</code></p>
+  <ul>
+    <li>Go to the <code class="language-plaintext highlighter-rouge">Contracts Section</code></li>
+    <li>Click on <code class="language-plaintext highlighter-rouge">Register a Contract API</code></li>
+    <li>Select the name of your broadcasted FFI in the <code class="language-plaintext highlighter-rouge">Contract Interface</code> dropdown</li>
+    <li>In the <code class="language-plaintext highlighter-rouge">Name</code> Field, give a name that will be part of the URL for your Http API</li>
+    <li>In the <code class="language-plaintext highlighter-rouge">Chaincode</code> Field, give your chaincode name for which you wrote the FFI</li>
+    <li>In the <code class="language-plaintext highlighter-rouge">Channel</code> Field, give the channel name where your chaincode is deployed</li>
+    <li>Click on <code class="language-plaintext highlighter-rouge">Run</code></li>
+  </ul>
+</blockquote>
       <h2 id="view-openapi-spec-for-the-contract">
         
         
