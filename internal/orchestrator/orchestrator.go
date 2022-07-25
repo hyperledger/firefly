@@ -257,10 +257,7 @@ func (or *orchestrator) tokens() map[string]tokens.Plugin {
 func (or *orchestrator) Start() (err error) {
 	or.data.Start()
 	if or.config.Multiparty.Enabled {
-		err = or.multiparty.ConfigureContract(or.ctx)
-		if err == nil {
-			err = or.batch.Start()
-		}
+		err = or.batch.Start()
 		if err == nil {
 			err = or.broadcast.Start()
 		}
