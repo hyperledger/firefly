@@ -142,9 +142,9 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context) (err error) 
 		contracts.Active = core.MultipartyContract{
 			Location:   location,
 			FirstEvent: firstEvent,
-			Version:    version,
 			Info: core.MultipartyContractInfo{
 				Subscription: subID,
+				Version:      version,
 			},
 		}
 		err = mm.database.UpsertNamespace(ctx, mm.namespace, true)

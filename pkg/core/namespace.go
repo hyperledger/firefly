@@ -40,17 +40,19 @@ type MultipartyContracts struct {
 	Terminated []MultipartyContract `ffstruct:"MultipartyContracts" json:"terminated,omitempty"`
 }
 
+// MultipartyContract represents identifying details about a FireFly multiparty contract, as read from the config file
 type MultipartyContract struct {
 	Index      int                    `ffstruct:"MultipartyContract" json:"index"`
-	Version    int                    `ffstruct:"MultipartyContract" json:"version,omitempty"`
 	Location   *fftypes.JSONAny       `ffstruct:"MultipartyContract" json:"location,omitempty"`
 	FirstEvent string                 `ffstruct:"MultipartyContract" json:"firstEvent,omitempty"`
 	Info       MultipartyContractInfo `ffstruct:"MultipartyContract" json:"info"`
 }
 
+// MultipartyContractInfo stores additional info about the FireFly multiparty contract that is computed during node operation
 type MultipartyContractInfo struct {
 	Subscription string `ffstruct:"MultipartyContract" json:"subscription,omitempty"`
 	FinalEvent   string `ffstruct:"MultipartyContract" json:"finalEvent,omitempty"`
+	Version      int    `ffstruct:"MultipartyContract" json:"version,omitempty"`
 }
 
 type NamespaceRef struct {

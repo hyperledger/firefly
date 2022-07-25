@@ -259,7 +259,7 @@ func (nm *namespaceManager) checkForV1Contract(ctx context.Context, ns *namespac
 	// check previously terminated contracts to see if they were ever V1
 	stored := ns.orchestrator.GetNamespace(ctx)
 	for _, contract := range stored.Contracts.Terminated {
-		if contract.Version == 1 {
+		if contract.Info.Version == 1 {
 			return true
 		}
 	}

@@ -364,10 +364,14 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 		Description: "used to be V1",
 		Contracts: core.MultipartyContracts{
 			Active: core.MultipartyContract{
-				Version: 2,
+				Info: core.MultipartyContractInfo{
+					Version: 2,
+				},
 			},
 			Terminated: []core.MultipartyContract{{
-				Version: 1,
+				Info: core.MultipartyContractInfo{
+					Version: 1,
+				},
 			}},
 		},
 	})
@@ -425,10 +429,14 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 		Description: "used to be V1",
 		Contracts: core.MultipartyContracts{
 			Active: core.MultipartyContract{
-				Version: 2,
+				Info: core.MultipartyContractInfo{
+					Version: 2,
+				},
 			},
 			Terminated: []core.MultipartyContract{{
-				Version: 1,
+				Info: core.MultipartyContractInfo{
+					Version: 1,
+				},
 			}},
 		},
 	})
@@ -486,10 +494,14 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 		Description: "used to be V1",
 		Contracts: core.MultipartyContracts{
 			Active: core.MultipartyContract{
-				Version: 2,
+				Info: core.MultipartyContractInfo{
+					Version: 2,
+				},
 			},
 			Terminated: []core.MultipartyContract{{
-				Version: 1,
+				Info: core.MultipartyContractInfo{
+					Version: 1,
+				},
 			}},
 		},
 	})
@@ -547,10 +559,14 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 		Description: "used to be V1",
 		Contracts: core.MultipartyContracts{
 			Active: core.MultipartyContract{
-				Version: 2,
+				Info: core.MultipartyContractInfo{
+					Version: 2,
+				},
 			},
 			Terminated: []core.MultipartyContract{{
-				Version: 1,
+				Info: core.MultipartyContractInfo{
+					Version: 1,
+				},
 			}},
 		},
 	})
