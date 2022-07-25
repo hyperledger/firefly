@@ -162,13 +162,13 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// SendMessage provides a mock function with given fields: ctx, nsOpID, peerID, data
-func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peerID string, data []byte) error {
-	ret := _m.Called(ctx, nsOpID, peerID, data)
+// SendMessage provides a mock function with given fields: ctx, nsOpID, peerID, senderID, data
+func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peerID string, senderID string, data []byte) error {
+	ret := _m.Called(ctx, nsOpID, peerID, senderID, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, []byte) error); ok {
-		r0 = rf(ctx, nsOpID, peerID, data)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, []byte) error); ok {
+		r0 = rf(ctx, nsOpID, peerID, senderID, data)
 	} else {
 		r0 = ret.Error(0)
 	}

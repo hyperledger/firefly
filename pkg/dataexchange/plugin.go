@@ -97,7 +97,7 @@ type Plugin interface {
 
 	// SendMessage sends an in-line package of data to another network node.
 	// Should return as quickly as possible for parallelism, then report completion asynchronously via the operation ID
-	SendMessage(ctx context.Context, nsOpID, peerID string, data []byte) (err error)
+	SendMessage(ctx context.Context, nsOpID, peerID string, senderID string, data []byte) (err error)
 
 	// TransferBlob initiates a transfer of a previously stored blob to another node
 	TransferBlob(ctx context.Context, nsOpID, peerID string, payloadRef string) (err error)

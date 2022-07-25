@@ -132,11 +132,16 @@ func (pm *privateMessaging) RunOperation(ctx context.Context, op *core.PreparedO
 		return nil, false, pm.exchange.TransferBlob(ctx, op.NamespacedIDString(), data.Node.Profile.GetString("id"), data.Blob.PayloadRef)
 
 	case batchSendData:
+		node, err := pm.identity.GetLocalNode(ctx)
+		if err != nil {
+			return nil, false, err
+		}
+
 		payload, err := json.Marshal(data.Transport)
 		if err != nil {
 			return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 		}
-		return nil, false, pm.exchange.SendMessage(ctx, op.NamespacedIDString(), data.Node.Profile.GetString("id"), payload)
+		return nil, false, pm.exchange.SendMessage(ctx, op.NamespacedIDString(), data.Node.Profile.GetString("id"), node.Profile.GetString("id"), payload)
 
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
