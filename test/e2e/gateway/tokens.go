@@ -18,8 +18,6 @@ package gateway
 
 import (
 	"fmt"
-	"math/rand"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -58,9 +56,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 
 	received1 := e2e.WsReader(suite.testState.ws1)
 
-	pools := suite.testState.client1.GetTokenPools(suite.T(), time.Unix(0, 0))
-	rand.Seed(time.Now().UnixNano())
-	poolName := fmt.Sprintf("pool%d", rand.Intn(10000))
+	poolName := fmt.Sprintf("pool_%s", randomName(suite.T()))
 	suite.T().Logf("Pool name: %s", poolName)
 
 	pool := &core.TokenPool{
@@ -73,7 +69,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	poolID := poolResp.ID
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolID)
-	pools = suite.testState.client1.GetTokenPools(suite.T(), suite.testState.startTime)
+	pools := suite.testState.client1.GetTokenPools(suite.T(), suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
 	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)

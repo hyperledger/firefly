@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -111,14 +111,14 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	custom1 := suite.testState.client1.ClaimCustomIdentity(suite.T(),
 		org1key,
 		fmt.Sprintf("custom_%d_org1priv", ts),
-		fmt.Sprintf("Description org1priv"),
+		"Description org1priv",
 		nil,
 		suite.testState.org1.ID,
 		true)
 	custom2 := suite.testState.client2.ClaimCustomIdentity(suite.T(),
 		org2key,
 		fmt.Sprintf("custom_%d_org2priv", ts),
-		fmt.Sprintf("Description org2priv"),
+		"Description org2priv",
 		nil,
 		suite.testState.org2.ID,
 		true)

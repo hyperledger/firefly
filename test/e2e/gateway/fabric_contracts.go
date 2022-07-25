@@ -34,19 +34,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type fabConnectHeaders struct {
-	Type      string `json:"type"`
-	Channel   string `json:"channel"`
-	Signer    string `json:"signer"`
-	Chaincode string `json:"chaincode"`
-}
-
-type createAssetBody struct {
-	Headers fabConnectHeaders `json:"headers"`
-	Func    string            `json:"func"`
-	Args    []string          `json:"args"`
-}
-
 var assetCreatedEvent = &fftypes.FFIEvent{
 	FFIEventDefinition: fftypes.FFIEventDefinition{
 		Name: "AssetCreated",
@@ -99,26 +86,6 @@ func deployChaincode(t *testing.T, stackName string) string {
 	require.NoError(t, err)
 
 	return chaincodeName
-}
-
-func invokeFabContract(t *testing.T, client *resty.Client, channel, chaincode, signer, method string, args []string) {
-	path := "/transactions"
-	body := &createAssetBody{
-		Headers: fabConnectHeaders{
-			Type:      "SendTransaction",
-			Channel:   channel,
-			Signer:    signer,
-			Chaincode: chaincode,
-		},
-		Func: method,
-		Args: args,
-	}
-	resp, err := client.R().
-		SetHeader("x-firefly-sync", "true").
-		SetBody(body).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
 type FabricContractTestSuite struct {

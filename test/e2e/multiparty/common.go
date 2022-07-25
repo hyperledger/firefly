@@ -18,6 +18,7 @@ package multiparty
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
@@ -32,6 +33,11 @@ import (
 	"github.com/hyperledger/firefly/test/e2e"
 	"github.com/hyperledger/firefly/test/e2e/client"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	schemeHTTP  = "http"
+	schemeHTTPS = "https"
 )
 
 type testState struct {
@@ -69,13 +75,13 @@ func beforeE2ETest(t *testing.T) *testState {
 	var authHeader1 http.Header
 	var authHeader2 http.Header
 
-	httpProtocolClient1 := "http"
-	httpProtocolClient2 := "http"
+	httpProtocolClient1 := schemeHTTP
+	httpProtocolClient2 := schemeHTTP
 	if stack.Members[0].UseHTTPS {
-		httpProtocolClient1 = "https"
+		httpProtocolClient1 = schemeHTTPS
 	}
 	if stack.Members[1].UseHTTPS {
-		httpProtocolClient2 = "https"
+		httpProtocolClient2 = schemeHTTPS
 	}
 
 	member0WithPort := ""
@@ -227,4 +233,11 @@ func validateReceivedMessages(ts *testState, client *client.FireFlyClient, topic
 
 	// Flip data (returned in most recent order) into delivery order
 	return returnData
+}
+
+func randomName(t *testing.T) string {
+	b := make([]byte, 5)
+	_, err := rand.Read(b)
+	assert.NoError(t, err)
+	return fmt.Sprintf("e2e_%x", b)
 }

@@ -17,7 +17,6 @@
 package multiparty
 
 import (
-	"crypto/rand"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -36,14 +35,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func randomName(t *testing.T) string {
-	b := make([]byte, 5)
-	_, err := rand.Read(b)
-	assert.NoError(t, err)
-	return fmt.Sprintf("e2e_%x", b)
-
-}
-
 func readConfig(t *testing.T, configFile string) map[string]interface{} {
 	yfile, err := ioutil.ReadFile(configFile)
 	assert.NoError(t, err)
@@ -58,7 +49,8 @@ func writeConfig(t *testing.T, configFile string, data map[string]interface{}) {
 	assert.NoError(t, err)
 	f, err := os.Create(configFile)
 	assert.NoError(t, err)
-	f.Write(out)
+	_, err = f.Write(out)
+	assert.NoError(t, err)
 	f.Close()
 }
 
@@ -91,13 +83,13 @@ func (suite *ContractMigrationTestSuite) SetupSuite() {
 	stack := e2e.ReadStack(suite.T())
 	suite.stackName = stack.Name
 
-	adminProtocol1 := "http"
+	adminProtocol1 := schemeHTTP
 	if stack.Members[0].UseHTTPS {
-		adminProtocol1 = "https"
+		adminProtocol1 = schemeHTTPS
 	}
-	adminProtocol2 := "http"
+	adminProtocol2 := schemeHTTP
 	if stack.Members[1].UseHTTPS {
-		adminProtocol2 = "https"
+		adminProtocol2 = schemeHTTPS
 	}
 	suite.adminHost1 = fmt.Sprintf("%s://%s:%d", adminProtocol1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedAdminPort)
 	suite.adminHost2 = fmt.Sprintf("%s://%s:%d", adminProtocol2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedAdminPort)

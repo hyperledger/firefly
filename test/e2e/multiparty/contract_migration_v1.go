@@ -34,13 +34,13 @@ func (suite *ContractMigrationV1TestSuite) SetupSuite() {
 	stack := e2e.ReadStack(suite.T())
 	suite.stackName = stack.Name
 
-	adminProtocol1 := "http"
+	adminProtocol1 := schemeHTTP
 	if stack.Members[0].UseHTTPS {
-		adminProtocol1 = "https"
+		adminProtocol1 = schemeHTTPS
 	}
-	adminProtocol2 := "http"
+	adminProtocol2 := schemeHTTP
 	if stack.Members[1].UseHTTPS {
-		adminProtocol2 = "https"
+		adminProtocol2 = schemeHTTPS
 	}
 	suite.adminHost1 = fmt.Sprintf("%s://%s:%d", adminProtocol1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedAdminPort)
 	suite.adminHost2 = fmt.Sprintf("%s://%s:%d", adminProtocol2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedAdminPort)

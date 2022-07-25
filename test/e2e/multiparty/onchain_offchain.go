@@ -121,7 +121,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 		Version: version,
 		Value:   fftypes.JSONAnyPtrBytes(e2e.WidgetSchemaJSON),
 	}
-	dt = suite.testState.client1.CreateDatatype(suite.T(), dt, true)
+	suite.testState.client1.CreateDatatype(suite.T(), dt, true)
 
 	resp, err = suite.testState.client1.BroadcastMessage(suite.T(), "topic1", &data, true)
 	require.NoError(suite.T(), err)
@@ -173,7 +173,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 		Version: version,
 		Value:   fftypes.JSONAnyPtrBytes(e2e.WidgetSchemaJSON),
 	}
-	dt = suite.testState.client1.CreateDatatype(suite.T(), dt, true)
+	suite.testState.client1.CreateDatatype(suite.T(), dt, true)
 
 	resp, err = suite.testState.client1.PrivateMessage("topic1", &data, []string{
 		suite.testState.org1.Name,
