@@ -14,14 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gateway
+package runners
 
 import (
 	"testing"
 
+	"github.com/hyperledger/firefly/test/e2e/multiparty"
 	"github.com/stretchr/testify/suite"
 )
 
-func TestFabricGatewayE2ESuite(t *testing.T) {
-	suite.Run(t, new(FabricContractTestSuite))
+func TestEthereumNamespaceE2ESuite(t *testing.T) {
+	suite.Run(t, new(multiparty.OnChainOffChainTestSuite))
+	suite.Run(t, new(multiparty.TokensTestSuite))
+	suite.Run(t, new(multiparty.EthereumContractTestSuite))
 }

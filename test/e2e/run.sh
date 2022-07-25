@@ -128,7 +128,7 @@ checkOk $?
 export STACK_DIR
 
 runTest() {
-  go clean -testcache && go test -v -p 1 ./multiparty ./gateway -run $TEST_SUITE
+  go clean -testcache && go test -v -p 1 ./runners -run $TEST_SUITE
   checkOk $?
 }
 runTest

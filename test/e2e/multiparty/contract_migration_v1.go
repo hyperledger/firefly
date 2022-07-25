@@ -61,10 +61,6 @@ func (suite *ContractMigrationV1TestSuite) AfterTest(suiteName, testName string)
 	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
 }
 
-// This suite can only be run once per stack.
-// Specifically, it must be run on a stack that has never used a V1 FireFly multiparty contract.
-// The test deploys a V1 contract, then migrates to V2. This is a one-time operation that cannot
-// be performed again on the same stack.
 func (suite *ContractMigrationV1TestSuite) TestContractMigration() {
 	defer suite.testState.Done()
 
