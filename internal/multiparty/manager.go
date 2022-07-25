@@ -119,6 +119,10 @@ func (mm *multipartyManager) RootOrg() RootOrg {
 }
 
 func (mm *multipartyManager) ConfigureContract(ctx context.Context) (err error) {
+	return mm.configureContractCommon(ctx, false)
+}
+
+func (mm *multipartyManager) configureContractCommon(ctx context.Context, migration bool) (err error) {
 	contracts := &mm.namespace.Contracts
 	log.L(ctx).Infof("Resolving FireFly contract at index %d", contracts.Active.Index)
 	location, firstEvent, err := mm.resolveFireFlyContract(ctx, contracts.Active.Index)
@@ -131,8 +135,10 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context) (err error) 
 		return err
 	}
 
-	if !contracts.Active.Location.IsNil() && contracts.Active.Location.String() != location.String() {
-		log.L(ctx).Warnf("FireFly contract location changed from %s to %s", contracts.Active.Location, location)
+	if !migration {
+		if !contracts.Active.Location.IsNil() && contracts.Active.Location.String() != location.String() {
+			log.L(ctx).Warnf("FireFly contract location changed from %s to %s", contracts.Active.Location, location)
+		}
 	}
 
 	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.LocalName, location, firstEvent)
@@ -181,7 +187,7 @@ func (mm *multipartyManager) TerminateContract(ctx context.Context, location *ff
 	contracts.Active.Info.FinalEvent = termination.ProtocolID
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
 	contracts.Active = core.MultipartyContract{Index: contracts.Active.Index + 1}
-	return mm.ConfigureContract(ctx)
+	return mm.configureContractCommon(ctx, true)
 }
 
 func (mm *multipartyManager) GetNetworkVersion() int {

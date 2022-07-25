@@ -213,7 +213,14 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		metrics.Registry()
 	}
 
+	// In network version 1, the blockchain plugin and multiparty contract were global and singular.
+	// Therefore, if any namespace was EVER pointed at a V1 contract, that contract and that namespace's plugins
+	// become the de facto configuration for ff_system as well. There can only be one V1 contract in the history
+	// of a given FireFly node, because it's impossible to re-create ff_system against a different contract
+	// or different set of plugins.
 	var v1Namespace *namespace
+	var v1Contract *core.MultipartyContract
+
 	for _, ns := range nm.namespaces {
 		if err := nm.initNamespace(ns); err != nil {
 			return err
@@ -221,50 +228,46 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		multiparty := ns.config.Multiparty.Enabled
 		version := "n/a"
 		if multiparty {
-			version = fmt.Sprintf("%d", ns.orchestrator.MultiParty().GetNetworkVersion())
+			version = fmt.Sprintf("%d", ns.orchestrator.GetNamespace(ctx).Contracts.Active.Info.Version)
 		}
 		log.L(ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.name, strconv.FormatBool(multiparty), version)
-		// If any namespace was EVER pointed at a V1 contract, that contract and that namespace's plugins
-		// become the de facto configuration for ff_system as well. There can only be one V1 contract in the history
-		// of a given FireFly node, because it's impossible to re-create ff_system against a different contract
-		// or different set of plugins.
-		// TODO: still need to understand why we should check the contract address
-		if multiparty && nm.checkForV1Contract(ctx, ns) {
-			if v1Namespace == nil {
-				v1Namespace = ns
-			} else if !stringSlicesEqual(v1Namespace.plugins, ns.plugins) {
-				return i18n.NewError(ctx, coremsgs.MsgCannotInitLegacyNS, core.LegacySystemNamespace, v1Namespace.name, ns.name)
+		if multiparty {
+			contract := nm.findV1Contract(ctx, ns)
+			if contract != nil {
+				if v1Namespace == nil {
+					v1Namespace = ns
+					v1Contract = contract
+				} else if !stringSlicesEqual(v1Namespace.plugins, ns.plugins) ||
+					v1Contract.Location.String() != contract.Location.String() ||
+					v1Contract.FirstEvent != contract.FirstEvent {
+					return i18n.NewError(ctx, coremsgs.MsgCannotInitLegacyNS, core.LegacySystemNamespace, v1Namespace.name, ns.name)
+				}
 			}
 		}
 	}
 
-	// If any namespace is a multiparty V1 namespace, insert the legacy ff_system namespace.
-	// Note that the contract address and plugin list must match for ALL V1 namespaces.
 	if v1Namespace != nil {
 		systemNS := *v1Namespace
 		systemNS.name = core.LegacySystemNamespace
 		systemNS.remoteName = core.LegacySystemNamespace
-		log.L(ctx).Infof("Initializing legacy '%s' namespace as a copy of '%s'", core.LegacySystemNamespace, v1Namespace.name)
-		err = nm.initNamespace(&systemNS)
 		nm.namespaces[core.LegacySystemNamespace] = &systemNS
+		err = nm.initNamespace(&systemNS)
+		log.L(ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, v1Namespace.name)
 	}
 	return err
 }
 
-func (nm *namespaceManager) checkForV1Contract(ctx context.Context, ns *namespace) bool {
-	if ns.orchestrator.MultiParty().GetNetworkVersion() == 1 {
-		return true
-	}
-
-	// check previously terminated contracts to see if they were ever V1
+func (nm *namespaceManager) findV1Contract(ctx context.Context, ns *namespace) *core.MultipartyContract {
 	stored := ns.orchestrator.GetNamespace(ctx)
+	if stored.Contracts.Active.Info.Version == 1 {
+		return &stored.Contracts.Active
+	}
 	for _, contract := range stored.Contracts.Terminated {
 		if contract.Info.Version == 1 {
-			return true
+			return &contract
 		}
 	}
-
-	return false
+	return nil
 }
 
 func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {

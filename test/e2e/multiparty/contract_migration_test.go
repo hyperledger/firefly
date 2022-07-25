@@ -121,8 +121,12 @@ func (suite *ContractMigrationTestSuite) AfterTest(suiteName, testName string) {
 func (suite *ContractMigrationTestSuite) TestContractMigration() {
 	defer suite.testState.Done()
 
-	address1 := deployContract(suite.T(), suite.stackName, "firefly/FireflyV1.json")
+	address1 := deployContract(suite.T(), suite.stackName, "firefly/Firefly.json")
 	address2 := deployContract(suite.T(), suite.stackName, "firefly/Firefly.json")
+	runMigrationTest(suite, address1, address2, false)
+}
+
+func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 string, startOnV1 bool) {
 	testNamespace := randomName(suite.T())
 	suite.T().Logf("Test namespace: %s", testNamespace)
 
@@ -142,6 +146,7 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 			},
 		},
 	}
+	data := &core.DataRefOrValue{Value: fftypes.JSONAnyPtr(`"test"`)}
 
 	// Add the new namespace to both config files
 	data1 := readConfig(suite.T(), suite.configFile1)
@@ -167,37 +172,35 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 	e2e.PollForUp(suite.T(), suite.testState.client1)
 	e2e.PollForUp(suite.T(), suite.testState.client2)
 
-	systemClient1 := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, "ff_system")
-	systemClient2 := client.NewFireFly(suite.T(), suite.testState.client2.Hostname, "ff_system")
 	client1 := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, testNamespace)
 	client2 := client.NewFireFly(suite.T(), suite.testState.client2.Hostname, testNamespace)
-
-	// Register org/node identities on ff_system if not registered (but not on the new namespace)
-	if systemClient1.GetOrganization(suite.T(), suite.testState.org1.Name) == nil {
-		systemClient1.RegisterSelfOrg(suite.T(), true)
-		systemClient1.RegisterSelfNode(suite.T(), true)
-	}
-	if systemClient2.GetOrganization(suite.T(), suite.testState.org2.Name) == nil {
-		systemClient2.RegisterSelfOrg(suite.T(), true)
-		systemClient2.RegisterSelfNode(suite.T(), true)
-	}
 
 	eventNames := "message_confirmed|blockchain_event_received"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s", testNamespace, eventNames)
 	received1 := e2e.WsReader(client1.WebSocket(suite.T(), queryString, nil))
 	received2 := e2e.WsReader(client2.WebSocket(suite.T(), queryString, nil))
 
-	systemQueryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s", "ff_system", eventNames)
-	systemReceived1 := e2e.WsReader(systemClient1.WebSocket(suite.T(), systemQueryString, nil))
-	systemReceived2 := e2e.WsReader(systemClient2.WebSocket(suite.T(), systemQueryString, nil))
+	if startOnV1 {
+		systemClient1 := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, "ff_system")
+		systemClient2 := client.NewFireFly(suite.T(), suite.testState.client2.Hostname, "ff_system")
 
-	// Verify that a broadcast on the new namespace succeeds under the V1 contract
-	data := &core.DataRefOrValue{Value: fftypes.JSONAnyPtr(`"test"`)}
-	resp, err := client1.BroadcastMessage(suite.T(), "topic", data, false)
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), 202, resp.StatusCode())
-	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
-	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
+		// Register org/node identities on ff_system if not registered (but not on the new namespace)
+		if systemClient1.GetOrganization(suite.T(), suite.testState.org1.Name) == nil {
+			systemClient1.RegisterSelfOrg(suite.T(), true)
+			systemClient1.RegisterSelfNode(suite.T(), true)
+		}
+		if systemClient2.GetOrganization(suite.T(), suite.testState.org2.Name) == nil {
+			systemClient2.RegisterSelfOrg(suite.T(), true)
+			systemClient2.RegisterSelfNode(suite.T(), true)
+		}
+
+		// Verify that a broadcast on the new namespace succeeds under the first contract
+		resp, err := client1.BroadcastMessage(suite.T(), "topic", data, false)
+		require.NoError(suite.T(), err)
+		assert.Equal(suite.T(), 202, resp.StatusCode())
+		e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
+		e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
+	}
 
 	// Register org/node identities on the new namespace
 	client1.RegisterSelfOrg(suite.T(), true)
@@ -205,21 +208,21 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 	client2.RegisterSelfOrg(suite.T(), true)
 	client2.RegisterSelfNode(suite.T(), true)
 
-	// Migrate to the V2 contract
+	// Migrate to the new contract
 	client1.NetworkAction(suite.T(), core.NetworkActionTerminate)
-	e2e.WaitForContractEvent(suite.T(), systemClient1, systemReceived1, map[string]interface{}{
+	e2e.WaitForContractEvent(suite.T(), client1, received1, map[string]interface{}{
 		"output": map[string]interface{}{
 			"namespace": "firefly:terminate",
 		},
 	})
-	e2e.WaitForContractEvent(suite.T(), systemClient2, systemReceived2, map[string]interface{}{
+	e2e.WaitForContractEvent(suite.T(), client2, received2, map[string]interface{}{
 		"output": map[string]interface{}{
 			"namespace": "firefly:terminate",
 		},
 	})
 
-	// Verify that a broadcast on the new namespace succeeds under the V2 contract
-	resp, err = client1.BroadcastMessage(suite.T(), "topic", data, false)
+	// Verify that a broadcast on the new namespace succeeds under the second contract
+	resp, err := client1.BroadcastMessage(suite.T(), "topic", data, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)

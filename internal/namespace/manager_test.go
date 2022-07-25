@@ -39,7 +39,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
-	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
@@ -141,11 +140,16 @@ func TestInit(t *testing.T) {
 	nm.metricsEnabled = true
 
 	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{})
-	mmp.On("GetNetworkVersion").Return(2)
+	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
+		Contracts: core.MultipartyContracts{
+			Active: core.MultipartyContract{
+				Info: core.MultipartyContractInfo{
+					Version: 2,
+				},
+			},
+		},
+	})
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -315,15 +319,22 @@ func TestInitVersion1(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	mmp := &multipartymocks.Manager{}
 	mo := &orchestratormocks.Orchestrator{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 	nm.utOrchestrator = mo
 
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(1)
+	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
+		Contracts: core.MultipartyContracts{
+			Active: core.MultipartyContract{
+				Location: fftypes.JSONAnyPtr("{}"),
+				Info: core.MultipartyContractInfo{
+					Version: 1,
+				},
+			},
+		},
+	})
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
@@ -355,9 +366,7 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 	nm.metricsEnabled = true
 
 	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
 	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
 		LocalName:   "default",
 		RemoteName:  "default",
@@ -369,13 +378,13 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 				},
 			},
 			Terminated: []core.MultipartyContract{{
+				Location: fftypes.JSONAnyPtr("{}"),
 				Info: core.MultipartyContractInfo{
 					Version: 1,
 				},
 			}},
 		},
 	})
-	mmp.On("GetNetworkVersion").Return(2)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -422,9 +431,7 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 	assert.NoError(t, err)
 
 	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
 	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
 		Description: "used to be V1",
 		Contracts: core.MultipartyContracts{
@@ -434,13 +441,13 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 				},
 			},
 			Terminated: []core.MultipartyContract{{
+				Location: fftypes.JSONAnyPtr("{}"),
 				Info: core.MultipartyContractInfo{
 					Version: 1,
 				},
 			}},
 		},
 	})
-	mmp.On("GetNetworkVersion").Return(2)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -487,9 +494,7 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 	assert.NoError(t, err)
 
 	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
 	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
 		Description: "used to be V1",
 		Contracts: core.MultipartyContracts{
@@ -499,13 +504,13 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 				},
 			},
 			Terminated: []core.MultipartyContract{{
+				Location: fftypes.JSONAnyPtr("{}"),
 				Info: core.MultipartyContractInfo{
 					Version: 1,
 				},
 			}},
 		},
 	})
-	mmp.On("GetNetworkVersion").Return(2)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -552,9 +557,7 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 	assert.NoError(t, err)
 
 	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
 	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
 		Description: "used to be V1",
 		Contracts: core.MultipartyContracts{
@@ -564,13 +567,13 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 				},
 			},
 			Terminated: []core.MultipartyContract{{
+				Location: fftypes.JSONAnyPtr("{}"),
 				Info: core.MultipartyContractInfo{
 					Version: 1,
 				},
 			}},
 		},
 	})
-	mmp.On("GetNetworkVersion").Return(2)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -601,14 +604,21 @@ func TestInitVersion1Fail(t *testing.T) {
 	defer nm.cleanup(t)
 
 	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 	mo.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 	nm.utOrchestrator = mo
 
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(1)
+	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
+		Contracts: core.MultipartyContracts{
+			Active: core.MultipartyContract{
+				Location: fftypes.JSONAnyPtr("{}"),
+				Info: core.MultipartyContractInfo{
+					Version: 1,
+				},
+			},
+		},
+	})
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
@@ -1258,12 +1268,6 @@ func TestLoadNamespacesNonMultipartyNoDatabase(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
-
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
@@ -1293,12 +1297,6 @@ func TestLoadNamespacesMultipartyUnknownPlugin(t *testing.T) {
         enabled: true
   `))
 	assert.NoError(t, err)
-
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
@@ -1330,12 +1328,6 @@ func TestLoadNamespacesMultipartyMultipleBlockchains(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
-
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
@@ -1365,12 +1357,6 @@ func TestLoadNamespacesMultipartyMultipleDX(t *testing.T) {
         enabled: true
   `))
 	assert.NoError(t, err)
-
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
@@ -1402,12 +1388,6 @@ func TestLoadNamespacesMultipartyMultipleSS(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
-
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
@@ -1437,12 +1417,6 @@ func TestLoadNamespacesMultipartyMultipleDB(t *testing.T) {
         enabled: true
   `))
 	assert.NoError(t, err)
-
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
@@ -1546,12 +1520,6 @@ func TestLoadNamespacesNonMultipartyMultipleDB(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
-
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
@@ -1579,12 +1547,6 @@ func TestLoadNamespacesNonMultipartyMultipleBlockchains(t *testing.T) {
       plugins: [ethereum, ethereum]
   `))
 	assert.NoError(t, err)
-
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
@@ -1616,12 +1578,6 @@ func TestLoadNamespacesMultipartyMissingPlugins(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
-
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
@@ -1649,12 +1605,6 @@ func TestLoadNamespacesNonMultipartyWithDX(t *testing.T) {
       plugins: [ffdx]
   `))
 	assert.NoError(t, err)
-
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
@@ -1684,12 +1634,6 @@ func TestLoadNamespacesNonMultipartyWithSharedStorage(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
-
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
@@ -1717,12 +1661,6 @@ func TestLoadNamespacesNonMultipartyUnknownPlugin(t *testing.T) {
       plugins: [basicauth, erc721, bad]
   `))
 	assert.NoError(t, err)
-
-	mo := &orchestratormocks.Orchestrator{}
-	mmp := &multipartymocks.Manager{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("MultiParty").Return(mmp)
-	mmp.On("GetNetworkVersion").Return(2)
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
@@ -1794,6 +1732,8 @@ func TestStartBlockchainFail(t *testing.T) {
 	err := nm.Start()
 	assert.EqualError(t, err, "pop")
 
+	mo.AssertExpectations(t)
+
 }
 
 func TestStartDataExchangeFail(t *testing.T) {
@@ -1813,6 +1753,8 @@ func TestStartDataExchangeFail(t *testing.T) {
 
 	err := nm.Start()
 	assert.EqualError(t, err, "pop")
+
+	mo.AssertExpectations(t)
 
 }
 
@@ -1925,6 +1867,8 @@ func TestGetNamespaces(t *testing.T) {
 	results, err := nm.GetNamespaces(context.Background())
 	assert.Nil(t, err)
 	assert.Len(t, results, 1)
+
+	mo.AssertExpectations(t)
 }
 
 func TestGetOperationByNamespacedID(t *testing.T) {
@@ -2034,16 +1978,18 @@ func TestResolveOperationByNamespacedIDNoOrchestrator(t *testing.T) {
 func TestAuthorize(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
-	or := &orchestratormocks.Orchestrator{}
-	or.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	mo := &orchestratormocks.Orchestrator{}
+	mo.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	nm.namespaces["ns1"] = &namespace{
-		orchestrator: or,
+		orchestrator: mo,
 	}
-	nm.utOrchestrator = or
+	nm.utOrchestrator = mo
 	err := nm.Authorize(context.Background(), &fftypes.AuthReq{
 		Namespace: "ns1",
 	})
 	assert.NoError(t, err)
+
+	mo.AssertExpectations(t)
 }
 
 func TestValidateNonMultipartyConfig(t *testing.T) {
