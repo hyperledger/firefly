@@ -118,6 +118,7 @@ func run() error {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
+		log.L(ctx).Infof("Starting up")
 		rootCtx, rootCancelCtx := context.WithCancel(ctx)
 		mgr := getRootManager()
 		as := apiserver.NewAPIServer()

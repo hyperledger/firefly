@@ -466,7 +466,7 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 
 		eventName := msgJSON.GetString("eventName")
 		sub := msgJSON.GetString("subId")
-		logger.Infof("Received '%s' message", eventName)
+		logger.Infof("Received '%s' message on '%s'", eventName, sub)
 		logger.Tracef("Message: %+v", msgJSON)
 
 		// Matches one of the active FireFly BatchPin subscriptions

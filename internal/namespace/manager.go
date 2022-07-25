@@ -244,7 +244,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		systemNS := *v1Namespace
 		systemNS.name = core.LegacySystemNamespace
 		systemNS.remoteName = core.LegacySystemNamespace
-		log.L(ctx).Infof("Initializing legacy '%s' namespace as a copy of %s", core.LegacySystemNamespace, v1Namespace.name)
+		log.L(ctx).Infof("Initializing legacy '%s' namespace as a copy of '%s'", core.LegacySystemNamespace, v1Namespace.name)
 		err = nm.initNamespace(&systemNS)
 		nm.namespaces[core.LegacySystemNamespace] = &systemNS
 	}
@@ -310,6 +310,7 @@ func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 		<-orCtx.Done()
 		nm.nsMux.Lock()
 		defer nm.nsMux.Unlock()
+		log.L(nm.ctx).Infof("Terminated namespace '%s'", ns.name)
 		delete(nm.namespaces, ns.name)
 	}()
 	ns.orchestrator = or
@@ -356,7 +357,9 @@ func (nm *namespaceManager) WaitStop() {
 }
 
 func (nm *namespaceManager) Reset(ctx context.Context) {
-	// Restart the current context to pick up the configuration change
+	// Queue a restart of the root context to pick up a configuration change.
+	// Caller is responsible for terminating the passed context to trigger the actual reset
+	// (allows caller to cleanly finish processing the current request/event).
 	go func() {
 		<-ctx.Done()
 		nm.cancelCtx()
