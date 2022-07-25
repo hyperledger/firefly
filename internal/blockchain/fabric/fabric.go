@@ -360,6 +360,10 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 	var namespace string
 	if subInfo.version == 1 {
 		namespace = nsOrAction
+		if subInfo.namespace != "" && subInfo.namespace != namespace {
+			log.L(ctx).Debugf("Ignoring batch for '%s' received on subscription for '%s'", namespace, subInfo.namespace)
+			return nil
+		}
 	} else {
 		namespace = subInfo.namespace
 	}

@@ -1042,6 +1042,50 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 
 }
 
+func TestHandleMessageBatchPinWrongNS(t *testing.T) {
+	data := fftypes.JSONAnyPtr(`
+[
+  {
+		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+		"blockNumber": "38011",
+		"transactionIndex": "0x0",
+		"transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+		"data": {
+			"author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"namespace": "ns2",
+			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
+			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
+			"payloadRef": "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+			"contexts": [
+				"0x68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a",
+				"0x19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771"
+			]
+    },
+		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
+		"logIndex": "50",
+		"timestamp": "1620576488"
+  }
+]`)
+
+	e := &Ethereum{
+		callbacks: common.NewBlockchainCallbacks(),
+	}
+
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
+
+	var events []interface{}
+	err := json.Unmarshal(data.Bytes(), &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+
+}
+
 func TestHandleMessageBatchPinV2(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`
 [
@@ -1052,7 +1096,6 @@ func TestHandleMessageBatchPinV2(t *testing.T) {
 		"transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
 		"data": {
 			"author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
-			"namespace": "",
 			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
 			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
 			"payloadRef": "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
