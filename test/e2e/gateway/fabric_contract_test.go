@@ -147,7 +147,7 @@ func (suite *FabricContractTestSuite) AfterTest(suiteName, testName string) {
 func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	defer suite.testState.done()
 
-	received1 := e2e.WsReader(suite.testState.ws1, true)
+	received1 := e2e.WsReader(suite.testState.ws1)
 
 	sub := suite.testState.client1.CreateContractListener(suite.T(), assetCreatedEvent, &fftypes.JSONObject{
 		"channel":   "firefly",

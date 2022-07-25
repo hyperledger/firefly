@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -183,38 +182,46 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 		systemClient2.RegisterSelfNode(suite.T(), true)
 	}
 
-	eventNames := "message_confirmed"
-	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", testNamespace, eventNames)
-	ws1 := client1.WebSocket(suite.T(), queryString, nil)
-	ws2 := client2.WebSocket(suite.T(), queryString, nil)
-	received1 := e2e.WsReader(ws1, true)
-	received2 := e2e.WsReader(ws2, true)
+	eventNames := "message_confirmed|blockchain_event_received"
+	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s", testNamespace, eventNames)
+	received1 := e2e.WsReader(client1.WebSocket(suite.T(), queryString, nil))
+	received2 := e2e.WsReader(client2.WebSocket(suite.T(), queryString, nil))
+
+	systemQueryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s", "ff_system", eventNames)
+	systemReceived1 := e2e.WsReader(systemClient1.WebSocket(suite.T(), systemQueryString, nil))
+	systemReceived2 := e2e.WsReader(systemClient2.WebSocket(suite.T(), systemQueryString, nil))
 
 	// Verify that a broadcast on the new namespace succeeds under the V1 contract
 	data := &core.DataRefOrValue{Value: fftypes.JSONAnyPtr(`"test"`)}
 	resp, err := client1.BroadcastMessage(suite.T(), "topic", data, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
-
 	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
 	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
 
-	// Register org/node identities on the new namespace and then migrate to the V2 contract
+	// Register org/node identities on the new namespace
 	client1.RegisterSelfOrg(suite.T(), true)
 	client1.RegisterSelfNode(suite.T(), true)
 	client2.RegisterSelfOrg(suite.T(), true)
 	client2.RegisterSelfNode(suite.T(), true)
-	client1.NetworkAction(suite.T(), core.NetworkActionTerminate)
 
-	// TODO: remove
-	// We should actually change the ws listener to listen for blockchain events too, and wait for the "terminate" events on ff_system
-	time.Sleep(5 * time.Second)
+	// Migrate to the V2 contract
+	client1.NetworkAction(suite.T(), core.NetworkActionTerminate)
+	e2e.WaitForContractEvent(suite.T(), systemClient1, systemReceived1, map[string]interface{}{
+		"output": map[string]interface{}{
+			"namespace": "firefly:terminate",
+		},
+	})
+	e2e.WaitForContractEvent(suite.T(), systemClient2, systemReceived2, map[string]interface{}{
+		"output": map[string]interface{}{
+			"namespace": "firefly:terminate",
+		},
+	})
 
 	// Verify that a broadcast on the new namespace succeeds under the V2 contract
 	resp, err = client1.BroadcastMessage(suite.T(), "topic", data, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
-
 	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
 	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
 

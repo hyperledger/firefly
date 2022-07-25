@@ -103,7 +103,7 @@ func ReadStackState(t *testing.T) *StackState {
 	return stackState
 }
 
-func WsReader(conn *websocket.Conn, dbChanges bool) chan *core.EventDelivery {
+func WsReader(conn *websocket.Conn) chan *core.EventDelivery {
 	events := make(chan *core.EventDelivery, 100)
 	go func() {
 		for {

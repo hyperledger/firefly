@@ -52,8 +52,8 @@ func (suite *TokensTestSuite) AfterTest(suiteName, testName string) {
 func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	defer suite.testState.done()
 
-	received1 := e2e.WsReader(suite.testState.ws1, false)
-	received2 := e2e.WsReader(suite.testState.ws2, false)
+	received1 := e2e.WsReader(suite.testState.ws1)
+	received2 := e2e.WsReader(suite.testState.ws2)
 
 	pools := suite.testState.client1.GetTokenPools(suite.T(), time.Unix(0, 0))
 	rand.Seed(time.Now().UnixNano())
@@ -220,8 +220,8 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	defer suite.testState.done()
 
-	received1 := e2e.WsReader(suite.testState.ws1, false)
-	received2 := e2e.WsReader(suite.testState.ws2, false)
+	received1 := e2e.WsReader(suite.testState.ws1)
+	received2 := e2e.WsReader(suite.testState.ws2)
 
 	pools := suite.testState.client1.GetTokenPools(suite.T(), time.Unix(0, 0))
 	rand.Seed(time.Now().UnixNano())

@@ -154,7 +154,7 @@ func (suite *EthereumContractTestSuite) AfterTest(suiteName, testName string) {
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.Done()
 
-	received1 := e2e.WsReader(suite.testState.ws1, true)
+	received1 := e2e.WsReader(suite.testState.ws1)
 	listener := suite.testState.client1.CreateContractListener(suite.T(), simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
@@ -208,7 +208,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	defer suite.testState.Done()
 
-	received1 := e2e.WsReader(suite.testState.ws1, true)
+	received1 := e2e.WsReader(suite.testState.ws1)
 
 	ffiReference := &fftypes.FFIReference{
 		ID: suite.interfaceID,
@@ -267,7 +267,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
 	defer suite.testState.Done()
 
-	received1 := e2e.WsReader(suite.testState.ws1, true)
+	received1 := e2e.WsReader(suite.testState.ws1)
 	APIName := fftypes.NewUUID().String()
 
 	ffiReference := &fftypes.FFIReference{
