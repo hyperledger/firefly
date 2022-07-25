@@ -81,14 +81,13 @@ type Contract struct {
 }
 
 type multipartyManager struct {
-	namespace      *core.Namespace
-	database       database.Plugin
-	blockchain     blockchain.Plugin
-	operations     operations.Manager
-	metrics        metrics.Manager
-	txHelper       txcommon.Helper
-	config         Config
-	networkVersion int
+	namespace  *core.Namespace
+	database   database.Plugin
+	blockchain blockchain.Plugin
+	operations operations.Manager
+	metrics    metrics.Manager
+	txHelper   txcommon.Helper
+	config     Config
 }
 
 func NewMultipartyManager(ctx context.Context, ns *core.Namespace, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
@@ -138,7 +137,6 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context) (err error) 
 
 	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.LocalName, location, firstEvent)
 	if err == nil {
-		mm.networkVersion = version
 		contracts.Active = core.MultipartyContract{
 			Location:   location,
 			FirstEvent: firstEvent,
@@ -179,15 +177,15 @@ func (mm *multipartyManager) TerminateContract(ctx context.Context, location *ff
 		return nil
 	}
 	log.L(ctx).Infof("Processing termination of contract #%d at '%s'", contracts.Active.Index, contracts.Active.Location)
+	mm.blockchain.RemoveFireflySubscription(ctx, contracts.Active.Info.Subscription)
 	contracts.Active.Info.FinalEvent = termination.ProtocolID
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
 	contracts.Active = core.MultipartyContract{Index: contracts.Active.Index + 1}
-	mm.blockchain.RemoveFireflySubscription(ctx, contracts.Active.Info.Subscription)
 	return mm.ConfigureContract(ctx)
 }
 
 func (mm *multipartyManager) GetNetworkVersion() int {
-	return mm.networkVersion
+	return mm.namespace.Contracts.Active.Info.Version
 }
 
 func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction) error {
