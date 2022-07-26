@@ -14,4 +14,7 @@ ALTER TABLE namespaces DROP COLUMN ntype;
 ALTER TABLE namespaces ADD COLUMN remote_name VARCHAR(64);
 UPDATE namespaces SET remote_name = name;
 ALTER TABLE namespaces ALTER COLUMN remote_name SET NOT NULL;
+
+DROP INDEX transactions_id;
+CREATE UNIQUE INDEX transactions_id ON transactions(namespace, id);
 COMMIT;

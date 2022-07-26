@@ -14,16 +14,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package multiparty
+package runners
 
 import (
 	"testing"
 
+	"github.com/hyperledger/firefly/test/e2e/multiparty"
 	"github.com/stretchr/testify/suite"
 )
 
-func TestFabricMultipartyE2ESuite(t *testing.T) {
-	suite.Run(t, new(IdentityTestSuite))
-	suite.Run(t, new(OnChainOffChainTestSuite))
-	suite.Run(t, new(FabricContractTestSuite))
+// This suite can only be run once per stack.
+// Specifically, it must be run on a stack that has never used a V1 FireFly multiparty contract.
+// The test deploys a V1 contract, then migrates to V2. This is a one-time operation that cannot
+// be performed again on the same stack.
+func TestEthereumV1MigrationE2ESuite(t *testing.T) {
+	suite.Run(t, new(multiparty.ContractMigrationV1TestSuite))
 }

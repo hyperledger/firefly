@@ -112,7 +112,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 	}
 
 	if or.config.Multiparty.Enabled {
-		status.Multiparty.Contracts = &or.namespace.Contracts
+		status.Multiparty.Contracts = or.namespace.Contracts
 	}
 
 	if org != nil {

@@ -80,13 +80,13 @@ func (_m *Manager) GetOperationByNamespacedID(ctx context.Context, nsOpID string
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx
-func (_m *Manager) Init(ctx context.Context) error {
-	ret := _m.Called(ctx)
+// Init provides a mock function with given fields: ctx, cancelCtx
+func (_m *Manager) Init(ctx context.Context, cancelCtx context.CancelFunc) error {
+	ret := _m.Called(ctx, cancelCtx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc) error); ok {
+		r0 = rf(ctx, cancelCtx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -108,6 +108,11 @@ func (_m *Manager) Orchestrator(ns string) orchestrator.Orchestrator {
 	}
 
 	return r0
+}
+
+// Reset provides a mock function with given fields: ctx
+func (_m *Manager) Reset(ctx context.Context) {
+	_m.Called(ctx)
 }
 
 // ResolveOperationByNamespacedID provides a mock function with given fields: ctx, nsOpID, op

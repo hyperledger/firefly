@@ -14,17 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apiserver
+package runners
 
-import "github.com/hyperledger/firefly-common/pkg/ffapi"
+import (
+	"testing"
 
-// The Service Provider Interface (SPI) allows external microservices (such as the FireFly Transaction Manager)
-// to act as augmented components to the core.
-var spiRoutes = []*ffapi.Route{
-	spiGetNamespaceByName,
-	spiGetNamespaces,
-	spiGetOpByID,
-	spiGetOps,
-	spiPatchOpByID,
-	spiPostReset,
+	"github.com/hyperledger/firefly/test/e2e/multiparty"
+	"github.com/stretchr/testify/suite"
+)
+
+func TestFabricMultipartyE2ESuite(t *testing.T) {
+	suite.Run(t, new(multiparty.IdentityTestSuite))
+	suite.Run(t, new(multiparty.OnChainOffChainTestSuite))
+	suite.Run(t, new(multiparty.FabricContractTestSuite))
 }

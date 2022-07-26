@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2021 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,15 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gateway
+package apiserver
 
 import (
+	"bytes"
+	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestEthereumGatewayE2ESuite(t *testing.T) {
-	suite.Run(t, new(TokensTestSuite))
-	suite.Run(t, new(EthereumContractTestSuite))
+func TestAdminPostResetConfig(t *testing.T) {
+	mgr, _, as := newTestServer()
+	r := as.createAdminMuxRouter(mgr)
+	req := httptest.NewRequest("POST", "/spi/v1/reset", bytes.NewReader([]byte(`{}`)))
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	mgr.On("Reset", mock.Anything).Return()
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 204, res.Result().StatusCode)
 }

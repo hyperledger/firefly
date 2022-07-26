@@ -35,22 +35,6 @@ import (
 
 var contractVersion, _ = nanoid.Generate("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", nanoid.DefaultSize)
 
-type uploadABIResult struct {
-	ID string `json:"id"`
-}
-
-type deployABIResult struct {
-	ContractAddress string `json:"contractAddress"`
-}
-
-type ethconnectOutput struct {
-	Output string `json:"output"`
-}
-
-type simpleStorageBody struct {
-	NewValue string `json:"newValue"`
-}
-
 func simpleStorageFFIChanged() *fftypes.FFIEvent {
 	return &fftypes.FFIEvent{
 		FFIEventDefinition: fftypes.FFIEventDefinition{
@@ -110,7 +94,8 @@ func simpleStorageFFIGet() *fftypes.FFIMethod {
 }
 
 func deployContract(t *testing.T, stackName, contract string) string {
-	out, err := exec.Command("ff", "deploy", "ethereum", stackName, "../../data/contracts/"+contract).Output()
+	path := "../../data/contracts/" + contract
+	out, err := exec.Command("ff", "deploy", "ethereum", stackName, path).Output()
 	require.NoError(t, err)
 	var output map[string]interface{}
 	err = json.Unmarshal(out, &output)
@@ -154,7 +139,7 @@ func (suite *EthereumContractTestSuite) AfterTest(suiteName, testName string) {
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.Done()
 
-	received1 := e2e.WsReader(suite.testState.ws1, true)
+	received1 := e2e.WsReader(suite.testState.ws1)
 	listener := suite.testState.client1.CreateContractListener(suite.T(), simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
@@ -208,7 +193,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	defer suite.testState.Done()
 
-	received1 := e2e.WsReader(suite.testState.ws1, true)
+	received1 := e2e.WsReader(suite.testState.ws1)
 
 	ffiReference := &fftypes.FFIReference{
 		ID: suite.interfaceID,
@@ -267,7 +252,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
 	defer suite.testState.Done()
 
-	received1 := e2e.WsReader(suite.testState.ws1, true)
+	received1 := e2e.WsReader(suite.testState.ws1)
 	APIName := fftypes.NewUUID().String()
 
 	ffiReference := &fftypes.FFIReference{

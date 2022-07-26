@@ -20,11 +20,9 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/internal/operations"
-	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
-	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 type boundCallbacks struct {
@@ -44,14 +42,6 @@ func (bc *boundCallbacks) OperationUpdate(plugin core.Named, nsOpID string, stat
 	})
 }
 
-func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	return bc.ei.BatchPinComplete(batch, signingKey)
-}
-
-func (bc *boundCallbacks) BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	return bc.ei.BlockchainNetworkAction(action, location, event, signingKey)
-}
-
 func (bc *boundCallbacks) DXEvent(event dataexchange.DXEvent) {
 	switch event.Type() {
 	case dataexchange.DXEventTypeTransferResult:
@@ -59,22 +49,6 @@ func (bc *boundCallbacks) DXEvent(event dataexchange.DXEvent) {
 	default:
 		bc.ei.DXEvent(bc.dx, event)
 	}
-}
-
-func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.TokenPool) error {
-	return bc.ei.TokenPoolCreated(plugin, pool)
-}
-
-func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
-	return bc.ei.TokensTransferred(plugin, transfer)
-}
-
-func (bc *boundCallbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	return bc.ei.BlockchainEvent(event)
-}
-
-func (bc *boundCallbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.TokenApproval) error {
-	return bc.ei.TokensApproved(plugin, approval)
 }
 
 func (bc *boundCallbacks) SharedStorageBatchDownloaded(payloadRef string, data []byte) (*fftypes.UUID, error) {

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,8 +48,8 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	defer suite.testState.done()
 
 	ctx := context.Background()
-	received1 := e2e.WsReader(suite.testState.ws1, false)
-	received2 := e2e.WsReader(suite.testState.ws2, false)
+	received1 := e2e.WsReader(suite.testState.ws1)
+	received2 := e2e.WsReader(suite.testState.ws2)
 
 	totalIdentities := 2
 	ts := time.Now().Unix()
@@ -101,8 +101,8 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	defer suite.testState.done()
 
-	received1 := e2e.WsReader(suite.testState.ws1, false)
-	received2 := e2e.WsReader(suite.testState.ws2, false)
+	received1 := e2e.WsReader(suite.testState.ws1)
+	received2 := e2e.WsReader(suite.testState.ws2)
 
 	org1key := getUnregisteredAccount(suite, suite.testState.org1.Name)
 	org2key := getUnregisteredAccount(suite, suite.testState.org2.Name)
@@ -111,14 +111,14 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	custom1 := suite.testState.client1.ClaimCustomIdentity(suite.T(),
 		org1key,
 		fmt.Sprintf("custom_%d_org1priv", ts),
-		fmt.Sprintf("Description org1priv"),
+		"Description org1priv",
 		nil,
 		suite.testState.org1.ID,
 		true)
 	custom2 := suite.testState.client2.ClaimCustomIdentity(suite.T(),
 		org2key,
 		fmt.Sprintf("custom_%d_org2priv", ts),
-		fmt.Sprintf("Description org2priv"),
+		"Description org2priv",
 		nil,
 		suite.testState.org2.ID,
 		true)

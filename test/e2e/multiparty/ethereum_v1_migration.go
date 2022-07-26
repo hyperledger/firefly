@@ -22,8 +22,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestEthereumNamespaceE2ESuite(t *testing.T) {
-	suite.Run(t, new(OnChainOffChainTestSuite))
-	suite.Run(t, new(TokensTestSuite))
-	suite.Run(t, new(EthereumContractTestSuite))
+func TestEthereumMultipartyV1MigrationE2ESuite(t *testing.T) {
+	suite.Run(t, new(ContractMigrationV1TestSuite))
 }

@@ -52,8 +52,8 @@ import (
 
 // Orchestrator is the main interface behind the API, implementing the actions
 type Orchestrator interface {
-	Init(ctx context.Context) error
-	Start(onStop func()) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc) error
+	Start() error
 	WaitStop() // The close itself is performed by canceling the context
 
 	MultiParty() multiparty.Manager             // only for multiparty
@@ -177,11 +177,10 @@ type Config struct {
 type orchestrator struct {
 	ctx            context.Context
 	cancelCtx      context.CancelFunc
-	onStop         func()
 	started        bool
 	namespace      *core.Namespace
 	config         Config
-	plugins        Plugins
+	plugins        *Plugins
 	multiparty     multiparty.Manager       // only for multiparty
 	batch          batch.Manager            // only for multiparty
 	broadcast      broadcast.Manager        // only for multiparty
@@ -203,7 +202,7 @@ type orchestrator struct {
 	txHelper       txcommon.Helper
 }
 
-func NewOrchestrator(ns *core.Namespace, config Config, plugins Plugins, metrics metrics.Manager) Orchestrator {
+func NewOrchestrator(ns *core.Namespace, config Config, plugins *Plugins, metrics metrics.Manager) Orchestrator {
 	or := &orchestrator{
 		namespace: ns,
 		config:    config,
@@ -213,15 +212,15 @@ func NewOrchestrator(ns *core.Namespace, config Config, plugins Plugins, metrics
 	return or
 }
 
-func (or *orchestrator) Init(ctx context.Context) (err error) {
+func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
 	namespaceLog := or.namespace.LocalName
 	if or.namespace.RemoteName != or.namespace.LocalName {
 		namespaceLog += "->" + or.namespace.RemoteName
 	}
 	or.ctx, or.cancelCtx = context.WithCancel(log.WithLogField(ctx, "ns", namespaceLog))
-	err = or.initPlugins(or.ctx)
+	err = or.initComponents(or.ctx)
 	if err == nil {
-		err = or.initComponents(or.ctx)
+		err = or.initHandlers(or.ctx)
 	}
 	// Bind together the blockchain interface callbacks, with the events manager
 	or.bc.ei = or.events
@@ -255,14 +254,10 @@ func (or *orchestrator) tokens() map[string]tokens.Plugin {
 	return result
 }
 
-func (or *orchestrator) Start(onStop func()) (err error) {
-	or.onStop = onStop
+func (or *orchestrator) Start() (err error) {
 	or.data.Start()
 	if or.config.Multiparty.Enabled {
-		err = or.multiparty.ConfigureContract(or.ctx)
-		if err == nil {
-			err = or.batch.Start()
-		}
+		err = or.batch.Start()
 		if err == nil {
 			err = or.broadcast.Start()
 		}
@@ -279,13 +274,6 @@ func (or *orchestrator) Start(onStop func()) (err error) {
 
 	or.started = true
 	return err
-}
-
-func (or *orchestrator) stop() {
-	or.cancelCtx()
-	if or.onStop != nil {
-		or.onStop()
-	}
 }
 
 func (or *orchestrator) WaitStop() {
@@ -363,11 +351,11 @@ func (or *orchestrator) MultiParty() multiparty.Manager {
 	return or.multiparty
 }
 
-func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
+func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 	or.plugins.Database.Plugin.SetHandler(or.namespace.LocalName, or)
 
 	if or.plugins.Blockchain.Plugin != nil {
-		or.plugins.Blockchain.Plugin.SetHandler(or.namespace.RemoteName, &or.bc)
+		or.plugins.Blockchain.Plugin.SetHandler(or.namespace.RemoteName, or.events)
 		or.plugins.Blockchain.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
 	}
 
@@ -392,7 +380,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	for _, token := range or.plugins.Tokens {
-		if err := token.Plugin.SetHandler(or.namespace.LocalName, &or.bc); err != nil {
+		if err := token.Plugin.SetHandler(or.namespace.LocalName, or.events); err != nil {
 			return err
 		}
 		token.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
@@ -415,10 +403,13 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.config.Multiparty.Enabled {
 		if or.multiparty == nil {
-			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.stop, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
+			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
 			if err != nil {
 				return err
 			}
+		}
+		if err = or.multiparty.ConfigureContract(ctx); err != nil {
+			return err
 		}
 	}
 

@@ -41,8 +41,8 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 		LocalName:  "namespace1",
 		RemoteName: "default",
 		Created:    fftypes.Now(),
-		Contracts: core.MultipartyContracts{
-			Active: core.MultipartyContract{
+		Contracts: &core.MultipartyContracts{
+			Active: &core.MultipartyContract{
 				Index: 1,
 			},
 		},

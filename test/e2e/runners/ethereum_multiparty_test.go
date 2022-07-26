@@ -14,17 +14,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package multiparty
+package runners
 
 import (
 	"testing"
 
+	"github.com/hyperledger/firefly/test/e2e/multiparty"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestEthereumMultipartyE2ESuite(t *testing.T) {
-	suite.Run(t, new(IdentityTestSuite))
-	suite.Run(t, new(OnChainOffChainTestSuite))
-	suite.Run(t, new(TokensTestSuite))
-	suite.Run(t, new(EthereumContractTestSuite))
+	suite.Run(t, new(multiparty.IdentityTestSuite))
+	suite.Run(t, new(multiparty.OnChainOffChainTestSuite))
+	suite.Run(t, new(multiparty.TokensTestSuite))
+	suite.Run(t, new(multiparty.EthereumContractTestSuite))
+	suite.Run(t, new(multiparty.ContractMigrationTestSuite))
 }

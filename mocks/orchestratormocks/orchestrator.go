@@ -1122,13 +1122,13 @@ func (_m *Orchestrator) GetTransactions(ctx context.Context, filter database.And
 	return r0, r1, r2
 }
 
-// Init provides a mock function with given fields: ctx
-func (_m *Orchestrator) Init(ctx context.Context) error {
-	ret := _m.Called(ctx)
+// Init provides a mock function with given fields: ctx, cancelCtx
+func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) error {
+	ret := _m.Called(ctx, cancelCtx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc) error); ok {
+		r0 = rf(ctx, cancelCtx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1223,13 +1223,13 @@ func (_m *Orchestrator) RequestReply(ctx context.Context, msg *core.MessageInOut
 	return r0, r1
 }
 
-// Start provides a mock function with given fields: onStop
-func (_m *Orchestrator) Start(onStop func()) error {
-	ret := _m.Called(onStop)
+// Start provides a mock function with given fields:
+func (_m *Orchestrator) Start() error {
+	ret := _m.Called()
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(func()) error); ok {
-		r0 = rf(onStop)
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
 	}

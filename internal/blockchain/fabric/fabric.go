@@ -360,6 +360,10 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 	var namespace string
 	if subInfo.version == 1 {
 		namespace = nsOrAction
+		if subInfo.namespace != "" && subInfo.namespace != namespace {
+			log.L(ctx).Debugf("Ignoring batch for '%s' received on subscription for '%s'", namespace, subInfo.namespace)
+			return nil
+		}
 	} else {
 		namespace = subInfo.namespace
 	}
@@ -453,22 +457,21 @@ func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) {
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {
-	l := log.L(ctx)
-
 	for i, msgI := range messages {
 		msgMap, ok := msgI.(map[string]interface{})
 		if !ok {
-			l.Errorf("Message cannot be parsed as JSON: %+v", msgI)
+			log.L(ctx).Errorf("Message cannot be parsed as JSON: %+v", msgI)
 			return nil // Swallow this and move on
 		}
 		msgJSON := fftypes.JSONObject(msgMap)
 
-		l1 := l.WithField("fabmsgidx", i)
-		ctx1 := log.WithLogger(ctx, l1)
+		logger := log.L(ctx).WithField("fabmsgidx", i)
+		eventCtx, done := context.WithCancel(log.WithLogger(ctx, logger))
+
 		eventName := msgJSON.GetString("eventName")
 		sub := msgJSON.GetString("subId")
-		l1.Infof("Received '%s' message", eventName)
-		l1.Tracef("Message: %+v", msgJSON)
+		logger.Infof("Received '%s' message on '%s'", eventName, sub)
+		logger.Tracef("Message: %+v", msgJSON)
 
 		// Matches one of the active FireFly BatchPin subscriptions
 		if subInfo, ok := f.subs[sub]; ok {
@@ -477,24 +480,28 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 				Channel:   subInfo.channel,
 			})
 			if err != nil {
+				done()
 				return err
 			}
 
 			switch eventName {
 			case broadcastBatchEventName:
-				if err := f.handleBatchPinEvent(ctx1, location, &subInfo, msgJSON); err != nil {
+				if err := f.handleBatchPinEvent(eventCtx, location, &subInfo, msgJSON); err != nil {
+					done()
 					return err
 				}
 			default:
-				l.Infof("Ignoring event with unknown name: %s", eventName)
+				log.L(ctx).Infof("Ignoring event with unknown name: %s", eventName)
 			}
 		} else {
 			// Subscription not recognized - assume it's from a custom contract listener
 			// (event manager will reject it if it's not)
 			if err := f.handleContractEvent(ctx, msgJSON); err != nil {
+				done()
 				return err
 			}
 		}
+		done()
 	}
 
 	return nil

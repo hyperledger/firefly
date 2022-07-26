@@ -16,15 +16,28 @@
 
 package apiserver
 
-import "github.com/hyperledger/firefly-common/pkg/ffapi"
+import (
+	"net/http"
 
-// The Service Provider Interface (SPI) allows external microservices (such as the FireFly Transaction Manager)
-// to act as augmented components to the core.
-var spiRoutes = []*ffapi.Route{
-	spiGetNamespaceByName,
-	spiGetNamespaces,
-	spiGetOpByID,
-	spiGetOps,
-	spiPatchOpByID,
-	spiPostReset,
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+)
+
+var spiPostReset = &ffapi.Route{
+	Name:            "spiPostReset",
+	Path:            "reset",
+	Method:          http.MethodPost,
+	PathParams:      nil,
+	QueryParams:     nil,
+	Description:     coremsgs.APIEndpointsAdminPostReset,
+	JSONInputValue:  nil,
+	JSONOutputValue: nil,
+	JSONOutputCodes: []int{http.StatusNoContent},
+	Extensions: &coreExtensions{
+		FilterFactory: nil,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			cr.mgr.Reset(cr.ctx)
+			return nil, nil
+		},
+	},
 }
