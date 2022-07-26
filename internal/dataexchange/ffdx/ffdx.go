@@ -56,7 +56,7 @@ type callbacks struct {
 
 func (cb *callbacks) DXEvent(ctx context.Context, namespace string, event dataexchange.DXEvent) {
 	if handler, ok := cb.handlers[namespace]; ok {
-		handler.DXEvent(event)
+		handler.DXEvent(ctx, event)
 	} else {
 		log.L(ctx).Errorf("unknown namespace on event '%s'", event.EventID())
 		event.Ack()

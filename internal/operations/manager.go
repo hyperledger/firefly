@@ -27,7 +27,6 @@ import (
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
 type OperationHandler interface {
@@ -44,7 +43,6 @@ type Manager interface {
 	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation) error
 	SubmitOperationUpdate(plugin core.Named, update *OperationUpdate)
-	TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent)
 	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
 	Start() error
 	WaitStop()
@@ -163,37 +161,6 @@ func (om *operationsManager) RetryOperation(ctx context.Context, opID *fftypes.U
 
 	_, err = om.RunOperation(ctx, po)
 	return op, err
-}
-
-func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent) {
-
-	tr := event.TransferResult()
-
-	log.L(om.ctx).Infof("Transfer result %s=%s error='%s' manifest='%s' info='%s'", tr.TrackingID, tr.Status, tr.Error, tr.Manifest, tr.Info)
-
-	opUpdate := &OperationUpdate{
-		NamespacedOpID: event.NamespacedID(),
-		Status:         tr.Status,
-		VerifyManifest: dx.Capabilities().Manifest,
-		ErrorMessage:   tr.Error,
-		Output:         tr.Info,
-		OnComplete: func() {
-			event.Ack()
-		},
-	}
-
-	// Pass manifest verification code to the background worker, for once it has loaded the operation
-	if opUpdate.VerifyManifest {
-		if tr.Manifest != "" {
-			// For batches DX passes us a manifest to compare.
-			opUpdate.DXManifest = tr.Manifest
-		} else if tr.Hash != "" {
-			// For blobs DX passes us a hash to compare.
-			opUpdate.DXHash = tr.Hash
-		}
-	}
-
-	om.SubmitOperationUpdate(dx, opUpdate)
 }
 
 func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject) {

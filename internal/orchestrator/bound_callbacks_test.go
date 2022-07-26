@@ -17,6 +17,7 @@
 package orchestrator
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -44,27 +45,16 @@ func TestBoundCallbacks(t *testing.T) {
 	info := fftypes.JSONObject{"hello": "world"}
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
-
 	nsOpID := "ns1:" + opID.String()
+
 	mom.On("SubmitOperationUpdate", mock.Anything, &operations.OperationUpdate{
 		NamespacedOpID: nsOpID,
 		Status:         core.OpStatusFailed,
 		BlockchainTXID: "0xffffeeee",
 		ErrorMessage:   "error info",
 		Output:         info,
-	}).Return()
-
+	}).Return().Once()
 	bc.OperationUpdate(mbi, nsOpID, core.OpStatusFailed, "0xffffeeee", "error info", info)
-
-	mde := &dataexchangemocks.DXEvent{}
-	mom.On("TransferResult", mdx, mde).Return()
-	mei.On("DXEvent", mdx, mde).Return()
-
-	mde.On("Type").Return(dataexchange.DXEventTypeTransferResult).Once()
-	bc.DXEvent(mde)
-
-	mde.On("Type").Return(dataexchange.DXEventTypeMessageReceived).Once()
-	bc.DXEvent(mde)
 
 	mei.On("SharedStorageBatchDownloaded", mss, "payload1", []byte(`{}`)).Return(nil, fmt.Errorf("pop"))
 	_, err := bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
@@ -72,4 +62,90 @@ func TestBoundCallbacks(t *testing.T) {
 
 	mei.On("SharedStorageBlobDownloaded", mss, *hash, int64(12345), "payload1").Return()
 	bc.SharedStorageBlobDownloaded(*hash, 12345, "payload1")
+
+	mei.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mss.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestBoundCallbacksDXEvent(t *testing.T) {
+	mei := &eventmocks.EventManager{}
+	mdx := &dataexchangemocks.Plugin{}
+	mss := &sharedstoragemocks.Plugin{}
+	mom := &operationmocks.Manager{}
+	bc := boundCallbacks{dx: mdx, ei: mei, ss: mss, om: mom}
+
+	ctx := context.Background()
+	info := fftypes.JSONObject{"hello": "world"}
+	opID := fftypes.NewUUID()
+	nsOpID := "ns1:" + opID.String()
+
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+
+	event1 := &dataexchangemocks.DXEvent{}
+	mei.On("DXEvent", mdx, event1).Return().Once()
+	event1.On("Type").Return(dataexchange.DXEventTypeMessageReceived).Once()
+	bc.DXEvent(ctx, event1)
+	event1.AssertExpectations(t)
+
+	event2 := &dataexchangemocks.DXEvent{}
+	event2.On("Type").Return(dataexchange.DXEventTypeTransferResult).Once()
+	event2.On("TransferResult").Return(&dataexchange.TransferResult{
+		TrackingID: opID.String(),
+		Status:     core.OpStatusSucceeded,
+		TransportStatusUpdate: core.TransportStatusUpdate{
+			Info:     info,
+			Manifest: "Sally",
+		},
+	})
+	event2.On("NamespacedID").Return(nsOpID)
+	event2.On("Ack").Return()
+	mom.On("SubmitOperationUpdate", mock.Anything, mock.MatchedBy(func(update *operations.OperationUpdate) bool {
+		if update.NamespacedOpID == nsOpID &&
+			update.Status == core.OpStatusSucceeded &&
+			update.VerifyManifest &&
+			update.DXManifest == "Sally" &&
+			update.DXHash == "" {
+			update.OnComplete()
+			return true
+		}
+		return false
+	})).Return().Once()
+	bc.DXEvent(ctx, event2)
+	event2.AssertExpectations(t)
+
+	event3 := &dataexchangemocks.DXEvent{}
+	event3.On("Type").Return(dataexchange.DXEventTypeTransferResult).Once()
+	event3.On("TransferResult").Return(&dataexchange.TransferResult{
+		TrackingID: opID.String(),
+		Status:     core.OpStatusSucceeded,
+		TransportStatusUpdate: core.TransportStatusUpdate{
+			Info: info,
+			Hash: "hash1",
+		},
+	})
+	event3.On("NamespacedID").Return(nsOpID)
+	event3.On("Ack").Return()
+	mom.On("SubmitOperationUpdate", mock.Anything, mock.MatchedBy(func(update *operations.OperationUpdate) bool {
+		if update.NamespacedOpID == nsOpID &&
+			update.Status == core.OpStatusSucceeded &&
+			update.VerifyManifest &&
+			update.DXManifest == "" &&
+			update.DXHash == "hash1" {
+			update.OnComplete()
+			return true
+		}
+		return false
+	})).Return().Once()
+	bc.DXEvent(ctx, event3)
+	event3.AssertExpectations(t)
+
+	mei.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mss.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
