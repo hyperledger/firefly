@@ -26,8 +26,33 @@ jobs:
       - name: Upload coverage
         run: bash <(curl -s https://codecov.io/bash)
 
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: Build Docker image
+        run: make docker
+
+      - name: Save Docker image
+        run: docker save --output firefly.tar.gz hyperledger/firefly
+
+      - name: Upload Docker image
+        uses: actions/upload-artifact@v3
+        with:
+          name: firefly-docker
+          path: firefly.tar.gz
+
   e2e-test:
     runs-on: ubuntu-latest
+    needs: docker
     strategy:
       fail-fast: false
       matrix:
@@ -79,8 +104,17 @@ jobs:
         with:
           go-version: 1.17
 
+      - name: Download Docker image
+        uses: actions/download-artifact@v3
+        with:
+          name: firefly-docker
+
+      - name: Load Docker image
+        run: docker load --input firefly.tar.gz
+
       - name: Run E2E tests
         env:
+          BUILD_FIREFLY: false
           TEST_SUITE: ${{ matrix.test-suite }}
           BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
           TOKENS_PROVIDER: ${{ matrix.token-provider }}
