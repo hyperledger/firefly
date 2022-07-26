@@ -33,7 +33,6 @@ func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, wai
 	}
 
 	if bm.multiparty {
-		ffi.Namespace = bm.namespace // TODO: change validation to not check namespace
 		if err := bm.contracts.ResolveFFI(ctx, ffi); err != nil {
 			return err
 		}
@@ -56,7 +55,6 @@ func (bm *definitionSender) DefineContractAPI(ctx context.Context, httpServerURL
 	api.ID = fftypes.NewUUID()
 
 	if bm.multiparty {
-		api.Namespace = bm.namespace // TODO: change validation to not check namespace
 		if err := bm.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
 			return err
 		}
