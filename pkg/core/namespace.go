@@ -28,16 +28,16 @@ import (
 // Namespace is an isolated set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
-	LocalName   string              `ffstruct:"Namespace" json:"name"`
-	RemoteName  string              `ffstruct:"Namespace" json:"remoteName"`
-	Description string              `ffstruct:"Namespace" json:"description"`
-	Created     *fftypes.FFTime     `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
-	Contracts   MultipartyContracts `ffstruct:"Namespace" json:"-"`
+	LocalName   string               `ffstruct:"Namespace" json:"name"`
+	RemoteName  string               `ffstruct:"Namespace" json:"remoteName"`
+	Description string               `ffstruct:"Namespace" json:"description"`
+	Created     *fftypes.FFTime      `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
+	Contracts   *MultipartyContracts `ffstruct:"Namespace" json:"-"`
 }
 
 type MultipartyContracts struct {
-	Active     MultipartyContract   `ffstruct:"MultipartyContracts" json:"active"`
-	Terminated []MultipartyContract `ffstruct:"MultipartyContracts" json:"terminated,omitempty"`
+	Active     *MultipartyContract   `ffstruct:"MultipartyContracts" json:"active"`
+	Terminated []*MultipartyContract `ffstruct:"MultipartyContracts" json:"terminated,omitempty"`
 }
 
 // MultipartyContract represents identifying details about a FireFly multiparty contract, as read from the config file

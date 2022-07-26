@@ -39,13 +39,13 @@ type Manager interface {
 	RootOrg() RootOrg
 
 	// ConfigureContract initializes the subscription to the FireFly contract
-	// - Checks the namespace contract info against the plugin's configuration, and updates it as needed
-	// - Initializes the contract info for performing BatchPin transactions, and initializes subscriptions for BatchPin events
+	// - Determines the active multiparty contract entry from the config, and updates the namespace with contract info
+	// - Resolves the multiparty contract address and version, and initializes subscriptions for contract events
 	ConfigureContract(ctx context.Context) (err error)
 
 	// TerminateContract marks the given event as the last one to be parsed on the current FireFly contract
-	// - Validates that the event came from the currently active FireFly contract
-	// - Re-initializes the plugin against the next configured FireFly contract
+	// - Validates that the event came from the currently active multiparty contract
+	// - Re-initializes the plugin against the next configured multiparty contract
 	// - Updates the namespace contract info to record the point of termination and the newly active contract
 	TerminateContract(ctx context.Context, location *fftypes.JSONAny, termination *blockchain.Event) (err error)
 
@@ -123,7 +123,7 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context) (err error) 
 }
 
 func (mm *multipartyManager) configureContractCommon(ctx context.Context, migration bool) (err error) {
-	contracts := &mm.namespace.Contracts
+	contracts := mm.namespace.Contracts
 	log.L(ctx).Infof("Resolving FireFly contract at index %d", contracts.Active.Index)
 	location, firstEvent, err := mm.resolveFireFlyContract(ctx, contracts.Active.Index)
 	if err != nil {
@@ -143,7 +143,7 @@ func (mm *multipartyManager) configureContractCommon(ctx context.Context, migrat
 
 	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.LocalName, location, firstEvent)
 	if err == nil {
-		contracts.Active = core.MultipartyContract{
+		contracts.Active = &core.MultipartyContract{
 			Location:   location,
 			FirstEvent: firstEvent,
 			Info: core.MultipartyContractInfo{
@@ -177,7 +177,7 @@ func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contrac
 }
 
 func (mm *multipartyManager) TerminateContract(ctx context.Context, location *fftypes.JSONAny, termination *blockchain.Event) (err error) {
-	contracts := &mm.namespace.Contracts
+	contracts := mm.namespace.Contracts
 	if contracts.Active.Location.String() != location.String() {
 		log.L(ctx).Warnf("Ignoring termination event from contract at '%s', which does not match active '%s'", location, contracts.Active.Location)
 		return nil
@@ -186,7 +186,7 @@ func (mm *multipartyManager) TerminateContract(ctx context.Context, location *ff
 	mm.blockchain.RemoveFireflySubscription(ctx, contracts.Active.Info.Subscription)
 	contracts.Active.Info.FinalEvent = termination.ProtocolID
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
-	contracts.Active = core.MultipartyContract{Index: contracts.Active.Index + 1}
+	contracts.Active = &core.MultipartyContract{Index: contracts.Active.Index + 1}
 	return mm.configureContractCommon(ctx, true)
 }
 

@@ -85,9 +85,7 @@ type Manager interface {
 }
 
 type namespace struct {
-	name         string
-	remoteName   string
-	description  string
+	core.Namespace
 	orchestrator orchestrator.Orchestrator
 	config       orchestrator.Config
 	plugins      []string
@@ -228,11 +226,11 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		multiparty := ns.config.Multiparty.Enabled
 		version := "n/a"
 		if multiparty {
-			version = fmt.Sprintf("%d", ns.orchestrator.GetNamespace(ctx).Contracts.Active.Info.Version)
+			version = fmt.Sprintf("%d", ns.Namespace.Contracts.Active.Info.Version)
 		}
-		log.L(ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.name, strconv.FormatBool(multiparty), version)
+		log.L(ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.LocalName, strconv.FormatBool(multiparty), version)
 		if multiparty {
-			contract := nm.findV1Contract(ctx, ns)
+			contract := nm.findV1Contract(ns)
 			if contract != nil {
 				if v1Namespace == nil {
 					v1Namespace = ns
@@ -240,31 +238,34 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 				} else if !stringSlicesEqual(v1Namespace.plugins, ns.plugins) ||
 					v1Contract.Location.String() != contract.Location.String() ||
 					v1Contract.FirstEvent != contract.FirstEvent {
-					return i18n.NewError(ctx, coremsgs.MsgCannotInitLegacyNS, core.LegacySystemNamespace, v1Namespace.name, ns.name)
+					return i18n.NewError(ctx, coremsgs.MsgCannotInitLegacyNS, core.LegacySystemNamespace, v1Namespace.LocalName, ns.LocalName)
 				}
 			}
 		}
 	}
 
 	if v1Namespace != nil {
-		systemNS := *v1Namespace
-		systemNS.name = core.LegacySystemNamespace
-		systemNS.remoteName = core.LegacySystemNamespace
-		nm.namespaces[core.LegacySystemNamespace] = &systemNS
-		err = nm.initNamespace(&systemNS)
-		log.L(ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, v1Namespace.name)
+		systemNS := &namespace{
+			Namespace: v1Namespace.Namespace,
+			config:    v1Namespace.config,
+			plugins:   v1Namespace.plugins,
+		}
+		systemNS.LocalName = core.LegacySystemNamespace
+		systemNS.RemoteName = core.LegacySystemNamespace
+		nm.namespaces[core.LegacySystemNamespace] = systemNS
+		err = nm.initNamespace(systemNS)
+		log.L(ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, v1Namespace.LocalName)
 	}
 	return err
 }
 
-func (nm *namespaceManager) findV1Contract(ctx context.Context, ns *namespace) *core.MultipartyContract {
-	stored := ns.orchestrator.GetNamespace(ctx)
-	if stored.Contracts.Active.Info.Version == 1 {
-		return &stored.Contracts.Active
+func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContract {
+	if ns.Contracts.Active.Info.Version == 1 {
+		return ns.Contracts.Active
 	}
-	for _, contract := range stored.Contracts.Terminated {
+	for _, contract := range ns.Contracts.Terminated {
 		if contract.Info.Version == 1 {
-			return &contract
+			return contract
 		}
 	}
 	return nil
@@ -273,38 +274,38 @@ func (nm *namespaceManager) findV1Contract(ctx context.Context, ns *namespace) *
 func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 	var plugins *orchestrator.Plugins
 	if ns.config.Multiparty.Enabled {
-		plugins, err = nm.validateMultiPartyConfig(nm.ctx, ns.name, ns.plugins)
+		plugins, err = nm.validateMultiPartyConfig(nm.ctx, ns.LocalName, ns.plugins)
 	} else {
-		plugins, err = nm.validateNonMultipartyConfig(nm.ctx, ns.name, ns.plugins)
+		plugins, err = nm.validateNonMultipartyConfig(nm.ctx, ns.LocalName, ns.plugins)
 	}
 	if err != nil {
 		return err
 	}
 
-	stored, err := plugins.Database.Plugin.GetNamespace(nm.ctx, ns.name)
+	database := plugins.Database.Plugin
+	existing, err := database.GetNamespace(nm.ctx, ns.LocalName)
 	switch {
 	case err != nil:
 		return err
-	case stored != nil:
-		stored.RemoteName = ns.remoteName
-		stored.Description = ns.description
+	case existing != nil:
+		ns.Created = existing.Created
+		ns.Contracts = existing.Contracts
 		// TODO: should we check for discrepancies in the multiparty contract config?
 	default:
-		stored = &core.Namespace{
-			LocalName:   ns.name,
-			RemoteName:  ns.remoteName,
-			Description: ns.description,
-			Created:     fftypes.Now(),
+		ns.Created = fftypes.Now()
+		ns.Contracts = &core.MultipartyContracts{
+			Active: &core.MultipartyContract{},
 		}
 	}
-	if err = plugins.Database.Plugin.UpsertNamespace(nm.ctx, stored, true); err != nil {
+	if err = database.UpsertNamespace(nm.ctx, &ns.Namespace, true); err != nil {
 		return err
 	}
 
 	or := nm.utOrchestrator
 	if or == nil {
-		or = orchestrator.NewOrchestrator(stored, ns.config, plugins, nm.metrics)
+		or = orchestrator.NewOrchestrator(&ns.Namespace, ns.config, plugins, nm.metrics)
 	}
+	ns.orchestrator = or
 	orCtx, orCancel := context.WithCancel(nm.ctx)
 	if err := or.Init(orCtx, orCancel); err != nil {
 		return err
@@ -313,10 +314,9 @@ func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 		<-orCtx.Done()
 		nm.nsMux.Lock()
 		defer nm.nsMux.Unlock()
-		log.L(nm.ctx).Infof("Terminated namespace '%s'", ns.name)
-		delete(nm.namespaces, ns.name)
+		log.L(nm.ctx).Infof("Terminated namespace '%s'", ns.LocalName)
+		delete(nm.namespaces, ns.LocalName)
 	}()
-	ns.orchestrator = or
 	return nil
 }
 
@@ -877,11 +877,13 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}
 
 	return &namespace{
-		name:        name,
-		remoteName:  remoteName,
-		description: conf.GetString(coreconfig.NamespaceDescription),
-		config:      config,
-		plugins:     plugins,
+		Namespace: core.Namespace{
+			LocalName:   name,
+			RemoteName:  remoteName,
+			Description: conf.GetString(coreconfig.NamespaceDescription),
+		},
+		config:  config,
+		plugins: plugins,
 	}, nil
 }
 
@@ -1043,7 +1045,7 @@ func (nm *namespaceManager) GetNamespaces(ctx context.Context) ([]*core.Namespac
 	defer nm.nsMux.Unlock()
 	results := make([]*core.Namespace, 0, len(nm.namespaces))
 	for _, ns := range nm.namespaces {
-		results = append(results, ns.orchestrator.GetNamespace(ctx))
+		results = append(results, &ns.Namespace)
 	}
 	return results, nil
 }

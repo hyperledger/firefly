@@ -140,16 +140,15 @@ func TestInit(t *testing.T) {
 	nm.metricsEnabled = true
 
 	mo := &orchestratormocks.Orchestrator{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
-		Contracts: core.MultipartyContracts{
-			Active: core.MultipartyContract{
+	mo.On("Init", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			nm.namespaces["default"].Contracts.Active = &core.MultipartyContract{
 				Info: core.MultipartyContractInfo{
 					Version: 2,
 				},
-			},
-		},
-	})
+			}
+		}).
+		Return(nil)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -169,6 +168,7 @@ func TestInit(t *testing.T) {
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
 	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.Nil(t, nm.Orchestrator(core.LegacySystemNamespace))
 
 	mo.AssertExpectations(t)
 }
@@ -320,21 +320,18 @@ func TestInitVersion1(t *testing.T) {
 	defer nm.cleanup(t)
 
 	mo := &orchestratormocks.Orchestrator{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
-	nm.utOrchestrator = mo
-
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
-		Contracts: core.MultipartyContracts{
-			Active: core.MultipartyContract{
+	mo.On("Init", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			nm.namespaces["default"].Contracts.Active = &core.MultipartyContract{
 				Location: fftypes.JSONAnyPtr("{}"),
 				Info: core.MultipartyContractInfo{
 					Version: 1,
 				},
-			},
-		},
-	})
+			}
+		}).
+		Return(nil).Once()
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
+	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
@@ -366,25 +363,23 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 	nm.metricsEnabled = true
 
 	mo := &orchestratormocks.Orchestrator{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
-		LocalName:   "default",
-		RemoteName:  "default",
-		Description: "used to be V1",
-		Contracts: core.MultipartyContracts{
-			Active: core.MultipartyContract{
-				Info: core.MultipartyContractInfo{
-					Version: 2,
+	mo.On("Init", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			nm.namespaces["default"].Contracts = &core.MultipartyContracts{
+				Active: &core.MultipartyContract{
+					Info: core.MultipartyContractInfo{
+						Version: 2,
+					},
 				},
-			},
-			Terminated: []core.MultipartyContract{{
-				Location: fftypes.JSONAnyPtr("{}"),
-				Info: core.MultipartyContractInfo{
-					Version: 1,
-				},
-			}},
-		},
-	})
+				Terminated: []*core.MultipartyContract{{
+					Location: fftypes.JSONAnyPtr("{}"),
+					Info: core.MultipartyContractInfo{
+						Version: 1,
+					},
+				}},
+			}
+		}).
+		Return(nil)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -431,23 +426,26 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 	assert.NoError(t, err)
 
 	mo := &orchestratormocks.Orchestrator{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
-		Description: "used to be V1",
-		Contracts: core.MultipartyContracts{
-			Active: core.MultipartyContract{
-				Info: core.MultipartyContractInfo{
-					Version: 2,
+	mo.On("Init", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			nm.namespaces["default"].Contracts = &core.MultipartyContracts{
+				Active: &core.MultipartyContract{
+					Location: fftypes.JSONAnyPtr("{}"),
+					Info: core.MultipartyContractInfo{
+						Version: 1,
+					},
 				},
-			},
-			Terminated: []core.MultipartyContract{{
-				Location: fftypes.JSONAnyPtr("{}"),
-				Info: core.MultipartyContractInfo{
-					Version: 1,
+			}
+			nm.namespaces["ns2"].Contracts = &core.MultipartyContracts{
+				Active: &core.MultipartyContract{
+					Location: fftypes.JSONAnyPtr("{}"),
+					Info: core.MultipartyContractInfo{
+						Version: 1,
+					},
 				},
-			}},
-		},
-	})
+			}
+		}).
+		Return(nil)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -494,23 +492,26 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 	assert.NoError(t, err)
 
 	mo := &orchestratormocks.Orchestrator{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
-		Description: "used to be V1",
-		Contracts: core.MultipartyContracts{
-			Active: core.MultipartyContract{
-				Info: core.MultipartyContractInfo{
-					Version: 2,
+	mo.On("Init", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			nm.namespaces["default"].Contracts = &core.MultipartyContracts{
+				Active: &core.MultipartyContract{
+					Location: fftypes.JSONAnyPtr("{}"),
+					Info: core.MultipartyContractInfo{
+						Version: 1,
+					},
 				},
-			},
-			Terminated: []core.MultipartyContract{{
-				Location: fftypes.JSONAnyPtr("{}"),
-				Info: core.MultipartyContractInfo{
-					Version: 1,
+			}
+			nm.namespaces["ns2"].Contracts = &core.MultipartyContracts{
+				Active: &core.MultipartyContract{
+					Location: fftypes.JSONAnyPtr("{}"),
+					Info: core.MultipartyContractInfo{
+						Version: 1,
+					},
 				},
-			}},
-		},
-	})
+			}
+		}).
+		Return(nil)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -557,23 +558,26 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 	assert.NoError(t, err)
 
 	mo := &orchestratormocks.Orchestrator{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
-		Description: "used to be V1",
-		Contracts: core.MultipartyContracts{
-			Active: core.MultipartyContract{
-				Info: core.MultipartyContractInfo{
-					Version: 2,
+	mo.On("Init", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			nm.namespaces["default"].Contracts = &core.MultipartyContracts{
+				Active: &core.MultipartyContract{
+					Location: fftypes.JSONAnyPtr("{}"),
+					Info: core.MultipartyContractInfo{
+						Version: 1,
+					},
 				},
-			},
-			Terminated: []core.MultipartyContract{{
-				Location: fftypes.JSONAnyPtr("{}"),
-				Info: core.MultipartyContractInfo{
-					Version: 1,
+			}
+			nm.namespaces["ns2"].Contracts = &core.MultipartyContracts{
+				Active: &core.MultipartyContract{
+					Location: fftypes.JSONAnyPtr("{}"),
+					Info: core.MultipartyContractInfo{
+						Version: 1,
+					},
 				},
-			}},
-		},
-	})
+			}
+		}).
+		Return(nil)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -604,21 +608,18 @@ func TestInitVersion1Fail(t *testing.T) {
 	defer nm.cleanup(t)
 
 	mo := &orchestratormocks.Orchestrator{}
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
-	mo.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
-	nm.utOrchestrator = mo
-
-	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("GetNamespace", mock.Anything).Return(&core.Namespace{
-		Contracts: core.MultipartyContracts{
-			Active: core.MultipartyContract{
+	mo.On("Init", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			nm.namespaces["default"].Contracts.Active = &core.MultipartyContract{
 				Location: fftypes.JSONAnyPtr("{}"),
 				Info: core.MultipartyContractInfo{
 					Version: 1,
 				},
-			},
-		},
-	})
+			}
+		}).
+		Return(nil).Once()
+	mo.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
@@ -645,7 +646,9 @@ func TestInitNamespaceQueryFail(t *testing.T) {
 	defer nm.cleanup(t)
 
 	ns := &namespace{
-		name:    "default",
+		Namespace: core.Namespace{
+			LocalName: "default",
+		},
 		plugins: []string{"postgres"},
 	}
 
@@ -660,7 +663,9 @@ func TestInitNamespaceExistingUpsertFail(t *testing.T) {
 	defer nm.cleanup(t)
 
 	ns := &namespace{
-		name:    "default",
+		Namespace: core.Namespace{
+			LocalName: "default",
+		},
 		plugins: []string{"postgres"},
 	}
 
@@ -1855,20 +1860,13 @@ func TestGetNamespaces(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	mo := &orchestratormocks.Orchestrator{}
 	nm.namespaces = map[string]*namespace{
-		"default": {
-			orchestrator: mo,
-		},
+		"default": {},
 	}
-
-	mo.On("GetNamespace", context.Background()).Return(&core.Namespace{})
 
 	results, err := nm.GetNamespaces(context.Background())
 	assert.Nil(t, err)
 	assert.Len(t, results, 1)
-
-	mo.AssertExpectations(t)
 }
 
 func TestGetOperationByNamespacedID(t *testing.T) {

@@ -57,7 +57,13 @@ func newTestMultipartyManager() *testMultipartyManager {
 		mmi: &metricsmocks.Manager{},
 		mth: &txcommonmocks.Helper{},
 		multipartyManager: multipartyManager{
-			namespace: &core.Namespace{LocalName: "ns1", RemoteName: "ns1"},
+			namespace: &core.Namespace{
+				LocalName:  "ns1",
+				RemoteName: "ns1",
+				Contracts: &core.MultipartyContracts{
+					Active: &core.MultipartyContract{},
+				},
+			},
 		},
 	}
 
@@ -130,8 +136,8 @@ func TestConfigureContractLocationChanged(t *testing.T) {
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{
 			Index:    0,
 			Location: location,
 		},
@@ -193,8 +199,8 @@ func TestConfigureContractBadIndex(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 1},
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 1},
 	}
 	mp.multipartyManager.config.Contracts = []Contract{{
 		FirstEvent: "0",
@@ -215,8 +221,8 @@ func TestConfigureContractNetworkVersionFail(t *testing.T) {
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(0, fmt.Errorf("pop"))
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 0},
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 0},
 	}
 	mp.multipartyManager.config.Contracts = []Contract{{
 		FirstEvent: "0",
@@ -236,8 +242,8 @@ func TestSubmitNetworkAction(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 0},
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 0},
 	}
 	mp.multipartyManager.config.Contracts = []Contract{{
 		FirstEvent: "0",
@@ -279,8 +285,8 @@ func TestSubmitNetworkActionTXFail(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 0},
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 0},
 	}
 	mp.multipartyManager.config.Contracts = []Contract{{
 		FirstEvent: "0",
@@ -310,8 +316,8 @@ func TestSubmitNetworkActionOpFail(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 0},
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 0},
 	}
 	mp.multipartyManager.config.Contracts = []Contract{{
 		FirstEvent: "0",
@@ -347,8 +353,8 @@ func TestSubmitNetworkActionBadType(t *testing.T) {
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 0},
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 0},
 	}
 	mp.multipartyManager.config.Contracts = []Contract{{
 		FirstEvent: "0",
@@ -475,8 +481,8 @@ func TestGetNetworkVersion(t *testing.T) {
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 0},
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 0},
 	}
 	mp.multipartyManager.config.Contracts = []Contract{{
 		FirstEvent: "0",
@@ -503,8 +509,8 @@ func TestConfgureAndTerminateContract(t *testing.T) {
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return(nil)
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 0},
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 0},
 	}
 	mp.multipartyManager.config.Contracts = []Contract{{
 		FirstEvent: "0",
@@ -531,8 +537,8 @@ func TestTerminateContractError(t *testing.T) {
 		"address": "0x123",
 	}.String())
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 0, Location: location},
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 0, Location: location},
 	}
 
 	err := mp.TerminateContract(context.Background(), location, &blockchain.Event{})
@@ -547,8 +553,8 @@ func TestTerminateContractWrongAddress(t *testing.T) {
 		"address": "0x123",
 	}.String())
 
-	mp.multipartyManager.namespace.Contracts = core.MultipartyContracts{
-		Active: core.MultipartyContract{Index: 0, Location: location},
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 0, Location: location},
 	}
 
 	err := mp.TerminateContract(context.Background(), fftypes.JSONAnyPtr("{}"), &blockchain.Event{})

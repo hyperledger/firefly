@@ -35,7 +35,7 @@ func TestNamespace(t *testing.T) {
 
 func TestMultipartyContractsDatabaseSerialization(t *testing.T) {
 	contracts1 := &MultipartyContracts{
-		Active: MultipartyContract{
+		Active: &MultipartyContract{
 			Index:      1,
 			FirstEvent: "oldest",
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -45,7 +45,7 @@ func TestMultipartyContractsDatabaseSerialization(t *testing.T) {
 				Subscription: "1234",
 			},
 		},
-		Terminated: []MultipartyContract{
+		Terminated: []*MultipartyContract{
 			{
 				Index:      0,
 				FirstEvent: "oldest",
