@@ -20467,6 +20467,9 @@ paths:
                                     description: The backend identifier of the subscription
                                       for the FireFly BatchPin contract
                                     type: string
+                                  version:
+                                    description: The version of this multiparty contract
+                                    type: integer
                                 type: object
                               location:
                                 description: A blockchain specific contract identifier.
@@ -20500,6 +20503,10 @@ paths:
                                       description: The backend identifier of the subscription
                                         for the FireFly BatchPin contract
                                       type: string
+                                    version:
+                                      description: The version of this multiparty
+                                        contract
+                                      type: integer
                                   type: object
                                 location:
                                   description: A blockchain specific contract identifier.
@@ -28021,6 +28028,9 @@ paths:
                                     description: The backend identifier of the subscription
                                       for the FireFly BatchPin contract
                                     type: string
+                                  version:
+                                    description: The version of this multiparty contract
+                                    type: integer
                                 type: object
                               location:
                                 description: A blockchain specific contract identifier.
@@ -28054,6 +28064,10 @@ paths:
                                       description: The backend identifier of the subscription
                                         for the FireFly BatchPin contract
                                       type: string
+                                    version:
+                                      description: The version of this multiparty
+                                        contract
+                                      type: integer
                                   type: object
                                 location:
                                   description: A blockchain specific contract identifier.
