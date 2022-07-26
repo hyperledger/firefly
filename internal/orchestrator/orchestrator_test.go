@@ -213,8 +213,6 @@ func TestInitOK(t *testing.T) {
 	or.mps.On("SetHandler", "ns2", mock.Anything).Return()
 	or.mti.On("SetHandler", "ns", mock.Anything).Return(nil)
 	or.mti.On("SetOperationHandler", "ns", mock.Anything).Return(nil)
-	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.Init(or.ctx, or.cancelCtx)
 	assert.NoError(t, err)
@@ -265,6 +263,7 @@ func TestInitMessagingComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.messaging = nil
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -274,6 +273,7 @@ func TestInitEventsComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.events = nil
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -283,6 +283,7 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.networkmap = nil
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -296,11 +297,20 @@ func TestInitMultipartyComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestInitMultipartyComponentConfigureFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	err := or.initComponents(context.Background())
+	assert.EqualError(t, err, "pop")
+}
+
 func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.sharedDownload = nil
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -310,6 +320,7 @@ func TestInitBatchComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.batch = nil
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -319,6 +330,7 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.broadcast = nil
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -328,6 +340,7 @@ func TestInitDefSenderComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.data = nil
 	or.defsender = nil
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initManagers(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -346,6 +359,7 @@ func TestInitIdentityComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.identity = nil
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -355,6 +369,7 @@ func TestInitAssetsComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.assets = nil
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -364,6 +379,7 @@ func TestInitContractsComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.contracts = nil
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
