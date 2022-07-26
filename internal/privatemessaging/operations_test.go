@@ -96,6 +96,16 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 			},
 		},
 	}
+	localNode := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{
+				"id": "local1",
+			},
+		},
+	}
 	group := &core.Group{
 		Hash: fftypes.NewRandB32(),
 	}
@@ -114,10 +124,11 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", context.Background()).Return(localNode, nil)
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
 	mdi.On("GetBatchByID", context.Background(), "ns1", batch.ID).Return(bp, nil)
-	mdx.On("SendMessage", context.Background(), "ns1:"+op.ID.String(), "peer1", mock.Anything).Return(nil)
+	mdx.On("SendMessage", context.Background(), "ns1:"+op.ID.String(), "peer1", "local1", mock.Anything).Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -540,6 +551,18 @@ func TestRunOperationBatchSendInvalidData(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
+	localNode := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{
+				"id": "local1",
+			},
+		},
+	}
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", context.Background()).Return(localNode, nil)
 	transport := &core.TransportWrapper{
 		Group: &core.Group{},
 		Batch: &core.Batch{
