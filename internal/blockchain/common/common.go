@@ -33,7 +33,7 @@ type BlockchainCallbacks interface {
 	SetHandler(namespace string, handler blockchain.Callbacks)
 	SetOperationalHandler(namespace string, handler core.OperationCallbacks)
 
-	OperationUpdate(ctx context.Context, plugin blockchain.Plugin, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
+	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 	BatchPinOrNetworkAction(ctx context.Context, nsOrAction string, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams) error
 	BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error
 }
@@ -74,7 +74,7 @@ func (cb *callbacks) SetOperationalHandler(namespace string, handler core.Operat
 	cb.opHandlers[namespace] = handler
 }
 
-func (cb *callbacks) OperationUpdate(ctx context.Context, plugin blockchain.Plugin, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+func (cb *callbacks) OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
 		handler.OperationUpdate(plugin, nsOpID, status, blockchainTXID, errorMessage, opOutput)
@@ -108,7 +108,12 @@ func (cb *callbacks) BatchPinOrNetworkAction(ctx context.Context, nsOrAction str
 	// For V1 of the FireFly contract, namespace is passed explicitly, but needs to be mapped to local name(s).
 	// For V2+, namespace is inferred from the subscription.
 	if subInfo.Version == 1 {
-		return cb.batchPinComplete(ctx, subInfo.V1Namespace[nsOrAction], batch, signingKey)
+		namespaces := subInfo.V1Namespace[nsOrAction]
+		if len(namespaces) == 0 {
+			log.L(ctx).Errorf("No handler found for blockchain batch pin on remote namespace '%s'", nsOrAction)
+			return nil
+		}
+		return cb.batchPinComplete(ctx, namespaces, batch, signingKey)
 	}
 	return cb.batchPinComplete(ctx, []string{subInfo.V2Namespace}, batch, signingKey)
 }
@@ -120,7 +125,7 @@ func (cb *callbacks) batchPinComplete(ctx context.Context, namespaces []string, 
 				return err
 			}
 		} else {
-			log.L(ctx).Errorf("No handler found for blockchain batch pin on namespace '%s'", namespace)
+			log.L(ctx).Errorf("No handler found for blockchain batch pin on local namespace '%s'", namespace)
 		}
 	}
 	return nil
@@ -133,7 +138,7 @@ func (cb *callbacks) networkAction(ctx context.Context, namespaces []string, act
 				return err
 			}
 		} else {
-			log.L(ctx).Errorf("No handler found for blockchain network action on namespace '%s'", namespace)
+			log.L(ctx).Errorf("No handler found for blockchain network action on local namespace '%s'", namespace)
 		}
 	}
 	return nil
@@ -141,9 +146,8 @@ func (cb *callbacks) networkAction(ctx context.Context, namespaces []string, act
 
 func (cb *callbacks) BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error {
 	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every handler
+		// Older subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
-			// Send the event to all handlers and let them match it to a contract listener
 			if err := cb.BlockchainEvent(event); err != nil {
 				return err
 			}
@@ -199,4 +203,14 @@ func buildBatchPin(ctx context.Context, event *blockchain.Event, params *BatchPi
 		Contexts:        contexts,
 		Event:           *event,
 	}, nil
+}
+
+func GetNamespaceFromSubName(subName string) string {
+	var parts = strings.Split(subName, "-")
+	// Subscription names post version 1.1 are in the format `ff-sub-<namespace>-<listener ID>`
+	if len(parts) != 4 {
+		// Assume older subscription and return empty string
+		return ""
+	}
+	return parts[2]
 }
