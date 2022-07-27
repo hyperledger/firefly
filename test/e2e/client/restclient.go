@@ -72,6 +72,7 @@ var (
 	urlNodesSelf         = "/network/nodes/self"
 	urlNetworkAction     = "/network/action"
 	urlGetOrgKeys        = "/identities/%s/verifiers"
+	urlStatus            = "/status"
 )
 
 type Logger interface {
@@ -923,4 +924,13 @@ func (client *FireFlyClient) NetworkAction(t *testing.T, action core.NetworkActi
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func (client *FireFlyClient) GetStatus() (*core.NamespaceStatus, *resty.Response, error) {
+	var status core.NamespaceStatus
+	path := client.namespaced(urlStatus)
+	resp, err := client.Client.R().
+		SetResult(&status).
+		Get(path)
+	return &status, resp, err
 }
