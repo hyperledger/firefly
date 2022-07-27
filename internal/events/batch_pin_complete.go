@@ -40,7 +40,7 @@ func (em *eventManager) BatchPinComplete(batchPin *blockchain.BatchPin, signingK
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
 	}
-	if batchPin.Namespace != em.namespace.RemoteName {
+	if batchPin.Namespace != em.namespace.LocalName {
 		log.L(em.ctx).Debugf("Ignoring batch pin from different namespace '%s'", batchPin.Namespace)
 		return nil // move on
 	}

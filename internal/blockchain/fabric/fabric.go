@@ -63,15 +63,16 @@ type Fabric struct {
 	closed         chan struct{}
 	metrics        metrics.Manager
 	fabconnectConf config.Section
-	subs           map[string]subscriptionInfo
+	subs           map[string]*subscriptionInfo
 	cache          *ccache.Cache
 	cacheTTL       time.Duration
 }
 
 type subscriptionInfo struct {
-	namespace string
-	channel   string
-	version   int
+	channel     string
+	version     int
+	v1Namespace map[string][]string
+	v2Namespace string
 }
 
 type eventStreamWebsocket struct {
@@ -238,7 +239,7 @@ func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.
 		return err
 	}
 	f.streamID = stream.ID
-	f.subs = make(map[string]subscriptionInfo)
+	f.subs = make(map[string]*subscriptionInfo)
 	log.L(f.ctx).Infof("Event stream: %s", f.streamID)
 
 	f.closed = make(chan struct{})
@@ -349,32 +350,32 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 		// For V2+, namespace is inferred from the subscription
 		var namespace string
 		if subInfo.version > 1 {
-			namespace = subInfo.namespace
+			namespace = subInfo.v2Namespace
 		}
 
 		return f.callbacks.BlockchainNetworkAction(ctx, namespace, action, location, event, verifier)
 	}
 
-	// For V1 of the FireFly contract, namespace is passed explicitly
-	// For V2+, namespace is inferred from the subscription
-	var namespace string
-	if subInfo.version == 1 {
-		namespace = nsOrAction
-		if subInfo.namespace != "" && subInfo.namespace != namespace {
-			log.L(ctx).Debugf("Ignoring batch for '%s' received on subscription for '%s'", namespace, subInfo.namespace)
-			return nil
+	deliverBatch := func(namespace string) error {
+		batch, err := common.BuildBatchPin(ctx, namespace, event, sUUIDs, sBatchHash, sContexts, sPayloadRef)
+		if err != nil {
+			return nil // move on
 		}
-	} else {
-		namespace = subInfo.namespace
+		// If there's an error dispatching the event, we must return the error and shutdown
+		return f.callbacks.BatchPinComplete(ctx, batch, verifier)
 	}
 
-	batch, err := common.BuildBatchPin(ctx, namespace, event, sUUIDs, sBatchHash, sContexts, sPayloadRef)
-	if err != nil {
-		return nil // move on
+	// For V1 of the FireFly contract, namespace is passed explicitly, but needs to be mapped to local name(s).
+	// For V2+, namespace is inferred from the subscription.
+	if subInfo.version == 1 {
+		for _, destination := range subInfo.v1Namespace[nsOrAction] {
+			if err := deliverBatch(destination); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
-
-	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(ctx, batch, verifier)
+	return deliverBatch(subInfo.v2Namespace)
 }
 
 func (f *Fabric) buildEventLocationString(chaincode string) string {
@@ -417,13 +418,8 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
 	f.callbacks.OperationUpdate(ctx, f, requestID, updateType, txHash, message, reply)
 }
 
-func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (string, error) {
+func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace core.NamespaceRef, location *fftypes.JSONAny, firstEvent string) (string, error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
-	if err != nil {
-		return "", err
-	}
-
-	sub, subNS, err := f.streams.ensureFireFlySubscription(ctx, namespace, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
 	if err != nil {
 		return "", err
 	}
@@ -433,14 +429,30 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 		return "", err
 	}
 
-	if version > 1 && subNS == "" {
-		return "", i18n.NewError(ctx, coremsgs.MsgInvalidSubscriptionForNetwork, sub.Name, version)
+	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.LocalName, version, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
+	if err != nil {
+		return "", err
 	}
 
-	f.subs[sub.ID] = subscriptionInfo{
-		namespace: subNS,
-		channel:   fabricOnChainLocation.Channel,
-		version:   version,
+	if version == 1 {
+		// The V1 contract shares a single subscription per contract, and the remote namespace name is passed on chain.
+		// Therefore, it requires a map of remote->local in order to farm out notifications to one or more local handlers.
+		existing, ok := f.subs[sub.ID]
+		if !ok {
+			existing = &subscriptionInfo{
+				version:     version,
+				v1Namespace: make(map[string][]string),
+			}
+			f.subs[sub.ID] = existing
+		}
+		existing.v1Namespace[namespace.RemoteName] = append(existing.v1Namespace[namespace.RemoteName], namespace.LocalName)
+	} else {
+		// The V2 contract does not pass the namespace on chain, and requires a separate contract instance (and subscription) per namespace.
+		// Therefore, the local namespace name can simply be cached alongside each subscription.
+		f.subs[sub.ID] = &subscriptionInfo{
+			version:     version,
+			v2Namespace: namespace.LocalName,
+		}
 	}
 	return sub.ID, nil
 }
@@ -486,7 +498,7 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 
 			switch eventName {
 			case broadcastBatchEventName:
-				if err := f.handleBatchPinEvent(eventCtx, location, &subInfo, msgJSON); err != nil {
+				if err := f.handleBatchPinEvent(eventCtx, location, subInfo, msgJSON); err != nil {
 					done()
 					return err
 				}

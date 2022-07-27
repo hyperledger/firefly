@@ -141,16 +141,12 @@ func (mm *multipartyManager) configureContractCommon(ctx context.Context, migrat
 		}
 	}
 
-	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.LocalName, location, firstEvent)
+	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.Ref(), location, firstEvent)
 	if err == nil {
-		contracts.Active = &core.MultipartyContract{
-			Location:   location,
-			FirstEvent: firstEvent,
-			Info: core.MultipartyContractInfo{
-				Subscription: subID,
-				Version:      version,
-			},
-		}
+		contracts.Active.Location = location
+		contracts.Active.FirstEvent = firstEvent
+		contracts.Active.Info.Subscription = subID
+		contracts.Active.Info.Version = version
 		err = mm.database.UpsertNamespace(ctx, mm.namespace, true)
 	}
 	return err

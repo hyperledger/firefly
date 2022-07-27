@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -190,34 +191,38 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 	return nil
 }
 
-func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, location *Location, fromBlock, stream, event string) (sub *subscription, subNS string, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, location *Location, fromBlock, stream, event string) (sub *subscription, err error) {
 	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	oldName := event
-	currentName := fmt.Sprintf("%s_%s", namespace, event)
+	v1Name := event
+	v2Name := fmt.Sprintf("%s_%s", namespace, event)
 
 	for _, s := range existingSubs {
 		if s.Stream == stream {
-			if s.Name == oldName {
-				log.L(ctx).Warnf("Subscription %s uses a legacy name format '%s' and may not support multiple namespaces. Expected '%s' instead.", s.ID, s.Name, currentName)
-				sub = s
-			} else if s.Name == currentName {
-				sub = s
-				subNS = namespace
+			if version == 1 {
+				if s.Name == v1Name {
+					return s, nil
+				}
+			} else {
+				if s.Name == v1Name {
+					return nil, i18n.NewError(ctx, coremsgs.MsgInvalidSubscriptionForNetwork, s.Name, version)
+				} else if s.Name == v2Name {
+					return s, nil
+				}
 			}
 		}
 	}
 
-	if sub == nil {
-		if sub, err = s.createSubscription(ctx, location, stream, currentName, event, fromBlock); err != nil {
-			return nil, "", err
-		}
-		subNS = namespace
+	name := v2Name
+	if version == 1 {
+		name = v1Name
 	}
-
+	if sub, err = s.createSubscription(ctx, location, stream, name, event, fromBlock); err != nil {
+		return nil, err
+	}
 	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)
-	return sub, subNS, nil
+	return sub, nil
 }
