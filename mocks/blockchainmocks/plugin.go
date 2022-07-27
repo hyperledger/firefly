@@ -341,13 +341,13 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// SubmitBatchPin provides a mock function with given fields: ctx, nsOpID, signingKey, batch, location
-func (_m *Plugin) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
-	ret := _m.Called(ctx, nsOpID, signingKey, batch, location)
+// SubmitBatchPin provides a mock function with given fields: ctx, nsOpID, remtoeNamespace, signingKey, batch, location
+func (_m *Plugin) SubmitBatchPin(ctx context.Context, nsOpID string, remtoeNamespace string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+	ret := _m.Called(ctx, nsOpID, remtoeNamespace, signingKey, batch, location)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *blockchain.BatchPin, *fftypes.JSONAny) error); ok {
-		r0 = rf(ctx, nsOpID, signingKey, batch, location)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *blockchain.BatchPin, *fftypes.JSONAny) error); ok {
+		r0 = rf(ctx, nsOpID, remtoeNamespace, signingKey, batch, location)
 	} else {
 		r0 = ret.Error(0)
 	}

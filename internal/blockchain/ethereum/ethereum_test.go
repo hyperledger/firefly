@@ -713,7 +713,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", addr, batch, location)
 
 	assert.NoError(t, err)
 }
@@ -757,7 +757,7 @@ func TestSubmitBatchPinV1(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", addr, batch, location)
 
 	assert.NoError(t, err)
 }
@@ -783,7 +783,7 @@ func TestSubmitBatchPinBadLocation(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"bad": "bad",
 	}.String())
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", addr, batch, location)
 
 	assert.Regexp(t, "FF10310", err)
 }
@@ -828,7 +828,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 		"address": "0x123",
 	}.String())
 
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", addr, batch, location)
 
 	assert.NoError(t, err)
 
@@ -859,7 +859,7 @@ func TestSubmitBatchPinVersionFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", addr, batch, location)
 
 	assert.Regexp(t, "FF10111.*pop", err)
 
@@ -896,7 +896,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 			return httpmock.NewStringResponder(500, "pop")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", addr, batch, location)
 
 	assert.Regexp(t, "FF10111.*pop", err)
 
@@ -936,7 +936,7 @@ func TestSubmitBatchPinError(t *testing.T) {
 			})(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", addr, batch, location)
 
 	assert.Regexp(t, "FF10111.*Unknown error", err)
 }
@@ -1026,10 +1026,10 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	}
 	e.SetHandler("ns1", em)
 
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1038,7 +1038,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(nil)
+	em.On("BatchPinComplete", "ns1", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1048,13 +1048,12 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 
 	em.AssertExpectations(t)
 
-	b := em.Calls[0].Arguments[0].(*blockchain.BatchPin)
-	assert.Equal(t, "ns1", b.Namespace)
+	b := em.Calls[0].Arguments[1].(*blockchain.BatchPin)
 	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
-	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -1071,7 +1070,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	}
 	assert.Equal(t, info1, b.Event.Info)
 
-	b2 := em.Calls[1].Arguments[0].(*blockchain.BatchPin)
+	b2 := em.Calls[1].Arguments[1].(*blockchain.BatchPin)
 	info2 := fftypes.JSONObject{
 		"address":          "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"blockNumber":      "38011",
@@ -1116,10 +1115,10 @@ func TestHandleMessageBatchPinWrongNS(t *testing.T) {
 		callbacks: common.NewBlockchainCallbacks(),
 	}
 
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1162,10 +1161,10 @@ func TestHandleMessageBatchPinV2(t *testing.T) {
 	}
 	e.SetHandler("ns1", em)
 
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     2,
-			v2Namespace: "ns1",
+			Version:     2,
+			V2Namespace: "ns1",
 		},
 	}
 
@@ -1174,7 +1173,7 @@ func TestHandleMessageBatchPinV2(t *testing.T) {
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(nil)
+	em.On("BatchPinComplete", "ns1", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1184,13 +1183,12 @@ func TestHandleMessageBatchPinV2(t *testing.T) {
 
 	em.AssertExpectations(t)
 
-	b := em.Calls[0].Arguments[0].(*blockchain.BatchPin)
-	assert.Equal(t, "ns1", b.Namespace)
+	b := em.Calls[0].Arguments[1].(*blockchain.BatchPin)
 	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
-	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -1241,10 +1239,10 @@ func TestHandleMessageBatchPinMissingAddress(t *testing.T) {
 	}
 	e.SetHandler("ns1", em)
 
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1283,10 +1281,10 @@ func TestHandleMessageBatchPinMissingAuthor(t *testing.T) {
 ]`)
 
 	e := &Ethereum{}
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1331,10 +1329,10 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	}
 	e.SetHandler("ns1", em)
 
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1343,7 +1341,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(nil)
+	em.On("BatchPinComplete", "ns1", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1353,13 +1351,12 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 
 	em.AssertExpectations(t)
 
-	b := em.Calls[0].Arguments[0].(*blockchain.BatchPin)
-	assert.Equal(t, "ns1", b.Namespace)
+	b := em.Calls[0].Arguments[1].(*blockchain.BatchPin)
 	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Empty(t, b.BatchPayloadRef)
-	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -1400,13 +1397,13 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	}
 	e.SetHandler("ns1", em)
 
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
-	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(fmt.Errorf("pop"))
+	em.On("BatchPinComplete", "ns1", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1419,10 +1416,10 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 
 func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	e := &Ethereum{}
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1442,10 +1439,10 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 
 func TestHandleMessageBatchMissingData(t *testing.T) {
 	e := &Ethereum{}
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1465,11 +1462,13 @@ func TestHandleMessageBatchMissingData(t *testing.T) {
 }
 
 func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
-	e := &Ethereum{}
-	e.subs = map[string]*subscriptionInfo{
+	e := &Ethereum{
+		callbacks: common.NewBlockchainCallbacks(),
+	}
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1502,10 +1501,10 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 
 func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	e := &Ethereum{}
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1537,11 +1536,13 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 }
 
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
-	e := &Ethereum{}
-	e.subs = map[string]*subscriptionInfo{
+	e := &Ethereum{
+		callbacks: common.NewBlockchainCallbacks(),
+	}
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1573,11 +1574,13 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 }
 
 func TestHandleMessageBatchPinBadPin(t *testing.T) {
-	e := &Ethereum{}
-	e.subs = map[string]*subscriptionInfo{
+	e := &Ethereum{
+		callbacks: common.NewBlockchainCallbacks(),
+	}
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -1988,10 +1991,10 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 		}))
 
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 	e.streams = newTestStreamManager(e.client)
@@ -2065,10 +2068,10 @@ func TestHandleMessageContractEventErrorOldSubscription(t *testing.T) {
 
 	e.callbacks = common.NewBlockchainCallbacks()
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 	e.streams = newTestStreamManager(e.client)
@@ -2129,10 +2132,10 @@ func TestHandleMessageContractEventWithNamespace(t *testing.T) {
 
 	e.callbacks = common.NewBlockchainCallbacks()
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 	e.streams = newTestStreamManager(e.client)
@@ -2204,10 +2207,10 @@ func TestHandleMessageContractEventNoNamespaceHandlers(t *testing.T) {
 		}))
 
 	e.SetHandler("ns2", em)
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 	e.streams = newTestStreamManager(e.client)
@@ -2256,10 +2259,10 @@ func TestHandleMessageContractEventSubNameError(t *testing.T) {
 
 	e.callbacks = common.NewBlockchainCallbacks()
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 	e.streams = newTestStreamManager(e.client)
@@ -2305,10 +2308,10 @@ func TestHandleMessageContractEventError(t *testing.T) {
 		}))
 
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 	e.streams = newTestStreamManager(e.client)
@@ -2944,10 +2947,10 @@ func TestHandleNetworkAction(t *testing.T) {
 		callbacks: common.NewBlockchainCallbacks(),
 	}
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 
@@ -2996,10 +2999,10 @@ func TestHandleNetworkActionV2(t *testing.T) {
 		callbacks: common.NewBlockchainCallbacks(),
 	}
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     2,
-			v2Namespace: "ns1",
+			Version:     2,
+			V2Namespace: "ns1",
 		},
 	}
 
@@ -3048,10 +3051,10 @@ func TestHandleNetworkActionFail(t *testing.T) {
 		callbacks: common.NewBlockchainCallbacks(),
 	}
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*subscriptionInfo{
+	e.subs = map[string]*common.SubscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			Version:     1,
+			V1Namespace: map[string][]string{"ns1": {"ns1"}},
 		},
 	}
 

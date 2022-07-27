@@ -654,7 +654,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), "", signer, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.NoError(t, err)
 
@@ -698,7 +698,7 @@ func TestSubmitBatchPinV1(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), "", signer, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.NoError(t, err)
 
@@ -724,7 +724,7 @@ func TestSubmitBatchPinBadLocation(t *testing.T) {
 		"bad": "simplestorage",
 	}.String())
 
-	err := e.SubmitBatchPin(context.Background(), "", signer, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.Regexp(t, "FF10310", err)
 }
@@ -766,7 +766,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), "", signer, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.NoError(t, err)
 
@@ -799,7 +799,7 @@ func TestSubmitBatchPinVersionFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), "", signer, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.Regexp(t, "FF10284.*pop", err)
 
@@ -835,7 +835,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), "", signer, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.Regexp(t, "FF10284.*pop", err)
 
@@ -873,7 +873,7 @@ func TestSubmitBatchPinError(t *testing.T) {
 			"error": "Invalid",
 		}))
 
-	err := e.SubmitBatchPin(context.Background(), "", signer, batch, location)
+	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.Regexp(t, "FF10284.*Invalid", err)
 
@@ -1001,9 +1001,11 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1012,7 +1014,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef).Return(nil)
+	em.On("BatchPinComplete", "ns1", mock.Anything, expectedSigningKeyRef).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -1020,13 +1022,12 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
 
-	b := em.Calls[0].Arguments[0].(*blockchain.BatchPin)
-	assert.Equal(t, "ns1", b.Namespace)
+	b := em.Calls[0].Arguments[1].(*blockchain.BatchPin)
 	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
-	assert.Equal(t, expectedSigningKeyRef, em.Calls[1].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[1].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -1066,9 +1067,11 @@ func TestHandleMessageBatchPinV2(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     2,
-			v2Namespace: "ns1",
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     2,
+				V2Namespace: "ns1",
+			},
 		},
 	}
 
@@ -1077,7 +1080,7 @@ func TestHandleMessageBatchPinV2(t *testing.T) {
 		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef).Return(nil)
+	em.On("BatchPinComplete", "ns1", mock.Anything, expectedSigningKeyRef).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -1085,8 +1088,7 @@ func TestHandleMessageBatchPinV2(t *testing.T) {
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
 
-	b := em.Calls[0].Arguments[0].(*blockchain.BatchPin)
-	assert.Equal(t, "ns1", b.Namespace)
+	b := em.Calls[0].Arguments[1].(*blockchain.BatchPin)
 	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
@@ -1129,9 +1131,11 @@ func TestHandleMessageBatchPinMissingChaincodeID(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1163,9 +1167,11 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1174,7 +1180,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything, mock.Anything).Return(nil)
+	em.On("BatchPinComplete", "ns1", mock.Anything, expectedSigningKeyRef, mock.Anything, mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -1182,13 +1188,12 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
 
-	b := em.Calls[0].Arguments[0].(*blockchain.BatchPin)
-	assert.Equal(t, "ns1", b.Namespace)
+	b := em.Calls[0].Arguments[1].(*blockchain.BatchPin)
 	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Empty(t, b.BatchPayloadRef)
-	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -1217,9 +1222,11 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1228,7 +1235,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	em.On("BatchPinComplete", "ns1", mock.Anything, expectedSigningKeyRef, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -1257,9 +1264,11 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1290,9 +1299,11 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1312,9 +1323,11 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1342,9 +1355,11 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1372,9 +1387,11 @@ func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1402,9 +1419,11 @@ func TestHandleMessageBatchPinBadPayloadUUIDs(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1794,9 +1813,11 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1880,9 +1901,11 @@ func TestHandleMessageContractEventNamespacedHandlers(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -1955,9 +1978,11 @@ func TestHandleMessageContractEventNoNamespacedHandlers(t *testing.T) {
 	e.SetHandler("ns2", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -2006,9 +2031,11 @@ func TestHandleMessageContractEventNoPayload(t *testing.T) {
 
 	e.subs = map[string]*subscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -2039,9 +2066,11 @@ func TestHandleMessageContractEventBadPayload(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-cb37cc07-e873-4f58-44ab-55add6bba320": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -2083,9 +2112,11 @@ func TestHandleMessageContractOldSubError(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -2129,9 +2160,11 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -2173,9 +2206,11 @@ func TestHandleMessageContractGetSubError(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -2553,9 +2588,11 @@ func TestHandleNetworkAction(t *testing.T) {
 
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 
@@ -2599,9 +2636,11 @@ func TestHandleNetworkActionV2(t *testing.T) {
 
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     2,
-			v2Namespace: "ns1",
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     2,
+				V2Namespace: "ns1",
+			},
 		},
 	}
 
@@ -2644,9 +2683,11 @@ func TestHandleNetworkActionFail(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs = map[string]*subscriptionInfo{
 		"sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e": {
-			channel:     "firefly",
-			version:     1,
-			v1Namespace: map[string][]string{"ns1": {"ns1"}},
+			channel: "firefly",
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     1,
+				V1Namespace: map[string][]string{"ns1": {"ns1"}},
+			},
 		},
 	}
 

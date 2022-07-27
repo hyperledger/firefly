@@ -91,7 +91,6 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	batchPin := &blockchain.BatchPin{
-		Namespace:       "ns1",
 		TransactionID:   batch.Payload.TX.ID,
 		BatchID:         batch.ID,
 		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
@@ -137,7 +136,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 	msd.On("InitiateDownloadBatch", mock.Anything, batchPin.TransactionID, batchPin.BatchPayloadRef).Return(nil)
 
-	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -154,7 +153,6 @@ func TestBatchPinCompleteOkBroadcastExistingBatch(t *testing.T) {
 	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	batchPin := &blockchain.BatchPin{
-		Namespace:       "ns1",
 		TransactionID:   batch.Payload.TX.ID,
 		BatchID:         batch.ID,
 		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
@@ -206,7 +204,7 @@ func TestBatchPinCompleteOkBroadcastExistingBatch(t *testing.T) {
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(batchPersisted, nil)
 
-	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -221,7 +219,6 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	defer cancel()
 
 	batchPin := &blockchain.BatchPin{
-		Namespace:     "ns1",
 		TransactionID: fftypes.NewUUID(),
 		BatchID:       fftypes.NewUUID(),
 		Contexts:      []*fftypes.Bytes32{fftypes.NewRandB32()},
@@ -243,7 +240,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 
-	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -264,7 +261,6 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	cancel()
 
 	batchPin := &blockchain.BatchPin{
-		Namespace:     "ns1",
 		TransactionID: fftypes.NewUUID(),
 		BatchID:       fftypes.NewUUID(),
 		Contexts:      []*fftypes.Bytes32{fftypes.NewRandB32()},
@@ -285,7 +281,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
-	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -300,7 +296,6 @@ func TestBatchPinCompleteGetBatchByIDFails(t *testing.T) {
 	cancel()
 
 	batchPin := &blockchain.BatchPin{
-		Namespace:     "ns1",
 		TransactionID: fftypes.NewUUID(),
 		BatchID:       fftypes.NewUUID(),
 		Contexts:      []*fftypes.Bytes32{fftypes.NewRandB32()},
@@ -321,7 +316,7 @@ func TestBatchPinCompleteGetBatchByIDFails(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("batch lookup failed"))
 
-	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -335,7 +330,6 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 
 	batchPin := &blockchain.BatchPin{
-		Namespace:       "ns1",
 		TransactionID:   fftypes.NewUUID(),
 		BatchID:         fftypes.NewUUID(),
 		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
@@ -360,7 +354,7 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
 	msd.On("InitiateDownloadBatch", mock.Anything, batchPin.TransactionID, batchPin.BatchPayloadRef).Return(fmt.Errorf("pop"))
 
-	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -376,7 +370,7 @@ func TestBatchPinCompleteNoTX(t *testing.T) {
 
 	batch := &blockchain.BatchPin{}
 
-	err := em.BatchPinComplete(batch, &core.VerifierRef{
+	err := em.BatchPinComplete("ns1", batch, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -388,14 +382,13 @@ func TestBatchPinCompleteWrongNamespace(t *testing.T) {
 	defer cancel()
 
 	batch := &blockchain.BatchPin{
-		Namespace:     "ns2",
 		TransactionID: fftypes.NewUUID(),
 		Event: blockchain.Event{
 			BlockchainTXID: "0x12345",
 		},
 	}
 
-	err := em.BatchPinComplete(batch, &core.VerifierRef{
+	err := em.BatchPinComplete("ns2", batch, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -408,14 +401,13 @@ func TestBatchPinCompleteNonMultiparty(t *testing.T) {
 	em.multiparty = nil
 
 	batch := &blockchain.BatchPin{
-		Namespace:     "ns1",
 		TransactionID: fftypes.NewUUID(),
 		Event: blockchain.Event{
 			BlockchainTXID: "0x12345",
 		},
 	}
 
-	err := em.BatchPinComplete(batch, &core.VerifierRef{
+	err := em.BatchPinComplete("ns1", batch, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})

@@ -69,10 +69,8 @@ type Fabric struct {
 }
 
 type subscriptionInfo struct {
-	channel     string
-	version     int
-	v1Namespace map[string][]string
-	v2Namespace string
+	common.SubscriptionInfo
+	channel string
 }
 
 type eventStreamWebsocket struct {
@@ -332,50 +330,19 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 
 	signer := event.Output.GetString("signer")
 	nsOrAction := event.Output.GetString("namespace")
-	sUUIDs := event.Output.GetString("uuids")
-	sBatchHash := event.Output.GetString("batchHash")
-	sPayloadRef := event.Output.GetString("payloadRef")
-	sContexts := event.Output.GetStringArray("contexts")
+	params := &common.BatchPinParams{
+		UUIDs:      event.Output.GetString("uuids"),
+		BatchHash:  event.Output.GetString("batchHash"),
+		PayloadRef: event.Output.GetString("payloadRef"),
+		Contexts:   event.Output.GetStringArray("contexts"),
+	}
 
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeMSPIdentity,
 		Value: signer,
 	}
 
-	// Check if this is actually an operator action
-	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
-		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
-
-		// For V1 of the FireFly contract, action is sent to all namespaces
-		// For V2+, namespace is inferred from the subscription
-		var namespace string
-		if subInfo.version > 1 {
-			namespace = subInfo.v2Namespace
-		}
-
-		return f.callbacks.BlockchainNetworkAction(ctx, namespace, action, location, event, verifier)
-	}
-
-	deliverBatch := func(namespace string) error {
-		batch, err := common.BuildBatchPin(ctx, namespace, event, sUUIDs, sBatchHash, sContexts, sPayloadRef)
-		if err != nil {
-			return nil // move on
-		}
-		// If there's an error dispatching the event, we must return the error and shutdown
-		return f.callbacks.BatchPinComplete(ctx, batch, verifier)
-	}
-
-	// For V1 of the FireFly contract, namespace is passed explicitly, but needs to be mapped to local name(s).
-	// For V2+, namespace is inferred from the subscription.
-	if subInfo.version == 1 {
-		for _, destination := range subInfo.v1Namespace[nsOrAction] {
-			if err := deliverBatch(destination); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	return deliverBatch(subInfo.v2Namespace)
+	return f.callbacks.BatchPinOrNetworkAction(ctx, nsOrAction, &subInfo.SubscriptionInfo, location, event, verifier, params)
 }
 
 func (f *Fabric) buildEventLocationString(chaincode string) string {
@@ -440,18 +407,24 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace core.Name
 		existing, ok := f.subs[sub.ID]
 		if !ok {
 			existing = &subscriptionInfo{
-				version:     version,
-				v1Namespace: make(map[string][]string),
+				channel: fabricOnChainLocation.Channel,
+				SubscriptionInfo: common.SubscriptionInfo{
+					Version:     version,
+					V1Namespace: make(map[string][]string),
+				},
 			}
 			f.subs[sub.ID] = existing
 		}
-		existing.v1Namespace[namespace.RemoteName] = append(existing.v1Namespace[namespace.RemoteName], namespace.LocalName)
+		existing.V1Namespace[namespace.RemoteName] = append(existing.V1Namespace[namespace.RemoteName], namespace.LocalName)
 	} else {
 		// The V2 contract does not pass the namespace on chain, and requires a separate contract instance (and subscription) per namespace.
 		// Therefore, the local namespace name can simply be cached alongside each subscription.
 		f.subs[sub.ID] = &subscriptionInfo{
-			version:     version,
-			v2Namespace: namespace.LocalName,
+			channel: fabricOnChainLocation.Channel,
+			SubscriptionInfo: common.SubscriptionInfo{
+				Version:     version,
+				V2Namespace: namespace.LocalName,
+			},
 		}
 	}
 	return sub.ID, nil
@@ -655,7 +628,7 @@ func hexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, remoteNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -680,7 +653,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey s
 	if version == 1 {
 		prefixItems = batchPinPrefixItemsV1
 		pinInput = map[string]interface{}{
-			"namespace":  batch.Namespace,
+			"namespace":  remoteNamespace,
 			"uuids":      hexFormatB32(&uuids),
 			"batchHash":  hexFormatB32(batch.BatchHash),
 			"payloadRef": batch.BatchPayloadRef,

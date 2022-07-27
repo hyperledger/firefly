@@ -64,15 +64,9 @@ type Ethereum struct {
 	addressResolver *addressResolver
 	metrics         metrics.Manager
 	ethconnectConf  config.Section
-	subs            map[string]*subscriptionInfo
+	subs            map[string]*common.SubscriptionInfo
 	cache           *ccache.Cache
 	cacheTTL        time.Duration
-}
-
-type subscriptionInfo struct {
-	version     int
-	v1Namespace map[string][]string
-	v2Namespace string
 }
 
 type eventStreamWebsocket struct {
@@ -176,7 +170,7 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 		return err
 	}
 	e.streamID = stream.ID
-	e.subs = make(map[string]*subscriptionInfo)
+	e.subs = make(map[string]*common.SubscriptionInfo)
 	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
 
 	e.closed = make(chan struct{})
@@ -229,19 +223,19 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace core.Na
 		// Therefore, it requires a map of remote->local in order to farm out notifications to one or more local handlers.
 		existing, ok := e.subs[sub.ID]
 		if !ok {
-			existing = &subscriptionInfo{
-				version:     version,
-				v1Namespace: make(map[string][]string),
+			existing = &common.SubscriptionInfo{
+				Version:     version,
+				V1Namespace: make(map[string][]string),
 			}
 			e.subs[sub.ID] = existing
 		}
-		existing.v1Namespace[namespace.RemoteName] = append(existing.v1Namespace[namespace.RemoteName], namespace.LocalName)
+		existing.V1Namespace[namespace.RemoteName] = append(existing.V1Namespace[namespace.RemoteName], namespace.LocalName)
 	} else {
 		// The V2 contract does not pass the namespace on chain, and requires a separate contract instance (and subscription) per namespace.
 		// Therefore, the local namespace name can simply be cached alongside each subscription.
-		e.subs[sub.ID] = &subscriptionInfo{
-			version:     version,
-			v2Namespace: namespace.LocalName,
+		e.subs[sub.ID] = &common.SubscriptionInfo{
+			Version:     version,
+			V2Namespace: namespace.LocalName,
 		}
 	}
 	return sub.ID, nil
@@ -316,7 +310,7 @@ func (e *Ethereum) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSO
 	}
 }
 
-func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *subscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
+func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *common.SubscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on
@@ -327,14 +321,12 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 	if nsOrAction == "" {
 		nsOrAction = event.Output.GetString("namespace")
 	}
-	sUUIDs := event.Output.GetString("uuids")
-	sBatchHash := event.Output.GetString("batchHash")
-	sPayloadRef := event.Output.GetString("payloadRef")
-	sContexts := event.Output.GetStringArray("contexts")
 
-	if authorAddress == "" || sUUIDs == "" || sBatchHash == "" {
-		log.L(ctx).Errorf("BatchPin event is not valid - missing data: %+v", msgJSON)
-		return nil // move on
+	params := &common.BatchPinParams{
+		UUIDs:      event.Output.GetString("uuids"),
+		BatchHash:  event.Output.GetString("batchHash"),
+		PayloadRef: event.Output.GetString("payloadRef"),
+		Contexts:   event.Output.GetStringArray("contexts"),
 	}
 
 	authorAddress, err = e.NormalizeSigningKey(ctx, authorAddress)
@@ -347,40 +339,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 		Value: authorAddress,
 	}
 
-	// Check if this is actually an operator action
-	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
-		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
-
-		// For V1 of the FireFly contract, action is sent to all namespaces
-		// For V2+, namespace is inferred from the subscription
-		var namespace string
-		if subInfo.version > 1 {
-			namespace = subInfo.v2Namespace
-		}
-
-		return e.callbacks.BlockchainNetworkAction(ctx, namespace, action, location, event, verifier)
-	}
-
-	deliverBatch := func(namespace string) error {
-		batch, err := common.BuildBatchPin(ctx, namespace, event, sUUIDs, sBatchHash, sContexts, sPayloadRef)
-		if err != nil {
-			return nil // move on
-		}
-		// If there's an error dispatching the event, we must return the error and shutdown
-		return e.callbacks.BatchPinComplete(ctx, batch, verifier)
-	}
-
-	// For V1 of the FireFly contract, namespace is passed explicitly, but needs to be mapped to local name(s).
-	// For V2+, namespace is inferred from the subscription.
-	if subInfo.version == 1 {
-		for _, destination := range subInfo.v1Namespace[nsOrAction] {
-			if err := deliverBatch(destination); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	return deliverBatch(subInfo.v2Namespace)
+	return e.callbacks.BatchPinOrNetworkAction(ctx, nsOrAction, subInfo, location, event, verifier, params)
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -620,7 +579,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 	return res, nil
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, remoteNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
 	ethLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -645,7 +604,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey
 	if version == 1 {
 		method = batchPinMethodABIV1
 		input = []interface{}{
-			batch.Namespace,
+			remoteNamespace,
 			ethHexFormatB32(&uuids),
 			ethHexFormatB32(batch.BatchHash),
 			batch.BatchPayloadRef,

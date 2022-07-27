@@ -109,8 +109,7 @@ func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.Prepared
 	case batchPinData:
 		batch := data.Batch
 		contract := mm.namespace.Contracts.Active
-		return nil, false, mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Key, &blockchain.BatchPin{
-			Namespace:       batch.Namespace,
+		return nil, false, mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Namespace, batch.Key, &blockchain.BatchPin{
 			TransactionID:   batch.TX.ID,
 			BatchID:         batch.ID,
 			BatchHash:       batch.Hash,
