@@ -1,5 +1,12 @@
 **/node_modules
 **/coverage
 **/.nyc_output
-smart_contracts/ethereum/solidity_firefly/build
-firefly
+**/.git*
+**/.vscode
+/smart_contracts/ethereum/solidity_firefly/artifacts
+/smart_contracts/ethereum/solidity_firefly/build
+/smart_contracts/ethereum/solidity_firefly/cache
+/firefly
+/firefly-nocgo
+coverage.txt
+codecov.yml
