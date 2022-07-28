@@ -64,7 +64,7 @@ type Ethereum struct {
 	addressResolver *addressResolver
 	metrics         metrics.Manager
 	ethconnectConf  config.Section
-	subs            map[string]*common.SubscriptionInfo
+	subs            common.FireflySubscriptions
 	cache           *ccache.Cache
 	cacheTTL        time.Duration
 }
@@ -127,6 +127,7 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 	e.metrics = metrics
 	e.capabilities = &blockchain.Capabilities{}
 	e.callbacks = common.NewBlockchainCallbacks()
+	e.subs = common.NewFireflySubscriptions()
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
 		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
@@ -170,7 +171,6 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 		return err
 	}
 	e.streamID = stream.ID
-	e.subs = make(map[string]*common.SubscriptionInfo)
 	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
 
 	e.closed = make(chan struct{})
@@ -218,26 +218,7 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace core.Na
 		return "", err
 	}
 
-	if version == 1 {
-		// The V1 contract shares a single subscription per contract, and the remote namespace name is passed on chain.
-		// Therefore, it requires a map of remote->local in order to farm out notifications to one or more local handlers.
-		existing, ok := e.subs[sub.ID]
-		if !ok {
-			existing = &common.SubscriptionInfo{
-				Version:     version,
-				V1Namespace: make(map[string][]string),
-			}
-			e.subs[sub.ID] = existing
-		}
-		existing.V1Namespace[namespace.RemoteName] = append(existing.V1Namespace[namespace.RemoteName], namespace.LocalName)
-	} else {
-		// The V2 contract does not pass the namespace on chain, and requires a separate contract instance (and subscription) per namespace.
-		// Therefore, the local namespace name can simply be cached alongside each subscription.
-		e.subs[sub.ID] = &common.SubscriptionInfo{
-			Version:     version,
-			V2Namespace: namespace.LocalName,
-		}
-	}
+	e.subs.AddSubscription(ctx, namespace, version, sub.ID, nil)
 	return sub.ID, nil
 }
 
@@ -245,11 +226,7 @@ func (e *Ethereum) RemoveFireflySubscription(ctx context.Context, subID string) 
 	// Don't actually delete the subscription from ethconnect, as this may be called while processing
 	// events from the subscription (and handling that scenario cleanly could be difficult for ethconnect).
 	// TODO: can old subscriptions be somehow cleaned up later?
-	if _, ok := e.subs[subID]; ok {
-		delete(e.subs, subID)
-	} else {
-		log.L(ctx).Debugf("Invalid subscription ID: %s", subID)
-	}
+	e.subs.RemoveSubscription(ctx, subID)
 }
 
 func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error {
@@ -401,7 +378,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 		logger.Tracef("Message: %+v", msgJSON)
 
 		// Matches one of the active FireFly BatchPin subscriptions
-		if subInfo, ok := e.subs[sub]; ok {
+		if subInfo := e.subs.GetSubscription(sub); subInfo != nil {
 			location, err := encodeContractLocation(ctx, &Location{
 				Address: msgJSON.GetString("address"),
 			})

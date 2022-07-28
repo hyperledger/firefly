@@ -93,8 +93,9 @@ func newTestEthereum() (*Ethereum, func()) {
 		wsconn:      wsm,
 		metrics:     mm,
 		cache:       ccache.New(ccache.Configure().MaxSize(100)),
+		callbacks:   common.NewBlockchainCallbacks(),
+		subs:        common.NewFireflySubscriptions(),
 	}
-	e.callbacks = common.NewBlockchainCallbacks()
 	return e, func() {
 		cancel()
 		if e.closed != nil {
@@ -1023,15 +1024,14 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
 		callbacks: common.NewBlockchainCallbacks(),
+		subs:      common.NewFireflySubscriptions(),
 	}
 	e.SetHandler("ns1", em)
-
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -1114,15 +1114,14 @@ func TestHandleMessageBatchPinMissingAddress(t *testing.T) {
 
 	e := &Ethereum{
 		callbacks: common.NewBlockchainCallbacks(),
+		subs:      common.NewFireflySubscriptions(),
 	}
 	e.SetHandler("ns1", em)
-
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1133,13 +1132,14 @@ func TestHandleMessageBatchPinMissingAddress(t *testing.T) {
 }
 
 func TestHandleMessageBatchPinEmpty(t *testing.T) {
-	e := &Ethereum{}
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
+	e := &Ethereum{
+		subs: common.NewFireflySubscriptions(),
 	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 
 	var events []interface{}
 	err := json.Unmarshal([]byte(`
@@ -1156,13 +1156,14 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 }
 
 func TestHandleMessageBatchMissingData(t *testing.T) {
-	e := &Ethereum{}
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
+	e := &Ethereum{
+		subs: common.NewFireflySubscriptions(),
 	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 
 	var events []interface{}
 	err := json.Unmarshal([]byte(`
@@ -1182,13 +1183,13 @@ func TestHandleMessageBatchMissingData(t *testing.T) {
 func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	e := &Ethereum{
 		callbacks: common.NewBlockchainCallbacks(),
+		subs:      common.NewFireflySubscriptions(),
 	}
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -1218,13 +1219,14 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 }
 
 func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
-	e := &Ethereum{}
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
+	e := &Ethereum{
+		subs: common.NewFireflySubscriptions(),
 	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -1628,12 +1630,11 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 		}))
 
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 	e.streams = newTestStreamManager(e.client)
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
@@ -1705,12 +1706,11 @@ func TestHandleMessageContractEventErrorOldSubscription(t *testing.T) {
 
 	e.callbacks = common.NewBlockchainCallbacks()
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 	e.streams = newTestStreamManager(e.client)
 	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -1769,12 +1769,11 @@ func TestHandleMessageContractEventWithNamespace(t *testing.T) {
 
 	e.callbacks = common.NewBlockchainCallbacks()
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 	e.streams = newTestStreamManager(e.client)
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
@@ -1844,12 +1843,11 @@ func TestHandleMessageContractEventNoNamespaceHandlers(t *testing.T) {
 		}))
 
 	e.SetHandler("ns2", em)
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 	e.streams = newTestStreamManager(e.client)
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
@@ -1896,12 +1894,11 @@ func TestHandleMessageContractEventSubNameError(t *testing.T) {
 
 	e.callbacks = common.NewBlockchainCallbacks()
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 	e.streams = newTestStreamManager(e.client)
 
 	var events []interface{}
@@ -1945,12 +1942,11 @@ func TestHandleMessageContractEventError(t *testing.T) {
 		}))
 
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 	e.streams = newTestStreamManager(e.client)
 
 	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
@@ -2582,14 +2578,14 @@ func TestHandleNetworkAction(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
 		callbacks: common.NewBlockchainCallbacks(),
+		subs:      common.NewFireflySubscriptions(),
 	}
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -2634,14 +2630,14 @@ func TestHandleNetworkActionFail(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
 		callbacks: common.NewBlockchainCallbacks(),
+		subs:      common.NewFireflySubscriptions(),
 	}
 	e.SetHandler("ns1", em)
-	e.subs = map[string]*common.SubscriptionInfo{
-		"sb-b5b97a4e-a317-4053-6400-1474650efcb5": {
-			Version:     1,
-			V1Namespace: map[string][]string{"ns1": {"ns1"}},
-		},
-	}
+	e.subs.AddSubscription(
+		context.Background(),
+		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
+	)
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -2915,7 +2911,9 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sub1",
+		}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
 
 	resetConf(e)
@@ -2934,13 +2932,13 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
 	subID, err := e.AddFireflySubscription(e.ctx, ns, location, "newest")
 	assert.NoError(t, err)
-	assert.Len(t, e.subs, 1)
+	assert.NotNil(t, e.subs.GetSubscription("sub1"))
 
 	e.RemoveFireflySubscription(e.ctx, subID)
-	assert.Len(t, e.subs, 0)
+	assert.Nil(t, e.subs.GetSubscription("sub1"))
 }
 
-func TestAddFireflySubscriptionV1Mapping(t *testing.T) {
+func TestAddFireflySubscriptionV1(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	resetConf(e)
@@ -2956,7 +2954,9 @@ func TestAddFireflySubscriptionV1Mapping(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sub1",
+		}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
 
 	resetConf(e)
@@ -2975,12 +2975,7 @@ func TestAddFireflySubscriptionV1Mapping(t *testing.T) {
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
 	assert.NoError(t, err)
-	assert.Len(t, e.subs, 1)
-
-	ns = core.NamespaceRef{LocalName: "ns2", RemoteName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
-	assert.NoError(t, err)
-	assert.Len(t, e.subs, 1)
+	assert.NotNil(t, e.subs.GetSubscription("sub1"))
 }
 
 func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
@@ -3093,9 +3088,4 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.Regexp(t, "FF10111", err)
-}
-
-func TestRemoveInvalidSubscription(t *testing.T) {
-	e, _ := newTestEthereum()
-	e.RemoveFireflySubscription(e.ctx, "bad")
 }

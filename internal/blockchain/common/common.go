@@ -38,9 +38,19 @@ type BlockchainCallbacks interface {
 	BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error
 }
 
+type FireflySubscriptions interface {
+	AddSubscription(ctx context.Context, namespace core.NamespaceRef, version int, subID string, extra interface{})
+	RemoveSubscription(ctx context.Context, subID string)
+	GetSubscription(subID string) *SubscriptionInfo
+}
+
 type callbacks struct {
 	handlers   map[string]blockchain.Callbacks
 	opHandlers map[string]core.OperationCallbacks
+}
+
+type subscriptions struct {
+	subs map[string]*SubscriptionInfo
 }
 
 type BatchPinParams struct {
@@ -57,12 +67,19 @@ type SubscriptionInfo struct {
 	Version     int
 	V1Namespace map[string][]string
 	V2Namespace string
+	Extra       interface{}
 }
 
 func NewBlockchainCallbacks() BlockchainCallbacks {
 	return &callbacks{
 		handlers:   make(map[string]blockchain.Callbacks),
 		opHandlers: make(map[string]core.OperationCallbacks),
+	}
+}
+
+func NewFireflySubscriptions() FireflySubscriptions {
+	return &subscriptions{
+		subs: make(map[string]*SubscriptionInfo),
 	}
 }
 
@@ -213,4 +230,41 @@ func GetNamespaceFromSubName(subName string) string {
 		return ""
 	}
 	return parts[2]
+}
+
+func (s *subscriptions) AddSubscription(ctx context.Context, namespace core.NamespaceRef, version int, subID string, extra interface{}) {
+	if version == 1 {
+		// The V1 contract shares a single subscription per contract, and the remote namespace name is passed on chain.
+		// Therefore, it requires a map of remote->local in order to farm out notifications to one or more local handlers.
+		existing, ok := s.subs[subID]
+		if !ok {
+			existing = &SubscriptionInfo{
+				Version:     version,
+				V1Namespace: make(map[string][]string),
+				Extra:       extra,
+			}
+			s.subs[subID] = existing
+		}
+		existing.V1Namespace[namespace.RemoteName] = append(existing.V1Namespace[namespace.RemoteName], namespace.LocalName)
+	} else {
+		// The V2 contract does not pass the namespace on chain, and requires a separate contract instance (and subscription) per namespace.
+		// Therefore, the local namespace name can simply be cached alongside each subscription.
+		s.subs[subID] = &SubscriptionInfo{
+			Version:     version,
+			V2Namespace: namespace.LocalName,
+			Extra:       extra,
+		}
+	}
+}
+
+func (s *subscriptions) RemoveSubscription(ctx context.Context, subID string) {
+	if _, ok := s.subs[subID]; ok {
+		delete(s.subs, subID)
+	} else {
+		log.L(ctx).Debugf("Invalid subscription ID: %s", subID)
+	}
+}
+
+func (s *subscriptions) GetSubscription(subID string) *SubscriptionInfo {
+	return s.subs[subID]
 }

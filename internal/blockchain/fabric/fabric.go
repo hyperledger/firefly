@@ -63,14 +63,9 @@ type Fabric struct {
 	closed         chan struct{}
 	metrics        metrics.Manager
 	fabconnectConf config.Section
-	subs           map[string]*subscriptionInfo
+	subs           common.FireflySubscriptions
 	cache          *ccache.Cache
 	cacheTTL       time.Duration
-}
-
-type subscriptionInfo struct {
-	common.SubscriptionInfo
-	channel string
 }
 
 type eventStreamWebsocket struct {
@@ -201,6 +196,7 @@ func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
 	f.callbacks = common.NewBlockchainCallbacks()
+	f.subs = common.NewFireflySubscriptions()
 
 	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
@@ -237,7 +233,6 @@ func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.
 		return err
 	}
 	f.streamID = stream.ID
-	f.subs = make(map[string]*subscriptionInfo)
 	log.L(f.ctx).Infof("Event stream: %s", f.streamID)
 
 	f.closed = make(chan struct{})
@@ -322,7 +317,7 @@ func (f *Fabric) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONO
 	}
 }
 
-func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *subscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
+func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *common.SubscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
 	event := f.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on
@@ -342,7 +337,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 		Value: signer,
 	}
 
-	return f.callbacks.BatchPinOrNetworkAction(ctx, nsOrAction, &subInfo.SubscriptionInfo, location, event, verifier, params)
+	return f.callbacks.BatchPinOrNetworkAction(ctx, nsOrAction, subInfo, location, event, verifier, params)
 }
 
 func (f *Fabric) buildEventLocationString(chaincode string) string {
@@ -401,32 +396,7 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace core.Name
 		return "", err
 	}
 
-	if version == 1 {
-		// The V1 contract shares a single subscription per contract, and the remote namespace name is passed on chain.
-		// Therefore, it requires a map of remote->local in order to farm out notifications to one or more local handlers.
-		existing, ok := f.subs[sub.ID]
-		if !ok {
-			existing = &subscriptionInfo{
-				channel: fabricOnChainLocation.Channel,
-				SubscriptionInfo: common.SubscriptionInfo{
-					Version:     version,
-					V1Namespace: make(map[string][]string),
-				},
-			}
-			f.subs[sub.ID] = existing
-		}
-		existing.V1Namespace[namespace.RemoteName] = append(existing.V1Namespace[namespace.RemoteName], namespace.LocalName)
-	} else {
-		// The V2 contract does not pass the namespace on chain, and requires a separate contract instance (and subscription) per namespace.
-		// Therefore, the local namespace name can simply be cached alongside each subscription.
-		f.subs[sub.ID] = &subscriptionInfo{
-			channel: fabricOnChainLocation.Channel,
-			SubscriptionInfo: common.SubscriptionInfo{
-				Version:     version,
-				V2Namespace: namespace.LocalName,
-			},
-		}
-	}
+	f.subs.AddSubscription(ctx, namespace, version, sub.ID, fabricOnChainLocation.Channel)
 	return sub.ID, nil
 }
 
@@ -434,11 +404,7 @@ func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) {
 	// Don't actually delete the subscription from fabconnect, as this may be called while processing
 	// events from the subscription (and handling that scenario cleanly could be difficult for fabconnect).
 	// TODO: can old subscriptions be somehow cleaned up later?
-	if _, ok := f.subs[subID]; ok {
-		delete(f.subs, subID)
-	} else {
-		log.L(ctx).Debugf("Invalid subscription ID: %s", subID)
-	}
+	f.subs.RemoveSubscription(ctx, subID)
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {
@@ -459,10 +425,10 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 		logger.Tracef("Message: %+v", msgJSON)
 
 		// Matches one of the active FireFly BatchPin subscriptions
-		if subInfo, ok := f.subs[sub]; ok {
+		if subInfo := f.subs.GetSubscription(sub); subInfo != nil {
 			location, err := encodeContractLocation(ctx, &Location{
 				Chaincode: msgJSON.GetString("chaincodeId"),
-				Channel:   subInfo.channel,
+				Channel:   subInfo.Extra.(string),
 			})
 			if err != nil {
 				done()

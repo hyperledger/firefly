@@ -192,3 +192,30 @@ func TestGetNamespaceFromSubName(t *testing.T) {
 	ns = GetNamespaceFromSubName("BAD")
 	assert.Equal(t, "", ns)
 }
+
+func TestSubscriptionsAddRemoveSubscription(t *testing.T) {
+	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+
+	subs := NewFireflySubscriptions()
+
+	subs.AddSubscription(context.Background(), ns, 2, "sub1", nil)
+	assert.NotNil(t, subs.GetSubscription("sub1"))
+	subs.RemoveSubscription(context.Background(), "sub1")
+	assert.Nil(t, subs.GetSubscription("sub1"))
+}
+
+func TestSubscriptionsAddRemoveSubscriptionV1(t *testing.T) {
+	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+
+	subs := NewFireflySubscriptions()
+
+	subs.AddSubscription(context.Background(), ns, 1, "sub1", nil)
+	assert.NotNil(t, subs.GetSubscription("sub1"))
+	subs.RemoveSubscription(context.Background(), "sub1")
+	assert.Nil(t, subs.GetSubscription("sub1"))
+}
+
+func TestSubscriptionsRemoveInvalid(t *testing.T) {
+	subs := NewFireflySubscriptions()
+	subs.RemoveSubscription(context.Background(), "sub1")
+}
