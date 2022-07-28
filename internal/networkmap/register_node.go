@@ -34,7 +34,7 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 
 	nodeRequest := &core.IdentityCreateDTO{
 		Parent: nodeOwningOrg.ID.String(),
-		Name:   config.GetString(coreconfig.NodeName),
+		Name:   nm.nodeName,
 		Type:   core.IdentityTypeNode,
 		IdentityProfile: core.IdentityProfile{
 			Description: config.GetString(coreconfig.NodeDescription),

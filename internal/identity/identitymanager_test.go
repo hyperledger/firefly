@@ -42,13 +42,13 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 
 	ctx := context.Background()
-	im, err := NewIdentityManager(ctx, "ns1", "", mdi, mbi, mmp)
+	im, err := NewIdentityManager(ctx, "ns1", "", "", mdi, mbi, mmp)
 	assert.NoError(t, err)
 	return ctx, im.(*identityManager)
 }
 
 func TestNewIdentityManagerMissingDeps(t *testing.T) {
-	_, err := NewIdentityManager(context.Background(), "", "", nil, nil, nil)
+	_, err := NewIdentityManager(context.Background(), "", "", "", nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

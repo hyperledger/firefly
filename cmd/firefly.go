@@ -101,7 +101,6 @@ func run() error {
 	// Setup logging after reading config (even if failed), to output header correctly
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	ctx = log.WithLogger(ctx, logrus.WithField("pid", fmt.Sprintf("%d", os.Getpid())))
-	ctx = log.WithLogger(ctx, logrus.WithField("prefix", config.GetString(coreconfig.NodeName)))
 
 	config.SetupLogging(ctx)
 	log.L(ctx).Infof("Hyperledger FireFly")

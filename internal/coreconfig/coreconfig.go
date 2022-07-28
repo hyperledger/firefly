@@ -51,6 +51,8 @@ const (
 	NamespaceMultipartyOrgDescription = "org.description"
 	// NamespaceMultipartyOrgKey is the signing key allocated to the local root org within a namespace
 	NamespaceMultipartyOrgKey = "org.key"
+	// NamespaceMultipartyNodeName is the name for a local node within a namespace
+	NamespaceMultipartyNodeName = "node.name"
 	// NamespaceMultipartyContract is a list of firefly contract configurations for this namespace
 	NamespaceMultipartyContract = "contract"
 	// NamespaceMultipartyContractFirstEvent is the first event to process for this contract

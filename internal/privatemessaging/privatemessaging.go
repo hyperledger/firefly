@@ -85,7 +85,7 @@ type blobTransferTracker struct {
 	op       *core.PreparedOperation
 }
 
-func NewPrivateMessaging(ctx context.Context, ns core.NamespaceRef, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
+func NewPrivateMessaging(ctx context.Context, ns core.NamespaceRef, nodeName string, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "PrivateMessaging")
 	}
@@ -100,7 +100,7 @@ func NewPrivateMessaging(ctx context.Context, ns core.NamespaceRef, di database.
 		data:          dm,
 		syncasync:     sa,
 		multiparty:    mult,
-		localNodeName: config.GetString(coreconfig.NodeName),
+		localNodeName: nodeName,
 		groupManager: groupManager{
 			namespace:     ns,
 			database:      di,

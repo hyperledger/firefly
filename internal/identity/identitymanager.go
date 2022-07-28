@@ -60,6 +60,7 @@ type identityManager struct {
 	multiparty             multiparty.Manager // optional
 	namespace              string
 	defaultKey             string
+	nodeName               string
 	multipartyRootVerifier *core.VerifierRef
 	identityCacheTTL       time.Duration
 	identityCache          *ccache.Cache
@@ -67,7 +68,7 @@ type identityManager struct {
 	signingKeyCache        *ccache.Cache
 }
 
-func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager) (Manager, error) {
+func NewIdentityManager(ctx context.Context, ns, defaultKey, nodeName string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager) (Manager, error) {
 	if di == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "IdentityManager")
 	}
@@ -98,6 +99,10 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 	default:
 		return KeyNormalizationNone
 	}
+}
+
+func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identity, err error) {
+	return im.database.GetIdentityByName(ctx, core.IdentityTypeNode, im.namespace, im.nodeName)
 }
 
 // NormalizeSigningKey takes in only a "key" (which may be empty to use the default) to be normalized and returned.

@@ -66,6 +66,7 @@ type Manager interface {
 type Config struct {
 	Enabled   bool
 	Org       RootOrg
+	NodeName  string
 	Contracts []Contract
 }
 

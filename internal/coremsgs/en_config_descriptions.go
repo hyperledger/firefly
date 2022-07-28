@@ -261,6 +261,7 @@ var (
 	ConfigNamespacesMultipartyOrgName            = ffc("config.namespaces.predefined[].multiparty.org.name", "A short name for the local root organization within this namespace", i18n.StringType)
 	ConfigNamespacesMultipartyOrgDesc            = ffc("config.namespaces.predefined[].multiparty.org.description", "A description for the local root organization within this namespace", i18n.StringType)
 	ConfigNamespacesMultipartyOrgKey             = ffc("config.namespaces.predefined[].multiparty.org.key", "The signing key allocated to the root organization within this namespace", i18n.StringType)
+	ConfigNamespacesMultipartyNodeName           = ffc("config.namespaces.predefined[].multiparty.node.name", "The node name for this namespace", i18n.StringType)
 	ConfigNamespacesMultipartyContract           = ffc("config.namespaces.predefined[].contract", "A list containing configuration for the multi-party blockchain contract", i18n.StringType)
 	ConfigNamespacesMultipartyContractFirstEvent = ffc("config.namespaces.predefined[].multiparty.contract[].firstEvent", "The first event the contract should process. Valid options are `oldest` or `newest`", i18n.StringType)
 	ConfigNamespacesMultipartyContractLocation   = ffc("config.namespaces.predefined[].multiparty.contract[].location", "A blockchain-specific contract location. For example, an Ethereum contract address, or a Fabric chaincode name and channe", i18n.StringType)

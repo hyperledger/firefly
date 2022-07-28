@@ -81,7 +81,6 @@ func TestGetStatusRegistered(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
@@ -146,7 +145,6 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
@@ -173,7 +171,6 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
@@ -226,7 +223,6 @@ func TestGetStatusUnregistered(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	or.mim.On("GetMultipartyRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
 
@@ -255,7 +251,6 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
@@ -309,7 +304,6 @@ func TestGetStatusNodeError(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
