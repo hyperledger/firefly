@@ -42,6 +42,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 			SignerRef: core.SignerRef{
 				Key: "0x123",
 			},
+			Namespace: "ns1",
 		},
 	}
 	contexts := []*fftypes.Bytes32{
@@ -51,7 +52,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	addBatchPinInputs(op, batch.ID, contexts, "payload1")
 
 	mp.mdi.On("GetBatchByID", context.Background(), "ns1", batch.ID).Return(batch, nil)
-	mp.mbi.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.Anything, mock.Anything).Return(nil)
+	mp.mbi.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "ns1", "0x123", mock.Anything, mock.Anything).Return(nil)
 
 	po, err := mp.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -191,6 +192,7 @@ func TestRunBatchPinV1(t *testing.T) {
 			SignerRef: core.SignerRef{
 				Key: "0x123",
 			},
+			Namespace: "ns1",
 		},
 	}
 	contexts := []*fftypes.Bytes32{
@@ -199,7 +201,7 @@ func TestRunBatchPinV1(t *testing.T) {
 	}
 	addBatchPinInputs(op, batch.ID, contexts, "payload1")
 
-	mp.mbi.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.Anything, mock.Anything).Return(nil)
+	mp.mbi.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "ns1", "0x123", mock.Anything, mock.Anything).Return(nil)
 
 	_, complete, err := mp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
 

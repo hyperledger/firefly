@@ -64,14 +64,9 @@ type Ethereum struct {
 	addressResolver *addressResolver
 	metrics         metrics.Manager
 	ethconnectConf  config.Section
-	subs            map[string]subscriptionInfo
+	subs            common.FireflySubscriptions
 	cache           *ccache.Cache
 	cacheTTL        time.Duration
-}
-
-type subscriptionInfo struct {
-	namespace string
-	version   int
 }
 
 type eventStreamWebsocket struct {
@@ -132,6 +127,7 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 	e.metrics = metrics
 	e.capabilities = &blockchain.Capabilities{}
 	e.callbacks = common.NewBlockchainCallbacks()
+	e.subs = common.NewFireflySubscriptions()
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
 		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
@@ -175,7 +171,6 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 		return err
 	}
 	e.streamID = stream.ID
-	e.subs = make(map[string]subscriptionInfo)
 	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
 
 	e.closed = make(chan struct{})
@@ -200,7 +195,7 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (string, error) {
+func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace core.NamespaceRef, location *fftypes.JSONAny, firstEvent string) (string, error) {
 	ethLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return "", err
@@ -213,24 +208,17 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace string,
 		firstEvent = "latest"
 	}
 
-	sub, subNS, err := e.streams.ensureFireFlySubscription(ctx, namespace, ethLocation.Address, firstEvent, e.streamID, batchPinEventABI)
-	if err != nil {
-		return "", err
-	}
-
 	version, err := e.GetNetworkVersion(ctx, location)
 	if err != nil {
 		return "", err
 	}
 
-	if version > 1 && subNS == "" {
-		return "", i18n.NewError(ctx, coremsgs.MsgInvalidSubscriptionForNetwork, sub.Name, version)
+	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.LocalName, version, ethLocation.Address, firstEvent, e.streamID, batchPinEventABI)
+	if err != nil {
+		return "", err
 	}
 
-	e.subs[sub.ID] = subscriptionInfo{
-		namespace: subNS,
-		version:   version,
-	}
+	e.subs.AddSubscription(ctx, namespace, version, sub.ID, nil)
 	return sub.ID, nil
 }
 
@@ -238,11 +226,7 @@ func (e *Ethereum) RemoveFireflySubscription(ctx context.Context, subID string) 
 	// Don't actually delete the subscription from ethconnect, as this may be called while processing
 	// events from the subscription (and handling that scenario cleanly could be difficult for ethconnect).
 	// TODO: can old subscriptions be somehow cleaned up later?
-	if _, ok := e.subs[subID]; ok {
-		delete(e.subs, subID)
-	} else {
-		log.L(ctx).Debugf("Invalid subscription ID: %s", subID)
-	}
+	e.subs.RemoveSubscription(ctx, subID)
 }
 
 func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error {
@@ -303,7 +287,7 @@ func (e *Ethereum) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSO
 	}
 }
 
-func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *subscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
+func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *common.SubscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on
@@ -314,14 +298,12 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 	if nsOrAction == "" {
 		nsOrAction = event.Output.GetString("namespace")
 	}
-	sUUIDs := event.Output.GetString("uuids")
-	sBatchHash := event.Output.GetString("batchHash")
-	sPayloadRef := event.Output.GetString("payloadRef")
-	sContexts := event.Output.GetStringArray("contexts")
 
-	if authorAddress == "" || sUUIDs == "" || sBatchHash == "" {
-		log.L(ctx).Errorf("BatchPin event is not valid - missing data: %+v", msgJSON)
-		return nil // move on
+	params := &common.BatchPinParams{
+		UUIDs:      event.Output.GetString("uuids"),
+		BatchHash:  event.Output.GetString("batchHash"),
+		PayloadRef: event.Output.GetString("payloadRef"),
+		Contexts:   event.Output.GetStringArray("contexts"),
 	}
 
 	authorAddress, err = e.NormalizeSigningKey(ctx, authorAddress)
@@ -334,40 +316,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 		Value: authorAddress,
 	}
 
-	// Check if this is actually an operator action
-	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
-		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
-
-		// For V1 of the FireFly contract, action is sent to all namespaces
-		// For V2+, namespace is inferred from the subscription
-		var namespace string
-		if subInfo.version > 1 {
-			namespace = subInfo.namespace
-		}
-
-		return e.callbacks.BlockchainNetworkAction(ctx, namespace, action, location, event, verifier)
-	}
-
-	// For V1 of the FireFly contract, namespace is passed explicitly
-	// For V2+, namespace is inferred from the subscription
-	var namespace string
-	if subInfo.version == 1 {
-		namespace = nsOrAction
-		if subInfo.namespace != "" && subInfo.namespace != namespace {
-			log.L(ctx).Debugf("Ignoring batch for '%s' received on subscription for '%s'", namespace, subInfo.namespace)
-			return nil
-		}
-	} else {
-		namespace = subInfo.namespace
-	}
-
-	batch, err := common.BuildBatchPin(ctx, namespace, event, sUUIDs, sBatchHash, sContexts, sPayloadRef)
-	if err != nil {
-		return nil // move on
-	}
-
-	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.BatchPinComplete(ctx, batch, verifier)
+	return e.callbacks.BatchPinOrNetworkAction(ctx, nsOrAction, subInfo, location, event, verifier, params)
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -429,7 +378,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 		logger.Tracef("Message: %+v", msgJSON)
 
 		// Matches one of the active FireFly BatchPin subscriptions
-		if subInfo, ok := e.subs[sub]; ok {
+		if subInfo := e.subs.GetSubscription(sub); subInfo != nil {
 			location, err := encodeContractLocation(ctx, &Location{
 				Address: msgJSON.GetString("address"),
 			})
@@ -440,7 +389,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 
 			switch signature {
 			case broadcastBatchEventSignature:
-				if err := e.handleBatchPinEvent(eventCtx, location, &subInfo, msgJSON); err != nil {
+				if err := e.handleBatchPinEvent(eventCtx, location, subInfo, msgJSON); err != nil {
 					done()
 					return err
 				}
@@ -607,7 +556,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 	return res, nil
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, remoteNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
 	ethLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -632,7 +581,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey
 	if version == 1 {
 		method = batchPinMethodABIV1
 		input = []interface{}{
-			batch.Namespace,
+			remoteNamespace,
 			ethHexFormatB32(&uuids),
 			ethHexFormatB32(batch.BatchHash),
 			batch.BatchPayloadRef,

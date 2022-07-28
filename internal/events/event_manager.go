@@ -65,7 +65,7 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
+	BatchPinComplete(namespace string, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
 	BlockchainEvent(event *blockchain.EventWithSubscription) error
 	BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error
 

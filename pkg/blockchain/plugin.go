@@ -58,13 +58,13 @@ type Plugin interface {
 	NormalizeSigningKey(ctx context.Context, keyRef string) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
-	SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *BatchPin, location *fftypes.JSONAny) error
+	SubmitBatchPin(ctx context.Context, nsOpID, remtoeNamespace, signingKey string, batch *BatchPin, location *fftypes.JSONAny) error
 
 	// SubmitNetworkAction writes a special "BatchPin" event which signals the plugin to take an action
-	SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error
+	SubmitNetworkAction(ctx context.Context, nsOpID, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
-	InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error
+	InvokeContract(ctx context.Context, nsOpID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error
 
 	// QueryContract executes a method via custom on-chain logic and returns the result
 	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error)
@@ -94,7 +94,7 @@ type Plugin interface {
 	GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error)
 
 	// AddFireflySubscription creates a FireFly BatchPin subscription for the provided location
-	AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (subID string, err error)
+	AddFireflySubscription(ctx context.Context, namespace core.NamespaceRef, location *fftypes.JSONAny, firstEvent string) (subID string, err error)
 
 	// RemoveFireFlySubscription removes the provided FireFly subscription
 	RemoveFireflySubscription(ctx context.Context, subID string)
@@ -112,7 +112,7 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should only be returned in shutdown scenarios
-	BatchPinComplete(batch *BatchPin, signingKey *core.VerifierRef) error
+	BatchPinComplete(namespace string, batch *BatchPin, signingKey *core.VerifierRef) error
 
 	// BlockchainNetworkAction notifies on the arrival of a network operator action
 	//
@@ -130,9 +130,6 @@ type Capabilities struct {
 
 // BatchPin is the set of data pinned to the blockchain for a batch - whether it's private or broadcast.
 type BatchPin struct {
-
-	// Namespace goes in the clear on the chain (for network rules V1 only)
-	Namespace string
 
 	// TransactionID is the firefly transaction ID allocated before transaction submission for correlation with events (it's a UUID so no leakage)
 	TransactionID *fftypes.UUID

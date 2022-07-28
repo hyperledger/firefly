@@ -5,10 +5,8 @@ package operationmocks
 import (
 	context "context"
 
-	core "github.com/hyperledger/firefly/pkg/core"
-	dataexchange "github.com/hyperledger/firefly/pkg/dataexchange"
-
 	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -146,11 +144,6 @@ func (_m *Manager) Start() error {
 // SubmitOperationUpdate provides a mock function with given fields: plugin, update
 func (_m *Manager) SubmitOperationUpdate(plugin core.Named, update *operations.OperationUpdate) {
 	_m.Called(plugin, update)
-}
-
-// TransferResult provides a mock function with given fields: dx, event
-func (_m *Manager) TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent) {
-	_m.Called(dx, event)
 }
 
 // WaitStop provides a mock function with given fields:

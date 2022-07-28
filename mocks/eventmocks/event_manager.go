@@ -41,13 +41,13 @@ func (_m *EventManager) AddSystemEventListener(ns string, el system.EventListene
 	return r0
 }
 
-// BatchPinComplete provides a mock function with given fields: batch, signingKey
-func (_m *EventManager) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	ret := _m.Called(batch, signingKey)
+// BatchPinComplete provides a mock function with given fields: namespace, batch, signingKey
+func (_m *EventManager) BatchPinComplete(namespace string, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+	ret := _m.Called(namespace, batch, signingKey)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.BatchPin, *core.VerifierRef) error); ok {
-		r0 = rf(batch, signingKey)
+	if rf, ok := ret.Get(0).(func(string, *blockchain.BatchPin, *core.VerifierRef) error); ok {
+		r0 = rf(namespace, batch, signingKey)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -124,13 +124,13 @@ func TestInitMissingURL(t *testing.T) {
 
 func acker() func(args mock.Arguments) {
 	return func(args mock.Arguments) {
-		args[0].(dataexchange.DXEvent).Ack()
+		args[1].(dataexchange.DXEvent).Ack()
 	}
 }
 
 func manifestAcker(manifest string) func(args mock.Arguments) {
 	return func(args mock.Arguments) {
-		args[0].(dataexchange.DXEvent).AckWithManifest(manifest)
+		args[1].(dataexchange.DXEvent).AckWithManifest(manifest)
 	}
 }
 
@@ -505,7 +505,7 @@ func TestMessageEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "1" &&
 			ev.NamespacedID() == namespacedID1 &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
@@ -518,7 +518,7 @@ func TestMessageEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "2" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == namespacedID2 &&
@@ -529,7 +529,7 @@ func TestMessageEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
 	namespacedID3 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "3" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == namespacedID3 &&
@@ -541,7 +541,7 @@ func TestMessageEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"3"}`, string(msg))
 
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "4" &&
 			ev.Type() == dataexchange.DXEventTypeMessageReceived &&
 			ev.MessageReceived().PeerID == "peer1"
@@ -565,7 +565,7 @@ func TestBlobEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	namespacedID5 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "5" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == namespacedID5 &&
@@ -577,7 +577,7 @@ func TestBlobEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
 
 	namespacedID6 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "6" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == namespacedID6 &&
@@ -590,7 +590,7 @@ func TestBlobEvents(t *testing.T) {
 
 	u := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "9" &&
 			ev.Type() == dataexchange.DXEventTypePrivateBlobReceived &&
 			ev.PrivateBlobReceived().Hash.Equals(hash)
@@ -600,7 +600,7 @@ func TestBlobEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"9"}`, string(msg))
 
 	namespacedID10 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "10" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == namespacedID10 &&
@@ -631,7 +631,7 @@ func TestEventsWithManifest(t *testing.T) {
 	h.SetHandler("ns1", mcb)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "1" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().Status == core.OpStatusPending
@@ -641,7 +641,7 @@ func TestEventsWithManifest(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "2" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().Status == core.OpStatusPending

@@ -18,7 +18,6 @@ package operations
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -26,11 +25,9 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -408,141 +405,6 @@ func TestWriteOperationFailure(t *testing.T) {
 	om.writeOperationFailure(ctx, opID, nil, fmt.Errorf("pop"), core.OpStatusFailed)
 
 	mdi.AssertExpectations(t)
-}
-
-func TestTransferResultManifestMismatch(t *testing.T) {
-	om, cancel := newTestOperations(t)
-	defer cancel()
-	om.updater.conf.workerCount = 0
-
-	opID1 := fftypes.NewUUID()
-	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, "ns1", mock.Anything).Return([]*core.Operation{
-		{
-			ID:        opID1,
-			Namespace: "ns1",
-			Type:      core.OpTypeDataExchangeSendBatch,
-			Input: fftypes.JSONObject{
-				"batch": fftypes.NewUUID().String(),
-			},
-		},
-	}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.MatchedBy(func(errorMsg *string) bool {
-		return strings.Contains(*errorMsg, "FF10329")
-	}), fftypes.JSONObject{
-		"extra": "info",
-	}).Return(nil)
-	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(&core.BatchPersisted{
-		Manifest: fftypes.JSONAnyPtr("my-manifest"),
-	}, nil)
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
-		Manifest: true,
-	})
-	mde := &dataexchangemocks.DXEvent{}
-	mde.On("NamespacedID").Return("ns1:" + opID1.String())
-	mde.On("Ack").Return()
-	mde.On("TransferResult").Return(&dataexchange.TransferResult{
-		TrackingID: opID1.String(),
-		Status:     core.OpStatusSucceeded,
-		TransportStatusUpdate: core.TransportStatusUpdate{
-			Info:     fftypes.JSONObject{"extra": "info"},
-			Manifest: "Sally",
-		},
-	})
-	om.TransferResult(mdx, mde)
-
-	mde.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-
-}
-
-func TestTransferResultHashMismatch(t *testing.T) {
-
-	om, cancel := newTestOperations(t)
-	cancel()
-	om.updater.conf.workerCount = 0
-
-	opID1 := fftypes.NewUUID()
-	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, "ns1", mock.Anything).Return([]*core.Operation{
-		{
-			ID:        opID1,
-			Namespace: "ns1",
-			Type:      core.OpTypeDataExchangeSendBlob,
-			Input: fftypes.JSONObject{
-				"hash": "Bob",
-			},
-		},
-	}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.MatchedBy(func(errorMsg *string) bool {
-		return strings.Contains(*errorMsg, "FF10348")
-	}), fftypes.JSONObject{
-		"extra": "info",
-	}).Return(nil)
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
-		Manifest: true,
-	})
-	mde := &dataexchangemocks.DXEvent{}
-	mde.On("NamespacedID").Return("ns1:" + opID1.String())
-	mde.On("Ack").Return()
-	mde.On("TransferResult").Return(&dataexchange.TransferResult{
-		TrackingID: opID1.String(),
-		Status:     core.OpStatusSucceeded,
-		TransportStatusUpdate: core.TransportStatusUpdate{
-			Info: fftypes.JSONObject{"extra": "info"},
-			Hash: "Sally",
-		},
-	})
-	om.TransferResult(mdx, mde)
-
-	mde.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-
-}
-
-func TestTransferResultBatchLookupFail(t *testing.T) {
-	om, cancel := newTestOperations(t)
-	cancel()
-	om.updater.conf.workerCount = 0
-
-	opID1 := fftypes.NewUUID()
-	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, "ns1", mock.Anything).Return([]*core.Operation{
-		{
-			ID:   opID1,
-			Type: core.OpTypeDataExchangeSendBatch,
-			Input: fftypes.JSONObject{
-				"batch": fftypes.NewUUID().String(),
-			},
-		},
-	}, nil, nil)
-	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
-		Manifest: true,
-	})
-	mde := &dataexchangemocks.DXEvent{}
-	mde.On("NamespacedID").Return("ns1:" + opID1.String())
-	mde.On("TransferResult").Return(&dataexchange.TransferResult{
-		TrackingID: opID1.String(),
-		Status:     core.OpStatusSucceeded,
-		TransportStatusUpdate: core.TransportStatusUpdate{
-			Info:     fftypes.JSONObject{"extra": "info"},
-			Manifest: "Sally",
-		},
-	})
-	om.TransferResult(mdx, mde)
-
-	mdi.AssertExpectations(t)
-
 }
 
 func TestResolveOperationByNamespacedIDOk(t *testing.T) {

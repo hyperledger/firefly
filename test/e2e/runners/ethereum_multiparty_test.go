@@ -29,4 +29,5 @@ func TestEthereumMultipartyE2ESuite(t *testing.T) {
 	suite.Run(t, new(multiparty.TokensTestSuite))
 	suite.Run(t, new(multiparty.EthereumContractTestSuite))
 	suite.Run(t, new(multiparty.ContractMigrationTestSuite))
+	suite.Run(t, new(multiparty.NamespaceAliasSuite))
 }

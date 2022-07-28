@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -209,7 +210,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 	return nil
 }
 
-func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, instancePath, fromBlock, stream string, abi *abi.Entry) (sub *subscription, subNS string, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, instancePath, fromBlock, stream string, abi *abi.Entry) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
@@ -217,39 +218,43 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 
 	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	oldName1 := abi.Name
-	oldName2 := fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash)
-	currentName := fmt.Sprintf("%s_%s_%s", namespace, abi.Name, instanceUniqueHash)
+	legacyName := abi.Name
+	v1Name := fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash)
+	v2Name := fmt.Sprintf("%s_%s_%s", namespace, abi.Name, instanceUniqueHash)
 
 	for _, s := range existingSubs {
 		if s.Stream == stream {
 			/* Check for the deprecated names, before adding namespace uniqueness qualifier.
 			   NOTE: If one of these early environments needed a new subscription, the existing one would need to
 				 be deleted manually. */
-			if s.Name == oldName1 || s.Name == oldName2 {
-				log.L(ctx).Warnf("Subscription %s uses a legacy name format '%s' and may not support multiple namespaces. Expected '%s' instead.", s.ID, s.Name, currentName)
-				sub = s
-			} else if s.Name == currentName {
-				sub = s
-				subNS = namespace
+			if version == 1 {
+				if s.Name == legacyName {
+					log.L(ctx).Warnf("Subscription %s uses a legacy name format '%s' - expected '%s' instead", s.ID, legacyName, v1Name)
+					return s, nil
+				} else if s.Name == v1Name {
+					return s, nil
+				}
+			} else {
+				if s.Name == legacyName || s.Name == v1Name {
+					return nil, i18n.NewError(ctx, coremsgs.MsgInvalidSubscriptionForNetwork, s.Name, version)
+				} else if s.Name == v2Name {
+					return s, nil
+				}
 			}
 		}
 	}
 
-	location := &Location{
-		Address: instancePath,
+	name := v2Name
+	if version == 1 {
+		name = v1Name
 	}
-
-	if sub == nil {
-		if sub, err = s.createSubscription(ctx, location, stream, currentName, fromBlock, abi); err != nil {
-			return nil, "", err
-		}
-		subNS = namespace
+	location := &Location{Address: instancePath}
+	if sub, err = s.createSubscription(ctx, location, stream, name, fromBlock, abi); err != nil {
+		return nil, err
 	}
-
 	log.L(ctx).Infof("%s subscription: %s", abi.Name, sub.ID)
-	return sub, subNS, nil
+	return sub, nil
 }

@@ -31,7 +31,7 @@ import (
 //
 // We must block here long enough to get the payload from the sharedstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) BatchPinComplete(batchPin *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+func (em *eventManager) BatchPinComplete(namespace string, batchPin *blockchain.BatchPin, signingKey *core.VerifierRef) error {
 	if em.multiparty == nil {
 		log.L(em.ctx).Errorf("Ignoring batch pin from non-multiparty network!")
 		return nil
@@ -40,11 +40,10 @@ func (em *eventManager) BatchPinComplete(batchPin *blockchain.BatchPin, signingK
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
 	}
-	if batchPin.Namespace != em.namespace.RemoteName {
-		log.L(em.ctx).Debugf("Ignoring batch pin from different namespace '%s'", batchPin.Namespace)
+	if namespace != em.namespace.LocalName {
+		log.L(em.ctx).Debugf("Ignoring batch pin from different namespace '%s'", namespace)
 		return nil // move on
 	}
-	batchPin.Namespace = em.namespace.LocalName
 
 	log.L(em.ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, signingKey.Value)
 	defer func() {
@@ -61,7 +60,7 @@ func (em *eventManager) BatchPinComplete(batchPin *blockchain.BatchPin, signingK
 			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
 				return err
 			}
-			chainEvent := buildBlockchainEvent(batchPin.Namespace, nil, &batchPin.Event, &core.BlockchainTransactionRef{
+			chainEvent := buildBlockchainEvent(em.namespace.LocalName, nil, &batchPin.Event, &core.BlockchainTransactionRef{
 				Type:         core.TransactionTypeBatchPin,
 				ID:           batchPin.TransactionID,
 				BlockchainID: batchPin.Event.BlockchainTXID,
@@ -103,7 +102,7 @@ func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchai
 	pins := make([]*core.Pin, len(batchPin.Contexts))
 	for idx, hash := range batchPin.Contexts {
 		pins[idx] = &core.Pin{
-			Namespace: batchPin.Namespace,
+			Namespace: em.namespace.LocalName,
 			Masked:    private,
 			Hash:      hash,
 			Batch:     batchPin.BatchID,

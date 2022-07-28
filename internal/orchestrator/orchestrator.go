@@ -355,12 +355,12 @@ func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 	or.plugins.Database.Plugin.SetHandler(or.namespace.LocalName, or)
 
 	if or.plugins.Blockchain.Plugin != nil {
-		or.plugins.Blockchain.Plugin.SetHandler(or.namespace.RemoteName, or.events)
+		or.plugins.Blockchain.Plugin.SetHandler(or.namespace.LocalName, or.events)
 		or.plugins.Blockchain.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
 	}
 
 	if or.plugins.SharedStorage.Plugin != nil {
-		or.plugins.SharedStorage.Plugin.SetHandler(or.namespace.RemoteName, &or.bc)
+		or.plugins.SharedStorage.Plugin.SetHandler(or.namespace.LocalName, &or.bc)
 	}
 
 	if or.plugins.DataExchange.Plugin != nil {
