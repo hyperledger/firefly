@@ -56,19 +56,12 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, plugin tokens.Plugin, 
 	}
 }
 
-func (cb *callbacks) TokenPoolCreated(ctx context.Context, namespace string, plugin tokens.Plugin, pool *tokens.TokenPool) error {
-	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every handler
-		for _, cb := range cb.handlers {
-			if err := cb.TokenPoolCreated(plugin, pool); err != nil {
-				return err
-			}
+func (cb *callbacks) TokenPoolCreated(ctx context.Context, plugin tokens.Plugin, pool *tokens.TokenPool) error {
+	// Deliver token pool creation events to every handler
+	for _, cb := range cb.handlers {
+		if err := cb.TokenPoolCreated(plugin, pool); err != nil {
+			return err
 		}
-	} else {
-		if handler, ok := cb.handlers[namespace]; ok {
-			return handler.TokenPoolCreated(plugin, pool)
-		}
-		log.L(ctx).Errorf("No handler found for token pool event on namespace '%s'", namespace)
 	}
 	return nil
 }
@@ -132,10 +125,6 @@ type tokenData struct {
 	MessageHash *fftypes.Bytes32     `json:"messageHash,omitempty"`
 }
 
-type tokenInit struct {
-	Namespace string `json:"namespace"`
-}
-
 type createPool struct {
 	Type      core.TokenType     `json:"type"`
 	RequestID string             `json:"requestId"`
@@ -147,7 +136,7 @@ type createPool struct {
 }
 
 type activatePool struct {
-	Namespace   string             `json:"namespace"`
+	PoolData    string             `json:"poolData"`
 	PoolLocator string             `json:"poolLocator"`
 	Config      fftypes.JSONObject `json:"config"`
 	RequestID   string             `json:"requestId,omitempty"`
@@ -234,18 +223,8 @@ func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section
 	return nil
 }
 
-func (ft *FFTokens) SetHandler(namespace string, handler tokens.Callbacks) error {
+func (ft *FFTokens) SetHandler(namespace string, handler tokens.Callbacks) {
 	ft.callbacks.handlers[namespace] = handler
-
-	res, err := ft.client.R().SetContext(ft.ctx).
-		SetBody(&tokenInit{
-			Namespace: namespace,
-		}).
-		Post("/api/v1/init")
-	if err != nil || !res.IsSuccess() {
-		return wrapError(ft.ctx, nil, res, err)
-	}
-	return nil
 }
 
 func (ft *FFTokens) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
@@ -282,11 +261,10 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
 	tokenType := data.GetString("type")
 	poolLocator := data.GetString("poolLocator")
-	standard := data.GetString("standard")   // optional
-	symbol := data.GetString("symbol")       // optional
-	decimals := data.GetInt64("decimals")    // optional
-	info := data.GetObject("info")           // optional
-	namespace := data.GetString("namespace") // optional
+	standard := data.GetString("standard") // optional
+	symbol := data.GetString("symbol")     // optional
+	decimals := data.GetInt64("decimals")  // optional
+	info := data.GetObject("info")         // optional
 
 	// All blockchain items below are optional
 	blockchainEvent := data.GetObject("blockchain")
@@ -349,7 +327,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokenPoolCreated(ctx, namespace, ft, pool)
+	return ft.callbacks.TokenPoolCreated(ctx, ft, pool)
 }
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransferType, data fftypes.JSONObject) (err error) {
@@ -361,7 +339,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 	value := data.GetString("amount")
 	tokenIndex := data.GetString("tokenIndex") // optional
 	uri := data.GetString("uri")               // optional
-	namespace := data.GetString("namespace")   // optional
+	namespace := data.GetString("poolData")    // optional
 
 	blockchainEvent := data.GetObject("blockchain")
 	blockchainID := blockchainEvent.GetString("id")
@@ -448,8 +426,8 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	poolLocator := data.GetString("poolLocator")
 	operatorAddress := data.GetString("operator")
 	approved := data.GetBool("approved")
-	info := data.GetObject("info")           // optional
-	namespace := data.GetString("namespace") // optional
+	info := data.GetObject("info")          // optional
+	namespace := data.GetString("poolData") // optional
 
 	blockchainEvent := data.GetObject("blockchain")
 	blockchainID := blockchainEvent.GetString("id")
@@ -640,7 +618,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
 			RequestID:   nsOpID,
-			Namespace:   pool.Namespace,
+			PoolData:    pool.Namespace,
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
 		}).

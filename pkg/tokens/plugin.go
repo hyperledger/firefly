@@ -37,7 +37,7 @@ type Plugin interface {
 
 	// SetHandler registers a handler to receive callbacks
 	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace
-	SetHandler(namespace string, handler Callbacks) error
+	SetHandler(namespace string, handler Callbacks)
 
 	// SetOperationHandler registers a handler to receive async operation status
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
