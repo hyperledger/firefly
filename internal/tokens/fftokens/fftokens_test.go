@@ -422,7 +422,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 	mcb := &tokenmocks.Callbacks{}
 	h.SetHandler("ns1", mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == ""
+		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event == nil
 	})).Return(nil)
 
 	complete, err := h.ActivateTokenPool(context.Background(), nsOpID, pool)
@@ -1188,7 +1188,11 @@ func TestApprovalEvents(t *testing.T) {
 
 	// token-approval: success
 	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
-		return t.Approved == true && t.Operator == "0x0" && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
+		return t.Approved == true &&
+			t.Operator == "0x0" &&
+			t.PoolLocator == "F1" &&
+			t.Event != nil &&
+			t.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "17",
@@ -1227,6 +1231,12 @@ func TestApprovalEvents(t *testing.T) {
 			"signer":      "0x0",
 			"operator":    "0x0",
 			"approved":    true,
+			"blockchain": fftypes.JSONObject{
+				"id": "000000000010/000020/000030",
+				"info": fftypes.JSONObject{
+					"transactionHash": "0xffffeeee",
+				},
+			},
 		},
 	}.String()
 	msg = <-toServer

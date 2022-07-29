@@ -122,7 +122,7 @@ type TokenPool struct {
 	Info fftypes.JSONObject
 
 	// Event contains info on the underlying blockchain event for this pool creation
-	Event blockchain.Event
+	Event *blockchain.Event
 }
 
 type TokenTransfer struct {
@@ -134,7 +134,7 @@ type TokenTransfer struct {
 	PoolLocator string
 
 	// Event contains info on the underlying blockchain event for this transfer
-	Event blockchain.Event
+	Event *blockchain.Event
 }
 
 type TokenApproval struct {
@@ -144,5 +144,5 @@ type TokenApproval struct {
 	PoolLocator string
 
 	// Event contains info on the underlying blockchain event for this transfer
-	Event blockchain.Event
+	Event *blockchain.Event
 }

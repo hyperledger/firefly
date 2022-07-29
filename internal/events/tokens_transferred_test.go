@@ -49,7 +49,7 @@ func newTransfer() *tokens.TokenTransfer {
 				Type: core.TransactionTypeTokenTransfer,
 			},
 		},
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			Name:           "Transfer",
 			ProtocolID:     "0000/0000/0000",
@@ -370,7 +370,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 			Message:    fftypes.NewUUID(),
 			Amount:     *fftypes.NewFFBigInt(1),
 		},
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "0000/0000/0000",
 			Info:           info,
@@ -433,7 +433,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 			Message:    fftypes.NewUUID(),
 			Amount:     *fftypes.NewFFBigInt(1),
 		},
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "0000/0000/0000",
 			Info:           info,

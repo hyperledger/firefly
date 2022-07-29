@@ -50,19 +50,21 @@ func addPoolDetailsFromPlugin(ffPool *core.TokenPool, pluginPool *tokens.TokenPo
 }
 
 func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, ev *blockchain.Event) error {
-	if ev.ProtocolID != "" || ev.BlockchainTXID != "" {
+	var blockchainID string
+	if ev != nil {
 		// Some pools will not include a blockchain event for creation (such as when indexing a pre-existing pool)
+		blockchainID = ev.BlockchainTXID
 		chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &core.BlockchainTransactionRef{
 			ID:           pool.TX.ID,
 			Type:         pool.TX.Type,
-			BlockchainID: ev.BlockchainTXID,
+			BlockchainID: blockchainID,
 		})
 		if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
 			return err
 		}
 		em.emitBlockchainEventMetric(ev)
 	}
-	if _, err := em.txHelper.PersistTransaction(ctx, pool.TX.ID, pool.TX.Type, ev.BlockchainTXID); err != nil {
+	if _, err := em.txHelper.PersistTransaction(ctx, pool.TX.ID, pool.TX.Type, blockchainID); err != nil {
 		return err
 	}
 	pool.State = core.TokenPoolStateConfirmed
@@ -151,7 +153,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 					return nil // already confirmed
 				}
 				msgIDforRewind = existingPool.Message
-				return em.confirmPool(ctx, existingPool, &pool.Event)
+				return em.confirmPool(ctx, existingPool, pool.Event)
 			} else if pool.TX.ID == nil {
 				// TransactionID is required if the pool doesn't exist yet
 				// (but it may be omitted when activating a pool that was received via definition broadcast)

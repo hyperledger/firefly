@@ -258,30 +258,49 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 	ft.callbacks.OperationUpdate(ctx, ft, requestID, updateType, transactionHash, message, data)
 }
 
+func (ft *FFTokens) buildBlockchainEvent(eventData fftypes.JSONObject) *blockchain.Event {
+	blockchainID := eventData.GetString("id")
+	blockchainInfo := eventData.GetObject("info")
+	txHash := blockchainInfo.GetString("transactionHash")
+
+	// Only include a blockchain event if there was some significant blockchain info
+	if blockchainID != "" || txHash != "" {
+		timestampStr := eventData.GetString("timestamp")
+		timestamp, err := fftypes.ParseTimeString(timestampStr)
+		if err != nil {
+			timestamp = fftypes.Now()
+		}
+
+		return &blockchain.Event{
+			ProtocolID:     blockchainID,
+			BlockchainTXID: txHash,
+			Source:         ft.Name() + ":" + ft.configuredName,
+			Name:           eventData.GetString("name"),
+			Output:         eventData.GetObject("output"),
+			Location:       eventData.GetString("location"),
+			Signature:      eventData.GetString("signature"),
+			Info:           blockchainInfo,
+			Timestamp:      timestamp,
+		}
+	}
+	return nil
+}
+
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
 	tokenType := data.GetString("type")
 	poolLocator := data.GetString("poolLocator")
-	standard := data.GetString("standard") // optional
-	symbol := data.GetString("symbol")     // optional
-	decimals := data.GetInt64("decimals")  // optional
-	info := data.GetObject("info")         // optional
-
-	// All blockchain items below are optional
-	blockchainEvent := data.GetObject("blockchain")
-	blockchainID := blockchainEvent.GetString("id")
-	blockchainInfo := blockchainEvent.GetObject("info")
-	txHash := blockchainInfo.GetString("transactionHash")
-	timestampStr := blockchainEvent.GetString("timestamp")
-
-	timestamp, err := fftypes.ParseTimeString(timestampStr)
-	if err != nil {
-		timestamp = fftypes.Now()
-	}
 
 	if tokenType == "" || poolLocator == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
+
+	// These fields are optional
+	standard := data.GetString("standard")
+	symbol := data.GetString("symbol")
+	decimals := data.GetInt64("decimals")
+	info := data.GetObject("info")
+	blockchainEvent := data.GetObject("blockchain")
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
@@ -309,21 +328,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		Symbol:    symbol,
 		Decimals:  int(decimals),
 		Info:      info,
-	}
-
-	// Only include a blockchain event if there was some significant blockchain info
-	if blockchainID != "" || txHash != "" {
-		pool.Event = blockchain.Event{
-			ProtocolID:     blockchainID,
-			BlockchainTXID: txHash,
-			Source:         ft.Name() + ":" + ft.configuredName,
-			Name:           blockchainEvent.GetString("name"),
-			Output:         blockchainEvent.GetObject("output"),
-			Location:       blockchainEvent.GetString("location"),
-			Signature:      blockchainEvent.GetString("signature"),
-			Info:           blockchainInfo,
-			Timestamp:      timestamp,
-		}
+		Event:     ft.buildBlockchainEvent(blockchainEvent),
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
@@ -337,30 +342,23 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 	fromAddress := data.GetString("from")
 	toAddress := data.GetString("to")
 	value := data.GetString("amount")
-	tokenIndex := data.GetString("tokenIndex") // optional
-	uri := data.GetString("uri")               // optional
-	namespace := data.GetString("poolData")    // optional
-
-	blockchainEvent := data.GetObject("blockchain")
-	blockchainID := blockchainEvent.GetString("id")
-	blockchainInfo := blockchainEvent.GetObject("info")
-	txHash := blockchainInfo.GetString("transactionHash")  // optional
-	timestampStr := blockchainEvent.GetString("timestamp") // optional
-
-	timestamp, err := fftypes.ParseTimeString(timestampStr)
-	if err != nil {
-		timestamp = fftypes.Now()
-	}
+	blockchainEvent := ft.buildBlockchainEvent(data.GetObject("blockchain"))
 
 	if protocolID == "" ||
 		poolLocator == "" ||
 		signerAddress == "" ||
 		value == "" ||
 		(t != core.TokenTransferTypeMint && fromAddress == "") ||
-		(t != core.TokenTransferTypeBurn && toAddress == "") {
+		(t != core.TokenTransferTypeBurn && toAddress == "") ||
+		blockchainEvent == nil {
 		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", t, data)
 		return nil // move on
 	}
+
+	// These fields are optional
+	tokenIndex := data.GetString("tokenIndex")
+	uri := data.GetString("uri")
+	namespace := data.GetString("poolData")
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
@@ -402,17 +400,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 				Type: txType,
 			},
 		},
-		Event: blockchain.Event{
-			ProtocolID:     blockchainID,
-			BlockchainTXID: txHash,
-			Source:         ft.Name() + ":" + ft.configuredName,
-			Name:           blockchainEvent.GetString("name"),
-			Output:         blockchainEvent.GetObject("output"),
-			Location:       blockchainEvent.GetString("location"),
-			Signature:      blockchainEvent.GetString("signature"),
-			Info:           blockchainInfo,
-			Timestamp:      timestamp,
-		},
+		Event: blockchainEvent,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
@@ -426,28 +414,21 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	poolLocator := data.GetString("poolLocator")
 	operatorAddress := data.GetString("operator")
 	approved := data.GetBool("approved")
-	info := data.GetObject("info")          // optional
-	namespace := data.GetString("poolData") // optional
-
-	blockchainEvent := data.GetObject("blockchain")
-	blockchainID := blockchainEvent.GetString("id")
-	blockchainInfo := blockchainEvent.GetObject("info")
-	txHash := blockchainInfo.GetString("transactionHash")  // optional
-	timestampStr := blockchainEvent.GetString("timestamp") // optional
-
-	timestamp, err := fftypes.ParseTimeString(timestampStr)
-	if err != nil {
-		timestamp = fftypes.Now()
-	}
+	blockchainEvent := ft.buildBlockchainEvent(data.GetObject("blockchain"))
 
 	if protocolID == "" ||
 		subject == "" ||
 		poolLocator == "" ||
 		signerAddress == "" ||
-		operatorAddress == "" {
+		operatorAddress == "" ||
+		blockchainEvent == nil {
 		log.L(ctx).Errorf("Approval event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
+
+	// These fields are optional
+	info := data.GetObject("info")
+	namespace := data.GetString("poolData")
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
@@ -478,17 +459,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 				Type: txType,
 			},
 		},
-		Event: blockchain.Event{
-			ProtocolID:     blockchainID,
-			BlockchainTXID: txHash,
-			Source:         ft.Name() + ":" + ft.configuredName,
-			Name:           blockchainEvent.GetString("name"),
-			Output:         blockchainEvent.GetObject("output"),
-			Location:       blockchainEvent.GetString("location"),
-			Signature:      blockchainEvent.GetString("signature"),
-			Info:           blockchainInfo,
-			Timestamp:      timestamp,
-		},
+		Event: blockchainEvent,
 	}
 
 	return ft.callbacks.TokensApproved(ctx, namespace, ft, approval)

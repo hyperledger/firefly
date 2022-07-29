@@ -100,7 +100,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		}
 	}
 
-	chainEvent := buildBlockchainEvent(pool.Namespace, nil, &transfer.Event, &core.BlockchainTransactionRef{
+	chainEvent := buildBlockchainEvent(pool.Namespace, nil, transfer.Event, &core.BlockchainTransactionRef{
 		ID:           transfer.TX.ID,
 		Type:         transfer.TX.Type,
 		BlockchainID: transfer.Event.BlockchainTXID,
@@ -108,7 +108,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
 		return false, err
 	}
-	em.emitBlockchainEventMetric(&transfer.Event)
+	em.emitBlockchainEventMetric(transfer.Event)
 	transfer.BlockchainEvent = chainEvent.ID
 
 	if err := em.database.UpsertTokenTransfer(ctx, &transfer.TokenTransfer); err != nil {
@@ -153,7 +153,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 					msgIDforRewind = transfer.Message
 				}
 			}
-			em.emitBlockchainEventMetric(&transfer.Event)
+			em.emitBlockchainEventMetric(transfer.Event)
 
 			event := core.NewEvent(core.EventTypeTransferConfirmed, transfer.Namespace, transfer.LocalID, transfer.TX.ID, transfer.Pool.String())
 			return em.database.InsertEvent(ctx, event)

@@ -51,7 +51,7 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 			Type: core.TransactionTypeTokenPool,
 		},
 		Connector: "erc1155",
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
 			Info:           info,
@@ -78,7 +78,7 @@ func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
 		Type:        core.TokenTypeFungible,
 		PoolLocator: "123",
 		Connector:   "erc1155",
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
 			Info:           info,
@@ -113,7 +113,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 		Standard: "ERC1155",
 		Symbol:   "FFT",
 		Info:     info1,
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			Name:           "TokenPool",
 			ProtocolID:     "tx1",
@@ -173,7 +173,7 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 			ID:   txID,
 			Type: core.TransactionTypeTokenPool,
 		},
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
 			Info:           info,
@@ -215,7 +215,7 @@ func TestTokenPoolCreatedConfirmFailBadSymbol(t *testing.T) {
 			Type: core.TransactionTypeTokenPool,
 		},
 		Symbol: "ETH",
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
 			Info:           info,
@@ -261,7 +261,7 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 			ID:   txID,
 			Type: core.TransactionTypeTokenPool,
 		},
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
 			Info:           fftypes.JSONObject{"some": "info"},
@@ -441,7 +441,7 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 			Type: core.TransactionTypeTokenPool,
 		},
 		Connector: "erc1155",
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
 			Info:           info,
@@ -486,7 +486,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 			Type: core.TransactionTypeTokenPool,
 		},
 		Connector: "erc1155",
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
 			Info:           info,
@@ -527,7 +527,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 			Type: core.TransactionTypeTokenPool,
 		},
 		Connector: "erc1155",
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
 			Info:           info,
@@ -572,7 +572,7 @@ func TestTokenPoolCreatedAnnounceBadSymbol(t *testing.T) {
 		},
 		Connector: "erc1155",
 		Symbol:    "ETH",
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
 			Info:           info,
