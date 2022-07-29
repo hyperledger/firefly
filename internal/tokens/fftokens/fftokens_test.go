@@ -1320,7 +1320,7 @@ func TestCallbacksWrongNamespace(t *testing.T) {
 	h, _, _, _, done := newTestFFTokens(t)
 	defer done()
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	h.callbacks.OperationUpdate(context.Background(), h, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
-	h.callbacks.TokensTransferred(context.Background(), "ns1", h, nil)
-	h.callbacks.TokensApproved(context.Background(), "ns1", h, nil)
+	h.callbacks.OperationUpdate(context.Background(), nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
+	h.callbacks.TokensTransferred(context.Background(), "ns1", nil)
+	h.callbacks.TokensApproved(context.Background(), "ns1", nil)
 }

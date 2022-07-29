@@ -184,11 +184,10 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 		// Announce the details of the new token pool
 		// Other nodes will pass these details to their own token connector for validation/activation of the pool
 		if announcePool != nil {
-			broadcast := &core.TokenPoolAnnouncement{
-				Pool: announcePool,
-			}
 			log.L(em.ctx).Infof("Announcing token pool, id=%s", announcePool.ID)
-			err = em.defsender.DefineTokenPool(em.ctx, broadcast, false)
+			err = em.defsender.DefineTokenPool(em.ctx, &core.TokenPoolAnnouncement{
+				Pool: announcePool,
+			}, false)
 		}
 	}
 
