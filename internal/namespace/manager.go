@@ -797,10 +797,12 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	orgKey := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgKey)
 	orgDesc := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgDescription)
 	nodeName := multipartyConf.GetString(coreconfig.NamespaceMultipartyNodeName)
+	nodeDesc := multipartyConf.GetString(coreconfig.NamespaceMultipartyNodeDescription)
 	deprecatedOrgName := config.GetString(coreconfig.OrgName)
 	deprecatedOrgKey := config.GetString(coreconfig.OrgKey)
 	deprecatedOrgDesc := config.GetString(coreconfig.OrgDescription)
 	deprecatedNodeName := config.GetString(coreconfig.NodeName)
+	deprecatedNodeDesc := config.GetString(coreconfig.NodeDescription)
 	if deprecatedOrgName != "" || deprecatedOrgKey != "" || deprecatedOrgDesc != "" {
 		log.L(ctx).Warnf("Your org config uses a deprecated configuration structure - the org configuration has been moved under the 'namespaces.predefined[].multiparty' section")
 	}
@@ -815,6 +817,9 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}
 	if nodeName == "" {
 		nodeName = deprecatedNodeName
+	}
+	if nodeDesc == "" {
+		nodeDesc = deprecatedNodeDesc
 	}
 
 	multipartyEnabled := multipartyConf.Get(coreconfig.NamespaceMultipartyEnabled)
@@ -880,7 +885,8 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		config.Multiparty.Org.Key = orgKey
 		config.Multiparty.Org.Description = orgDesc
 		config.Multiparty.Contracts = contracts
-		config.Multiparty.NodeName = nodeName
+		config.Multiparty.Node.Name = nodeName
+		config.Multiparty.Node.Description = nodeDesc
 	}
 
 	return &namespace{

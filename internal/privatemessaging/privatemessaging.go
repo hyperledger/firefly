@@ -71,8 +71,6 @@ type privateMessaging struct {
 	syncasync             syncasync.Bridge
 	multiparty            multiparty.Manager
 	retry                 retry.Retry
-	localNodeName         string
-	localNodeID           *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
 	maxBatchPayloadLength int64
 	metrics               metrics.Manager
 	operations            operations.Manager
@@ -85,22 +83,21 @@ type blobTransferTracker struct {
 	op       *core.PreparedOperation
 }
 
-func NewPrivateMessaging(ctx context.Context, ns core.NamespaceRef, nodeName string, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
+func NewPrivateMessaging(ctx context.Context, ns core.NamespaceRef, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "PrivateMessaging")
 	}
 
 	pm := &privateMessaging{
-		ctx:           ctx,
-		namespace:     ns,
-		database:      di,
-		identity:      im,
-		exchange:      dx,
-		blockchain:    bi,
-		data:          dm,
-		syncasync:     sa,
-		multiparty:    mult,
-		localNodeName: nodeName,
+		ctx:        ctx,
+		namespace:  ns,
+		database:   di,
+		identity:   im,
+		exchange:   dx,
+		blockchain: bi,
+		data:       dm,
+		syncasync:  sa,
+		multiparty: mult,
 		groupManager: groupManager{
 			namespace:     ns,
 			database:      di,

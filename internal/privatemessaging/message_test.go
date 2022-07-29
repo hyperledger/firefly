@@ -82,6 +82,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	localNode := newTestNode("node1", intermediateOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(intermediateOrg, nil)
+	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(intermediateOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
 
@@ -224,6 +225,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	localNode := newTestNode("node1", localOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[2].(*core.SignerRef)
 		identity.Author = "localorg"
@@ -340,6 +342,7 @@ func TestMessagePrepare(t *testing.T) {
 	localNode := newTestNode("node1", localOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[1].(*core.SignerRef)
 		identity.Author = "localorg"

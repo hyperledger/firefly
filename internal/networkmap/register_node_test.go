@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -36,16 +36,12 @@ func TestRegisterNodeOk(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(coreconfig.OrgKey, "0x23456")
-	config.Set(coreconfig.OrgName, "org1")
-	config.Set(coreconfig.NodeDescription, "Node 1")
-
 	parentOrg := testOrg("org1")
+	signerRef := &core.SignerRef{Key: "0x23456"}
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetMultipartyRootOrg", nm.ctx).Return(parentOrg, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
-	signerRef := &core.SignerRef{Key: "0x23456"}
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
@@ -61,6 +57,9 @@ func TestRegisterNodeOk(t *testing.T) {
 		(*core.SignerRef)(nil),
 		false).Return(nil)
 
+	mmp := nm.multiparty.(*multipartymocks.Manager)
+	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"})
+
 	node, err := nm.RegisterNode(nm.ctx, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, node)
@@ -68,6 +67,7 @@ func TestRegisterNodeOk(t *testing.T) {
 	mim.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mds.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 }
 
 func TestRegisterNodePeerInfoFail(t *testing.T) {
@@ -75,24 +75,23 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(coreconfig.OrgKey, "0x23456")
-	config.Set(coreconfig.OrgName, "org1")
-	config.Set(coreconfig.NodeDescription, "Node 1")
-
 	parentOrg := testOrg("org1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetMultipartyRootOrg", nm.ctx).Return(parentOrg, nil)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
-	signerRef := &core.SignerRef{Key: "0x23456"}
-	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{}, fmt.Errorf("pop"))
 
+	mmp := nm.multiparty.(*multipartymocks.Manager)
+	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"})
+
 	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
 
+	mim.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 }
 
 func TestRegisterNodeGetOwnerFail(t *testing.T) {

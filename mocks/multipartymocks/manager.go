@@ -49,6 +49,20 @@ func (_m *Manager) GetNetworkVersion() int {
 	return r0
 }
 
+// LocalNode provides a mock function with given fields:
+func (_m *Manager) LocalNode() multiparty.LocalNode {
+	ret := _m.Called()
+
+	var r0 multiparty.LocalNode
+	if rf, ok := ret.Get(0).(func() multiparty.LocalNode); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(multiparty.LocalNode)
+	}
+
+	return r0
+}
+
 // Name provides a mock function with given fields:
 func (_m *Manager) Name() string {
 	ret := _m.Called()

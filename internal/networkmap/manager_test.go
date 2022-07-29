@@ -39,13 +39,13 @@ func newTestNetworkmap(t *testing.T) (*networkMap, func()) {
 	mim := &identitymanagermocks.Manager{}
 	msa := &syncasyncmocks.Bridge{}
 	mmp := &multipartymocks.Manager{}
-	nm, err := NewNetworkMap(ctx, "ns1", "node1", mdi, mdx, mds, mim, msa, mmp)
+	nm, err := NewNetworkMap(ctx, "ns1", mdi, mdx, mds, mim, msa, mmp)
 	assert.NoError(t, err)
 	return nm.(*networkMap), cancel
 
 }
 
 func TestNewNetworkMapMissingDep(t *testing.T) {
-	_, err := NewNetworkMap(context.Background(), "", "", nil, nil, nil, nil, nil, nil)
+	_, err := NewNetworkMap(context.Background(), "", nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }

@@ -77,7 +77,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
-	pm, err := NewPrivateMessaging(ctx, ns, "node1", mdi, mdx, mbi, mim, mba, mdm, msa, mmp, mmi, mom)
+	pm, err := NewPrivateMessaging(ctx, ns, mdi, mdx, mbi, mim, mba, mdm, msa, mmp, mmi, mom)
 	assert.NoError(t, err)
 
 	// Default mocks to save boilerplate in the tests
@@ -212,7 +212,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 }
 
 func TestNewPrivateMessagingMissingDeps(t *testing.T) {
-	_, err := NewPrivateMessaging(context.Background(), core.NamespaceRef{}, "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewPrivateMessaging(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

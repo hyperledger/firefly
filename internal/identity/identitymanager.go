@@ -51,6 +51,7 @@ type Manager interface {
 	CachedVerifierLookup(ctx context.Context, vType core.VerifierType, value string) (verifier *core.Verifier, err error)
 	GetMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error)
 	GetMultipartyRootOrg(ctx context.Context) (*core.Identity, error)
+	GetLocalNode(ctx context.Context) (node *core.Identity, err error)
 	VerifyIdentityChain(ctx context.Context, identity *core.Identity) (immediateParent *core.Identity, retryable bool, err error)
 }
 
@@ -60,15 +61,15 @@ type identityManager struct {
 	multiparty             multiparty.Manager // optional
 	namespace              string
 	defaultKey             string
-	nodeName               string
 	multipartyRootVerifier *core.VerifierRef
+	localNodeID            *fftypes.UUID
 	identityCacheTTL       time.Duration
 	identityCache          *ccache.Cache
 	signingKeyCacheTTL     time.Duration
 	signingKeyCache        *ccache.Cache
 }
 
-func NewIdentityManager(ctx context.Context, ns, defaultKey, nodeName string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager) (Manager, error) {
+func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager) (Manager, error) {
 	if di == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "IdentityManager")
 	}
@@ -102,7 +103,15 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 }
 
 func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identity, err error) {
-	return im.database.GetIdentityByName(ctx, core.IdentityTypeNode, im.namespace, im.nodeName)
+	if im.localNodeID != nil {
+		return im.CachedIdentityLookupByID(ctx, im.localNodeID)
+	}
+	nodeName := im.multiparty.LocalNode().Name
+	node, err = im.database.GetIdentityByName(ctx, core.IdentityTypeNode, im.namespace, nodeName)
+	if err == nil && node != nil {
+		im.localNodeID = node.ID
+	}
+	return node, err
 }
 
 // NormalizeSigningKey takes in only a "key" (which may be empty to use the default) to be normalized and returned.

@@ -639,6 +639,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|description|A description for the node in this namespace|`string`|`<nil>`
 |name|The node name for this namespace|`string`|`<nil>`
 
 ## namespaces.predefined[].multiparty.org

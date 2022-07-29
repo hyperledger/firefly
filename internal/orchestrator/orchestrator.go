@@ -414,7 +414,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.namespace.LocalName, or.config.DefaultKey, or.config.Multiparty.NodeName, or.database(), or.blockchain(), or.multiparty)
+		or.identity, err = identity.NewIdentityManager(ctx, or.namespace.LocalName, or.config.DefaultKey, or.database(), or.blockchain(), or.multiparty)
 		if err != nil {
 			return err
 		}
@@ -431,7 +431,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 
 		if or.messaging == nil {
-			if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace.Ref(), or.config.Multiparty.NodeName, or.database(), or.dataexchange(), or.blockchain(), or.identity, or.batch, or.data, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
+			if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace.Ref(), or.database(), or.dataexchange(), or.blockchain(), or.identity, or.batch, or.data, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
 				return err
 			}
 		}
@@ -474,7 +474,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace.LocalName, or.config.Multiparty.NodeName, or.database(), or.dataexchange(), or.defsender, or.identity, or.syncasync, or.multiparty)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace.LocalName, or.database(), or.dataexchange(), or.defsender, or.identity, or.syncasync, or.multiparty)
 		if err != nil {
 			return err
 		}

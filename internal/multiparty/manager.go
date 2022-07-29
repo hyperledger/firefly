@@ -38,6 +38,9 @@ type Manager interface {
 	// RootOrg returns configuration details for the root organization identity
 	RootOrg() RootOrg
 
+	// LocalNode returns configuration details for the local node identity
+	LocalNode() LocalNode
+
 	// ConfigureContract initializes the subscription to the FireFly contract
 	// - Determines the active multiparty contract entry from the config, and updates the namespace with contract info
 	// - Resolves the multiparty contract address and version, and initializes subscriptions for contract events
@@ -66,7 +69,7 @@ type Manager interface {
 type Config struct {
 	Enabled   bool
 	Org       RootOrg
-	NodeName  string
+	Node      LocalNode
 	Contracts []Contract
 }
 
@@ -74,6 +77,11 @@ type RootOrg struct {
 	Name        string
 	Description string
 	Key         string
+}
+
+type LocalNode struct {
+	Name        string
+	Description string
 }
 
 type Contract struct {
@@ -117,6 +125,10 @@ func (mm *multipartyManager) Name() string {
 
 func (mm *multipartyManager) RootOrg() RootOrg {
 	return mm.config.Org
+}
+
+func (mm *multipartyManager) LocalNode() LocalNode {
+	return mm.config.Node
 }
 
 func (mm *multipartyManager) ConfigureContract(ctx context.Context) (err error) {
