@@ -48,7 +48,6 @@ type Manager interface {
 	CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *core.Identity, err error)
 	CachedIdentityLookupMustExist(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
 	CachedIdentityLookupNilOK(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
-	CachedVerifierLookup(ctx context.Context, vType core.VerifierType, value string) (verifier *core.Verifier, err error)
 	GetMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error)
 	GetMultipartyRootOrg(ctx context.Context) (*core.Identity, error)
 	GetLocalNode(ctx context.Context) (node *core.Identity, err error)
@@ -508,21 +507,4 @@ func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fft
 		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
 	}
 	return identity, nil
-}
-
-func (im *identityManager) CachedVerifierLookup(ctx context.Context, vType core.VerifierType, value string) (verifier *core.Verifier, err error) {
-	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
-	cacheKey := fmt.Sprintf("v=%s|%s", vType, value)
-	if cached := im.identityCache.Get(cacheKey); cached != nil {
-		cached.Extend(im.identityCacheTTL)
-		verifier = cached.Value().(*core.Verifier)
-	} else {
-		verifier, err = im.database.GetVerifierByValue(ctx, vType, im.namespace, value)
-		if err != nil || verifier == nil {
-			return verifier, err
-		}
-		// Cache the result
-		im.identityCache.Set(cacheKey, verifier, im.identityCacheTTL)
-	}
-	return verifier, nil
 }

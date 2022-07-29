@@ -1278,44 +1278,6 @@ func TestValidateParentTypeInvalidType(t *testing.T) {
 
 }
 
-func TestCachedVerifierLookupCaching(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-
-	verifier := (&core.Verifier{
-		Namespace: "ns1",
-		VerifierRef: core.VerifierRef{
-			Value: "peer1",
-			Type:  core.VerifierTypeFFDXPeerID,
-		},
-	}).Seal()
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, verifier.Type, verifier.Namespace, verifier.Value).Return(verifier, nil).Once()
-
-	v1, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, "peer1")
-	assert.NoError(t, err)
-	assert.Equal(t, verifier, v1)
-
-	v2, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, "peer1")
-	assert.NoError(t, err)
-	assert.Equal(t, verifier, v2)
-
-	mdi.AssertExpectations(t)
-}
-
-func TestCachedVerifierLookupError(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, "ns1", "peer1").Return(nil, fmt.Errorf("pop"))
-
-	_, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, "peer1")
-	assert.Regexp(t, "pop", err)
-
-	mdi.AssertExpectations(t)
-}
-
 func TestResolveIdentitySignerOk(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 	mdi := im.database.(*databasemocks.Plugin)
