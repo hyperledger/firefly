@@ -109,6 +109,7 @@ func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identit
 	node, err = im.database.GetIdentityByName(ctx, core.IdentityTypeNode, im.namespace, nodeName)
 	if err == nil && node != nil {
 		im.localNodeID = node.ID
+		im.addToIdentityCache(node)
 	}
 	return node, err
 }
@@ -492,6 +493,11 @@ func (im *identityManager) CachedIdentityLookupMustExist(ctx context.Context, di
 	return identity, false, nil
 }
 
+func (im *identityManager) addToIdentityCache(identity *core.Identity) {
+	cacheKey := fmt.Sprintf("id=%s", identity.ID)
+	im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
+}
+
 func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *core.Identity, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
 	cacheKey := fmt.Sprintf("id=%s", id)
@@ -504,7 +510,7 @@ func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fft
 			return identity, err
 		}
 		// Cache the result
-		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
+		im.addToIdentityCache(identity)
 	}
 	return identity, nil
 }

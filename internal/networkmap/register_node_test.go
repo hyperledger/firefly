@@ -70,6 +70,26 @@ func TestRegisterNodeOk(t *testing.T) {
 	mmp.AssertExpectations(t)
 }
 
+func TestRegisterNodeMissingName(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	parentOrg := testOrg("org1")
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetMultipartyRootOrg", nm.ctx).Return(parentOrg, nil)
+
+	mmp := nm.multiparty.(*multipartymocks.Manager)
+	mmp.On("LocalNode").Return(multiparty.LocalNode{})
+
+	_, err := nm.RegisterNode(nm.ctx, false)
+	assert.Regexp(t, "FF10216", err)
+
+	mim.AssertExpectations(t)
+	mmp.AssertExpectations(t)
+}
+
 func TestRegisterNodePeerInfoFail(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)

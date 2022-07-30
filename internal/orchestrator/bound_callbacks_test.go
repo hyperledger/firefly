@@ -17,6 +17,7 @@
 package orchestrator
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -63,6 +64,26 @@ func TestBoundCallbacks(t *testing.T) {
 
 	mei.AssertExpectations(t)
 	mbi.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mss.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestBoundCallbacksDXEvent(t *testing.T) {
+	mei := &eventmocks.EventManager{}
+	mdx := &dataexchangemocks.Plugin{}
+	mss := &sharedstoragemocks.Plugin{}
+	mom := &operationmocks.Manager{}
+	bc := boundCallbacks{dx: mdx, ei: mei, ss: mss, om: mom}
+
+	ctx := context.Background()
+
+	event := &dataexchangemocks.DXEvent{}
+	mei.On("DXEvent", mdx, event).Return().Once()
+	bc.DXEvent(ctx, event)
+	event.AssertExpectations(t)
+
+	mei.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mss.AssertExpectations(t)
 	mom.AssertExpectations(t)

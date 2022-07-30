@@ -1357,6 +1357,33 @@ func TestResolveIdentitySignerNotFound(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestGetLocalNode(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mdi := im.database.(*databasemocks.Plugin)
+
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"}).Once()
+	mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, "ns1", "node1").Return(node, nil).Once()
+
+	result, err := im.GetLocalNode(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, node, result)
+
+	// second call is cached
+	result, err = im.GetLocalNode(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, node, result)
+
+	mmp.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestParseKeyNormalizationConfig(t *testing.T) {
 	assert.Equal(t, KeyNormalizationBlockchainPlugin, ParseKeyNormalizationConfig("blockchain_Plugin"))
 	assert.Equal(t, KeyNormalizationNone, ParseKeyNormalizationConfig("none"))
