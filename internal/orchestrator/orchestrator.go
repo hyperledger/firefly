@@ -377,6 +377,7 @@ func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 		}
 		or.plugins.DataExchange.Plugin.SetNodes(nodeInfo)
 		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.RemoteName, &or.bc)
+		or.plugins.DataExchange.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
 	}
 
 	for _, token := range or.plugins.Tokens {

@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
@@ -551,7 +550,7 @@ func TestOperationUpdatePool(t *testing.T) {
 	err := txcommon.AddTokenPoolCreateInputs(op, pool)
 	assert.NoError(t, err)
 
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusFailed,
 	}
 
@@ -575,7 +574,7 @@ func TestOperationUpdatePoolBadInput(t *testing.T) {
 		ID:   fftypes.NewUUID(),
 		Type: core.OpTypeTokenCreatePool,
 	}
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusFailed,
 	}
 
@@ -599,7 +598,7 @@ func TestOperationUpdatePoolEventFail(t *testing.T) {
 		ID:   fftypes.NewUUID(),
 		Type: core.OpTypeTokenCreatePool,
 	}
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusFailed,
 	}
 
@@ -629,7 +628,7 @@ func TestOperationUpdateTransfer(t *testing.T) {
 	err := txcommon.AddTokenTransferInputs(op, transfer)
 	assert.NoError(t, err)
 
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusFailed,
 	}
 
@@ -653,7 +652,7 @@ func TestOperationUpdateTransferBadInput(t *testing.T) {
 		ID:   fftypes.NewUUID(),
 		Type: core.OpTypeTokenTransfer,
 	}
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusFailed,
 	}
 
@@ -677,7 +676,7 @@ func TestOperationUpdateTransferEventFail(t *testing.T) {
 		ID:   fftypes.NewUUID(),
 		Type: core.OpTypeTokenTransfer,
 	}
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusFailed,
 	}
 
@@ -706,7 +705,7 @@ func TestOperationUpdateApproval(t *testing.T) {
 	err := txcommon.AddTokenApprovalInputs(op, approval)
 	assert.NoError(t, err)
 
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusFailed,
 	}
 
@@ -730,7 +729,7 @@ func TestOperationUpdateApprovalBadInput(t *testing.T) {
 		ID:   fftypes.NewUUID(),
 		Type: core.OpTypeTokenApproval,
 	}
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusFailed,
 	}
 
@@ -754,7 +753,7 @@ func TestOperationUpdateApprovalEventFail(t *testing.T) {
 		ID:   fftypes.NewUUID(),
 		Type: core.OpTypeTokenApproval,
 	}
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusFailed,
 	}
 

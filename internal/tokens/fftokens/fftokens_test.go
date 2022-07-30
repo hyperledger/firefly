@@ -835,7 +835,9 @@ func TestReceiptEvents(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	// receipt: bad ID - passed through
-	mcb.On("OperationUpdate", h, "wrong", core.OpStatusFailed, "", "", mock.Anything).Return(nil).Once()
+	mcb.On("OperationUpdate", h, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "wrong " && update.Status == core.OpStatusFailed
+	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "3",
 		"event": "receipt",
@@ -843,7 +845,11 @@ func TestReceiptEvents(t *testing.T) {
 	}.String()
 
 	// receipt: success
-	mcb.On("OperationUpdate", h, "ns1:"+opID.String(), core.OpStatusSucceeded, "0xffffeeee", "", mock.Anything).Return(nil).Once()
+	mcb.On("OperationUpdate", h, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:"+opID.String() &&
+			update.Status == core.OpStatusSucceeded &&
+			update.BlockchainTXID == "0xffffeeee"
+	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "4",
 		"event": "receipt",
@@ -855,7 +861,11 @@ func TestReceiptEvents(t *testing.T) {
 	}.String()
 
 	// receipt: failure
-	mcb.On("OperationUpdate", h, "ns1:"+opID.String(), core.OpStatusFailed, "0xffffeeee", "", mock.Anything).Return(nil).Once()
+	mcb.On("OperationUpdate", h, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:"+opID.String() &&
+			update.Status == core.OpStatusFailed &&
+			update.BlockchainTXID == "0xffffeeee"
+	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "5",
 		"event": "receipt",

@@ -7,6 +7,8 @@ import (
 
 	config "github.com/hyperledger/firefly-common/pkg/config"
 
+	core "github.com/hyperledger/firefly/pkg/core"
+
 	dataexchange "github.com/hyperledger/firefly/pkg/dataexchange"
 
 	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -182,6 +184,11 @@ func (_m *Plugin) SetHandler(namespace string, handler dataexchange.Callbacks) {
 // SetNodes provides a mock function with given fields: nodes
 func (_m *Plugin) SetNodes(nodes []fftypes.JSONObject) {
 	_m.Called(nodes)
+}
+
+// SetOperationHandler provides a mock function with given fields: namespace, handler
+func (_m *Plugin) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
+	_m.Called(namespace, handler)
 }
 
 // Start provides a mock function with given fields:

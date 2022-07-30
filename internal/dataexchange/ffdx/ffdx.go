@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
@@ -51,14 +52,26 @@ type FFDX struct {
 }
 
 type callbacks struct {
-	handlers map[string]dataexchange.Callbacks
+	plugin     dataexchange.Plugin
+	handlers   map[string]dataexchange.Callbacks
+	opHandlers map[string]core.OperationCallbacks
+}
+
+func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.OperationUpdate) {
+	namespace, _, _ := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
+	if handler, ok := cb.opHandlers[namespace]; ok {
+		handler.OperationUpdate(cb.plugin, update)
+	} else {
+		log.L(ctx).Errorf("No handler found for DX operation '%s'", update.NamespacedOpID)
+		update.OnComplete()
+	}
 }
 
 func (cb *callbacks) DXEvent(ctx context.Context, namespace string, event dataexchange.DXEvent) {
 	if handler, ok := cb.handlers[namespace]; ok {
 		handler.DXEvent(ctx, event)
 	} else {
-		log.L(ctx).Errorf("unknown namespace on event '%s'", event.EventID())
+		log.L(ctx).Errorf("No handler found for DX event '%s'", event.EventID())
 		event.Ack()
 	}
 }
@@ -143,7 +156,11 @@ func (h *FFDX) Name() string {
 func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.ackChannel = make(chan *ack)
-	h.callbacks.handlers = make(map[string]dataexchange.Callbacks)
+	h.callbacks = callbacks{
+		plugin:     h,
+		handlers:   make(map[string]dataexchange.Callbacks),
+		opHandlers: make(map[string]core.OperationCallbacks),
+	}
 	h.needsInit = config.GetBool(DataExchangeInitEnabled)
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
@@ -172,6 +189,10 @@ func (h *FFDX) SetNodes(nodes []fftypes.JSONObject) {
 
 func (h *FFDX) SetHandler(namespace string, handler dataexchange.Callbacks) {
 	h.callbacks.handlers[namespace] = handler
+}
+
+func (h *FFDX) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
+	h.callbacks.opHandlers[namespace] = handler
 }
 
 func (h *FFDX) Start() error {

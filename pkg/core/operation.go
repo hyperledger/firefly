@@ -143,10 +143,22 @@ func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.
 }
 
 type OperationCallbacks interface {
-	// OperationUpdate notifies FireFly of an update to an operation.
-	// Only success/failure and errorMessage (for errors) are modeled.
-	// opOutput can be used to add opaque protocol-specific JSON from the plugin (protocol transaction ID etc.)
-	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
-	// Only the party submitting the transaction will see this data.
-	OperationUpdate(plugin Named, nsOpID string, status OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
+	OperationUpdate(plugin Named, update *OperationUpdate)
+}
+
+// OperationUpdate notifies FireFly of an update to an operation.
+// Only success/failure and errorMessage (for errors) are modeled.
+// Output can be used to add opaque protocol-specific JSON from the plugin (protocol transaction ID etc.)
+// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
+// Only the party submitting the transaction will see this data.
+type OperationUpdate struct {
+	NamespacedOpID string
+	Status         OpStatus
+	BlockchainTXID string
+	ErrorMessage   string
+	Output         fftypes.JSONObject
+	VerifyManifest bool
+	DXManifest     string
+	DXHash         string
+	OnComplete     func()
 }

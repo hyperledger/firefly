@@ -82,22 +82,6 @@ func (_m *DXEvent) PrivateBlobReceived() *dataexchange.PrivateBlobReceived {
 	return r0
 }
 
-// TransferResult provides a mock function with given fields:
-func (_m *DXEvent) TransferResult() *dataexchange.TransferResult {
-	ret := _m.Called()
-
-	var r0 *dataexchange.TransferResult
-	if rf, ok := ret.Get(0).(func() *dataexchange.TransferResult); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*dataexchange.TransferResult)
-		}
-	}
-
-	return r0
-}
-
 // Type provides a mock function with given fields:
 func (_m *DXEvent) Type() dataexchange.DXEventType {
 	ret := _m.Called()

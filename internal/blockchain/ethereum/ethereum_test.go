@@ -1339,13 +1339,11 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"transactionIndex": "0"
   }`)
 
-	em.On("OperationUpdate",
-		e,
-		"ns1:"+operationID.String(),
-		core.OpStatusSucceeded,
-		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
-		"",
-		mock.Anything).Return(nil)
+	em.On("OperationUpdate", e, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:"+operationID.String() &&
+			update.Status == core.OpStatusSucceeded &&
+			update.BlockchainTXID == "0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8"
+	})).Return(nil)
 
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
@@ -1381,13 +1379,11 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 
 	em := &coremocks.OperationCallbacks{}
 	e.SetOperationHandler("ns1", em)
-	txsu := em.On("OperationUpdate",
-		e,
-		"ns1:"+operationID.String(),
-		core.OpStatusFailed,
-		"",
-		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
-		mock.Anything).Return(fmt.Errorf("Shutdown"))
+	txsu := em.On("OperationUpdate", e, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:"+operationID.String() &&
+			update.Status == core.OpStatusFailed &&
+			update.ErrorMessage == "Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument"
+	})).Return(fmt.Errorf("Shutdown"))
 	done := make(chan struct{})
 	txsu.RunFn = func(a mock.Arguments) {
 		close(done)

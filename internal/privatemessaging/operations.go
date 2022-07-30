@@ -23,7 +23,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -144,7 +143,7 @@ func (pm *privateMessaging) RunOperation(ctx context.Context, op *core.PreparedO
 	}
 }
 
-func (pm *privateMessaging) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
+func (pm *privateMessaging) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {
 	return nil
 }
 

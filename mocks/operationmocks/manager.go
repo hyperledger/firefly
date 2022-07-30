@@ -142,7 +142,7 @@ func (_m *Manager) Start() error {
 }
 
 // SubmitOperationUpdate provides a mock function with given fields: plugin, update
-func (_m *Manager) SubmitOperationUpdate(plugin core.Named, update *operations.OperationUpdate) {
+func (_m *Manager) SubmitOperationUpdate(plugin core.Named, update *core.OperationUpdate) {
 	_m.Called(plugin, update)
 }
 
