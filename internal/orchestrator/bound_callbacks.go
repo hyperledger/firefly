@@ -17,18 +17,14 @@
 package orchestrator
 
 import (
-	"context"
-
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
 type boundCallbacks struct {
-	dx dataexchange.Plugin
 	ss sharedstorage.Plugin
 	ei events.EventManager
 	om operations.Manager
@@ -36,10 +32,6 @@ type boundCallbacks struct {
 
 func (bc *boundCallbacks) OperationUpdate(plugin core.Named, update *core.OperationUpdate) {
 	bc.om.SubmitOperationUpdate(plugin, update)
-}
-
-func (bc *boundCallbacks) DXEvent(ctx context.Context, event dataexchange.DXEvent) {
-	bc.ei.DXEvent(bc.dx, event)
 }
 
 func (bc *boundCallbacks) SharedStorageBatchDownloaded(payloadRef string, data []byte) (*fftypes.UUID, error) {

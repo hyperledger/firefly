@@ -69,7 +69,7 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.Operation
 
 func (cb *callbacks) DXEvent(ctx context.Context, namespace string, event dataexchange.DXEvent) {
 	if handler, ok := cb.handlers[namespace]; ok {
-		handler.DXEvent(ctx, event)
+		handler.DXEvent(cb.plugin, event)
 	} else {
 		log.L(ctx).Errorf("No handler found for DX event '%s'", event.EventID())
 		event.Ack()

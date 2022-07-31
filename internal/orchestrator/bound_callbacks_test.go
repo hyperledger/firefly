@@ -17,13 +17,11 @@
 package orchestrator
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
-	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
@@ -35,10 +33,9 @@ import (
 func TestBoundCallbacks(t *testing.T) {
 	mei := &eventmocks.EventManager{}
 	mbi := &blockchainmocks.Plugin{}
-	mdx := &dataexchangemocks.Plugin{}
 	mss := &sharedstoragemocks.Plugin{}
 	mom := &operationmocks.Manager{}
-	bc := boundCallbacks{dx: mdx, ei: mei, ss: mss, om: mom}
+	bc := boundCallbacks{ei: mei, ss: mss, om: mom}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	hash := fftypes.NewRandB32()
@@ -64,27 +61,6 @@ func TestBoundCallbacks(t *testing.T) {
 
 	mei.AssertExpectations(t)
 	mbi.AssertExpectations(t)
-	mdx.AssertExpectations(t)
-	mss.AssertExpectations(t)
-	mom.AssertExpectations(t)
-}
-
-func TestBoundCallbacksDXEvent(t *testing.T) {
-	mei := &eventmocks.EventManager{}
-	mdx := &dataexchangemocks.Plugin{}
-	mss := &sharedstoragemocks.Plugin{}
-	mom := &operationmocks.Manager{}
-	bc := boundCallbacks{dx: mdx, ei: mei, ss: mss, om: mom}
-
-	ctx := context.Background()
-
-	event := &dataexchangemocks.DXEvent{}
-	mei.On("DXEvent", mdx, event).Return().Once()
-	bc.DXEvent(ctx, event)
-	event.AssertExpectations(t)
-
-	mei.AssertExpectations(t)
-	mdx.AssertExpectations(t)
 	mss.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }

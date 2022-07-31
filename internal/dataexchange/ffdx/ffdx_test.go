@@ -543,7 +543,7 @@ func TestMessageEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"3"}`, string(msg))
 
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", h, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "4" &&
 			ev.Type() == dataexchange.DXEventTypeMessageReceived &&
 			ev.MessageReceived().PeerID == "peer1"
@@ -591,7 +591,7 @@ func TestBlobEvents(t *testing.T) {
 
 	u := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", h, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "9" &&
 			ev.Type() == dataexchange.DXEventTypePrivateBlobReceived &&
 			ev.PrivateBlobReceived().Hash.Equals(hash)

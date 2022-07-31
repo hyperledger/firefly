@@ -70,7 +70,7 @@ type EventManager interface {
 	BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error
 
 	// Bound dataexchange callbacks
-	DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent)
+	DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent)
 
 	// Bound sharedstorage callbacks
 	SharedStorageBatchDownloaded(ss sharedstorage.Plugin, payloadRef string, data []byte) (*fftypes.UUID, error)
