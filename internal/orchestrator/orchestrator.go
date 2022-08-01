@@ -380,9 +380,7 @@ func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 	}
 
 	for _, token := range or.plugins.Tokens {
-		if err := token.Plugin.SetHandler(or.namespace.LocalName, or.events); err != nil {
-			return err
-		}
+		token.Plugin.SetHandler(or.namespace.LocalName, or.events)
 		token.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
 	}
 

@@ -100,7 +100,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		}
 	}
 
-	chainEvent := buildBlockchainEvent(approval.Namespace, nil, &approval.Event, &core.BlockchainTransactionRef{
+	chainEvent := buildBlockchainEvent(approval.Namespace, nil, approval.Event, &core.BlockchainTransactionRef{
 		ID:           approval.TX.ID,
 		Type:         approval.TX.Type,
 		BlockchainID: approval.Event.BlockchainTXID,
@@ -108,7 +108,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 	if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
 		return false, err
 	}
-	em.emitBlockchainEventMetric(&approval.Event)
+	em.emitBlockchainEventMetric(approval.Event)
 	approval.BlockchainEvent = chainEvent.ID
 
 	fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
