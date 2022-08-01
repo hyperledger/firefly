@@ -139,17 +139,8 @@ func (_m *Plugin) Name() string {
 }
 
 // SetHandler provides a mock function with given fields: namespace, handler
-func (_m *Plugin) SetHandler(namespace string, handler tokens.Callbacks) error {
-	ret := _m.Called(namespace, handler)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, tokens.Callbacks) error); ok {
-		r0 = rf(namespace, handler)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Plugin) SetHandler(namespace string, handler tokens.Callbacks) {
+	_m.Called(namespace, handler)
 }
 
 // SetOperationHandler provides a mock function with given fields: namespace, handler

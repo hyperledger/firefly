@@ -43,14 +43,15 @@ type FFTokens struct {
 }
 
 type callbacks struct {
+	plugin     tokens.Plugin
 	handlers   map[string]tokens.Callbacks
 	opHandlers map[string]core.OperationCallbacks
 }
 
-func (cb *callbacks) OperationUpdate(ctx context.Context, plugin tokens.Plugin, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+func (cb *callbacks) OperationUpdate(ctx context.Context, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(plugin, &core.OperationUpdate{
+		handler.OperationUpdate(cb.plugin, &core.OperationUpdate{
 			NamespacedOpID: nsOpID,
 			Status:         status,
 			BlockchainTXID: blockchainTXID,
@@ -62,51 +63,44 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, plugin tokens.Plugin, 
 	}
 }
 
-func (cb *callbacks) TokenPoolCreated(ctx context.Context, namespace string, plugin tokens.Plugin, pool *tokens.TokenPool) error {
-	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every handler
-		for _, cb := range cb.handlers {
-			if err := cb.TokenPoolCreated(plugin, pool); err != nil {
-				return err
-			}
+func (cb *callbacks) TokenPoolCreated(ctx context.Context, pool *tokens.TokenPool) error {
+	// Deliver token pool creation events to every handler
+	for _, handler := range cb.handlers {
+		if err := handler.TokenPoolCreated(cb.plugin, pool); err != nil {
+			return err
 		}
-	} else {
-		if handler, ok := cb.handlers[namespace]; ok {
-			return handler.TokenPoolCreated(plugin, pool)
-		}
-		log.L(ctx).Errorf("No handler found for token pool event on namespace '%s'", namespace)
 	}
 	return nil
 }
 
-func (cb *callbacks) TokensTransferred(ctx context.Context, namespace string, plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
+func (cb *callbacks) TokensTransferred(ctx context.Context, namespace string, transfer *tokens.TokenTransfer) error {
 	if namespace == "" {
 		// Older token subscriptions don't populate namespace, so deliver the event to every handler
-		for _, cb := range cb.handlers {
-			if err := cb.TokensTransferred(plugin, transfer); err != nil {
+		for _, handler := range cb.handlers {
+			if err := handler.TokensTransferred(cb.plugin, transfer); err != nil {
 				return err
 			}
 		}
 	} else {
 		if handler, ok := cb.handlers[namespace]; ok {
-			return handler.TokensTransferred(plugin, transfer)
+			return handler.TokensTransferred(cb.plugin, transfer)
 		}
 		log.L(ctx).Errorf("No handler found for token transfer event on namespace '%s'", namespace)
 	}
 	return nil
 }
 
-func (cb *callbacks) TokensApproved(ctx context.Context, namespace string, plugin tokens.Plugin, approval *tokens.TokenApproval) error {
+func (cb *callbacks) TokensApproved(ctx context.Context, namespace string, approval *tokens.TokenApproval) error {
 	if namespace == "" {
 		// Older token subscriptions don't populate namespace, so deliver the event to every handler
-		for _, cb := range cb.handlers {
-			if err := cb.TokensApproved(plugin, approval); err != nil {
+		for _, handler := range cb.handlers {
+			if err := handler.TokensApproved(cb.plugin, approval); err != nil {
 				return err
 			}
 		}
 	} else {
 		if handler, ok := cb.handlers[namespace]; ok {
-			return handler.TokensApproved(plugin, approval)
+			return handler.TokensApproved(cb.plugin, approval)
 		}
 		log.L(ctx).Errorf("No handler found for token approval event on namespace '%s'", namespace)
 	}
@@ -138,10 +132,6 @@ type tokenData struct {
 	MessageHash *fftypes.Bytes32     `json:"messageHash,omitempty"`
 }
 
-type tokenInit struct {
-	Namespace string `json:"namespace"`
-}
-
 type createPool struct {
 	Type      core.TokenType     `json:"type"`
 	RequestID string             `json:"requestId"`
@@ -153,7 +143,7 @@ type createPool struct {
 }
 
 type activatePool struct {
-	Namespace   string             `json:"namespace"`
+	PoolData    string             `json:"poolData"`
 	PoolLocator string             `json:"poolLocator"`
 	Config      fftypes.JSONObject `json:"config"`
 	RequestID   string             `json:"requestId,omitempty"`
@@ -217,8 +207,11 @@ func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section
 	ft.ctx = log.WithLogField(ctx, "proto", "fftokens")
 	ft.configuredName = name
 	ft.capabilities = &tokens.Capabilities{}
-	ft.callbacks.handlers = make(map[string]tokens.Callbacks)
-	ft.callbacks.opHandlers = make(map[string]core.OperationCallbacks)
+	ft.callbacks = callbacks{
+		plugin:     ft,
+		handlers:   make(map[string]tokens.Callbacks),
+		opHandlers: make(map[string]core.OperationCallbacks),
+	}
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "tokens.fftokens")
@@ -240,18 +233,8 @@ func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section
 	return nil
 }
 
-func (ft *FFTokens) SetHandler(namespace string, handler tokens.Callbacks) error {
+func (ft *FFTokens) SetHandler(namespace string, handler tokens.Callbacks) {
 	ft.callbacks.handlers[namespace] = handler
-
-	res, err := ft.client.R().SetContext(ft.ctx).
-		SetBody(&tokenInit{
-			Namespace: namespace,
-		}).
-		Post("/api/v1/init")
-	if err != nil || !res.IsSuccess() {
-		return wrapError(ft.ctx, nil, res, err)
-	}
-	return nil
 }
 
 func (ft *FFTokens) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
@@ -282,34 +265,52 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 		updateType = core.OpStatusFailed
 	}
 	l.Infof("Received operation update: status=%s request=%s message=%s", updateType, requestID, message)
-	ft.callbacks.OperationUpdate(ctx, ft, requestID, updateType, transactionHash, message, data)
+	ft.callbacks.OperationUpdate(ctx, requestID, updateType, transactionHash, message, data)
+}
+
+func (ft *FFTokens) buildBlockchainEvent(eventData fftypes.JSONObject) *blockchain.Event {
+	blockchainID := eventData.GetString("id")
+	blockchainInfo := eventData.GetObject("info")
+	txHash := blockchainInfo.GetString("transactionHash")
+
+	// Only include a blockchain event if there was some significant blockchain info
+	if blockchainID != "" || txHash != "" {
+		timestampStr := eventData.GetString("timestamp")
+		timestamp, err := fftypes.ParseTimeString(timestampStr)
+		if err != nil {
+			timestamp = fftypes.Now()
+		}
+
+		return &blockchain.Event{
+			ProtocolID:     blockchainID,
+			BlockchainTXID: txHash,
+			Source:         ft.Name() + ":" + ft.configuredName,
+			Name:           eventData.GetString("name"),
+			Output:         eventData.GetObject("output"),
+			Location:       eventData.GetString("location"),
+			Signature:      eventData.GetString("signature"),
+			Info:           blockchainInfo,
+			Timestamp:      timestamp,
+		}
+	}
+	return nil
 }
 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
 	tokenType := data.GetString("type")
 	poolLocator := data.GetString("poolLocator")
-	standard := data.GetString("standard")   // optional
-	symbol := data.GetString("symbol")       // optional
-	decimals := data.GetInt64("decimals")    // optional
-	info := data.GetObject("info")           // optional
-	namespace := data.GetString("namespace") // optional
-
-	// All blockchain items below are optional
-	blockchainEvent := data.GetObject("blockchain")
-	blockchainID := blockchainEvent.GetString("id")
-	blockchainInfo := blockchainEvent.GetObject("info")
-	txHash := blockchainInfo.GetString("transactionHash")
-	timestampStr := blockchainEvent.GetString("timestamp")
-
-	timestamp, err := fftypes.ParseTimeString(timestampStr)
-	if err != nil {
-		timestamp = fftypes.Now()
-	}
 
 	if tokenType == "" || poolLocator == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
+
+	// These fields are optional
+	standard := data.GetString("standard")
+	symbol := data.GetString("symbol")
+	decimals := data.GetInt64("decimals")
+	info := data.GetObject("info")
+	blockchainEvent := data.GetObject("blockchain")
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
@@ -337,25 +338,11 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		Symbol:    symbol,
 		Decimals:  int(decimals),
 		Info:      info,
-	}
-
-	// Only include a blockchain event if there was some significant blockchain info
-	if blockchainID != "" || txHash != "" {
-		pool.Event = blockchain.Event{
-			ProtocolID:     blockchainID,
-			BlockchainTXID: txHash,
-			Source:         ft.Name() + ":" + ft.configuredName,
-			Name:           blockchainEvent.GetString("name"),
-			Output:         blockchainEvent.GetObject("output"),
-			Location:       blockchainEvent.GetString("location"),
-			Signature:      blockchainEvent.GetString("signature"),
-			Info:           blockchainInfo,
-			Timestamp:      timestamp,
-		}
+		Event:     ft.buildBlockchainEvent(blockchainEvent),
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokenPoolCreated(ctx, namespace, ft, pool)
+	return ft.callbacks.TokenPoolCreated(ctx, pool)
 }
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransferType, data fftypes.JSONObject) (err error) {
@@ -365,30 +352,23 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 	fromAddress := data.GetString("from")
 	toAddress := data.GetString("to")
 	value := data.GetString("amount")
-	tokenIndex := data.GetString("tokenIndex") // optional
-	uri := data.GetString("uri")               // optional
-	namespace := data.GetString("namespace")   // optional
-
-	blockchainEvent := data.GetObject("blockchain")
-	blockchainID := blockchainEvent.GetString("id")
-	blockchainInfo := blockchainEvent.GetObject("info")
-	txHash := blockchainInfo.GetString("transactionHash")  // optional
-	timestampStr := blockchainEvent.GetString("timestamp") // optional
-
-	timestamp, err := fftypes.ParseTimeString(timestampStr)
-	if err != nil {
-		timestamp = fftypes.Now()
-	}
+	blockchainEvent := ft.buildBlockchainEvent(data.GetObject("blockchain"))
 
 	if protocolID == "" ||
 		poolLocator == "" ||
 		signerAddress == "" ||
 		value == "" ||
 		(t != core.TokenTransferTypeMint && fromAddress == "") ||
-		(t != core.TokenTransferTypeBurn && toAddress == "") {
+		(t != core.TokenTransferTypeBurn && toAddress == "") ||
+		blockchainEvent == nil {
 		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", t, data)
 		return nil // move on
 	}
+
+	// These fields are optional
+	tokenIndex := data.GetString("tokenIndex")
+	uri := data.GetString("uri")
+	namespace := data.GetString("poolData")
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
@@ -430,21 +410,11 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 				Type: txType,
 			},
 		},
-		Event: blockchain.Event{
-			ProtocolID:     blockchainID,
-			BlockchainTXID: txHash,
-			Source:         ft.Name() + ":" + ft.configuredName,
-			Name:           blockchainEvent.GetString("name"),
-			Output:         blockchainEvent.GetObject("output"),
-			Location:       blockchainEvent.GetString("location"),
-			Signature:      blockchainEvent.GetString("signature"),
-			Info:           blockchainInfo,
-			Timestamp:      timestamp,
-		},
+		Event: blockchainEvent,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokensTransferred(ctx, namespace, ft, transfer)
+	return ft.callbacks.TokensTransferred(ctx, namespace, transfer)
 }
 
 func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONObject) (err error) {
@@ -454,28 +424,21 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	poolLocator := data.GetString("poolLocator")
 	operatorAddress := data.GetString("operator")
 	approved := data.GetBool("approved")
-	info := data.GetObject("info")           // optional
-	namespace := data.GetString("namespace") // optional
-
-	blockchainEvent := data.GetObject("blockchain")
-	blockchainID := blockchainEvent.GetString("id")
-	blockchainInfo := blockchainEvent.GetObject("info")
-	txHash := blockchainInfo.GetString("transactionHash")  // optional
-	timestampStr := blockchainEvent.GetString("timestamp") // optional
-
-	timestamp, err := fftypes.ParseTimeString(timestampStr)
-	if err != nil {
-		timestamp = fftypes.Now()
-	}
+	blockchainEvent := ft.buildBlockchainEvent(data.GetObject("blockchain"))
 
 	if protocolID == "" ||
 		subject == "" ||
 		poolLocator == "" ||
 		signerAddress == "" ||
-		operatorAddress == "" {
+		operatorAddress == "" ||
+		blockchainEvent == nil {
 		log.L(ctx).Errorf("Approval event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
+
+	// These fields are optional
+	info := data.GetObject("info")
+	namespace := data.GetString("poolData")
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
@@ -506,20 +469,10 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 				Type: txType,
 			},
 		},
-		Event: blockchain.Event{
-			ProtocolID:     blockchainID,
-			BlockchainTXID: txHash,
-			Source:         ft.Name() + ":" + ft.configuredName,
-			Name:           blockchainEvent.GetString("name"),
-			Output:         blockchainEvent.GetObject("output"),
-			Location:       blockchainEvent.GetString("location"),
-			Signature:      blockchainEvent.GetString("signature"),
-			Info:           blockchainInfo,
-			Timestamp:      timestamp,
-		},
+		Event: blockchainEvent,
 	}
 
-	return ft.callbacks.TokensApproved(ctx, namespace, ft, approval)
+	return ft.callbacks.TokensApproved(ctx, namespace, approval)
 }
 
 func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (err error) {
@@ -646,7 +599,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
 			RequestID:   nsOpID,
-			Namespace:   pool.Namespace,
+			PoolData:    pool.Namespace,
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
 		}).

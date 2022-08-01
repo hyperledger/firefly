@@ -49,7 +49,7 @@ func newApproval() *tokens.TokenApproval {
 				ID:   fftypes.NewUUID(),
 			},
 		},
-		Event: blockchain.Event{
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			Name:           "TokenApproval",
 			ProtocolID:     "0000/0000/0000",

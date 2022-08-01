@@ -231,22 +231,6 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mmp, or.MultiParty())
 }
 
-func TestInitTokenListenerFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
-	or.mbi.On("SetHandler", "ns", mock.Anything).Return()
-	or.mbi.On("SetOperationHandler", "ns", mock.Anything).Return()
-	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{{}}, nil, nil)
-	or.mdx.On("SetHandler", "ns", mock.Anything).Return()
-	or.mdx.On("SetOperationHandler", "ns", mock.Anything).Return()
-	or.mdx.On("SetNodes", mock.Anything).Return()
-	or.mps.On("SetHandler", "ns", mock.Anything).Return()
-	or.mti.On("SetHandler", "ns", mock.Anything).Return(fmt.Errorf("pop"))
-	err := or.initHandlers(context.Background())
-	assert.EqualError(t, err, "pop")
-}
-
 func TestInitDataexchangeNodesFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
