@@ -70,6 +70,10 @@ type Plugin interface {
 	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace
 	SetHandler(namespace string, handler Callbacks)
 
+	// SetOperationHandler registers a handler to receive async operation status
+	// If namespace is set, plugin will attempt to deliver only events for that namespace
+	SetOperationHandler(namespace string, handler core.OperationCallbacks)
+
 	// Data exchange interface must not deliver any events until start is called
 	Start() error
 
@@ -102,7 +106,7 @@ type Plugin interface {
 // Callbacks is the interface provided to the data exchange plugin, to allow it to pass events back to firefly.
 type Callbacks interface {
 	// Event has sub-types as defined below, and can be processed and ack'd asynchronously
-	DXEvent(ctx context.Context, event DXEvent)
+	DXEvent(plugin Plugin, event DXEvent)
 }
 
 type DXEventType int
@@ -110,19 +114,16 @@ type DXEventType int
 // DXEvent is a single interface that can be passed to all events
 type DXEvent interface {
 	EventID() string
-	NamespacedID() string
 	Ack()
 	AckWithManifest(manifest string)
 	Type() DXEventType
 	MessageReceived() *MessageReceived
 	PrivateBlobReceived() *PrivateBlobReceived
-	TransferResult() *TransferResult
 }
 
 const (
 	DXEventTypeMessageReceived DXEventType = iota
 	DXEventTypePrivateBlobReceived
-	DXEventTypeTransferResult
 )
 
 type MessageReceived struct {
@@ -136,12 +137,6 @@ type PrivateBlobReceived struct {
 	Hash       fftypes.Bytes32
 	Size       int64
 	PayloadRef string
-}
-
-type TransferResult struct {
-	TrackingID string
-	Status     core.OpStatus
-	core.TransportStatusUpdate
 }
 
 // Capabilities the supported featureset of the data exchange

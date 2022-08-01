@@ -113,6 +113,10 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *core.MessageI
 	}
 
 	foundLocal := false
+	localNode, err := pm.identity.GetLocalNode(ctx)
+	if err != nil {
+		return nil, err
+	}
 	gi = &core.GroupIdentity{
 		Namespace: in.Message.Header.Namespace,
 		Name:      in.Group.Name,
@@ -129,7 +133,7 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *core.MessageI
 		if err != nil {
 			return nil, err
 		}
-		isLocal := (node.Parent.Equals(localOrg.ID) && node.Name == pm.localNodeName)
+		isLocal := (node.Parent.Equals(localOrg.ID) && node.Name == localNode.Name)
 		foundLocal = foundLocal || isLocal
 		log.L(ctx).Debugf("Resolved group identity %s node=%s to identity %s node=%s local=%t", rInput.Identity, rInput.Node, identity.DID, node.ID, isLocal)
 		gi.Members[i] = &core.Member{
@@ -138,38 +142,13 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *core.MessageI
 		}
 	}
 	if !foundLocal {
-		// Add in the local org identity
-		localNodeID, err := pm.resolveLocalNode(ctx, localOrg)
-		if err != nil {
-			return nil, err
-		}
+		// Add in the local org/node identity
 		gi.Members = append(gi.Members, &core.Member{
 			Identity: localOrg.DID,
-			Node:     localNodeID,
+			Node:     localNode.ID,
 		})
 	}
 	return gi, nil
-}
-
-func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrg *core.Identity) (*fftypes.UUID, error) {
-	if pm.localNodeID != nil {
-		return pm.localNodeID, nil
-	}
-	fb := database.IdentityQueryFactory.NewFilterLimit(ctx, 1)
-	filter := fb.And(
-		fb.Eq("parent", localOrg.ID),
-		fb.Eq("type", core.IdentityTypeNode),
-		fb.Eq("name", pm.localNodeName),
-	)
-	nodes, _, err := pm.database.GetIdentities(ctx, pm.namespace.LocalName, filter)
-	if err != nil {
-		return nil, err
-	}
-	if len(nodes) == 0 {
-		return nil, i18n.NewError(ctx, coremsgs.MsgLocalNodeResolveFailed)
-	}
-	pm.localNodeID = nodes[0].ID
-	return pm.localNodeID, nil
 }
 
 func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *core.MessageInOut) (group *core.Group, isNew bool, err error) {

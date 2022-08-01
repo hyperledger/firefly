@@ -71,8 +71,6 @@ type privateMessaging struct {
 	syncasync             syncasync.Bridge
 	multiparty            multiparty.Manager
 	retry                 retry.Retry
-	localNodeName         string
-	localNodeID           *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
 	maxBatchPayloadLength int64
 	metrics               metrics.Manager
 	operations            operations.Manager
@@ -91,16 +89,15 @@ func NewPrivateMessaging(ctx context.Context, ns core.NamespaceRef, di database.
 	}
 
 	pm := &privateMessaging{
-		ctx:           ctx,
-		namespace:     ns,
-		database:      di,
-		identity:      im,
-		exchange:      dx,
-		blockchain:    bi,
-		data:          dm,
-		syncasync:     sa,
-		multiparty:    mult,
-		localNodeName: config.GetString(coreconfig.NodeName),
+		ctx:        ctx,
+		namespace:  ns,
+		database:   di,
+		identity:   im,
+		exchange:   dx,
+		blockchain: bi,
+		data:       dm,
+		syncasync:  sa,
+		multiparty: mult,
 		groupManager: groupManager{
 			namespace:     ns,
 			database:      di,

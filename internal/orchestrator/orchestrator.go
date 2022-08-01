@@ -224,7 +224,6 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	}
 	// Bind together the blockchain interface callbacks, with the events manager
 	or.bc.ei = or.events
-	or.bc.dx = or.plugins.DataExchange.Plugin
 	or.bc.ss = or.plugins.SharedStorage.Plugin
 	or.bc.om = or.operations
 	return err
@@ -376,7 +375,8 @@ func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 			nodeInfo[i] = node.Profile
 		}
 		or.plugins.DataExchange.Plugin.SetNodes(nodeInfo)
-		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.RemoteName, &or.bc)
+		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.RemoteName, or.events)
+		or.plugins.DataExchange.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
 	}
 
 	for _, token := range or.plugins.Tokens {

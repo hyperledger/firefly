@@ -18,10 +18,9 @@ package networkmap
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
-	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -32,18 +31,17 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 		return nil, err
 	}
 
+	localNodeName := nm.multiparty.LocalNode().Name
+	if localNodeName == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgNodeAndOrgIDMustBeSet)
+	}
 	nodeRequest := &core.IdentityCreateDTO{
 		Parent: nodeOwningOrg.ID.String(),
-		Name:   config.GetString(coreconfig.NodeName),
+		Name:   localNodeName,
 		Type:   core.IdentityTypeNode,
 		IdentityProfile: core.IdentityProfile{
-			Description: config.GetString(coreconfig.NodeDescription),
+			Description: nm.multiparty.LocalNode().Description,
 		},
-	}
-	if nodeRequest.Name == "" {
-		if nodeOwningOrg.Name != "" {
-			nodeRequest.Name = fmt.Sprintf("%s.node", nodeOwningOrg.Name)
-		}
 	}
 
 	dxInfo, err := nm.exchange.GetEndpointInfo(ctx)

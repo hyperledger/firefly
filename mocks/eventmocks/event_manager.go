@@ -97,9 +97,9 @@ func (_m *EventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 	return r0
 }
 
-// DXEvent provides a mock function with given fields: dx, event
-func (_m *EventManager) DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent) {
-	_m.Called(dx, event)
+// DXEvent provides a mock function with given fields: plugin, event
+func (_m *EventManager) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) {
+	_m.Called(plugin, event)
 }
 
 // DeleteDurableSubscription provides a mock function with given fields: ctx, subDef

@@ -94,7 +94,13 @@ func (cb *callbacks) SetOperationalHandler(namespace string, handler core.Operat
 func (cb *callbacks) OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(plugin, nsOpID, status, blockchainTXID, errorMessage, opOutput)
+		handler.OperationUpdate(plugin, &core.OperationUpdate{
+			NamespacedOpID: nsOpID,
+			Status:         status,
+			BlockchainTXID: blockchainTXID,
+			ErrorMessage:   errorMessage,
+			Output:         opOutput,
+		})
 		return
 	}
 	log.L(ctx).Errorf("No handler found for blockchain operation '%s'", nsOpID)

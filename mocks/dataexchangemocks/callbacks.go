@@ -3,8 +3,6 @@
 package dataexchangemocks
 
 import (
-	context "context"
-
 	dataexchange "github.com/hyperledger/firefly/pkg/dataexchange"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -14,7 +12,7 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// DXEvent provides a mock function with given fields: ctx, event
-func (_m *Callbacks) DXEvent(ctx context.Context, event dataexchange.DXEvent) {
-	_m.Called(ctx, event)
+// DXEvent provides a mock function with given fields: plugin, event
+func (_m *Callbacks) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) {
+	_m.Called(plugin, event)
 }

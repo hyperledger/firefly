@@ -25,7 +25,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -169,7 +168,7 @@ func (bm *broadcastManager) uploadBlob(ctx context.Context, data uploadBlobData)
 	return getUploadBlobOutputs(data.Data.Blob.Public), true, nil
 }
 
-func (bm *broadcastManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
+func (bm *broadcastManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {
 	return nil
 }
 

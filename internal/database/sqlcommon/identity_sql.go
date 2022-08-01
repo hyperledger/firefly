@@ -72,7 +72,8 @@ func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, id
 			Set("messages_update", identity.Messages.Update).
 			Set("updated", identity.Updated).
 			Where(sq.Eq{
-				"id": identity.ID,
+				"id":        identity.ID,
+				"namespace": identity.Namespace,
 			}),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionIdentities, core.ChangeEventTypeUpdated, identity.Namespace, identity.ID)
@@ -127,7 +128,7 @@ func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *core.Identity,
 		msgRows, _, err := s.queryTx(ctx, identitiesTable, tx,
 			sq.Select("id").
 				From(identitiesTable).
-				Where(sq.Eq{"id": identity.ID}),
+				Where(sq.Eq{"id": identity.ID, "namespace": identity.Namespace}),
 		)
 		if err != nil {
 			return err

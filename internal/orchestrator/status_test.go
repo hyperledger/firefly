@@ -81,7 +81,6 @@ func TestGetStatusRegistered(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
@@ -109,6 +108,7 @@ func TestGetStatusRegistered(t *testing.T) {
 	}, nil, nil)
 
 	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
 
 	or.mem.On("GetPlugins").Return(mockEventPlugins)
 
@@ -146,7 +146,6 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
@@ -173,7 +172,6 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
@@ -201,6 +199,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 	}, nil, nil)
 
 	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
 
 	or.mem.On("GetPlugins").Return(mockEventPlugins)
 
@@ -226,11 +225,11 @@ func TestGetStatusUnregistered(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	or.mim.On("GetMultipartyRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
 
 	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
 
 	or.mem.On("GetPlugins").Return(mockEventPlugins)
 
@@ -255,7 +254,6 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
@@ -276,6 +274,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	}, nil, nil)
 
 	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
 
 	or.mem.On("GetPlugins").Return(mockEventPlugins)
 
@@ -309,7 +308,6 @@ func TestGetStatusNodeError(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
@@ -328,6 +326,8 @@ func TestGetStatusNodeError(t *testing.T) {
 			Value: "0x12345",
 		}},
 	}, nil, nil)
+
+	or.config.Multiparty.Node.Name = "node1"
 
 	or.mem.On("GetPlugins").Return(mockEventPlugins)
 

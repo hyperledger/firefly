@@ -20,10 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -102,16 +100,14 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 
 	status = &core.NamespaceStatus{
 		Namespace: or.namespace,
-		Node: &core.NamespaceStatusNode{
-			Name: config.GetString(coreconfig.NodeName),
-		},
-		Plugins: or.getPlugins(),
+		Plugins:   or.getPlugins(),
 		Multiparty: core.NamespaceStatusMultiparty{
 			Enabled: or.config.Multiparty.Enabled,
 		},
 	}
 
 	if or.config.Multiparty.Enabled {
+		status.Node = &core.NamespaceStatusNode{Name: or.config.Multiparty.Node.Name}
 		status.Org = &core.NamespaceStatusOrg{Name: or.config.Multiparty.Org.Name}
 		status.Multiparty.Contracts = or.namespace.Contracts
 

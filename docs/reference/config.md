@@ -635,6 +635,13 @@ nav_order: 2
 |firstEvent|The first event the contract should process. Valid options are `oldest` or `newest`|`string`|`<nil>`
 |location|A blockchain-specific contract location. For example, an Ethereum contract address, or a Fabric chaincode name and channe|`string`|`<nil>`
 
+## namespaces.predefined[].multiparty.node
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|description|A description for the node in this namespace|`string`|`<nil>`
+|name|The node name for this namespace|`string`|`<nil>`
+
 ## namespaces.predefined[].multiparty.org
 
 |Key|Description|Type|Default Value|

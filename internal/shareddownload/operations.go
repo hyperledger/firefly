@@ -26,7 +26,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -161,7 +160,7 @@ func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobDa
 	return getDownloadBlobOutputs(hash, blobSize, dxPayloadRef), true, nil
 }
 
-func (dm *downloadManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
+func (dm *downloadManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {
 	return nil
 }
 

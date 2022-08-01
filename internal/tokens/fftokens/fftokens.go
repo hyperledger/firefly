@@ -51,7 +51,13 @@ type callbacks struct {
 func (cb *callbacks) OperationUpdate(ctx context.Context, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(cb.plugin, nsOpID, status, blockchainTXID, errorMessage, opOutput)
+		handler.OperationUpdate(cb.plugin, &core.OperationUpdate{
+			NamespacedOpID: nsOpID,
+			Status:         status,
+			BlockchainTXID: blockchainTXID,
+			ErrorMessage:   errorMessage,
+			Output:         opOutput,
+		})
 	} else {
 		log.L(ctx).Errorf("No handler found for token operation '%s'", nsOpID)
 	}

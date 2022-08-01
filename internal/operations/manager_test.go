@@ -52,7 +52,7 @@ func (m *mockHandler) RunOperation(ctx context.Context, op *core.PreparedOperati
 	return m.Outputs, m.Complete, m.RunErr
 }
 
-func (m *mockHandler) OnOperationUpdate(ctx context.Context, op *core.Operation, update *OperationUpdate) error {
+func (m *mockHandler) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {
 	return m.UpdateErr
 }
 

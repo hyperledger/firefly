@@ -81,7 +81,11 @@ func TestNewMultipartyManager(t *testing.T) {
 	mom := &operationmocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	mth := &txcommonmocks.Helper{}
-	config := Config{Contracts: []Contract{}}
+	config := Config{
+		Org:       RootOrg{Name: "org1"},
+		Node:      LocalNode{Name: "node1"},
+		Contracts: []Contract{},
+	}
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, []core.OpType{
 		core.OpTypeBlockchainPinBatch,
 		core.OpTypeBlockchainNetworkAction,
@@ -92,6 +96,7 @@ func TestNewMultipartyManager(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "MultipartyManager", nm.Name())
 	assert.Equal(t, config.Org, nm.RootOrg())
+	assert.Equal(t, config.Node, nm.LocalNode())
 }
 
 func TestInitFail(t *testing.T) {

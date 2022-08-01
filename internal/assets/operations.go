@@ -24,7 +24,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -146,7 +145,7 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 	}
 }
 
-func (am *assetManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
+func (am *assetManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {
 	// Write an event for failed pool operations
 	if op.Type == core.OpTypeTokenCreatePool && update.Status == core.OpStatusFailed {
 		tokenPool, err := txcommon.RetrieveTokenPoolCreateInputs(ctx, op)

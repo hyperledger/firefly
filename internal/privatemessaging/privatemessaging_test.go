@@ -42,7 +42,6 @@ import (
 
 func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateMessaging, func()) {
 	coreconfig.Reset()
-	config.Set(coreconfig.NodeName, "node1")
 	config.Set(coreconfig.GroupCacheTTL, "1m")
 	config.Set(coreconfig.GroupCacheSize, "1m")
 

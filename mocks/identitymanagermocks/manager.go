@@ -99,29 +99,6 @@ func (_m *Manager) CachedIdentityLookupNilOK(ctx context.Context, did string) (*
 	return r0, r1, r2
 }
 
-// CachedVerifierLookup provides a mock function with given fields: ctx, vType, value
-func (_m *Manager) CachedVerifierLookup(ctx context.Context, vType fftypes.FFEnum, value string) (*core.Verifier, error) {
-	ret := _m.Called(ctx, vType, value)
-
-	var r0 *core.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string) *core.Verifier); ok {
-		r0 = rf(ctx, vType, value)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Verifier)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string) error); ok {
-		r1 = rf(ctx, vType, value)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // FindIdentityForVerifier provides a mock function with given fields: ctx, iTypes, verifier
 func (_m *Manager) FindIdentityForVerifier(ctx context.Context, iTypes []fftypes.FFEnum, verifier *core.VerifierRef) (*core.Identity, error) {
 	ret := _m.Called(ctx, iTypes, verifier)
@@ -138,6 +115,29 @@ func (_m *Manager) FindIdentityForVerifier(ctx context.Context, iTypes []fftypes
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []fftypes.FFEnum, *core.VerifierRef) error); ok {
 		r1 = rf(ctx, iTypes, verifier)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetLocalNode provides a mock function with given fields: ctx
+func (_m *Manager) GetLocalNode(ctx context.Context) (*core.Identity, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *core.Identity
+	if rf, ok := ret.Get(0).(func(context.Context) *core.Identity); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.Identity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -33,7 +33,7 @@ type OperationHandler interface {
 	core.Named
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
-	OnOperationUpdate(ctx context.Context, op *core.Operation, update *OperationUpdate) error
+	OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error
 }
 
 type Manager interface {
@@ -42,7 +42,7 @@ type Manager interface {
 	RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
 	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation) error
-	SubmitOperationUpdate(plugin core.Named, update *OperationUpdate)
+	SubmitOperationUpdate(plugin core.Named, update *core.OperationUpdate)
 	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
 	Start() error
 	WaitStop()
@@ -181,7 +181,7 @@ func (om *operationsManager) ResolveOperationByID(ctx context.Context, opID *fft
 	return om.database.ResolveOperation(ctx, om.namespace, opID, op.Status, op.Error, op.Output)
 }
 
-func (om *operationsManager) SubmitOperationUpdate(plugin core.Named, update *OperationUpdate) {
+func (om *operationsManager) SubmitOperationUpdate(plugin core.Named, update *core.OperationUpdate) {
 	errString := ""
 	if update.ErrorMessage != "" {
 		errString = fmt.Sprintf(" error=%s", update.ErrorMessage)

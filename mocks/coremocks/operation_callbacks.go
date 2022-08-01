@@ -3,9 +3,7 @@
 package coremocks
 
 import (
-	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 	core "github.com/hyperledger/firefly/pkg/core"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -14,7 +12,7 @@ type OperationCallbacks struct {
 	mock.Mock
 }
 
-// OperationUpdate provides a mock function with given fields: plugin, nsOpID, status, blockchainTXID, errorMessage, opOutput
-func (_m *OperationCallbacks) OperationUpdate(plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
-	_m.Called(plugin, nsOpID, status, blockchainTXID, errorMessage, opOutput)
+// OperationUpdate provides a mock function with given fields: plugin, update
+func (_m *OperationCallbacks) OperationUpdate(plugin core.Named, update *core.OperationUpdate) {
+	_m.Called(plugin, update)
 }

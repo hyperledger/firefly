@@ -30,10 +30,3 @@ type TransportWrapper struct {
 	Group *Group `json:"group,omitempty"`
 	Batch *Batch `json:"batch,omitempty"`
 }
-
-type TransportStatusUpdate struct {
-	Error    string             `json:"error,omitempty"`
-	Manifest string             `json:"manifest,omitempty"`
-	Info     fftypes.JSONObject `json:"info,omitempty"`
-	Hash     string             `json:"hash,omitempty"`
-}

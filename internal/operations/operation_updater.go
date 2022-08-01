@@ -34,21 +34,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-// OperationUpdate is dispatched asynchronously to perform an update.
-type OperationUpdate struct {
-	NamespacedOpID string
-	Status         core.OpStatus
-	BlockchainTXID string
-	ErrorMessage   string
-	Output         fftypes.JSONObject
-	VerifyManifest bool
-	DXManifest     string
-	DXHash         string
-	OnComplete     func()
-}
-
 type operationUpdaterBatch struct {
-	updates        []*OperationUpdate
+	updates        []*core.OperationUpdate
 	timeoutContext context.Context
 	timeoutCancel  func()
 }
@@ -60,7 +47,7 @@ type operationUpdater struct {
 	manager     *operationsManager
 	database    database.Plugin
 	txHelper    txcommon.Helper
-	workQueues  []chan *OperationUpdate
+	workQueues  []chan *core.OperationUpdate
 	workersDone []chan struct{}
 	conf        operationUpdaterConf
 	closed      bool
@@ -100,13 +87,13 @@ func newOperationUpdater(ctx context.Context, om *operationsManager, di database
 }
 
 // pickWorker ensures multiple updates for the same ID go to the same worker
-func (ou *operationUpdater) pickWorker(ctx context.Context, id *fftypes.UUID, update *OperationUpdate) chan *OperationUpdate {
+func (ou *operationUpdater) pickWorker(ctx context.Context, id *fftypes.UUID, update *core.OperationUpdate) chan *core.OperationUpdate {
 	worker := id.HashBucket(ou.conf.workerCount)
 	log.L(ctx).Debugf("Submitting operation update id=%s status=%s blockchainTX=%s worker=opu_%.3d", id, update.Status, update.BlockchainTXID, worker)
 	return ou.workQueues[worker]
 }
 
-func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *OperationUpdate) {
+func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *core.OperationUpdate) {
 	ns, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if err != nil {
 		log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
@@ -126,17 +113,17 @@ func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *O
 		return
 	}
 	// Otherwise do it in-line on this context
-	err = ou.doBatchUpdateWithRetry(ctx, []*OperationUpdate{update})
+	err = ou.doBatchUpdateWithRetry(ctx, []*core.OperationUpdate{update})
 	if err != nil {
 		log.L(ctx).Warnf("Exiting while updating operation: %s", err)
 	}
 }
 
 func (ou *operationUpdater) initQueues() {
-	ou.workQueues = make([]chan *OperationUpdate, ou.conf.workerCount)
+	ou.workQueues = make([]chan *core.OperationUpdate, ou.conf.workerCount)
 	ou.workersDone = make([]chan struct{}, ou.conf.workerCount)
 	for i := 0; i < ou.conf.workerCount; i++ {
-		ou.workQueues[i] = make(chan *OperationUpdate, ou.conf.queueLength)
+		ou.workQueues[i] = make(chan *core.OperationUpdate, ou.conf.queueLength)
 		ou.workersDone[i] = make(chan struct{})
 	}
 }
@@ -188,7 +175,7 @@ func (ou *operationUpdater) updaterLoop(index int) {
 	}
 }
 
-func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates []*OperationUpdate) error {
+func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates []*core.OperationUpdate) error {
 	return ou.retry.Do(ctx, "operation update", func(attempt int) (retry bool, err error) {
 		err = ou.database.RunAsGroup(ctx, func(ctx context.Context) error {
 			return ou.doBatchUpdate(ctx, updates)
@@ -205,7 +192,7 @@ func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates 
 	})
 }
 
-func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*OperationUpdate) error {
+func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*core.OperationUpdate) error {
 
 	// Get all the operations that match
 	opIDs := make([]driver.Value, 0, len(updates))
@@ -252,7 +239,7 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*Operat
 	return nil
 }
 
-func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdate, ops []*core.Operation, transactions []*core.Transaction) error {
+func (ou *operationUpdater) doUpdate(ctx context.Context, update *core.OperationUpdate, ops []*core.Operation, transactions []*core.Transaction) error {
 
 	_, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if err != nil {
@@ -309,7 +296,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 	return nil
 }
 
-func (ou *operationUpdater) verifyManifest(ctx context.Context, update *OperationUpdate, op *core.Operation) error {
+func (ou *operationUpdater) verifyManifest(ctx context.Context, update *core.OperationUpdate, op *core.Operation) error {
 
 	if op.Type == core.OpTypeDataExchangeSendBatch && update.Status == core.OpStatusSucceeded {
 		batchID, _ := fftypes.ParseUUID(ctx, op.Input.GetString("batch"))

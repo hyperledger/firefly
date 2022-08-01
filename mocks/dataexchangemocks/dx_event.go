@@ -52,20 +52,6 @@ func (_m *DXEvent) MessageReceived() *dataexchange.MessageReceived {
 	return r0
 }
 
-// NamespacedID provides a mock function with given fields:
-func (_m *DXEvent) NamespacedID() string {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
 // PrivateBlobReceived provides a mock function with given fields:
 func (_m *DXEvent) PrivateBlobReceived() *dataexchange.PrivateBlobReceived {
 	ret := _m.Called()
@@ -76,22 +62,6 @@ func (_m *DXEvent) PrivateBlobReceived() *dataexchange.PrivateBlobReceived {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*dataexchange.PrivateBlobReceived)
-		}
-	}
-
-	return r0
-}
-
-// TransferResult provides a mock function with given fields:
-func (_m *DXEvent) TransferResult() *dataexchange.TransferResult {
-	ret := _m.Called()
-
-	var r0 *dataexchange.TransferResult
-	if rf, ok := ret.Get(0).(func() *dataexchange.TransferResult); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*dataexchange.TransferResult)
 		}
 	}
 

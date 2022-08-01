@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/coremocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -122,9 +123,15 @@ func TestInitMissingURL(t *testing.T) {
 	assert.Regexp(t, "FF10138", err)
 }
 
+func opAcker() func(args mock.Arguments) {
+	return func(args mock.Arguments) {
+		args[1].(*core.OperationUpdate).OnComplete()
+	}
+}
+
 func acker() func(args mock.Arguments) {
 	return func(args mock.Arguments) {
-		args[1].(dataexchange.DXEvent).Ack()
+		args[1].(*dxEvent).Ack()
 	}
 }
 
@@ -466,9 +473,6 @@ func TestBadEvents(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFDX(t, false)
 	defer done()
 
-	mcb := &dataexchangemocks.Callbacks{}
-	h.SetHandler("ns1", mcb)
-
 	err := h.Start()
 	assert.NoError(t, err)
 
@@ -490,7 +494,10 @@ func TestBadEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"3"}`, string(msg))
 
-	mcb.AssertExpectations(t)
+	fromServer <- `{"id":"4","type":"message-received","sender":"peer1","message":"{\"batch\":{\"namespace\":\"ns1\"}}"}`
+	msg = <-toServer
+	assert.Equal(t, `{"action":"ack","id":"4"}`, string(msg))
+
 }
 
 func TestMessageEvents(t *testing.T) {
@@ -500,48 +507,43 @@ func TestMessageEvents(t *testing.T) {
 
 	mcb := &dataexchangemocks.Callbacks{}
 	h.SetHandler("ns1", mcb)
+	ocb := &coremocks.OperationCallbacks{}
+	h.SetOperationHandler("ns1", ocb)
 
 	err := h.Start()
 	assert.NoError(t, err)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.EventID() == "1" &&
-			ev.NamespacedID() == namespacedID1 &&
-			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == namespacedID1 &&
-			ev.TransferResult().Status == core.OpStatusFailed &&
-			ev.TransferResult().Error == "pop"
-	})).Run(acker()).Return(nil)
+	ocb.On("OperationUpdate", h, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID1 &&
+			ev.Status == core.OpStatusFailed &&
+			ev.ErrorMessage == "pop"
+	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"1","type":"message-failed","requestID":"` + namespacedID1 + `","error":"pop"}`
 	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.EventID() == "2" &&
-			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == namespacedID2 &&
-			ev.TransferResult().Status == core.OpStatusSucceeded
-	})).Run(acker()).Return(nil)
+	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID2 &&
+			ev.Status == core.OpStatusSucceeded
+	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"2","type":"message-delivered","requestID":"` + namespacedID2 + `"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
 	namespacedID3 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.EventID() == "3" &&
-			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == namespacedID3 &&
-			ev.TransferResult().Status == core.OpStatusSucceeded &&
-			ev.TransferResult().Manifest == `{"manifest":true}` &&
-			ev.TransferResult().Info.String() == `{"signatures":"and stuff"}`
-	})).Run(acker()).Return(nil)
+	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID3 &&
+			ev.Status == core.OpStatusSucceeded &&
+			ev.DXManifest == `{"manifest":true}` &&
+			ev.Output.String() == `{"signatures":"and stuff"}`
+	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"3","type":"message-acknowledged","requestID":"` + namespacedID3 + `","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"3"}`, string(msg))
 
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", h, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "4" &&
 			ev.Type() == dataexchange.DXEventTypeMessageReceived &&
 			ev.MessageReceived().PeerID == "peer1"
@@ -551,6 +553,7 @@ func TestMessageEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"4","manifest":"{\"manifest\":true}"}`, string(msg))
 
 	mcb.AssertExpectations(t)
+	ocb.AssertExpectations(t)
 }
 
 func TestBlobEvents(t *testing.T) {
@@ -560,37 +563,35 @@ func TestBlobEvents(t *testing.T) {
 
 	mcb := &dataexchangemocks.Callbacks{}
 	h.SetHandler("ns1", mcb)
+	ocb := &coremocks.OperationCallbacks{}
+	h.SetOperationHandler("ns1", ocb)
 
 	err := h.Start()
 	assert.NoError(t, err)
 
 	namespacedID5 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.EventID() == "5" &&
-			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == namespacedID5 &&
-			ev.TransferResult().Status == core.OpStatusFailed &&
-			ev.TransferResult().Error == "pop"
-	})).Run(acker()).Return(nil)
+	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID5 &&
+			ev.Status == core.OpStatusFailed &&
+			ev.ErrorMessage == "pop"
+	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"5","type":"blob-failed","requestID":"` + namespacedID5 + `","error":"pop"}`
 	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
 
 	namespacedID6 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.EventID() == "6" &&
-			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == namespacedID6 &&
-			ev.TransferResult().Status == core.OpStatusSucceeded &&
-			ev.TransferResult().Info.String() == `{"some":"details"}`
-	})).Run(acker()).Return(nil)
+	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID6 &&
+			ev.Status == core.OpStatusSucceeded &&
+			ev.Output.String() == `{"some":"details"}`
+	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"6","type":"blob-delivered","requestID":"` + namespacedID6 + `","info":{"some":"details"}}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"6"}`, string(msg))
 
 	u := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+	mcb.On("DXEvent", h, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "9" &&
 			ev.Type() == dataexchange.DXEventTypePrivateBlobReceived &&
 			ev.PrivateBlobReceived().Hash.Equals(hash)
@@ -600,18 +601,17 @@ func TestBlobEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"9"}`, string(msg))
 
 	namespacedID10 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.EventID() == "10" &&
-			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == namespacedID10 &&
-			ev.TransferResult().Status == core.OpStatusSucceeded &&
-			ev.TransferResult().Info.String() == `{"signatures":"and stuff"}`
-	})).Run(acker()).Return(nil)
+	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID10 &&
+			ev.Status == core.OpStatusSucceeded &&
+			ev.Output.String() == `{"signatures":"and stuff"}`
+	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"10","type":"blob-acknowledged","requestID":"` + namespacedID10 + `","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"10"}`, string(msg))
 
 	mcb.AssertExpectations(t)
+	ocb.AssertExpectations(t)
 }
 
 func TestEventsWithManifest(t *testing.T) {
@@ -629,28 +629,29 @@ func TestEventsWithManifest(t *testing.T) {
 
 	mcb := &dataexchangemocks.Callbacks{}
 	h.SetHandler("ns1", mcb)
+	ocb := &coremocks.OperationCallbacks{}
+	h.SetOperationHandler("ns1", ocb)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.EventID() == "1" &&
-			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().Status == core.OpStatusPending
-	})).Run(acker()).Return(nil)
+	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID1 &&
+			ev.Status == core.OpStatusPending
+	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"1","type":"message-delivered","requestID":"` + namespacedID1 + `"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	mcb.On("DXEvent", mock.Anything, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.EventID() == "2" &&
-			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().Status == core.OpStatusPending
-	})).Run(acker()).Return(nil)
+	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID2 &&
+			ev.Status == core.OpStatusPending
+	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"2","type":"blob-delivered","requestID":"` + namespacedID2 + `"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
 	mcb.AssertExpectations(t)
+	ocb.AssertExpectations(t)
 }
 
 func TestEventLoopReceiveClosed(t *testing.T) {

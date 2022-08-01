@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -115,7 +114,7 @@ func TestOperationUpdateInvokeSucceed(t *testing.T) {
 		ID:   fftypes.NewUUID(),
 		Type: core.OpTypeBlockchainInvoke,
 	}
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusSucceeded,
 	}
 
@@ -137,7 +136,7 @@ func TestOperationUpdateInvokeFail(t *testing.T) {
 		ID:   fftypes.NewUUID(),
 		Type: core.OpTypeBlockchainInvoke,
 	}
-	update := &operations.OperationUpdate{
+	update := &core.OperationUpdate{
 		Status: core.OpStatusFailed,
 	}
 

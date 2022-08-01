@@ -183,7 +183,7 @@ func (em *eventManager) DXEvent(dx dataexchange.Plugin, event dataexchange.DXEve
 		// Batches are significant items of work in their own right, so get dispatched to their own routines
 		go em.messageReceived(dx, event)
 	default:
-		log.L(em.ctx).Errorf("Invalid DX event type from %s: %d", dx.Name(), event.Type())
+		log.L(em.ctx).Errorf("Invalid data exchange event type from %s: %d", dx.Name(), event.Type())
 		event.Ack() // still ack
 	}
 }
@@ -208,7 +208,7 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 	log.L(em.ctx).Infof("Blob received event from data exchange %s: Peer='%s' Hash='%v' PayloadRef='%s'", dx.Name(), br.PeerID, &br.Hash, br.PayloadRef)
 
 	if br.PeerID == "" || len(br.PeerID) > 256 || br.PayloadRef == "" || len(br.PayloadRef) > 1024 {
-		log.L(em.ctx).Errorf("Invalid blob received event from data exhange: Peer='%s' Hash='%v' PayloadRef='%s'", br.PeerID, &br.Hash, br.PayloadRef)
+		log.L(em.ctx).Errorf("Invalid blob received event from data exchange: Peer='%s' Hash='%v' PayloadRef='%s'", br.PeerID, &br.Hash, br.PayloadRef)
 		event.Ack() // Still confirm the event
 		return
 	}

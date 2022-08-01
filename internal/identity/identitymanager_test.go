@@ -1278,44 +1278,6 @@ func TestValidateParentTypeInvalidType(t *testing.T) {
 
 }
 
-func TestCachedVerifierLookupCaching(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-
-	verifier := (&core.Verifier{
-		Namespace: "ns1",
-		VerifierRef: core.VerifierRef{
-			Value: "peer1",
-			Type:  core.VerifierTypeFFDXPeerID,
-		},
-	}).Seal()
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, verifier.Type, verifier.Namespace, verifier.Value).Return(verifier, nil).Once()
-
-	v1, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, "peer1")
-	assert.NoError(t, err)
-	assert.Equal(t, verifier, v1)
-
-	v2, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, "peer1")
-	assert.NoError(t, err)
-	assert.Equal(t, verifier, v2)
-
-	mdi.AssertExpectations(t)
-}
-
-func TestCachedVerifierLookupError(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, "ns1", "peer1").Return(nil, fmt.Errorf("pop"))
-
-	_, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, "peer1")
-	assert.Regexp(t, "pop", err)
-
-	mdi.AssertExpectations(t)
-}
-
 func TestResolveIdentitySignerOk(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 	mdi := im.database.(*databasemocks.Plugin)
@@ -1392,6 +1354,33 @@ func TestResolveIdentitySignerNotFound(t *testing.T) {
 	})
 	assert.Regexp(t, "FF10366", err)
 
+	mdi.AssertExpectations(t)
+}
+
+func TestGetLocalNode(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mdi := im.database.(*databasemocks.Plugin)
+
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"}).Once()
+	mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, "ns1", "node1").Return(node, nil).Once()
+
+	result, err := im.GetLocalNode(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, node, result)
+
+	// second call is cached
+	result, err = im.GetLocalNode(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, node, result)
+
+	mmp.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 

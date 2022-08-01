@@ -23,7 +23,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -73,7 +72,7 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOp
 	}
 }
 
-func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
+func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {
 	// Special handling for OpTypeBlockchainInvoke, which writes an event when it succeeds or fails
 	if op.Type == core.OpTypeBlockchainInvoke {
 		if update.Status == core.OpStatusSucceeded {
