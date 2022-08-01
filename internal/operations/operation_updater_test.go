@@ -108,7 +108,27 @@ func TestSubmitUpdateSyncFallbackOpNotFound(t *testing.T) {
 	}).Return(nil)
 	mdi.On("GetOperations", customCtx, mock.Anything, mock.Anything).Return(nil, nil, nil)
 
+	complete := false
 	ou.SubmitOperationUpdate(customCtx, &OperationUpdate{
+		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+		OnComplete:     func() { complete = true },
+	})
+	assert.True(t, complete)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestSubmitUpdateDatabaseError(t *testing.T) {
+	ou := newTestOperationUpdaterNoConcurrency(t)
+	defer ou.close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	mdi := ou.database.(*databasemocks.Plugin)
+	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ou.SubmitOperationUpdate(ctx, &OperationUpdate{
 		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
 	})
 
@@ -324,4 +344,146 @@ func TestDoUpdateFailExternalHandler(t *testing.T) {
 		{Namespace: "ns1", ID: opID1, Type: core.OpTypeBlockchainInvoke, Transaction: txID1},
 	}, []*core.Transaction{})
 	assert.Regexp(t, "pop", err)
+}
+
+func TestDoUpdateVerifyBatchManifest(t *testing.T) {
+	ou := newTestOperationUpdaterNoConcurrency(t)
+	defer ou.close()
+
+	opID1 := fftypes.NewUUID()
+	txID1 := fftypes.NewUUID()
+	batchID := fftypes.NewUUID()
+	ou.manager.handlers[core.OpTypeDataExchangeSendBatch] = &mockHandler{}
+
+	ou.initQueues()
+
+	mdi := ou.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", mock.Anything, "ns1", batchID).Return(&core.BatchPersisted{
+		Manifest: fftypes.JSONAnyPtr(`"test-manifest"`),
+	}, nil)
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusSucceeded, mock.Anything, fftypes.JSONObject(nil)).Return(nil)
+
+	err := ou.doUpdate(ou.ctx, &OperationUpdate{
+		NamespacedOpID: "ns1:" + opID1.String(),
+		Status:         core.OpStatusSucceeded,
+		VerifyManifest: true,
+		DXManifest:     `"test-manifest"`,
+	}, []*core.Operation{{
+		Namespace:   "ns1",
+		ID:          opID1,
+		Type:        core.OpTypeDataExchangeSendBatch,
+		Transaction: txID1,
+		Input: fftypes.JSONObject{
+			"batch": batchID.String(),
+		},
+	}}, []*core.Transaction{})
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDoUpdateVerifyBatchManifestQuery(t *testing.T) {
+	ou := newTestOperationUpdaterNoConcurrency(t)
+	defer ou.close()
+
+	opID1 := fftypes.NewUUID()
+	txID1 := fftypes.NewUUID()
+	batchID := fftypes.NewUUID()
+	ou.manager.handlers[core.OpTypeDataExchangeSendBatch] = &mockHandler{}
+
+	ou.initQueues()
+
+	mdi := ou.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", mock.Anything, "ns1", batchID).Return(nil, fmt.Errorf("pop"))
+
+	err := ou.doUpdate(ou.ctx, &OperationUpdate{
+		NamespacedOpID: "ns1:" + opID1.String(),
+		Status:         core.OpStatusSucceeded,
+		VerifyManifest: true,
+		DXManifest:     `"test-manifest"`,
+	}, []*core.Operation{{
+		Namespace:   "ns1",
+		ID:          opID1,
+		Type:        core.OpTypeDataExchangeSendBatch,
+		Transaction: txID1,
+		Input: fftypes.JSONObject{
+			"batch": batchID.String(),
+		},
+	}}, []*core.Transaction{})
+
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDoUpdateVerifyBatchManifestFail(t *testing.T) {
+	ou := newTestOperationUpdaterNoConcurrency(t)
+	defer ou.close()
+
+	opID1 := fftypes.NewUUID()
+	txID1 := fftypes.NewUUID()
+	batchID := fftypes.NewUUID()
+	ou.manager.handlers[core.OpTypeDataExchangeSendBatch] = &mockHandler{}
+
+	ou.initQueues()
+
+	mdi := ou.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", mock.Anything, "ns1", batchID).Return(&core.BatchPersisted{
+		Manifest: fftypes.JSONAnyPtr(`"test-manifest"`),
+	}, nil)
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.Anything, fftypes.JSONObject(nil)).Return(nil)
+
+	err := ou.doUpdate(ou.ctx, &OperationUpdate{
+		NamespacedOpID: "ns1:" + opID1.String(),
+		Status:         core.OpStatusSucceeded,
+		VerifyManifest: true,
+		DXManifest:     `"BAD"`,
+	}, []*core.Operation{{
+		Namespace:   "ns1",
+		ID:          opID1,
+		Type:        core.OpTypeDataExchangeSendBatch,
+		Transaction: txID1,
+		Input: fftypes.JSONObject{
+			"batch": batchID.String(),
+		},
+	}}, []*core.Transaction{})
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDoUpdateVerifyBlobManifestFail(t *testing.T) {
+	ou := newTestOperationUpdaterNoConcurrency(t)
+	defer ou.close()
+
+	opID1 := fftypes.NewUUID()
+	txID1 := fftypes.NewUUID()
+	blobHash := fftypes.NewRandB32()
+	ou.manager.handlers[core.OpTypeDataExchangeSendBlob] = &mockHandler{}
+
+	ou.initQueues()
+
+	mdi := ou.database.(*databasemocks.Plugin)
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.Anything, fftypes.JSONObject(nil)).Return(nil)
+
+	err := ou.doUpdate(ou.ctx, &OperationUpdate{
+		NamespacedOpID: "ns1:" + opID1.String(),
+		Status:         core.OpStatusSucceeded,
+		VerifyManifest: true,
+		DXHash:         "BAD",
+	}, []*core.Operation{{
+		Namespace:   "ns1",
+		ID:          opID1,
+		Type:        core.OpTypeDataExchangeSendBlob,
+		Transaction: txID1,
+		Input: fftypes.JSONObject{
+			"hash": blobHash.String(),
+		},
+	}}, []*core.Transaction{})
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
 }
