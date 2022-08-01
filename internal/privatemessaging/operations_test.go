@@ -580,6 +580,35 @@ func TestRunOperationBatchSendInvalidData(t *testing.T) {
 	assert.Regexp(t, "FF10137", err)
 }
 
+func TestRunOperationBatchNodeFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	op := &core.Operation{}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", context.Background()).Return(nil, fmt.Errorf("pop"))
+	transport := &core.TransportWrapper{
+		Group: &core.Group{},
+		Batch: &core.Batch{
+			Payload: core.BatchPayload{
+				Data: core.DataArray{
+					{Value: fftypes.JSONAnyPtr(`!json`)},
+				},
+			},
+		},
+	}
+
+	_, complete, err := pm.RunOperation(context.Background(), opSendBatch(op, node, transport))
+
+	assert.False(t, complete)
+	assert.EqualError(t, err, "pop")
+}
+
 func TestOperationUpdate(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()

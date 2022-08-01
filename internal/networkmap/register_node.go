@@ -18,7 +18,6 @@ package networkmap
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -45,18 +44,10 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 		},
 	}
 
-	dxInfo, err := nm.exchange.GetEndpointInfo(ctx)
+	nodeRequest.Profile, err = nm.exchange.GetEndpointInfo(ctx, localNodeName)
 	if err != nil {
 		return nil, err
 	}
-
-	dxID := dxInfo.GetString("id")
-	if dxID != "" {
-		namespacedDestination := fmt.Sprintf("%s-%s", dxID, nm.namespace)
-		dxInfo["id"] = namespacedDestination
-	}
-
-	nodeRequest.Profile = dxInfo
 
 	return nm.RegisterIdentity(ctx, nodeRequest, waitConfirm)
 }

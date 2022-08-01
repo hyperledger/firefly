@@ -290,7 +290,7 @@ func (dm *dataManager) getMessageData(ctx context.Context, msg *core.Message) (d
 			return nil, false, err
 		}
 		if d == nil {
-			log.L(ctx).Warnf("Message %v data %d mising", msg.Header.ID, i)
+			log.L(ctx).Warnf("Message %v data %d missing", msg.Header.ID, i)
 			foundAll = false
 			continue
 		}

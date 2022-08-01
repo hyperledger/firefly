@@ -61,7 +61,7 @@ type identityManager struct {
 	namespace              string
 	defaultKey             string
 	multipartyRootVerifier *core.VerifierRef
-	localNodeID            *fftypes.UUID
+	localNode              *core.Identity
 	identityCacheTTL       time.Duration
 	identityCache          *ccache.Cache
 	signingKeyCacheTTL     time.Duration
@@ -102,14 +102,13 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 }
 
 func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identity, err error) {
-	if im.localNodeID != nil {
-		return im.CachedIdentityLookupByID(ctx, im.localNodeID)
+	if im.localNode != nil {
+		return im.localNode, nil
 	}
 	nodeName := im.multiparty.LocalNode().Name
 	node, err = im.database.GetIdentityByName(ctx, core.IdentityTypeNode, im.namespace, nodeName)
 	if err == nil && node != nil {
-		im.localNodeID = node.ID
-		im.addToIdentityCache(node)
+		im.localNode = node
 	}
 	return node, err
 }
@@ -493,11 +492,6 @@ func (im *identityManager) CachedIdentityLookupMustExist(ctx context.Context, di
 	return identity, false, nil
 }
 
-func (im *identityManager) addToIdentityCache(identity *core.Identity) {
-	cacheKey := fmt.Sprintf("id=%s", identity.ID)
-	im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
-}
-
 func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *core.Identity, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
 	cacheKey := fmt.Sprintf("id=%s", id)
@@ -510,7 +504,7 @@ func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fft
 			return identity, err
 		}
 		// Cache the result
-		im.addToIdentityCache(identity)
+		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
 	}
 	return identity, nil
 }

@@ -38,6 +38,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
+const DXIDSeparator = "/"
+
 type FFDX struct {
 	ctx          context.Context
 	capabilities *dataexchange.Capabilities
@@ -47,12 +49,17 @@ type FFDX struct {
 	needsInit    bool
 	initialized  bool
 	initMutex    sync.Mutex
-	nodes        []fftypes.JSONObject
+	nodes        map[string]*dxNode
 	ackChannel   chan *ack
 }
 
+type dxNode struct {
+	Name string
+	Peer fftypes.JSONObject
+}
+
 type callbacks struct {
-	plugin     dataexchange.Plugin
+	plugin     *FFDX
 	handlers   map[string]dataexchange.Callbacks
 	opHandlers map[string]core.OperationCallbacks
 }
@@ -67,11 +74,17 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.Operation
 	}
 }
 
-func (cb *callbacks) DXEvent(ctx context.Context, namespace string, event dataexchange.DXEvent) {
-	if handler, ok := cb.handlers[namespace]; ok {
-		handler.DXEvent(cb.plugin, event)
+func (cb *callbacks) DXEvent(ctx context.Context, namespace, recipient string, event dataexchange.DXEvent) {
+	if node, ok := cb.plugin.nodes[recipient]; ok {
+		key := namespace + ":" + node.Name
+		if handler, ok := cb.handlers[key]; ok {
+			handler.DXEvent(cb.plugin, event)
+		} else {
+			log.L(ctx).Errorf("No handler found for DX event '%s' namespace=%s node=%s", event.EventID(), namespace, node.Name)
+			event.Ack()
+		}
 	} else {
-		log.L(ctx).Errorf("No handler found for DX event '%s'", event.EventID())
+		log.L(ctx).Errorf("Unknown local node for DX event '%s' recipient=%s", event.EventID(), recipient)
 		event.Ack()
 	}
 }
@@ -163,6 +176,7 @@ func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
 		opHandlers: make(map[string]core.OperationCallbacks),
 	}
 	h.needsInit = config.GetBool(DataExchangeInitEnabled)
+	h.nodes = make(map[string]*dxNode)
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
@@ -184,12 +198,17 @@ func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
 	return nil
 }
 
-func (h *FFDX) SetNodes(nodes []fftypes.JSONObject) {
-	h.nodes = nodes
+func (h *FFDX) InitPeer(nodeName string, peer fftypes.JSONObject) {
+	id := peer.GetString("id")
+	h.nodes[id] = &dxNode{
+		Name: nodeName,
+		Peer: peer,
+	}
 }
 
-func (h *FFDX) SetHandler(namespace string, handler dataexchange.Callbacks) {
-	h.callbacks.handlers[namespace] = handler
+func (h *FFDX) SetHandler(remoteNamespace, nodeName string, handler dataexchange.Callbacks) {
+	key := remoteNamespace + ":" + nodeName
+	h.callbacks.handlers[key] = handler
 }
 
 func (h *FFDX) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
@@ -211,8 +230,12 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 	if h.needsInit {
 		h.initialized = false
 		var status dxStatus
+		var body []fftypes.JSONObject
+		for _, node := range h.nodes {
+			body = append(body, node.Peer)
+		}
 		res, err := h.client.R().SetContext(ctx).
-			SetBody(h.nodes).
+			SetBody(body).
 			SetResult(&status).
 			Post("/api/v1/init")
 		if err != nil || !res.IsSuccess() {
@@ -236,7 +259,7 @@ func (h *FFDX) checkInitialized(ctx context.Context) error {
 	return nil
 }
 
-func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.JSONObject, err error) {
+func (h *FFDX) GetEndpointInfo(ctx context.Context, nodeName string) (peer fftypes.JSONObject, err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return peer, err
 	}
@@ -252,21 +275,28 @@ func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.JSONObject, er
 		log.L(ctx).Errorf("Invalid DX info: %s", peer.String())
 		return nil, i18n.NewError(ctx, coremsgs.MsgDXInfoMissingID)
 	}
-	h.nodes = append(h.nodes, peer)
+	peer["peerID"] = id
+	peer["id"] = fmt.Sprintf("%s%s%s", id, DXIDSeparator, nodeName)
 	return peer, nil
 }
 
-func (h *FFDX) AddPeer(ctx context.Context, peer fftypes.JSONObject) (err error) {
+func (h *FFDX) AddPeer(ctx context.Context, nodeName string, peer fftypes.JSONObject) (err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
 
+	id := peer.GetString("peerID")
+	if id == "" {
+		id = peer.GetString("id")
+	}
+
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(peer).
-		Put(fmt.Sprintf("/api/v1/peers/%s", peer.GetString("id")))
+		Put(fmt.Sprintf("/api/v1/peers/%s", id))
 	if err != nil || !res.IsSuccess() {
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
+	h.InitPeer(nodeName, peer)
 	return nil
 }
 

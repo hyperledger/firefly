@@ -23,13 +23,13 @@ type Plugin struct {
 	mock.Mock
 }
 
-// AddPeer provides a mock function with given fields: ctx, peer
-func (_m *Plugin) AddPeer(ctx context.Context, peer fftypes.JSONObject) error {
-	ret := _m.Called(ctx, peer)
+// AddPeer provides a mock function with given fields: ctx, nodeName, peer
+func (_m *Plugin) AddPeer(ctx context.Context, nodeName string, peer fftypes.JSONObject) error {
+	ret := _m.Called(ctx, nodeName, peer)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.JSONObject) error); ok {
-		r0 = rf(ctx, peer)
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.JSONObject) error); ok {
+		r0 = rf(ctx, nodeName, peer)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -106,13 +106,13 @@ func (_m *Plugin) DownloadBlob(ctx context.Context, payloadRef string) (io.ReadC
 	return r0, r1
 }
 
-// GetEndpointInfo provides a mock function with given fields: ctx
-func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.JSONObject, error) {
-	ret := _m.Called(ctx)
+// GetEndpointInfo provides a mock function with given fields: ctx, nodeName
+func (_m *Plugin) GetEndpointInfo(ctx context.Context, nodeName string) (fftypes.JSONObject, error) {
+	ret := _m.Called(ctx, nodeName)
 
 	var r0 fftypes.JSONObject
-	if rf, ok := ret.Get(0).(func(context.Context) fftypes.JSONObject); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) fftypes.JSONObject); ok {
+		r0 = rf(ctx, nodeName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(fftypes.JSONObject)
@@ -120,8 +120,8 @@ func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.JSONObject, erro
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, nodeName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -146,6 +146,11 @@ func (_m *Plugin) Init(ctx context.Context, _a1 config.Section) error {
 // InitConfig provides a mock function with given fields: _a0
 func (_m *Plugin) InitConfig(_a0 config.Section) {
 	_m.Called(_a0)
+}
+
+// InitPeer provides a mock function with given fields: nodeName, peer
+func (_m *Plugin) InitPeer(nodeName string, peer fftypes.JSONObject) {
+	_m.Called(nodeName, peer)
 }
 
 // Name provides a mock function with given fields:
@@ -176,14 +181,9 @@ func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peerID string,
 	return r0
 }
 
-// SetHandler provides a mock function with given fields: namespace, handler
-func (_m *Plugin) SetHandler(namespace string, handler dataexchange.Callbacks) {
-	_m.Called(namespace, handler)
-}
-
-// SetNodes provides a mock function with given fields: nodes
-func (_m *Plugin) SetNodes(nodes []fftypes.JSONObject) {
-	_m.Called(nodes)
+// SetHandler provides a mock function with given fields: remoteNamespace, nodeName, handler
+func (_m *Plugin) SetHandler(remoteNamespace string, nodeName string, handler dataexchange.Callbacks) {
+	_m.Called(remoteNamespace, nodeName, handler)
 }
 
 // SetOperationHandler provides a mock function with given fields: namespace, handler

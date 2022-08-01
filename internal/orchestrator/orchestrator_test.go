@@ -204,13 +204,19 @@ func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.namespace.RemoteName = "ns2"
+	or.config.Multiparty.Node.Name = "node1"
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Name: "node1",
+		},
+	}
 	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
 	or.mbi.On("SetHandler", "ns", mock.Anything).Return()
 	or.mbi.On("SetOperationHandler", "ns", mock.Anything).Return()
-	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{{}}, nil, nil)
-	or.mdx.On("SetHandler", "ns2", mock.Anything).Return()
+	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{node}, nil, nil)
+	or.mdx.On("SetHandler", "ns2", "node1", mock.Anything).Return()
 	or.mdx.On("SetOperationHandler", "ns", mock.Anything).Return()
-	or.mdx.On("SetNodes", mock.Anything).Return()
+	or.mdx.On("InitPeer", "node1", mock.Anything).Return()
 	or.mps.On("SetHandler", "ns", mock.Anything).Return()
 	or.mti.On("SetHandler", "ns", mock.Anything).Return(nil)
 	or.mti.On("SetOperationHandler", "ns", mock.Anything).Return()

@@ -234,7 +234,7 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 		state.AddPreFinalize(
 			func(ctx context.Context) error {
 				// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
-				return dh.exchange.AddPeer(ctx, identity.Profile)
+				return dh.exchange.AddPeer(ctx, identity.Name, identity.Profile)
 			})
 	}
 

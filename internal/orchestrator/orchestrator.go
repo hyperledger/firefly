@@ -370,12 +370,10 @@ func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
-		nodeInfo := make([]fftypes.JSONObject, len(nodes))
-		for i, node := range nodes {
-			nodeInfo[i] = node.Profile
+		for _, node := range nodes {
+			or.plugins.DataExchange.Plugin.InitPeer(node.Name, node.Profile)
 		}
-		or.plugins.DataExchange.Plugin.SetNodes(nodeInfo)
-		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.RemoteName, or.events)
+		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.RemoteName, or.config.Multiparty.Node.Name, or.events)
 		or.plugins.DataExchange.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
 	}
 

@@ -63,12 +63,12 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, config config.Section) error
 
-	// SetNodes initializes the known nodes from the database
-	SetNodes(nodes []fftypes.JSONObject)
+	// InitPeer initializes info on a known peer (loaded from the database)
+	InitPeer(nodeName string, peer fftypes.JSONObject)
 
 	// SetHandler registers a handler to receive callbacks
-	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace
-	SetHandler(namespace string, handler Callbacks)
+	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace and node
+	SetHandler(remoteNamespace, nodeName string, handler Callbacks)
 
 	// SetOperationHandler registers a handler to receive async operation status
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
@@ -81,10 +81,10 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// GetEndpointInfo returns the information about the local endpoint
-	GetEndpointInfo(ctx context.Context) (peer fftypes.JSONObject, err error)
+	GetEndpointInfo(ctx context.Context, nodeName string) (peer fftypes.JSONObject, err error)
 
 	// AddPeer translates the configuration published by another peer, into a reference string that is used between DX and FireFly to refer to the peer
-	AddPeer(ctx context.Context, peer fftypes.JSONObject) (err error)
+	AddPeer(ctx context.Context, nodeName string, peer fftypes.JSONObject) (err error)
 
 	// UploadBlob streams a blob to storage, and returns the hash to confirm the hash calculated in Core matches the hash calculated in the plugin
 	UploadBlob(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error)
