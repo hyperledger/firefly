@@ -18,12 +18,8 @@ package multiparty
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"strings"
-	"testing"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/test/e2e"
@@ -31,41 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/yaml.v2"
 )
-
-func readConfig(t *testing.T, configFile string) map[string]interface{} {
-	yfile, err := ioutil.ReadFile(configFile)
-	assert.NoError(t, err)
-	data := make(map[string]interface{})
-	err = yaml.Unmarshal(yfile, &data)
-	assert.NoError(t, err)
-	return data
-}
-
-func writeConfig(t *testing.T, configFile string, data map[string]interface{}) {
-	out, err := yaml.Marshal(data)
-	assert.NoError(t, err)
-	f, err := os.Create(configFile)
-	assert.NoError(t, err)
-	_, err = f.Write(out)
-	assert.NoError(t, err)
-	f.Close()
-}
-
-func addNamespace(data map[string]interface{}, ns map[string]interface{}) {
-	namespaces := data["namespaces"].(map[interface{}]interface{})
-	predefined := namespaces["predefined"].([]interface{})
-	namespaces["predefined"] = append(predefined, ns)
-}
-
-func resetFireFly(t *testing.T, client *resty.Client) {
-	resp, err := client.R().
-		SetBody(map[string]interface{}{}).
-		Post("/reset")
-	require.NoError(t, err)
-	assert.Equal(t, 204, resp.StatusCode())
-}
 
 type ContractMigrationTestSuite struct {
 	suite.Suite
