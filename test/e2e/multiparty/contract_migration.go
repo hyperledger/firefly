@@ -18,13 +18,8 @@ package multiparty
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strings"
-	"testing"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/test/e2e"
@@ -32,74 +27,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/yaml.v2"
 )
-
-func readConfig(t *testing.T, configFile string) map[string]interface{} {
-	yfile, err := ioutil.ReadFile(configFile)
-	assert.NoError(t, err)
-	data := make(map[string]interface{})
-	err = yaml.Unmarshal(yfile, &data)
-	assert.NoError(t, err)
-	return data
-}
-
-func writeConfig(t *testing.T, configFile string, data map[string]interface{}) {
-	out, err := yaml.Marshal(data)
-	assert.NoError(t, err)
-	f, err := os.Create(configFile)
-	assert.NoError(t, err)
-	_, err = f.Write(out)
-	assert.NoError(t, err)
-	f.Close()
-}
-
-func addNamespace(data map[string]interface{}, ns map[string]interface{}) {
-	namespaces := data["namespaces"].(map[interface{}]interface{})
-	predefined := namespaces["predefined"].([]interface{})
-	namespaces["predefined"] = append(predefined, ns)
-}
-
-func resetFireFly(t *testing.T, client *resty.Client) {
-	resp, err := client.R().
-		SetBody(map[string]interface{}{}).
-		Post("/reset")
-	require.NoError(t, err)
-	assert.Equal(t, 204, resp.StatusCode())
-}
 
 type ContractMigrationTestSuite struct {
 	suite.Suite
-	testState   *testState
-	stackName   string
-	adminHost1  string
-	adminHost2  string
-	configFile1 string
-	configFile2 string
+	testState *testState
 }
 
 func (suite *ContractMigrationTestSuite) SetupSuite() {
 	suite.testState = beforeE2ETest(suite.T())
-	stack := e2e.ReadStack(suite.T())
-	suite.stackName = stack.Name
-
-	adminProtocol1 := schemeHTTP
-	if stack.Members[0].UseHTTPS {
-		adminProtocol1 = schemeHTTPS
-	}
-	adminProtocol2 := schemeHTTP
-	if stack.Members[1].UseHTTPS {
-		adminProtocol2 = schemeHTTPS
-	}
-	suite.adminHost1 = fmt.Sprintf("%s://%s:%d", adminProtocol1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedAdminPort)
-	suite.adminHost2 = fmt.Sprintf("%s://%s:%d", adminProtocol2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedAdminPort)
-
-	stackDir := os.Getenv("STACK_DIR")
-	if stackDir == "" {
-		suite.T().Fatal("STACK_DIR must be set")
-	}
-	suite.configFile1 = filepath.Join(stackDir, "runtime", "config", "firefly_core_0.yml")
-	suite.configFile2 = filepath.Join(stackDir, "runtime", "config", "firefly_core_1.yml")
 }
 
 func (suite *ContractMigrationTestSuite) BeforeTest(suiteName, testName string) {
@@ -113,8 +49,8 @@ func (suite *ContractMigrationTestSuite) AfterTest(suiteName, testName string) {
 func (suite *ContractMigrationTestSuite) TestContractMigration() {
 	defer suite.testState.Done()
 
-	address1 := deployContract(suite.T(), suite.stackName, "firefly/Firefly.json")
-	address2 := deployContract(suite.T(), suite.stackName, "firefly/Firefly.json")
+	address1 := deployContract(suite.T(), suite.testState.stackName, "firefly/Firefly.json")
+	address2 := deployContract(suite.T(), suite.testState.stackName, "firefly/Firefly.json")
 	runMigrationTest(suite, address1, address2, false)
 }
 
@@ -141,22 +77,22 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	data := &core.DataRefOrValue{Value: fftypes.JSONAnyPtr(`"test"`)}
 
 	// Add the new namespace to both config files
-	data1 := readConfig(suite.T(), suite.configFile1)
+	data1 := readConfig(suite.T(), suite.testState.configFile1)
 	org["name"] = suite.testState.org1.Name
 	org["key"] = suite.testState.org1key.Value
 	addNamespace(data1, namespaceInfo)
-	writeConfig(suite.T(), suite.configFile1, data1)
+	writeConfig(suite.T(), suite.testState.configFile1, data1)
 
-	data2 := readConfig(suite.T(), suite.configFile2)
+	data2 := readConfig(suite.T(), suite.testState.configFile2)
 	org["name"] = suite.testState.org2.Name
 	org["key"] = suite.testState.org2key.Value
 	addNamespace(data2, namespaceInfo)
-	writeConfig(suite.T(), suite.configFile2, data2)
+	writeConfig(suite.T(), suite.testState.configFile2, data2)
 
 	admin1 := client.NewResty(suite.T())
 	admin2 := client.NewResty(suite.T())
-	admin1.SetBaseURL(suite.adminHost1 + "/spi/v1")
-	admin2.SetBaseURL(suite.adminHost2 + "/spi/v1")
+	admin1.SetBaseURL(suite.testState.adminHost1 + "/spi/v1")
+	admin2.SetBaseURL(suite.testState.adminHost2 + "/spi/v1")
 
 	// Reset both nodes to pick up the new namespace
 	resetFireFly(suite.T(), admin1)

@@ -18,8 +18,6 @@ package multiparty
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -32,36 +30,11 @@ import (
 
 type NamespaceAliasSuite struct {
 	suite.Suite
-	testState   *testState
-	stackName   string
-	adminHost1  string
-	adminHost2  string
-	configFile1 string
-	configFile2 string
+	testState *testState
 }
 
 func (suite *NamespaceAliasSuite) SetupSuite() {
 	suite.testState = beforeE2ETest(suite.T())
-	stack := e2e.ReadStack(suite.T())
-	suite.stackName = stack.Name
-
-	adminProtocol1 := schemeHTTP
-	if stack.Members[0].UseHTTPS {
-		adminProtocol1 = schemeHTTPS
-	}
-	adminProtocol2 := schemeHTTP
-	if stack.Members[1].UseHTTPS {
-		adminProtocol2 = schemeHTTPS
-	}
-	suite.adminHost1 = fmt.Sprintf("%s://%s:%d", adminProtocol1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedAdminPort)
-	suite.adminHost2 = fmt.Sprintf("%s://%s:%d", adminProtocol2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedAdminPort)
-
-	stackDir := os.Getenv("STACK_DIR")
-	if stackDir == "" {
-		suite.T().Fatal("STACK_DIR must be set")
-	}
-	suite.configFile1 = filepath.Join(stackDir, "runtime", "config", "firefly_core_0.yml")
-	suite.configFile2 = filepath.Join(stackDir, "runtime", "config", "firefly_core_1.yml")
 }
 
 func (suite *NamespaceAliasSuite) BeforeTest(suiteName, testName string) {
@@ -75,7 +48,7 @@ func (suite *NamespaceAliasSuite) AfterTest(suiteName, testName string) {
 func (suite *NamespaceAliasSuite) TestNamespaceMapping() {
 	defer suite.testState.Done()
 
-	address := deployContract(suite.T(), suite.stackName, "firefly/Firefly.json")
+	address := deployContract(suite.T(), suite.testState.stackName, "firefly/Firefly.json")
 	localNamespace1 := randomName(suite.T())
 	localNamespace2 := randomName(suite.T())
 	remoteNamespace := randomName(suite.T())
@@ -97,24 +70,24 @@ func (suite *NamespaceAliasSuite) TestNamespaceMapping() {
 	data := &core.DataRefOrValue{Value: fftypes.JSONAnyPtr(`"test"`)}
 
 	// Add the new namespace to both config files
-	data1 := readConfig(suite.T(), suite.configFile1)
+	data1 := readConfig(suite.T(), suite.testState.configFile1)
 	namespaceInfo["name"] = localNamespace1
 	org["name"] = suite.testState.org1.Name
 	org["key"] = suite.testState.org1key.Value
 	addNamespace(data1, namespaceInfo)
-	writeConfig(suite.T(), suite.configFile1, data1)
+	writeConfig(suite.T(), suite.testState.configFile1, data1)
 
-	data2 := readConfig(suite.T(), suite.configFile2)
+	data2 := readConfig(suite.T(), suite.testState.configFile2)
 	namespaceInfo["name"] = localNamespace2
 	org["name"] = suite.testState.org2.Name
 	org["key"] = suite.testState.org2key.Value
 	addNamespace(data2, namespaceInfo)
-	writeConfig(suite.T(), suite.configFile2, data2)
+	writeConfig(suite.T(), suite.testState.configFile2, data2)
 
 	admin1 := client.NewResty(suite.T())
 	admin2 := client.NewResty(suite.T())
-	admin1.SetBaseURL(suite.adminHost1 + "/spi/v1")
-	admin2.SetBaseURL(suite.adminHost2 + "/spi/v1")
+	admin1.SetBaseURL(suite.testState.adminHost1 + "/spi/v1")
+	admin2.SetBaseURL(suite.testState.adminHost2 + "/spi/v1")
 
 	// Reset both nodes to pick up the new namespace
 	resetFireFly(suite.T(), admin1)
