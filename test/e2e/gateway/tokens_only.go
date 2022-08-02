@@ -72,7 +72,7 @@ func (suite *TokensOnlyTestSuite) AfterTest(suiteName, testName string) {
 
 func (suite *TokensOnlyTestSuite) TestTokensOnlyNamespaces() {
 	defer suite.testState.Done()
-	testNamespace := randomName(suite.T())
+	testNamespace := e2e.RandomName(suite.T())
 	suite.T().Logf("Test namespace: %s", testNamespace)
 
 	namespaceInfo := map[string]interface{}{
@@ -86,14 +86,14 @@ func (suite *TokensOnlyTestSuite) TestTokensOnlyNamespaces() {
 	}
 
 	// Add the new namespace
-	data1 := readConfig(suite.T(), suite.configFile1)
-	addNamespace(data1, namespaceInfo)
-	writeConfig(suite.T(), suite.configFile1, data1)
+	data1 := e2e.ReadConfig(suite.T(), suite.configFile1)
+	e2e.AddNamespace(data1, namespaceInfo)
+	e2e.WriteConfig(suite.T(), suite.configFile1, data1)
 
 	admin1 := client.NewResty(suite.T())
 	admin1.SetBaseURL(suite.adminHost1 + "/spi/v1")
 
-	resetFireFly(suite.T(), admin1)
+	e2e.ResetFireFly(suite.T(), admin1)
 	e2e.PollForUp(suite.T(), suite.testState.client1)
 
 	client1 := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, testNamespace)
@@ -102,7 +102,7 @@ func (suite *TokensOnlyTestSuite) TestTokensOnlyNamespaces() {
 	received1 := e2e.WsReader(client1.WebSocket(suite.T(), queryString, nil))
 
 	// Attempt async token operations on new namespace
-	poolName := fmt.Sprintf("pool_%s", randomName(suite.T()))
+	poolName := fmt.Sprintf("pool_%s", e2e.RandomName(suite.T()))
 	suite.T().Logf("Pool name: %s", poolName)
 
 	pool := &core.TokenPool{

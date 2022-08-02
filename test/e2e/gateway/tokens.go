@@ -56,7 +56,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 
 	received1 := e2e.WsReader(suite.testState.ws1)
 
-	poolName := fmt.Sprintf("pool_%s", randomName(suite.T()))
+	poolName := fmt.Sprintf("pool_%s", e2e.RandomName(suite.T()))
 	suite.T().Logf("Pool name: %s", poolName)
 
 	pool := &core.TokenPool{

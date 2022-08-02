@@ -55,7 +55,7 @@ func (suite *ContractMigrationTestSuite) TestContractMigration() {
 }
 
 func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 string, startOnV1 bool) {
-	testNamespace := randomName(suite.T())
+	testNamespace := e2e.RandomName(suite.T())
 	suite.T().Logf("Test namespace: %s", testNamespace)
 
 	org := map[string]interface{}{}
@@ -77,17 +77,17 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	data := &core.DataRefOrValue{Value: fftypes.JSONAnyPtr(`"test"`)}
 
 	// Add the new namespace to both config files
-	data1 := readConfig(suite.T(), suite.testState.configFile1)
+	data1 := e2e.ReadConfig(suite.T(), suite.testState.configFile1)
 	org["name"] = suite.testState.org1.Name
 	org["key"] = suite.testState.org1key.Value
-	addNamespace(data1, namespaceInfo)
-	writeConfig(suite.T(), suite.testState.configFile1, data1)
+	e2e.AddNamespace(data1, namespaceInfo)
+	e2e.WriteConfig(suite.T(), suite.testState.configFile1, data1)
 
-	data2 := readConfig(suite.T(), suite.testState.configFile2)
+	data2 := e2e.ReadConfig(suite.T(), suite.testState.configFile2)
 	org["name"] = suite.testState.org2.Name
 	org["key"] = suite.testState.org2key.Value
-	addNamespace(data2, namespaceInfo)
-	writeConfig(suite.T(), suite.testState.configFile2, data2)
+	e2e.AddNamespace(data2, namespaceInfo)
+	e2e.WriteConfig(suite.T(), suite.testState.configFile2, data2)
 
 	admin1 := client.NewResty(suite.T())
 	admin2 := client.NewResty(suite.T())
@@ -95,8 +95,8 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	admin2.SetBaseURL(suite.testState.adminHost2 + "/spi/v1")
 
 	// Reset both nodes to pick up the new namespace
-	resetFireFly(suite.T(), admin1)
-	resetFireFly(suite.T(), admin2)
+	e2e.ResetFireFly(suite.T(), admin1)
+	e2e.ResetFireFly(suite.T(), admin2)
 	e2e.PollForUp(suite.T(), suite.testState.client1)
 	e2e.PollForUp(suite.T(), suite.testState.client2)
 
