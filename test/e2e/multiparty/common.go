@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -54,6 +55,11 @@ type testState struct {
 	client2              *client.FireFlyClient
 	unregisteredAccounts []interface{}
 	namespace            string
+	stackName            string
+	adminHost1           string
+	adminHost2           string
+	configFile1          string
+	configFile2          string
 }
 
 func (m *testState) T() *testing.T {
@@ -69,6 +75,10 @@ func (m *testState) Done() func() {
 }
 
 func beforeE2ETest(t *testing.T) *testState {
+	stackDir := os.Getenv("STACK_DIR")
+	if stackDir == "" {
+		t.Fatal("STACK_DIR must be set")
+	}
 	stack := e2e.ReadStack(t)
 	stackState := e2e.ReadStackState(t)
 
@@ -95,6 +105,9 @@ func beforeE2ETest(t *testing.T) *testState {
 
 	base1 := fmt.Sprintf("%s://%s%s", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
 	base2 := fmt.Sprintf("%s://%s%s", httpProtocolClient2, stack.Members[1].FireflyHostname, member1WithPort)
+	admin1 := fmt.Sprintf("%s://%s:%d", httpProtocolClient1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedAdminPort)
+	admin2 := fmt.Sprintf("%s://%s:%d", httpProtocolClient2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedAdminPort)
+
 	namespace := os.Getenv("NAMESPACE")
 	if namespace == "" {
 		namespace = "default"
@@ -102,11 +115,16 @@ func beforeE2ETest(t *testing.T) *testState {
 
 	ts := &testState{
 		t:                    t,
+		stackName:            stack.Name,
 		startTime:            time.Now(),
 		client1:              client.NewFireFly(t, base1, namespace),
 		client2:              client.NewFireFly(t, base2, namespace),
 		unregisteredAccounts: stackState.Accounts[2:],
 		namespace:            namespace,
+		adminHost1:           admin1,
+		adminHost2:           admin2,
+		configFile1:          filepath.Join(stackDir, "runtime", "config", "firefly_core_0.yml"),
+		configFile2:          filepath.Join(stackDir, "runtime", "config", "firefly_core_1.yml"),
 	}
 
 	t.Logf("Blockchain provider: %s", stack.BlockchainProvider)
