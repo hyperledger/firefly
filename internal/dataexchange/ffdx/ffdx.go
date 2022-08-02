@@ -50,6 +50,7 @@ type FFDX struct {
 	initialized  bool
 	initMutex    sync.Mutex
 	nodes        map[string]*dxNode
+	nodesMutex   sync.Mutex
 	ackChannel   chan *ack
 }
 
@@ -75,7 +76,9 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.Operation
 }
 
 func (cb *callbacks) DXEvent(ctx context.Context, namespace, recipient string, event dataexchange.DXEvent) {
+	cb.plugin.nodesMutex.Lock()
 	if node, ok := cb.plugin.nodes[recipient]; ok {
+		cb.plugin.nodesMutex.Unlock()
 		key := namespace + ":" + node.Name
 		if handler, ok := cb.handlers[key]; ok {
 			handler.DXEvent(cb.plugin, event)
@@ -84,6 +87,7 @@ func (cb *callbacks) DXEvent(ctx context.Context, namespace, recipient string, e
 			event.Ack()
 		}
 	} else {
+		cb.plugin.nodesMutex.Unlock()
 		log.L(ctx).Errorf("Unknown local node for DX event '%s' recipient=%s", event.EventID(), recipient)
 		event.Ack()
 	}
@@ -231,9 +235,11 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 		h.initialized = false
 		var status dxStatus
 		var body []fftypes.JSONObject
+		h.nodesMutex.Lock()
 		for _, node := range h.nodes {
 			body = append(body, node.Peer)
 		}
+		h.nodesMutex.Unlock()
 		res, err := h.client.R().SetContext(ctx).
 			SetBody(body).
 			SetResult(&status).
@@ -289,6 +295,9 @@ func (h *FFDX) AddPeer(ctx context.Context, nodeName string, peer fftypes.JSONOb
 	if id == "" {
 		id = peer.GetString("id")
 	}
+
+	h.nodesMutex.Lock()
+	defer h.nodesMutex.Unlock()
 
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(peer).
