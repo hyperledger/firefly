@@ -30,7 +30,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|keyNormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization|`string`|`<nil>`
+|keynormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization|`string`|`<nil>`
 
 ## batch.cache
 
@@ -621,6 +621,12 @@ nav_order: 2
 |name|The name of the namespace (must be unique)|`string`|`<nil>`
 |plugins|The list of plugins for this namespace|`string`|`<nil>`
 |remotename|The namespace name to be sent in plugin calls, if it differs from namespace name|`string`|`<nil>`
+
+## namespaces.predefined[].assets.manager
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|keynormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization|`string`|`<nil>`
 
 ## namespaces.predefined[].multiparty
 

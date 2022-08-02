@@ -170,6 +170,7 @@ type Plugins struct {
 
 type Config struct {
 	DefaultKey       string
+	KeyNormalization string
 	Multiparty       multiparty.Config
 	TokenRemoteNames map[string]string
 }
@@ -449,7 +450,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.namespace.LocalName, or.database(), or.tokens(), or.identity, or.syncasync, or.broadcast, or.messaging, or.metrics, or.operations, or.txHelper)
+		or.assets, err = assets.NewAssetManager(ctx, or.namespace.LocalName, or.config.KeyNormalization, or.database(), or.tokens(), or.identity, or.syncasync, or.broadcast, or.messaging, or.metrics, or.operations, or.txHelper)
 		if err != nil {
 			return err
 		}

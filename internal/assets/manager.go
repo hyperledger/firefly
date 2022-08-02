@@ -19,11 +19,9 @@ package assets
 import (
 	"context"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/broadcast"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
@@ -84,7 +82,7 @@ type assetManager struct {
 	keyNormalization int
 }
 
-func NewAssetManager(ctx context.Context, ns string, di database.Plugin, ti map[string]tokens.Plugin, im identity.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
+func NewAssetManager(ctx context.Context, ns, keyNormalization string, di database.Plugin, ti map[string]tokens.Plugin, im identity.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || im == nil || sa == nil || ti == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "AssetManager")
 	}
@@ -98,7 +96,7 @@ func NewAssetManager(ctx context.Context, ns string, di database.Plugin, ti map[
 		broadcast:        bm,
 		messaging:        pm,
 		tokens:           ti,
-		keyNormalization: identity.ParseKeyNormalizationConfig(config.GetString(coreconfig.AssetManagerKeyNormalization)),
+		keyNormalization: identity.ParseKeyNormalizationConfig(keyNormalization),
 		metrics:          mm,
 		operations:       om,
 	}
