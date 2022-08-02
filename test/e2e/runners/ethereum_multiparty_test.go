@@ -24,8 +24,8 @@ import (
 )
 
 func TestEthereumMultipartyE2ESuite(t *testing.T) {
-	suite.Run(t, new(multiparty.IdentityTestSuite))
 	suite.Run(t, new(multiparty.OnChainOffChainTestSuite))
+	suite.Run(t, new(multiparty.IdentityTestSuite))
 	suite.Run(t, new(multiparty.TokensTestSuite))
 	suite.Run(t, new(multiparty.EthereumContractTestSuite))
 	suite.Run(t, new(multiparty.ContractMigrationTestSuite))
