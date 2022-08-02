@@ -49,6 +49,16 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 			},
 		},
 	}
+	localNode := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{
+				"id": "local1",
+			},
+		},
+	}
 	blob := &core.Blob{
 		Hash:       fftypes.NewRandB32(),
 		PayloadRef: "payload",
@@ -60,7 +70,8 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), mock.Anything).Return(node, nil)
 	mdi.On("GetBlobMatchingHash", context.Background(), blob.Hash).Return(blob, nil)
-	mdx.On("TransferBlob", context.Background(), "ns1:"+op.ID.String(), "peer1", "payload").Return(nil)
+	mim.On("GetLocalNode", context.Background()).Return(localNode, nil)
+	mdx.On("TransferBlob", context.Background(), "ns1:"+op.ID.String(), "peer1", "local1", "payload").Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -580,7 +591,7 @@ func TestRunOperationBatchSendInvalidData(t *testing.T) {
 	assert.Regexp(t, "FF10137", err)
 }
 
-func TestRunOperationBatchNodeFail(t *testing.T) {
+func TestRunOperationBatchSendNodeFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
@@ -604,6 +615,25 @@ func TestRunOperationBatchNodeFail(t *testing.T) {
 	}
 
 	_, complete, err := pm.RunOperation(context.Background(), opSendBatch(op, node, transport))
+
+	assert.False(t, complete)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestRunOperationBlobSendNodeFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	op := &core.Operation{}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", context.Background()).Return(nil, fmt.Errorf("pop"))
+
+	_, complete, err := pm.RunOperation(context.Background(), opSendBlob(op, node, &core.Blob{}))
 
 	assert.False(t, complete)
 	assert.EqualError(t, err, "pop")

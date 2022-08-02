@@ -150,6 +150,7 @@ type transferBlob struct {
 	Path      string `json:"path"`
 	Recipient string `json:"recipient"`
 	RequestID string `json:"requestId"`
+	Sender    string `json:"sender"`
 }
 
 type wsAck struct {
@@ -339,7 +340,7 @@ func (h *FFDX) DownloadBlob(ctx context.Context, payloadRef string) (content io.
 	return res.RawBody(), nil
 }
 
-func (h *FFDX) SendMessage(ctx context.Context, nsOpID, peerID string, senderID string, data []byte) (err error) {
+func (h *FFDX) SendMessage(ctx context.Context, nsOpID, peerID, senderID string, data []byte) (err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
@@ -360,7 +361,7 @@ func (h *FFDX) SendMessage(ctx context.Context, nsOpID, peerID string, senderID 
 	return nil
 }
 
-func (h *FFDX) TransferBlob(ctx context.Context, nsOpID, peerID, payloadRef string) (err error) {
+func (h *FFDX) TransferBlob(ctx context.Context, nsOpID, peerID, senderID, payloadRef string) (err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
@@ -371,6 +372,7 @@ func (h *FFDX) TransferBlob(ctx context.Context, nsOpID, peerID, payloadRef stri
 			Path:      fmt.Sprintf("/%s", payloadRef),
 			Recipient: peerID,
 			RequestID: nsOpID,
+			Sender:    senderID,
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/transfers")

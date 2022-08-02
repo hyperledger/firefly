@@ -205,13 +205,13 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// TransferBlob provides a mock function with given fields: ctx, nsOpID, peerID, payloadRef
-func (_m *Plugin) TransferBlob(ctx context.Context, nsOpID string, peerID string, payloadRef string) error {
-	ret := _m.Called(ctx, nsOpID, peerID, payloadRef)
+// TransferBlob provides a mock function with given fields: ctx, nsOpID, peerID, senderID, payloadRef
+func (_m *Plugin) TransferBlob(ctx context.Context, nsOpID string, peerID string, senderID string, payloadRef string) error {
+	ret := _m.Called(ctx, nsOpID, peerID, senderID, payloadRef)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, nsOpID, peerID, payloadRef)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) error); ok {
+		r0 = rf(ctx, nsOpID, peerID, senderID, payloadRef)
 	} else {
 		r0 = ret.Error(0)
 	}

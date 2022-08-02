@@ -129,8 +129,14 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 func (pm *privateMessaging) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case transferBlobData:
+		node, err := pm.identity.GetLocalNode(ctx)
+		if err != nil {
+			return nil, false, err
+		}
+
 		recipient := data.Node.Profile.GetString("id")
-		return nil, false, pm.exchange.TransferBlob(ctx, op.NamespacedIDString(), recipient, data.Blob.PayloadRef)
+		sender := node.Profile.GetString("id")
+		return nil, false, pm.exchange.TransferBlob(ctx, op.NamespacedIDString(), recipient, sender, data.Blob.PayloadRef)
 
 	case batchSendData:
 		node, err := pm.identity.GetLocalNode(ctx)
