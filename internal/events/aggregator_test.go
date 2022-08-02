@@ -225,9 +225,9 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	// Update the message
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.MatchedBy(func(u database.Update) bool {
 		update, err := u.Finalize()
 		assert.NoError(t, err)
 		assert.Len(t, update.SetOperations, 2)
@@ -365,9 +365,9 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 		return true
 	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	// Update the message
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := ag.processPinsEventsHandler([]core.LocallySequenced{
 		&core.Pin{
@@ -452,9 +452,9 @@ func TestAggregationBroadcast(t *testing.T) {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	// Update the message
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*core.Pin{
 		{
@@ -547,9 +547,9 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	// Update the message
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 
 	err = ag.processPins(ag.ctx, []*core.Pin{
 		{
@@ -1100,7 +1100,7 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateNextPin", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := ag.processMessage(ag.ctx, &core.BatchManifest{
@@ -1524,7 +1524,7 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.MatchedBy(func(u database.Update) bool {
 		update, err := u.Finalize()
 		assert.NoError(t, err)
 		assert.Len(t, update.SetOperations, 2)
@@ -1577,7 +1577,7 @@ func TestDefinitionBroadcastInvalidSigner(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.MatchedBy(func(u database.Update) bool {
 		update, err := u.Finalize()
 		assert.NoError(t, err)
 		assert.Len(t, update.SetOperations, 2)
@@ -1906,7 +1906,7 @@ func TestRewindOffchainBatchesNoBatches(t *testing.T) {
 	defer cancel()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	rewind, offset := ag.rewindOffchainBatches()
 	assert.False(t, rewind)

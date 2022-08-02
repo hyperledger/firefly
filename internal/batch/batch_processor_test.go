@@ -81,7 +81,7 @@ func TestUnfilledBatch(t *testing.T) {
 	defer cancel()
 
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
@@ -126,7 +126,7 @@ func TestBatchSizeOverflow(t *testing.T) {
 	defer cancel()
 	bp.conf.BatchMaxBytes = batchSizeEstimateBase + (&core.Message{}).EstimateSize(false) + 100
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
@@ -401,7 +401,7 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	bp.conf.txType = core.TransactionTypeUnpinned
 
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
@@ -454,7 +454,7 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 	mdi.On("UpdateNonce", mock.Anything, mock.MatchedBy(func(dbNonce *core.Nonce) bool {
 		return dbNonce.Nonce == 12347 // twice incremented
 	})).Return(nil).Once()
-	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
+	mdi.On("UpdateMessage", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil).Twice()
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	mdm := bp.data.(*datamocks.Manager)
@@ -510,7 +510,7 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("InsertNonce", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpdateMessage", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
 	msg := &core.Message{
 		Header: core.MessageHeader{

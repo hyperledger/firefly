@@ -102,6 +102,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 	if err != nil {
 		return i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 	}
+	group.LocalNamespace = gm.namespace.LocalName
 
 	// In the case of groups, we actually write the unconfirmed group directly to our database.
 	// So it can be used straight away.
@@ -229,6 +230,7 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *core.Message)
 			return nil, nil
 		}
 		newGroup.Message = msg.Header.ID
+		newGroup.LocalNamespace = gm.namespace.LocalName
 		err = gm.database.UpsertGroup(ctx, &newGroup, database.UpsertOptimizationNew /* we think we're first to create this */)
 		if err != nil {
 			return nil, err

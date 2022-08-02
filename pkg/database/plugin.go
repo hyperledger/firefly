@@ -84,14 +84,14 @@ type iMessageCollection interface {
 	InsertMessages(ctx context.Context, messages []*core.Message, hooks ...PostCompletionHook) (err error)
 
 	// UpdateMessage - Update message
-	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	UpdateMessage(ctx context.Context, namespace string, id *fftypes.UUID, update Update) (err error)
 
 	// ReplaceMessage updates the message, and assigns it a new sequence number at the front of the list.
 	// A new event is raised for the message, with the new sequence number - as if it was brand new.
 	ReplaceMessage(ctx context.Context, message *core.Message) (err error)
 
 	// UpdateMessages - Update messages
-	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
+	UpdateMessages(ctx context.Context, namespace string, filter Filter, update Update) (err error)
 
 	// GetMessageByID - Get a message by ID
 	GetMessageByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Message, err error)
@@ -122,7 +122,7 @@ type iDataCollection interface {
 	InsertDataArray(ctx context.Context, data core.DataArray) (err error)
 
 	// UpdateData - Update data
-	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	UpdateData(ctx context.Context, namespace string, id *fftypes.UUID, update Update) (err error)
 
 	// GetDataByID - Get a data record by ID
 	GetDataByID(ctx context.Context, namespace string, id *fftypes.UUID, withValue bool) (message *core.Data, err error)
@@ -139,7 +139,7 @@ type iBatchCollection interface {
 	UpsertBatch(ctx context.Context, data *core.BatchPersisted) (err error)
 
 	// UpdateBatch - Update data
-	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	UpdateBatch(ctx context.Context, namespace string, id *fftypes.UUID, update Update) (err error)
 
 	// GetBatchByID - Get a batch by ID
 	GetBatchByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.BatchPersisted, err error)
@@ -153,7 +153,7 @@ type iTransactionCollection interface {
 	InsertTransaction(ctx context.Context, data *core.Transaction) (err error)
 
 	// UpdateTransaction - Update transaction
-	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	UpdateTransaction(ctx context.Context, namespace string, id *fftypes.UUID, update Update) (err error)
 
 	// GetTransactionByID - Get a transaction by ID
 	GetTransactionByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Transaction, err error)
@@ -204,7 +204,7 @@ type iPinCollection interface {
 	GetPins(ctx context.Context, namespace string, filter Filter) (offset []*core.Pin, res *FilterResult, err error)
 
 	// UpdatePins - Updates pins
-	UpdatePins(ctx context.Context, filter Filter, update Update) (err error)
+	UpdatePins(ctx context.Context, namespace string, filter Filter, update Update) (err error)
 }
 
 type iOperationCollection interface {

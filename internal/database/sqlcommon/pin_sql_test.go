@@ -69,7 +69,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 	assert.Equal(t, int64(1), *res.TotalCount)
 
 	// Set it dispatched
-	err = s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("sequence", pin.Sequence), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
+	err = s.UpdatePins(ctx, "ns", database.PinQueryFactory.NewFilter(ctx).Eq("sequence", pin.Sequence), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
 	assert.NoError(t, err)
 
 	// Double insert, checking no error and we keep the dispatched flag
@@ -220,7 +220,7 @@ func TestUpdatePinsBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	ctx := context.Background()
-	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
+	err := s.UpdatePins(ctx, "ns1", database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -230,7 +230,7 @@ func TestUpdatePinsUpdateFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	ctx := context.Background()
-	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
+	err := s.UpdatePins(ctx, "ns1", database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
 	assert.Regexp(t, "FF10117", err)
 }
 
@@ -239,7 +239,7 @@ func TestUpdatePinsBadFilter(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectRollback()
 	ctx := context.Background()
-	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("bad", true))
+	err := s.UpdatePins(ctx, "ns1", database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("bad", true))
 	assert.Regexp(t, "FF00142", err)
 }
 
@@ -248,6 +248,6 @@ func TestUpdatePinsBadUpdate(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectRollback()
 	ctx := context.Background()
-	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("bad", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
+	err := s.UpdatePins(ctx, "ns1", database.PinQueryFactory.NewFilter(ctx).Eq("bad", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
 	assert.Regexp(t, "FF00142", err)
 }

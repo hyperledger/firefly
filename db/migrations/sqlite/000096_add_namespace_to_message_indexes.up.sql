@@ -13,6 +13,15 @@ CREATE UNIQUE INDEX tokenpool_locator ON tokenpool(namespace, connector, locator
 DROP INDEX ffi_id;
 CREATE UNIQUE INDEX ffi_id ON ffi(namespace, id);
 
+DROP INDEX datatypes_id;
+CREATE UNIQUE INDEX datatypes_id ON datatypes(namespace, id);
+
+DROP INDEX batches_id;
+CREATE UNIQUE INDEX batches_id ON batches(namespace, id);
+
+DROP INDEX groups_hash;
+CREATE UNIQUE INDEX groups_hash ON groups(namespace_local, hash);
+
 DROP INDEX messages_id;
 CREATE UNIQUE INDEX messages_id ON messages(namespace_local, id);
 

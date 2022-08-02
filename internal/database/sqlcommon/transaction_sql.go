@@ -139,7 +139,7 @@ func (s *SQLCommon) GetTransactions(ctx context.Context, namespace string, filte
 
 }
 
-func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateTransaction(ctx context.Context, namespace string, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -151,7 +151,7 @@ func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *fftypes.UUID, upd
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"id": id})
+	query = query.Where(sq.Eq{"id": id, "namespace": namespace})
 
 	_, err = s.updateTx(ctx, transactionsTable, tx, query, nil /* no change evnents for filter based updates */)
 	if err != nil {

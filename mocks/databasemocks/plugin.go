@@ -2378,13 +2378,13 @@ func (_m *Plugin) SetHandler(namespace string, handler database.Callbacks) {
 	_m.Called(namespace, handler)
 }
 
-// UpdateBatch provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateBatch(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
+// UpdateBatch provides a mock function with given fields: ctx, namespace, id, update
+func (_m *Plugin) UpdateBatch(ctx context.Context, namespace string, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, namespace, id, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, namespace, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2392,13 +2392,13 @@ func (_m *Plugin) UpdateBatch(ctx context.Context, id *fftypes.UUID, update data
 	return r0
 }
 
-// UpdateData provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateData(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
+// UpdateData provides a mock function with given fields: ctx, namespace, id, update
+func (_m *Plugin) UpdateData(ctx context.Context, namespace string, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, namespace, id, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, namespace, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2406,13 +2406,13 @@ func (_m *Plugin) UpdateData(ctx context.Context, id *fftypes.UUID, update datab
 	return r0
 }
 
-// UpdateMessage provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateMessage(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
+// UpdateMessage provides a mock function with given fields: ctx, namespace, id, update
+func (_m *Plugin) UpdateMessage(ctx context.Context, namespace string, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, namespace, id, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, namespace, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2420,13 +2420,13 @@ func (_m *Plugin) UpdateMessage(ctx context.Context, id *fftypes.UUID, update da
 	return r0
 }
 
-// UpdateMessages provides a mock function with given fields: ctx, filter, update
-func (_m *Plugin) UpdateMessages(ctx context.Context, filter database.Filter, update database.Update) error {
-	ret := _m.Called(ctx, filter, update)
+// UpdateMessages provides a mock function with given fields: ctx, namespace, filter, update
+func (_m *Plugin) UpdateMessages(ctx context.Context, namespace string, filter database.Filter, update database.Update) error {
+	ret := _m.Called(ctx, namespace, filter, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter, database.Update) error); ok {
-		r0 = rf(ctx, filter, update)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter, database.Update) error); ok {
+		r0 = rf(ctx, namespace, filter, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2490,13 +2490,13 @@ func (_m *Plugin) UpdateOperation(ctx context.Context, namespace string, id *fft
 	return r0
 }
 
-// UpdatePins provides a mock function with given fields: ctx, filter, update
-func (_m *Plugin) UpdatePins(ctx context.Context, filter database.Filter, update database.Update) error {
-	ret := _m.Called(ctx, filter, update)
+// UpdatePins provides a mock function with given fields: ctx, namespace, filter, update
+func (_m *Plugin) UpdatePins(ctx context.Context, namespace string, filter database.Filter, update database.Update) error {
+	ret := _m.Called(ctx, namespace, filter, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter, database.Update) error); ok {
-		r0 = rf(ctx, filter, update)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter, database.Update) error); ok {
+		r0 = rf(ctx, namespace, filter, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2546,13 +2546,13 @@ func (_m *Plugin) UpdateTokenBalances(ctx context.Context, transfer *core.TokenT
 	return r0
 }
 
-// UpdateTransaction provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateTransaction(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
+// UpdateTransaction provides a mock function with given fields: ctx, namespace, id, update
+func (_m *Plugin) UpdateTransaction(ctx context.Context, namespace string, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, namespace, id, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, namespace, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}

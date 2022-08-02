@@ -31,7 +31,7 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, pa
 	l := log.L(em.ctx)
 
 	if em.multiparty == nil {
-		l.Errorf("Ignoring private batch from non-multiparty network!")
+		l.Errorf("Ignoring batch from non-multiparty network!")
 		return nil, nil
 	}
 

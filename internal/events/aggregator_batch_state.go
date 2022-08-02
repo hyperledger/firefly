@@ -273,7 +273,7 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 			))
 		}
 		update := database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true)
-		if err := bs.database.UpdatePins(ctx, filter, update); err != nil {
+		if err := bs.database.UpdatePins(ctx, bs.namespace, filter, update); err != nil {
 			return err
 		}
 	}
@@ -291,7 +291,7 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).
 			Set("confirmed", confirmTime).
 			Set("state", msgState)
-		if err := bs.database.UpdateMessages(ctx, filter, setConfirmed); err != nil {
+		if err := bs.database.UpdateMessages(ctx, bs.namespace, filter, setConfirmed); err != nil {
 			return err
 		}
 	}

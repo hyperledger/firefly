@@ -166,7 +166,7 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 	}, nil, nil)
 	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Transaction{tx1}, nil, nil)
 	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusSucceeded, mock.Anything, fftypes.JSONObject(nil)).Return(nil)
-	mdi.On("UpdateTransaction", mock.Anything, tx1.ID, mock.Anything).Return(nil)
+	mdi.On("UpdateTransaction", mock.Anything, "ns1", tx1.ID, mock.Anything).Return(nil)
 	err1Str := "err1"
 	mdi.On("ResolveOperation", mock.Anything, "ns1", opID2, core.OpStatusFailed, &err1Str, fftypes.JSONObject{"test": true}).Return(nil)
 	err2Str := "err2"
@@ -312,7 +312,7 @@ func TestDoUpdateFailTransactionUpdate(t *testing.T) {
 	opID1 := fftypes.NewUUID()
 	txID1 := fftypes.NewUUID()
 	mdi := ou.database.(*databasemocks.Plugin)
-	mdi.On("UpdateTransaction", mock.Anything, txID1, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateTransaction", mock.Anything, "ns1", txID1, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ou.initQueues()
 
