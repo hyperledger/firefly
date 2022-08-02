@@ -68,3 +68,10 @@ func RandomName(t *testing.T) string {
 	assert.NoError(t, err)
 	return fmt.Sprintf("e2e_%x", b)
 }
+
+func AddPluginRemoteName(data map[string]interface{}, pluginType, remoteName string) {
+	pluginsConfig := data["plugins"].(map[interface{}]interface{})
+	plugins := pluginsConfig[pluginType].([]interface{})
+	plugin := plugins[0].(map[interface{}]interface{})
+	plugin["remoteName"] = remoteName
+}
