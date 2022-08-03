@@ -348,8 +348,13 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 		l.Errorf("Reply cannot be processed - missing fields: %+v", reply)
 		return
 	}
-	updateType := core.OpStatusSucceeded
-	if replyType != "TransactionSuccess" {
+	var updateType core.OpStatus
+	switch replyType {
+	case "TransactionSuccess":
+		updateType = core.OpStatusSucceeded
+	case "TransactionUpdate":
+		updateType = core.OpStatusPending
+	default:
 		updateType = core.OpStatusFailed
 	}
 	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, requestID, txHash, message)
@@ -387,6 +392,10 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 				return err
 			}
 
+			firstColon := strings.Index(signature, ":")
+			if firstColon >= 0 {
+				signature = signature[firstColon+1:]
+			}
 			switch signature {
 			case broadcastBatchEventSignature:
 				if err := e.handleBatchPinEvent(eventCtx, location, subInfo, msgJSON); err != nil {

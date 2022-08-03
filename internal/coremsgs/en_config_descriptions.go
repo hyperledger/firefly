@@ -328,6 +328,4 @@ var (
 	ConfigPluginsAuth     = ffc("config.plugins.auth", "Authorization plugin configuration", i18n.MapStringStringType)
 	ConfigPluginsAuthName = ffc("config.plugins.auth[].name", "The name of the auth plugin to use", i18n.StringType)
 	ConfigPluginsAuthType = ffc("config.plugins.auth[].type", "The type of the auth plugin to use", i18n.StringType)
-
-	ConfigGlobalAuthBasicPasswordFile = ffc("config.global.basic.passwordfile", "The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.", i18n.StringType)
 )

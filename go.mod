@@ -13,7 +13,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/hyperledger/firefly-common v0.1.15
+	github.com/hyperledger/firefly-common v0.1.16
 	github.com/hyperledger/firefly-signer v0.9.12
 	github.com/jarcoal/httpmock v1.1.0
 	github.com/karlseguin/ccache v2.0.3+incompatible
