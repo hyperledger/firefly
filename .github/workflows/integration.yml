@@ -56,3 +56,39 @@ jobs:
         with:
           name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-provider }}-${{ matrix.database-type }}
           path: containerlogs/logs.txt
+
+  migration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: Update manifest to latest commit for every service
+        run: ./manifestgen.sh head
+
+      - name: Pull latests FireFly build
+        run: |
+          docker pull ghcr.io/hyperledger/firefly:head
+          docker tag ghcr.io/hyperledger/firefly:head hyperledger/firefly
+
+      - name: Run E2E tests
+        env:
+          TEST_SUITE: TestEthereumV1MigrationE2ESuite
+          BLOCKCHAIN_PROVIDER: geth
+          DATABASE_TYPE: postgres
+          BUILD_FIREFLY: false
+          RESTART: false
+        run: ./test/e2e/run.sh
+
+      - name: Archive container logs
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: container-logs-TestEthereumV1MigrationE2ESuite-geth-postgres
+          path: containerlogs/logs.txt
