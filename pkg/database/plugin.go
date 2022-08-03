@@ -322,20 +322,11 @@ type iNextPinCollection interface {
 	// InsertNextPin - insert a nextpin
 	InsertNextPin(ctx context.Context, nextpin *core.NextPin) (err error)
 
-	// GetNextPinByContextAndIdentity - lookup nextpin by context+identity
-	GetNextPinByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *core.NextPin, err error)
-
-	// GetNextPinByHash - lookup nextpin by its hash
-	GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (message *core.NextPin, err error)
-
 	// GetNextPins - get nextpins
-	GetNextPins(ctx context.Context, filter Filter) (message []*core.NextPin, res *FilterResult, err error)
+	GetNextPinsForContext(ctx context.Context, namespace string, context *fftypes.Bytes32) (message []*core.NextPin, err error)
 
 	// UpdateNextPin - update a next hash using its local database ID
-	UpdateNextPin(ctx context.Context, sequence int64, update Update) (err error)
-
-	// DeleteNextPin - delete a next hash, using its local database ID
-	DeleteNextPin(ctx context.Context, sequence int64) (err error)
+	UpdateNextPin(ctx context.Context, namespace string, sequence int64, update Update) (err error)
 }
 
 type iBlobCollection interface {
@@ -830,7 +821,7 @@ var VerifierQueryFactory = &queryFields{
 	"created":  &TimeField{},
 }
 
-// GroupQueryFactory filter fields for nodes
+// GroupQueryFactory filter fields for groups
 var GroupQueryFactory = &queryFields{
 	"hash":        &Bytes32Field{},
 	"message":     &UUIDField{},
@@ -839,13 +830,13 @@ var GroupQueryFactory = &queryFields{
 	"created":     &TimeField{},
 }
 
-// NonceQueryFactory filter fields for nodes
+// NonceQueryFactory filter fields for nonces
 var NonceQueryFactory = &queryFields{
 	"hash":  &StringField{},
 	"nonce": &Int64Field{},
 }
 
-// NextPinQueryFactory filter fields for nodes
+// NextPinQueryFactory filter fields for next pins
 var NextPinQueryFactory = &queryFields{
 	"context":  &Bytes32Field{},
 	"identity": &StringField{},

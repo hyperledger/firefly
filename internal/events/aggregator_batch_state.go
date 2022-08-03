@@ -165,7 +165,7 @@ func (bs *batchState) checkMaskedContextReady(ctx context.Context, msg *core.Mes
 	h.Write([]byte(topic))
 	h.Write((*msg.Header.Group)[:])
 	contextUnmasked := fftypes.HashResult(h)
-	npg, err := bs.stateForMaskedContext(ctx, msg.Header.Group, topic, *contextUnmasked)
+	npg, err := bs.stateForMaskedContext(ctx, msg.Header.Group, topic, contextUnmasked)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 				update := database.NextPinQueryFactory.NewUpdate(ctx).
 					Set("nonce", np.Nonce).
 					Set("hash", np.Hash)
-				if err := bs.database.UpdateNextPin(ctx, np.Sequence, update); err != nil {
+				if err := bs.database.UpdateNextPin(ctx, bs.namespace, np.Sequence, update); err != nil {
 					return err
 				}
 			}
@@ -299,7 +299,7 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	return nil
 }
 
-func (nps *nextPinState) IncrementNextPin(ctx context.Context) {
+func (nps *nextPinState) IncrementNextPin(ctx context.Context, namespace string) {
 	npg := nps.nextPinGroup
 	np := nps.nextPin
 	for i, existingPin := range npg.nextPins {
@@ -307,11 +307,12 @@ func (nps *nextPinState) IncrementNextPin(ctx context.Context) {
 			// We are spending this one, replace it in the list
 			newNonce := np.Nonce + 1
 			newNextPin := &core.NextPin{
-				Context:  np.Context,
-				Identity: np.Identity,
-				Nonce:    newNonce,
-				Hash:     npg.calcPinHash(np.Identity, newNonce),
-				Sequence: np.Sequence, // used for update in Flush
+				Namespace: namespace,
+				Context:   np.Context,
+				Identity:  np.Identity,
+				Nonce:     newNonce,
+				Hash:      npg.calcPinHash(np.Identity, newNonce),
+				Sequence:  np.Sequence, // used for update in Flush
 			}
 			npg.nextPins[i] = newNextPin
 			log.L(ctx).Debugf("Incrementing NextPin=%s - Nonce=%d Topic=%s Group=%s NewNextPin=%s", np.Hash, np.Nonce, npg.topic, npg.groupID.String(), newNextPin.Hash)
@@ -332,14 +333,13 @@ func (npg *nextPinGroupState) calcPinHash(identity string, nonce int64) *fftypes
 	return fftypes.HashResult(h)
 }
 
-func (bs *batchState) stateForMaskedContext(ctx context.Context, groupID *fftypes.Bytes32, topic string, contextUnmasked fftypes.Bytes32) (*nextPinGroupState, error) {
+func (bs *batchState) stateForMaskedContext(ctx context.Context, groupID *fftypes.Bytes32, topic string, contextUnmasked *fftypes.Bytes32) (*nextPinGroupState, error) {
 
-	if npg, exists := bs.maskedContexts[contextUnmasked]; exists {
+	if npg, exists := bs.maskedContexts[*contextUnmasked]; exists {
 		return npg, nil
 	}
 
-	filter := database.NextPinQueryFactory.NewFilter(ctx).Eq("context", contextUnmasked)
-	nextPins, _, err := bs.database.GetNextPins(ctx, filter)
+	nextPins, err := bs.database.GetNextPinsForContext(ctx, bs.namespace, contextUnmasked)
 	if err != nil {
 		return nil, err
 	}
@@ -354,7 +354,7 @@ func (bs *batchState) stateForMaskedContext(ctx context.Context, groupID *fftype
 		identitiesChanged: make(map[string]bool),
 		nextPins:          nextPins,
 	}
-	bs.maskedContexts[contextUnmasked] = npg
+	bs.maskedContexts[*contextUnmasked] = npg
 	return npg, nil
 
 }
@@ -383,10 +383,11 @@ func (bs *batchState) attemptContextInit(ctx context.Context, msg *core.Message,
 	for i, member := range group.Members {
 		zeroHash := npg.calcPinHash(member.Identity, 0)
 		np := &core.NextPin{
-			Context:  contextUnmasked,
-			Identity: member.Identity,
-			Hash:     zeroHash,
-			Nonce:    0,
+			Namespace: bs.namespace,
+			Context:   contextUnmasked,
+			Identity:  member.Identity,
+			Hash:      zeroHash,
+			Nonce:     0,
 		}
 		if *pin == *zeroHash {
 			if member.Identity != msg.Header.Author {

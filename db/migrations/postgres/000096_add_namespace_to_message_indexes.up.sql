@@ -47,4 +47,8 @@ UPDATE messages_data SET namespace = msg.namespace
 
 CREATE INDEX messages_data_message ON messages_data(namespace, message_id);
 CREATE INDEX messages_data_data ON messages_data(namespace, data_id);
+
+ALTER TABLE nextpins ADD COLUMN namespace VARCHAR(64);
+DROP INDEX nextpins_hash;
+CREATE INDEX nextpins_context ON nextpins(namespace, context);
 COMMIT;

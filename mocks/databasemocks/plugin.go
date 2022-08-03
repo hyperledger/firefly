@@ -65,20 +65,6 @@ func (_m *Plugin) DeleteContractListenerByID(ctx context.Context, namespace stri
 	return r0
 }
 
-// DeleteNextPin provides a mock function with given fields: ctx, sequence
-func (_m *Plugin) DeleteNextPin(ctx context.Context, sequence int64) error {
-	ret := _m.Called(ctx, sequence)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
-		r0 = rf(ctx, sequence)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DeleteNonce provides a mock function with given fields: ctx, hash
 func (_m *Plugin) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) error {
 	ret := _m.Called(ctx, hash)
@@ -1254,82 +1240,27 @@ func (_m *Plugin) GetNamespace(ctx context.Context, name string) (*core.Namespac
 	return r0, r1
 }
 
-// GetNextPinByContextAndIdentity provides a mock function with given fields: ctx, _a1, identity
-func (_m *Plugin) GetNextPinByContextAndIdentity(ctx context.Context, _a1 *fftypes.Bytes32, identity string) (*core.NextPin, error) {
-	ret := _m.Called(ctx, _a1, identity)
-
-	var r0 *core.NextPin
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32, string) *core.NextPin); ok {
-		r0 = rf(ctx, _a1, identity)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.NextPin)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32, string) error); ok {
-		r1 = rf(ctx, _a1, identity)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetNextPinByHash provides a mock function with given fields: ctx, hash
-func (_m *Plugin) GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (*core.NextPin, error) {
-	ret := _m.Called(ctx, hash)
-
-	var r0 *core.NextPin
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *core.NextPin); ok {
-		r0 = rf(ctx, hash)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.NextPin)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
-		r1 = rf(ctx, hash)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetNextPins provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetNextPins(ctx context.Context, filter database.Filter) ([]*core.NextPin, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetNextPinsForContext provides a mock function with given fields: ctx, namespace, _a2
+func (_m *Plugin) GetNextPinsForContext(ctx context.Context, namespace string, _a2 *fftypes.Bytes32) ([]*core.NextPin, error) {
+	ret := _m.Called(ctx, namespace, _a2)
 
 	var r0 []*core.NextPin
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.NextPin); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Bytes32) []*core.NextPin); ok {
+		r0 = rf(ctx, namespace, _a2)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.NextPin)
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Bytes32) error); ok {
+		r1 = rf(ctx, namespace, _a2)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
-		}
+		r1 = ret.Error(1)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
 // GetNonce provides a mock function with given fields: ctx, hash
@@ -2434,13 +2365,13 @@ func (_m *Plugin) UpdateMessages(ctx context.Context, namespace string, filter d
 	return r0
 }
 
-// UpdateNextPin provides a mock function with given fields: ctx, sequence, update
-func (_m *Plugin) UpdateNextPin(ctx context.Context, sequence int64, update database.Update) error {
-	ret := _m.Called(ctx, sequence, update)
+// UpdateNextPin provides a mock function with given fields: ctx, namespace, sequence, update
+func (_m *Plugin) UpdateNextPin(ctx context.Context, namespace string, sequence int64, update database.Update) error {
+	ret := _m.Called(ctx, namespace, sequence, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, database.Update) error); ok {
-		r0 = rf(ctx, sequence, update)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64, database.Update) error); ok {
+		r0 = rf(ctx, namespace, sequence, update)
 	} else {
 		r0 = ret.Error(0)
 	}

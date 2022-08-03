@@ -43,4 +43,8 @@ DROP TABLE messages_data_old;
 
 CREATE INDEX messages_data_message ON messages_data(message_id);
 CREATE INDEX messages_data_data ON messages_data(data_id);
+
+DROP INDEX nextpins_context;
+ALTER TABLE nextpins DROP COLUMN namespace;
+CREATE INDEX nextpins_hash ON nextpins(hash);
 COMMIT;
