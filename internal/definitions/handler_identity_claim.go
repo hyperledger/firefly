@@ -89,7 +89,7 @@ func (dh *definitionHandler) getClaimVerifier(msg *identityMsgInfo, identity *co
 	switch identity.Type {
 	case core.IdentityTypeNode:
 		verifier.VerifierRef.Type = core.VerifierTypeFFDXPeerID
-		verifier.VerifierRef.Value = identity.Profile.GetString("id")
+		verifier.VerifierRef.Value = dh.exchange.GetPeerID(identity.Profile)
 	default:
 		verifier.VerifierRef.Type = dh.blockchain.VerifierType()
 		verifier.VerifierRef.Value = msg.Key
@@ -234,7 +234,7 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 		state.AddPreFinalize(
 			func(ctx context.Context) error {
 				// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
-				return dh.exchange.AddPeer(ctx, identity.Name, identity.Profile)
+				return dh.exchange.AddNode(ctx, dh.remoteNamespace, identity.Name, identity.Profile)
 			})
 	}
 

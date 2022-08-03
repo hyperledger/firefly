@@ -44,7 +44,7 @@ func newTestDefinitionHandler(t *testing.T) (*definitionHandler, *testDefinition
 	tokenNames := make(map[string]string)
 	tokenNames["remote1"] = "connector1"
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
-	dh, _ := newDefinitionHandler(context.Background(), "ns1", false, mdi, mbi, mdx, mdm, mim, mam, mcm, tokenNames)
+	dh, _ := newDefinitionHandler(context.Background(), "ns1", "ns1", false, mdi, mbi, mdx, mdm, mim, mam, mcm, tokenNames)
 	return dh, newTestDefinitionBatchState(t)
 }
 
@@ -70,7 +70,7 @@ func (bs *testDefinitionBatchState) assertNoFinalizers() {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := newDefinitionHandler(context.Background(), "", false, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := newDefinitionHandler(context.Background(), "", "", false, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

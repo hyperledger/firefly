@@ -71,7 +71,7 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", context.Background(), mock.Anything).Return(node, nil)
 	mdi.On("GetBlobMatchingHash", context.Background(), blob.Hash).Return(blob, nil)
 	mim.On("GetLocalNode", context.Background()).Return(localNode, nil)
-	mdx.On("TransferBlob", context.Background(), "ns1:"+op.ID.String(), "peer1", "local1", "payload").Return(nil)
+	mdx.On("TransferBlob", context.Background(), "ns1:"+op.ID.String(), node.Profile, localNode.Profile, "payload").Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -139,7 +139,7 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
 	mdi.On("GetBatchByID", context.Background(), "ns1", batch.ID).Return(bp, nil)
-	mdx.On("SendMessage", context.Background(), "ns1:"+op.ID.String(), "peer1", "local1", mock.Anything).Return(nil)
+	mdx.On("SendMessage", context.Background(), "ns1:"+op.ID.String(), node.Profile, localNode.Profile, mock.Anything).Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)

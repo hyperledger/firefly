@@ -129,17 +129,14 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 func (pm *privateMessaging) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case transferBlobData:
-		node, err := pm.identity.GetLocalNode(ctx)
+		localNode, err := pm.identity.GetLocalNode(ctx)
 		if err != nil {
 			return nil, false, err
 		}
-
-		recipient := data.Node.Profile.GetString("id")
-		sender := node.Profile.GetString("id")
-		return nil, false, pm.exchange.TransferBlob(ctx, op.NamespacedIDString(), recipient, sender, data.Blob.PayloadRef)
+		return nil, false, pm.exchange.TransferBlob(ctx, op.NamespacedIDString(), data.Node.Profile, localNode.Profile, data.Blob.PayloadRef)
 
 	case batchSendData:
-		node, err := pm.identity.GetLocalNode(ctx)
+		localNode, err := pm.identity.GetLocalNode(ctx)
 		if err != nil {
 			return nil, false, err
 		}
@@ -148,10 +145,7 @@ func (pm *privateMessaging) RunOperation(ctx context.Context, op *core.PreparedO
 		if err != nil {
 			return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 		}
-
-		recipient := data.Node.Profile.GetString("id")
-		sender := node.Profile.GetString("id")
-		return nil, false, pm.exchange.SendMessage(ctx, op.NamespacedIDString(), recipient, sender, payload)
+		return nil, false, pm.exchange.SendMessage(ctx, op.NamespacedIDString(), data.Node.Profile, localNode.Profile, payload)
 
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)

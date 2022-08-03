@@ -71,7 +71,7 @@ func fakeBatch(ctx context.Context, handler func(context.Context, *core.BatchSta
 	return err
 }
 
-func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, am assets.Manager, cm contracts.Manager, tokenRemoteNames map[string]string) (Sender, Handler, error) {
+func NewDefinitionSender(ctx context.Context, ns, remoteNS string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, am assets.Manager, cm contracts.Manager, tokenRemoteNames map[string]string) (Sender, Handler, error) {
 	if di == nil || im == nil || dm == nil {
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DefinitionSender")
 	}
@@ -86,7 +86,7 @@ func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di dat
 		contracts:        cm,
 		tokenRemoteNames: tokenRemoteNames,
 	}
-	dh, err := newDefinitionHandler(ctx, ns, multiparty, di, bi, dx, dm, im, am, cm, reverseMap(tokenRemoteNames))
+	dh, err := newDefinitionHandler(ctx, ns, remoteNS, multiparty, di, bi, dx, dm, im, am, cm, reverseMap(tokenRemoteNames))
 	ds.handler = dh
 	return ds, dh, err
 }
