@@ -42,7 +42,7 @@ const (
 	// NamespaceDefaultKey is the default signing key for blockchain transactions within this namespace
 	NamespaceDefaultKey = "defaultkey"
 	// NamespaceAssetKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization
-	NamespaceAssetKeyNormalization = "assets.manager.keynormalization"
+	NamespaceAssetKeyNormalization = "asset.manager.keynormalization"
 	// NamespaceMultiparty contains the multiparty configuration for a namespace
 	NamespaceMultiparty = "multiparty"
 	// NamespaceMultipartyEnabled specifies if multi-party mode is enabled for a namespace

@@ -77,7 +77,7 @@ func (suite *TokensOnlyTestSuite) TestTokensOnlyNamespaces() {
 
 	namespaceInfo := map[string]interface{}{
 		"name": testNamespace,
-		"assets": map[string]interface{}{
+		"asset": map[string]interface{}{
 			"manager": map[string]interface{}{
 				"keynormalization": "none",
 			},
