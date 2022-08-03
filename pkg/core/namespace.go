@@ -35,6 +35,7 @@ type Namespace struct {
 	Contracts   *MultipartyContracts `ffstruct:"Namespace" json:"-"`
 }
 
+// MultipartyContracts represent the currently active and any terminated FireFly multiparty contract(s)
 type MultipartyContracts struct {
 	Active     *MultipartyContract   `ffstruct:"MultipartyContracts" json:"active"`
 	Terminated []*MultipartyContract `ffstruct:"MultipartyContracts" json:"terminated,omitempty"`

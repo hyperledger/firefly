@@ -60,6 +60,7 @@ type NamespaceStatusPlugin struct {
 	PluginType string `ffstruct:"NamespaceStatusPlugin" json:"pluginType"`
 }
 
+// NamespaceStatusMultiparty is information about multiparty mode and any associated multiparty contracts
 type NamespaceStatusMultiparty struct {
 	Enabled   bool                 `ffstruct:"NamespaceStatusMultiparty" json:"enabled"`
 	Contracts *MultipartyContracts `ffstruct:"NamespaceStatusMultiparty" json:"contract,omitempty"`
