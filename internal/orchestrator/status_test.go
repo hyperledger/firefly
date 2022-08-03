@@ -115,7 +115,7 @@ func TestGetStatusRegistered(t *testing.T) {
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "ns", status.Namespace.LocalName)
+	assert.Equal(t, "ns", status.Namespace.Name)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
@@ -206,7 +206,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "ns", status.Namespace.LocalName)
+	assert.Equal(t, "ns", status.Namespace.Name)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
@@ -236,7 +236,7 @@ func TestGetStatusUnregistered(t *testing.T) {
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "ns", status.Namespace.LocalName)
+	assert.Equal(t, "ns", status.Namespace.Name)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.False(t, status.Org.Registered)
@@ -281,7 +281,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "ns", status.Namespace.LocalName)
+	assert.Equal(t, "ns", status.Namespace.Name)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)

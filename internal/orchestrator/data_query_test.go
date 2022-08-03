@@ -32,7 +32,7 @@ func TestGetNamespace(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	ns := or.GetNamespace(context.Background())
-	assert.Equal(t, "ns", ns.LocalName)
+	assert.Equal(t, "ns", ns.Name)
 }
 
 func TestGetTransactionByID(t *testing.T) {

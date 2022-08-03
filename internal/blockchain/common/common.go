@@ -39,7 +39,7 @@ type BlockchainCallbacks interface {
 }
 
 type FireflySubscriptions interface {
-	AddSubscription(ctx context.Context, namespace core.NamespaceRef, version int, subID string, extra interface{})
+	AddSubscription(ctx context.Context, namespace *core.Namespace, version int, subID string, extra interface{})
 	RemoveSubscription(ctx context.Context, subID string)
 	GetSubscription(subID string) *SubscriptionInfo
 }
@@ -238,7 +238,7 @@ func GetNamespaceFromSubName(subName string) string {
 	return parts[2]
 }
 
-func (s *subscriptions) AddSubscription(ctx context.Context, namespace core.NamespaceRef, version int, subID string, extra interface{}) {
+func (s *subscriptions) AddSubscription(ctx context.Context, namespace *core.Namespace, version int, subID string, extra interface{}) {
 	if version == 1 {
 		// The V1 contract shares a single subscription per contract, and the remote namespace name is passed on chain.
 		// Therefore, it requires a map of remote->local in order to farm out notifications to one or more local handlers.
@@ -251,13 +251,13 @@ func (s *subscriptions) AddSubscription(ctx context.Context, namespace core.Name
 			}
 			s.subs[subID] = existing
 		}
-		existing.V1Namespace[namespace.RemoteName] = append(existing.V1Namespace[namespace.RemoteName], namespace.LocalName)
+		existing.V1Namespace[namespace.NetworkName] = append(existing.V1Namespace[namespace.NetworkName], namespace.Name)
 	} else {
 		// The V2 contract does not pass the namespace on chain, and requires a separate contract instance (and subscription) per namespace.
 		// Therefore, the local namespace name can simply be cached alongside each subscription.
 		s.subs[subID] = &SubscriptionInfo{
 			Version:     version,
-			V2Namespace: namespace.LocalName,
+			V2Namespace: namespace.Name,
 			Extra:       extra,
 		}
 	}

@@ -87,8 +87,8 @@ func (s *broadcastSender) SendAndWait(ctx context.Context) error {
 func (s *broadcastSender) setDefaults() {
 	msg := s.msg.Message
 	msg.Header.ID = fftypes.NewUUID()
-	msg.Header.Namespace = s.mgr.namespace.RemoteName
-	msg.LocalNamespace = s.mgr.namespace.LocalName
+	msg.Header.Namespace = s.mgr.namespace.NetworkName
+	msg.LocalNamespace = s.mgr.namespace.Name
 	msg.State = core.MessageStateReady
 	if msg.Header.Type == "" {
 		msg.Header.Type = core.MessageTypeBroadcast

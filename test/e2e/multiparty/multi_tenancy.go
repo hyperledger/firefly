@@ -45,15 +45,15 @@ func (suite *NamespaceAliasSuite) AfterTest(suiteName, testName string) {
 	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
 }
 
-func newNamespace(remoteName, contractAddress string) (ns, org, node map[string]interface{}) {
+func newNamespace(networkNamespace, contractAddress string) (ns, org, node map[string]interface{}) {
 	org = make(map[string]interface{})
 	node = make(map[string]interface{})
 	ns = map[string]interface{}{
-		"remotename": remoteName,
 		"multiparty": map[string]interface{}{
-			"enabled": true,
-			"org":     org,
-			"node":    node,
+			"enabled":          true,
+			"networknamespace": networkNamespace,
+			"org":              org,
+			"node":             node,
 			"contract": []map[string]interface{}{
 				{
 					"location":   map[string]interface{}{"address": contractAddress},

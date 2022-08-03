@@ -114,7 +114,7 @@ func newTestOrchestrator() *testOrchestrator {
 		orchestrator: orchestrator{
 			ctx:       ctx,
 			cancelCtx: cancel,
-			namespace: &core.Namespace{LocalName: "ns", RemoteName: "ns"},
+			namespace: &core.Namespace{Name: "ns", NetworkName: "ns"},
 		},
 		mdi: &databasemocks.Plugin{},
 		mdm: &datamocks.Manager{},
@@ -192,7 +192,7 @@ func newTestOrchestrator() *testOrchestrator {
 
 func TestNewOrchestrator(t *testing.T) {
 	or := NewOrchestrator(
-		&core.Namespace{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		Config{},
 		&Plugins{},
 		&metricsmocks.Manager{},
@@ -203,7 +203,7 @@ func TestNewOrchestrator(t *testing.T) {
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.namespace.RemoteName = "ns2"
+	or.namespace.NetworkName = "ns2"
 	or.config.Multiparty.Node.Name = "node1"
 	node := &core.Identity{
 		IdentityBase: core.IdentityBase{
@@ -439,7 +439,7 @@ func TestStartStopOk(t *testing.T) {
 
 func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
-	or.namespace.LocalName = core.LegacySystemNamespace
+	or.namespace.Name = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action).Return(nil)
@@ -449,7 +449,7 @@ func TestNetworkAction(t *testing.T) {
 
 func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
-	or.namespace.LocalName = core.LegacySystemNamespace
+	or.namespace.Name = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	err := or.SubmitNetworkAction(context.Background(), action)

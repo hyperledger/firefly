@@ -377,7 +377,7 @@ var (
 
 	// Namespace field descriptions
 	NamespaceName                  = ffm("Namespace.name", "The local namespace name")
-	NamespaceRemoteName            = ffm("Namespace.remoteName", "The namespace name within the multiparty network")
+	NamespaceNetworkName           = ffm("Namespace.networkName", "The shared namespace name within the multiparty network")
 	NamespaceDescription           = ffm("Namespace.description", "A description of the namespace")
 	NamespaceCreated               = ffm("Namespace.created", "The time the namespace was created")
 	MultipartyContractsActive      = ffm("MultipartyContracts.active", "The currently active FireFly smart contract")

@@ -77,7 +77,7 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 
 func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *core.BatchState, ffi *fftypes.FFI, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
-	ffi.Namespace = dh.namespace
+	ffi.Namespace = dh.namespace.Name
 	if err := ffi.Validate(ctx, true); err != nil {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID, err)
 	}
@@ -108,7 +108,7 @@ func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, sta
 
 func (dh *definitionHandler) handleContractAPIDefinition(ctx context.Context, state *core.BatchState, httpServerURL string, api *core.ContractAPI, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
-	api.Namespace = dh.namespace
+	api.Namespace = dh.namespace.Name
 	if err := api.Validate(ctx, true); err != nil {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID, err)
 	}

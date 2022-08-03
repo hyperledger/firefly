@@ -40,7 +40,7 @@ type GroupManager interface {
 }
 
 type groupManager struct {
-	namespace     core.NamespaceRef
+	namespace     *core.Namespace
 	database      database.Plugin
 	identity      identity.Manager
 	data          data.Manager
@@ -63,7 +63,7 @@ func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *core.Group)
 	// the group via the blockchain.
 	// So this method checks if a group exists, and if it doesn't inserts it.
 	// We do assume the other side has sent the batch init of the group (rather than generating a second one)
-	if g, err := gm.database.GetGroupByHash(ctx, gm.namespace.LocalName, group.Hash); err != nil {
+	if g, err := gm.database.GetGroupByHash(ctx, gm.namespace.Name, group.Hash); err != nil {
 		return false, err
 	} else if g != nil {
 		// The group already exists
@@ -88,7 +88,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 	data := &core.Data{
 		Validator: core.ValidatorTypeSystemDefinition,
 		ID:        fftypes.NewUUID(),
-		Namespace: gm.namespace.LocalName, // must go in the same ordering context as the message
+		Namespace: gm.namespace.Name, // must go in the same ordering context as the message
 		Created:   fftypes.Now(),
 	}
 	b, err := json.Marshal(&group)
@@ -102,7 +102,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 	if err != nil {
 		return i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 	}
-	group.LocalNamespace = gm.namespace.LocalName
+	group.LocalNamespace = gm.namespace.Name
 
 	// In the case of groups, we actually write the unconfirmed group directly to our database.
 	// So it can be used straight away.
@@ -120,10 +120,10 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 	// Create a private send message referring to the data
 	msg := &core.Message{
 		State:          core.MessageStateReady,
-		LocalNamespace: gm.namespace.LocalName,
+		LocalNamespace: gm.namespace.Name, // Must go into the same ordering context as the message itself
 		Header: core.MessageHeader{
 			Group:     group.Hash,
-			Namespace: gm.namespace.RemoteName, // Must go into the same ordering context as the message itself
+			Namespace: gm.namespace.NetworkName,
 			Type:      core.MessageTypeGroupInit,
 			SignerRef: *signer,
 			Tag:       core.SystemTagDefineGroup,
@@ -153,11 +153,11 @@ func (gm *groupManager) GetGroupByID(ctx context.Context, hash string) (*core.Gr
 	if err != nil {
 		return nil, err
 	}
-	return gm.database.GetGroupByHash(ctx, gm.namespace.LocalName, h)
+	return gm.database.GetGroupByHash(ctx, gm.namespace.Name, h)
 }
 
 func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter) ([]*core.Group, *database.FilterResult, error) {
-	return gm.database.GetGroups(ctx, gm.namespace.LocalName, filter)
+	return gm.database.GetGroups(ctx, gm.namespace.Name, filter)
 }
 
 func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32, allowNil bool) (*core.Group, []*core.Identity, error) {
@@ -168,7 +168,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 		return ghe.group, ghe.nodes, nil
 	}
 
-	group, err := gm.database.GetGroupByHash(ctx, gm.namespace.LocalName, groupHash)
+	group, err := gm.database.GetGroupByHash(ctx, gm.namespace.Name, groupHash)
 	if err != nil || (allowNil && group == nil) {
 		return nil, nil, err
 	}
@@ -230,7 +230,7 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *core.Message)
 			return nil, nil
 		}
 		newGroup.Message = msg.Header.ID
-		newGroup.LocalNamespace = gm.namespace.LocalName
+		newGroup.LocalNamespace = gm.namespace.Name
 		err = gm.database.UpsertGroup(ctx, &newGroup, database.UpsertOptimizationNew /* we think we're first to create this */)
 		if err != nil {
 			return nil, err
@@ -239,7 +239,7 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *core.Message)
 	}
 
 	// Get the existing group
-	group, err := gm.database.GetGroupByHash(ctx, gm.namespace.LocalName, msg.Header.Group)
+	group, err := gm.database.GetGroupByHash(ctx, gm.namespace.Name, msg.Header.Group)
 	if err != nil {
 		return group, err
 	}

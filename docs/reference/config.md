@@ -620,7 +620,6 @@ nav_order: 2
 |description|A description for the namespace|`string`|`<nil>`
 |name|The name of the namespace (must be unique)|`string`|`<nil>`
 |plugins|The list of plugins for this namespace|`string`|`<nil>`
-|remotename|The namespace name to be sent in plugin calls, if it differs from namespace name|`string`|`<nil>`
 
 ## namespaces.predefined[].asset.manager
 
@@ -633,6 +632,7 @@ nav_order: 2
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |enabled|Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level)|`boolean`|`<nil>`
+|networknamespace|The shared namespace name to be sent in multiparty messages, if it differs from the local namespace name|`string`|`<nil>`
 
 ## namespaces.predefined[].multiparty.contract[]
 

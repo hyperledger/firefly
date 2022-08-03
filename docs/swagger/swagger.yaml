@@ -8790,8 +8790,9 @@ paths:
                     name:
                       description: The local namespace name
                       type: string
-                    remoteName:
-                      description: The namespace name within the multiparty network
+                    networkName:
+                      description: The shared namespace name within the multiparty
+                        network
                       type: string
                   type: object
                 type: array
@@ -8835,8 +8836,8 @@ paths:
                   name:
                     description: The local namespace name
                     type: string
-                  remoteName:
-                    description: The namespace name within the multiparty network
+                  networkName:
+                    description: The shared namespace name within the multiparty network
                     type: string
                 type: object
           description: Success
@@ -20533,8 +20534,9 @@ paths:
                       name:
                         description: The local namespace name
                         type: string
-                      remoteName:
-                        description: The namespace name within the multiparty network
+                      networkName:
+                        description: The shared namespace name within the multiparty
+                          network
                         type: string
                     type: object
                   node:
@@ -28094,8 +28096,9 @@ paths:
                       name:
                         description: The local namespace name
                         type: string
-                      remoteName:
-                        description: The namespace name within the multiparty network
+                      networkName:
+                        description: The shared namespace name within the multiparty
+                          network
                         type: string
                     type: object
                   node:

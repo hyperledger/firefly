@@ -86,7 +86,7 @@ func (mm *multipartyManager) PrepareOperation(ctx context.Context, op *core.Oper
 		if err != nil {
 			return nil, err
 		}
-		batch, err := mm.database.GetBatchByID(ctx, mm.namespace.LocalName, batchID)
+		batch, err := mm.database.GetBatchByID(ctx, mm.namespace.Name, batchID)
 		if err != nil {
 			return nil, err
 		} else if batch == nil {

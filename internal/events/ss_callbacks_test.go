@@ -98,7 +98,7 @@ func TestSharedStorageBatchDownloadedNSMismatch(t *testing.T) {
 	mss := &sharedstoragemocks.Plugin{}
 	mss.On("Name").Return("utdx").Maybe()
 
-	em.namespace.RemoteName = "ns2"
+	em.namespace.NetworkName = "ns2"
 	_, err := em.SharedStorageBatchDownloaded(mss, "payload1", b)
 	assert.NoError(t, err)
 

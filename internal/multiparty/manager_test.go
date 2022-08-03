@@ -58,8 +58,8 @@ func newTestMultipartyManager() *testMultipartyManager {
 		mth: &txcommonmocks.Helper{},
 		multipartyManager: multipartyManager{
 			namespace: &core.Namespace{
-				LocalName:  "ns1",
-				RemoteName: "ns1",
+				Name:        "ns1",
+				NetworkName: "ns1",
 				Contracts: &core.MultipartyContracts{
 					Active: &core.MultipartyContract{},
 				},
@@ -90,7 +90,7 @@ func TestNewMultipartyManager(t *testing.T) {
 		core.OpTypeBlockchainPinBatch,
 		core.OpTypeBlockchainNetworkAction,
 	}).Return()
-	ns := &core.Namespace{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	nm, err := NewMultipartyManager(context.Background(), ns, config, mdi, mbi, mom, mmi, mth)
 	assert.NotNil(t, nm)
 	assert.NoError(t, err)

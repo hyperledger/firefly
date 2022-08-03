@@ -62,7 +62,7 @@ type privateMessaging struct {
 	groupManager
 
 	ctx                   context.Context
-	namespace             core.NamespaceRef
+	namespace             *core.Namespace
 	database              database.Plugin
 	identity              identity.Manager
 	exchange              dataexchange.Plugin
@@ -83,7 +83,7 @@ type blobTransferTracker struct {
 	op       *core.PreparedOperation
 }
 
-func NewPrivateMessaging(ctx context.Context, ns core.NamespaceRef, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
+func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "PrivateMessaging")
 	}
@@ -173,7 +173,7 @@ func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, state *ba
 
 func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batch.DispatchState) error {
 	batch := state.Persisted.GenInflight(state.Messages, state.Data)
-	batch.Namespace = pm.namespace.RemoteName
+	batch.Namespace = pm.namespace.NetworkName
 	tw := &core.TransportWrapper{
 		Batch: batch,
 	}
@@ -215,7 +215,7 @@ func (pm *privateMessaging) prepareBlobTransfers(ctx context.Context, data core.
 
 				op := core.NewOperation(
 					pm.exchange,
-					pm.namespace.LocalName,
+					pm.namespace.Name,
 					txid,
 					core.OpTypeDataExchangeSendBlob)
 				addTransferBlobInputs(op, node.ID, blob.Hash)
@@ -291,7 +291,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *core.TransportWrap
 
 			op := core.NewOperation(
 				pm.exchange,
-				pm.namespace.LocalName,
+				pm.namespace.Name,
 				batch.Payload.TX.ID,
 				core.OpTypeDataExchangeSendBatch)
 			addBatchSendInputs(op, node.ID, batch.Group, batch.ID)

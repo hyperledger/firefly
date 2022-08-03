@@ -647,7 +647,7 @@ func TestInitNamespaceQueryFail(t *testing.T) {
 
 	ns := &namespace{
 		Namespace: core.Namespace{
-			LocalName: "default",
+			Name: "default",
 		},
 		plugins: []string{"postgres"},
 	}
@@ -664,7 +664,7 @@ func TestInitNamespaceExistingUpsertFail(t *testing.T) {
 
 	ns := &namespace{
 		Namespace: core.Namespace{
-			LocalName: "default",
+			Name: "default",
 		},
 		plugins: []string{"postgres"},
 	}
@@ -1177,6 +1177,26 @@ func TestLoadNamespacesReservedName(t *testing.T) {
     default: ns1
     predefined:
     - name: ff_system
+    `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10388", err)
+}
+
+func TestLoadNamespacesReservedNetworkName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      multiparty:
+        enabled: true
+        networknamespace: ff_system
     `))
 	assert.NoError(t, err)
 

@@ -195,7 +195,7 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace core.NamespaceRef, location *fftypes.JSONAny, firstEvent string) (string, error) {
+func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
 	ethLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return "", err
@@ -206,7 +206,7 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace core.Na
 		return "", err
 	}
 
-	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.LocalName, version, ethLocation.Address, firstEvent, e.streamID, batchPinEventABI)
+	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, firstEvent, e.streamID, batchPinEventABI)
 	if err != nil {
 		return "", err
 	}
@@ -558,7 +558,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 	return res, nil
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, remoteNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
 	ethLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -583,7 +583,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, remoteNamespace, 
 	if version == 1 {
 		method = batchPinMethodABIV1
 		input = []interface{}{
-			remoteNamespace,
+			networkNamespace,
 			ethHexFormatB32(&uuids),
 			ethHexFormatB32(batch.BatchHash),
 			batch.BatchPayloadRef,

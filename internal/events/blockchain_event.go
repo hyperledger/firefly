@@ -46,7 +46,7 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 
 func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, protocolID string) (*core.ContractListener, error) {
 	return em.getChainListenerCached(fmt.Sprintf("pid:%s", protocolID), func() (*core.ContractListener, error) {
-		return em.database.GetContractListenerByBackendID(ctx, em.namespace.LocalName, protocolID)
+		return em.database.GetContractListenerByBackendID(ctx, em.namespace.Name, protocolID)
 	})
 }
 
@@ -114,11 +114,11 @@ func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 				log.L(ctx).Warnf("Event received from unknown subscription %s", event.Subscription)
 				return nil // no retry
 			}
-			if listener.Namespace != em.namespace.LocalName {
+			if listener.Namespace != em.namespace.Name {
 				log.L(em.ctx).Debugf("Ignoring blockchain event from different namespace '%s'", listener.Namespace)
 				return nil
 			}
-			listener.Namespace = em.namespace.LocalName
+			listener.Namespace = em.namespace.Name
 
 			chainEvent := buildBlockchainEvent(listener.Namespace, listener.ID, &event.Event, &core.BlockchainTransactionRef{
 				BlockchainID: event.BlockchainTXID,

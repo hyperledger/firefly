@@ -148,7 +148,7 @@ func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobDa
 	defer reader.Close()
 
 	// ... to data exchange
-	dxPayloadRef, hash, blobSize, err := dm.dataexchange.UploadBlob(ctx, dm.namespace.RemoteName, *data.DataID, reader)
+	dxPayloadRef, hash, blobSize, err := dm.dataexchange.UploadBlob(ctx, dm.namespace.NetworkName, *data.DataID, reader)
 	if err != nil {
 		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
 	}
