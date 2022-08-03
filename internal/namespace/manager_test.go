@@ -668,8 +668,11 @@ func TestInitNamespaceExistingUpsertFail(t *testing.T) {
 		},
 		plugins: []string{"postgres"},
 	}
+	existing := &core.Namespace{
+		NetworkName: "ns1",
+	}
 
-	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(&core.Namespace{}, nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(existing, nil)
 	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
 
 	err := nm.initNamespace(ns)

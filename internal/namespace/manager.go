@@ -290,7 +290,9 @@ func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 	case existing != nil:
 		ns.Created = existing.Created
 		ns.Contracts = existing.Contracts
-		// TODO: should we check for discrepancies in the multiparty contract config?
+		if ns.NetworkName != existing.NetworkName {
+			log.L(nm.ctx).Warnf("Namespace '%s' - network name unexpectedly changed from '%s' to '%s'", ns.Name, existing.NetworkName, ns.NetworkName)
+		}
 	default:
 		ns.Created = fftypes.Now()
 		ns.Contracts = &core.MultipartyContracts{
