@@ -151,37 +151,56 @@ func (suite *NamespaceAliasSuite) TestMultiTenancy() {
 	toCharlie := []core.MemberInput{
 		{Identity: suite.testState.org2.Name, Node: "did:firefly:node/charlie"},
 	}
+	toAll := []core.MemberInput{
+		{Identity: suite.testState.org1.Name, Node: "did:firefly:node/alice"},
+		{Identity: suite.testState.org1.Name, Node: "did:firefly:node/bob"},
+		{Identity: suite.testState.org2.Name, Node: "did:firefly:node/charlie"},
+	}
 
 	// Verify that private messages on the new namespace succeed
 	// Alice -> Charlie
-	resp, err = clientAlice.PrivateMessage("topic", data, toCharlie, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	resp, err = clientAlice.PrivateMessage("topic", data, toCharlie, "tag1", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypePrivate)
 	e2e.WaitForMessageConfirmed(suite.T(), receivedCharlie, core.MessageTypePrivate)
 	// Charlie -> Alice
-	resp, err = clientCharlie.PrivateMessage("topic", data, toAlice, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	resp, err = clientCharlie.PrivateMessage("topic", data, toAlice, "tag2", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypePrivate)
 	e2e.WaitForMessageConfirmed(suite.T(), receivedCharlie, core.MessageTypePrivate)
-	// Charlie -> Bob
-	resp, err = clientCharlie.PrivateMessage("topic", data, toBob, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	// Charlie -> Alice+Bob
+	resp, err = clientCharlie.PrivateMessage("topic", data, toAll, "tag3", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
+	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypePrivate)
 	e2e.WaitForMessageConfirmed(suite.T(), receivedBob, core.MessageTypePrivate)
 	e2e.WaitForMessageConfirmed(suite.T(), receivedCharlie, core.MessageTypePrivate)
 	// Alice -> Bob
-	resp, err = clientAlice.PrivateMessage("topic", data, toBob, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	resp, err = clientAlice.PrivateMessage("topic", data, toBob, "tag4", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypePrivate)
 	e2e.WaitForMessageConfirmed(suite.T(), receivedBob, core.MessageTypePrivate)
+	// Bob -> Alice+Charlie (blob transfer)
+	dataRef, resp, err := clientBob.PrivateBlobMessageDatatypeTagged(suite.T(), "topic", toAll, suite.testState.startTime)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 202, resp.StatusCode())
+	assert.NotNil(suite.T(), dataRef.Blob.Hash)
+	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypePrivate)
+	e2e.WaitForMessageConfirmed(suite.T(), receivedBob, core.MessageTypePrivate)
+	e2e.WaitForMessageConfirmed(suite.T(), receivedCharlie, core.MessageTypePrivate)
+
+	dataRecv := clientAlice.GetDataByID(suite.T(), dataRef.ID)
+	assert.Equal(suite.T(), dataRef.Blob.Hash, dataRecv.Blob.Hash)
+	dataRecv = clientCharlie.GetDataByID(suite.T(), dataRef.ID)
+	assert.Equal(suite.T(), dataRef.Blob.Hash, dataRecv.Blob.Hash)
 
 	messages := clientAlice.GetMessages(suite.T(), suite.testState.startTime, core.MessageTypePrivate, "topic")
-	assert.Len(suite.T(), messages, 3)
+	assert.Len(suite.T(), messages, 5)
 	messages = clientBob.GetMessages(suite.T(), suite.testState.startTime, core.MessageTypePrivate, "topic")
-	assert.Len(suite.T(), messages, 2)
-	messages = clientCharlie.GetMessages(suite.T(), suite.testState.startTime, core.MessageTypePrivate, "topic")
 	assert.Len(suite.T(), messages, 3)
+	messages = clientCharlie.GetMessages(suite.T(), suite.testState.startTime, core.MessageTypePrivate, "topic")
+	assert.Len(suite.T(), messages, 4)
 }

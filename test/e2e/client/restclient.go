@@ -186,6 +186,17 @@ func (client *FireFlyClient) GetData(t *testing.T, startTime time.Time) (data co
 	return data
 }
 
+func (client *FireFlyClient) GetDataByID(t *testing.T, id *fftypes.UUID) *core.Data {
+	var data core.Data
+	path := client.namespaced(urlGetData + "/" + id.String())
+	resp, err := client.Client.R().
+		SetResult(&data).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &data
+}
+
 func (client *FireFlyClient) GetDataForMessage(t *testing.T, startTime time.Time, msgID *fftypes.UUID) (data core.DataArray) {
 	path := client.namespaced(urlGetMessages)
 	path += "/" + msgID.String() + "/data"
@@ -429,15 +440,8 @@ func (client *FireFlyClient) BroadcastBlobMessage(t *testing.T, topic string) (*
 	return data, res, err
 }
 
-func (client *FireFlyClient) PrivateBlobMessageDatatypeTagged(t *testing.T, topic string, orgNames []string, startTime time.Time) (*core.Data, *resty.Response, error) {
+func (client *FireFlyClient) PrivateBlobMessageDatatypeTagged(t *testing.T, topic string, members []core.MemberInput, startTime time.Time) (*core.Data, *resty.Response, error) {
 	data := client.CreateBlob(t, &core.DatatypeRef{Name: "myblob"})
-	members := make([]core.MemberInput, len(orgNames))
-	for i, oName := range orgNames {
-		// We let FireFly resolve the friendly name of the org to the identity
-		members[i] = core.MemberInput{
-			Identity: oName,
-		}
-	}
 	res, err := client.Client.R().
 		SetBody(core.MessageInOut{
 			Message: core.Message{

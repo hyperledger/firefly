@@ -277,10 +277,12 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 
 	var resp *resty.Response
 
-	data, resp, err := suite.testState.client1.PrivateBlobMessageDatatypeTagged(suite.T(), "topic1", []string{
-		suite.testState.org1.Name,
-		suite.testState.org2.Name,
-	}, suite.testState.startTime)
+	members := []core.MemberInput{
+		{Identity: suite.testState.org1.Name},
+		{Identity: suite.testState.org2.Name},
+	}
+
+	data, resp, err := suite.testState.client1.PrivateBlobMessageDatatypeTagged(suite.T(), "topic1", members, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	assert.Empty(suite.T(), data.Blob.Name)
