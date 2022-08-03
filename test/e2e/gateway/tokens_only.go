@@ -18,8 +18,6 @@ package gateway
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -31,30 +29,16 @@ import (
 
 type TokensOnlyTestSuite struct {
 	suite.Suite
-	testState   *testState
-	connector   string
-	db          string
-	key         string
-	adminHost1  string
-	configFile1 string
+	testState *testState
+	connector string
+	db        string
+	key       string
 }
 
 func (suite *TokensOnlyTestSuite) SetupSuite() {
 	suite.testState = beforeE2ETest(suite.T())
 	stack := e2e.ReadStack(suite.T())
 	stackState := e2e.ReadStackState(suite.T())
-
-	adminProtocol1 := schemeHTTP
-	if stack.Members[0].UseHTTPS {
-		adminProtocol1 = schemeHTTPS
-	}
-	suite.adminHost1 = fmt.Sprintf("%s://%s:%d", adminProtocol1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedAdminPort)
-
-	stackDir := os.Getenv("STACK_DIR")
-	if stackDir == "" {
-		suite.T().Fatal("STACK_DIR must be set")
-	}
-	suite.configFile1 = filepath.Join(stackDir, "runtime", "config", "firefly_core_0.yml")
 
 	suite.connector = stack.TokenProviders[0]
 	suite.db = stack.Database
@@ -86,12 +70,12 @@ func (suite *TokensOnlyTestSuite) TestTokensOnlyNamespaces() {
 	}
 
 	// Add the new namespace
-	data1 := e2e.ReadConfig(suite.T(), suite.configFile1)
+	data1 := e2e.ReadConfig(suite.T(), suite.testState.configFile1)
 	e2e.AddNamespace(data1, namespaceInfo)
-	e2e.WriteConfig(suite.T(), suite.configFile1, data1)
+	e2e.WriteConfig(suite.T(), suite.testState.configFile1, data1)
 
 	admin1 := client.NewResty(suite.T())
-	admin1.SetBaseURL(suite.adminHost1 + "/spi/v1")
+	admin1.SetBaseURL(suite.testState.adminHost1 + "/spi/v1")
 
 	e2e.ResetFireFly(suite.T(), admin1)
 	e2e.PollForUp(suite.T(), suite.testState.client1)
