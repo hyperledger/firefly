@@ -171,14 +171,17 @@ func (suite *NamespaceAliasSuite) TestMultiTenancy() {
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	e2e.WaitForMessageConfirmed(suite.T(), receivedBob, core.MessageTypePrivate)
 	e2e.WaitForMessageConfirmed(suite.T(), receivedCharlie, core.MessageTypePrivate)
-
-	// Note: cannot send Alice -> Bob because they share a parent org.
-	// TODO: should this restriction be changed?
+	// Alice -> Bob
+	resp, err = clientAlice.PrivateMessage("topic", data, toBob, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 202, resp.StatusCode())
+	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypePrivate)
+	e2e.WaitForMessageConfirmed(suite.T(), receivedBob, core.MessageTypePrivate)
 
 	messages := clientAlice.GetMessages(suite.T(), suite.testState.startTime, core.MessageTypePrivate, "topic")
-	assert.Len(suite.T(), messages, 2)
+	assert.Len(suite.T(), messages, 3)
 	messages = clientBob.GetMessages(suite.T(), suite.testState.startTime, core.MessageTypePrivate, "topic")
-	assert.Len(suite.T(), messages, 1)
+	assert.Len(suite.T(), messages, 2)
 	messages = clientCharlie.GetMessages(suite.T(), suite.testState.startTime, core.MessageTypePrivate, "topic")
 	assert.Len(suite.T(), messages, 3)
 }
