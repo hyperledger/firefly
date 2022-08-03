@@ -73,7 +73,10 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *core.Toke
 	rows, _, err := s.queryTx(ctx, tokenapprovalTable, tx,
 		sq.Select("seq").
 			From(tokenapprovalTable).
-			Where(sq.Eq{"protocol_id": approval.ProtocolID}),
+			Where(sq.Eq{
+				"namespace":   approval.Namespace,
+				"protocol_id": approval.ProtocolID,
+			}),
 	)
 	if err != nil {
 		return err
@@ -91,7 +94,6 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *core.Toke
 				Set("operator_key", approval.Operator).
 				Set("pool_id", approval.Pool).
 				Set("connector", approval.Connector).
-				Set("namespace", approval.Namespace).
 				Set("approved", approval.Approved).
 				Set("info", approval.Info).
 				Set("tx_type", approval.TX.Type).

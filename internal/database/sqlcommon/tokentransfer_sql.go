@@ -78,7 +78,10 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *core.Toke
 	rows, _, err := s.queryTx(ctx, tokentransferTable, tx,
 		sq.Select("seq").
 			From(tokentransferTable).
-			Where(sq.Eq{"protocol_id": transfer.ProtocolID}),
+			Where(sq.Eq{
+				"protocol_id": transfer.ProtocolID,
+				"namespace":   transfer.Namespace,
+			}),
 	)
 	if err != nil {
 		return err
@@ -95,7 +98,6 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *core.Toke
 				Set("token_index", transfer.TokenIndex).
 				Set("uri", transfer.URI).
 				Set("connector", transfer.Connector).
-				Set("namespace", transfer.Namespace).
 				Set("key", transfer.Key).
 				Set("from_key", transfer.From).
 				Set("to_key", transfer.To).
