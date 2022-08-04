@@ -17,18 +17,17 @@
 package gateway
 
 import (
-	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/hyperledger/firefly/test/e2e"
 	"github.com/hyperledger/firefly/test/e2e/client"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -44,6 +43,9 @@ type testState struct {
 	client1              *client.FireFlyClient
 	unregisteredAccounts []interface{}
 	namespace            string
+	stackName            string
+	adminHost1           string
+	configFile1          string
 }
 
 func (m *testState) T() *testing.T {
@@ -59,6 +61,10 @@ func (m *testState) Done() func() {
 }
 
 func beforeE2ETest(t *testing.T) *testState {
+	stackDir := os.Getenv("STACK_DIR")
+	if stackDir == "" {
+		t.Fatal("STACK_DIR must be set")
+	}
 	stack := e2e.ReadStack(t)
 	stackState := e2e.ReadStackState(t)
 
@@ -74,7 +80,9 @@ func beforeE2ETest(t *testing.T) *testState {
 		member0WithPort = fmt.Sprintf(":%d", stack.Members[0].ExposedFireflyPort)
 	}
 
-	baseURL := fmt.Sprintf("%s://%s%s", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
+	base1 := fmt.Sprintf("%s://%s%s", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort)
+	admin1 := fmt.Sprintf("%s://%s:%d", httpProtocolClient1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedAdminPort)
+
 	namespace := os.Getenv("NAMESPACE")
 	if namespace == "" {
 		namespace = "default"
@@ -82,10 +90,13 @@ func beforeE2ETest(t *testing.T) *testState {
 
 	ts := &testState{
 		t:                    t,
+		stackName:            stack.Name,
 		startTime:            time.Now(),
-		client1:              client.NewFireFly(t, baseURL, namespace),
+		client1:              client.NewFireFly(t, base1, namespace),
 		unregisteredAccounts: stackState.Accounts[2:],
 		namespace:            namespace,
+		adminHost1:           admin1,
+		configFile1:          filepath.Join(stackDir, "runtime", "config", "firefly_core_0.yml"),
 	}
 
 	t.Logf("Blockchain provider: %s", stack.BlockchainProvider)
@@ -116,11 +127,4 @@ func beforeE2ETest(t *testing.T) *testState {
 		t.Log("WebSockets closed")
 	}
 	return ts
-}
-
-func randomName(t *testing.T) string {
-	b := make([]byte, 5)
-	_, err := rand.Read(b)
-	assert.NoError(t, err)
-	return fmt.Sprintf("e2e_%x", b)
 }

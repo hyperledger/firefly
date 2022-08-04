@@ -27,6 +27,7 @@ type Stack struct {
 	BlockchainProvider    string    `json:"blockchainProvider"`
 	TokenProviders        []string  `json:"tokenProviders"`
 	Members               []*Member `json:"members,omitempty"`
+	Database              string    `json:"database"`
 }
 
 type StackState struct {

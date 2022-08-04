@@ -39,6 +39,7 @@ func InitConfig(withDefaults bool) {
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceRemoteName)
 	namespacePredefined.AddKnownKey(coreconfig.NamespacePlugins)
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceDefaultKey)
+	namespacePredefined.AddKnownKey(coreconfig.NamespaceAssetKeyNormalization)
 
 	multipartyConf := namespacePredefined.SubSection(coreconfig.NamespaceMultiparty)
 	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyEnabled)
@@ -55,5 +56,6 @@ func InitConfig(withDefaults bool) {
 	if withDefaults {
 		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceName, "default")
 		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceDescription, "Default predefined namespace")
+		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceAssetKeyNormalization, "blockchain_plugin")
 	}
 }
