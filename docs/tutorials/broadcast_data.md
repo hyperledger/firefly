@@ -198,7 +198,7 @@ At this point the data has not be shared with anyone else in the network
 
 Just include a reference to the `id` returned from the upload.
 
-`POST` `/api/v1/namespaces/default/broadcast/message`
+`POST` `/api/v1/namespaces/default/messages/broadcast`
 
 ```json
 {
