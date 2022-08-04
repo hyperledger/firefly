@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
+	"github.com/hyperledger/firefly/mocks/systemeventmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -35,7 +35,7 @@ func newTestSyncAsyncBridge(t *testing.T) (*syncAsyncBridge, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mse := &sysmessagingmocks.SystemEvents{}
+	mse := &systemeventmocks.EventInterface{}
 	sa := NewSyncAsyncBridge(ctx, "ns1", mdi, mdm)
 	sa.Init(mse)
 	return sa.(*syncAsyncBridge), cancel
@@ -50,7 +50,7 @@ func TestRequestReplyOk(t *testing.T) {
 	replyID := fftypes.NewUUID()
 	dataID := fftypes.NewUUID()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -104,7 +104,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 	requestID := fftypes.NewUUID()
 	dataID := fftypes.NewUUID()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -152,7 +152,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 	requestID := fftypes.NewUUID()
 	dataID := fftypes.NewUUID()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -195,7 +195,7 @@ func TestRequestReplyTimeout(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	cancel()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	_, err := sa.WaitForReply(sa.ctx, fftypes.NewUUID(), func(ctx context.Context) error {
@@ -209,7 +209,7 @@ func TestRequestSetupSystemListenerFail(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := sa.WaitForReply(sa.ctx, fftypes.NewUUID(), func(ctx context.Context) error {
@@ -224,7 +224,7 @@ func TestEventCallbackNotInflight(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
@@ -762,7 +762,7 @@ func TestAwaitTokenPoolConfirmation(t *testing.T) {
 
 	requestID := fftypes.NewUUID()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -802,7 +802,7 @@ func TestAwaitTokenPoolConfirmationSendFail(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	_, err := sa.WaitForTokenPool(sa.ctx, fftypes.NewUUID(), func(ctx context.Context) error {
@@ -837,7 +837,7 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 		},
 	}
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -870,7 +870,7 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 
 	requestID := fftypes.NewUUID()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -912,7 +912,7 @@ func TestAwaitTokenApprovalConfirmation(t *testing.T) {
 
 	requestID := fftypes.NewUUID()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -952,7 +952,7 @@ func TestAwaitTokenApprovalConfirmationSendFail(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	_, err := sa.WaitForTokenApproval(sa.ctx, fftypes.NewUUID(), func(ctx context.Context) error {
@@ -966,7 +966,7 @@ func TestAwaitTokenTransferConfirmationSendFail(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	_, err := sa.WaitForTokenTransfer(sa.ctx, fftypes.NewUUID(), func(ctx context.Context) error {
@@ -989,7 +989,7 @@ func TestAwaitFailedTokenPool(t *testing.T) {
 		Error: "pop",
 	}
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -1028,7 +1028,7 @@ func TestAwaitFailedTokenTransfer(t *testing.T) {
 		Error: "pop",
 	}
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -1067,7 +1067,7 @@ func TestAwaitFailedTokenApproval(t *testing.T) {
 		Error: "pop",
 	}
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -1380,7 +1380,7 @@ func TestAwaitIdentityConfirmed(t *testing.T) {
 		},
 	}
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -1412,7 +1412,7 @@ func TestAwaitIdentityFail(t *testing.T) {
 
 	requestID := fftypes.NewUUID()
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	_, err := sa.WaitForIdentity(sa.ctx, requestID, func(ctx context.Context) error {
@@ -1432,7 +1432,7 @@ func TestAwaitInvokeOpSucceeded(t *testing.T) {
 		Status: core.OpStatusSucceeded,
 	}
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -1471,7 +1471,7 @@ func TestAwaitInvokeOpSucceededLookupFail(t *testing.T) {
 		},
 	}
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -1502,7 +1502,7 @@ func TestAwaitInvokeOpFailed(t *testing.T) {
 		Error:  "pop",
 	}
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
@@ -1540,7 +1540,7 @@ func TestAwaitInvokeOpFailedLookupFail(t *testing.T) {
 		},
 	}
 
-	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)

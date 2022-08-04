@@ -41,7 +41,6 @@ import (
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -84,7 +83,7 @@ type EventManager interface {
 	GetPlugins() []*core.NamespaceStatusPlugin
 
 	// Internal events
-	sysmessaging.SystemEvents
+	system.EventInterface
 }
 
 type eventManager struct {

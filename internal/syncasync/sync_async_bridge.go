@@ -28,7 +28,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -36,8 +36,8 @@ import (
 // Bridge translates synchronous (HTTP API) calls, into asynchronously sending a
 // message and blocking until a correlating response is received, or we hit a timeout.
 type Bridge interface {
-	// Init is required as there's a bi-directional relationship between sysmessaging and syncasync bridge
-	Init(sysevents sysmessaging.SystemEvents)
+	// Init is required as there's a bi-directional relationship between event manager and syncasync bridge
+	Init(sysevents system.EventInterface)
 
 	// The following "WaitFor*" methods all wait for a particular type of event callback, and block until it is received.
 	// To use them, invoke the appropriate method, and pass a "send" callback that is expected to trigger the relevant event.
@@ -92,7 +92,7 @@ type syncAsyncBridge struct {
 	namespace   string
 	database    database.Plugin
 	data        data.Manager
-	sysevents   sysmessaging.SystemEvents
+	sysevents   system.EventInterface
 	inflightMux sync.Mutex
 	inflight    inflightRequestMap
 }
@@ -108,7 +108,7 @@ func NewSyncAsyncBridge(ctx context.Context, ns string, di database.Plugin, dm d
 	return sa
 }
 
-func (sa *syncAsyncBridge) Init(sysevents sysmessaging.SystemEvents) {
+func (sa *syncAsyncBridge) Init(sysevents system.EventInterface) {
 	sa.sysevents = sysevents
 }
 
