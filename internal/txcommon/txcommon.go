@@ -128,7 +128,7 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, id *fftypes.
 			return true, nil
 		}
 
-		if err = t.database.UpdateTransaction(ctx, tx.ID, database.TransactionQueryFactory.NewUpdate(ctx).Set("blockchainids", newBlockchainIDs)); err != nil {
+		if err = t.database.UpdateTransaction(ctx, t.namespace, tx.ID, database.TransactionQueryFactory.NewUpdate(ctx).Set("blockchainids", newBlockchainIDs)); err != nil {
 			return false, err
 		}
 	} else {
@@ -158,7 +158,7 @@ func (t *transactionHelper) AddBlockchainTX(ctx context.Context, tx *core.Transa
 		return nil
 	}
 
-	err := t.database.UpdateTransaction(ctx, tx.ID, database.TransactionQueryFactory.NewUpdate(ctx).Set("blockchainids", tx.BlockchainIDs))
+	err := t.database.UpdateTransaction(ctx, t.namespace, tx.ID, database.TransactionQueryFactory.NewUpdate(ctx).Set("blockchainids", tx.BlockchainIDs))
 	if err != nil {
 		return err
 	}

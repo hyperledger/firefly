@@ -67,7 +67,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *core.BatchPersisted)
 	batchRows, _, err := s.queryTx(ctx, batchesTable, tx,
 		sq.Select("hash").
 			From(batchesTable).
-			Where(sq.Eq{"id": batch.ID}),
+			Where(sq.Eq{"id": batch.ID, "namespace": batch.Namespace}),
 	)
 	if err != nil {
 		return err
@@ -91,7 +91,6 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *core.BatchPersisted)
 		if _, err = s.updateTx(ctx, batchesTable, tx,
 			sq.Update(batchesTable).
 				Set("btype", string(batch.Type)).
-				Set("namespace", batch.Namespace).
 				Set("author", batch.Author).
 				Set("key", batch.Key).
 				Set("group_hash", batch.Group).
@@ -102,7 +101,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *core.BatchPersisted)
 				Set("tx_type", batch.TX.Type).
 				Set("tx_id", batch.TX.ID).
 				Set("node_id", batch.Node).
-				Where(sq.Eq{"id": batch.ID}),
+				Where(sq.Eq{"id": batch.ID, "namespace": batch.Namespace}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, core.ChangeEventTypeUpdated, batch.Namespace, batch.ID)
 			},
@@ -214,7 +213,7 @@ func (s *SQLCommon) GetBatches(ctx context.Context, namespace string, filter dat
 
 }
 
-func (s *SQLCommon) UpdateBatch(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateBatch(ctx context.Context, namespace string, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -226,7 +225,7 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *fftypes.UUID, update da
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"id": id})
+	query = query.Where(sq.Eq{"id": id, "namespace": namespace})
 
 	_, err = s.updateTx(ctx, batchesTable, tx, query, nil /* no change events on filter update */)
 	if err != nil {

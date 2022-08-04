@@ -263,8 +263,8 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *core.TransportWrap
 	l := log.L(ctx)
 	batch := tw.Batch
 
-	// Lookup the local org
-	localOrg, err := pm.identity.GetMultipartyRootOrg(ctx)
+	// Lookup the local node
+	localNode, err := pm.identity.GetLocalNode(ctx)
 	if err != nil {
 		return err
 	}
@@ -272,7 +272,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *core.TransportWrap
 	// Write it to the dataexchange for each member
 	for i, node := range nodes {
 
-		if node.Parent.Equals(localOrg.ID) {
+		if node.ID.Equals(localNode.ID) {
 			l.Debugf("Skipping send of batch for local node %s for group=%s node=%s (%d/%d)", batch.ID, batch.Group, node.ID, i+1, len(nodes))
 			continue
 		}

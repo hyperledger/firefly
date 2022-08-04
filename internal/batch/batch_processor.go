@@ -531,7 +531,7 @@ func (bp *batchProcessor) flushNonceState(ctx context.Context, state *DispatchSt
 	// message cache, until after the Retry/RunAsGroup has ended in sealBatch.
 	for _, msg := range state.Messages {
 		if pins, ok := state.msgPins[*msg.Header.ID]; ok {
-			if err := bp.database.UpdateMessage(ctx, msg.Header.ID,
+			if err := bp.database.UpdateMessage(ctx, bp.bm.namespace, msg.Header.ID,
 				database.MessageQueryFactory.NewUpdate(ctx).Set("pins", pins),
 			); err != nil {
 				return err
@@ -643,7 +643,7 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 					Set("confirmed", confirmTime)
 			}
 
-			if err = bp.database.UpdateMessages(ctx, filter, allMsgsUpdate); err != nil {
+			if err = bp.database.UpdateMessages(ctx, bp.bm.namespace, filter, allMsgsUpdate); err != nil {
 				return err
 			}
 

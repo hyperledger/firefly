@@ -157,7 +157,7 @@ func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch
 		Set("state", core.MessageStateConfirmed).
 		Set("confirmed", fftypes.Now())
 
-	if err := em.database.UpdateMessages(ctx, filter, update); err != nil {
+	if err := em.database.UpdateMessages(ctx, em.namespace.LocalName, filter, update); err != nil {
 		return err
 	}
 

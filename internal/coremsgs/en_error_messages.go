@@ -145,7 +145,7 @@ var (
 	MsgIdentityNotFoundByString           = ffe("FF10277", "Identity could not be resolved via lookup string '%s'")
 	MsgAuthorOrgSigningKeyMismatch        = ffe("FF10279", "Author organization '%s' is not associated with signing key '%s'")
 	MsgCannotTransferToSelf               = ffe("FF10280", "From and to addresses must be different", 400)
-	MsgLocalOrgLookupFailed               = ffe("FF10281", "Unable resolve the local org '%s' by the configured signing key on the node. Please confirm the org is registered with key '%s'", 500)
+	MsgLocalOrgLookupFailed               = ffe("FF10281", "Unable to resolve the local org '%s' by the configured signing key on the node. Please confirm the org is registered with key '%s'", 500)
 	MsgFabconnectRESTErr                  = ffe("FF10284", "Error from fabconnect: %s")
 	MsgInvalidIdentity                    = ffe("FF10285", "Supplied Fabric signer identity is invalid", 400)
 	MsgFailedToDecodeCertificate          = ffe("FF10286", "Failed to decode certificate: %s", 500)

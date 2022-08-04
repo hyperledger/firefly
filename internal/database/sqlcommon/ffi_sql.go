@@ -55,7 +55,10 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 	rows, _, err := s.queryTx(ctx, ffiTable, tx,
 		sq.Select("id").
 			From(ffiTable).
-			Where(sq.And{sq.Eq{"id": ffi.ID}}),
+			Where(sq.Eq{
+				"namespace": ffi.Namespace,
+				"id":        ffi.ID,
+			}),
 	)
 	if err != nil {
 		return err
@@ -66,7 +69,6 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 	if existing {
 		if _, err = s.updateTx(ctx, ffiTable, tx,
 			sq.Update(ffiTable).
-				Set("namespace", ffi.Namespace).
 				Set("name", ffi.Name).
 				Set("version", ffi.Version).
 				Set("description", ffi.Description).

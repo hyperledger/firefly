@@ -159,7 +159,7 @@ func (bm *broadcastManager) uploadBlob(ctx context.Context, data uploadBlobData)
 	}
 
 	// Update the data in the DB
-	err = bm.database.UpdateData(ctx, data.Data.ID, database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", data.Data.Blob.Public))
+	err = bm.database.UpdateData(ctx, bm.namespace.LocalName, data.Data.ID, database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", data.Data.Blob.Public))
 	if err != nil {
 		return nil, false, err
 	}

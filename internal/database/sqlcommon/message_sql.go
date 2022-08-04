@@ -70,8 +70,6 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, mes
 			Set("author", message.Header.Author).
 			Set("key", message.Header.Key).
 			Set("created", message.Header.Created).
-			Set("namespace", message.Header.Namespace).
-			Set("namespace_local", message.LocalNamespace).
 			Set("topics", message.Header.Topics).
 			Set("tag", message.Header.Tag).
 			Set("group_hash", message.Header.Group).
@@ -83,8 +81,10 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, mes
 			Set("tx_type", message.Header.TxType).
 			Set("batch_id", message.BatchID).
 			Where(sq.Eq{
-				"id":   message.Header.ID,
-				"hash": message.Hash,
+				"id":              message.Header.ID,
+				"hash":            message.Hash,
+				"namespace_local": message.LocalNamespace,
+				"namespace":       message.Header.Namespace,
 			}),
 		func() {
 			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeUpdated, message.LocalNamespace, message.Header.ID, -1 /* not applicable on update */)
@@ -150,7 +150,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *core.Message, op
 		msgRows, _, err := s.queryTx(ctx, messagesTable, tx,
 			sq.Select("hash", sequenceColumn).
 				From(messagesTable).
-				Where(sq.Eq{"id": message.Header.ID}),
+				Where(sq.Eq{"id": message.Header.ID, "namespace_local": message.LocalNamespace}),
 		)
 		if err != nil {
 			return err
@@ -275,7 +275,7 @@ func (s *SQLCommon) ReplaceMessage(ctx context.Context, message *core.Message) (
 	if err := s.deleteTx(ctx, messagesTable, tx,
 		sq.Delete(messagesTable).
 			Where(sq.And{
-				sq.Eq{"id": message.Header.ID},
+				sq.Eq{"id": message.Header.ID, "namespace_local": message.LocalNamespace},
 			}),
 		nil, // no change event
 	); err != nil {
@@ -299,7 +299,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 		if err := s.deleteTx(ctx, messagesDataJoinTable, tx,
 			sq.Delete(messagesDataJoinTable).
 				Where(sq.And{
-					sq.Eq{"message_id": message.Header.ID},
+					sq.Eq{"message_id": message.Header.ID, "namespace": message.LocalNamespace},
 				}),
 			nil, // no change event
 		); err != nil && err != database.DeleteRecordNotFound {
@@ -318,12 +318,14 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 		if _, err := s.insertTx(ctx, messagesDataJoinTable, tx,
 			sq.Insert(messagesDataJoinTable).
 				Columns(
+					"namespace",
 					"message_id",
 					"data_id",
 					"data_hash",
 					"data_idx",
 				).
 				Values(
+					message.LocalNamespace,
 					message.Header.ID,
 					msgDataRef.ID,
 					msgDataRef.Hash,
@@ -344,7 +346,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 // way for a single-query option. So a two-query option ended up being simplest.
 // See commit e304161a30b8044a42b5bac3fcfca7e7bd8f8ab7 for the abandoned changeset
 // that implemented LEFT JOIN
-func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*core.Message) error {
+func (s *SQLCommon) loadDataRefs(ctx context.Context, namespace string, msgs []*core.Message) error {
 
 	msgIDs := make([]string, len(msgs))
 	for i, m := range msgs {
@@ -361,7 +363,7 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*core.Message) erro
 			"data_idx",
 		).
 			From(messagesDataJoinTable).
-			Where(sq.Eq{"message_id": msgIDs}).
+			Where(sq.Eq{"message_id": msgIDs, "namespace": namespace}).
 			OrderBy("data_idx"),
 	)
 	if err != nil {
@@ -451,14 +453,14 @@ func (s *SQLCommon) GetMessageByID(ctx context.Context, namespace string, id *ff
 	}
 
 	rows.Close()
-	if err = s.loadDataRefs(ctx, []*core.Message{msg}); err != nil {
+	if err = s.loadDataRefs(ctx, namespace, []*core.Message{msg}); err != nil {
 		return nil, err
 	}
 
 	return msg, nil
 }
 
-func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder, fop sq.Sqlizer, fi *database.FilterInfo, allowCount bool) (message []*core.Message, fr *database.FilterResult, err error) {
+func (s *SQLCommon) getMessagesQuery(ctx context.Context, namespace string, query sq.SelectBuilder, fop sq.Sqlizer, fi *database.FilterInfo, allowCount bool) (message []*core.Message, fr *database.FilterResult, err error) {
 	if fi.Count && !allowCount {
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgFilterCountNotSupported)
 	}
@@ -480,7 +482,7 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 
 	rows.Close()
 	if len(msgs) > 0 {
-		if err = s.loadDataRefs(ctx, msgs); err != nil {
+		if err = s.loadDataRefs(ctx, namespace, msgs); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -557,7 +559,7 @@ func (s *SQLCommon) GetMessages(ctx context.Context, namespace string, filter da
 	if err != nil {
 		return nil, nil, err
 	}
-	return s.getMessagesQuery(ctx, query, fop, fi, true)
+	return s.getMessagesQuery(ctx, namespace, query, fop, fi, true)
 }
 
 func (s *SQLCommon) GetMessagesForData(ctx context.Context, namespace string, dataID *fftypes.UUID, filter database.Filter) (message []*core.Message, fr *database.FilterResult, err error) {
@@ -575,14 +577,14 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, namespace string, da
 	}
 
 	query = query.LeftJoin("messages AS m ON m.id = md.message_id")
-	return s.getMessagesQuery(ctx, query, fop, fi, false)
+	return s.getMessagesQuery(ctx, namespace, query, fop, fi, false)
 }
 
-func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *fftypes.UUID, update database.Update) (err error) {
-	return s.UpdateMessages(ctx, database.MessageQueryFactory.NewFilter(ctx).Eq("id", msgid), update)
+func (s *SQLCommon) UpdateMessage(ctx context.Context, namespace string, msgid *fftypes.UUID, update database.Update) (err error) {
+	return s.UpdateMessages(ctx, namespace, database.MessageQueryFactory.NewFilter(ctx).Eq("id", msgid), update)
 }
 
-func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, update database.Update) (err error) {
+func (s *SQLCommon) UpdateMessages(ctx context.Context, namespace string, filter database.Filter, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -590,7 +592,7 @@ func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, 
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update(messagesTable), update, msgFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(messagesTable).Where(sq.Eq{"namespace_local": namespace}), update, msgFilterFieldMap)
 	if err != nil {
 		return err
 	}

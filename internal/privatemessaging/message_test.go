@@ -640,7 +640,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	node2 := newTestNode("node2", newTestOrg("remoteorg"))
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetLocalNode", pm.ctx).Return(node1, nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, "node2-peer", mock.Anything).Return(nil)
@@ -700,6 +700,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 
 	localOrg := newTestOrg("localorg")
 	groupID := fftypes.NewRandB32()
+	node1 := newTestNode("node1", localOrg)
 	node2 := newTestNode("node2", newTestOrg("remoteorg"))
 	nodes := []*core.Identity{node2}
 
@@ -709,6 +710,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 		return true
 	})).Return(nil)
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetLocalNode", pm.ctx).Return(node1, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
@@ -753,11 +755,12 @@ func TestSendDataTransferFail(t *testing.T) {
 
 	localOrg := newTestOrg("localorg")
 	groupID := fftypes.NewRandB32()
+	node1 := newTestNode("node1", localOrg)
 	node2 := newTestNode("node2", newTestOrg("remoteorg"))
 	nodes := []*core.Identity{node2}
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetLocalNode", pm.ctx).Return(node1, nil)
 
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
@@ -802,6 +805,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 
 	localOrg := newTestOrg("localorg")
 	groupID := fftypes.NewRandB32()
+	node1 := newTestNode("node1", localOrg)
 	node2 := newTestNode("node2", newTestOrg("remoteorg"))
 	nodes := []*core.Identity{node2}
 
@@ -811,6 +815,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 		return true
 	})).Return(nil)
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetLocalNode", pm.ctx).Return(node1, nil)
 
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))

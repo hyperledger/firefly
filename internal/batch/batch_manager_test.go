@@ -125,14 +125,14 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).Return([]*core.IDAndSequence{}, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil) // pins
+	mdi.On("UpdateMessage", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil) // pins
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag.RunFn = func(a mock.Arguments) {
 		ctx := a.Get(0).(context.Context)
 		fn := a.Get(1).(func(context.Context) error)
 		fn(ctx)
 	}
-	mdi.On("UpdateMessages", mock.Anything, mock.MatchedBy(func(f database.Filter) bool {
+	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.MatchedBy(func(f database.Filter) bool {
 		fi, err := f.Finalize()
 		assert.NoError(t, err)
 		assert.Equal(t, fmt.Sprintf("( id IN ['%s'] ) && ( state == 'ready' )", msg.Header.ID.String()), fi.String())
@@ -241,7 +241,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 	mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).Return([]*core.IDAndSequence{{ID: *msg.Header.ID}}, nil).Once()
 	mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).Return([]*core.IDAndSequence{}, nil)
-	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil) // pins
+	mdi.On("UpdateMessage", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil) // pins
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -250,7 +250,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		fn := a.Get(1).(func(context.Context) error)
 		fn(ctx)
 	}
-	mdi.On("UpdateMessages", mock.Anything, mock.MatchedBy(func(f database.Filter) bool {
+	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.MatchedBy(func(f database.Filter) bool {
 		fi, err := f.Finalize()
 		assert.NoError(t, err)
 		assert.Equal(t, fmt.Sprintf("( id IN ['%s'] ) && ( state == 'ready' )", msg.Header.ID.String()), fi.String())
@@ -414,7 +414,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	mdi.On("InsertTransaction", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil) // transaction submit
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
+	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
 		ctx := a.Get(0).(context.Context)

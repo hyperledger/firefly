@@ -127,9 +127,14 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 		e2e.WaitForIdentityConfirmed(suite.T(), received2)
 	}
 
+	members := []core.MemberInput{
+		{Identity: custom1.DID},
+		{Identity: custom2.DID},
+	}
+
 	resp, err := suite.testState.client1.PrivateMessageWithKey(org1key, "topic1", &core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`"test private custom identity"`),
-	}, []string{custom1.DID, custom2.DID}, "tag1", core.TransactionTypeBatchPin, true, suite.testState.startTime)
+	}, members, "tag1", core.TransactionTypeBatchPin, true, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 

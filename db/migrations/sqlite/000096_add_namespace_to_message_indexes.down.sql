@@ -13,6 +13,15 @@ CREATE UNIQUE INDEX tokenpool_locator ON tokenpool(connector, locator);
 DROP INDEX ffi_id;
 CREATE UNIQUE INDEX ffi_id ON ffi(id);
 
+DROP INDEX datatypes_id;
+CREATE UNIQUE INDEX datatypes_id ON datatypes(id);
+
+DROP INDEX batches_id;
+CREATE UNIQUE INDEX batches_id ON batches(id);
+
+DROP INDEX groups_hash;
+CREATE UNIQUE INDEX groups_hash ON groups(hash);
+
 DROP INDEX messages_id;
 CREATE UNIQUE INDEX messages_id ON messages(id);
 
@@ -33,3 +42,7 @@ DROP TABLE messages_data_old;
 
 CREATE INDEX messages_data_message ON messages_data(message_id);
 CREATE INDEX messages_data_data ON messages_data(data_id);
+
+DROP INDEX nextpins_context;
+ALTER TABLE nextpins DROP COLUMN namespace;
+CREATE INDEX nextpins_hash ON nextpins(hash);

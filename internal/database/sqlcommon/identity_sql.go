@@ -63,7 +63,6 @@ func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, id
 			Set("did", identity.DID).
 			Set("parent", identity.Parent).
 			Set("itype", identity.Type).
-			Set("namespace", identity.Namespace).
 			Set("name", identity.Name).
 			Set("description", identity.Description).
 			Set("profile", identity.Profile).

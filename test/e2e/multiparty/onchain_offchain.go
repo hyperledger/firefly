@@ -159,11 +159,13 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 		},
 	}
 
+	members := []core.MemberInput{
+		{Identity: suite.testState.org1.Name},
+		{Identity: suite.testState.org2.Name},
+	}
+
 	// Should be rejected as datatype not known
-	resp, err := suite.testState.client1.PrivateMessage("topic1", &data, []string{
-		suite.testState.org1.Name,
-		suite.testState.org2.Name,
-	}, "", core.TransactionTypeBatchPin, true, suite.testState.startTime)
+	resp, err := suite.testState.client1.PrivateMessage("topic1", &data, members, "", core.TransactionTypeBatchPin, true, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10195") // datatype not found
@@ -175,10 +177,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	}
 	suite.testState.client1.CreateDatatype(suite.T(), dt, true)
 
-	resp, err = suite.testState.client1.PrivateMessage("topic1", &data, []string{
-		suite.testState.org1.Name,
-		suite.testState.org2.Name,
-	}, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	resp, err = suite.testState.client1.PrivateMessage("topic1", &data, members, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10198") // does not conform
@@ -188,10 +187,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 		"name": "mywidget"
 	}`)
 
-	resp, err = suite.testState.client1.PrivateMessage("topic1", &data, []string{
-		suite.testState.org1.Name,
-		suite.testState.org2.Name,
-	}, "", core.TransactionTypeBatchPin, true, suite.testState.startTime)
+	resp, err = suite.testState.client1.PrivateMessage("topic1", &data, members, "", core.TransactionTypeBatchPin, true, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
@@ -206,6 +202,11 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 	received1 := e2e.WsReader(suite.testState.ws1)
 	received2 := e2e.WsReader(suite.testState.ws2)
 
+	members := []core.MemberInput{
+		{Identity: suite.testState.org1.Name},
+		{Identity: suite.testState.org2.Name},
+	}
+
 	// Send 10 messages, that should get batched, across two topics
 	totalMessages := 10
 	topics := []string{"topicA", "topicB"}
@@ -219,10 +220,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 
 		expectedData[topic] = append(expectedData[topic], data)
 
-		resp, err := suite.testState.client1.PrivateMessage(topic, data, []string{
-			suite.testState.org1.Name,
-			suite.testState.org2.Name,
-		}, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+		resp, err := suite.testState.client1.PrivateMessage(topic, data, members, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 		require.NoError(suite.T(), err)
 		assert.Equal(suite.T(), 202, resp.StatusCode())
 	}
@@ -279,10 +277,12 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 
 	var resp *resty.Response
 
-	data, resp, err := suite.testState.client1.PrivateBlobMessageDatatypeTagged(suite.T(), "topic1", []string{
-		suite.testState.org1.Name,
-		suite.testState.org2.Name,
-	}, suite.testState.startTime)
+	members := []core.MemberInput{
+		{Identity: suite.testState.org1.Name},
+		{Identity: suite.testState.org2.Name},
+	}
+
+	data, resp, err := suite.testState.client1.PrivateBlobMessageDatatypeTagged(suite.T(), "topic1", members, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	assert.Empty(suite.T(), data.Blob.Name)
@@ -330,11 +330,13 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 
+	members := []core.MemberInput{
+		{Identity: suite.testState.org1.Name},
+		{Identity: suite.testState.org2.Name},
+	}
+
 	var resp *resty.Response
-	resp, err := suite.testState.client1.PrivateMessage("topic1", &data, []string{
-		suite.testState.org1.Name,
-		suite.testState.org2.Name,
-	}, "myrequest", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	resp, err := suite.testState.client1.PrivateMessage("topic1", &data, members, "myrequest", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 

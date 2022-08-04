@@ -147,7 +147,7 @@ func TestBatch2EWithDB(t *testing.T) {
 	// Update
 	author2 := "0x222222"
 	up := database.BatchQueryFactory.NewUpdate(ctx).Set("author", author2)
-	err = s.UpdateBatch(ctx, batchID, up)
+	err = s.UpdateBatch(ctx, "ns1", batchID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -276,7 +276,7 @@ func TestBatchUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.BatchQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
-	err := s.UpdateBatch(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateBatch(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -284,7 +284,7 @@ func TestBatchUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.BatchQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
-	err := s.UpdateBatch(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateBatch(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF00143.*id", err)
 }
 
@@ -294,6 +294,6 @@ func TestBatchUpdateFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.BatchQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.UpdateBatch(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateBatch(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
 }

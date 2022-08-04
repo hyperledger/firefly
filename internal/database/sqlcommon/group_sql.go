@@ -69,7 +69,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *core.Group, optimiza
 		groupRows, _, err := s.queryTx(ctx, groupsTable, tx,
 			sq.Select("hash").
 				From(groupsTable).
-				Where(sq.Eq{"hash": group.Hash}),
+				Where(sq.Eq{"hash": group.Hash, "namespace_local": group.LocalNamespace}),
 		)
 		if err != nil {
 			return err
@@ -108,7 +108,7 @@ func (s *SQLCommon) attemptGroupUpdate(ctx context.Context, tx *txWrapper, group
 			Set("name", group.Name).
 			Set("hash", group.Hash).
 			Set("created", group.Created).
-			Where(sq.Eq{"hash": group.Hash}),
+			Where(sq.Eq{"hash": group.Hash, "namespace_local": group.LocalNamespace}),
 		func() {
 			s.callbacks.HashCollectionNSEvent(database.CollectionGroups, core.ChangeEventTypeUpdated, group.LocalNamespace, group.Hash)
 		},

@@ -88,7 +88,6 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *core.S
 		if _, err = s.updateTx(ctx, subscriptionsTable, tx,
 			sq.Update(subscriptionsTable).
 				// Note we do not update ID
-				Set("namespace", subscription.Namespace).
 				Set("name", subscription.Name).
 				Set("transport", subscription.Transport).
 				Set("filters", subscription.Filter).
