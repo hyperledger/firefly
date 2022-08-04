@@ -56,27 +56,7 @@ func (suite *TokensRemoteNameTestSuite) TestE2EFungibleTokensWithRemoteNameAsync
 	e2e.AddPluginRemoteName(config1, "tokens", "testremote")
 
 	// Change plugin local name and update plugin list
-	pluginsConfig := config1["plugins"].(map[interface{}]interface{})
-	plugins := pluginsConfig["tokens"].([]interface{})
-	plugin := plugins[0].(map[interface{}]interface{})
-	oldName := plugin["name"]
-	plugin["name"] = newLocalName
-
-	namespaces := config1["namespaces"].(map[interface{}]interface{})
-	predefined := namespaces["predefined"].([]interface{})
-	defaultNs := predefined[0].(map[interface{}]interface{})
-	pluginList := defaultNs["plugins"].([]interface{})
-	var newPluginList []interface{}
-	for _, plugin := range pluginList {
-		if plugin == oldName {
-			newPluginList = append(newPluginList, "tokens1")
-		} else {
-			newPluginList = append(newPluginList, plugin)
-		}
-	}
-
-	defaultNs["plugins"] = newPluginList
-
+	e2e.ChangeDefaultNSPluginLocalName(config1, "tokens", newLocalName)
 	e2e.WriteConfig(suite.T(), suite.testState.configFile1, config1)
 
 	config2 := e2e.ReadConfig(suite.T(), suite.testState.configFile2)
