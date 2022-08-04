@@ -31,7 +31,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/operations"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -76,7 +75,6 @@ type FlushStatus struct {
 type batchProcessor struct {
 	ctx                context.Context
 	bm                 *batchManager
-	ni                 sysmessaging.LocalNodeInfo
 	data               data.Manager
 	database           database.Plugin
 	txHelper           txcommon.Helper
@@ -116,7 +114,6 @@ func newBatchProcessor(bm *batchManager, conf *batchProcessorConf, baseRetryConf
 		ctx:       pCtx,
 		cancelCtx: cancelCtx,
 		bm:        bm,
-		ni:        bm.ni,
 		database:  bm.database,
 		data:      bm.data,
 		txHelper:  txHelper,
@@ -382,9 +379,12 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 				SignerRef: bp.conf.signer,
 				Group:     bp.conf.group,
 				Created:   fftypes.Now(),
-				Node:      bp.ni.GetNodeUUID(bp.ctx),
 			},
 		},
+	}
+	localNode, err := bp.bm.identity.GetLocalNode(bp.ctx)
+	if err == nil && localNode != nil {
+		state.Persisted.BatchHeader.Node = localNode.ID
 	}
 	for _, w := range flushWork {
 		if w.msg != nil {

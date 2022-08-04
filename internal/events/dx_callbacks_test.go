@@ -152,6 +152,8 @@ func TestPinnedReceiveOK(t *testing.T) {
 		Value: "peer1",
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
@@ -580,6 +582,8 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 		Value: "peer1",
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization fail"))
@@ -616,6 +620,8 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 		Value: "peer1",
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(fmt.Errorf("optimization miss"))
 	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
@@ -651,6 +657,8 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 		Value: "peer1",
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
@@ -692,6 +700,8 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 		Value: "peer1",
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
@@ -733,6 +743,8 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 		Value: "peer1",
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {

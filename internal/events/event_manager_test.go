@@ -38,7 +38,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
-	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -49,6 +48,11 @@ import (
 )
 
 var testNodeID = fftypes.NewUUID()
+var testNode = &core.Identity{
+	IdentityBase: core.IdentityBase{
+		ID: testNodeID,
+	},
+}
 
 func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	return newTestEventManagerCommon(t, false, false)
@@ -78,7 +82,6 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	mam := &assetmocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mdd := &shareddownloadmocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	mev := &eventsmocks.Plugin{}
@@ -89,14 +92,13 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	if metrics {
 		mmi.On("TransferConfirmed", mock.Anything)
 	}
-	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
 	mev.On("SetHandler", "ns1", mock.Anything).Return(nil).Maybe()
 	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
-	emi, err := NewEventManager(ctx, ns, mni, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, mdd, mmi, txHelper, events, mmp)
+	emi, err := NewEventManager(ctx, ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, mdd, mmi, txHelper, events, mmp)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	mockRunAsGroupPassthrough(mdi)
@@ -131,7 +133,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -147,7 +149,6 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mds := &definitionsmocks.Sender{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mam := &assetmocks.Manager{}
 	msd := &shareddownloadmocks.Manager{}
 	mm := &metricsmocks.Manager{}
@@ -159,7 +160,7 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	mev.On("SetHandler", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
-	_, err := NewEventManager(context.Background(), ns, mni, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, txHelper, events, mmp)
+	_, err := NewEventManager(context.Background(), ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, txHelper, events, mmp)
 	assert.EqualError(t, err, "pop")
 }
 

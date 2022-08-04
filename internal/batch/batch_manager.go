@@ -30,14 +30,14 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func NewBatchManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) (Manager, error) {
-	if di == nil || dm == nil {
+func NewBatchManager(ctx context.Context, ns string, di database.Plugin, dm data.Manager, im identity.Manager, txHelper txcommon.Helper) (Manager, error) {
+	if di == nil || dm == nil || im == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BatchManager")
 	}
 	pCtx, cancelCtx := context.WithCancel(log.WithLogField(ctx, "role", "batchmgr"))
@@ -46,7 +46,7 @@ func NewBatchManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeIn
 		ctx:                        pCtx,
 		cancelCtx:                  cancelCtx,
 		namespace:                  ns,
-		ni:                         ni,
+		identity:                   im,
 		database:                   di,
 		data:                       dm,
 		txHelper:                   txHelper,
@@ -94,7 +94,7 @@ type batchManager struct {
 	ctx                        context.Context
 	cancelCtx                  func()
 	namespace                  string
-	ni                         sysmessaging.LocalNodeInfo
+	identity                   identity.Manager
 	database                   database.Plugin
 	data                       data.Manager
 	txHelper                   txcommon.Helper
