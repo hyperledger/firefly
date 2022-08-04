@@ -811,6 +811,9 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	if deprecatedOrgName != "" || deprecatedOrgKey != "" || deprecatedOrgDesc != "" {
 		log.L(ctx).Warnf("Your org config uses a deprecated configuration structure - the org configuration has been moved under the 'namespaces.predefined[].multiparty' section")
 	}
+	if deprecatedNodeName != "" || deprecatedNodeDesc != "" {
+		log.L(ctx).Warnf("Your node config uses a deprecated configuration structure - the node configuration has been moved under the 'namespaces.predefined[].multiparty' section")
+	}
 	if orgName == "" {
 		orgName = deprecatedOrgName
 	}
