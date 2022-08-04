@@ -48,13 +48,13 @@ func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
 	tokenRemoteNames["connector1"] = "remote1"
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ds, _, err := NewDefinitionSender(ctx, "ns1", false, mdi, mbi, mdx, mbm, mim, mdm, mam, mcm, tokenRemoteNames)
+	ds, _, err := NewDefinitionSender(ctx, "ns1", "ns1", false, mdi, mbi, mdx, mbm, mim, mdm, mam, mcm, tokenRemoteNames)
 	assert.NoError(t, err)
 	return ds.(*definitionSender), cancel
 }
 
 func TestInitSenderFail(t *testing.T) {
-	_, _, err := NewDefinitionSender(context.Background(), "", false, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, _, err := NewDefinitionSender(context.Background(), "", "", false, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

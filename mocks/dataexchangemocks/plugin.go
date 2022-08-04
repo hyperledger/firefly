@@ -23,13 +23,13 @@ type Plugin struct {
 	mock.Mock
 }
 
-// AddPeer provides a mock function with given fields: ctx, peer
-func (_m *Plugin) AddPeer(ctx context.Context, peer fftypes.JSONObject) error {
-	ret := _m.Called(ctx, peer)
+// AddNode provides a mock function with given fields: ctx, remoteNamespace, nodeName, peer
+func (_m *Plugin) AddNode(ctx context.Context, remoteNamespace string, nodeName string, peer fftypes.JSONObject) error {
+	ret := _m.Called(ctx, remoteNamespace, nodeName, peer)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.JSONObject) error); ok {
-		r0 = rf(ctx, peer)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(ctx, remoteNamespace, nodeName, peer)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -51,36 +51,6 @@ func (_m *Plugin) Capabilities() *dataexchange.Capabilities {
 	}
 
 	return r0
-}
-
-// CheckBlobReceived provides a mock function with given fields: ctx, peerID, ns, id
-func (_m *Plugin) CheckBlobReceived(ctx context.Context, peerID string, ns string, id fftypes.UUID) (*fftypes.Bytes32, int64, error) {
-	ret := _m.Called(ctx, peerID, ns, id)
-
-	var r0 *fftypes.Bytes32
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, fftypes.UUID) *fftypes.Bytes32); ok {
-		r0 = rf(ctx, peerID, ns, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Bytes32)
-		}
-	}
-
-	var r1 int64
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, fftypes.UUID) int64); ok {
-		r1 = rf(ctx, peerID, ns, id)
-	} else {
-		r1 = ret.Get(1).(int64)
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, string, fftypes.UUID) error); ok {
-		r2 = rf(ctx, peerID, ns, id)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
 }
 
 // DownloadBlob provides a mock function with given fields: ctx, payloadRef
@@ -106,13 +76,13 @@ func (_m *Plugin) DownloadBlob(ctx context.Context, payloadRef string) (io.ReadC
 	return r0, r1
 }
 
-// GetEndpointInfo provides a mock function with given fields: ctx
-func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.JSONObject, error) {
-	ret := _m.Called(ctx)
+// GetEndpointInfo provides a mock function with given fields: ctx, nodeName
+func (_m *Plugin) GetEndpointInfo(ctx context.Context, nodeName string) (fftypes.JSONObject, error) {
+	ret := _m.Called(ctx, nodeName)
 
 	var r0 fftypes.JSONObject
-	if rf, ok := ret.Get(0).(func(context.Context) fftypes.JSONObject); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) fftypes.JSONObject); ok {
+		r0 = rf(ctx, nodeName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(fftypes.JSONObject)
@@ -120,13 +90,27 @@ func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.JSONObject, erro
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, nodeName)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
+}
+
+// GetPeerID provides a mock function with given fields: peer
+func (_m *Plugin) GetPeerID(peer fftypes.JSONObject) string {
+	ret := _m.Called(peer)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(fftypes.JSONObject) string); ok {
+		r0 = rf(peer)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
 }
 
 // Init provides a mock function with given fields: ctx, _a1
@@ -162,13 +146,13 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// SendMessage provides a mock function with given fields: ctx, nsOpID, peerID, data
-func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peerID string, data []byte) error {
-	ret := _m.Called(ctx, nsOpID, peerID, data)
+// SendMessage provides a mock function with given fields: ctx, nsOpID, peer, sender, data
+func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peer fftypes.JSONObject, sender fftypes.JSONObject, data []byte) error {
+	ret := _m.Called(ctx, nsOpID, peer, sender, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, []byte) error); ok {
-		r0 = rf(ctx, nsOpID, peerID, data)
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.JSONObject, fftypes.JSONObject, []byte) error); ok {
+		r0 = rf(ctx, nsOpID, peer, sender, data)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -176,14 +160,9 @@ func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peerID string,
 	return r0
 }
 
-// SetHandler provides a mock function with given fields: namespace, handler
-func (_m *Plugin) SetHandler(namespace string, handler dataexchange.Callbacks) {
-	_m.Called(namespace, handler)
-}
-
-// SetNodes provides a mock function with given fields: nodes
-func (_m *Plugin) SetNodes(nodes []fftypes.JSONObject) {
-	_m.Called(nodes)
+// SetHandler provides a mock function with given fields: remoteNamespace, nodeName, handler
+func (_m *Plugin) SetHandler(remoteNamespace string, nodeName string, handler dataexchange.Callbacks) {
+	_m.Called(remoteNamespace, nodeName, handler)
 }
 
 // SetOperationHandler provides a mock function with given fields: namespace, handler
@@ -205,13 +184,13 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// TransferBlob provides a mock function with given fields: ctx, nsOpID, peerID, payloadRef
-func (_m *Plugin) TransferBlob(ctx context.Context, nsOpID string, peerID string, payloadRef string) error {
-	ret := _m.Called(ctx, nsOpID, peerID, payloadRef)
+// TransferBlob provides a mock function with given fields: ctx, nsOpID, peer, sender, payloadRef
+func (_m *Plugin) TransferBlob(ctx context.Context, nsOpID string, peer fftypes.JSONObject, sender fftypes.JSONObject, payloadRef string) error {
+	ret := _m.Called(ctx, nsOpID, peer, sender, payloadRef)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, nsOpID, peerID, payloadRef)
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.JSONObject, fftypes.JSONObject, string) error); ok {
+		r0 = rf(ctx, nsOpID, peer, sender, payloadRef)
 	} else {
 		r0 = ret.Error(0)
 	}

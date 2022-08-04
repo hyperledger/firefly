@@ -128,7 +128,8 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	})).Return(nil)
 
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("AddPeer", ctx, node.DX.Endpoint).Return(nil)
+	mdx.On("GetPeerID", node.DX.Endpoint).Return("member_0")
+	mdx.On("AddNode", ctx, "ns1", node.Name, node.DX.Endpoint).Return(nil)
 
 	dh.multiparty = true
 

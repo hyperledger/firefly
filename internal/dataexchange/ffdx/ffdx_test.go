@@ -152,10 +152,10 @@ func TestGetEndpointInfo(t *testing.T) {
 			"cert":     "cert data...",
 		}))
 
-	peer, err := h.GetEndpointInfo(context.Background())
+	peer, err := h.GetEndpointInfo(context.Background(), "node1")
 	assert.NoError(t, err)
-	assert.Equal(t, "peer1", peer.GetString("id"))
 	assert.Equal(t, fftypes.JSONObject{
+		"nodeID":   "peer1/node1",
 		"id":       "peer1",
 		"endpoint": "https://peer1.example.com",
 		"cert":     "cert data...",
@@ -172,7 +172,7 @@ func TestGetEndpointMissingID(t *testing.T) {
 			"cert":     "cert data...",
 		}))
 
-	_, err := h.GetEndpointInfo(context.Background())
+	_, err := h.GetEndpointInfo(context.Background(), "node1")
 	assert.Regexp(t, "FF10367", err)
 }
 
@@ -183,7 +183,7 @@ func TestGetEndpointInfoError(t *testing.T) {
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	_, err := h.GetEndpointInfo(context.Background())
+	_, err := h.GetEndpointInfo(context.Background(), "node1")
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -204,7 +204,7 @@ func TestAddPeer(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.AddPeer(context.Background(), fftypes.JSONObject{
+	err := h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{
 		"id":       "peer1",
 		"endpoint": "https://peer1.example.com",
 		"cert":     "cert...",
@@ -219,7 +219,7 @@ func TestAddPeerError(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.AddPeer(context.Background(), fftypes.JSONObject{
+	err := h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{
 		"id": "peer1",
 	})
 	assert.Regexp(t, "FF10229", err)
@@ -289,112 +289,6 @@ func TestUploadBlobError(t *testing.T) {
 	assert.Regexp(t, "FF10229", err)
 }
 
-func TestCheckBlobReceivedOk(t *testing.T) {
-
-	h, _, _, httpURL, done := newTestFFDX(t, false)
-	defer done()
-
-	u := fftypes.NewUUID()
-	hash := fftypes.NewRandB32()
-	httpmock.RegisterResponder("HEAD", fmt.Sprintf("%s/api/v1/blobs/peer1/ns1/%s", httpURL, u),
-		func(r *http.Request) (*http.Response, error) {
-			res := &http.Response{
-				Header: http.Header{
-					"Dx-Hash": []string{hash.String()},
-					"Dx-Size": []string{"12345"},
-				},
-				StatusCode: 200,
-			}
-			return res, nil
-		})
-
-	hashReturned, size, err := h.CheckBlobReceived(context.Background(), "peer1", "ns1", *u)
-	assert.NoError(t, err)
-	assert.Equal(t, *hash, *hashReturned)
-	assert.Equal(t, int64(size), size)
-}
-
-func TestCheckBlobReceivedBadHash(t *testing.T) {
-
-	h, _, _, httpURL, done := newTestFFDX(t, false)
-	defer done()
-
-	u := fftypes.NewUUID()
-	httpmock.RegisterResponder("HEAD", fmt.Sprintf("%s/api/v1/blobs/peer1/ns1/%s", httpURL, u),
-		func(r *http.Request) (*http.Response, error) {
-			res := &http.Response{
-				Header: http.Header{
-					"Dx-Hash": []string{"!wrong"},
-				},
-				StatusCode: 200,
-			}
-			return res, nil
-		})
-
-	_, _, err := h.CheckBlobReceived(context.Background(), "peer1", "ns1", *u)
-	assert.Regexp(t, "FF10237", err)
-}
-
-func TestCheckBlobReceivedBadSize(t *testing.T) {
-
-	h, _, _, httpURL, done := newTestFFDX(t, false)
-	defer done()
-
-	u := fftypes.NewUUID()
-	hash := fftypes.NewRandB32()
-	httpmock.RegisterResponder("HEAD", fmt.Sprintf("%s/api/v1/blobs/peer1/ns1/%s", httpURL, u),
-		func(r *http.Request) (*http.Response, error) {
-			res := &http.Response{
-				Header: http.Header{
-					"Dx-Hash": []string{hash.String()},
-					"Dx-Size": []string{"bob"},
-				},
-				StatusCode: 200,
-			}
-			return res, nil
-		})
-
-	_, _, err := h.CheckBlobReceived(context.Background(), "peer1", "ns1", *u)
-	assert.Regexp(t, "FF10237", err)
-}
-
-func TestCheckBlobReceivedNotFound(t *testing.T) {
-
-	h, _, _, httpURL, done := newTestFFDX(t, false)
-	defer done()
-
-	u := fftypes.NewUUID()
-	httpmock.RegisterResponder("HEAD", fmt.Sprintf("%s/api/v1/blobs/peer1/ns1/%s", httpURL, u),
-		func(r *http.Request) (*http.Response, error) {
-			res := &http.Response{
-				StatusCode: 404,
-			}
-			return res, nil
-		})
-
-	hashReturned, _, err := h.CheckBlobReceived(context.Background(), "peer1", "ns1", *u)
-	assert.NoError(t, err)
-	assert.Nil(t, hashReturned)
-}
-
-func TestCheckBlobReceivedError(t *testing.T) {
-
-	h, _, _, httpURL, done := newTestFFDX(t, false)
-	defer done()
-
-	u := fftypes.NewUUID()
-	httpmock.RegisterResponder("HEAD", fmt.Sprintf("%s/api/v1/blobs/peer1/ns1/%s", httpURL, u),
-		func(r *http.Request) (*http.Response, error) {
-			res := &http.Response{
-				StatusCode: 500,
-			}
-			return res, nil
-		})
-
-	_, _, err := h.CheckBlobReceived(context.Background(), "peer1", "ns1", *u)
-	assert.Regexp(t, "FF10229", err)
-}
-
 func TestDownloadBlob(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestFFDX(t, false)
@@ -430,7 +324,9 @@ func TestSendMessage(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/messages", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.SendMessage(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
+	peer := fftypes.JSONObject{"id": "peer1"}
+	sender := fftypes.JSONObject{"id": "sender1"}
+	err := h.SendMessage(context.Background(), "ns1:"+fftypes.NewUUID().String(), peer, sender, []byte(`some data`))
 	assert.NoError(t, err)
 }
 
@@ -441,7 +337,9 @@ func TestSendMessageError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/message", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.SendMessage(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
+	peer := fftypes.JSONObject{"id": "peer1"}
+	sender := fftypes.JSONObject{"id": "sender1"}
+	err := h.SendMessage(context.Background(), "ns1:"+fftypes.NewUUID().String(), peer, sender, []byte(`some data`))
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -453,7 +351,9 @@ func TestTransferBlob(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.TransferBlob(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
+	peer := fftypes.JSONObject{"id": "peer1"}
+	sender := fftypes.JSONObject{"id": "sender1"}
+	err := h.TransferBlob(context.Background(), "ns1:"+fftypes.NewUUID().String(), peer, sender, "ns1/id1")
 	assert.NoError(t, err)
 }
 
@@ -464,7 +364,9 @@ func TestTransferBlobError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.TransferBlob(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
+	peer := fftypes.JSONObject{"id": "peer1"}
+	sender := fftypes.JSONObject{"id": "sender1"}
+	err := h.TransferBlob(context.Background(), "ns1:"+fftypes.NewUUID().String(), peer, sender, "ns1/id1")
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -472,6 +374,7 @@ func TestBadEvents(t *testing.T) {
 
 	h, toServer, fromServer, _, done := newTestFFDX(t, false)
 	defer done()
+	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{"id": "peer2"})
 
 	err := h.Start()
 	assert.NoError(t, err)
@@ -498,6 +401,10 @@ func TestBadEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"4"}`, string(msg))
 
+	fromServer <- `{"id":"5","type":"message-received","sender":"peer1","recipient":"peer2","message":"{\"batch\":{\"namespace\":\"ns1\"}}"}`
+	msg = <-toServer
+	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
+
 }
 
 func TestMessageEvents(t *testing.T) {
@@ -506,9 +413,10 @@ func TestMessageEvents(t *testing.T) {
 	defer done()
 
 	mcb := &dataexchangemocks.Callbacks{}
-	h.SetHandler("ns1", mcb)
+	h.SetHandler("ns1", "node1", mcb)
 	ocb := &coremocks.OperationCallbacks{}
 	h.SetOperationHandler("ns1", ocb)
+	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{"id": "peer1"})
 
 	err := h.Start()
 	assert.NoError(t, err)
@@ -546,9 +454,9 @@ func TestMessageEvents(t *testing.T) {
 	mcb.On("DXEvent", h, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "4" &&
 			ev.Type() == dataexchange.DXEventTypeMessageReceived &&
-			ev.MessageReceived().PeerID == "peer1"
+			ev.MessageReceived().PeerID == "peer2"
 	})).Run(manifestAcker(`{"manifest":true}`)).Return(nil)
-	fromServer <- `{"id":"4","type":"message-received","sender":"peer1","message":"{\"batch\":{\"namespace\":\"ns1\"}}"}`
+	fromServer <- `{"id":"4","type":"message-received","sender":"peer2","recipient":"peer1","message":"{\"batch\":{\"namespace\":\"ns1\"}}"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"4","manifest":"{\"manifest\":true}"}`, string(msg))
 
@@ -562,9 +470,10 @@ func TestBlobEvents(t *testing.T) {
 	defer done()
 
 	mcb := &dataexchangemocks.Callbacks{}
-	h.SetHandler("ns1", mcb)
+	h.SetHandler("ns1", "node1", mcb)
 	ocb := &coremocks.OperationCallbacks{}
 	h.SetOperationHandler("ns1", ocb)
+	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{"id": "peer1"})
 
 	err := h.Start()
 	assert.NoError(t, err)
@@ -596,7 +505,7 @@ func TestBlobEvents(t *testing.T) {
 			ev.Type() == dataexchange.DXEventTypePrivateBlobReceived &&
 			ev.PrivateBlobReceived().Hash.Equals(hash)
 	})).Run(acker()).Return(nil)
-	fromServer <- fmt.Sprintf(`{"id":"9","type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"%s","size":12345}`, u.String(), hash.String())
+	fromServer <- fmt.Sprintf(`{"id":"9","type":"blob-received","sender":"peer2","recipient":"peer1","path":"ns1/%s","hash":"%s","size":12345}`, u.String(), hash.String())
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"9"}`, string(msg))
 
@@ -628,7 +537,7 @@ func TestEventsWithManifest(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
 	mcb := &dataexchangemocks.Callbacks{}
-	h.SetHandler("ns1", mcb)
+	h.SetHandler("ns1", "node1", mcb)
 	ocb := &coremocks.OperationCallbacks{}
 	h.SetOperationHandler("ns1", ocb)
 
@@ -719,7 +628,6 @@ func TestWebsocketWithReinit(t *testing.T) {
 	u.Scheme = "http"
 	httpURL := u.String()
 	h := &FFDX{}
-	nodes := []fftypes.JSONObject{{}}
 
 	coreconfig.Reset()
 	h.InitConfig(utConfig)
@@ -754,7 +662,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 	h.InitConfig(utConfig)
 	err := h.Init(context.Background(), utConfig)
 	assert.NoError(t, err)
-	h.SetNodes(nodes)
+	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{})
 
 	err = h.Start()
 	assert.NoError(t, err)
@@ -769,15 +677,11 @@ func TestDXUninitialized(t *testing.T) {
 
 	h.initialized = false
 
-	_, err := h.GetEndpointInfo(context.Background())
+	peer := fftypes.JSONObject{"id": "peer1"}
+	sender := fftypes.JSONObject{"id": "sender1"}
+	err := h.TransferBlob(context.Background(), "ns1:"+fftypes.NewUUID().String(), peer, sender, "ns1/id1")
 	assert.Regexp(t, "FF10342", err)
 
-	err = h.AddPeer(context.Background(), fftypes.JSONObject{})
-	assert.Regexp(t, "FF10342", err)
-
-	err = h.TransferBlob(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
-	assert.Regexp(t, "FF10342", err)
-
-	err = h.SendMessage(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
+	err = h.SendMessage(context.Background(), "ns1:"+fftypes.NewUUID().String(), peer, sender, []byte(`some data`))
 	assert.Regexp(t, "FF10342", err)
 }

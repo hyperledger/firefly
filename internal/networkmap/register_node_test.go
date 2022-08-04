@@ -45,7 +45,7 @@ func TestRegisterNodeOk(t *testing.T) {
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{
+	mdx.On("GetEndpointInfo", nm.ctx, "node1").Return(fftypes.JSONObject{
 		"id":       "peer1",
 		"endpoint": "details",
 	}, nil)
@@ -101,7 +101,7 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 	mim.On("GetMultipartyRootOrg", nm.ctx).Return(parentOrg, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{}, fmt.Errorf("pop"))
+	mdx.On("GetEndpointInfo", nm.ctx, "node1").Return(fftypes.JSONObject{}, fmt.Errorf("pop"))
 
 	mmp := nm.multiparty.(*multipartymocks.Manager)
 	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"})

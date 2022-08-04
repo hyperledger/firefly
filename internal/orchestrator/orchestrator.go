@@ -371,12 +371,13 @@ func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
-		nodeInfo := make([]fftypes.JSONObject, len(nodes))
-		for i, node := range nodes {
-			nodeInfo[i] = node.Profile
+		for _, node := range nodes {
+			err = or.plugins.DataExchange.Plugin.AddNode(ctx, or.namespace.RemoteName, node.Name, node.Profile)
+			if err != nil {
+				return err
+			}
 		}
-		or.plugins.DataExchange.Plugin.SetNodes(nodeInfo)
-		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.RemoteName, or.events)
+		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.RemoteName, or.config.Multiparty.Node.Name, or.events)
 		or.plugins.DataExchange.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
 	}
 
@@ -466,7 +467,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.defsender == nil {
-		or.defsender, or.defhandler, err = definitions.NewDefinitionSender(ctx, or.namespace.LocalName, or.config.Multiparty.Enabled, or.database(), or.blockchain(), or.dataexchange(), or.broadcast, or.identity, or.data, or.assets, or.contracts, or.config.TokenRemoteNames)
+		or.defsender, or.defhandler, err = definitions.NewDefinitionSender(ctx, or.namespace.LocalName, or.namespace.RemoteName, or.config.Multiparty.Enabled, or.database(), or.blockchain(), or.dataexchange(), or.broadcast, or.identity, or.data, or.assets, or.contracts, or.config.TokenRemoteNames)
 		if err != nil {
 			return err
 		}

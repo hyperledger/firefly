@@ -49,6 +49,16 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 			},
 		},
 	}
+	localNode := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{
+				"id": "local1",
+			},
+		},
+	}
 	blob := &core.Blob{
 		Hash:       fftypes.NewRandB32(),
 		PayloadRef: "payload",
@@ -60,7 +70,8 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), mock.Anything).Return(node, nil)
 	mdi.On("GetBlobMatchingHash", context.Background(), blob.Hash).Return(blob, nil)
-	mdx.On("TransferBlob", context.Background(), "ns1:"+op.ID.String(), "peer1", "payload").Return(nil)
+	mim.On("GetLocalNode", context.Background()).Return(localNode, nil)
+	mdx.On("TransferBlob", context.Background(), "ns1:"+op.ID.String(), node.Profile, localNode.Profile, "payload").Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -96,6 +107,16 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 			},
 		},
 	}
+	localNode := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{
+				"id": "local1",
+			},
+		},
+	}
 	group := &core.Group{
 		Hash: fftypes.NewRandB32(),
 	}
@@ -114,10 +135,11 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", context.Background()).Return(localNode, nil)
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
 	mdi.On("GetBatchByID", context.Background(), "ns1", batch.ID).Return(bp, nil)
-	mdx.On("SendMessage", context.Background(), "ns1:"+op.ID.String(), "peer1", mock.Anything).Return(nil)
+	mdx.On("SendMessage", context.Background(), "ns1:"+op.ID.String(), node.Profile, localNode.Profile, mock.Anything).Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -540,6 +562,18 @@ func TestRunOperationBatchSendInvalidData(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
+	localNode := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{
+				"id": "local1",
+			},
+		},
+	}
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", context.Background()).Return(localNode, nil)
 	transport := &core.TransportWrapper{
 		Group: &core.Group{},
 		Batch: &core.Batch{
@@ -555,6 +589,54 @@ func TestRunOperationBatchSendInvalidData(t *testing.T) {
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10137", err)
+}
+
+func TestRunOperationBatchSendNodeFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	op := &core.Operation{}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", context.Background()).Return(nil, fmt.Errorf("pop"))
+	transport := &core.TransportWrapper{
+		Group: &core.Group{},
+		Batch: &core.Batch{
+			Payload: core.BatchPayload{
+				Data: core.DataArray{
+					{Value: fftypes.JSONAnyPtr(`!json`)},
+				},
+			},
+		},
+	}
+
+	_, complete, err := pm.RunOperation(context.Background(), opSendBatch(op, node, transport))
+
+	assert.False(t, complete)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestRunOperationBlobSendNodeFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	op := &core.Operation{}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", context.Background()).Return(nil, fmt.Errorf("pop"))
+
+	_, complete, err := pm.RunOperation(context.Background(), opSendBlob(op, node, &core.Blob{}))
+
+	assert.False(t, complete)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestOperationUpdate(t *testing.T) {

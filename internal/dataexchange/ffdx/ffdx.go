@@ -21,8 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -38,6 +36,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
+const DXIDSeparator = "/"
+
 type FFDX struct {
 	ctx          context.Context
 	capabilities *dataexchange.Capabilities
@@ -47,12 +47,17 @@ type FFDX struct {
 	needsInit    bool
 	initialized  bool
 	initMutex    sync.Mutex
-	nodes        []fftypes.JSONObject
+	nodes        map[string]*dxNode
 	ackChannel   chan *ack
 }
 
+type dxNode struct {
+	Name string
+	Peer fftypes.JSONObject
+}
+
 type callbacks struct {
-	plugin     dataexchange.Plugin
+	plugin     *FFDX
 	handlers   map[string]dataexchange.Callbacks
 	opHandlers map[string]core.OperationCallbacks
 }
@@ -67,11 +72,22 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.Operation
 	}
 }
 
-func (cb *callbacks) DXEvent(ctx context.Context, namespace string, event dataexchange.DXEvent) {
-	if handler, ok := cb.handlers[namespace]; ok {
-		handler.DXEvent(cb.plugin, event)
+func (cb *callbacks) DXEvent(ctx context.Context, namespace, recipient string, event dataexchange.DXEvent) {
+	cb.plugin.initMutex.Lock()
+	nodeKey := namespace + ":" + recipient
+	node, ok := cb.plugin.nodes[nodeKey]
+	cb.plugin.initMutex.Unlock()
+
+	if ok {
+		key := namespace + ":" + node.Name
+		if handler, ok := cb.handlers[key]; ok {
+			handler.DXEvent(cb.plugin, event)
+		} else {
+			log.L(ctx).Errorf("No handler found for DX event '%s' namespace=%s node=%s", event.EventID(), namespace, node.Name)
+			event.Ack()
+		}
 	} else {
-		log.L(ctx).Errorf("No handler found for DX event '%s'", event.EventID())
+		log.L(ctx).Errorf("Unknown local node for DX event '%s' recipient=%s", event.EventID(), recipient)
 		event.Ack()
 	}
 }
@@ -93,11 +109,6 @@ func splitBlobPath(path string) (prefix, namespace, id string) {
 func joinBlobPath(namespace, id string) string {
 	return fmt.Sprintf("%s/%s", namespace, id)
 }
-
-const (
-	dxHTTPHeaderHash = "dx-hash"
-	dxHTTPHeaderSize = "dx-size"
-)
 
 type msgType string
 
@@ -126,12 +137,14 @@ type sendMessage struct {
 	Message   string `json:"message"`
 	Recipient string `json:"recipient"`
 	RequestID string `json:"requestId"`
+	Sender    string `json:"sender"`
 }
 
 type transferBlob struct {
 	Path      string `json:"path"`
 	Recipient string `json:"recipient"`
 	RequestID string `json:"requestId"`
+	Sender    string `json:"sender"`
 }
 
 type wsAck struct {
@@ -162,6 +175,7 @@ func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
 		opHandlers: make(map[string]core.OperationCallbacks),
 	}
 	h.needsInit = config.GetBool(DataExchangeInitEnabled)
+	h.nodes = make(map[string]*dxNode)
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
@@ -183,12 +197,9 @@ func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
 	return nil
 }
 
-func (h *FFDX) SetNodes(nodes []fftypes.JSONObject) {
-	h.nodes = nodes
-}
-
-func (h *FFDX) SetHandler(namespace string, handler dataexchange.Callbacks) {
-	h.callbacks.handlers[namespace] = handler
+func (h *FFDX) SetHandler(remoteNamespace, nodeName string, handler dataexchange.Callbacks) {
+	key := remoteNamespace + ":" + nodeName
+	h.callbacks.handlers[key] = handler
 }
 
 func (h *FFDX) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
@@ -210,8 +221,12 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 	if h.needsInit {
 		h.initialized = false
 		var status dxStatus
+		var body []fftypes.JSONObject
+		for _, node := range h.nodes {
+			body = append(body, node.Peer)
+		}
 		res, err := h.client.R().SetContext(ctx).
-			SetBody(h.nodes).
+			SetBody(body).
 			SetResult(&status).
 			Post("/api/v1/init")
 		if err != nil || !res.IsSuccess() {
@@ -235,11 +250,15 @@ func (h *FFDX) checkInitialized(ctx context.Context) error {
 	return nil
 }
 
-func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.JSONObject, err error) {
-	if err := h.checkInitialized(ctx); err != nil {
-		return peer, err
+func (h *FFDX) GetPeerID(peer fftypes.JSONObject) string {
+	id := peer.GetString("nodeID")
+	if id == "" {
+		id = peer.GetString("id")
 	}
+	return id
+}
 
+func (h *FFDX) GetEndpointInfo(ctx context.Context, nodeName string) (peer fftypes.JSONObject, err error) {
 	res, err := h.client.R().SetContext(ctx).
 		SetResult(&peer).
 		Get("/api/v1/id")
@@ -251,21 +270,29 @@ func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.JSONObject, er
 		log.L(ctx).Errorf("Invalid DX info: %s", peer.String())
 		return nil, i18n.NewError(ctx, coremsgs.MsgDXInfoMissingID)
 	}
-	h.nodes = append(h.nodes, peer)
+	peer["nodeID"] = fmt.Sprintf("%s%s%s", id, DXIDSeparator, nodeName)
 	return peer, nil
 }
 
-func (h *FFDX) AddPeer(ctx context.Context, peer fftypes.JSONObject) (err error) {
-	if err := h.checkInitialized(ctx); err != nil {
-		return err
+func (h *FFDX) AddNode(ctx context.Context, remoteNamespace, nodeName string, peer fftypes.JSONObject) (err error) {
+	h.initMutex.Lock()
+	defer h.initMutex.Unlock()
+
+	key := remoteNamespace + ":" + h.GetPeerID(peer)
+	h.nodes[key] = &dxNode{
+		Peer: peer,
+		Name: nodeName,
 	}
 
-	res, err := h.client.R().SetContext(ctx).
-		SetBody(peer).
-		Put(fmt.Sprintf("/api/v1/peers/%s", peer.GetString("id")))
-	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+	if h.initialized {
+		res, err := h.client.R().SetContext(ctx).
+			SetBody(peer).
+			Put(fmt.Sprintf("/api/v1/peers/%s", peer.GetString("id")))
+		if err != nil || !res.IsSuccess() {
+			return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+		}
 	}
+
 	return nil
 }
 
@@ -299,7 +326,7 @@ func (h *FFDX) DownloadBlob(ctx context.Context, payloadRef string) (content io.
 	return res.RawBody(), nil
 }
 
-func (h *FFDX) SendMessage(ctx context.Context, nsOpID, peerID string, data []byte) (err error) {
+func (h *FFDX) SendMessage(ctx context.Context, nsOpID string, peer, sender fftypes.JSONObject, data []byte) (err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
@@ -308,8 +335,9 @@ func (h *FFDX) SendMessage(ctx context.Context, nsOpID, peerID string, data []by
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&sendMessage{
 			Message:   string(data),
-			Recipient: peerID,
+			Recipient: h.GetPeerID(peer),
 			RequestID: nsOpID,
+			Sender:    h.GetPeerID(sender),
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/messages")
@@ -319,7 +347,7 @@ func (h *FFDX) SendMessage(ctx context.Context, nsOpID, peerID string, data []by
 	return nil
 }
 
-func (h *FFDX) TransferBlob(ctx context.Context, nsOpID, peerID, payloadRef string) (err error) {
+func (h *FFDX) TransferBlob(ctx context.Context, nsOpID string, peer, sender fftypes.JSONObject, payloadRef string) (err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
@@ -328,8 +356,9 @@ func (h *FFDX) TransferBlob(ctx context.Context, nsOpID, peerID, payloadRef stri
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&transferBlob{
 			Path:      fmt.Sprintf("/%s", payloadRef),
-			Recipient: peerID,
+			Recipient: h.GetPeerID(peer),
 			RequestID: nsOpID,
+			Sender:    h.GetPeerID(sender),
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/transfers")
@@ -337,30 +366,6 @@ func (h *FFDX) TransferBlob(ctx context.Context, nsOpID, peerID, payloadRef stri
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return nil
-}
-
-func (h *FFDX) CheckBlobReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error) {
-	var responseData responseWithRequestID
-	res, err := h.client.R().SetContext(ctx).
-		SetResult(&responseData).
-		Head(fmt.Sprintf("/api/v1/blobs/%s/%s/%s", peerID, ns, id.String()))
-	if err == nil && res.StatusCode() == http.StatusNotFound {
-		return nil, -1, nil
-	}
-	if err != nil || !res.IsSuccess() {
-		return nil, -1, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
-	}
-	hashString := res.Header().Get(dxHTTPHeaderHash)
-	if hash, err = fftypes.ParseBytes32(ctx, hashString); err != nil {
-		return nil, -1, i18n.WrapError(ctx, err, coremsgs.MsgDXBadResponse, "hash", hashString)
-	}
-	sizeString := res.Header().Get(dxHTTPHeaderSize)
-	if sizeString != "" {
-		if size, err = strconv.ParseInt(sizeString, 10, 64); err != nil {
-			return nil, -1, i18n.WrapError(ctx, err, coremsgs.MsgDXBadResponse, "size", sizeString)
-		}
-	}
-	return hash, size, nil
 }
 
 func (h *FFDX) ackLoop() {
