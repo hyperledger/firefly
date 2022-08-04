@@ -50,7 +50,7 @@ with the same state at the end of the processing.
 
 This requires an **event-driven programming** model.
 
-You will find and event-driven model at the core of every blockchain
+You will find an event-driven model at the core of every blockchain
 Smart Contract technology.
 
 This event-driven approach is unavoidable regardless of how much of
