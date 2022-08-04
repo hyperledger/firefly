@@ -42,7 +42,10 @@ type SQLite3 struct {
 }
 
 func connHook(conn *sqlite3.SQLiteConn) error {
-	_, err := conn.Exec("PRAGMA case_sensitive_like=ON;", nil)
+	_, err := conn.Exec(`
+		PRAGMA case_sensitive_like=ON;
+		PRAGMA busy_timeout=1000;
+	`, nil)
 	return err
 }
 
