@@ -73,5 +73,5 @@ func AddPluginRemoteName(data map[string]interface{}, pluginType, remoteName str
 	pluginsConfig := data["plugins"].(map[interface{}]interface{})
 	plugins := pluginsConfig[pluginType].([]interface{})
 	plugin := plugins[0].(map[interface{}]interface{})
-	plugin["remoteName"] = remoteName
+	plugin["remotename"] = remoteName
 }
