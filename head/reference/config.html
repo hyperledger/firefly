@@ -311,8 +311,8 @@
   </thead>
   <tbody>
     <tr>
-      <td>keyNormalization</td>
-      <td>Mechanism to normalize keys before using them. Valid options are <code class="language-plaintext highlighter-rouge">blockchain_plugin</code> - use blockchain plugin (default) or <code class="language-plaintext highlighter-rouge">none</code> - do not attempt normalization</td>
+      <td>keynormalization</td>
+      <td>Mechanism to normalize keys before using them. Valid options are <code class="language-plaintext highlighter-rouge">blockchain_plugin</code> - use blockchain plugin (default) or <code class="language-plaintext highlighter-rouge">none</code> - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keynormalization)</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -816,7 +816,7 @@
     </tr>
     <tr>
       <td>fromBlock</td>
-      <td>The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use namespace.predefined[].multiparty.contract[].location.firstEvent)</td>
+      <td>The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use namespaces.predefined[].multiparty.contract[].location.firstEvent)</td>
       <td>Address <code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">0</code></td>
     </tr>
@@ -834,7 +834,7 @@
     </tr>
     <tr>
       <td>instance</td>
-      <td>The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use namespace.predefined[].multiparty.contract[].location.address)</td>
+      <td>The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use namespaces.predefined[].multiparty.contract[].location.address)</td>
       <td>Address <code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -1245,13 +1245,13 @@
     </tr>
     <tr>
       <td>chaincode</td>
-      <td>The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use namespace.predefined[].multiparty.contract[].location.chaincode)</td>
+      <td>The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use namespaces.predefined[].multiparty.contract[].location.chaincode)</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>channel</td>
-      <td>The Fabric channel that FireFly will use for BatchPin transactions (deprecated - use namespace.predefined[].multiparty.contract[].location.channel)</td>
+      <td>The Fabric channel that FireFly will use for BatchPin transactions (deprecated - use namespaces.predefined[].multiparty.contract[].location.channel)</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -3241,6 +3241,33 @@
     <tr>
       <td>remotename</td>
       <td>The namespace name to be sent in plugin calls, if it differs from namespace name</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="namespacespredefinedassetmanager">
+        
+        
+          <a href="#namespacespredefinedassetmanager" class="anchor-heading" aria-labelledby="namespacespredefinedassetmanager"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> namespaces.predefined[].asset.manager
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>keynormalization</td>
+      <td>Mechanism to normalize keys before using them. Valid options are <code class="language-plaintext highlighter-rouge">blockchain_plugin</code> - use blockchain plugin (default) or <code class="language-plaintext highlighter-rouge">none</code> - do not attempt normalization</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
