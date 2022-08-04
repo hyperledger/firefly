@@ -26,7 +26,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
+	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -88,7 +88,7 @@ func TestDefineTokenPoolOk(t *testing.T) {
 	mdm := ds.data.(*datamocks.Manager)
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 
 	pool := &core.TokenPoolAnnouncement{
 		Pool: &core.TokenPool{
@@ -151,7 +151,7 @@ func TestDefineTokenPoolBadName(t *testing.T) {
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 
 	pool := &core.TokenPoolAnnouncement{
 		Pool: &core.TokenPool{

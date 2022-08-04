@@ -53,7 +53,7 @@ $(eval $(call makemock, pkg/tokens,                Plugin,             tokenmock
 $(eval $(call makemock, pkg/tokens,                Callbacks,          tokenmocks))
 $(eval $(call makemock, internal/txcommon,         Helper,             txcommonmocks))
 $(eval $(call makemock, internal/identity,         Manager,            identitymanagermocks))
-$(eval $(call makemock, internal/sysmessaging,     MessageSender,      sysmessagingmocks))
+$(eval $(call makemock, internal/syncasync,        Sender,             syncasyncmocks))
 $(eval $(call makemock, internal/syncasync,        Bridge,             syncasyncmocks))
 $(eval $(call makemock, internal/data,             Manager,            datamocks))
 $(eval $(call makemock, internal/batch,            Manager,            batchmocks))

@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
+	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -35,7 +35,7 @@ func TestClaimIdentity(t *testing.T) {
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
@@ -61,7 +61,7 @@ func TestClaimIdentityFail(t *testing.T) {
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
@@ -107,8 +107,8 @@ func TestClaimIdentityChild(t *testing.T) {
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms1 := &sysmessagingmocks.MessageSender{}
-	mms2 := &sysmessagingmocks.MessageSender{}
+	mms1 := &syncasyncmocks.Sender{}
+	mms2 := &syncasyncmocks.Sender{}
 
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms1).Once()
@@ -141,8 +141,8 @@ func TestClaimIdentityChildFail(t *testing.T) {
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms1 := &sysmessagingmocks.MessageSender{}
-	mms2 := &sysmessagingmocks.MessageSender{}
+	mms1 := &syncasyncmocks.Sender{}
+	mms2 := &syncasyncmocks.Sender{}
 
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms1).Once()
@@ -195,7 +195,7 @@ func TestUpdateIdentity(t *testing.T) {
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", mock.Anything).Return(nil)

@@ -103,7 +103,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
 	msa.On("WaitForMessage", pm.ctx, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(pm.ctx)
 		}).
 		Return(retMsg, nil).Once()
@@ -601,7 +601,7 @@ func TestRequestReplySuccess(t *testing.T) {
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
 	msa.On("WaitForReply", pm.ctx, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(pm.ctx)
 		}).
 		Return(nil, nil)

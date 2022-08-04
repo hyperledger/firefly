@@ -449,7 +449,7 @@ func TestTokenApprovalConfirm(t *testing.T) {
 
 	msa.On("WaitForTokenApproval", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&core.TokenApproval{}, nil)
