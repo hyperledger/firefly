@@ -54,13 +54,6 @@ const (
 	// EthconnectConfigFromBlockDeprecated is the configuration of the first block to listen to when creating the listener for the FireFly contract
 	EthconnectConfigFromBlockDeprecated = "fromBlock"
 
-	// FireFlyContractConfigKey is a sub-key in the config to contain the info on the deployed FireFly contract
-	FireFlyContractConfigKey = "fireflyContract"
-	// FireFlyContractAddress is the ethereum address of the FireFly contract
-	FireFlyContractAddress = "address"
-	// FireFlyContractFromBlock is the configuration of the first block to listen to when creating the listener
-	FireFlyContractFromBlock = "fromBlock"
-
 	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
 	AddressResolverConfigKey = "addressResolver"
 	// AddressResolverRetainOriginal when true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address

@@ -469,7 +469,6 @@ func TestInitNewConfig(t *testing.T) {
 	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
 
 	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
