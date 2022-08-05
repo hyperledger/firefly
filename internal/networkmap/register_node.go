@@ -44,11 +44,10 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 		},
 	}
 
-	dxInfo, err := nm.exchange.GetEndpointInfo(ctx)
+	nodeRequest.Profile, err = nm.exchange.GetEndpointInfo(ctx, localNodeName)
 	if err != nil {
 		return nil, err
 	}
-	nodeRequest.Profile = dxInfo
 
 	return nm.RegisterIdentity(ctx, nodeRequest, waitConfirm)
 }

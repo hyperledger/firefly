@@ -34,7 +34,7 @@ func TestFlushPinsFailUpdatePins(t *testing.T) {
 	bs := newBatchState(ag)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	bs.markMessageDispatched(fftypes.NewUUID(), &core.Message{
 		Header: core.MessageHeader{
@@ -55,8 +55,8 @@ func TestFlushPinsFailUpdateMessages(t *testing.T) {
 	msgID := fftypes.NewUUID()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageStateIfCached", ag.ctx, msgID, core.MessageStateConfirmed, mock.Anything).Return()
 

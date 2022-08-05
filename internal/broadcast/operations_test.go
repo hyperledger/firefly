@@ -258,7 +258,7 @@ func TestPrepareAndRunUploadBlob(t *testing.T) {
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(blob, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, nil)
-	mdi.On("UpdateData", context.Background(), data.ID, mock.MatchedBy(func(update database.Update) bool {
+	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.MatchedBy(func(update database.Update) bool {
 		info, _ := update.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
 		assert.Equal(t, "blob.public", info.SetOperations[0].Field)
@@ -425,7 +425,7 @@ func TestRunOperationUploadBlobUpdateFail(t *testing.T) {
 	reader := ioutil.NopCloser(strings.NewReader("some data"))
 	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
-	mdi.On("UpdateData", context.Background(), data.ID, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
 

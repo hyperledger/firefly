@@ -56,7 +56,10 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *core.ContractAPI
 	rows, _, err := s.queryTx(ctx, contractapisTable, tx,
 		sq.Select("id").
 			From(contractapisTable).
-			Where(sq.And{sq.Eq{"namespace": api.Namespace}, sq.Eq{"name": api.Name}}),
+			Where(sq.Eq{
+				"namespace": api.Namespace,
+				"name":      api.Name,
+			}),
 	)
 	if err != nil {
 		return err
@@ -81,7 +84,6 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *core.ContractAPI
 				Set("interface_id", api.Interface.ID).
 				Set("location", api.Location).
 				Set("name", api.Name).
-				Set("namespace", api.Namespace).
 				Set("message_id", api.Message),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, core.ChangeEventTypeUpdated, api.Namespace, api.ID)

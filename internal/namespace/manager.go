@@ -791,6 +791,11 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		remoteName = name
 	}
 
+	keyNormalization := conf.GetString(coreconfig.NamespaceAssetKeyNormalization)
+	if keyNormalization == "" {
+		keyNormalization = config.GetString(coreconfig.AssetManagerKeyNormalization)
+	}
+
 	multipartyConf := conf.SubSection(coreconfig.NamespaceMultiparty)
 	// If any multiparty org information is configured (here or at the root), assume multiparty mode by default
 	orgName := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgName)
@@ -859,6 +864,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	config := orchestrator.Config{
 		DefaultKey:       conf.GetString(coreconfig.NamespaceDefaultKey),
 		TokenRemoteNames: nm.tokenRemoteNames,
+		KeyNormalization: keyNormalization,
 	}
 	if multipartyEnabled.(bool) {
 		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)

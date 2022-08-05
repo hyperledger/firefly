@@ -174,7 +174,7 @@ func TestPersistTransactionExistingAddBlockchainID(t *testing.T) {
 		Created:       fftypes.Now(),
 		BlockchainIDs: core.FFStringArray{"0x111111"},
 	}, nil)
-	mdi.On("UpdateTransaction", ctx, txid, mock.Anything).Return(nil)
+	mdi.On("UpdateTransaction", ctx, "ns1", txid, mock.Anything).Return(nil)
 
 	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "0x222222")
 	assert.NoError(t, err)
@@ -199,7 +199,7 @@ func TestPersistTransactionExistingUpdateFail(t *testing.T) {
 		Created:       fftypes.Now(),
 		BlockchainIDs: core.FFStringArray{"0x111111"},
 	}, nil)
-	mdi.On("UpdateTransaction", ctx, txid, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateTransaction", ctx, "ns1", txid, mock.Anything).Return(fmt.Errorf("pop"))
 
 	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "0x222222")
 	assert.Regexp(t, "pop", err)
@@ -313,7 +313,7 @@ func TestAddBlockchainTX(t *testing.T) {
 		Created:       fftypes.Now(),
 		BlockchainIDs: core.FFStringArray{"0x111111"},
 	}
-	mdi.On("UpdateTransaction", ctx, tx.ID, mock.MatchedBy(func(u database.Update) bool {
+	mdi.On("UpdateTransaction", ctx, "ns1", tx.ID, mock.MatchedBy(func(u database.Update) bool {
 		info, _ := u.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
 		assert.Equal(t, "blockchainids", info.SetOperations[0].Field)
@@ -343,7 +343,7 @@ func TestAddBlockchainTXUpdateFail(t *testing.T) {
 		Created:       fftypes.Now(),
 		BlockchainIDs: core.FFStringArray{"0x111111"},
 	}
-	mdi.On("UpdateTransaction", ctx, tx.ID, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateTransaction", ctx, "ns1", tx.ID, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := txHelper.AddBlockchainTX(ctx, tx, "abc")
 	assert.EqualError(t, err, "pop")

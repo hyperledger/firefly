@@ -193,7 +193,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, "ns1", batchID).Return(bp, nil)
 	// Look for existing nextpins - none found, first on context
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{}, nil, nil).Once()
+	mdi.On("GetNextPinsForContext", ag.ctx, "ns1", contextUnmasked).Return([]*core.NextPin{}, nil).Once()
 	// Get the group members
 	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&core.Group{
 		GroupIdentity: core.GroupIdentity{
@@ -225,9 +225,9 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	// Update the message
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.MatchedBy(func(u database.Update) bool {
 		update, err := u.Finalize()
 		assert.NoError(t, err)
 		assert.Len(t, update.SetOperations, 2)
@@ -339,10 +339,10 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, "ns1", batchID).Return(bp, nil)
 	// Look for existing nextpins - none found, first on context
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
+	mdi.On("GetNextPinsForContext", ag.ctx, "ns1", contextUnmasked).Return([]*core.NextPin{
 		{Context: contextUnmasked, Identity: member1org.DID, Hash: member1Nonce100, Nonce: 100, Sequence: 929},
 		{Context: contextUnmasked, Identity: member2org.DID, Hash: member2Nonce500, Nonce: 500, Sequence: 424},
-	}, nil, nil).Once()
+	}, nil).Once()
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
@@ -352,7 +352,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Update member2 to nonce 1
-	mdi.On("UpdateNextPin", ag.ctx, mock.MatchedBy(func(seq int64) bool {
+	mdi.On("UpdateNextPin", ag.ctx, "ns1", mock.MatchedBy(func(seq int64) bool {
 		return seq == 424
 	}), mock.MatchedBy(func(update database.Update) bool {
 		ui, _ := update.Finalize()
@@ -365,9 +365,9 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 		return true
 	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	// Update the message
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := ag.processPinsEventsHandler([]core.LocallySequenced{
 		&core.Pin{
@@ -452,9 +452,9 @@ func TestAggregationBroadcast(t *testing.T) {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	// Update the message
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*core.Pin{
 		{
@@ -547,9 +547,9 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	// Update the message
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 
 	err = ag.processPins(ag.ctx, []*core.Pin{
 		{
@@ -999,7 +999,7 @@ func TestProcessMsgFailGetNextPins(t *testing.T) {
 	defer cancel()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetNextPinsForContext", ag.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	msg := &core.Message{
 		Header: core.MessageHeader{
@@ -1094,14 +1094,14 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	}).Return(org1, nil)
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
+	mdi.On("GetNextPinsForContext", ag.ctx, "ns1", mock.Anything).Return([]*core.NextPin{
 		{Context: fftypes.NewRandB32(), Hash: pin, Identity: org1.DID},
-	}, nil, nil)
+	}, nil)
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateNextPin", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateNextPin", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := ag.processMessage(ag.ctx, &core.BatchManifest{
 		ID: fftypes.NewUUID(),
@@ -1125,9 +1125,9 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 	pin := fftypes.NewRandB32()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
+	mdi.On("GetNextPinsForContext", ag.ctx, "ns1", mock.Anything).Return([]*core.NextPin{
 		{Context: fftypes.NewRandB32(), Hash: pin},
-	}, nil, nil)
+	}, nil)
 
 	bs := newBatchState(ag)
 	_, err := bs.checkMaskedContextReady(ag.ctx, &core.Message{
@@ -1524,7 +1524,7 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.MatchedBy(func(u database.Update) bool {
 		update, err := u.Finalize()
 		assert.NoError(t, err)
 		assert.Len(t, update.SetOperations, 2)
@@ -1577,7 +1577,7 @@ func TestDefinitionBroadcastInvalidSigner(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.MatchedBy(func(u database.Update) bool {
 		update, err := u.Finalize()
 		assert.NoError(t, err)
 		assert.Len(t, update.SetOperations, 2)
@@ -1662,9 +1662,9 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 	context := fftypes.HashResult(h)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
+	mdi.On("GetNextPinsForContext", ag.ctx, "ns1", mock.Anything).Return([]*core.NextPin{
 		{Context: context, Nonce: 1 /* match member1NonceOne */, Identity: org1.DID, Hash: member1NonceOne},
-	}, nil, nil)
+	}, nil)
 
 	msg1.Pins = core.FFStringArray{member1NonceOne.String()}
 	msg2.Pins = core.FFStringArray{member1NonceTwo.String()}
@@ -1705,9 +1705,9 @@ func TestDispatchPrivateNextPinIncremented(t *testing.T) {
 	context := fftypes.HashResult(h)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
+	mdi.On("GetNextPinsForContext", ag.ctx, "ns1", mock.Anything).Return([]*core.NextPin{
 		{Context: context, Nonce: 1 /* match member1NonceOne */, Identity: org1.DID, Hash: member1NonceOne},
-	}, nil, nil)
+	}, nil)
 
 	msg1.Pins = core.FFStringArray{member1NonceOne.String()}
 	msg2.Pins = core.FFStringArray{member1NonceTwo.String()}
@@ -1906,7 +1906,7 @@ func TestRewindOffchainBatchesNoBatches(t *testing.T) {
 	defer cancel()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	rewind, offset := ag.rewindOffchainBatches()
 	assert.False(t, rewind)

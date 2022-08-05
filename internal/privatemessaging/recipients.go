@@ -162,9 +162,8 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *core.Me
 	// exists. If it doesn't, we go ahead and create it. If it does - we don't return
 	// this candidate - we return the existing group.
 	newCandidate := &core.Group{
-		LocalNamespace: pm.namespace.LocalName,
-		GroupIdentity:  *gi,
-		Created:        fftypes.Now(),
+		GroupIdentity: *gi,
+		Created:       fftypes.Now(),
 	}
 	newCandidate.Seal()
 

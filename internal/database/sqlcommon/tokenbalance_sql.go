@@ -49,33 +49,34 @@ var (
 )
 
 func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer *core.TokenTransfer, key string, negate bool) error {
-	account, err := s.GetTokenBalance(ctx, transfer.Namespace, transfer.Pool, transfer.TokenIndex, key)
+	balance, err := s.GetTokenBalance(ctx, transfer.Namespace, transfer.Pool, transfer.TokenIndex, key)
 	if err != nil {
 		return err
 	}
 
-	var balance *fftypes.FFBigInt
-	if account != nil {
-		balance = &account.Balance
+	var total *fftypes.FFBigInt
+	if balance != nil {
+		total = &balance.Balance
 	} else {
-		balance = &fftypes.FFBigInt{}
+		total = &fftypes.FFBigInt{}
 	}
 	if negate {
-		balance.Int().Sub(balance.Int(), transfer.Amount.Int())
+		total.Int().Sub(total.Int(), transfer.Amount.Int())
 	} else {
-		balance.Int().Add(balance.Int(), transfer.Amount.Int())
+		total.Int().Add(total.Int(), transfer.Amount.Int())
 	}
 
-	if account != nil {
+	if balance != nil {
 		if _, err = s.updateTx(ctx, tokenbalanceTable, tx,
 			sq.Update(tokenbalanceTable).
 				Set("uri", transfer.URI).
-				Set("balance", balance).
+				Set("balance", total).
 				Set("updated", fftypes.Now()).
-				Where(sq.And{
-					sq.Eq{"pool_id": account.Pool},
-					sq.Eq{"token_index": account.TokenIndex},
-					sq.Eq{"key": account.Key},
+				Where(sq.Eq{
+					"namespace":   balance.Namespace,
+					"pool_id":     balance.Pool,
+					"token_index": balance.TokenIndex,
+					"key":         balance.Key,
 				}),
 			nil,
 		); err != nil {
@@ -92,7 +93,7 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 					transfer.Connector,
 					transfer.Namespace,
 					key,
-					balance,
+					total,
 					fftypes.Now(),
 				),
 			nil,

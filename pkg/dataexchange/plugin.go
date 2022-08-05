@@ -63,12 +63,9 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, config config.Section) error
 
-	// SetNodes initializes the known nodes from the database
-	SetNodes(nodes []fftypes.JSONObject)
-
 	// SetHandler registers a handler to receive callbacks
-	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace
-	SetHandler(namespace string, handler Callbacks)
+	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace and node
+	SetHandler(remoteNamespace, nodeName string, handler Callbacks)
 
 	// SetOperationHandler registers a handler to receive async operation status
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
@@ -81,10 +78,11 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// GetEndpointInfo returns the information about the local endpoint
-	GetEndpointInfo(ctx context.Context) (peer fftypes.JSONObject, err error)
+	GetEndpointInfo(ctx context.Context, nodeName string) (peer fftypes.JSONObject, err error)
 
-	// AddPeer translates the configuration published by another peer, into a reference string that is used between DX and FireFly to refer to the peer
-	AddPeer(ctx context.Context, peer fftypes.JSONObject) (err error)
+	// AddNode registers details on a node in the multiparty network
+	// This may be information loaded from the database at init, or received in flight while running
+	AddNode(ctx context.Context, remoteNamespace, nodeName string, peer fftypes.JSONObject) (err error)
 
 	// UploadBlob streams a blob to storage, and returns the hash to confirm the hash calculated in Core matches the hash calculated in the plugin
 	UploadBlob(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error)
@@ -92,15 +90,15 @@ type Plugin interface {
 	// DownloadBlob streams a received blob out of storage
 	DownloadBlob(ctx context.Context, payloadRef string) (content io.ReadCloser, err error)
 
-	// CheckBlobReceived confirms that a blob with the specified hash has been received from the specified peer
-	CheckBlobReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error)
-
 	// SendMessage sends an in-line package of data to another network node.
 	// Should return as quickly as possible for parallelism, then report completion asynchronously via the operation ID
-	SendMessage(ctx context.Context, nsOpID, peerID string, data []byte) (err error)
+	SendMessage(ctx context.Context, nsOpID string, peer, sender fftypes.JSONObject, data []byte) (err error)
 
 	// TransferBlob initiates a transfer of a previously stored blob to another node
-	TransferBlob(ctx context.Context, nsOpID, peerID string, payloadRef string) (err error)
+	TransferBlob(ctx context.Context, nsOpID string, peer, sender fftypes.JSONObject, payloadRef string) (err error)
+
+	// GetPeerID extracts the peer ID from the peer JSON
+	GetPeerID(peer fftypes.JSONObject) string
 }
 
 // Callbacks is the interface provided to the data exchange plugin, to allow it to pass events back to firefly.

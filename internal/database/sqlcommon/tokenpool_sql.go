@@ -66,7 +66,10 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 	rows, _, err := s.queryTx(ctx, tokenpoolTable, tx,
 		sq.Select("id").
 			From(tokenpoolTable).
-			Where(sq.And{sq.Eq{"namespace": pool.Namespace}, sq.Eq{"name": pool.Name}}),
+			Where(sq.Eq{
+				"namespace": pool.Namespace,
+				"name":      pool.Name,
+			}),
 	)
 	if err != nil {
 		return err
@@ -87,7 +90,6 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 	if existing {
 		if _, err = s.updateTx(ctx, tokenpoolTable, tx,
 			sq.Update(tokenpoolTable).
-				Set("namespace", pool.Namespace).
 				Set("name", pool.Name).
 				Set("standard", pool.Standard).
 				Set("locator", pool.Locator).

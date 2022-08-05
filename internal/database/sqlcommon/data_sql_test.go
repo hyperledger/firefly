@@ -150,7 +150,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	// Update
 	v2 := "2.0.0"
 	up := database.DataQueryFactory.NewUpdate(ctx).Set("datatype.version", v2)
-	err = s.UpdateData(ctx, dataID, up)
+	err = s.UpdateData(ctx, "ns1", dataID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -359,7 +359,7 @@ func TestDataUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.DataQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
-	err := s.UpdateData(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateData(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -367,7 +367,7 @@ func TestDataUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.DataQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
-	err := s.UpdateData(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateData(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF00143.*id", err)
 }
 
@@ -377,6 +377,6 @@ func TestDataUpdateFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.DataQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.UpdateData(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateData(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
 }

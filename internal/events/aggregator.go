@@ -488,7 +488,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 	// - dispatched=false: we need to prevent dispatch of any subsequent messages on the same topic in the batch
 	if dispatched {
 		for _, np := range nextPins {
-			np.IncrementNextPin(ctx)
+			np.IncrementNextPin(ctx, ag.namespace)
 		}
 		state.markMessageDispatched(manifest.ID, msg, msgBaseIndex, newState)
 	} else {

@@ -161,7 +161,7 @@ func (client *FireFlyClient) GetMessageEvents(t *testing.T, startTime time.Time,
 	return events
 }
 
-func (client *FireFlyClient) GetMessages(t *testing.T, startTime time.Time, msgType core.MessageType, topic string, expectedStatus int) (msgs []*core.Message) {
+func (client *FireFlyClient) GetMessages(t *testing.T, startTime time.Time, msgType core.MessageType, topic string) (msgs []*core.Message) {
 	path := client.namespaced(urlGetMessages)
 	resp, err := client.Client.R().
 		SetQueryParam("type", string(msgType)).
@@ -171,19 +171,30 @@ func (client *FireFlyClient) GetMessages(t *testing.T, startTime time.Time, msgT
 		SetResult(&msgs).
 		Get(path)
 	require.NoError(t, err)
-	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return msgs
 }
 
-func (client *FireFlyClient) GetData(t *testing.T, startTime time.Time, expectedStatus int) (data core.DataArray) {
+func (client *FireFlyClient) GetData(t *testing.T, startTime time.Time) (data core.DataArray) {
 	path := client.namespaced(urlGetData)
 	resp, err := client.Client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetResult(&data).
 		Get(path)
 	require.NoError(t, err)
-	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return data
+}
+
+func (client *FireFlyClient) GetDataByID(t *testing.T, id *fftypes.UUID) *core.Data {
+	var data core.Data
+	path := client.namespaced(urlGetData + "/" + id.String())
+	resp, err := client.Client.R().
+		SetResult(&data).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &data
 }
 
 func (client *FireFlyClient) GetDataForMessage(t *testing.T, startTime time.Time, msgID *fftypes.UUID) (data core.DataArray) {
@@ -429,15 +440,8 @@ func (client *FireFlyClient) BroadcastBlobMessage(t *testing.T, topic string) (*
 	return data, res, err
 }
 
-func (client *FireFlyClient) PrivateBlobMessageDatatypeTagged(t *testing.T, topic string, orgNames []string, startTime time.Time) (*core.Data, *resty.Response, error) {
+func (client *FireFlyClient) PrivateBlobMessageDatatypeTagged(t *testing.T, topic string, members []core.MemberInput, startTime time.Time) (*core.Data, *resty.Response, error) {
 	data := client.CreateBlob(t, &core.DatatypeRef{Name: "myblob"})
-	members := make([]core.MemberInput, len(orgNames))
-	for i, oName := range orgNames {
-		// We let FireFly resolve the friendly name of the org to the identity
-		members[i] = core.MemberInput{
-			Identity: oName,
-		}
-	}
 	res, err := client.Client.R().
 		SetBody(core.MessageInOut{
 			Message: core.Message{
@@ -457,18 +461,11 @@ func (client *FireFlyClient) PrivateBlobMessageDatatypeTagged(t *testing.T, topi
 	return data, res, err
 }
 
-func (client *FireFlyClient) PrivateMessage(topic string, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
-	return client.PrivateMessageWithKey("", topic, data, orgNames, tag, txType, confirm, startTime)
+func (client *FireFlyClient) PrivateMessage(topic string, data *core.DataRefOrValue, members []core.MemberInput, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
+	return client.PrivateMessageWithKey("", topic, data, members, tag, txType, confirm, startTime)
 }
 
-func (client *FireFlyClient) PrivateMessageWithKey(key, topic string, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
-	members := make([]core.MemberInput, len(orgNames))
-	for i, oName := range orgNames {
-		// We let FireFly resolve the friendly name of the org to the identity
-		members[i] = core.MemberInput{
-			Identity: oName,
-		}
-	}
+func (client *FireFlyClient) PrivateMessageWithKey(key, topic string, data *core.DataRefOrValue, members []core.MemberInput, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
 	msg := core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{

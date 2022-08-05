@@ -86,6 +86,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 	var namespace string
 	var err error
 	e := &dxEvent{ffdx: h, id: msg.EventID}
+
 	switch msg.Type {
 	case messageFailed:
 		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
@@ -118,23 +119,6 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			OnComplete:     e.Ack,
 		})
 		return
-	case messageReceived:
-		// De-serialize the transport wrapper
-		var wrapper *core.TransportWrapper
-		err = json.Unmarshal([]byte(msg.Message), &wrapper)
-		switch {
-		case err != nil:
-			err = fmt.Errorf("invalid transmission from peer '%s': %s", msg.Sender, err)
-		case wrapper.Batch == nil:
-			err = fmt.Errorf("invalid transmission from peer '%s': nil batch", msg.Sender)
-		default:
-			namespace = wrapper.Batch.Namespace
-			e.dxType = dataexchange.DXEventTypeMessageReceived
-			e.messageReceived = &dataexchange.MessageReceived{
-				PeerID:    msg.Sender,
-				Transport: wrapper,
-			}
-		}
 	case blobFailed:
 		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
 			NamespacedOpID: msg.RequestID,
@@ -156,6 +140,35 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			OnComplete:     e.Ack,
 		})
 		return
+	case blobAcknowledged:
+		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+			NamespacedOpID: msg.RequestID,
+			Status:         core.OpStatusSucceeded,
+			Output:         msg.Info,
+			VerifyManifest: h.capabilities.Manifest,
+			DXHash:         msg.Hash,
+			OnComplete:     e.Ack,
+		})
+		return
+
+	case messageReceived:
+		// De-serialize the transport wrapper
+		var wrapper *core.TransportWrapper
+		err = json.Unmarshal([]byte(msg.Message), &wrapper)
+		switch {
+		case err != nil:
+			err = fmt.Errorf("invalid transmission from peer '%s': %s", msg.Sender, err)
+		case wrapper.Batch == nil:
+			err = fmt.Errorf("invalid transmission from peer '%s': nil batch", msg.Sender)
+		default:
+			namespace = wrapper.Batch.Namespace
+			e.dxType = dataexchange.DXEventTypeMessageReceived
+			e.messageReceived = &dataexchange.MessageReceived{
+				PeerID:    msg.Sender,
+				Transport: wrapper,
+			}
+		}
+
 	case blobReceived:
 		var hash *fftypes.Bytes32
 		hash, err = fftypes.ParseBytes32(h.ctx, msg.Hash)
@@ -170,25 +183,16 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 				PayloadRef: msg.Path,
 			}
 		}
-	case blobAcknowledged:
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
-			NamespacedOpID: msg.RequestID,
-			Status:         core.OpStatusSucceeded,
-			Output:         msg.Info,
-			VerifyManifest: h.capabilities.Manifest,
-			DXHash:         msg.Hash,
-			OnComplete:     e.Ack,
-		})
-		return
+
 	default:
 		err = i18n.NewError(h.ctx, coremsgs.MsgUnexpectedDXMessageType, msg.Type)
 	}
 
 	// If we couldn't dispatch the event we received, we still ack it
-	if err == nil {
-		h.callbacks.DXEvent(h.ctx, namespace, e)
-	} else {
+	if err != nil {
 		log.L(h.ctx).Warnf("Failed to dispatch DX event: %s", err)
 		e.Ack()
+	} else {
+		h.callbacks.DXEvent(h.ctx, namespace, msg.Recipient, e)
 	}
 }

@@ -70,7 +70,6 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *
 	return s.updateTx(ctx, dataTable, tx,
 		sq.Update(dataTable).
 			Set("validator", string(data.Validator)).
-			Set("namespace", data.Namespace).
 			Set("datatype_name", datatype.Name).
 			Set("datatype_version", datatype.Version).
 			Set("hash", data.Hash).
@@ -82,8 +81,9 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *
 			Set("value_size", data.ValueSize).
 			Set("value", data.Value).
 			Where(sq.Eq{
-				"id":   data.ID,
-				"hash": data.Hash,
+				"id":        data.ID,
+				"hash":      data.Hash,
+				"namespace": data.Namespace,
 			}),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionData, core.ChangeEventTypeUpdated, data.Namespace, data.ID)
@@ -150,7 +150,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *core.Data, optimizatio
 		dataRows, _, err := s.queryTx(ctx, dataTable, tx,
 			sq.Select("hash").
 				From(dataTable).
-				Where(sq.Eq{"id": data.ID}),
+				Where(sq.Eq{"id": data.ID, "namespace": data.Namespace}),
 		)
 		if err != nil {
 			return err
@@ -344,7 +344,7 @@ func (s *SQLCommon) GetDataRefs(ctx context.Context, namespace string, filter da
 
 }
 
-func (s *SQLCommon) UpdateData(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateData(ctx context.Context, namespace string, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -356,7 +356,7 @@ func (s *SQLCommon) UpdateData(ctx context.Context, id *fftypes.UUID, update dat
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"id": id})
+	query = query.Where(sq.Eq{"id": id, "namespace": namespace})
 
 	_, err = s.updateTx(ctx, dataTable, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {

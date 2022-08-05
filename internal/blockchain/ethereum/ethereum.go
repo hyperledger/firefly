@@ -201,13 +201,6 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace core.Na
 		return "", err
 	}
 
-	switch firstEvent {
-	case string(core.SubOptsFirstEventOldest):
-		firstEvent = "0"
-	case string(core.SubOptsFirstEventNewest):
-		firstEvent = "latest"
-	}
-
 	version, err := e.GetNetworkVersion(ctx, location)
 	if err != nil {
 		return "", err

@@ -656,7 +656,7 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
 	})
-	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", em.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
@@ -697,7 +697,7 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
 	})
-	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateMessages", em.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
@@ -738,7 +738,7 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
 	})
-	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", em.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()

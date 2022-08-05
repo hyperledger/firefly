@@ -61,9 +61,10 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *core.Pin) (err error) {
 		sq.Select(sequenceColumn, "masked", "dispatched").
 			From(pinsTable).
 			Where(sq.Eq{
-				"hash":     pin.Hash,
-				"batch_id": pin.Batch,
-				"idx":      pin.Index,
+				"hash":      pin.Hash,
+				"batch_id":  pin.Batch,
+				"idx":       pin.Index,
+				"namespace": pin.Namespace,
 			}))
 	if err != nil {
 		return err
@@ -198,7 +199,7 @@ func (s *SQLCommon) GetPins(ctx context.Context, namespace string, filter databa
 
 }
 
-func (s *SQLCommon) UpdatePins(ctx context.Context, filter database.Filter, update database.Update) (err error) {
+func (s *SQLCommon) UpdatePins(ctx context.Context, namespace string, filter database.Filter, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -206,7 +207,7 @@ func (s *SQLCommon) UpdatePins(ctx context.Context, filter database.Filter, upda
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update(pinsTable), update, pinFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(pinsTable).Where(sq.Eq{"namespace": namespace}), update, pinFilterFieldMap)
 	if err != nil {
 		return err
 	}

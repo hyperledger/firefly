@@ -62,7 +62,10 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *core.Datatype,
 		datatypeRows, _, err := s.queryTx(ctx, datatypesTable, tx,
 			sq.Select("id").
 				From(datatypesTable).
-				Where(sq.Eq{"id": datatype.ID}),
+				Where(sq.Eq{
+					"namespace": datatype.Namespace,
+					"id":        datatype.ID,
+				}),
 		)
 		if err != nil {
 			return err
@@ -78,7 +81,6 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *core.Datatype,
 			sq.Update(datatypesTable).
 				Set("message_id", datatype.Message).
 				Set("validator", string(datatype.Validator)).
-				Set("namespace", datatype.Namespace).
 				Set("name", datatype.Name).
 				Set("version", datatype.Version).
 				Set("hash", datatype.Hash).

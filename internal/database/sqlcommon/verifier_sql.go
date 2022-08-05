@@ -50,7 +50,6 @@ func (s *SQLCommon) attemptVerifierUpdate(ctx context.Context, tx *txWrapper, ve
 		sq.Update(verifiersTable).
 			Set("identity", verifier.Identity).
 			Set("vtype", verifier.Type).
-			Set("namespace", verifier.Namespace).
 			Set("value", verifier.Value).
 			Where(sq.Eq{
 				"hash": verifier.Hash,
@@ -100,7 +99,10 @@ func (s *SQLCommon) UpsertVerifier(ctx context.Context, verifier *core.Verifier,
 		msgRows, _, err := s.queryTx(ctx, verifiersTable, tx,
 			sq.Select("hash").
 				From(verifiersTable).
-				Where(sq.Eq{"hash": verifier.Hash}),
+				Where(sq.Eq{
+					"namespace": verifier.Namespace,
+					"hash":      verifier.Hash,
+				}),
 		)
 		if err != nil {
 			return err
