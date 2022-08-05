@@ -81,7 +81,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 
 		op = core.NewOperation(
 			plugin,
-			pool.Namespace,
+			am.namespace,
 			txid,
 			core.OpTypeTokenCreatePool)
 		if err = txcommon.AddTokenPoolCreateInputs(op, pool); err == nil {
@@ -119,7 +119,7 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenP
 
 		op = core.NewOperation(
 			plugin,
-			pool.Namespace,
+			am.namespace,
 			pool.TX.ID,
 			core.OpTypeTokenActivatePool)
 		txcommon.AddTokenPoolActivateInputs(op, pool.ID)

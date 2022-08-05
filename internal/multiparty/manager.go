@@ -230,7 +230,7 @@ func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey
 func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
 	op := core.NewOperation(
 		mm.blockchain,
-		batch.Namespace,
+		mm.namespace.LocalName,
 		batch.TX.ID,
 		core.OpTypeBlockchainPinBatch)
 	addBatchPinInputs(op, batch.ID, contexts, payloadRef)

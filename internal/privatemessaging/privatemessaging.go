@@ -215,7 +215,7 @@ func (pm *privateMessaging) prepareBlobTransfers(ctx context.Context, data core.
 
 				op := core.NewOperation(
 					pm.exchange,
-					d.Namespace,
+					pm.namespace.LocalName,
 					txid,
 					core.OpTypeDataExchangeSendBlob)
 				addTransferBlobInputs(op, node.ID, blob.Hash)
@@ -291,7 +291,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *core.TransportWrap
 
 			op := core.NewOperation(
 				pm.exchange,
-				batch.Namespace,
+				pm.namespace.LocalName,
 				batch.Payload.TX.ID,
 				core.OpTypeDataExchangeSendBatch)
 			addBatchSendInputs(op, node.ID, batch.Group, batch.ID)
