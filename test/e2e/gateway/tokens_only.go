@@ -77,10 +77,11 @@ func (suite *TokensOnlyTestSuite) TestTokensOnlyNamespaces() {
 	admin1 := client.NewResty(suite.T())
 	admin1.SetBaseURL(suite.testState.adminHost1 + "/spi/v1")
 
-	e2e.ResetFireFly(suite.T(), admin1)
-	e2e.PollForUp(suite.T(), suite.testState.client1)
-
 	client1 := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, testNamespace)
+
+	e2e.ResetFireFly(suite.T(), admin1)
+	e2e.PollForUp(suite.T(), client1)
+
 	eventNames := "token_pool_confirmed|token_transfer_confirmed"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s", testNamespace, eventNames)
 	received1 := e2e.WsReader(client1.WebSocket(suite.T(), queryString, nil))

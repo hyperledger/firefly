@@ -68,3 +68,34 @@ func RandomName(t *testing.T) string {
 	assert.NoError(t, err)
 	return fmt.Sprintf("e2e_%x", b)
 }
+
+func AddPluginRemoteName(data map[string]interface{}, pluginType, remoteName string) {
+	pluginsConfig := data["plugins"].(map[interface{}]interface{})
+	plugins := pluginsConfig[pluginType].([]interface{})
+	plugin := plugins[0].(map[interface{}]interface{})
+	plugin["remotename"] = remoteName
+}
+
+// ChangeDefaultNSPluginLocalName changes the plugin local name and updates the plugin list for the default namespace
+func ChangeDefaultNSPluginLocalName(data map[string]interface{}, pluginType, newLocalName string) {
+	pluginsConfig := data["plugins"].(map[interface{}]interface{})
+	plugins := pluginsConfig[pluginType].([]interface{})
+	plugin := plugins[0].(map[interface{}]interface{})
+	oldName := plugin["name"]
+	plugin["name"] = newLocalName
+
+	namespaces := data["namespaces"].(map[interface{}]interface{})
+	predefined := namespaces["predefined"].([]interface{})
+	defaultNs := predefined[0].(map[interface{}]interface{})
+	pluginList := defaultNs["plugins"].([]interface{})
+	var newPluginList []interface{}
+	for _, plugin := range pluginList {
+		if plugin == oldName {
+			newPluginList = append(newPluginList, newLocalName)
+		} else {
+			newPluginList = append(newPluginList, plugin)
+		}
+	}
+
+	defaultNs["plugins"] = newPluginList
+}

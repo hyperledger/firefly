@@ -77,6 +77,13 @@ jobs:
               token-provider: erc1155
               multiparty-enabled: true
 
+            - blockchain-provider: geth
+              test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
+              database-type: postgres
+              token-provider: erc20_erc721
+              multiparty-enabled: true
+
+
             - blockchain-provider: fabric
               test-suite: TestFabricE2ESuite
               database-type: sqlite3
