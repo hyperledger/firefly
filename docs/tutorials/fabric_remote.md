@@ -34,7 +34,7 @@ Choose a stack name. For this guide, I will choose the name `my-remote-fabric`, 
 stack name: my-remote-fabric
 ```
 
-For this guide, we will be creating only one supernode for one of the organizations in our fabric netwok and using that organizational identity to interact with the chaincode. You can create multiple supernodes for different organizations in your fabric network by passing here the number of members in your stack.
+For this guide, we will be creating only one supernode for one of the organizations in our fabric network and using that organizational identity to interact with the chaincode. You can create multiple supernodes for different organizations in your fabric network by passing here the number of members in your stack.
 
 ```
 number of members: 1
@@ -64,11 +64,11 @@ Now that you have created a stack, let's open it up in your favourite code edito
 
 ### Add msp folder representing your fabric identity
 
-In `$HOME/.firefly/stacks/my-remote-fabric`, you need to add an msp folder. This msp folder essentially describes the fabric organizational identiy which will be interacting with your chaincode. Inside the msp folder, you must have all the certifactes and the private key to be used by firefly to query/invoke your chaincode.
+In `$HOME/.firefly/stacks/my-remote-fabric`, you need to add a msp folder. This msp folder essentially describes the fabric organizational identity which will be interacting with your chaincode. Inside the msp folder, you must have all the certificates and the private key to be used by firefly to query/invoke your chaincode.
 
 You should be having this msp folder for an organizational identity from when you would have set up your fabric network. For more details, please refer to [Hyperledger Fabric Documentation for MSP](https://hyperledger-fabric.readthedocs.io/en/latest/msp.html).
 
-Now, you need to mount this msp directory as a docker volume in your fabconnect serivce.
+Now, you need to mount this msp directory as a docker volume in your fabconnect service.
 
 > **NOTE:** All docker-compose.yml related changes should be done in docker-compose.override.yml.
 
@@ -228,7 +228,7 @@ ff start my-remote-fabric
 
 This may take a minute or two and in the background the FireFly CLI will do the following for you:
 
-- Download Docker images for all of the components of the Supernode
+- Download Docker images for all the components of the Supernode
 - Set up configuration between all the components
 - Deploy FireFly's `BatchPin` smart contract to our remote fabric network
 - Register an identity for each member and node in our remote fabric network
