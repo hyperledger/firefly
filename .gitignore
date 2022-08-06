@@ -16,3 +16,4 @@ __debug*
 !deploy/charts/firefly
 containerlogs
 .vscode/*.log
+.idea
