@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
+        test-suite: [TestEthereumMultipartyE2ESuite, TestEthereumGatewayE2ESuite, TestEthereumMultipartyTokensRemoteNameE2ESuite, TestEthereumNamespaceE2ESuite, TestFabricGatewayE2ESuite, TestFabricMultipartyE2ESuite]
         blockchain-provider: [geth, besu, fabric]
         database-type: [sqlite3, postgres]
         exclude:
