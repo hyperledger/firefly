@@ -975,7 +975,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 			]
     },
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
+		"signature": "0x1C197604587F046FD40684A8f21f4609FB811A7b:BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
 		"logIndex": "50",
 		"timestamp": "1620576488"
   },
@@ -1062,7 +1062,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		"address":          "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"blockNumber":      "38011",
 		"logIndex":         "50",
-		"signature":        "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
+		"signature":        "0x1C197604587F046FD40684A8f21f4609FB811A7b:BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
 		"subId":            "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"transactionHash":  "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
 		"transactionIndex": "0x0",
@@ -1343,6 +1343,90 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8"
+	})).Return(nil)
+
+	err := json.Unmarshal(data.Bytes(), &reply)
+	assert.NoError(t, err)
+	e.handleReceipt(context.Background(), reply)
+
+	em.AssertExpectations(t)
+}
+
+func TestHandleReceiptTXUpdateEVMConnect(t *testing.T) {
+	em := &coremocks.OperationCallbacks{}
+	wsm := &wsmocks.WSClient{}
+	e := &Ethereum{
+		ctx:       context.Background(),
+		topic:     "topic1",
+		callbacks: common.NewBlockchainCallbacks(),
+		wsconn:    wsm,
+	}
+	e.SetOperationHandler("ns1", em)
+
+	var reply fftypes.JSONObject
+	operationID := fftypes.NewUUID()
+	data := fftypes.JSONAnyPtr(`{
+		"created": "2022-08-03T18:55:42.671166Z",
+		"errorHistory": null,
+		"firstSubmit": "2022-08-03T18:55:42.762254Z",
+		"gas": "48049",
+		"gasPrice": 0,
+		"headers": {
+			"requestId": "ns1:` + operationID.String() + `",
+			"type": "TransactionUpdate"
+		},
+		"id": "ns1:` + operationID.String() + `",
+		"lastSubmit": "2022-08-03T18:55:42.762254Z",
+		"nonce": "1",
+		"policyInfo": null,
+		"receipt": {
+			"blockHash": "0x972713d879efd32573fe4d88ed0cde94a094367d50f7e5bc8262dd41fe07d9e6",
+			"blockNumber": "3",
+			"extraInfo": {
+				"blockHash": "0x972713d879efd32573fe4d88ed0cde94a094367d50f7e5bc8262dd41fe07d9e6",
+				"blockNumber": "0x3",
+				"contractAddress": null,
+				"cumulativeGasUsed": "0x7d21",
+				"from": "0x081afaa6792a524ff2fb0654e615d19f9a600e57",
+				"gasUsed": "0x7d21",
+				"logs": [
+					{
+						"address": "0x9da7ecba282387ecd696dd9aecfc14efeb5f5fce",
+						"blockHash": "0x972713d879efd32573fe4d88ed0cde94a094367d50f7e5bc8262dd41fe07d9e6",
+						"blockNumber": "0x3",
+						"data": "0x000000000000000000000000081afaa6792a524ff2fb0654e615d19f9a600e570000000000000000000000000000000000000000000000000000000062eac4ae00000000000000000000000000000000000000000000000000000000000000e05fbe3d02be9341f492917ec5aecfb151d243287ac95c49f780a4259ab53a8d14ec218052055a2b541712ab3246354c36f3aa189e1f31a7a8b33cbf957014d2e6000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002e516d50535551486f5852617553346a5434544b55356f414167616d334d4132315642575777634c6e66536e35696d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000018319d70666de18ed7d1c17e1bbd8ac0b16716fbe2059a8ae356a09d3bd067e14",
+						"logIndex": "0x0",
+						"removed": false,
+						"topics": [
+							"0x805721bc246bccc732581be0c0aa2dd8f7ec93e97ba4b307be84428c98b0a12f"
+						],
+						"transactionHash": "0x929c898a46762d91e9f4b0b8e2800863dcf4a40f694109dc4cd19dbd334fa4cc",
+						"transactionIndex": "0x0"
+					}
+				],
+				"status": "0x1",
+				"to": "0x9da7ecba282387ecd696dd9aecfc14efeb5f5fce",
+				"transactionHash": "0x929c898a46762d91e9f4b0b8e2800863dcf4a40f694109dc4cd19dbd334fa4cc",
+				"transactionIndex": "0x0"
+			},
+			"success": true,
+			"transactionIndex": "0"
+		},
+		"sequenceId": "dfd7c5e6-135d-11ed-80ff-b67a78953577",
+		"status": "Succeeded",
+		"transactionData": "0x48ce1dcc5fbe3d02be9341f492917ec5aecfb151d243287ac95c49f780a4259ab53a8d14ec218052055a2b541712ab3246354c36f3aa189e1f31a7a8b33cbf957014d2e6000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000002e516d50535551486f5852617553346a5434544b55356f414167616d334d4132315642575777634c6e66536e35696d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000018319d70666de18ed7d1c17e1bbd8ac0b16716fbe2059a8ae356a09d3bd067e14",
+		"transactionHash": "0x929c898a46762d91e9f4b0b8e2800863dcf4a40f694109dc4cd19dbd334fa4cc",
+		"transactionHeaders": {
+			"from": "0x081afaa6792a524ff2fb0654e615d19f9a600e57",
+			"to": "0x9da7ecba282387ecd696dd9aecfc14efeb5f5fce"
+		},
+		"updated": "2022-08-03T18:55:43.781941Z"
+	}`)
+
+	em.On("OperationUpdate", e, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:"+operationID.String() &&
+			update.Status == core.OpStatusPending &&
+			update.BlockchainTXID == "0x929c898a46762d91e9f4b0b8e2800863dcf4a40f694109dc4cd19dbd334fa4cc"
 	})).Return(nil)
 
 	err := json.Unmarshal(data.Bytes(), &reply)
