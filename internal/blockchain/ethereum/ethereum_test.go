@@ -326,7 +326,6 @@ func TestInitNewConfig(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
@@ -351,7 +350,6 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "")
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
@@ -381,7 +379,6 @@ func TestInitNetworkVersionNotFound(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
@@ -3000,7 +2997,6 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
@@ -3043,7 +3039,6 @@ func TestAddFireflySubscriptionV1(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
@@ -3081,7 +3076,6 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
@@ -3119,7 +3113,6 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
@@ -3156,7 +3149,6 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)

@@ -7,7 +7,6 @@ set -o pipefail
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
 CLI_VERSION=$(cat $CWD/../../manifest.json | jq -r .cli.tag)
-STACKS_DIR=~/.firefly/stacks
 
 create_accounts() {
   if [ "$TEST_SUITE" == "TestEthereumMultipartyE2ESuite" ]; then
@@ -36,46 +35,21 @@ checkOk() {
   mkdir -p "${WORKDIR}/containerlogs"
   $CLI logs $STACK_NAME > "${WORKDIR}/containerlogs/logs.txt"
   if [ $rc -eq 0 ]; then rc=$?; fi
-
   if [ $rc -ne 0 ]; then exit $rc; fi
 }
 
-if [ -z "${STACK_NAME}" ]; then
-  STACK_NAME=firefly_e2e
-fi
+STACK_NAME=${STACK_NAME:-firefly_e2e}
+STACKS_DIR=${STACKS_DIR:-~/.firefly/stacks}
+STACK_DIR=${STACK_DIR:-$STACKS_DIR/$STACK_NAME}
 
-if [ -z "${DOWNLOAD_CLI}" ]; then
-  DOWNLOAD_CLI=true
-fi
+DOWNLOAD_CLI=${DOWNLOAD_CLI:-true}
+CREATE_STACK=${CREATE_STACK:-true}
+BUILD_FIREFLY=${BUILD_FIREFLY:-true}
+MULTIPARTY_ENABLED=${MULTIPARTY_ENABLED:-true}
 
-if [ -z "${CREATE_STACK}" ]; then
-  CREATE_STACK=true
-fi
-
-if [ -z "${BUILD_FIREFLY}" ]; then
-  BUILD_FIREFLY=true
-fi
-
-if [ -z "${DATABASE_TYPE}" ]; then
-  # Can also set to "postgres"
-  DATABASE_TYPE=sqlite3
-fi
-
-if [ -z "${MULTIPARTY_ENABLED}" ]; then
-  MULTIPARTY_ENABLED=true
-fi
-
-if [ -z "${STACK_DIR}" ]; then
-  STACK_DIR=$STACKS_DIR/$STACK_NAME
-fi
-
-if [ -z "${BLOCKCHAIN_PROVIDER}" ]; then
-  BLOCKCHAIN_PROVIDER=geth
-fi
-
-if [ -z "${TOKENS_PROVIDER}" ]; then
-  TOKENS_PROVIDER=erc20_erc721
-fi
+DATABASE_TYPE=${DATABASE_TYPE:-sqlite3}
+BLOCKCHAIN_PROVIDER=${BLOCKCHAIN_PROVIDER:-geth}
+TOKENS_PROVIDER=${TOKENS_PROVIDER:-erc20_erc721}
 
 if [ -z "${TEST_SUITE}" ]; then
   if [ "${BLOCKCHAIN_PROVIDER}" == "fabric" ]; then
@@ -95,10 +69,6 @@ fi
 
 cd $CWD
 
-if [ "$CREATE_STACK" == "true" ]; then
-  $CLI remove -f $STACK_NAME
-fi
-
 if [ "$BUILD_FIREFLY" == "true" ]; then
   make -C ../.. docker
   checkOk $?
@@ -110,6 +80,7 @@ if [ "$DOWNLOAD_CLI" == "true" ]; then
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
+  $CLI remove -f $STACK_NAME
   $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false --multiparty=$MULTIPARTY_ENABLED
   checkOk $?
 

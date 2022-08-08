@@ -129,7 +129,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	// Upload the batch itself
 	op := core.NewOperation(
 		bm.sharedstorage,
-		state.Persisted.Namespace,
+		bm.namespace.LocalName,
 		state.Persisted.TX.ID,
 		core.OpTypeSharedStorageUploadBatch)
 	addUploadBatchInputs(op, state.Persisted.ID)
@@ -157,10 +157,13 @@ func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, d
 
 			op := core.NewOperation(
 				bm.sharedstorage,
-				d.Namespace,
+				bm.namespace.LocalName,
 				tx,
 				core.OpTypeSharedStorageUploadBlob)
 			addUploadBlobInputs(op, d.ID)
+			if err := bm.operations.AddOrReuseOperation(ctx, op); err != nil {
+				return err
+			}
 
 			blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
 			if err != nil {

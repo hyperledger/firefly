@@ -49,13 +49,6 @@ const (
 	FabconnectPrefixLong = "prefixLong"
 	// FabconnectConfigChaincodeDeprecated is the Fabric Firefly chaincode deployed to the Firefly channels
 	FabconnectConfigChaincodeDeprecated = "chaincode"
-
-	// FireFlyContractConfigKey is a sub-key in the config to contain the info on the deployed FireFly contract
-	FireFlyContractConfigKey = "fireflyContract"
-	// FireFlyContractChaincode is the Fabric Firefly chaincode deployed to the Firefly channels
-	FireFlyContractChaincode = "chaincode"
-	// FireFlyContractFromBlock is the configuration of the first block to listen to when creating the listener
-	FireFlyContractFromBlock = "fromBlock"
 )
 
 func (f *Fabric) InitConfig(config config.Section) {
