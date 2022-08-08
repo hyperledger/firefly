@@ -19,8 +19,8 @@ package migrate
 import (
 	"fmt"
 	"io/ioutil"
-	"sort"
 
+	"github.com/blang/semver/v4"
 	"gopkg.in/yaml.v2"
 )
 
@@ -127,6 +127,21 @@ var migrations = map[string]func(root *ConfigItem){
 	},
 }
 
+func getVersions() []semver.Version {
+	versions := make([]semver.Version, 0, len(migrations))
+	for k := range migrations {
+		versions = append(versions, semver.MustParse(k))
+	}
+	semver.Sort(versions)
+	return versions
+}
+
+func migrateVersion(root *ConfigItem, version string) {
+	fmt.Printf("Version %s\n", version)
+	migrations[version](root)
+	fmt.Println()
+}
+
 func Run(cfgFile string) error {
 	yfile, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
@@ -137,16 +152,9 @@ func Run(cfgFile string) error {
 	if err != nil {
 		return err
 	}
-	versions := make([]string, 0, len(migrations))
-	for k := range migrations {
-		versions = append(versions, k)
-	}
-	sort.Strings(versions)
 	root := &ConfigItem{value: data}
-	for _, version := range versions {
-		fmt.Printf("Version %s\n", version)
-		migrations[version](root)
-		fmt.Println()
+	for _, version := range getVersions() {
+		migrateVersion(root, version.String())
 	}
 	out, err := yaml.Marshal(data)
 	if err != nil {
