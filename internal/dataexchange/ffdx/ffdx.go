@@ -251,11 +251,7 @@ func (h *FFDX) checkInitialized(ctx context.Context) error {
 }
 
 func (h *FFDX) GetPeerID(peer fftypes.JSONObject) string {
-	id := peer.GetString("nodeID")
-	if id == "" {
-		id = peer.GetString("id")
-	}
-	return id
+	return peer.GetString("id")
 }
 
 func (h *FFDX) GetEndpointInfo(ctx context.Context, nodeName string) (peer fftypes.JSONObject, err error) {
@@ -270,7 +266,7 @@ func (h *FFDX) GetEndpointInfo(ctx context.Context, nodeName string) (peer fftyp
 		log.L(ctx).Errorf("Invalid DX info: %s", peer.String())
 		return nil, i18n.NewError(ctx, coremsgs.MsgDXInfoMissingID)
 	}
-	peer["nodeID"] = fmt.Sprintf("%s%s%s", id, DXIDSeparator, nodeName)
+	peer["id"] = fmt.Sprintf("%s%s%s", id, DXIDSeparator, nodeName)
 	return peer, nil
 }
 

@@ -155,8 +155,7 @@ func TestGetEndpointInfo(t *testing.T) {
 	peer, err := h.GetEndpointInfo(context.Background(), "node1")
 	assert.NoError(t, err)
 	assert.Equal(t, fftypes.JSONObject{
-		"nodeID":   "peer1/node1",
-		"id":       "peer1",
+		"id":       "peer1/node1",
 		"endpoint": "https://peer1.example.com",
 		"cert":     "cert data...",
 	}, peer)
