@@ -18,12 +18,14 @@ package migrate
 
 import (
 	"fmt"
+	"io"
 )
 
 type ConfigItem struct {
 	value  interface{}
 	parent *ConfigItem
 	name   string
+	writer io.Writer
 }
 
 type ConfigItemIterator struct {
@@ -52,10 +54,10 @@ func (c *ConfigItem) setChild(name string, value interface{}) {
 func (c *ConfigItem) Get(name string) *ConfigItem {
 	if v, ok := c.value.(map[interface{}]interface{}); ok {
 		if child, ok := v[name]; ok {
-			return &ConfigItem{value: child, parent: c, name: name}
+			return &ConfigItem{value: child, parent: c, name: name, writer: c.writer}
 		}
 	}
-	return &ConfigItem{value: nil, parent: c, name: name}
+	return &ConfigItem{value: nil, parent: c, name: name, writer: c.writer}
 }
 
 func (c *ConfigItemIterator) Get(name string) *ConfigItemIterator {
@@ -95,6 +97,7 @@ func (c *ConfigItem) Each() *ConfigItemIterator {
 			value:  val,
 			parent: c.parent,
 			name:   c.name,
+			writer: c.writer,
 		}
 	}
 	return &ConfigItemIterator{items: items}
@@ -119,7 +122,7 @@ func (c *ConfigItem) Create() *ConfigItem {
 }
 
 func (c *ConfigItem) Set(value interface{}) *ConfigItem {
-	fmt.Printf("Create: %s: %s\n", c.Path(), value)
+	fmt.Fprintf(c.writer, "Create: %s: %s\n", c.Path(), value)
 	c.value = value
 	c.parent.Create()
 	c.parent.setChild(c.name, c.value)
@@ -149,7 +152,7 @@ func (c *ConfigItemIterator) SetIfEmpty(value interface{}) *ConfigItemIterator {
 
 func (c *ConfigItem) Delete() *ConfigItem {
 	if c.Exists() {
-		fmt.Printf("Delete: %s\n", c.Path())
+		fmt.Fprintf(c.writer, "Delete: %s\n", c.Path())
 		c.parent.deleteChild(c.name)
 	}
 	return c
@@ -168,7 +171,7 @@ func (c *ConfigItem) RenameTo(name string) *ConfigItem {
 			// Don't overwrite if the new key already exists
 			c.Delete()
 		} else {
-			fmt.Printf("Rename: %s -> .%s\n", c.Path(), name)
+			fmt.Fprintf(c.writer, "Rename: %s -> .%s\n", c.Path(), name)
 			c.parent.deleteChild(c.name)
 			c.parent.setChild(name, c.value)
 			c.name = name
@@ -186,7 +189,7 @@ func (c *ConfigItemIterator) RenameTo(name string) *ConfigItemIterator {
 
 func (c *ConfigItem) ReplaceValue(old interface{}, new interface{}) *ConfigItem {
 	if c.value == old {
-		fmt.Printf("Change: %s: %s -> %s\n", c.Path(), old, new)
+		fmt.Fprintf(c.writer, "Change: %s: %s -> %s\n", c.Path(), old, new)
 		c.value = new
 		c.parent.setChild(c.name, new)
 	}

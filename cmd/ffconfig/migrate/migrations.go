@@ -19,6 +19,7 @@ package migrate
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/blang/semver/v4"
 	"gopkg.in/yaml.v2"
@@ -137,9 +138,9 @@ func getVersions() []semver.Version {
 }
 
 func migrateVersion(root *ConfigItem, version string) {
-	fmt.Printf("Version %s\n", version)
+	fmt.Fprintf(os.Stderr, "Version %s\n", version)
 	migrations[version](root)
-	fmt.Println()
+	fmt.Fprintln(os.Stderr)
 }
 
 func Run(cfgFile string) error {
@@ -152,7 +153,7 @@ func Run(cfgFile string) error {
 	if err != nil {
 		return err
 	}
-	root := &ConfigItem{value: data}
+	root := &ConfigItem{value: data, writer: os.Stderr}
 	for _, version := range getVersions() {
 		migrateVersion(root, version.String())
 	}
