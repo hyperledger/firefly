@@ -70,6 +70,61 @@ var migrations = map[string]func(root *ConfigItem){
 			newTokens.Set(items)
 		}
 		oldTokens.Delete()
+
+		defaultNS := root.Get("namespaces").Get("default").SetIfEmpty("default").value
+		namespaces := root.Get("namespaces").Get("predefined").Create()
+		if namespaces.Length() == 0 {
+			namespaces.Set([]interface{}{
+				map[interface{}]interface{}{
+					"name": defaultNS,
+				},
+			})
+		}
+
+		rootOrg := root.Get("org")
+		rootNode := root.Get("node")
+		if rootOrg.Get("name").Exists() || rootOrg.Get("key").Exists() {
+			namespaces.Each().Run(func(item *ConfigItem) {
+				if item.Get("multiparty").Get("enabled").value != false {
+					item.Get("multiparty").Get("enabled").Set(true)
+					item.Get("multiparty").Get("org").SetIfEmpty(rootOrg.value)
+					item.Get("multiparty").Get("node").SetIfEmpty(rootNode.value)
+				}
+			})
+		}
+		rootOrg.Delete()
+		rootNode.Delete()
+
+		root.Get("plugins").Get("blockchain").Each().Get("ethereum").Get("ethconnect").Run(func(ethconnect *ConfigItem) {
+			contract := map[interface{}]interface{}{
+				"location": map[interface{}]interface{}{
+					"address": ethconnect.Get("instance").Delete().value,
+				},
+			}
+			fromBlock := ethconnect.Get("fromBlock").Delete()
+			if fromBlock.Exists() {
+				contract["firstEvent"] = fromBlock.value
+			}
+			namespaces.Each().Run(func(namespace *ConfigItem) {
+				if namespace.Get("multiparty").Get("enabled").value == true {
+					namespace.Get("multiparty").Get("contract").SetIfEmpty(contract)
+				}
+			})
+		})
+
+		root.Get("plugins").Get("blockchain").Each().Get("fabric").Get("fabconnect").Run(func(fabconnect *ConfigItem) {
+			contract := map[interface{}]interface{}{
+				"location": map[interface{}]interface{}{
+					"chaincode": fabconnect.Get("chaincode").Delete().value,
+					"channel":   fabconnect.Get("channel").value,
+				},
+			}
+			namespaces.Each().Run(func(namespace *ConfigItem) {
+				if namespace.Get("multiparty").Get("enabled").value == true {
+					namespace.Get("multiparty").Get("contract").SetIfEmpty(contract)
+				}
+			})
+		})
 	},
 }
 
