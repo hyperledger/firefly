@@ -161,6 +161,9 @@ func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, d
 				tx,
 				core.OpTypeSharedStorageUploadBlob)
 			addUploadBlobInputs(op, d.ID)
+			if err := bm.operations.AddOrReuseOperation(ctx, op); err != nil {
+				return err
+			}
 
 			blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
 			if err != nil {
