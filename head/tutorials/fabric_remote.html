@@ -289,7 +289,7 @@
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>stack name: my-remote-fabric
 </code></pre></div></div>
 
-<p>For this guide, we will be creating only one supernode for one of the organizations in our fabric netwok and using that organizational identity to interact with the chaincode. You can create multiple supernodes for different organizations in your fabric network by passing here the number of members in your stack.</p>
+<p>For this guide, we will be creating only one supernode for one of the organizations in our fabric network and using that organizational identity to interact with the chaincode. You can create multiple supernodes for different organizations in your fabric network by passing here the number of members in your stack.</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>number of members: 1
 </code></pre></div></div>
@@ -328,11 +328,11 @@ ff start my-remote-fabric
       </h3>
     
 
-<p>In <code class="language-plaintext highlighter-rouge">$HOME/.firefly/stacks/my-remote-fabric</code>, you need to add an msp folder. This msp folder essentially describes the fabric organizational identiy which will be interacting with your chaincode. Inside the msp folder, you must have all the certifactes and the private key to be used by firefly to query/invoke your chaincode.</p>
+<p>In <code class="language-plaintext highlighter-rouge">$HOME/.firefly/stacks/my-remote-fabric</code>, you need to add a msp folder. This msp folder essentially describes the fabric organizational identity which will be interacting with your chaincode. Inside the msp folder, you must have all the certificates and the private key to be used by firefly to query/invoke your chaincode.</p>
 
 <p>You should be having this msp folder for an organizational identity from when you would have set up your fabric network. For more details, please refer to <a href="https://hyperledger-fabric.readthedocs.io/en/latest/msp.html">Hyperledger Fabric Documentation for MSP</a>.</p>
 
-<p>Now, you need to mount this msp directory as a docker volume in your fabconnect serivce.</p>
+<p>Now, you need to mount this msp directory as a docker volume in your fabconnect service.</p>
 
 <blockquote>
   <p><strong>NOTE:</strong> All docker-compose.yml related changes should be done in docker-compose.override.yml.</p>
@@ -529,7 +529,7 @@ version: 1.1.0%
 <p>This may take a minute or two and in the background the FireFly CLI will do the following for you:</p>
 
 <ul>
-  <li>Download Docker images for all of the components of the Supernode</li>
+  <li>Download Docker images for all the components of the Supernode</li>
   <li>Set up configuration between all the components</li>
   <li>Deploy FireFly’s <code class="language-plaintext highlighter-rouge">BatchPin</code> smart contract to our remote fabric network</li>
   <li>Register an identity for each member and node in our remote fabric network</li>
