@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -376,7 +375,7 @@ func TestGetTransactionByIDCached(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper, txCache, _ := NewTestTransactionHelper(mdi, mdm)
+	txHelper, _, _ := NewTestTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -388,15 +387,9 @@ func TestGetTransactionByIDCached(t *testing.T) {
 		BlockchainIDs: core.FFStringArray{"0x111111"},
 	}, nil).Once()
 
-	previousTxCacheSize := txCache.ItemCount()
-
 	tx, err := txHelper.GetTransactionByIDCached(ctx, txid)
 	assert.NoError(t, err)
 	assert.Equal(t, txid, tx.ID)
-
-	for txCache.ItemCount() <= previousTxCacheSize {
-		time.Sleep(time.Millisecond * 1)
-	}
 
 	tx, err = txHelper.GetTransactionByIDCached(ctx, txid)
 	assert.NoError(t, err)
