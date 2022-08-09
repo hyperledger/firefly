@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/hyperledger/firefly/ffconfig/migrate"
@@ -36,14 +37,24 @@ var migrateCommand = &cobra.Command{
 	Use:   "migrate",
 	Short: "Migrate a config file to the current version",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return migrate.Run(cfgFile)
+		cfg, err := ioutil.ReadFile(cfgFile)
+		if err != nil {
+			return err
+		}
+		out, err := migrate.Run(cfg, fromVersion, toVersion)
+		fmt.Print(out)
+		return err
 	},
 }
 
 var cfgFile string
+var fromVersion string
+var toVersion string
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "firefly_core.yml", "config file")
+	migrateCommand.PersistentFlags().StringVar(&fromVersion, "from", "", "from version (optional, such as 1.0.0)")
+	migrateCommand.PersistentFlags().StringVar(&toVersion, "to", "", "to version (optional, such as 1.1.0)")
 	rootCmd.AddCommand(migrateCommand)
 }
 

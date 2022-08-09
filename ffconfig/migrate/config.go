@@ -143,13 +143,6 @@ func (c *ConfigItem) SetIfEmpty(value interface{}) *ConfigItem {
 	return c
 }
 
-func (c *ConfigItemIterator) SetIfEmpty(value interface{}) *ConfigItemIterator {
-	for _, item := range c.items {
-		item.SetIfEmpty(value)
-	}
-	return c
-}
-
 func (c *ConfigItem) Delete() *ConfigItem {
 	if c.Exists() {
 		fmt.Fprintf(c.writer, "Delete: %s\n", c.Path())

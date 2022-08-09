@@ -18,7 +18,6 @@ package migrate
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/blang/semver/v4"
@@ -44,7 +43,7 @@ var migrations = map[string]func(root *ConfigItem){
 		movePlugin := func(name string) {
 			old := root.Get(name)
 			new := root.Get("plugins").Get(name)
-			if new.Length() == 0 {
+			if old.Exists() && new.Length() == 0 {
 				new.Set([]interface{}{old.value})
 				new.Each().Get("name").Set(name + "0")
 			}
@@ -88,7 +87,9 @@ var migrations = map[string]func(root *ConfigItem){
 				if item.Get("multiparty").Get("enabled").value != false {
 					item.Get("multiparty").Get("enabled").Set(true)
 					item.Get("multiparty").Get("org").SetIfEmpty(rootOrg.value)
-					item.Get("multiparty").Get("node").SetIfEmpty(rootNode.value)
+					if rootNode.Exists() {
+						item.Get("multiparty").Get("node").SetIfEmpty(rootNode.value)
+					}
 				}
 			})
 		}
@@ -96,34 +97,38 @@ var migrations = map[string]func(root *ConfigItem){
 		rootNode.Delete()
 
 		root.Get("plugins").Get("blockchain").Each().Get("ethereum").Get("ethconnect").Run(func(ethconnect *ConfigItem) {
-			contract := map[interface{}]interface{}{
-				"location": map[interface{}]interface{}{
-					"address": ethconnect.Get("instance").Delete().value,
-				},
-			}
-			fromBlock := ethconnect.Get("fromBlock").Delete()
-			if fromBlock.Exists() {
-				contract["firstEvent"] = fromBlock.value
-			}
-			namespaces.Each().Run(func(namespace *ConfigItem) {
-				if namespace.Get("multiparty").Get("enabled").value == true {
-					namespace.Get("multiparty").Get("contract").SetIfEmpty(contract)
+			if ethconnect.Exists() {
+				contract := map[interface{}]interface{}{
+					"location": map[interface{}]interface{}{
+						"address": ethconnect.Get("instance").Delete().value,
+					},
 				}
-			})
+				fromBlock := ethconnect.Get("fromBlock").Delete()
+				if fromBlock.Exists() {
+					contract["firstEvent"] = fromBlock.value
+				}
+				namespaces.Each().Run(func(namespace *ConfigItem) {
+					if namespace.Get("multiparty").Get("enabled").value == true {
+						namespace.Get("multiparty").Get("contract").SetIfEmpty([]interface{}{contract})
+					}
+				})
+			}
 		})
 
 		root.Get("plugins").Get("blockchain").Each().Get("fabric").Get("fabconnect").Run(func(fabconnect *ConfigItem) {
-			contract := map[interface{}]interface{}{
-				"location": map[interface{}]interface{}{
-					"chaincode": fabconnect.Get("chaincode").Delete().value,
-					"channel":   fabconnect.Get("channel").value,
-				},
-			}
-			namespaces.Each().Run(func(namespace *ConfigItem) {
-				if namespace.Get("multiparty").Get("enabled").value == true {
-					namespace.Get("multiparty").Get("contract").SetIfEmpty(contract)
+			if fabconnect.Exists() {
+				contract := map[interface{}]interface{}{
+					"location": map[interface{}]interface{}{
+						"chaincode": fabconnect.Get("chaincode").Delete().value,
+						"channel":   fabconnect.Get("channel").value,
+					},
 				}
-			})
+				namespaces.Each().Run(func(namespace *ConfigItem) {
+					if namespace.Get("multiparty").Get("enabled").value == true {
+						namespace.Get("multiparty").Get("contract").SetIfEmpty([]interface{}{contract})
+					}
+				})
+			}
 		})
 	},
 }
@@ -143,24 +148,39 @@ func migrateVersion(root *ConfigItem, version string) {
 	fmt.Fprintln(os.Stderr)
 }
 
-func Run(cfgFile string) error {
-	yfile, err := ioutil.ReadFile(cfgFile)
-	if err != nil {
-		return err
+func Run(cfgFile []byte, fromVersion, toVersion string) (result string, err error) {
+	var from, to semver.Version
+	if fromVersion != "" {
+		if from, err = semver.Parse(fromVersion); err != nil {
+			return "", fmt.Errorf("bad 'from' version: %s", err)
+		}
 	}
+	if toVersion != "" {
+		if to, err = semver.Parse(toVersion); err != nil {
+			return "", fmt.Errorf("bad 'to' version: %s", err)
+		}
+	}
+
 	data := make(map[interface{}]interface{})
-	err = yaml.Unmarshal(yfile, &data)
+	err = yaml.Unmarshal(cfgFile, &data)
 	if err != nil {
-		return err
+		return "", err
 	}
+
 	root := &ConfigItem{value: data, writer: os.Stderr}
 	for _, version := range getVersions() {
+		if fromVersion != "" && version.LT(from) {
+			continue
+		}
+		if toVersion != "" && version.GT(to) {
+			break
+		}
 		migrateVersion(root, version.String())
 	}
+
 	out, err := yaml.Marshal(data)
-	if err != nil {
-		return err
+	if err == nil {
+		result = string(out)
 	}
-	fmt.Print(string(out))
-	return nil
+	return result, err
 }
