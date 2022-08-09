@@ -32,6 +32,10 @@ type ConfigItemIterator struct {
 	items []*ConfigItem
 }
 
+func NewConfigItem(value interface{}, writer io.Writer) *ConfigItem {
+	return &ConfigItem{value: value, writer: writer}
+}
+
 func (c *ConfigItem) hasChild(name string) (exists bool) {
 	if v, ok := c.value.(map[interface{}]interface{}); ok {
 		_, exists = v[name]

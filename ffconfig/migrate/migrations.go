@@ -148,26 +148,26 @@ func migrateVersion(root *ConfigItem, version string) {
 	fmt.Fprintln(os.Stderr)
 }
 
-func Run(cfgFile []byte, fromVersion, toVersion string) (result string, err error) {
+func Run(cfg []byte, fromVersion, toVersion string) (result []byte, err error) {
 	var from, to semver.Version
 	if fromVersion != "" {
 		if from, err = semver.Parse(fromVersion); err != nil {
-			return "", fmt.Errorf("bad 'from' version: %s", err)
+			return nil, fmt.Errorf("bad 'from' version: %s", err)
 		}
 	}
 	if toVersion != "" {
 		if to, err = semver.Parse(toVersion); err != nil {
-			return "", fmt.Errorf("bad 'to' version: %s", err)
+			return nil, fmt.Errorf("bad 'to' version: %s", err)
 		}
 	}
 
 	data := make(map[interface{}]interface{})
-	err = yaml.Unmarshal(cfgFile, &data)
+	err = yaml.Unmarshal(cfg, &data)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	root := &ConfigItem{value: data, writer: os.Stderr}
+	root := NewConfigItem(data, os.Stderr)
 	for _, version := range getVersions() {
 		if fromVersion != "" && version.LT(from) {
 			continue
@@ -178,9 +178,5 @@ func Run(cfgFile []byte, fromVersion, toVersion string) (result string, err erro
 		migrateVersion(root, version.String())
 	}
 
-	out, err := yaml.Marshal(data)
-	if err == nil {
-		result = string(out)
-	}
-	return result, err
+	return yaml.Marshal(data)
 }

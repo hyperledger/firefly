@@ -36,7 +36,7 @@ publicstorage:
 dataexchange: {}
 sharedstorage:
   type: ipfs
-`, result)
+`, string(result))
 }
 
 func TestMigrate1_0_3(t *testing.T) {
@@ -54,7 +54,7 @@ dataexchange:
   type: ffdx
 sharedstorage:
   type: ipfs
-`, result)
+`, string(result))
 }
 
 func TestMigrate1_0_3Only(t *testing.T) {
@@ -72,7 +72,7 @@ dataexchange:
   type: ffdx
 publicstorage:
   type: ipfs
-`, result)
+`, string(result))
 }
 
 func TestMigrate1_1_0(t *testing.T) {
@@ -117,7 +117,7 @@ plugins:
   - fftokens: {}
     name: erc1155
     type: fftokens
-`, result)
+`, string(result))
 }
 
 func TestMigrate1_1_0Ethconnect(t *testing.T) {
@@ -157,7 +157,7 @@ plugins:
   dataexchange:
   - name: dataexchange0
     type: ffdx
-`, result)
+`, string(result))
 }
 
 func TestMigrate1_1_0Fabconnect(t *testing.T) {
@@ -198,7 +198,7 @@ plugins:
   dataexchange:
   - name: dataexchange0
     type: ffdx
-`, result)
+`, string(result))
 }
 
 func TestMigrateBadVersions(t *testing.T) {

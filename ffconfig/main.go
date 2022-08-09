@@ -27,7 +27,8 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "ffconfig",
-	Short: "Tool for managing and migrating config files for Hyperledger FireFly",
+	Short: "FireFly configuration tool",
+	Long:  "Tool for managing and migrating config files for Hyperledger FireFly",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("a command is required")
 	},
@@ -42,17 +43,25 @@ var migrateCommand = &cobra.Command{
 			return err
 		}
 		out, err := migrate.Run(cfg, fromVersion, toVersion)
-		fmt.Print(out)
-		return err
+		if err != nil {
+			return err
+		}
+		if outFile == "" {
+			fmt.Print(string(out))
+			return nil
+		}
+		return ioutil.WriteFile(outFile, out, 0600)
 	},
 }
 
 var cfgFile string
+var outFile string
 var fromVersion string
 var toVersion string
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "firefly_core.yml", "config file")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "firefly.core.yml", "config file")
+	migrateCommand.PersistentFlags().StringVarP(&outFile, "out", "o", "", "output file (if unspecified, write to stdout)")
 	migrateCommand.PersistentFlags().StringVar(&fromVersion, "from", "", "from version (optional, such as 1.0.0)")
 	migrateCommand.PersistentFlags().StringVar(&toVersion, "to", "", "to version (optional, such as 1.1.0)")
 	rootCmd.AddCommand(migrateCommand)
