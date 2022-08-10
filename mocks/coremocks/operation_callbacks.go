@@ -12,7 +12,7 @@ type OperationCallbacks struct {
 	mock.Mock
 }
 
-// OperationUpdate provides a mock function with given fields: plugin, update
-func (_m *OperationCallbacks) OperationUpdate(plugin core.Named, update *core.OperationUpdate) {
-	_m.Called(plugin, update)
+// OperationUpdate provides a mock function with given fields: update
+func (_m *OperationCallbacks) OperationUpdate(update *core.OperationUpdate) {
+	_m.Called(update)
 }
