@@ -38,11 +38,13 @@ func TestCallbackOperationUpdate(t *testing.T) {
 	cb := NewBlockchainCallbacks()
 	cb.SetOperationalHandler("ns1", mcb)
 
-	mcb.On("OperationUpdate", mbi, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	mbi.On("Name").Return("utblockchain")
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
 		return update.NamespacedOpID == nsOpID &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "tx1" &&
-			update.ErrorMessage == "err"
+			update.ErrorMessage == "err" &&
+			update.Plugin == "utblockchain"
 	})).Return().Once()
 	cb.OperationUpdate(context.Background(), mbi, nsOpID, core.OpStatusSucceeded, "tx1", "err", fftypes.JSONObject{})
 

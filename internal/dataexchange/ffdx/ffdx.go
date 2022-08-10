@@ -65,7 +65,7 @@ type callbacks struct {
 func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.OperationUpdate) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(cb.plugin, update)
+		handler.OperationUpdate(update)
 	} else {
 		log.L(ctx).Errorf("No handler found for DX operation '%s'", update.NamespacedOpID)
 		update.OnComplete()
