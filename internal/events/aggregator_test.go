@@ -938,6 +938,19 @@ func TestProcessMsgFailData(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
+func TestProcessMsgNoData(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(nil, nil, false, nil)
+
+	err := ag.processMessage(ag.ctx, &core.BatchManifest{}, &core.Pin{Masked: true, Sequence: 12345}, 10, &core.MessageManifestEntry{}, nil)
+	assert.NoError(t, err)
+
+	mdm.AssertExpectations(t)
+}
+
 func TestProcessMsgFailMissingData(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
