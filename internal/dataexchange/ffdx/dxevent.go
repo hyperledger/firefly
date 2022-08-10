@@ -90,6 +90,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 	switch msg.Type {
 	case messageFailed:
 		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         core.OpStatusFailed,
 			ErrorMessage:   msg.Error,
@@ -103,6 +104,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			status = core.OpStatusPending
 		}
 		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         status,
 			Output:         msg.Info,
@@ -111,6 +113,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		return
 	case messageAcknowledged:
 		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         core.OpStatusSucceeded,
 			VerifyManifest: h.capabilities.Manifest,
@@ -121,6 +124,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		return
 	case blobFailed:
 		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         core.OpStatusFailed,
 			ErrorMessage:   msg.Error,
@@ -134,6 +138,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			status = core.OpStatusPending
 		}
 		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         status,
 			Output:         msg.Info,
@@ -142,6 +147,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		return
 	case blobAcknowledged:
 		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         core.OpStatusSucceeded,
 			Output:         msg.Info,

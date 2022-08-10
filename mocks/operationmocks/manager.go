@@ -141,9 +141,9 @@ func (_m *Manager) Start() error {
 	return r0
 }
 
-// SubmitOperationUpdate provides a mock function with given fields: plugin, update
-func (_m *Manager) SubmitOperationUpdate(plugin core.Named, update *core.OperationUpdate) {
-	_m.Called(plugin, update)
+// SubmitOperationUpdate provides a mock function with given fields: update
+func (_m *Manager) SubmitOperationUpdate(update *core.OperationUpdate) {
+	_m.Called(update)
 }
 
 // WaitStop provides a mock function with given fields:
