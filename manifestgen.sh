@@ -43,6 +43,7 @@ rm -f manifest.json
 
 SERVICES=(
     "ethconnect"
+    "evmconnect"
     "fabconnect"
     "dataexchange-https"
     "tokens-erc1155"

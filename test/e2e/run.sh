@@ -51,6 +51,11 @@ DATABASE_TYPE=${DATABASE_TYPE:-sqlite3}
 BLOCKCHAIN_PROVIDER=${BLOCKCHAIN_PROVIDER:-geth}
 TOKENS_PROVIDER=${TOKENS_PROVIDER:-erc20_erc721}
 
+BLOCKCHAIN_CONNECTOR_FLAG=""
+if [ -n "${BLOCKCHAIN_CONNECTOR}" ]; then
+  BLOCKCHAIN_CONNECTOR_FLAG="--blockchain-connector ${BLOCKCHAIN_CONNECTOR}"
+fi
+
 if [ -z "${TEST_SUITE}" ]; then
   if [ "${BLOCKCHAIN_PROVIDER}" == "fabric" ]; then
     if [ "${MULTIPARTY_ENABLED}" == "true" ]; then
@@ -81,7 +86,7 @@ fi
 
 if [ "$CREATE_STACK" == "true" ]; then
   $CLI remove -f $STACK_NAME
-  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false --multiparty=$MULTIPARTY_ENABLED
+  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER $BLOCKCHAIN_CONNECTOR_FLAG --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false --multiparty=$MULTIPARTY_ENABLED
   checkOk $?
 
   $CLI pull $STACK_NAME -r 3
