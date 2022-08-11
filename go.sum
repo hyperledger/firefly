@@ -737,6 +737,8 @@ github.com/hyperledger/firefly-common v0.1.19-0.20220811195438-ef727fa10629 h1:i
 github.com/hyperledger/firefly-common v0.1.19-0.20220811195438-ef727fa10629/go.mod h1:MNbaI2spBsdZYOub6Duj9xueE7Qyu9itOmJ4vE8tjYw=
 github.com/hyperledger/firefly-common v0.1.19-0.20220811200324-b6c4c44d2d0d h1:9s1MI4RIfKgftrGQ6sI2gvQBEQElq2CQOs3uaiB44s8=
 github.com/hyperledger/firefly-common v0.1.19-0.20220811200324-b6c4c44d2d0d/go.mod h1:MNbaI2spBsdZYOub6Duj9xueE7Qyu9itOmJ4vE8tjYw=
+github.com/hyperledger/firefly-common v0.1.20 h1:0dShkjlIShyBxkXRmu3vLmpEK6xrqmfc8GhF6k0Vgbg=
+github.com/hyperledger/firefly-common v0.1.20/go.mod h1:gMlv4Iy5JjnzXmSEdb+tWVDIc/2GhL9MRcgNX+VmI4M=
 github.com/hyperledger/firefly-signer v0.9.12 h1:pCPiGHx1+MbTsIQuRkoQmfWxvpcvtGHVavls0NnH0po=
 github.com/hyperledger/firefly-signer v0.9.12/go.mod h1:GPQRUZOFOAjkLmg8GDjZUjEdUD0gcar+CSVhwltIwyw=
 github.com/iancoleman/strcase v0.2.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
