@@ -29,7 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -39,10 +39,8 @@ import (
 func newTestBatchProcessor(t *testing.T, dispatch DispatchHandler) (func(), *databasemocks.Plugin, *batchProcessor) {
 	bm, cancel := newTestBatchManager(t)
 	mdi := bm.database.(*databasemocks.Plugin)
-	mni := bm.ni.(*sysmessagingmocks.LocalNodeInfo)
 	mdm := bm.data.(*datamocks.Manager)
 	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
-	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID()).Maybe()
 	bp := newBatchProcessor(bm, &batchProcessorConf{
 		txType:   core.TransactionTypeBatchPin,
 		signer:   core.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
@@ -90,6 +88,9 @@ func TestUnfilledBatch(t *testing.T) {
 	mdm := bp.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
+	mim := bp.bm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
+
 	// Dispatch the work
 	go func() {
 		for i := 0; i < 5; i++ {
@@ -112,6 +113,7 @@ func TestUnfilledBatch(t *testing.T) {
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestBatchSizeOverflow(t *testing.T) {
@@ -134,6 +136,9 @@ func TestBatchSizeOverflow(t *testing.T) {
 
 	mdm := bp.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
+
+	mim := bp.bm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 
 	// Dispatch the work
 	msgIDs := []*fftypes.UUID{fftypes.NewUUID(), fftypes.NewUUID()}
@@ -161,6 +166,7 @@ func TestBatchSizeOverflow(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
@@ -192,6 +198,9 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 		}).
 		Return(nil, fmt.Errorf("pop"))
 
+	mim := bp.bm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
+
 	// Generate the work
 	msgid := fftypes.NewUUID()
 	go func() {
@@ -207,6 +216,9 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	// Close to unblock
 	bp.cancelCtx()
 	<-bp.done
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestInsertNewNonceFail(t *testing.T) {
@@ -412,6 +424,9 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	mdm := bp.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
+	mim := bp.bm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
+
 	// Dispatch the work
 	go func() {
 		for i := 0; i < 5; i++ {
@@ -434,6 +449,7 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
@@ -462,6 +478,9 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
 	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
+
+	mim := bp.bm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 
 	groupID := fftypes.NewRandB32()
 	msg1 := &core.Message{
@@ -494,6 +513,9 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 	<-bp.done
 
 	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestMaskContextsUpdateMessageFail(t *testing.T) {
@@ -512,6 +534,9 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 	mdi.On("InsertNonce", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateMessage", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
+	mim := bp.bm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
+
 	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
@@ -529,6 +554,7 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 	<-bp.done
 
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestBigBatchEstimate(t *testing.T) {

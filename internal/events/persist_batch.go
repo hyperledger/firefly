@@ -213,11 +213,11 @@ func (em *eventManager) validateBatchMessage(ctx context.Context, batch *core.Ba
 }
 
 func (em *eventManager) sentByUs(ctx context.Context, batch *core.Batch) bool {
-	localNode := em.ni.GetNodeUUID(ctx)
-	if batch.Node == nil {
+	localNode, err := em.identity.GetLocalNode(ctx)
+	if localNode == nil || err != nil {
 		// This is from a node that hasn't yet completed registration, so we can't optimize
 		return false
-	} else if batch.Node.Equals(localNode) {
+	} else if batch.Node.Equals(localNode.ID) {
 		// We sent the batch, so we should already have all the messages and data locally
 		return true
 	}

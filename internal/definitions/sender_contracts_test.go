@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
+	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -84,7 +84,7 @@ func TestDefineFFIOk(t *testing.T) {
 	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
 
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
@@ -160,7 +160,7 @@ func TestDefineContractAPIOk(t *testing.T) {
 	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
 
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 

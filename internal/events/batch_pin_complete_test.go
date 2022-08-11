@@ -620,6 +620,9 @@ func TestPersistBatchGoodDataUpsertOptimizeFail(t *testing.T) {
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(fmt.Errorf("optimzation miss"))
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	bp, valid, err := em.persistBatch(context.Background(), batch)
 	assert.Nil(t, bp)
 	assert.False(t, valid)
@@ -637,6 +640,9 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimzation miss"))
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("pop"))
+
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 
 	bp, valid, err := em.persistBatch(context.Background(), batch)
 	assert.False(t, valid)

@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -77,23 +76,6 @@ func (or *orchestrator) getPlugins() core.NamespaceStatusPlugins {
 		Tokens:        tokensArray,
 		Identity:      []*core.NamespaceStatusPlugin{},
 	}
-}
-
-func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
-	if or.node != nil {
-		return or.node
-	}
-	status, err := or.GetStatus(ctx)
-	if err != nil {
-		log.L(or.ctx).Warnf("Failed to query local node UUID: %s", err)
-		return nil
-	}
-	if status.Node.Registered {
-		or.node = status.Node.ID
-	} else {
-		log.L(or.ctx).Infof("Node not yet registered")
-	}
-	return or.node
 }
 
 func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceStatus, err error) {

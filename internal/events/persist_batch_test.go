@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -158,11 +159,15 @@ func TestPersistBatchContentSendByUsOK(t *testing.T) {
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", em.ctx, batch.Payload.Messages[0].Header.ID).Return(batch.Payload.Messages[0], batch.Payload.Data, true, nil)
 
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPersistBatchContentSentByNil(t *testing.T) {
@@ -180,11 +185,15 @@ func TestPersistBatchContentSentByNil(t *testing.T) {
 		args[2].(database.PostCompletionHook)()
 	})
 
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(nil, nil)
+
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 
@@ -206,12 +215,16 @@ func TestPersistBatchContentSentByUsNotFoundFallback(t *testing.T) {
 		args[2].(database.PostCompletionHook)()
 	})
 
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 
@@ -236,12 +249,16 @@ func TestPersistBatchContentSentByUsFoundMismatch(t *testing.T) {
 	mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization miss"))
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(database.HashMismatch)
 
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.NoError(t, err)
 	assert.False(t, ok)
 
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 
@@ -267,12 +284,16 @@ func TestPersistBatchContentInsertMessagesFail(t *testing.T) {
 	}
 	mdm.On("UpdateMessageCache", msgData.message, msgData.data).Return()
 
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{msgData})
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPersistBatchContentSentByUsFoundError(t *testing.T) {
@@ -287,11 +308,15 @@ func TestPersistBatchContentSentByUsFoundError(t *testing.T) {
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", em.ctx, batch.Payload.Messages[0].Header.ID).Return(nil, nil, false, fmt.Errorf("pop"))
 
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.Regexp(t, "pop", err)
 	assert.False(t, ok)
 
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 
@@ -307,12 +332,15 @@ func TestPersistBatchContentDataHashMismatch(t *testing.T) {
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(fmt.Errorf("optimization miss"))
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationExisting).Return(database.HashMismatch)
 
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.NoError(t, err)
 	assert.False(t, ok)
 
 	mdi.AssertExpectations(t)
-
+	mim.AssertExpectations(t)
 }
 
 func TestPersistBatchContentDataMissingBlobRef(t *testing.T) {
