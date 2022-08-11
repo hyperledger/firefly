@@ -1274,6 +1274,7 @@ func TestApprovalEvents(t *testing.T) {
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
 			"id":          "000000000010/000020/000030/000040",
+			"poolData":    "ns1",
 			"subject":     "a:b",
 			"poolLocator": "F1",
 			"signer":      "0x0",
@@ -1299,14 +1300,19 @@ func TestApprovalEvents(t *testing.T) {
 	assert.Equal(t, `{"data":{"id":"19"},"event":"ack"}`, string(msg))
 
 	// token-approval: callback fail
+	errProcessed := make(chan struct{})
 	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
 		return t.Approved == true && t.Operator == "0x0" && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
-	})).Return(fmt.Errorf("pop")).Once()
+	})).Return(fmt.Errorf("pop")).Once().Run(func(args mock.Arguments) {
+		// We do not ack in the case of an error
+		close(errProcessed)
+	})
 	fromServer <- fftypes.JSONObject{
 		"id":    "20",
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
 			"id":          "000000000010/000020/000030/000040",
+			"poolData":    "", // deliberately to drive to all namespaces
 			"subject":     "a:b",
 			"poolLocator": "F1",
 			"signer":      "0x0",
@@ -1321,6 +1327,9 @@ func TestApprovalEvents(t *testing.T) {
 			},
 		},
 	}.String()
+	<-errProcessed
+
+	mcb.AssertExpectations(t)
 }
 
 func TestEventLoopReceiveClosed(t *testing.T) {
