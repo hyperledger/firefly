@@ -834,7 +834,12 @@ func TestReceiptEvents(t *testing.T) {
 	fromServer <- fftypes.JSONObject{
 		"id":    "3",
 		"event": "receipt",
-		"data":  fftypes.JSONObject{"id": "wrong"}, // passed through to OperationUpdate to ignore
+		"data": fftypes.JSONObject{
+			"headers": fftypes.JSONObject{
+				"requestId": "wrong", // passed through to OperationUpdate to ignore
+				"type":      "TransactionUpdate",
+			},
+		},
 	}.String()
 
 	// receipt: success
@@ -847,9 +852,9 @@ func TestReceiptEvents(t *testing.T) {
 		"id":    "4",
 		"event": "receipt",
 		"data": fftypes.JSONObject{
-			"id": "ns1:" + opID.String(),
 			"headers": fftypes.JSONObject{
-				"type": "TransactionSuccess",
+				"requestId": "ns1:" + opID.String(),
+				"type":      "TransactionSuccess",
 			},
 			"transactionHash": "0xffffeeee",
 		},
@@ -865,9 +870,9 @@ func TestReceiptEvents(t *testing.T) {
 		"id":    "5",
 		"event": "receipt",
 		"data": fftypes.JSONObject{
-			"id": "ns1:" + opID.String(),
 			"headers": fftypes.JSONObject{
-				"type": "TransactionUpdate",
+				"requestId": "ns1:" + opID.String(),
+				"type":      "TransactionUpdate",
 			},
 			"transactionHash": "0xffffeeee",
 		},
@@ -883,9 +888,9 @@ func TestReceiptEvents(t *testing.T) {
 		"id":    "5",
 		"event": "receipt",
 		"data": fftypes.JSONObject{
-			"id": "ns1:" + opID.String(),
 			"headers": fftypes.JSONObject{
-				"type": "TransactionFailed",
+				"requestId": "ns1:" + opID.String(),
+				"type":      "TransactionFailed",
 			},
 			"transactionHash": "0xffffeeee",
 		},
