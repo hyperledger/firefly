@@ -1401,6 +1401,41 @@ func TestAttemptMessageDispatchFailValidateData(t *testing.T) {
 
 }
 
+func TestAttemptMessageDispatchBadSigner(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+	bs := newBatchState(ag)
+
+	blobHash := fftypes.NewRandB32()
+
+	org1 := newTestOrg("org1")
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(ev *core.Event) bool {
+		return ev.Type == core.EventTypeMessageRejected
+	})).Return(nil)
+
+	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
+			Topics:    []string{"topic1"},
+		},
+	}, core.DataArray{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &core.BlobRef{
+			Hash:   blobHash,
+			Public: "public-ref",
+		}},
+	}, nil, bs, &core.Pin{Signer: ""})
+	assert.NoError(t, err)
+	assert.True(t, dispatched)
+
+	err = bs.RunFinalize(ag.ctx)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
@@ -1634,19 +1669,37 @@ func TestDispatchBroadcastQueuesLaterDispatch(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePublicBlobRefs).Return(msg1, core.DataArray{}, true, nil).Once()
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePublicBlobRefs).Return(msg2, core.DataArray{}, true, nil).Once()
+	data1 := core.DataArray{}
+	data2 := core.DataArray{}
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePublicBlobRefs).Return(msg1, data1, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePublicBlobRefs).Return(msg2, data2, true, nil).Once()
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 
+	mdh := ag.definitions.(*definitionsmocks.Handler)
+	result1 := definitions.HandlerResult{Action: definitions.ActionConfirm}
+	mdh.On("HandleDefinitionBroadcast", ag.ctx, mock.Anything, msg1, data1, manifest.TX.ID).Return(result1, nil).Once()
+	result2 := definitions.HandlerResult{Action: definitions.ActionWait}
+	mdh.On("HandleDefinitionBroadcast", ag.ctx, mock.Anything, msg2, data2, manifest.TX.ID).Return(result2, nil).Once()
+
 	// First message should dispatch
-	err := ag.processMessage(ag.ctx, manifest, &core.Pin{Sequence: 12345}, 0, manifest.Messages[0], bs)
+	pin1 := &core.Pin{Sequence: 12345, Signer: msg1.Header.Key}
+	err := ag.processMessage(ag.ctx, manifest, pin1, 0, manifest.Messages[0], bs)
 	assert.NoError(t, err)
 
-	// Second message should not (mocks have Once limit on GetMessageData to confirm)
-	err = ag.processMessage(ag.ctx, manifest, &core.Pin{Sequence: 12346}, 0, manifest.Messages[1], bs)
+	// Second message should block
+	pin2 := &core.Pin{Sequence: 12346, Signer: msg2.Header.Key}
+	err = ag.processMessage(ag.ctx, manifest, pin2, 0, manifest.Messages[1], bs)
 	assert.NoError(t, err)
+
+	assert.Len(t, bs.dispatchedMessages, 1)
+	assert.Equal(t, msg1.Header.ID, bs.dispatchedMessages[0].msgID)
+
+	h := sha256.New()
+	h.Write([]byte(msg2.Header.Topics[0]))
+	msgContext := fftypes.HashResult(h)
+	assert.Equal(t, pin2.Sequence, bs.unmaskedContexts[*msgContext].blockedBy)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -1664,12 +1717,15 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePins).Return(msg1, core.DataArray{}, true, nil).Once()
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePins).Return(msg2, core.DataArray{}, true, nil).Once()
+	data1 := core.DataArray{}
+	data2 := core.DataArray{{Blob: &core.BlobRef{Hash: fftypes.NewRandB32()}}}
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePins).Return(msg1, data1, true, nil).Once()
+	mdm.On("ValidateAll", ag.ctx, data1).Return(true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePins).Return(msg2, data2, true, nil).Once()
 
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
-	member1NonceOne := initNPG.calcPinHash("org1", 1)
-	member1NonceTwo := initNPG.calcPinHash("org1", 2)
+	member1NonceOne := initNPG.calcPinHash("did:firefly:org/org1", 1)
+	member1NonceTwo := initNPG.calcPinHash("did:firefly:org/org1", 2)
 	h := sha256.New()
 	h.Write([]byte("topic1"))
 	context := fftypes.HashResult(h)
@@ -1677,18 +1733,24 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetNextPinsForContext", ag.ctx, "ns1", mock.Anything).Return([]*core.NextPin{
 		{Context: context, Nonce: 1 /* match member1NonceOne */, Identity: org1.DID, Hash: member1NonceOne},
-	}, nil)
+	}, nil).Once()
+	mdi.On("GetBlobMatchingHash", ag.ctx, data2[0].Blob.Hash).Return(nil, nil)
 
 	msg1.Pins = core.FFStringArray{member1NonceOne.String()}
 	msg2.Pins = core.FFStringArray{member1NonceTwo.String()}
 
 	// First message should dispatch
-	err := ag.processMessage(ag.ctx, manifest, &core.Pin{Masked: true, Sequence: 12345}, 0, manifest.Messages[0], bs)
+	pin1 := &core.Pin{Masked: true, Sequence: 12345, Signer: msg1.Header.Key}
+	err := ag.processMessage(ag.ctx, manifest, pin1, 0, manifest.Messages[0], bs)
 	assert.NoError(t, err)
 
-	// Second message should not (mocks have Once limit on GetMessageData to confirm)
-	err = ag.processMessage(ag.ctx, manifest, &core.Pin{Masked: true, Sequence: 12346}, 0, manifest.Messages[1], bs)
+	// Second message should block
+	pin2 := &core.Pin{Masked: true, Sequence: 12346, Signer: msg2.Header.Key}
+	err = ag.processMessage(ag.ctx, manifest, pin2, 0, manifest.Messages[1], bs)
 	assert.NoError(t, err)
+
+	assert.Len(t, bs.dispatchedMessages, 1)
+	assert.Equal(t, msg1.Header.ID, bs.dispatchedMessages[0].msgID)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -1776,30 +1838,27 @@ func TestDefinitionBroadcastRejectSignerLookupFail(t *testing.T) {
 func TestDefinitionBroadcastRejectSignerLookupWrongOrg(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	bs := newBatchState(ag)
 
 	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(newTestOrg("org2"), nil)
 
-	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(ev *core.Event) bool {
+		return ev.Type == core.EventTypeMessageRejected
+	})).Return(nil)
+
+	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, bs, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
-	assert.False(t, valid)
+	assert.True(t, valid)
+
+	err = bs.RunFinalize(ag.ctx)
+	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
-}
-
-func TestDefinitionBroadcastRejectBadSigner(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	msg1, _, org1, _ := newTestManifest(core.MessageTypeDefinition, nil)
-	msg1.Header.SignerRef = core.SignerRef{Key: "0x23456", Author: org1.DID}
-
-	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
-	assert.NoError(t, err)
-	assert.False(t, valid)
-
+	mdi.AssertExpectations(t)
 }
 
 func TestDefinitionBroadcastParkUnregisteredSignerIdentityClaim(t *testing.T) {
@@ -1824,20 +1883,30 @@ func TestDefinitionBroadcastParkUnregisteredSignerIdentityClaim(t *testing.T) {
 	msh.AssertExpectations(t)
 }
 
-func TestDefinitionBroadcastRootUnregisteredOk(t *testing.T) {
+func TestDefinitionBroadcastRootUnregistered(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	bs := newBatchState(ag)
 
 	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil)
 
-	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(ev *core.Event) bool {
+		return ev.Type == core.EventTypeMessageRejected
+	})).Return(nil)
+
+	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, bs, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
-	assert.False(t, valid)
+	assert.True(t, valid)
+
+	err = bs.RunFinalize(ag.ctx)
+	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestDefinitionBroadcastActionWait(t *testing.T) {
