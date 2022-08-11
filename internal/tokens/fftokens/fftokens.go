@@ -51,7 +51,8 @@ type callbacks struct {
 func (cb *callbacks) OperationUpdate(ctx context.Context, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(cb.plugin, &core.OperationUpdate{
+		handler.OperationUpdate(&core.OperationUpdate{
+			Plugin:         cb.plugin.Name(),
 			NamespacedOpID: nsOpID,
 			Status:         status,
 			BlockchainTXID: blockchainTXID,
@@ -253,16 +254,21 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 	l := log.L(ctx)
 
 	requestID := data.GetString("id")
-	success := data.GetBool("success")
 	message := data.GetString("message")
 	transactionHash := data.GetString("transactionHash")
 	if requestID == "" {
 		l.Errorf("Reply cannot be processed - missing fields: %+v", data)
 		return
 	}
-	updateType := core.OpStatusSucceeded
-	if !success {
-		updateType = core.OpStatusFailed
+	headers := data.GetObject("headers")
+	updateType := core.OpStatusFailed
+	if headers != nil {
+		switch headers.GetString("type") {
+		case "TransactionSuccess":
+			updateType = core.OpStatusSucceeded
+		case "TransactionUpdate":
+			updateType = core.OpStatusPending
+		}
 	}
 	l.Infof("Received operation update: status=%s request=%s message=%s", updateType, requestID, message)
 	ft.callbacks.OperationUpdate(ctx, requestID, updateType, transactionHash, message, data)

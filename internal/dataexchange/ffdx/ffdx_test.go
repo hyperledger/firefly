@@ -125,7 +125,7 @@ func TestInitMissingURL(t *testing.T) {
 
 func opAcker() func(args mock.Arguments) {
 	return func(args mock.Arguments) {
-		args[1].(*core.OperationUpdate).OnComplete()
+		args[0].(*core.OperationUpdate).OnComplete()
 	}
 }
 
@@ -155,8 +155,7 @@ func TestGetEndpointInfo(t *testing.T) {
 	peer, err := h.GetEndpointInfo(context.Background(), "node1")
 	assert.NoError(t, err)
 	assert.Equal(t, fftypes.JSONObject{
-		"nodeID":   "peer1/node1",
-		"id":       "peer1",
+		"id":       "peer1/node1",
 		"endpoint": "https://peer1.example.com",
 		"cert":     "cert data...",
 	}, peer)
@@ -422,30 +421,33 @@ func TestMessageEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", h, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
 		return ev.NamespacedOpID == namespacedID1 &&
 			ev.Status == core.OpStatusFailed &&
-			ev.ErrorMessage == "pop"
+			ev.ErrorMessage == "pop" &&
+			ev.Plugin == "ffdx"
 	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"1","type":"message-failed","requestID":"` + namespacedID1 + `","error":"pop"}`
 	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
 		return ev.NamespacedOpID == namespacedID2 &&
-			ev.Status == core.OpStatusSucceeded
+			ev.Status == core.OpStatusSucceeded &&
+			ev.Plugin == "ffdx"
 	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"2","type":"message-delivered","requestID":"` + namespacedID2 + `"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
 	namespacedID3 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
 		return ev.NamespacedOpID == namespacedID3 &&
 			ev.Status == core.OpStatusSucceeded &&
 			ev.DXManifest == `{"manifest":true}` &&
-			ev.Output.String() == `{"signatures":"and stuff"}`
+			ev.Output.String() == `{"signatures":"and stuff"}` &&
+			ev.Plugin == "ffdx"
 	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"3","type":"message-acknowledged","requestID":"` + namespacedID3 + `","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
@@ -479,20 +481,22 @@ func TestBlobEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	namespacedID5 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
 		return ev.NamespacedOpID == namespacedID5 &&
 			ev.Status == core.OpStatusFailed &&
-			ev.ErrorMessage == "pop"
+			ev.ErrorMessage == "pop" &&
+			ev.Plugin == "ffdx"
 	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"5","type":"blob-failed","requestID":"` + namespacedID5 + `","error":"pop"}`
 	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
 
 	namespacedID6 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
 		return ev.NamespacedOpID == namespacedID6 &&
 			ev.Status == core.OpStatusSucceeded &&
-			ev.Output.String() == `{"some":"details"}`
+			ev.Output.String() == `{"some":"details"}` &&
+			ev.Plugin == "ffdx"
 	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"6","type":"blob-delivered","requestID":"` + namespacedID6 + `","info":{"some":"details"}}`
 	msg = <-toServer
@@ -510,10 +514,11 @@ func TestBlobEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"9"}`, string(msg))
 
 	namespacedID10 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
 		return ev.NamespacedOpID == namespacedID10 &&
 			ev.Status == core.OpStatusSucceeded &&
-			ev.Output.String() == `{"signatures":"and stuff"}`
+			ev.Output.String() == `{"signatures":"and stuff"}` &&
+			ev.Plugin == "ffdx"
 	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"10","type":"blob-acknowledged","requestID":"` + namespacedID10 + `","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
@@ -542,18 +547,20 @@ func TestEventsWithManifest(t *testing.T) {
 	h.SetOperationHandler("ns1", ocb)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
 		return ev.NamespacedOpID == namespacedID1 &&
-			ev.Status == core.OpStatusPending
+			ev.Status == core.OpStatusPending &&
+			ev.Plugin == "ffdx"
 	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"1","type":"message-delivered","requestID":"` + namespacedID1 + `"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.Anything, mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
 		return ev.NamespacedOpID == namespacedID2 &&
-			ev.Status == core.OpStatusPending
+			ev.Status == core.OpStatusPending &&
+			ev.Plugin == "ffdx"
 	})).Run(opAcker()).Return(nil)
 	fromServer <- `{"id":"2","type":"blob-delivered","requestID":"` + namespacedID2 + `"}`
 	msg = <-toServer

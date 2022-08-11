@@ -42,6 +42,7 @@ CLI_SECTION=$(cat manifest.json | jq .cli)
 rm -f manifest.json
 
 SERVICES=(
+    "evmconnect"
     "ethconnect"
     "evmconnect"
     "fabconnect"

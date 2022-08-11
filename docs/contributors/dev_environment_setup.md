@@ -99,7 +99,7 @@ At a certain point in the startup process, the CLI will pause and wait for up to
 The CLI will print out the command line which can be copied and pasted into another terminal window to run FireFly. *This command should be run from the `firefly` core project directory.* Here is an example of the command that the CLI will tell you to run:
 
 ```
-./firefly -f ~/.stacks/firefly/dev/init/config/firefly_core_0.yml
+firefly -f ~/.firefly/stacks/dev/runtime/config/firefly_core_0.yml
 ```
 
 > **NOTE**: The first time you run FireFly with a fresh database, it will need a directory of database migrations to apply to the empty database. If you run FireFly from the `firefly` project directory you cloned from GitHub, it will automatically find these and apply them. If you run it from some other directory, you will have to point FireFly to the migrations on your own.

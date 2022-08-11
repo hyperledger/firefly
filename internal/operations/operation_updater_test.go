@@ -34,12 +34,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type mockplug struct{}
-
-func (mp *mockplug) Name() string {
-	return "unittest"
-}
-
 func newTestOperationUpdater(t *testing.T) *operationUpdater {
 	return newTestOperationUpdaterCommon(t, &database.Capabilities{Concurrency: true})
 }
@@ -177,18 +171,18 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 
 	om.Start()
 
-	om.SubmitOperationUpdate(&mockplug{}, &core.OperationUpdate{
+	om.SubmitOperationUpdate(&core.OperationUpdate{
 		NamespacedOpID: "ns1:" + opID1.String(),
 		Status:         core.OpStatusSucceeded,
 		BlockchainTXID: "tx12345",
 	})
-	om.SubmitOperationUpdate(&mockplug{}, &core.OperationUpdate{
+	om.SubmitOperationUpdate(&core.OperationUpdate{
 		NamespacedOpID: "ns1:" + opID2.String(),
 		Status:         core.OpStatusFailed,
 		ErrorMessage:   "err1",
 		Output:         fftypes.JSONObject{"test": true},
 	})
-	om.SubmitOperationUpdate(&mockplug{}, &core.OperationUpdate{
+	om.SubmitOperationUpdate(&core.OperationUpdate{
 		NamespacedOpID: "ns1:" + opID3.String(),
 		Status:         core.OpStatusFailed,
 		ErrorMessage:   "err2",
@@ -303,6 +297,25 @@ func TestDoUpdateIgnoreBadID(t *testing.T) {
 	}, []*core.Operation{}, []*core.Transaction{})
 	assert.NoError(t, err)
 
+}
+
+func TestDoUpdateFailWrongPlugin(t *testing.T) {
+	ou := newTestOperationUpdaterNoConcurrency(t)
+	defer ou.close()
+
+	opID1 := fftypes.NewUUID()
+	txID1 := fftypes.NewUUID()
+
+	ou.initQueues()
+
+	err := ou.doUpdate(ou.ctx, &core.OperationUpdate{
+		NamespacedOpID: "ns1:" + opID1.String(), Status: core.OpStatusSucceeded, BlockchainTXID: "0x12345", Plugin: "plugin2",
+	}, []*core.Operation{
+		{Namespace: "ns1", ID: opID1, Type: core.OpTypeBlockchainInvoke, Transaction: txID1, Plugin: "plugin1"},
+	}, []*core.Transaction{
+		{ID: txID1},
+	})
+	assert.NoError(t, err)
 }
 
 func TestDoUpdateFailTransactionUpdate(t *testing.T) {
