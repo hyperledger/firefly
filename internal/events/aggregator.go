@@ -421,10 +421,13 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		cro = data.CRORequirePublicBlobRefs
 	}
 	msg, data, dataAvailable, err := ag.data.GetMessageWithDataCached(ctx, msgEntry.ID, cro)
-	if err != nil {
+	switch {
+	case err != nil:
 		return err
-	}
-	if !dataAvailable {
+	case msg == nil:
+		l.Debugf("Message '%s' in batch '%s' is not yet available", msgEntry.ID, manifest.ID)
+		return nil
+	case !dataAvailable:
 		l.Errorf("Message '%s' in batch '%s' is missing data", msgEntry.ID, manifest.ID)
 		return nil
 	}

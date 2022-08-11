@@ -207,6 +207,7 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*core.O
 	if len(opIDs) == 0 {
 		return nil
 	}
+	// TODO: cache these operation queries
 	opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", opIDs)
 	ops, _, err := ou.database.GetOperations(ctx, ou.manager.namespace, opFilter)
 	if err != nil {
@@ -241,7 +242,7 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*core.O
 
 func (ou *operationUpdater) doUpdate(ctx context.Context, update *core.OperationUpdate, ops []*core.Operation, transactions []*core.Transaction) error {
 
-	_, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
+	_, updateID, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if err != nil {
 		log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
 		return nil
@@ -250,7 +251,11 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *core.Operation
 	// Find the operation we already retrieved, and do the update
 	var op *core.Operation
 	for _, candidate := range ops {
-		if id.Equals(candidate.ID) {
+		if updateID.Equals(candidate.ID) {
+			if update.Plugin != candidate.Plugin {
+				log.L(ctx).Debugf("Operation update '%s' from '%s' ignored, as it does not match operation source '%s'", update.NamespacedOpID, update.Plugin, candidate.Plugin)
+				return nil
+			}
 			op = candidate
 			break
 		}
