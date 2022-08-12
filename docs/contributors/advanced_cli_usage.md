@@ -112,7 +112,7 @@ docker build -t ghcr.io/hyperledger/firefly .
 ```
 
 ## Edit your `manifest.json` file
-Next, edit the `fabconnect` section of the `manifest.json` file and add the following section:
+Next, edit the `manifest.json` file and add the following section:
 
 ```json
 ...
