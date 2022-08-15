@@ -2,7 +2,7 @@
 layout: default
 title: Define a datatype
 parent: pages.tutorials
-nav_order: 7
+nav_order: 3
 ---
 
 # Define a datatype

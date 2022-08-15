@@ -25,3 +25,6 @@ pages:
   reference: Reference
   tutorials: Tutorials
   understanding_firefly: Understanding FireFly
+  chains: Connecting to other chains
+  polygon_testnet: Polygon Testnet
+  remote_fabric_network: Remote Fabric Network

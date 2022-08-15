@@ -2,7 +2,7 @@
 layout: i18n_page
 title: pages.broadcast_data
 parent: pages.tutorials
-nav_order: 4
+nav_order: 1
 ---
 
 # Broadcast data
