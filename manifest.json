@@ -45,8 +45,8 @@
     }
   },
   "ui": {
-    "tag": "v1.1.0-alpha.2",
-    "release": "v1.1.0-alpha.2"
+    "tag": "v1.1.0-alpha.3",
+    "release": "v1.1.0-alpha.3"
   },
   "cli": {
     "tag": "v1.1.0-alpha.2"
