@@ -36,6 +36,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const apiVersion = "1.1" // Test will validate this does not mismatch the first two digits of a release semver
+
 const configSuffix = "core"
 
 var sigs = make(chan os.Signal, 1)
@@ -83,7 +85,10 @@ func getRootManager() namespace.Manager {
 	if _utManager != nil {
 		return _utManager
 	}
-	return namespace.NewNamespaceManager(true)
+	return namespace.NewNamespaceManager(&namespace.InitOptions{
+		WithDefaults: true,
+		Version:      getVersion(),
+	})
 }
 
 // Execute is called by the main method of the package

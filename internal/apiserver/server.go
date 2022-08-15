@@ -319,6 +319,14 @@ func (as *apiServer) handlerFactory() *ffapi.HandlerFactory {
 	}
 }
 
+func (as *apiServer) versionInfo(mgr namespace.Manager) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	return func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+		res.Header().Set("Content-Type", "application/json")
+		v := mgr.Version()
+		return 200, json.NewEncoder(res).Encode(&v)
+	}
+}
+
 func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager) *mux.Router {
 	r := mux.NewRouter()
 	hf := as.handlerFactory()
@@ -347,6 +355,7 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 
 	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, hf.APIWrapper(as.swaggerHandler(as.swaggerGenerator(routes, apiBaseURL))))
 	r.HandleFunc(`/api`, hf.APIWrapper(hf.SwaggerUIHandler(publicURL+"/api/swagger.yaml")))
+	r.HandleFunc(`/api/version`, hf.APIWrapper(as.versionInfo(mgr)))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	ws, _ := eifactory.GetPlugin(ctx, "websockets")

@@ -371,6 +371,27 @@ func TestContractAPISwaggerUI(t *testing.T) {
 	assert.Regexp(t, "html", string(b))
 }
 
+func TestAPIVersion(t *testing.T) {
+	verInfo := core.Version{Version: "v1.2.3"}
+
+	mgr, _, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	s := httptest.NewServer(r)
+	defer s.Close()
+	mgr.On("Version").Return(verInfo)
+
+	req := httptest.NewRequest("GET", "/api/version", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	var retVerInfo core.Version
+	err := json.NewDecoder(res.Body).Decode(&retVerInfo)
+	assert.NoError(t, err)
+	assert.Equal(t, verInfo, retVerInfo)
+}
+
 func TestJSONBadNamespace(t *testing.T) {
 	mgr, _, as := newTestServer()
 	r := as.createMuxRouter(context.Background(), mgr)

@@ -20,6 +20,7 @@ import (
 	"runtime/debug"
 	"testing"
 
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,7 +60,7 @@ func TestVersionCmdShorthand(t *testing.T) {
 }
 
 func TestSetBuildInfoWithBI(t *testing.T) {
-	info := &Info{}
+	info := &core.Version{}
 	setBuildInfo(info, &debug.BuildInfo{Main: debug.Module{Version: "12345"}}, true)
 	assert.Equal(t, "12345", info.Version)
 }

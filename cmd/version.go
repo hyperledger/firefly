@@ -21,10 +21,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime/debug"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/spf13/cobra"
 )
 
@@ -34,17 +36,33 @@ var BuildDate string
 var BuildCommit string
 var BuildVersionOverride string
 
-type Info struct {
-	Version string `json:"Version,omitempty" yaml:"Version,omitempty"`
-	Commit  string `json:"Commit,omitempty" yaml:"Commit,omitempty"`
-	Date    string `json:"Date,omitempty" yaml:"Date,omitempty"`
-	License string `json:"License,omitempty" yaml:"License,omitempty"`
-}
-
-func setBuildInfo(info *Info, buildInfo *debug.BuildInfo, ok bool) {
+func setBuildInfo(info *core.Version, buildInfo *debug.BuildInfo, ok bool) {
 	if ok {
 		info.Version = buildInfo.Main.Version
 	}
+}
+
+func getVersion() core.Version {
+	info := core.Version{
+		Date:       BuildDate,
+		Commit:     BuildCommit,
+		Version:    BuildVersionOverride,
+		License:    "Apache-2.0",
+		APIVersion: apiVersion,
+	}
+
+	// Where you are using go install, we will get good version information usefully from Go
+	// When we're in go-releaser in a Github action, we will have the version passed in explicitly
+	if info.Version == "" {
+		buildInfo, ok := debug.ReadBuildInfo()
+		setBuildInfo(&info, buildInfo, ok)
+	}
+
+	if info.Version != "(devel)" && !strings.HasPrefix(info.Version, fmt.Sprintf("v%s", apiVersion)) {
+		panic(i18n.NewError(context.Background(), coremsgs.MsgInvalidBuildVersion, apiVersion, info.Version))
+	}
+
+	return info
 }
 
 // versionCmd represents the version command
@@ -53,20 +71,8 @@ var versionCmd = &cobra.Command{
 	Short: "Prints the version info",
 	Long:  "Prints the version info of the Core binary",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		info := &Info{
-			Date:    BuildDate,
-			Commit:  BuildCommit,
-			Version: BuildVersionOverride,
-			License: "Apache-2.0",
-		}
 
-		// Where you are using go install, we will get good version information usefully from Go
-		// When we're in go-releaser in a Github action, we will have the version passed in explicitly
-		if info.Version == "" {
-			buildInfo, ok := debug.ReadBuildInfo()
-			setBuildInfo(info, buildInfo, ok)
-		}
-
+		info := getVersion()
 		if shortened {
 			fmt.Println(info.Version)
 		} else {

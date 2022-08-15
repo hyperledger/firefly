@@ -130,7 +130,7 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 }
 
 func TestNewNamespaceManager(t *testing.T) {
-	nm := NewNamespaceManager(true)
+	nm := NewNamespaceManager(&InitOptions{WithDefaults: true})
 	assert.NotNil(t, nm)
 }
 

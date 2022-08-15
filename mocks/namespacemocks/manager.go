@@ -159,6 +159,20 @@ func (_m *Manager) Start() error {
 	return r0
 }
 
+// Version provides a mock function with given fields:
+func (_m *Manager) Version() core.Version {
+	ret := _m.Called()
+
+	var r0 core.Version
+	if rf, ok := ret.Get(0).(func() core.Version); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(core.Version)
+	}
+
+	return r0
+}
+
 // WaitStop provides a mock function with given fields:
 func (_m *Manager) WaitStop() {
 	_m.Called()

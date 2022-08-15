@@ -71,6 +71,7 @@ var (
 )
 
 type Manager interface {
+	Version() core.Version
 	Init(ctx context.Context, cancelCtx context.CancelFunc) error
 	Start() error
 	WaitStop()
@@ -112,6 +113,7 @@ type namespaceManager struct {
 	adminEvents      spievents.Manager
 	utOrchestrator   orchestrator.Orchestrator
 	tokenRemoteNames map[string]string
+	version          core.Version
 }
 
 type blockchainPlugin struct {
@@ -166,14 +168,20 @@ func stringSlicesEqual(a, b []string) bool {
 	return true
 }
 
-func NewNamespaceManager(withDefaults bool) Manager {
+type InitOptions struct {
+	WithDefaults bool
+	Version      core.Version
+}
+
+func NewNamespaceManager(options *InitOptions) Manager {
 	nm := &namespaceManager{
 		namespaces:       make(map[string]*namespace),
 		metricsEnabled:   config.GetBool(coreconfig.MetricsEnabled),
 		tokenRemoteNames: make(map[string]string),
+		version:          options.Version,
 	}
 
-	InitConfig(withDefaults)
+	InitConfig(options.WithDefaults)
 
 	// Initialize the config on all the factories
 	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
@@ -190,6 +198,10 @@ func NewNamespaceManager(withDefaults bool) Manager {
 	authfactory.InitConfigArray(authConfig)
 
 	return nm
+}
+
+func (nm *namespaceManager) Version() core.Version {
+	return nm.version
 }
 
 func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {

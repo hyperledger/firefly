@@ -261,4 +261,5 @@ var (
 	MsgDuplicatePluginRemoteName          = ffe("FF10419", "Invalid %s plugin remote name: %s - remote names must be unique")
 	MsgInvalidConnectorName               = ffe("FF10420", "Could not find name %s for %s connector")
 	MsgCannotInitLegacyNS                 = ffe("FF10421", "could not initialize legacy '%s' namespace - found conflicting V1 multi-party config in %s and %s")
+	MsgInvalidBuildVersion                = ffe("FF10422", "Invalid build: API version '%s' mismatched with build version '%s'")
 )
