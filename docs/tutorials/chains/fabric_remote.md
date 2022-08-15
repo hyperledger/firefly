@@ -1,8 +1,10 @@
 ---
-layout: default
-title: Work with remote fabric network
-parent: pages.tutorials
-nav_order:
+layout: i18n_page
+title: pages.remote_fabric_network
+parent: pages.chains
+grand_parent: pages.tutorials
+nav_order: 2
+has_children: true
 ---
 
 # Work with remote Hyperledger Fabric Network
@@ -248,8 +250,8 @@ ff logs my-remote-fabric
 
 ## Integrate your FireFly stack with your Fabric chaincode 
 
-Once your stack is up and running, you can define and broadcast FireFly Interface Document for your remote fabric chaincode. You can refer to [Broadcast the Contract Interface(Fabric)](./custom_contracts/fabric.html#broadcast-the-contract-interface) guide for this.
+Once your stack is up and running, you can define and broadcast FireFly Interface Document for your remote fabric chaincode. You can refer to [Broadcast the Contract Interface(Fabric)](../custom_contracts/fabric.html#broadcast-the-contract-interface) guide for this.
 
-You can also now create an HTTP API for your fabric chaincode which will help you easily query/invoke all your chaincode methods with your organizational context that you set up in fabconnect. You can refer to [Create an HTTP API for the contract(Fabric)](./custom_contracts/fabric.html#create-an-http-api-for-the-contract) guide for this.
+You can also now create an HTTP API for your fabric chaincode which will help you easily query/invoke all your chaincode methods with your organizational context that you set up in fabconnect. You can refer to [Create an HTTP API for the contract(Fabric)](../custom_contracts/fabric.html#create-an-http-api-for-the-contract) guide for this.
 
-To view the OpenAPI spec for your contract, or to submit transactions, query for states and listen for events, you can further refer to [Work with Hyperledger Fabric chaincodes](./custom_contracts/fabric.html#work-with-hyperledger-fabric-chaincodes) guide.
+To view the OpenAPI spec for your contract, or to submit transactions, query for states and listen for events, you can further refer to [Work with Hyperledger Fabric chaincodes](../custom_contracts/fabric.html#work-with-hyperledger-fabric-chaincodes) guide.
