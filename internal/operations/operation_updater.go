@@ -294,7 +294,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *core.Operation
 		}
 	}
 
-	if err := ou.database.ResolveOperation(ctx, op.Namespace, op.ID, update.Status, &update.ErrorMessage, update.Output); err != nil {
+	if err := ou.resolveOperation(ctx, op.Namespace, op.ID, update.Status, &update.ErrorMessage, update.Output); err != nil {
 		return err
 	}
 
@@ -346,4 +346,18 @@ func (ou *operationUpdater) close() {
 			<-workerDone
 		}
 	}
+}
+
+func (ou *operationUpdater) resolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error) {
+	update := database.OperationQueryFactory.NewUpdate(ctx).S()
+	if status != "" {
+		update = update.Set("status", status)
+	}
+	if errorMsg != nil {
+		update = update.Set("error", *errorMsg)
+	}
+	if output != nil {
+		update = update.Set("output", output)
+	}
+	return ou.database.UpdateOperation(ctx, ns, id, update)
 }

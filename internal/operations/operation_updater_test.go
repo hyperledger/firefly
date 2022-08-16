@@ -60,6 +60,32 @@ func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabi
 	return newOperationUpdater(context.Background(), mom, mdi, txHelper)
 }
 
+func updateMatcher(vals [][]string) func(database.Update) bool {
+	return func(update database.Update) bool {
+		info, _ := update.Finalize()
+		if len(info.SetOperations) != len(vals) {
+			fmt.Printf("Failed: %d != %d\n", len(info.SetOperations), len(vals))
+			return false
+		}
+		for i, v := range vals {
+			field := info.SetOperations[i].Field
+			if info.SetOperations[i].Field != v[0] {
+				fmt.Printf("Failed: %s != %s\n", field, v[0])
+				return false
+			}
+			updateVal, _ := info.SetOperations[i].Value.Value()
+			if s, ok := updateVal.([]byte); ok {
+				updateVal = string(s)
+			}
+			if updateVal != v[1] {
+				fmt.Printf("Failed: %v != %v\n", updateVal, v[1])
+				return false
+			}
+		}
+		return true
+	}
+}
+
 func TestNewOperationUpdaterNoConcurrency(t *testing.T) {
 	ou := newTestOperationUpdaterNoConcurrency(t)
 	defer ou.close()
@@ -159,18 +185,25 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 		{ID: opID3, Namespace: "ns1", Type: core.OpTypeTokenApproval, Input: fftypes.JSONObject{"test": "test"}},
 	}, nil, nil)
 	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Transaction{tx1}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusSucceeded, mock.Anything, fftypes.JSONObject(nil)).Return(nil)
 	mdi.On("UpdateTransaction", mock.Anything, "ns1", tx1.ID, mock.Anything).Return(nil)
-	err1Str := "err1"
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID2, core.OpStatusFailed, &err1Str, fftypes.JSONObject{"test": true}).Return(nil)
-	err2Str := "err2"
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID3, core.OpStatusFailed, &err2Str, fftypes.JSONObject(nil)).Return(nil).
-		Run(func(args mock.Arguments) {
-			close(done)
-		})
+
+	mdi.On("UpdateOperation", mock.Anything, "ns1", opID1, mock.MatchedBy(updateMatcher([][]string{
+		{"status", "Succeeded"},
+		{"error", ""},
+	}))).Return(nil).Once()
+	mdi.On("UpdateOperation", mock.Anything, "ns1", opID2, mock.MatchedBy(updateMatcher([][]string{
+		{"status", "Failed"},
+		{"error", "err1"},
+		{"output", fftypes.JSONObject{"test": true}.String()},
+	}))).Return(nil).Once()
+	mdi.On("UpdateOperation", mock.Anything, "ns1", opID3, mock.MatchedBy(updateMatcher([][]string{
+		{"status", "Failed"},
+		{"error", "err2"},
+	}))).Return(nil).Run(func(args mock.Arguments) {
+		close(done)
+	}).Once()
 
 	om.Start()
-
 	om.SubmitOperationUpdate(&core.OperationUpdate{
 		NamespacedOpID: "ns1:" + opID1.String(),
 		Status:         core.OpStatusSucceeded,
@@ -187,7 +220,6 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 		Status:         core.OpStatusFailed,
 		ErrorMessage:   "err2",
 	})
-
 	<-done
 
 	mdi.AssertExpectations(t)
@@ -235,7 +267,10 @@ func TestDoBatchUpdateFailUpdate(t *testing.T) {
 	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Operation{
 		{ID: opID1, Namespace: "ns1", Type: core.OpTypeBlockchainInvoke},
 	}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateOperation", mock.Anything, "ns1", opID1, mock.MatchedBy(updateMatcher([][]string{
+		{"status", "Succeeded"},
+		{"error", ""},
+	}))).Return(fmt.Errorf("pop"))
 
 	ou.initQueues()
 
@@ -374,7 +409,10 @@ func TestDoUpdateVerifyBatchManifest(t *testing.T) {
 	mdi.On("GetBatchByID", mock.Anything, "ns1", batchID).Return(&core.BatchPersisted{
 		Manifest: fftypes.JSONAnyPtr(`"test-manifest"`),
 	}, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusSucceeded, mock.Anything, fftypes.JSONObject(nil)).Return(nil)
+	mdi.On("UpdateOperation", mock.Anything, "ns1", opID1, mock.MatchedBy(updateMatcher([][]string{
+		{"status", "Succeeded"},
+		{"error", ""},
+	}))).Return(nil)
 
 	err := ou.doUpdate(ou.ctx, &core.OperationUpdate{
 		NamespacedOpID: "ns1:" + opID1.String(),
@@ -445,7 +483,10 @@ func TestDoUpdateVerifyBatchManifestFail(t *testing.T) {
 	mdi.On("GetBatchByID", mock.Anything, "ns1", batchID).Return(&core.BatchPersisted{
 		Manifest: fftypes.JSONAnyPtr(`"test-manifest"`),
 	}, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.Anything, fftypes.JSONObject(nil)).Return(nil)
+	mdi.On("UpdateOperation", mock.Anything, "ns1", opID1, mock.MatchedBy(updateMatcher([][]string{
+		{"status", "Failed"},
+		{"error", "FF10329: Manifest mismatch overriding 'Succeeded' status as failure: '\"BAD\"'"},
+	}))).Return(nil)
 
 	err := ou.doUpdate(ou.ctx, &core.OperationUpdate{
 		NamespacedOpID: "ns1:" + opID1.String(),
@@ -473,13 +514,16 @@ func TestDoUpdateVerifyBlobManifestFail(t *testing.T) {
 
 	opID1 := fftypes.NewUUID()
 	txID1 := fftypes.NewUUID()
-	blobHash := fftypes.NewRandB32()
+	blobHash := fftypes.MustParseBytes32("940b97ffd499d5e8c30009f82de9aeee8f5dec222e3d7543535156f40be94cca")
 	ou.manager.handlers[core.OpTypeDataExchangeSendBlob] = &mockHandler{}
 
 	ou.initQueues()
 
 	mdi := ou.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.Anything, fftypes.JSONObject(nil)).Return(nil)
+	mdi.On("UpdateOperation", mock.Anything, "ns1", opID1, mock.MatchedBy(updateMatcher([][]string{
+		{"status", "Failed"},
+		{"error", "FF10348: Blob hash mismatch sent=940b97ffd499d5e8c30009f82de9aeee8f5dec222e3d7543535156f40be94cca received=BAD"},
+	}))).Return(nil)
 
 	err := ou.doUpdate(ou.ctx, &core.OperationUpdate{
 		NamespacedOpID: "ns1:" + opID1.String(),

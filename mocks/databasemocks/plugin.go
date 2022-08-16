@@ -2276,20 +2276,6 @@ func (_m *Plugin) ReplaceMessage(ctx context.Context, message *core.Message) err
 	return r0
 }
 
-// ResolveOperation provides a mock function with given fields: ctx, namespace, id, status, errorMsg, output
-func (_m *Plugin) ResolveOperation(ctx context.Context, namespace string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) error {
-	ret := _m.Called(ctx, namespace, id, status, errorMsg, output)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, core.OpStatus, *string, fftypes.JSONObject) error); ok {
-		r0 = rf(ctx, namespace, id, status, errorMsg, output)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // RunAsGroup provides a mock function with given fields: ctx, fn
 func (_m *Plugin) RunAsGroup(ctx context.Context, fn func(context.Context) error) error {
 	ret := _m.Called(ctx, fn)

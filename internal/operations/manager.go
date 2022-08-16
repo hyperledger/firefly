@@ -108,12 +108,20 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 	log.L(ctx).Tracef("Operation detail: %+v", op)
 	outputs, complete, err := handler.RunOperation(ctx, op)
 	if err != nil {
-		om.writeOperationFailure(ctx, op.ID, outputs, err, failState)
-		return nil, err
+		om.SubmitOperationUpdate(&core.OperationUpdate{
+			NamespacedOpID: op.NamespacedIDString(),
+			Status:         failState,
+			ErrorMessage:   err.Error(),
+			Output:         outputs,
+		})
 	} else if complete {
-		om.writeOperationSuccess(ctx, op.ID, outputs)
+		om.SubmitOperationUpdate(&core.OperationUpdate{
+			NamespacedOpID: op.NamespacedIDString(),
+			Status:         core.OpStatusSucceeded,
+			Output:         outputs,
+		})
 	}
-	return outputs, nil
+	return outputs, err
 }
 
 func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *core.Operation, err error) {
@@ -163,22 +171,8 @@ func (om *operationsManager) RetryOperation(ctx context.Context, opID *fftypes.U
 	return op, err
 }
 
-func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject) {
-	emptyString := ""
-	if err := om.database.ResolveOperation(ctx, om.namespace, opID, core.OpStatusSucceeded, &emptyString, outputs); err != nil {
-		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
-	}
-}
-
-func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newStatus core.OpStatus) {
-	errMsg := err.Error()
-	if err := om.database.ResolveOperation(ctx, om.namespace, opID, newStatus, &errMsg, outputs); err != nil {
-		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
-	}
-}
-
 func (om *operationsManager) ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error {
-	return om.database.ResolveOperation(ctx, om.namespace, opID, op.Status, op.Error, op.Output)
+	return om.updater.resolveOperation(ctx, om.namespace, opID, op.Status, op.Error, op.Output)
 }
 
 func (om *operationsManager) SubmitOperationUpdate(update *core.OperationUpdate) {

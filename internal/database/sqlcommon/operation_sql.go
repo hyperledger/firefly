@@ -193,17 +193,3 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.
 
 	return s.commitTx(ctx, tx, autoCommit)
 }
-
-func (s *SQLCommon) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error) {
-	update := database.OperationQueryFactory.NewUpdate(ctx).S()
-	if status != "" {
-		update = update.Set("status", status)
-	}
-	if errorMsg != nil {
-		update = update.Set("error", *errorMsg)
-	}
-	if output != nil {
-		update = update.Set("output", output)
-	}
-	return s.UpdateOperation(ctx, ns, id, update)
-}

@@ -139,6 +139,11 @@ func TestRunOperationSyncSuccess(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate),
+	}
+	om.updater.cancelFunc()
+
 	ctx := context.Background()
 	op := &core.PreparedOperation{
 		ID:        fftypes.NewUUID(),
@@ -146,21 +151,21 @@ func TestRunOperationSyncSuccess(t *testing.T) {
 		Type:      core.OpTypeBlockchainPinBatch,
 	}
 
-	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusSucceeded, mock.Anything, mock.Anything).Return(nil)
-
 	om.RegisterHandler(ctx, &mockHandler{Complete: true}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op)
 
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
 }
 
 func TestRunOperationFail(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate),
+	}
+	om.updater.cancelFunc()
+
 	ctx := context.Background()
 	op := &core.PreparedOperation{
 		ID:        fftypes.NewUUID(),
@@ -168,22 +173,21 @@ func TestRunOperationFail(t *testing.T) {
 		Type:      core.OpTypeBlockchainPinBatch,
 	}
 
-	mdi := om.database.(*databasemocks.Plugin)
-	errStr := "pop"
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusFailed, &errStr, mock.Anything).Return(nil)
-
 	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op)
 
 	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
 }
 
 func TestRunOperationFailRemainPending(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate),
+	}
+	om.updater.cancelFunc()
+
 	ctx := context.Background()
 	op := &core.PreparedOperation{
 		ID:        fftypes.NewUUID(),
@@ -191,16 +195,10 @@ func TestRunOperationFailRemainPending(t *testing.T) {
 		Type:      core.OpTypeBlockchainPinBatch,
 	}
 
-	mdi := om.database.(*databasemocks.Plugin)
-	errStr := "pop"
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusPending, &errStr, mock.Anything).Return(nil)
-
 	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op, RemainPendingOnFailure)
 
 	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
 }
 
 func TestRetryOperationSuccess(t *testing.T) {
@@ -376,37 +374,6 @@ func TestRetryOperationUpdateFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestWriteOperationSuccess(t *testing.T) {
-	om, cancel := newTestOperations(t)
-	defer cancel()
-
-	ctx := context.Background()
-	opID := fftypes.NewUUID()
-
-	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-
-	om.writeOperationSuccess(ctx, opID, nil)
-
-	mdi.AssertExpectations(t)
-}
-
-func TestWriteOperationFailure(t *testing.T) {
-	om, cancel := newTestOperations(t)
-	defer cancel()
-
-	ctx := context.Background()
-	opID := fftypes.NewUUID()
-
-	mdi := om.database.(*databasemocks.Plugin)
-	errStr := "pop"
-	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusFailed, &errStr, mock.Anything).Return(fmt.Errorf("pop"))
-
-	om.writeOperationFailure(ctx, opID, nil, fmt.Errorf("pop"), core.OpStatusFailed)
-
-	mdi.AssertExpectations(t)
-}
-
 func TestResolveOperationByNamespacedIDOk(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
@@ -423,9 +390,11 @@ func TestResolveOperationByNamespacedIDOk(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, &errStr, fftypes.JSONObject{
-		"my": "data",
-	}).Return(nil)
+	mdi.On("UpdateOperation", ctx, "ns1", opID, mock.MatchedBy(updateMatcher([][]string{
+		{"status", "Succeeded"},
+		{"error", errStr},
+		{"output", opUpdate.Output.String()},
+	}))).Return(nil)
 
 	err := om.ResolveOperationByID(ctx, opID, opUpdate)
 
