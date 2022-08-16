@@ -105,6 +105,7 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType cor
 		return nil, err
 	}
 
+	t.updateTransactionsCache(tx)
 	return tx.ID, nil
 }
 
@@ -144,7 +145,6 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, id *fftypes.
 	}
 
 	t.updateTransactionsCache(tx)
-
 	return true, nil
 }
 
@@ -162,8 +162,8 @@ func (t *transactionHelper) AddBlockchainTX(ctx context.Context, tx *core.Transa
 	if err != nil {
 		return err
 	}
-	t.updateTransactionsCache(tx)
 
+	t.updateTransactionsCache(tx)
 	return nil
 }
 
