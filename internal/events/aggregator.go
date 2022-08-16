@@ -329,22 +329,22 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*core.Pin, state *
 	l := log.L(ctx)
 
 	// Keep a batch cache for this list of pins
-	var batch *core.BatchPersisted
-	var manifest *core.BatchManifest
+	manifests := make(map[fftypes.UUID]*core.BatchManifest)
 	// As messages can have multiple topics, we need to avoid processing the message twice in the same poll loop.
 	// We must check all the contexts in the message, and mark them dispatched together.
 	dupMsgCheck := make(map[fftypes.UUID]bool)
 	for _, pin := range pins {
-
-		if batch == nil || !batch.ID.Equals(pin.Batch) {
-			batch, manifest, err = ag.GetBatchForPin(ctx, pin)
+		manifest, ok := manifests[*pin.Batch]
+		if !ok {
+			_, manifest, err = ag.GetBatchForPin(ctx, pin)
 			if err != nil {
 				return err
 			}
-			if batch == nil {
-				l.Debugf("Pin %.10d batch unavailable: batch=%s pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
-				continue
-			}
+			manifests[*pin.Batch] = manifest
+		}
+		if manifest == nil {
+			l.Debugf("Pin %.10d batch unavailable: batch=%s pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
+			continue
 		}
 
 		// Extract the message from the batch - where the index is of a topic within a message
