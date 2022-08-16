@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -29,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/karlseguin/ccache"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -52,6 +54,7 @@ func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabi
 	mom := &operationsManager{
 		namespace: "ns1",
 		handlers:  make(map[fftypes.FFEnum]OperationHandler),
+		cache:     ccache.New(ccache.Configure().MaxSize(100)),
 	}
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(dbCapabilities)
@@ -176,11 +179,16 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 	opID3 := fftypes.NewUUID()
 	tx1 := &core.Transaction{ID: fftypes.NewUUID()}
 
+	om.cache = ccache.New(ccache.Configure().MaxSize(100))
+	om.cacheTTL = time.Minute * 10
+	om.cacheOperation(
+		&core.Operation{ID: opID1, Namespace: "ns1", Type: core.OpTypeBlockchainInvoke, Transaction: tx1.ID},
+	)
+
 	done := make(chan struct{})
 
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Operation{
-		{ID: opID1, Namespace: "ns1", Type: core.OpTypeBlockchainInvoke, Transaction: tx1.ID},
 		{ID: opID2, Namespace: "ns1", Type: core.OpTypeTokenTransfer, Input: fftypes.JSONObject{"test": "test"}},
 		{ID: opID3, Namespace: "ns1", Type: core.OpTypeTokenApproval, Input: fftypes.JSONObject{"test": "test"}},
 	}, nil, nil)

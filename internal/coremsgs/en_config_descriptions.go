@@ -95,6 +95,9 @@ var (
 	ConfigCacheBlockchainTTL  = ffc("config.cache.blockchain.ttl", "Time to live for blockchain cache items", i18n.StringType)
 	ConfigCacheBlockchainSize = ffc("config.cache.blockchain.size", "Size of blockchain cache", i18n.StringType)
 
+	ConfigCacheOperationsTTL  = ffc("config.cache.operations.ttl", "Time to live for operation cache items", i18n.StringType)
+	ConfigCacheOperationsSize = ffc("config.cache.operations.size", "Size of operation cache", i18n.StringType)
+
 	ConfigPluginDatabase     = ffc("config.plugins.database", "The list of configured Database plugins", i18n.StringType)
 	ConfigPluginDatabaseName = ffc("config.plugins.database[].name", "The name of the Database plugin", i18n.StringType)
 	ConfigPluginDatabaseType = ffc("config.plugins.database[].type", "The type of the configured Database plugin", i18n.StringType)

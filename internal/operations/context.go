@@ -25,21 +25,21 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-type operationCacheKey struct{}
-type operationCache map[string]*core.Operation
+type operationContextKey struct{}
+type operationContext map[string]*core.Operation
 
-func getOperationCache(ctx context.Context) operationCache {
-	ctxKey := operationCacheKey{}
+func getOperationContext(ctx context.Context) operationContext {
+	ctxKey := operationContextKey{}
 	cacheVal := ctx.Value(ctxKey)
 	if cacheVal != nil {
-		if cache, ok := cacheVal.(operationCache); ok {
+		if cache, ok := cacheVal.(operationContext); ok {
 			return cache
 		}
 	}
 	return nil
 }
 
-func getCacheKey(op *core.Operation) (string, error) {
+func getContextKey(op *core.Operation) (string, error) {
 	opCopy := &core.Operation{
 		Namespace:   op.Namespace,
 		Transaction: op.Transaction,
@@ -54,22 +54,22 @@ func getCacheKey(op *core.Operation) (string, error) {
 	return string(key), nil
 }
 
-func CreateOperationRetryContext(ctx context.Context) (ctx1 context.Context) {
+func createOperationRetryContext(ctx context.Context) (ctx1 context.Context) {
 	l := log.L(ctx).WithField("opcache", fftypes.ShortID())
 	ctx1 = log.WithLogger(ctx, l)
-	return context.WithValue(ctx1, operationCacheKey{}, operationCache{})
+	return context.WithValue(ctx1, operationContextKey{}, operationContext{})
 }
 
-func RunWithOperationCache(ctx context.Context, fn func(ctx context.Context) error) error {
-	return fn(CreateOperationRetryContext(ctx))
+func RunWithOperationContext(ctx context.Context, fn func(ctx context.Context) error) error {
+	return fn(createOperationRetryContext(ctx))
 }
 
 func (om *operationsManager) AddOrReuseOperation(ctx context.Context, op *core.Operation) error {
-	// If a cache has been created via RunWithOperationCache, detect duplicate operation inserts
-	cache := getOperationCache(ctx)
-	if cache != nil {
-		if cacheKey, err := getCacheKey(op); err == nil {
-			if cached, ok := cache[cacheKey]; ok {
+	// If a ops has been created via RunWithOperationCache, detect duplicate operation inserts
+	ops := getOperationContext(ctx)
+	if ops != nil {
+		if key, err := getContextKey(op); err == nil {
+			if cached, ok := ops[key]; ok {
 				// Identical operation already added in this context
 				*op = *cached
 				return nil
@@ -77,9 +77,14 @@ func (om *operationsManager) AddOrReuseOperation(ctx context.Context, op *core.O
 			if err = om.database.InsertOperation(ctx, op); err != nil {
 				return err
 			}
-			cache[cacheKey] = op
+			ops[key] = op
+			om.cacheOperation(op)
 			return nil
 		}
 	}
-	return om.database.InsertOperation(ctx, op)
+	err := om.database.InsertOperation(ctx, op)
+	if err == nil {
+		om.cacheOperation(op)
+	}
+	return err
 }

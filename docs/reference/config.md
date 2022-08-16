@@ -287,6 +287,13 @@ nav_order: 2
 |size|Size of blockchain cache|`string`|`<nil>`
 |ttl|Time to live for blockchain cache items|`string`|`<nil>`
 
+## cache.operations
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|size|Size of operation cache|`string`|`<nil>`
+|ttl|Time to live for operation cache items|`string`|`<nil>`
+
 ## cors
 
 |Key|Description|Type|Default Value|

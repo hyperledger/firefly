@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestRunWithOperationCache(t *testing.T) {
+func TestRunWithOperationContext(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
@@ -54,7 +54,7 @@ func TestRunWithOperationCache(t *testing.T) {
 	mdi.On("InsertOperation", mock.Anything, op1).Return(nil).Once()
 	mdi.On("InsertOperation", mock.Anything, op2).Return(nil).Once()
 
-	err := RunWithOperationCache(context.Background(), func(ctx context.Context) error {
+	err := RunWithOperationContext(context.Background(), func(ctx context.Context) error {
 		if err := om.AddOrReuseOperation(ctx, op1); err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func TestRunWithOperationCache(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestRunWithOperationCacheFail(t *testing.T) {
+func TestRunWithOperationContextFail(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
@@ -82,7 +82,7 @@ func TestRunWithOperationCacheFail(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("InsertOperation", mock.Anything, op1).Return(fmt.Errorf("pop")).Once()
 
-	err := RunWithOperationCache(context.Background(), func(ctx context.Context) error {
+	err := RunWithOperationContext(context.Background(), func(ctx context.Context) error {
 		return om.AddOrReuseOperation(ctx, op1)
 	})
 	assert.EqualError(t, err, "pop")
@@ -90,7 +90,7 @@ func TestRunWithOperationCacheFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestAddOrReuseOperationNoCache(t *testing.T) {
+func TestAddOrReuseOperationNoContext(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
@@ -120,12 +120,12 @@ func TestAddOrReuseOperationNoCache(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestGetCacheKeyBadJSON(t *testing.T) {
+func TestGetContextKeyBadJSON(t *testing.T) {
 	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"test": map[bool]bool{true: false},
 		},
 	}
-	_, err := getCacheKey(op)
+	_, err := getContextKey(op)
 	assert.Error(t, err)
 }

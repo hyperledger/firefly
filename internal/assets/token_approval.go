@@ -111,7 +111,7 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 			txid,
 			core.TransactionTypeTokenApproval)
 		if err = txcommon.AddTokenApprovalInputs(op, &s.approval.TokenApproval); err == nil {
-			err = s.mgr.database.InsertOperation(ctx, op)
+			err = s.mgr.operations.AddOrReuseOperation(ctx, op)
 		}
 		return err
 	})

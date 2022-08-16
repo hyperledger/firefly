@@ -391,9 +391,27 @@ func TestGetTransactionByIDCached(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, txid, tx.ID)
 
+	// second attempt is cached
 	tx, err = txHelper.GetTransactionByIDCached(ctx, txid)
 	assert.NoError(t, err)
 	assert.Equal(t, txid, tx.ID)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestGetTransactionByIDCachedFail(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper, _, _ := NewTestTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	txid := fftypes.NewUUID()
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(nil, fmt.Errorf("pop"))
+
+	_, err := txHelper.GetTransactionByIDCached(ctx, txid)
+	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 

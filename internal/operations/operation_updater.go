@@ -195,7 +195,7 @@ func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates 
 func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*core.OperationUpdate) error {
 
 	// Get all the operations that match
-	opIDs := make([]driver.Value, 0, len(updates))
+	opIDs := make([]*fftypes.UUID, 0, len(updates))
 	for _, update := range updates {
 		_, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 		if err != nil {
@@ -207,11 +207,25 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*core.O
 	if len(opIDs) == 0 {
 		return nil
 	}
-	// TODO: cache these operation queries
-	opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", opIDs)
-	ops, _, err := ou.database.GetOperations(ctx, ou.manager.namespace, opFilter)
+
+	ops := make([]*core.Operation, 0, len(opIDs))
+	cacheMisses := make([]driver.Value, 0)
+	for _, id := range opIDs {
+		if op := ou.manager.getCachedOperation(id); op != nil {
+			ops = append(ops, op)
+		} else {
+			cacheMisses = append(cacheMisses, id)
+		}
+	}
+
+	opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", cacheMisses)
+	dbOps, _, err := ou.database.GetOperations(ctx, ou.manager.namespace, opFilter)
 	if err != nil {
 		return err
+	}
+	for _, op := range dbOps {
+		ou.manager.cacheOperation(op)
+		ops = append(ops, op)
 	}
 
 	// Get all the transactions for these operations
@@ -359,5 +373,6 @@ func (ou *operationUpdater) resolveOperation(ctx context.Context, ns string, id 
 	if output != nil {
 		update = update.Set("output", output)
 	}
+	ou.manager.updateCachedOperation(id, status, errorMsg, output, nil)
 	return ou.database.UpdateOperation(ctx, ns, id, update)
 }
