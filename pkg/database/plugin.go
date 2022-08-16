@@ -106,10 +106,10 @@ type iMessageCollection interface {
 	GetMessagesForData(ctx context.Context, namespace string, dataID *fftypes.UUID, filter Filter) (message []*core.Message, res *FilterResult, err error)
 
 	// GetBatchIDsForMessages - an optimized query to retrieve any non-null batch IDs for a list of message IDs
-	GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
+	GetBatchIDsForMessages(ctx context.Context, namespace string, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
 
 	// GetBatchIDsForDataAttachments - an optimized query to retrieve any non-null batch IDs for a list of data IDs that might be attached to messages in batches
-	GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
+	GetBatchIDsForDataAttachments(ctx context.Context, namespace string, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
 }
 
 type iDataCollection interface {
