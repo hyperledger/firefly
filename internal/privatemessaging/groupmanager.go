@@ -104,19 +104,6 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 	}
 	group.LocalNamespace = gm.namespace.LocalName
 
-	// In the case of groups, we actually write the unconfirmed group directly to our database.
-	// So it can be used straight away.
-	// We're able to do this by making the identifier of the group a hash of the identity fields
-	// (name, ledger and member list), as that is all the group contains. There's no data in there.
-	if err = gm.database.UpsertGroup(ctx, group, database.UpsertOptimizationNew /* we think we're first */); err != nil {
-		return err
-	}
-
-	// Write as data to the local store
-	if err = gm.database.UpsertData(ctx, data, database.UpsertOptimizationNew); err != nil {
-		return err
-	}
-
 	// Create a private send message referring to the data
 	msg := &core.Message{
 		State:          core.MessageStateReady,
@@ -134,18 +121,28 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 			{ID: data.ID, Hash: data.Hash},
 		},
 	}
+	if err = msg.Seal(ctx); err == nil {
+		err = gm.database.RunAsGroup(ctx, func(ctx context.Context) error {
+			// Write as data to the local store
+			if err = gm.database.UpsertData(ctx, data, database.UpsertOptimizationNew); err != nil {
+				return err
+			}
 
-	// Seal the message
-	err = msg.Seal(ctx)
-	if err == nil {
-		// Store the message - this asynchronously triggers the next step in process
-		err = gm.database.UpsertMessage(ctx, msg, database.UpsertOptimizationNew)
-	}
-	if err == nil {
-		log.L(ctx).Infof("Created new group %s", group.Hash)
+			// Store the message - this asynchronously triggers the next step in process
+			if err = gm.database.UpsertMessage(ctx, msg, database.UpsertOptimizationNew); err != nil {
+				return err
+			}
+
+			// Write the unconfirmed group directly to our database, so it can be used straight away.
+			// We're able to do this by making the identifier of the group a hash of the identity fields
+			// (name, ledger and member list), as that is all the group contains. There's no data in there.
+			return gm.database.UpsertGroup(ctx, group, database.UpsertOptimizationNew /* we think we're first */)
+		})
+		if err == nil {
+			log.L(ctx).Infof("Created new group %s", group.Hash)
+		}
 	}
 	return err
-
 }
 
 func (gm *groupManager) GetGroupByID(ctx context.Context, hash string) (*core.Group, error) {
