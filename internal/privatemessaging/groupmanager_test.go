@@ -47,6 +47,8 @@ func TestGroupInitWriteGroupFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
@@ -59,6 +61,32 @@ func TestGroupInitWriteGroupFail(t *testing.T) {
 	group.Seal()
 	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
 	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGroupInitWriteMessageFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Namespace: "ns1",
+			Members: core.Members{
+				{Identity: "id1", Node: fftypes.NewUUID()},
+			},
+		},
+	}
+	group.Seal()
+	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
 }
 
 func TestGroupInitWriteDataFail(t *testing.T) {
@@ -67,7 +95,6 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroup", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	group := &core.Group{
@@ -81,6 +108,8 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 	group.Seal()
 	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
 	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
 }
 
 func TestResolveInitGroupMissingData(t *testing.T) {
