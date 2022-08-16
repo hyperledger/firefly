@@ -28,7 +28,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
-	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -412,7 +411,7 @@ func TestMintTokensConfirm(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenTransfer", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&core.TokenTransfer{}, nil)
@@ -519,7 +518,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenTransfer", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&core.TokenTransfer{}, nil)
@@ -724,7 +723,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mbm := am.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
@@ -820,7 +819,7 @@ func TestTransferTokensWithBroadcastMessageSendFail(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mbm := am.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
@@ -865,7 +864,7 @@ func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 	}
 
 	mbm := am.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mbm.On("NewBroadcast", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
 
@@ -912,7 +911,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mpm := am.messaging.(*privatemessagingmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
@@ -1031,7 +1030,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenTransfer", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&core.TokenTransfer{}, nil)
@@ -1085,7 +1084,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mbm := am.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
@@ -1098,13 +1097,13 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mms.On("Send", context.Background()).Return(nil)
 	msa.On("WaitForMessage", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&core.Message{}, nil)
 	msa.On("WaitForTokenTransfer", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&transfer.TokenTransfer, nil)

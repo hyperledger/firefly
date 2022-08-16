@@ -368,7 +368,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenPool", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(nil, nil)

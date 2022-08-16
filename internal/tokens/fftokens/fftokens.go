@@ -253,20 +253,26 @@ func (ft *FFTokens) Capabilities() *tokens.Capabilities {
 func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) {
 	l := log.L(ctx)
 
-	requestID := data.GetString("id")
-	success := data.GetBool("success")
-	message := data.GetString("message")
-	transactionHash := data.GetString("transactionHash")
-	if requestID == "" {
+	headers := data.GetObject("headers")
+	requestID := headers.GetString("requestId")
+	replyType := headers.GetString("type")
+	txHash := data.GetString("transactionHash")
+	message := data.GetString("errorMessage")
+	if requestID == "" || replyType == "" {
 		l.Errorf("Reply cannot be processed - missing fields: %+v", data)
 		return
 	}
-	updateType := core.OpStatusSucceeded
-	if !success {
+	var updateType core.OpStatus
+	switch replyType {
+	case "TransactionSuccess":
+		updateType = core.OpStatusSucceeded
+	case "TransactionUpdate":
+		updateType = core.OpStatusPending
+	default:
 		updateType = core.OpStatusFailed
 	}
 	l.Infof("Received operation update: status=%s request=%s message=%s", updateType, requestID, message)
-	ft.callbacks.OperationUpdate(ctx, requestID, updateType, transactionHash, message, data)
+	ft.callbacks.OperationUpdate(ctx, requestID, updateType, txHash, message, data)
 }
 
 func (ft *FFTokens) buildBlockchainEvent(eventData fftypes.JSONObject) *blockchain.Event {

@@ -28,7 +28,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -36,29 +36,36 @@ import (
 // Bridge translates synchronous (HTTP API) calls, into asynchronously sending a
 // message and blocking until a correlating response is received, or we hit a timeout.
 type Bridge interface {
-	// Init is required as there's a bi-directional relationship between sysmessaging and syncasync bridge
-	Init(sysevents sysmessaging.SystemEvents)
+	// Init is required as there's a bi-directional relationship between event manager and syncasync bridge
+	Init(sysevents system.EventInterface)
 
 	// The following "WaitFor*" methods all wait for a particular type of event callback, and block until it is received.
 	// To use them, invoke the appropriate method, and pass a "send" callback that is expected to trigger the relevant event.
 
 	// WaitForReply waits for a reply to the message with the supplied ID
-	WaitForReply(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.MessageInOut, error)
+	WaitForReply(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.MessageInOut, error)
 	// WaitForMessage waits for a message with the supplied ID
-	WaitForMessage(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Message, error)
+	WaitForMessage(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.Message, error)
 	// WaitForIdentity waits for an identity with the supplied ID
-	WaitForIdentity(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Identity, error)
+	WaitForIdentity(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.Identity, error)
 	// WaitForTokenPool waits for a token pool with the supplied ID
-	WaitForTokenPool(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenPool, error)
+	WaitForTokenPool(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.TokenPool, error)
 	// WaitForTokenTransfer waits for a token transfer with the supplied ID
-	WaitForTokenTransfer(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenTransfer, error)
+	WaitForTokenTransfer(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.TokenTransfer, error)
 	// WaitForTokenTransfer waits for a token approval with the supplied ID
-	WaitForTokenApproval(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenApproval, error)
+	WaitForTokenApproval(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.TokenApproval, error)
 	// WaitForInvokeOperation waits for an operation with the supplied ID
-	WaitForInvokeOperation(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Operation, error)
+	WaitForInvokeOperation(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.Operation, error)
 }
 
-type RequestSender func(ctx context.Context) error
+// Sender interface may be implemented by other types that wish to provide generic sync/async capabilities
+type Sender interface {
+	Prepare(ctx context.Context) error
+	Send(ctx context.Context) error
+	SendAndWait(ctx context.Context) error
+}
+
+type SendFunction func(ctx context.Context) error
 
 type requestType int
 
@@ -92,7 +99,7 @@ type syncAsyncBridge struct {
 	namespace   string
 	database    database.Plugin
 	data        data.Manager
-	sysevents   sysmessaging.SystemEvents
+	sysevents   system.EventInterface
 	inflightMux sync.Mutex
 	inflight    inflightRequestMap
 }
@@ -108,7 +115,7 @@ func NewSyncAsyncBridge(ctx context.Context, ns string, di database.Plugin, dm d
 	return sa
 }
 
-func (sa *syncAsyncBridge) Init(sysevents sysmessaging.SystemEvents) {
+func (sa *syncAsyncBridge) Init(sysevents system.EventInterface) {
 	sa.sysevents = sysevents
 }
 
@@ -565,7 +572,7 @@ func (sa *syncAsyncBridge) resolveFailedOperation(inflight *inflightRequest, typ
 	inflight.response <- inflightResponse{err: fmt.Errorf(op.Error)}
 }
 
-func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftypes.UUID, reqType requestType, send RequestSender) (interface{}, error) {
+func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftypes.UUID, reqType requestType, send SendFunction) (interface{}, error) {
 	inflight, err := sa.addInFlight(ns, id, reqType)
 	if err != nil {
 		return nil, err
@@ -595,7 +602,7 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftyp
 	}
 }
 
-func (sa *syncAsyncBridge) WaitForReply(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.MessageInOut, error) {
+func (sa *syncAsyncBridge) WaitForReply(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.MessageInOut, error) {
 	reply, err := sa.sendAndWait(ctx, sa.namespace, id, messageReply, send)
 	if err != nil {
 		return nil, err
@@ -603,7 +610,7 @@ func (sa *syncAsyncBridge) WaitForReply(ctx context.Context, id *fftypes.UUID, s
 	return reply.(*core.MessageInOut), err
 }
 
-func (sa *syncAsyncBridge) WaitForMessage(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Message, error) {
+func (sa *syncAsyncBridge) WaitForMessage(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.Message, error) {
 	reply, err := sa.sendAndWait(ctx, sa.namespace, id, messageConfirm, send)
 	if err != nil {
 		return nil, err
@@ -611,7 +618,7 @@ func (sa *syncAsyncBridge) WaitForMessage(ctx context.Context, id *fftypes.UUID,
 	return reply.(*core.Message), err
 }
 
-func (sa *syncAsyncBridge) WaitForIdentity(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Identity, error) {
+func (sa *syncAsyncBridge) WaitForIdentity(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.Identity, error) {
 	reply, err := sa.sendAndWait(ctx, sa.namespace, id, identityConfirm, send)
 	if err != nil {
 		return nil, err
@@ -619,7 +626,7 @@ func (sa *syncAsyncBridge) WaitForIdentity(ctx context.Context, id *fftypes.UUID
 	return reply.(*core.Identity), err
 }
 
-func (sa *syncAsyncBridge) WaitForTokenPool(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenPool, error) {
+func (sa *syncAsyncBridge) WaitForTokenPool(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.TokenPool, error) {
 	reply, err := sa.sendAndWait(ctx, sa.namespace, id, tokenPoolConfirm, send)
 	if err != nil {
 		return nil, err
@@ -627,7 +634,7 @@ func (sa *syncAsyncBridge) WaitForTokenPool(ctx context.Context, id *fftypes.UUI
 	return reply.(*core.TokenPool), err
 }
 
-func (sa *syncAsyncBridge) WaitForTokenTransfer(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenTransfer, error) {
+func (sa *syncAsyncBridge) WaitForTokenTransfer(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.TokenTransfer, error) {
 	reply, err := sa.sendAndWait(ctx, sa.namespace, id, tokenTransferConfirm, send)
 	if err != nil {
 		return nil, err
@@ -635,7 +642,7 @@ func (sa *syncAsyncBridge) WaitForTokenTransfer(ctx context.Context, id *fftypes
 	return reply.(*core.TokenTransfer), err
 }
 
-func (sa *syncAsyncBridge) WaitForTokenApproval(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenApproval, error) {
+func (sa *syncAsyncBridge) WaitForTokenApproval(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.TokenApproval, error) {
 	reply, err := sa.sendAndWait(ctx, sa.namespace, id, tokenApproveConfirm, send)
 	if err != nil {
 		return nil, err
@@ -643,7 +650,7 @@ func (sa *syncAsyncBridge) WaitForTokenApproval(ctx context.Context, id *fftypes
 	return reply.(*core.TokenApproval), err
 }
 
-func (sa *syncAsyncBridge) WaitForInvokeOperation(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Operation, error) {
+func (sa *syncAsyncBridge) WaitForInvokeOperation(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.Operation, error) {
 	reply, err := sa.sendAndWait(ctx, sa.namespace, id, invokeOperationConfirm, send)
 	if err != nil {
 		return nil, err

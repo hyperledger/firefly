@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
-	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
+	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,7 +35,7 @@ func TestSendReplyBroadcastFail(t *testing.T) {
 	})
 	defer cancel()
 
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mbm := ed.broadcast.(*broadcastmocks.Manager)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
@@ -55,7 +55,7 @@ func TestSendReplyPrivateFail(t *testing.T) {
 	})
 	defer cancel()
 
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mpm := ed.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("NewMessage", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
@@ -87,7 +87,7 @@ func TestSendReplyPrivateOk(t *testing.T) {
 		},
 	}
 
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mpm := ed.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("NewMessage", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)

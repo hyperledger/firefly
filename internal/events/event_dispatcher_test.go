@@ -32,7 +32,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
-	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
+	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
@@ -1031,7 +1031,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 		Namespace: "ns1",
 	}
 
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mbm := ed.broadcast.(*broadcastmocks.Manager)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", mock.Anything).Return(nil)

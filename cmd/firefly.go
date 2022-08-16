@@ -58,6 +58,7 @@ var showConfigCommand = &cobra.Command{
 	Short:   "List out the configuration options",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config of all plugins
+		resetConfig()
 		getRootManager()
 		_ = config.ReadConfig(configSuffix, cfgFile)
 
@@ -79,6 +80,11 @@ func init() {
 	rootCmd.AddCommand(showConfigCommand)
 }
 
+func resetConfig() {
+	coreconfig.Reset()
+	apiserver.InitConfig()
+}
+
 func getRootManager() namespace.Manager {
 	if _utManager != nil {
 		return _utManager
@@ -94,8 +100,7 @@ func Execute() error {
 func run() error {
 
 	// Read the configuration
-	coreconfig.Reset()
-	apiserver.InitConfig()
+	resetConfig()
 	err := config.ReadConfig(configSuffix, cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly
@@ -132,8 +137,7 @@ func run() error {
 			log.L(ctx).Infof("Restarting due to configuration change")
 			mgr.WaitStop()
 			// Re-read the configuration
-			coreconfig.Reset()
-			apiserver.InitConfig()
+			resetConfig()
 			if err := config.ReadConfig(configSuffix, cfgFile); err != nil {
 				cancelCtx()
 				return err

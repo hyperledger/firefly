@@ -1338,7 +1338,7 @@ func TestInvokeContractConfirm(t *testing.T) {
 	})).Return(nil, nil)
 	msa.On("WaitForInvokeOperation", mock.Anything, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&core.Operation{}, nil)

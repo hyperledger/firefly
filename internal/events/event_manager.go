@@ -41,7 +41,6 @@ import (
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -84,13 +83,12 @@ type EventManager interface {
 	GetPlugins() []*core.NamespaceStatusPlugin
 
 	// Internal events
-	sysmessaging.SystemEvents
+	system.EventInterface
 }
 
 type eventManager struct {
 	ctx                   context.Context
 	namespace             core.NamespaceRef
-	ni                    sysmessaging.LocalNodeInfo
 	database              database.Plugin
 	txHelper              txcommon.Helper
 	identity              identity.Manager
@@ -115,8 +113,8 @@ type eventManager struct {
 	multiparty            multiparty.Manager // optional
 }
 
-func NewEventManager(ctx context.Context, ns core.NamespaceRef, ni sysmessaging.LocalNodeInfo, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
-	if ni == nil || di == nil || im == nil || dh == nil || dm == nil || ds == nil || am == nil {
+func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
+	if di == nil || im == nil || dh == nil || dm == nil || ds == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -124,7 +122,6 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, ni sysmessaging.
 	em := &eventManager{
 		ctx:            log.WithLogField(ctx, "role", "event-manager"),
 		namespace:      ns,
-		ni:             ni,
 		database:       di,
 		txHelper:       txHelper,
 		identity:       im,
