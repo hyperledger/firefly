@@ -145,7 +145,7 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plug
 		newEventNotifier:      newEventNotifier,
 		newPinNotifier:        newPinNotifier,
 		metrics:               mm,
-		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.EventListenerTopicCacheSize))),
+		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetInt64(coreconfig.EventListenerTopicCacheLimit))),
 		chainListenerCacheTTL: config.GetDuration(coreconfig.EventListenerTopicCacheTTL),
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)

@@ -83,7 +83,7 @@ func NewOperationsManager(ctx context.Context, ns string, di database.Plugin, tx
 	}
 	om.updater = newOperationUpdater(ctx, om, di, txHelper)
 	om.cache = ccache.New(
-		ccache.Configure().MaxSize(config.GetInt64(coreconfig.CacheOperationsSize)),
+		ccache.Configure().MaxSize(config.GetInt64(coreconfig.CacheOperationsLimit)),
 	)
 	return om, nil
 }

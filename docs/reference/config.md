@@ -36,7 +36,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|limit|Max number of cache items for batches|`string`|`<nil>`
 |ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## batch.manager
@@ -268,7 +268,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|limit|Max number of cache items for blockchain events|`string`|`<nil>`
 |ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## broadcast.batch
@@ -284,14 +284,14 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|Size of blockchain cache|`string`|`<nil>`
+|limit|Max number of cache items for blockchain plugin cache|`string`|`<nil>`
 |ttl|Time to live for blockchain cache items|`string`|`<nil>`
 
 ## cache.operations
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|Size of operation cache|`string`|`<nil>`
+|limit|Max number of cache items for operations|`string`|`<nil>`
 |ttl|Time to live for operation cache items|`string`|`<nil>`
 
 ## cors
@@ -467,7 +467,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|limit|Max number of cache items for blockchain listener topics|`string`|`<nil>`
 |ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## event.transports
@@ -481,7 +481,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|limit|Max number of cache items for private group addresses|`string`|`<nil>`
 |ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## histograms

@@ -48,7 +48,7 @@ func NewTestTransactionHelper(di database.Plugin, dm data.Manager) (Helper, *cca
 	t.blockchainEventCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.BlockchainEventCacheSize)),
+			MaxSize(config.GetByteSize(coreconfig.BlockchainEventCacheLimit)),
 	)
 	return t, t.transactionCache, t.blockchainEventCache
 }
