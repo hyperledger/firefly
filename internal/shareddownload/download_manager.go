@@ -234,7 +234,7 @@ func (dm *downloadManager) InitiateDownloadBlob(ctx context.Context, tx *fftypes
 }
 
 func (dm *downloadManager) createAndDispatchOp(ctx context.Context, op *core.Operation, preparedOp *core.PreparedOperation) error {
-	err := dm.database.InsertOperation(ctx, op, func() {
+	err := dm.operations.AddOrReuseOperation(ctx, op, func() {
 		// Use a closure hook to dispatch the work once the operation is successfully in the DB.
 		// Note we have crash recovery of pending operations on startup.
 		dm.dispatchWork(&downloadWork{

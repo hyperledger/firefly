@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -50,20 +51,27 @@ func TestRunWithOperationContext(t *testing.T) {
 		Status: core.OpStatusFailed,
 	}
 
+	hookCalls := 0
+	hook := func() { hookCalls++ }
+
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("InsertOperation", mock.Anything, op1).Return(nil).Once()
+	mdi.On("InsertOperation", mock.Anything, op1, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		hookFn := args[2].(database.PostCompletionHook)
+		hookFn()
+	}).Once()
 	mdi.On("InsertOperation", mock.Anything, op2).Return(nil).Once()
 
 	err := RunWithOperationContext(context.Background(), func(ctx context.Context) error {
-		if err := om.AddOrReuseOperation(ctx, op1); err != nil {
+		if err := om.AddOrReuseOperation(ctx, op1, hook); err != nil {
 			return err
 		}
-		if err := om.AddOrReuseOperation(ctx, op1Copy); err != nil {
+		if err := om.AddOrReuseOperation(ctx, op1Copy, hook); err != nil {
 			return err
 		}
 		return om.AddOrReuseOperation(ctx, op2)
 	})
 	assert.NoError(t, err)
+	assert.Equal(t, 2, hookCalls)
 
 	mdi.AssertExpectations(t)
 }

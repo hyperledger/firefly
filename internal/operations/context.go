@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 type operationContextKey struct{}
@@ -64,7 +65,7 @@ func RunWithOperationContext(ctx context.Context, fn func(ctx context.Context) e
 	return fn(createOperationRetryContext(ctx))
 }
 
-func (om *operationsManager) AddOrReuseOperation(ctx context.Context, op *core.Operation) error {
+func (om *operationsManager) AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error {
 	// If a ops has been created via RunWithOperationCache, detect duplicate operation inserts
 	ops := getOperationContext(ctx)
 	if ops != nil {
@@ -72,9 +73,12 @@ func (om *operationsManager) AddOrReuseOperation(ctx context.Context, op *core.O
 			if cached, ok := ops[key]; ok {
 				// Identical operation already added in this context
 				*op = *cached
+				for _, hook := range hooks {
+					hook()
+				}
 				return nil
 			}
-			if err = om.database.InsertOperation(ctx, op); err != nil {
+			if err = om.database.InsertOperation(ctx, op, hooks...); err != nil {
 				return err
 			}
 			ops[key] = op
@@ -82,7 +86,7 @@ func (om *operationsManager) AddOrReuseOperation(ctx context.Context, op *core.O
 			return nil
 		}
 	}
-	err := om.database.InsertOperation(ctx, op)
+	err := om.database.InsertOperation(ctx, op, hooks...)
 	if err == nil {
 		om.cacheOperation(op)
 	}

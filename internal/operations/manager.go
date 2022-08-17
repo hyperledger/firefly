@@ -46,7 +46,7 @@ type Manager interface {
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
 	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
-	AddOrReuseOperation(ctx context.Context, op *core.Operation) error
+	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
 	SubmitOperationUpdate(update *core.OperationUpdate)
 	GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error

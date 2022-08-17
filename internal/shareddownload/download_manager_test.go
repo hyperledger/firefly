@@ -89,13 +89,12 @@ func TestDownloadBatchE2EOk(t *testing.T) {
 	called := make(chan struct{})
 
 	opID := fftypes.NewUUID()
-	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("InsertOperation", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+
+	mom := dm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		*opID = *args[1].(*core.Operation).ID
 		args[2].(database.PostCompletionHook)()
 	}).Return(nil)
-
-	mom := dm.operations.(*operationmocks.Manager)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		assert.Equal(t, core.OpTypeSharedStorageDownloadBatch, op.Type)
 		assert.Equal(t, "ns1", op.Namespace)
@@ -118,7 +117,6 @@ func TestDownloadBatchE2EOk(t *testing.T) {
 	<-called
 
 	mss.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mci.AssertExpectations(t)
 	mom.AssertExpectations(t)
 
@@ -149,12 +147,10 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 
 	called := make(chan struct{})
 
-	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("InsertOperation", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+	mom := dm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
 	}).Return(nil)
-
-	mom := dm.operations.(*operationmocks.Manager)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		assert.Equal(t, core.OpTypeSharedStorageDownloadBlob, op.Type)
 		assert.Equal(t, "ns1", op.Namespace)
@@ -193,7 +189,6 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 
 	mss.AssertExpectations(t)
 	mdx.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mci.AssertExpectations(t)
 	mom.AssertExpectations(t)
 
@@ -210,13 +205,13 @@ func TestDownloadBlobInsertOpFail(t *testing.T) {
 	mss := dm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mss.On("Name").Return("utss")
 
-	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("InsertOperation", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mom := dm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := dm.InitiateDownloadBlob(dm.ctx, txID, dataID, "ref1")
 	assert.Regexp(t, "pop", err)
 
-	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 
 }
 

@@ -5,8 +5,10 @@ package operationmocks
 import (
 	context "context"
 
-	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 	core "github.com/hyperledger/firefly/pkg/core"
+	database "github.com/hyperledger/firefly/pkg/database"
+
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -18,13 +20,20 @@ type Manager struct {
 	mock.Mock
 }
 
-// AddOrReuseOperation provides a mock function with given fields: ctx, op
-func (_m *Manager) AddOrReuseOperation(ctx context.Context, op *core.Operation) error {
-	ret := _m.Called(ctx, op)
+// AddOrReuseOperation provides a mock function with given fields: ctx, op, hooks
+func (_m *Manager) AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, op)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Operation) error); ok {
-		r0 = rf(ctx, op)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Operation, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, op, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}
