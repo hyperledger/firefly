@@ -85,7 +85,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 			txid,
 			core.OpTypeTokenCreatePool)
 		if err = txcommon.AddTokenPoolCreateInputs(op, pool); err == nil {
-			err = am.database.InsertOperation(ctx, op)
+			err = am.operations.AddOrReuseOperation(ctx, op)
 		}
 		return err
 	})
@@ -123,7 +123,7 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenP
 			pool.TX.ID,
 			core.OpTypeTokenActivatePool)
 		txcommon.AddTokenPoolActivateInputs(op, pool.ID)
-		return am.database.InsertOperation(ctx, op)
+		return am.operations.AddOrReuseOperation(ctx, op)
 	})
 	if err != nil || op == nil {
 		return err

@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -99,18 +100,20 @@ type syncAsyncBridge struct {
 	namespace   string
 	database    database.Plugin
 	data        data.Manager
+	operations  operations.Manager
 	sysevents   system.EventInterface
 	inflightMux sync.Mutex
 	inflight    inflightRequestMap
 }
 
-func NewSyncAsyncBridge(ctx context.Context, ns string, di database.Plugin, dm data.Manager) Bridge {
+func NewSyncAsyncBridge(ctx context.Context, ns string, di database.Plugin, dm data.Manager, om operations.Manager) Bridge {
 	sa := &syncAsyncBridge{
-		ctx:       log.WithLogField(ctx, "role", "sync-async-bridge"),
-		namespace: ns,
-		database:  di,
-		data:      dm,
-		inflight:  make(inflightRequestMap),
+		ctx:        log.WithLogField(ctx, "role", "sync-async-bridge"),
+		namespace:  ns,
+		database:   di,
+		data:       dm,
+		operations: om,
+		inflight:   make(inflightRequestMap),
 	}
 	return sa
 }
@@ -245,7 +248,7 @@ func (sa *syncAsyncBridge) getApprovalFromEvent(event *core.EventDelivery) (appr
 }
 
 func (sa *syncAsyncBridge) getOperationFromEvent(event *core.EventDelivery) (op *core.Operation, err error) {
-	if op, err = sa.database.GetOperationByID(sa.ctx, sa.namespace, event.Reference); err != nil {
+	if op, err = sa.operations.GetOperationByIDCached(sa.ctx, event.Reference); err != nil {
 		return nil, err
 	}
 	if op == nil {

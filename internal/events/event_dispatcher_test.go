@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -48,9 +49,11 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
+	mom := &operationmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+	enricher := newEventEnricher("ns1", mdi, mdm, mom, txHelper)
 	ctx, cancel := context.WithCancel(context.Background())
-	return newEventDispatcher(ctx, mei, mdi, mdm, mbm, mpm, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), txHelper), func() {
+	return newEventDispatcher(ctx, enricher, mei, mdi, mdm, mbm, mpm, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), txHelper), func() {
 		cancel()
 		coreconfig.Reset()
 	}

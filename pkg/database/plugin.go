@@ -211,9 +211,6 @@ type iOperationCollection interface {
 	// InsertOperation - Insert an operation
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
 
-	// ResolveOperation - Resolve operation upon completion
-	ResolveOperation(ctx context.Context, namespace string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error)
-
 	// UpdateOperation - Update an operation
 	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, update Update) (err error)
 

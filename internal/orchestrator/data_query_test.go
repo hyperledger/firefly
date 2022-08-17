@@ -534,7 +534,7 @@ func TestGetOperationByID(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	u := fftypes.NewUUID()
-	or.mdi.On("GetOperationByID", mock.Anything, "ns", u).Return(&core.Operation{
+	or.mom.On("GetOperationByIDCached", mock.Anything, u).Return(&core.Operation{
 		Namespace: "ns1",
 	}, nil)
 	_, err := or.GetOperationByID(context.Background(), u.String())
@@ -644,21 +644,21 @@ func TestGetEventsWithReferences(t *testing.T) {
 		Type:      core.EventTypeMessageConfirmed,
 	}
 
-	or.mth.On("EnrichEvent", mock.Anything, blockchainEvent).Return(&core.EnrichedEvent{
+	or.mem.On("EnrichEvent", mock.Anything, blockchainEvent).Return(&core.EnrichedEvent{
 		Event: *blockchainEvent,
 		BlockchainEvent: &core.BlockchainEvent{
 			ID: ref1,
 		},
 	}, nil)
 
-	or.mth.On("EnrichEvent", mock.Anything, txEvent).Return(&core.EnrichedEvent{
+	or.mem.On("EnrichEvent", mock.Anything, txEvent).Return(&core.EnrichedEvent{
 		Event: *txEvent,
 		Transaction: &core.Transaction{
 			ID: ref2,
 		},
 	}, nil)
 
-	or.mth.On("EnrichEvent", mock.Anything, msgEvent).Return(&core.EnrichedEvent{
+	or.mem.On("EnrichEvent", mock.Anything, msgEvent).Return(&core.EnrichedEvent{
 		Event: *msgEvent,
 		Message: &core.Message{
 			Header: core.MessageHeader{
@@ -684,7 +684,7 @@ func TestGetEventsWithReferencesEnrichFail(t *testing.T) {
 	u := fftypes.NewUUID()
 
 	or.mdi.On("GetEvents", mock.Anything, "ns", mock.Anything).Return([]*core.Event{{ID: fftypes.NewUUID()}}, nil, nil)
-	or.mth.On("EnrichEvent", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	or.mem.On("EnrichEvent", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetEventsWithReferences(context.Background(), f)

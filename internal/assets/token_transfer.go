@@ -238,7 +238,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 			txid,
 			core.OpTypeTokenTransfer)
 		if err = txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer); err == nil {
-			err = s.mgr.database.InsertOperation(ctx, op)
+			err = s.mgr.operations.AddOrReuseOperation(ctx, op)
 		}
 		return err
 	})

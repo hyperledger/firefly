@@ -120,6 +120,7 @@ type OperationUpdateDTO struct {
 type PreparedOperation struct {
 	ID        *fftypes.UUID `json:"id"`
 	Namespace string        `json:"namespace"`
+	Plugin    string        `json:"plugin"`
 	Type      OpType        `json:"type" ffenum:"optype"`
 	Data      interface{}   `json:"data"`
 }
