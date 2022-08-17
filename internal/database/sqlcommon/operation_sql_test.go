@@ -103,6 +103,10 @@ func TestOperationE2EWithDB(t *testing.T) {
 	err = s.UpdateOperation(ctx, operation.Namespace, operation.ID, update)
 	assert.NoError(t, err)
 
+	// Update not found is 404
+	err = s.UpdateOperation(ctx, operation.Namespace, fftypes.NewUUID(), update)
+	assert.Regexp(t, "FF10143", err)
+
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("id", operation.ID.String()),
