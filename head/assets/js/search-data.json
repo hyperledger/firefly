@@ -421,7 +421,7 @@
   },"70": {
     "doc": "pages.reference",
     "title": "batch.cache",
-    "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | limit | Max number of cache items for batches | string | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#batchcache",
     "relUrl": "/reference/config.html#batchcache"
   },"71": {
@@ -571,7 +571,7 @@
   },"95": {
     "doc": "pages.reference",
     "title": "blockchainevent.cache",
-    "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | limit | Max number of cache items for blockchain events | string | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchaineventcache",
     "relUrl": "/reference/config.html#blockchaineventcache"
   },"96": {
@@ -583,13 +583,13 @@
   },"97": {
     "doc": "pages.reference",
     "title": "cache.blockchain",
-    "content": "| Key | Description | Type | Default Value | . | size | Size of blockchain cache | string | &lt;nil&gt; | . | ttl | Time to live for blockchain cache items | string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | limit | Max number of cache items for blockchain plugin cache | string | &lt;nil&gt; | . | ttl | Time to live for blockchain cache items | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#cacheblockchain",
     "relUrl": "/reference/config.html#cacheblockchain"
   },"98": {
     "doc": "pages.reference",
     "title": "cache.operations",
-    "content": "| Key | Description | Type | Default Value | . | size | Size of operation cache | string | &lt;nil&gt; | . | ttl | Time to live for operation cache items | string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | limit | Max number of cache items for operations | string | &lt;nil&gt; | . | ttl | Time to live for operation cache items | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#cacheoperations",
     "relUrl": "/reference/config.html#cacheoperations"
   },"99": {
@@ -715,7 +715,7 @@
   },"119": {
     "doc": "pages.reference",
     "title": "event.listenerTopic.cache",
-    "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | limit | Max number of cache items for blockchain listener topics | string | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#eventlistenertopiccache",
     "relUrl": "/reference/config.html#eventlistenertopiccache"
   },"120": {
@@ -727,7 +727,7 @@
   },"121": {
     "doc": "pages.reference",
     "title": "group.cache",
-    "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | limit | Max number of cache items for private group addresses | string | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#groupcache",
     "relUrl": "/reference/config.html#groupcache"
   },"122": {
