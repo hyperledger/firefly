@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/events"
@@ -44,8 +45,9 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.Plugin) (*subscriptionMana
 	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
+	mom := &operationmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
-	enricher := newEventEnricher("ns1", mdi, mdm, txHelper)
+	enricher := newEventEnricher("ns1", mdi, mdm, mom, txHelper)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	mei.On("Name").Return("ut")

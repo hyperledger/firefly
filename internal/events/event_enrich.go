@@ -20,24 +20,27 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
 type eventEnricher struct {
-	namespace string
-	data      data.Manager
-	database  database.Plugin
-	txHelper  txcommon.Helper
+	namespace  string
+	data       data.Manager
+	database   database.Plugin
+	operations operations.Manager
+	txHelper   txcommon.Helper
 }
 
-func newEventEnricher(ns string, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) *eventEnricher {
+func newEventEnricher(ns string, di database.Plugin, dm data.Manager, om operations.Manager, txHelper txcommon.Helper) *eventEnricher {
 	return &eventEnricher{
-		namespace: ns,
-		data:      dm,
-		database:  di,
-		txHelper:  txHelper,
+		namespace:  ns,
+		data:       dm,
+		database:   di,
+		operations: om,
+		txHelper:   txHelper,
 	}
 }
 
@@ -108,7 +111,7 @@ func (em *eventEnricher) enrichEvent(ctx context.Context, event *core.Event) (*c
 		}
 		e.TokenTransfer = transfer
 	case core.EventTypeApprovalOpFailed, core.EventTypeTransferOpFailed, core.EventTypeBlockchainInvokeOpFailed, core.EventTypePoolOpFailed, core.EventTypeBlockchainInvokeOpSucceeded:
-		operation, err := em.database.GetOperationByID(ctx, em.namespace, event.Reference)
+		operation, err := em.operations.GetOperationByIDCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}

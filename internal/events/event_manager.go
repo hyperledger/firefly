@@ -39,6 +39,7 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/multiparty"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -115,8 +116,8 @@ type eventManager struct {
 	multiparty            multiparty.Manager // optional
 }
 
-func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
-	if di == nil || im == nil || dh == nil || dm == nil || ds == nil || am == nil {
+func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
+	if di == nil || im == nil || dh == nil || dm == nil || om == nil || ds == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -154,7 +155,7 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plug
 		em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 	}
 
-	em.enricher = newEventEnricher(ns.LocalName, di, dm, txHelper)
+	em.enricher = newEventEnricher(ns.LocalName, di, dm, om, txHelper)
 
 	var err error
 	if em.subManager, err = newSubscriptionManager(ctx, ns.LocalName, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {

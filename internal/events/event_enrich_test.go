@@ -22,12 +22,22 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func newTestEventEnricher() *eventEnricher {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mom := &operationmocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+	return newEventEnricher("ns1", mdi, mdm, mom, txHelper)
+}
 
 func TestEnrichMessageConfirmed(t *testing.T) {
 	em, cancel := newTestEventManager(t)
@@ -56,8 +66,7 @@ func TestEnrichMessageConfirmed(t *testing.T) {
 }
 
 func TestEnrichMessageFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -74,13 +83,12 @@ func TestEnrichMessageFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichMessageRejected(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -99,14 +107,13 @@ func TestEnrichMessageRejected(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Message.Header.ID)
 }
 
 func TestEnrichTxSubmitted(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -125,14 +132,13 @@ func TestEnrichTxSubmitted(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Transaction.ID)
 }
 
 func TestEnrichTxFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -149,13 +155,12 @@ func TestEnrichTxFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichBlockchainEventSubmitted(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -174,14 +179,13 @@ func TestEnrichBlockchainEventSubmitted(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.BlockchainEvent.ID)
 }
 
 func TestEnrichBlockchainEventFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -198,13 +202,12 @@ func TestEnrichBlockchainEventFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichContractAPISubmitted(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -223,14 +226,13 @@ func TestEnrichContractAPISubmitted(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.ContractAPI.ID)
 }
 
 func TestEnrichContractAPItFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -247,13 +249,12 @@ func TestEnrichContractAPItFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichContractInterfaceSubmitted(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -272,14 +273,13 @@ func TestEnrichContractInterfaceSubmitted(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.ContractInterface.ID)
 }
 
 func TestEnrichContractInterfacetFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -296,13 +296,12 @@ func TestEnrichContractInterfacetFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichDatatypeConfirmed(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -321,14 +320,13 @@ func TestEnrichDatatypeConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Datatype.ID)
 }
 
 func TestEnrichDatatypeConfirmedFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -345,13 +343,12 @@ func TestEnrichDatatypeConfirmedFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichIdentityConfirmed(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -372,14 +369,13 @@ func TestEnrichIdentityConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Identity.IdentityBase.ID)
 }
 
 func TestEnrichIdentityConfirmedFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -396,13 +392,12 @@ func TestEnrichIdentityConfirmedFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichTokenPoolConfirmed(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -421,14 +416,13 @@ func TestEnrichTokenPoolConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.TokenPool.ID)
 }
 
 func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -445,13 +439,12 @@ func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichTokenApprovalConfirmed(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -470,14 +463,13 @@ func TestEnrichTokenApprovalConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.TokenApproval.LocalID)
 }
 
 func TestEnrichTokenApprovalFailed(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -485,8 +477,8 @@ func TestEnrichTokenApprovalFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", mock.Anything, "ns1", ref1).Return(&core.Operation{
+	mom := em.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", mock.Anything, ref1).Return(&core.Operation{
 		ID: ref1,
 	}, nil)
 
@@ -496,14 +488,13 @@ func TestEnrichTokenApprovalFailed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Operation.ID)
 }
 
 func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -520,13 +511,12 @@ func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichTokenTransferConfirmed(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -545,14 +535,13 @@ func TestEnrichTokenTransferConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.TokenTransfer.LocalID)
 }
 
 func TestEnrichTokenTransferFailed(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -560,8 +549,8 @@ func TestEnrichTokenTransferFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", mock.Anything, "ns1", ref1).Return(&core.Operation{
+	mom := em.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", mock.Anything, ref1).Return(&core.Operation{
 		ID: ref1,
 	}, nil)
 
@@ -571,14 +560,13 @@ func TestEnrichTokenTransferFailed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := em.EnrichEvent(ctx, event)
+	enriched, err := em.enrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Operation.ID)
 }
 
 func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -595,13 +583,12 @@ func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichOperationFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventEnricher()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -609,8 +596,8 @@ func TestEnrichOperationFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
+	mom := em.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,
@@ -618,6 +605,6 @@ func TestEnrichOperationFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := em.EnrichEvent(ctx, event)
+	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
