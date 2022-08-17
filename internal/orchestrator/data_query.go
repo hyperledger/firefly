@@ -36,7 +36,7 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, id string) (*cor
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetTransactionByID(ctx, or.namespace.LocalName, u)
+	return or.txHelper.GetTransactionByIDCached(ctx, u)
 }
 
 func (or *orchestrator) GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *database.FilterResult, error) {
@@ -198,7 +198,7 @@ func (or *orchestrator) GetMessageTransaction(ctx context.Context, id string) (*
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetTransactionByID(ctx, or.namespace.LocalName, txID)
+	return or.txHelper.GetTransactionByIDCached(ctx, txID)
 }
 
 func (or *orchestrator) GetMessageEvents(ctx context.Context, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {

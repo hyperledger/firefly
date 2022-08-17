@@ -39,7 +39,7 @@ func TestGetTransactionByID(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	u := fftypes.NewUUID()
-	or.mdi.On("GetTransactionByID", mock.Anything, "ns", u).Return(nil, nil)
+	or.mth.On("GetTransactionByIDCached", mock.Anything, u).Return(nil, nil)
 	_, err := or.GetTransactionByID(context.Background(), u.String())
 	assert.NoError(t, err)
 }
@@ -266,7 +266,7 @@ func TestGetMessageTransactionOk(t *testing.T) {
 			ID:   txID,
 		},
 	}, nil)
-	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(&core.Transaction{
+	or.mth.On("GetTransactionByIDCached", mock.Anything, txID).Return(&core.Transaction{
 		ID: txID,
 	}, nil)
 	tx, err := or.GetMessageTransaction(context.Background(), msgID.String())
