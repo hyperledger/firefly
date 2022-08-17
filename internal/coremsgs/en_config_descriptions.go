@@ -93,10 +93,15 @@ var (
 	ConfigBlockchainFabricFabconnectProxyURL     = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
 
 	ConfigCacheBlockchainTTL  = ffc("config.cache.blockchain.ttl", "Time to live for blockchain cache items", i18n.StringType)
-	ConfigCacheBlockchainSize = ffc("config.cache.blockchain.size", "Size of blockchain cache", i18n.StringType)
+	ConfigCacheBlockchainSize = ffc("config.cache.blockchain.limit", "Max number of cache items for blockchain plugin cache", i18n.StringType)
 
 	ConfigCacheOperationsTTL  = ffc("config.cache.operations.ttl", "Time to live for operation cache items", i18n.StringType)
-	ConfigCacheOperationsSize = ffc("config.cache.operations.size", "Size of operation cache", i18n.StringType)
+	ConfigCacheOperationsSize = ffc("config.cache.operations.limit", "Max number of cache items for operations", i18n.StringType)
+
+	ConfigCacheBatchLimit           = ffc("config.batch.cache.limit", "Max number of cache items for batches", i18n.StringType)
+	ConfigCacheBlockchainEventLimit = ffc("config.blockchainevent.cache.limit", "Max number of cache items for blockchain events", i18n.StringType)
+	ConfigCacheListenerTopicLimit   = ffc("config.event.listenerTopic.cache.limit", "Max number of cache items for blockchain listener topics", i18n.StringType)
+	ConfigCacheGroupLimit           = ffc("config.group.cache.limit", "Max number of cache items for private group addresses", i18n.StringType)
 
 	ConfigPluginDatabase     = ffc("config.plugins.database", "The list of configured Database plugins", i18n.StringType)
 	ConfigPluginDatabaseName = ffc("config.plugins.database[].name", "The name of the Database plugin", i18n.StringType)
