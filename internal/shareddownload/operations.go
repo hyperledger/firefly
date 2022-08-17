@@ -168,6 +168,7 @@ func opDownloadBatch(op *core.Operation, payloadRef string) *core.PreparedOperat
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data: downloadBatchData{
 			PayloadRef: payloadRef,
@@ -179,6 +180,7 @@ func opDownloadBlob(op *core.Operation, dataID *fftypes.UUID, payloadRef string)
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data: downloadBlobData{
 			DataID:     dataID,

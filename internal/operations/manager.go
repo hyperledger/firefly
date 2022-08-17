@@ -121,6 +121,7 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 	if err != nil {
 		om.SubmitOperationUpdate(&core.OperationUpdate{
 			NamespacedOpID: op.NamespacedIDString(),
+			Plugin:         op.Plugin,
 			Status:         failState,
 			ErrorMessage:   err.Error(),
 			Output:         outputs,
@@ -128,6 +129,7 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 	} else if complete {
 		om.SubmitOperationUpdate(&core.OperationUpdate{
 			NamespacedOpID: op.NamespacedIDString(),
+			Plugin:         op.Plugin,
 			Status:         core.OpStatusSucceeded,
 			Output:         outputs,
 		})

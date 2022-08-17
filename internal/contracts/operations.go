@@ -95,6 +95,7 @@ func opBlockchainInvoke(op *core.Operation, req *core.ContractCallRequest) *core
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      blockchainInvokeData{Request: req},
 	}
