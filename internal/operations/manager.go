@@ -230,15 +230,17 @@ func (om *operationsManager) getOperationsCached(ctx context.Context, opIDs []*f
 		}
 	}
 
-	opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", cacheMisses)
-	dbOps, _, err := om.database.GetOperations(ctx, om.namespace, opFilter)
-	if err != nil {
-		return nil, err
+	if len(cacheMisses) > 0 {
+		opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", cacheMisses)
+		dbOps, _, err := om.database.GetOperations(ctx, om.namespace, opFilter)
+		if err != nil {
+			return nil, err
+		}
+		for _, op := range dbOps {
+			om.cacheOperation(op)
+		}
+		ops = append(ops, dbOps...)
 	}
-	for _, op := range dbOps {
-		om.cacheOperation(op)
-	}
-	ops = append(ops, dbOps...)
 	return ops, nil
 }
 
