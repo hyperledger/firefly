@@ -161,7 +161,7 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 	}
 
 	e.cacheTTL = config.GetDuration(coreconfig.CacheBlockchainTTL)
-	e.cache = ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.CacheBlockchainSize)))
+	e.cache = ccache.New(ccache.Configure().MaxSize(config.GetInt64(coreconfig.CacheBlockchainLimit)))
 
 	e.streams = newStreamManager(e.client, e.cache, e.cacheTTL)
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)

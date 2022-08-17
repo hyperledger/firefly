@@ -82,7 +82,7 @@ func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockc
 	ag.batchCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.BatchCacheSize)),
+			MaxSize(config.GetInt64(coreconfig.BatchCacheLimit)),
 	)
 	firstEvent := core.SubOptsFirstEvent(config.GetString(coreconfig.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{

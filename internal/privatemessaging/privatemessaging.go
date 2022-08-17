@@ -117,7 +117,7 @@ func NewPrivateMessaging(ctx context.Context, ns core.NamespaceRef, di database.
 	pm.groupManager.groupCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.GroupCacheSize)),
+			MaxSize(config.GetInt64(coreconfig.GroupCacheLimit)),
 	)
 
 	bo := batch.DispatcherOptions{
