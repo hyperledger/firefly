@@ -124,7 +124,7 @@ func (or *orchestrator) GetOperationByID(ctx context.Context, id string) (*core.
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetOperationByID(ctx, or.namespace.LocalName, u)
+	return or.operations.GetOperationByIDCached(ctx, u)
 }
 
 func (or *orchestrator) GetEventByID(ctx context.Context, id string) (*core.Event, error) {

@@ -51,13 +51,15 @@ func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabi
 	config.Set(coreconfig.OpUpdateWorkerBatchMaxInserts, 200)
 	logrus.SetLevel(logrus.DebugLevel)
 
+	mdi := &databasemocks.Plugin{}
+	mdi.On("Capabilities").Return(dbCapabilities)
+
 	mom := &operationsManager{
 		namespace: "ns1",
 		handlers:  make(map[fftypes.FFEnum]OperationHandler),
 		cache:     ccache.New(ccache.Configure().MaxSize(100)),
+		database:  mdi,
 	}
-	mdi := &databasemocks.Plugin{}
-	mdi.On("Capabilities").Return(dbCapabilities)
 	mdm := &datamocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	return newOperationUpdater(context.Background(), mom, mdi, txHelper)
@@ -192,7 +194,7 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 		{ID: opID2, Namespace: "ns1", Type: core.OpTypeTokenTransfer, Input: fftypes.JSONObject{"test": "test"}},
 		{ID: opID3, Namespace: "ns1", Type: core.OpTypeTokenApproval, Input: fftypes.JSONObject{"test": "test"}},
 	}, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Transaction{tx1}, nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", tx1.ID).Return(tx1, nil)
 	mdi.On("UpdateTransaction", mock.Anything, "ns1", tx1.ID, mock.Anything).Return(nil)
 
 	mdi.On("UpdateOperation", mock.Anything, "ns1", opID1, mock.MatchedBy(updateMatcher([][]string{
@@ -295,11 +297,12 @@ func TestDoBatchUpdateFailGetTransactions(t *testing.T) {
 	defer ou.close()
 
 	opID1 := fftypes.NewUUID()
+	txID1 := fftypes.NewUUID()
 	mdi := ou.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Operation{
-		{Namespace: "ns1", ID: opID1, Type: core.OpTypeBlockchainInvoke, Transaction: fftypes.NewUUID()},
+		{Namespace: "ns1", ID: opID1, Type: core.OpTypeBlockchainInvoke, Transaction: txID1},
 	}, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", txID1).Return(nil, fmt.Errorf("pop"))
 
 	ou.initQueues()
 

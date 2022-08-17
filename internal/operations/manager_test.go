@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -28,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/karlseguin/ccache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -219,8 +221,11 @@ func TestRetryOperationSuccess(t *testing.T) {
 		Type: op.Type,
 	}
 
+	om.cache = ccache.New(ccache.Configure().MaxSize(100))
+	om.cacheTTL = time.Minute * 10
+	om.cacheOperation(op)
+
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, nil)
 	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(newOp *core.Operation) bool {
 		assert.NotEqual(t, opID, newOp.ID)
 		assert.Equal(t, "blockchain", newOp.Plugin)

@@ -534,7 +534,7 @@ func TestGetOperationByID(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	u := fftypes.NewUUID()
-	or.mdi.On("GetOperationByID", mock.Anything, "ns", u).Return(&core.Operation{
+	or.mom.On("GetOperationByIDCached", mock.Anything, u).Return(&core.Operation{
 		Namespace: "ns1",
 	}, nil)
 	_, err := or.GetOperationByID(context.Background(), u.String())

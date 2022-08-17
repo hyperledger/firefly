@@ -18,7 +18,6 @@ package operations
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"time"
 
@@ -207,40 +206,20 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*core.O
 	if len(opIDs) == 0 {
 		return nil
 	}
-
-	ops := make([]*core.Operation, 0, len(opIDs))
-	cacheMisses := make([]driver.Value, 0)
-	for _, id := range opIDs {
-		if op := ou.manager.getCachedOperation(id); op != nil {
-			ops = append(ops, op)
-		} else {
-			cacheMisses = append(cacheMisses, id)
-		}
-	}
-
-	opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", cacheMisses)
-	dbOps, _, err := ou.database.GetOperations(ctx, ou.manager.namespace, opFilter)
+	ops, err := ou.manager.getOperationsCached(ctx, opIDs)
 	if err != nil {
 		return err
 	}
-	for _, op := range dbOps {
-		ou.manager.cacheOperation(op)
-		ops = append(ops, op)
-	}
 
 	// Get all the transactions for these operations
-	txIDs := make([]driver.Value, 0, len(ops))
+	var transactions []*core.Transaction
 	for _, op := range ops {
 		if op.Transaction != nil {
-			txIDs = append(txIDs, op.Transaction)
-		}
-	}
-	var transactions []*core.Transaction
-	if len(txIDs) > 0 {
-		txFilter := database.TransactionQueryFactory.NewFilter(ctx).In("id", txIDs)
-		transactions, _, err = ou.database.GetTransactions(ctx, ou.manager.namespace, txFilter)
-		if err != nil {
-			return err
+			transaction, err := ou.txHelper.GetTransactionByIDCached(ctx, op.Transaction)
+			if err != nil {
+				return err
+			}
+			transactions = append(transactions, transaction)
 		}
 	}
 

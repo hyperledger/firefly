@@ -32,6 +32,29 @@ func (_m *Manager) AddOrReuseOperation(ctx context.Context, op *core.Operation) 
 	return r0
 }
 
+// GetOperationByIDCached provides a mock function with given fields: ctx, opID
+func (_m *Manager) GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error) {
+	ret := _m.Called(ctx, opID)
+
+	var r0 *core.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Operation); ok {
+		r0 = rf(ctx, opID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, opID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PrepareOperation provides a mock function with given fields: ctx, op
 func (_m *Manager) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	ret := _m.Called(ctx, op)

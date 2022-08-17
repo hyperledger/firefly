@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/systemeventmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -35,8 +36,9 @@ func newTestSyncAsyncBridge(t *testing.T) (*syncAsyncBridge, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	mom := &operationmocks.Manager{}
 	mse := &systemeventmocks.EventInterface{}
-	sa := NewSyncAsyncBridge(ctx, "ns1", mdi, mdm)
+	sa := NewSyncAsyncBridge(ctx, "ns1", mdi, mdm, mom)
 	sa.Init(mse)
 	return sa.(*syncAsyncBridge), cancel
 }
@@ -992,8 +994,8 @@ func TestAwaitFailedTokenPool(t *testing.T) {
 	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(op, nil)
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(op, nil)
 
 	_, err := sa.WaitForTokenPool(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
@@ -1031,8 +1033,8 @@ func TestAwaitFailedTokenTransfer(t *testing.T) {
 	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(op, nil)
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(op, nil)
 
 	_, err := sa.WaitForTokenTransfer(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
@@ -1070,8 +1072,8 @@ func TestAwaitFailedTokenApproval(t *testing.T) {
 	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(op, nil)
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(op, nil)
 
 	_, err := sa.WaitForTokenApproval(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
@@ -1113,8 +1115,8 @@ func TestFailedTokenTransferOpError(t *testing.T) {
 		},
 	}
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(nil, fmt.Errorf("pop"))
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1129,7 +1131,7 @@ func TestFailedTokenTransferOpError(t *testing.T) {
 	})
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestFailedTokenApprovalOpError(t *testing.T) {
@@ -1153,8 +1155,8 @@ func TestFailedTokenApprovalOpError(t *testing.T) {
 		},
 	}
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(nil, fmt.Errorf("pop"))
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1169,7 +1171,7 @@ func TestFailedTokenApprovalOpError(t *testing.T) {
 	})
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestFailedTokenPoolOpNotFound(t *testing.T) {
@@ -1193,8 +1195,8 @@ func TestFailedTokenPoolOpNotFound(t *testing.T) {
 		},
 	}
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(nil, nil)
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1209,7 +1211,7 @@ func TestFailedTokenPoolOpNotFound(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestFailedTokenApprovalOpNotFound(t *testing.T) {
@@ -1233,8 +1235,8 @@ func TestFailedTokenApprovalOpNotFound(t *testing.T) {
 		},
 	}
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(nil, nil)
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1249,7 +1251,7 @@ func TestFailedTokenApprovalOpNotFound(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestFailedTokenApprovalIDLookupFail(t *testing.T) {
@@ -1271,8 +1273,8 @@ func TestFailedTokenApprovalIDLookupFail(t *testing.T) {
 		Input: fftypes.JSONObject{},
 	}
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(op, nil)
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(op, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1287,7 +1289,7 @@ func TestFailedTokenApprovalIDLookupFail(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestFailedTokenTransferOpNotFound(t *testing.T) {
@@ -1311,8 +1313,8 @@ func TestFailedTokenTransferOpNotFound(t *testing.T) {
 		},
 	}
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(nil, nil)
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1327,7 +1329,7 @@ func TestFailedTokenTransferOpNotFound(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestFailedTokenTransferIDLookupFail(t *testing.T) {
@@ -1349,8 +1351,8 @@ func TestFailedTokenTransferIDLookupFail(t *testing.T) {
 		Input: fftypes.JSONObject{},
 	}
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(op, nil)
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(op, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1365,7 +1367,7 @@ func TestFailedTokenTransferIDLookupFail(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestAwaitIdentityConfirmed(t *testing.T) {
@@ -1435,8 +1437,8 @@ func TestAwaitInvokeOpSucceeded(t *testing.T) {
 	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", requestID).Return(op, nil)
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(op, nil)
 
 	ret, err := sa.WaitForInvokeOperation(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
@@ -1474,8 +1476,8 @@ func TestAwaitInvokeOpSucceededLookupFail(t *testing.T) {
 	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", requestID).Return(nil, fmt.Errorf("pop"))
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, requestID).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1505,8 +1507,8 @@ func TestAwaitInvokeOpFailed(t *testing.T) {
 	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", requestID).Return(op, nil)
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, op.ID).Return(op, nil)
 
 	_, err := sa.WaitForInvokeOperation(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
@@ -1543,8 +1545,8 @@ func TestAwaitInvokeOpFailedLookupFail(t *testing.T) {
 	mse := sa.sysevents.(*systemeventmocks.EventInterface)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, "ns1", requestID).Return(nil, fmt.Errorf("pop"))
+	mom := sa.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", sa.ctx, requestID).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{

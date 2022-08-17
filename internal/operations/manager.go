@@ -18,6 +18,7 @@ package operations
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"time"
 
@@ -47,6 +48,7 @@ type Manager interface {
 	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation) error
 	SubmitOperationUpdate(update *core.OperationUpdate)
+	GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
 	Start() error
 	WaitStop()
@@ -134,7 +136,7 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 }
 
 func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *core.Operation, err error) {
-	op, err = om.database.GetOperationByID(ctx, om.namespace, opID)
+	op, err = om.GetOperationByIDCached(ctx, opID)
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +204,40 @@ func (om *operationsManager) Start() error {
 
 func (om *operationsManager) WaitStop() {
 	om.updater.close()
+}
+
+func (om *operationsManager) GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error) {
+	if cached := om.getCachedOperation(opID); cached != nil {
+		return cached, nil
+	}
+	op, err := om.database.GetOperationByID(ctx, om.namespace, opID)
+	if err == nil && op != nil {
+		om.cacheOperation(op)
+	}
+	return op, err
+}
+
+func (om *operationsManager) getOperationsCached(ctx context.Context, opIDs []*fftypes.UUID) ([]*core.Operation, error) {
+	ops := make([]*core.Operation, 0, len(opIDs))
+	cacheMisses := make([]driver.Value, 0)
+	for _, id := range opIDs {
+		if op := om.getCachedOperation(id); op != nil {
+			ops = append(ops, op)
+		} else {
+			cacheMisses = append(cacheMisses, id)
+		}
+	}
+
+	opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", cacheMisses)
+	dbOps, _, err := om.database.GetOperations(ctx, om.namespace, opFilter)
+	if err != nil {
+		return nil, err
+	}
+	for _, op := range dbOps {
+		om.cacheOperation(op)
+	}
+	ops = append(ops, dbOps...)
+	return ops, nil
 }
 
 func (om *operationsManager) getCachedOperation(id *fftypes.UUID) *core.Operation {

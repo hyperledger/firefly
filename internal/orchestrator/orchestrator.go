@@ -419,7 +419,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace.LocalName, or.database(), or.data)
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace.LocalName, or.database(), or.data, or.operations)
 
 	if or.config.Multiparty.Enabled {
 		if or.batch == nil {
