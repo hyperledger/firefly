@@ -279,7 +279,7 @@ func (or *orchestrator) GetEventsWithReferences(ctx context.Context, filter data
 
 	enriched := make([]*core.EnrichedEvent, len(events))
 	for i, event := range events {
-		enrichedEvent, err := or.txHelper.EnrichEvent(or.ctx, event)
+		enrichedEvent, err := or.events.EnrichEvent(or.ctx, event)
 		if err != nil {
 			return nil, nil, err
 		}

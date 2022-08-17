@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package txcommon
+package events
 
 import (
 	"context"
@@ -30,9 +30,8 @@ import (
 )
 
 func TestEnrichMessageConfirmed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -40,6 +39,7 @@ func TestEnrichMessageConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdm := em.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&core.Message{
 		Header: core.MessageHeader{ID: ref1},
 	}, nil, true, nil)
@@ -50,15 +50,14 @@ func TestEnrichMessageConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Message.Header.ID)
 }
 
 func TestEnrichMessageFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -66,6 +65,7 @@ func TestEnrichMessageFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdm := em.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(nil, nil, false, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -74,14 +74,13 @@ func TestEnrichMessageFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichMessageRejected(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -89,6 +88,7 @@ func TestEnrichMessageRejected(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdm := em.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&core.Message{
 		Header: core.MessageHeader{ID: ref1},
 	}, nil, true, nil)
@@ -99,15 +99,14 @@ func TestEnrichMessageRejected(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Message.Header.ID)
 }
 
 func TestEnrichTxSubmitted(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -115,6 +114,7 @@ func TestEnrichTxSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref1).Return(&core.Transaction{
 		ID: ref1,
 	}, nil)
@@ -125,15 +125,14 @@ func TestEnrichTxSubmitted(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Transaction.ID)
 }
 
 func TestEnrichTxFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -141,6 +140,7 @@ func TestEnrichTxFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -149,14 +149,13 @@ func TestEnrichTxFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichBlockchainEventSubmitted(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -164,6 +163,7 @@ func TestEnrichBlockchainEventSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", ref1).Return(&core.BlockchainEvent{
 		ID: ref1,
 	}, nil)
@@ -174,15 +174,14 @@ func TestEnrichBlockchainEventSubmitted(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.BlockchainEvent.ID)
 }
 
 func TestEnrichBlockchainEventFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -190,6 +189,7 @@ func TestEnrichBlockchainEventFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -198,14 +198,13 @@ func TestEnrichBlockchainEventFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichContractAPISubmitted(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -213,6 +212,7 @@ func TestEnrichContractAPISubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetContractAPIByID", mock.Anything, "ns1", ref1).Return(&core.ContractAPI{
 		ID: ref1,
 	}, nil)
@@ -223,15 +223,14 @@ func TestEnrichContractAPISubmitted(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.ContractAPI.ID)
 }
 
 func TestEnrichContractAPItFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -239,6 +238,7 @@ func TestEnrichContractAPItFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetContractAPIByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -247,14 +247,13 @@ func TestEnrichContractAPItFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichContractInterfaceSubmitted(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -262,6 +261,7 @@ func TestEnrichContractInterfaceSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetFFIByID", mock.Anything, "ns1", ref1).Return(&fftypes.FFI{
 		ID: ref1,
 	}, nil)
@@ -272,15 +272,14 @@ func TestEnrichContractInterfaceSubmitted(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.ContractInterface.ID)
 }
 
 func TestEnrichContractInterfacetFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -288,6 +287,7 @@ func TestEnrichContractInterfacetFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetFFIByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -296,14 +296,13 @@ func TestEnrichContractInterfacetFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichDatatypeConfirmed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -311,6 +310,7 @@ func TestEnrichDatatypeConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByID", mock.Anything, "ns1", ref1).Return(&core.Datatype{
 		ID: ref1,
 	}, nil)
@@ -321,15 +321,14 @@ func TestEnrichDatatypeConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Datatype.ID)
 }
 
 func TestEnrichDatatypeConfirmedFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -337,6 +336,7 @@ func TestEnrichDatatypeConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -345,14 +345,13 @@ func TestEnrichDatatypeConfirmedFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichIdentityConfirmed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -360,6 +359,7 @@ func TestEnrichIdentityConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", mock.Anything, "ns1", ref1).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID: ref1,
@@ -372,15 +372,14 @@ func TestEnrichIdentityConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Identity.IdentityBase.ID)
 }
 
 func TestEnrichIdentityConfirmedFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -388,6 +387,7 @@ func TestEnrichIdentityConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -396,14 +396,13 @@ func TestEnrichIdentityConfirmedFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichTokenPoolConfirmed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -411,6 +410,7 @@ func TestEnrichTokenPoolConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", mock.Anything, "ns1", ref1).Return(&core.TokenPool{
 		ID: ref1,
 	}, nil)
@@ -421,15 +421,14 @@ func TestEnrichTokenPoolConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.TokenPool.ID)
 }
 
 func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -437,6 +436,7 @@ func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -445,14 +445,13 @@ func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichTokenApprovalConfirmed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -460,6 +459,7 @@ func TestEnrichTokenApprovalConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenApprovalByID", mock.Anything, "ns1", ref1).Return(&core.TokenApproval{
 		LocalID: ref1,
 	}, nil)
@@ -470,15 +470,14 @@ func TestEnrichTokenApprovalConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.TokenApproval.LocalID)
 }
 
 func TestEnrichTokenApprovalFailed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -486,6 +485,7 @@ func TestEnrichTokenApprovalFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetOperationByID", mock.Anything, "ns1", ref1).Return(&core.Operation{
 		ID: ref1,
 	}, nil)
@@ -496,15 +496,14 @@ func TestEnrichTokenApprovalFailed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Operation.ID)
 }
 
 func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -512,6 +511,7 @@ func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenApprovalByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -520,14 +520,13 @@ func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichTokenTransferConfirmed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -535,6 +534,7 @@ func TestEnrichTokenTransferConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransferByID", mock.Anything, "ns1", ref1).Return(&core.TokenTransfer{
 		LocalID: ref1,
 	}, nil)
@@ -545,15 +545,14 @@ func TestEnrichTokenTransferConfirmed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.TokenTransfer.LocalID)
 }
 
 func TestEnrichTokenTransferFailed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -561,6 +560,7 @@ func TestEnrichTokenTransferFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetOperationByID", mock.Anything, "ns1", ref1).Return(&core.Operation{
 		ID: ref1,
 	}, nil)
@@ -571,15 +571,14 @@ func TestEnrichTokenTransferFailed(t *testing.T) {
 		Reference: ref1,
 	}
 
-	enriched, err := txHelper.EnrichEvent(ctx, event)
+	enriched, err := em.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
 	assert.Equal(t, ref1, enriched.Operation.ID)
 }
 
 func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -587,6 +586,7 @@ func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransferByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -595,14 +595,13 @@ func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestEnrichOperationFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -610,6 +609,7 @@ func TestEnrichOperationFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetOperationByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
@@ -618,6 +618,6 @@ func TestEnrichOperationFail(t *testing.T) {
 		Reference: ref1,
 	}
 
-	_, err := txHelper.EnrichEvent(ctx, event)
+	_, err := em.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }

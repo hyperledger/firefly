@@ -49,8 +49,9 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+	enricher := newEventEnricher("ns1", mdi, mdm, txHelper)
 	ctx, cancel := context.WithCancel(context.Background())
-	return newEventDispatcher(ctx, mei, mdi, mdm, mbm, mpm, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), txHelper), func() {
+	return newEventDispatcher(ctx, enricher, mei, mdi, mdm, mbm, mpm, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), txHelper), func() {
 		cancel()
 		coreconfig.Reset()
 	}

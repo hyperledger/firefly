@@ -36,7 +36,6 @@ type Helper interface {
 	PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error
 	InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error
-	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
 	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error)
 	GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
 }

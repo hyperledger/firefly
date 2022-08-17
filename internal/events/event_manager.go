@@ -60,6 +60,7 @@ type EventManager interface {
 	DeletedSubscriptions() chan<- *fftypes.UUID
 	DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error)
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
+	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
 	Start() error
 	WaitStop()
 
@@ -89,6 +90,7 @@ type EventManager interface {
 type eventManager struct {
 	ctx                   context.Context
 	namespace             core.NamespaceRef
+	enricher              *eventEnricher
 	database              database.Plugin
 	txHelper              txcommon.Helper
 	identity              identity.Manager
@@ -152,8 +154,10 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plug
 		em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 	}
 
+	em.enricher = newEventEnricher(ns.LocalName, di, dm, txHelper)
+
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, ns.LocalName, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, ns.LocalName, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
 		return nil, err
 	}
 
@@ -264,4 +268,8 @@ func (em *eventManager) GetPlugins() []*core.NamespaceStatusPlugin {
 	}
 
 	return eventsArray
+}
+
+func (em *eventManager) EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
+	return em.enricher.enrichEvent(ctx, event)
 }

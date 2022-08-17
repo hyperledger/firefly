@@ -14,82 +14,101 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package txcommon
+package events
 
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
+type eventEnricher struct {
+	namespace string
+	data      data.Manager
+	database  database.Plugin
+	txHelper  txcommon.Helper
+}
+
+func newEventEnricher(ns string, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) *eventEnricher {
+	return &eventEnricher{
+		namespace: ns,
+		data:      dm,
+		database:  di,
+		txHelper:  txHelper,
+	}
+}
+
+func (em *eventEnricher) enrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
 	e := &core.EnrichedEvent{
 		Event: *event,
 	}
 
 	switch event.Type {
 	case core.EventTypeTransactionSubmitted:
-		tx, err := t.GetTransactionByIDCached(ctx, event.Reference)
+		tx, err := em.txHelper.GetTransactionByIDCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Transaction = tx
 	case core.EventTypeMessageConfirmed, core.EventTypeMessageRejected:
-		msg, _, _, err := t.data.GetMessageWithDataCached(ctx, event.Reference)
+		msg, _, _, err := em.data.GetMessageWithDataCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Message = msg
 	case core.EventTypeBlockchainEventReceived:
-		be, err := t.GetBlockchainEventByIDCached(ctx, event.Reference)
+		be, err := em.txHelper.GetBlockchainEventByIDCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.BlockchainEvent = be
 	case core.EventTypeContractAPIConfirmed:
-		contractAPI, err := t.database.GetContractAPIByID(ctx, t.namespace, event.Reference)
+		contractAPI, err := em.database.GetContractAPIByID(ctx, em.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.ContractAPI = contractAPI
 	case core.EventTypeContractInterfaceConfirmed:
-		contractInterface, err := t.database.GetFFIByID(ctx, t.namespace, event.Reference)
+		contractInterface, err := em.database.GetFFIByID(ctx, em.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.ContractInterface = contractInterface
 	case core.EventTypeDatatypeConfirmed:
-		dt, err := t.database.GetDatatypeByID(ctx, t.namespace, event.Reference)
+		dt, err := em.database.GetDatatypeByID(ctx, em.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Datatype = dt
 	case core.EventTypeIdentityConfirmed, core.EventTypeIdentityUpdated:
-		identity, err := t.database.GetIdentityByID(ctx, t.namespace, event.Reference)
+		identity, err := em.database.GetIdentityByID(ctx, em.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Identity = identity
 	case core.EventTypePoolConfirmed:
-		tokenPool, err := t.database.GetTokenPoolByID(ctx, t.namespace, event.Reference)
+		tokenPool, err := em.database.GetTokenPoolByID(ctx, em.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenPool = tokenPool
 	case core.EventTypeApprovalConfirmed:
-		approval, err := t.database.GetTokenApprovalByID(ctx, t.namespace, event.Reference)
+		approval, err := em.database.GetTokenApprovalByID(ctx, em.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenApproval = approval
 	case core.EventTypeTransferConfirmed:
-		transfer, err := t.database.GetTokenTransferByID(ctx, t.namespace, event.Reference)
+		transfer, err := em.database.GetTokenTransferByID(ctx, em.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenTransfer = transfer
 	case core.EventTypeApprovalOpFailed, core.EventTypeTransferOpFailed, core.EventTypeBlockchainInvokeOpFailed, core.EventTypePoolOpFailed, core.EventTypeBlockchainInvokeOpSucceeded:
-		operation, err := t.database.GetOperationByID(ctx, t.namespace, event.Reference)
+		operation, err := em.database.GetOperationByID(ctx, em.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

@@ -30,29 +30,6 @@ func (_m *Helper) AddBlockchainTX(ctx context.Context, tx *core.Transaction, blo
 	return r0
 }
 
-// EnrichEvent provides a mock function with given fields: ctx, event
-func (_m *Helper) EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
-	ret := _m.Called(ctx, event)
-
-	var r0 *core.EnrichedEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Event) *core.EnrichedEvent); ok {
-		r0 = rf(ctx, event)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.EnrichedEvent)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.Event) error); ok {
-		r1 = rf(ctx, event)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetBlockchainEventByIDCached provides a mock function with given fields: ctx, id
 func (_m *Helper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
 	ret := _m.Called(ctx, id)
