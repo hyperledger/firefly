@@ -251,7 +251,7 @@ func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, id string) (
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetBlockchainEventByID(ctx, or.namespace.LocalName, u)
+	return or.txHelper.GetBlockchainEventByIDCached(ctx, u)
 }
 
 func (or *orchestrator) GetBlockchainEvents(ctx context.Context, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
