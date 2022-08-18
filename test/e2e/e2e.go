@@ -61,7 +61,7 @@ var WidgetSchemaJSON = []byte(`{
 func PollForUp(t *testing.T, client *client.FireFlyClient) {
 	var resp *resty.Response
 	var err error
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 12; i++ {
 		_, resp, err = client.GetStatus()
 		if err == nil && resp.StatusCode() == 200 {
 			break
