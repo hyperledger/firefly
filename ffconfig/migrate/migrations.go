@@ -19,6 +19,7 @@ package migrate
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/blang/semver/v4"
 	"gopkg.in/yaml.v2"
@@ -151,12 +152,12 @@ func migrateVersion(root *ConfigItem, version string) {
 func Run(cfg []byte, fromVersion, toVersion string) (result []byte, err error) {
 	var from, to semver.Version
 	if fromVersion != "" {
-		if from, err = semver.Parse(fromVersion); err != nil {
+		if from, err = semver.Parse(strings.TrimPrefix(fromVersion, "v")); err != nil {
 			return nil, fmt.Errorf("bad 'from' version: %s", err)
 		}
 	}
 	if toVersion != "" {
-		if to, err = semver.Parse(toVersion); err != nil {
+		if to, err = semver.Parse(strings.TrimPrefix(toVersion, "v")); err != nil {
 			return nil, fmt.Errorf("bad 'to' version: %s", err)
 		}
 	}
