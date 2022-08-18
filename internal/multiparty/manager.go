@@ -136,9 +136,15 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context) (err error) 
 }
 
 func (mm *multipartyManager) configureContractCommon(ctx context.Context, migration bool) (err error) {
-	contracts := mm.namespace.Contracts
-	log.L(ctx).Infof("Resolving FireFly contract at index %d", contracts.Active.Index)
-	location, firstEvent, err := mm.resolveFireFlyContract(ctx, contracts.Active.Index)
+	if mm.namespace.Contracts == nil {
+		mm.namespace.Contracts = &core.MultipartyContracts{}
+	}
+	if mm.namespace.Contracts.Active == nil {
+		mm.namespace.Contracts.Active = &core.MultipartyContract{}
+	}
+	active := mm.namespace.Contracts.Active
+	log.L(ctx).Infof("Resolving FireFly contract at index %d", active.Index)
+	location, firstEvent, err := mm.resolveFireFlyContract(ctx, active.Index)
 	if err != nil {
 		return err
 	}
@@ -149,17 +155,17 @@ func (mm *multipartyManager) configureContractCommon(ctx context.Context, migrat
 	}
 
 	if !migration {
-		if !contracts.Active.Location.IsNil() && contracts.Active.Location.String() != location.String() {
-			log.L(ctx).Warnf("FireFly contract location changed from %s to %s", contracts.Active.Location, location)
+		if !active.Location.IsNil() && active.Location.String() != location.String() {
+			log.L(ctx).Warnf("FireFly contract location changed from %s to %s", active.Location, location)
 		}
 	}
 
 	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.Ref(), location, firstEvent)
 	if err == nil {
-		contracts.Active.Location = location
-		contracts.Active.FirstEvent = firstEvent
-		contracts.Active.Info.Subscription = subID
-		contracts.Active.Info.Version = version
+		active.Location = location
+		active.FirstEvent = firstEvent
+		active.Info.Subscription = subID
+		active.Info.Version = version
 		err = mm.database.UpsertNamespace(ctx, mm.namespace, true)
 	}
 	return err
