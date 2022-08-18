@@ -202,7 +202,9 @@ func (em *eventManager) WaitStop() {
 		em.blobReceiver.stop()
 		em.blobReceiver = nil
 	}
-	<-em.aggregator.eventPoller.closed
+	if em.aggregator != nil {
+		<-em.aggregator.eventPoller.closed
+	}
 }
 
 func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error) {
