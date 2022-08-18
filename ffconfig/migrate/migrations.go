@@ -28,7 +28,6 @@ import (
 var migrations = map[string]func(root *ConfigItem){
 	"1.0.0": func(root *ConfigItem) {
 		root.Get("org").Get("identity").RenameTo("key")
-		root.Get("publicstorage").RenameTo("sharedstorage")
 		root.Get("tokens").Each().Get("connector").RenameTo("plugin").ReplaceValue("https", "fftokens")
 		root.Get("dataexchange").Get("type").ReplaceValue("https", "ffdx")
 		root.Get("dataexchange").Get("https").RenameTo("ffdx")
@@ -36,6 +35,10 @@ var migrations = map[string]func(root *ConfigItem){
 
 	"1.0.3": func(root *ConfigItem) {
 		root.Get("dataexchange").Get("type").SetIfEmpty("ffdx")
+	},
+
+	"1.0.4": func(root *ConfigItem) {
+		root.Get("publicstorage").RenameTo("sharedstorage")
 	},
 
 	"1.1.0": func(root *ConfigItem) {
