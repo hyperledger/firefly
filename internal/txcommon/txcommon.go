@@ -35,7 +35,7 @@ type Helper interface {
 	SubmitNewTransaction(ctx context.Context, txType core.TransactionType) (*fftypes.UUID, error)
 	PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error
-	InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error
+	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
 	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error)
 	GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
 }
@@ -183,11 +183,15 @@ func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id
 	return chainEvent, nil
 }
 
-func (t *transactionHelper) InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error {
-	err := t.database.InsertBlockchainEvent(ctx, chainEvent)
+func (t *transactionHelper) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error) {
+	existing, err = t.database.InsertOrGetBlockchainEvent(ctx, event)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	t.addBlockchainEventToCache(chainEvent)
-	return nil
+	if existing != nil {
+		t.addBlockchainEventToCache(existing)
+		return existing, nil
+	}
+	t.addBlockchainEventToCache(event)
+	return nil, nil
 }

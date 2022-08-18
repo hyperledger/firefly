@@ -2094,20 +2094,6 @@ func (_m *Plugin) InsertBlobs(ctx context.Context, blobs []*core.Blob) error {
 	return r0
 }
 
-// InsertBlockchainEvent provides a mock function with given fields: ctx, event
-func (_m *Plugin) InsertBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) error {
-	ret := _m.Called(ctx, event)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.BlockchainEvent) error); ok {
-		r0 = rf(ctx, event)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // InsertContractListener provides a mock function with given fields: ctx, sub
 func (_m *Plugin) InsertContractListener(ctx context.Context, sub *core.ContractListener) error {
 	ret := _m.Called(ctx, sub)
@@ -2218,6 +2204,29 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *core.Operation
 	}
 
 	return r0
+}
+
+// InsertOrGetBlockchainEvent provides a mock function with given fields: ctx, event
+func (_m *Plugin) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (*core.BlockchainEvent, error) {
+	ret := _m.Called(ctx, event)
+
+	var r0 *core.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BlockchainEvent) *core.BlockchainEvent); ok {
+		r0 = rf(ctx, event)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.BlockchainEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *core.BlockchainEvent) error); ok {
+		r1 = rf(ctx, event)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // InsertPins provides a mock function with given fields: ctx, pins

@@ -121,16 +121,15 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		}
 	}
 
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
-	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+	mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Name == batchPin.Event.Name
-	})).Return(fmt.Errorf("pop")).Once()
-	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+	})).Return(nil, fmt.Errorf("pop")).Once()
+	mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Name == batchPin.Event.Name
-	})).Return(nil).Times(1)
+	})).Return(nil, nil).Once()
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
-	})).Return(nil).Times(1)
+	})).Return(nil).Once()
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
@@ -191,16 +190,15 @@ func TestBatchPinCompleteOkBroadcastExistingBatch(t *testing.T) {
 		}
 	}
 
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
-	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+	mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Name == batchPin.Event.Name
-	})).Return(fmt.Errorf("pop")).Once()
-	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+	})).Return(nil, fmt.Errorf("pop")).Once()
+	mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Name == batchPin.Event.Name
-	})).Return(nil).Times(1)
+	})).Return(nil, nil).Once()
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
-	})).Return(nil).Times(1)
+	})).Return(nil).Once()
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(batchPersisted, nil)
 
@@ -235,8 +233,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("These pins have been seen before")) // simulate replay fallback
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
-	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 
@@ -277,8 +274,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("optimization miss"))
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
-	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
 	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
@@ -311,8 +307,7 @@ func TestBatchPinCompleteGetBatchByIDFails(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
-	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("batch lookup failed"))
 
@@ -346,8 +341,7 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
-	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)

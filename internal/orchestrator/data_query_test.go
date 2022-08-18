@@ -696,7 +696,7 @@ func TestGetBlockchainEventByID(t *testing.T) {
 	defer or.cleanup(t)
 
 	id := fftypes.NewUUID()
-	or.mdi.On("GetBlockchainEventByID", context.Background(), "ns", id).Return(&core.BlockchainEvent{
+	or.mth.On("GetBlockchainEventByIDCached", context.Background(), id).Return(&core.BlockchainEvent{
 		Namespace: "ns",
 	}, nil)
 

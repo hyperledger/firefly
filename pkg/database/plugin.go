@@ -479,8 +479,9 @@ type iContractListenerCollection interface {
 }
 
 type iBlockchainEventCollection interface {
-	// InsertBlockchainEvent - insert an event from the blockchain
-	InsertBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (err error)
+	// InsertOrGetBlockchainEvent - insert an event from the blockchain
+	// If the ProtocolID has already been recorded, it does not insert but returns the existing row
+	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
 
 	// GetBlockchainEventByID - get blockchain event by ID
 	GetBlockchainEventByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.BlockchainEvent, error)
