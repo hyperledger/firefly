@@ -111,8 +111,7 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType cor
 // PersistTransaction is called when we need to ensure a transaction exists in the DB, and optionally associate a new BlockchainTXID to it
 func (t *transactionHelper) PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error) {
 
-	// TODO: Consider if this can exploit caching
-	tx, err := t.database.GetTransactionByID(ctx, t.namespace, id)
+	tx, err := t.GetTransactionByIDCached(ctx, id)
 	if err != nil {
 		return false, err
 	}
