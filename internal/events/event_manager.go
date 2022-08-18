@@ -198,7 +198,10 @@ func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 
 func (em *eventManager) WaitStop() {
 	em.subManager.close()
-	em.blobReceiver.stop()
+	if em.blobReceiver != nil {
+		em.blobReceiver.stop()
+		em.blobReceiver = nil
+	}
 	<-em.aggregator.eventPoller.closed
 }
 
