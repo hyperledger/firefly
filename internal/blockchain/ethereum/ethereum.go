@@ -788,7 +788,15 @@ func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSON
 		return cached.Value().(int), nil
 	}
 
-	res, err := e.queryContractMethod(ctx, ethLocation.Address, networkVersionMethodABI, []interface{}{}, nil)
+	version, err = e.queryNetworkVersion(ctx, ethLocation.Address)
+	if err == nil {
+		e.cache.Set(cacheKey, version, e.cacheTTL)
+	}
+	return version, err
+}
+
+func (e *Ethereum) queryNetworkVersion(ctx context.Context, address string) (version int, err error) {
+	res, err := e.queryContractMethod(ctx, address, networkVersionMethodABI, []interface{}{}, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Call failed" is interpreted as "method does not exist, default to version 1"
 		if strings.Contains(err.Error(), "FFEC100148") {
@@ -804,9 +812,6 @@ func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSON
 	switch result := output.Output.(type) {
 	case string:
 		version, err = strconv.Atoi(result)
-		if err == nil {
-			e.cache.Set(cacheKey, version, e.cacheTTL)
-		}
 	default:
 		err = i18n.NewError(ctx, coremsgs.MsgBadNetworkVersion, output.Output)
 	}
