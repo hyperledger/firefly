@@ -6,6 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/aidarkhanov/nanoid v1.0.8
+	github.com/blang/semver/v4 v4.0.0
 	github.com/docker/go-units v0.4.0
 	github.com/getkin/kin-openapi v0.96.0
 	github.com/ghodss/yaml v1.0.0
