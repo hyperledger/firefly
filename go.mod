@@ -7,6 +7,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59 // indirect
+	github.com/blang/semver/v4 v4.0.0
 	github.com/containerd/containerd v1.5.10 // indirect
 	github.com/docker/go-units v0.4.0
 	github.com/getkin/kin-openapi v0.94.1-0.20220401165309-136a868a30c2
@@ -45,4 +46,5 @@ require (
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5
 	golang.org/x/text v0.3.7
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gopkg.in/yaml.v2 v2.4.0
 )

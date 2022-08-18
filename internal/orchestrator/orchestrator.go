@@ -439,6 +439,9 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		if ssType == "" {
 			// Fallback and attempt to look for a "publicstorage" (deprecated) plugin
 			ssType = config.GetString(coreconfig.PublicStorageType)
+			if ssType != "" {
+				log.L(ctx).Warnf("Your config uses the deprecated 'publicstorage' section name - please change to 'sharedstorage' instead")
+			}
 			storageConfig = publicstorageConfig
 		}
 		if or.sharedstorage, err = ssfactory.GetPlugin(ctx, ssType); err != nil {
