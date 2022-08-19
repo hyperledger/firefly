@@ -63,7 +63,7 @@ func (suite *TokensOnlyTestSuite) TestTokensOnlyNamespaces() {
 		"name": testNamespace,
 		"asset": map[string]interface{}{
 			"manager": map[string]interface{}{
-				"keynormalization": "none",
+				"keyNormalization": "none",
 			},
 		},
 		"plugins": []string{"database0", suite.connector},

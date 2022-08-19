@@ -40,9 +40,9 @@ const (
 	// NamespacePlugins is the list of namespace plugins
 	NamespacePlugins = "plugins"
 	// NamespaceDefaultKey is the default signing key for blockchain transactions within this namespace
-	NamespaceDefaultKey = "defaultkey"
+	NamespaceDefaultKey = "defaultKey"
 	// NamespaceAssetKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization
-	NamespaceAssetKeyNormalization = "asset.manager.keynormalization"
+	NamespaceAssetKeyNormalization = "asset.manager.keyNormalization"
 	// NamespaceMultiparty contains the multiparty configuration for a namespace
 	NamespaceMultiparty = "multiparty"
 	// NamespaceMultipartyEnabled specifies if multi-party mode is enabled for a namespace
@@ -293,7 +293,7 @@ var (
 	// TransactionCacheTTL time-to-live for cache of transactions
 	TransactionCacheTTL = ffc("transaction.cache.ttl")
 	// AssetManagerKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization
-	AssetManagerKeyNormalization = ffc("asset.manager.keynormalization")
+	AssetManagerKeyNormalization = ffc("asset.manager.keyNormalization")
 	// UIEnabled set to false to disable the UI (default is true, so UI will be enabled if ui.path is valid)
 	UIEnabled = ffc("ui.enabled")
 	// UIPath the path on which to serve the UI
