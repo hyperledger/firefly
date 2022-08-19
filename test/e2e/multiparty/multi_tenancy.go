@@ -51,13 +51,13 @@ func newNamespace(networkNamespace, contractAddress string) (ns, org, node map[s
 	ns = map[string]interface{}{
 		"multiparty": map[string]interface{}{
 			"enabled":          true,
-			"networknamespace": networkNamespace,
+			"networkNamespace": networkNamespace,
 			"org":              org,
 			"node":             node,
 			"contract": []map[string]interface{}{
 				{
 					"location":   map[string]interface{}{"address": contractAddress},
-					"firstevent": "0",
+					"firstEvent": "0",
 				},
 			},
 		},
