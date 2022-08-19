@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/httpserver"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
@@ -109,6 +110,8 @@ func (as *apiServer) Serve(ctx context.Context, mgr namespace.Manager) (err erro
 			return err
 		}
 		go spiHTTPServer.ServeHTTP(ctx)
+	} else if config.GetBool(coreconfig.LegacyAdminEnabled) {
+		log.L(ctx).Warnf("Your config includes an 'admin' section, which should be renamed to 'spi' - SPI server will not be enabled until this is corrected")
 	}
 
 	if as.metricsEnabled {

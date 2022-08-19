@@ -17,6 +17,12 @@ nav_order: 2
 ---
 
 
+## admin
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Deprecated - use spi.enabled instead|`boolean`|`<nil>`
+
 ## api
 
 |Key|Description|Type|Default Value|
@@ -30,7 +36,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|keynormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keynormalization)|`string`|`<nil>`
+|keyNormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keyNormalization)|`string`|`<nil>`
 
 ## batch.cache
 
@@ -623,7 +629,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|defaultkey|A default signing key for blockchain transactions within this namespace|`string`|`<nil>`
+|defaultKey|A default signing key for blockchain transactions within this namespace|`string`|`<nil>`
 |description|A description for the namespace|`string`|`<nil>`
 |name|The name of the namespace (must be unique)|`string`|`<nil>`
 |plugins|The list of plugins for this namespace|`string`|`<nil>`
@@ -632,7 +638,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|keynormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization|`string`|`<nil>`
+|keyNormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization|`string`|`<nil>`
 
 ## namespaces.predefined[].multiparty
 
