@@ -134,7 +134,7 @@ func (im *identityManager) NormalizeSigningKey(ctx context.Context, inputKey str
 	}
 	// If the caller is not confident that the blockchain plugin/connector should be used to resolve,
 	// for example it might be a different blockchain (Eth vs Fabric etc.), or it has its own
-	// verification/management of keys, it should set `namespaces.predefined[].asset.manager.keynormalization: "none"` in the config.
+	// verification/management of keys, it should set `namespaces.predefined[].asset.manager.keyNormalization: "none"` in the config.
 	if keyNormalizationMode != KeyNormalizationBlockchainPlugin {
 		return inputKey, nil
 	}
