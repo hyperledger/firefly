@@ -17,6 +17,12 @@ nav_order: 2
 ---
 
 
+## admin
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Deprecated - use spi.enabled instead|`boolean`|`<nil>`
+
 ## api
 
 |Key|Description|Type|Default Value|

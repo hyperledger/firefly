@@ -34,7 +34,7 @@ publicstorage:
 	assert.Equal(t, `database:
   type: sqlite3
 dataexchange: {}
-sharedstorage:
+publicstorage:
   type: ipfs
 `, string(result))
 }
@@ -43,16 +43,12 @@ func TestMigratev1_0_0(t *testing.T) {
 	config := []byte(`database:
   type: sqlite3
 dataexchange: {}
-publicstorage:
-  type: ipfs
 `)
 	result, err := Run(config, "", "v1.0.0")
 	assert.NoError(t, err)
 	assert.Equal(t, `database:
   type: sqlite3
 dataexchange: {}
-sharedstorage:
-  type: ipfs
 `, string(result))
 }
 
@@ -60,8 +56,6 @@ func TestMigrate1_0_3(t *testing.T) {
 	config := []byte(`database:
   type: sqlite3
 dataexchange: {}
-publicstorage:
-  type: ipfs
 `)
 	result, err := Run(config, "", "1.0.3")
 	assert.NoError(t, err)
@@ -69,8 +63,6 @@ publicstorage:
   type: sqlite3
 dataexchange:
   type: ffdx
-sharedstorage:
-  type: ipfs
 `, string(result))
 }
 
@@ -88,6 +80,24 @@ publicstorage:
 dataexchange:
   type: ffdx
 publicstorage:
+  type: ipfs
+`, string(result))
+}
+
+func TestMigrate1_0_4(t *testing.T) {
+	config := []byte(`database:
+  type: sqlite3
+dataexchange: {}
+publicstorage:
+  type: ipfs
+`)
+	result, err := Run(config, "", "1.0.4")
+	assert.NoError(t, err)
+	assert.Equal(t, `database:
+  type: sqlite3
+dataexchange:
+  type: ffdx
+sharedstorage:
   type: ipfs
 `, string(result))
 }

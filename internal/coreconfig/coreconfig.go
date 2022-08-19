@@ -220,6 +220,8 @@ var (
 	GroupCacheLimit = ffc("group.cache.limit")
 	// GroupCacheTTL cache time-to-live for private group addresses
 	GroupCacheTTL = ffc("group.cache.ttl")
+	// LegacyAdminEnabled is the deprecated key that pre-dates spi.enabled
+	LegacyAdminEnabled = ffc("admin.enabled")
 	// SPIEnabled determines whether the admin interface will be enabled or not
 	SPIEnabled = ffc("spi.enabled")
 	// SPIWebSocketEventQueueLength is the maximum number of events that will queue up on the server side of each WebSocket connection before events start being dropped
