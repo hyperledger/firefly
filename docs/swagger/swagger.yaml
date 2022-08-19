@@ -19578,7 +19578,7 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/network/organizations/{nameOrId}:
     get:
-      description: Gets information about a specifc org in the network
+      description: Gets information about a specific org in the network
       operationId: getNetworkOrgNamespace
       parameters:
       - description: The name or ID of the org
@@ -20411,7 +20411,8 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/pins/rewind:
     post:
-      description: Queries the list of pins received from the blockchain
+      description: Force a rewind the event aggregator to a previous position, to
+        re-evaluate all unconfirmed pins since that point
       operationId: postPinsRewindNamespace
       parameters:
       - description: The namespace which scopes this request
@@ -27245,7 +27246,7 @@ paths:
       - Default Namespace
   /network/organizations/{nameOrId}:
     get:
-      description: Gets information about a specifc org in the network
+      description: Gets information about a specific org in the network
       operationId: getNetworkOrg
       parameters:
       - description: The name or ID of the org
@@ -28036,7 +28037,8 @@ paths:
       - Default Namespace
   /pins/rewind:
     post:
-      description: Queries the list of pins received from the blockchain
+      description: Force a rewind the event aggregator to a previous position, to
+        re-evaluate all unconfirmed pins since that point
       operationId: postPinsRewind
       parameters:
       - description: Server-side request timeout (milliseconds, or set a custom suffix

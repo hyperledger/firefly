@@ -30,7 +30,7 @@ var postPinsRewind = &ffapi.Route{
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsGetPins,
+	Description:     coremsgs.APIEndpointsPostPinsRewind,
 	JSONInputValue:  func() interface{} { return &core.PinRewind{} },
 	JSONOutputValue: func() interface{} { return &core.PinRewind{} },
 	JSONOutputCodes: []int{http.StatusOK},
