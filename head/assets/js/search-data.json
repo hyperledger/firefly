@@ -421,7 +421,7 @@
   },"70": {
     "doc": "pages.reference",
     "title": "asset.manager",
-    "content": "| Key | Description | Type | Default Value | . | keynormalization | Mechanism to normalize keys before using them. Valid options are blockchain_plugin - use blockchain plugin (default) or none - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keynormalization) | string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | keyNormalization | Mechanism to normalize keys before using them. Valid options are blockchain_plugin - use blockchain plugin (default) or none - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keyNormalization) | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#assetmanager",
     "relUrl": "/reference/config.html#assetmanager"
   },"71": {
@@ -835,13 +835,13 @@
   },"139": {
     "doc": "pages.reference",
     "title": "namespaces.predefined[]",
-    "content": "| Key | Description | Type | Default Value | . | defaultkey | A default signing key for blockchain transactions within this namespace | string | &lt;nil&gt; | . | description | A description for the namespace | string | &lt;nil&gt; | . | name | The name of the namespace (must be unique) | string | &lt;nil&gt; | . | plugins | The list of plugins for this namespace | string | &lt;nil&gt; | . | remotename | The namespace name to be sent in plugin calls, if it differs from namespace name | string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | defaultKey | A default signing key for blockchain transactions within this namespace | string | &lt;nil&gt; | . | description | A description for the namespace | string | &lt;nil&gt; | . | name | The name of the namespace (must be unique) | string | &lt;nil&gt; | . | plugins | The list of plugins for this namespace | string | &lt;nil&gt; | . | remotename | The namespace name to be sent in plugin calls, if it differs from namespace name | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespacespredefined",
     "relUrl": "/reference/config.html#namespacespredefined"
   },"140": {
     "doc": "pages.reference",
     "title": "namespaces.predefined[].asset.manager",
-    "content": "| Key | Description | Type | Default Value | . | keynormalization | Mechanism to normalize keys before using them. Valid options are blockchain_plugin - use blockchain plugin (default) or none - do not attempt normalization | string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | keyNormalization | Mechanism to normalize keys before using them. Valid options are blockchain_plugin - use blockchain plugin (default) or none - do not attempt normalization | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespacespredefinedassetmanager",
     "relUrl": "/reference/config.html#namespacespredefinedassetmanager"
   },"141": {
