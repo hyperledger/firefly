@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -40,7 +40,7 @@ func (am *assetManager) GetTokenTransferByID(ctx context.Context, id string) (*c
 	return am.database.GetTokenTransferByID(ctx, am.namespace, transferID)
 }
 
-func (am *assetManager) NewTransfer(transfer *core.TokenTransferInput) sysmessaging.MessageSender {
+func (am *assetManager) NewTransfer(transfer *core.TokenTransferInput) syncasync.Sender {
 	sender := &transferSender{
 		mgr:      am,
 		transfer: transfer,
@@ -53,7 +53,7 @@ type transferSender struct {
 	mgr       *assetManager
 	transfer  *core.TokenTransferInput
 	resolved  bool
-	msgSender sysmessaging.MessageSender
+	msgSender syncasync.Sender
 }
 
 // sendMethod is the specific operation requested of the transferSender.
@@ -238,7 +238,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 			txid,
 			core.OpTypeTokenTransfer)
 		if err = txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer); err == nil {
-			err = s.mgr.database.InsertOperation(ctx, op)
+			err = s.mgr.operations.AddOrReuseOperation(ctx, op)
 		}
 		return err
 	})
@@ -260,7 +260,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 	return err
 }
 
-func (s *transferSender) buildTransferMessage(ctx context.Context, in *core.MessageInOut) (sysmessaging.MessageSender, error) {
+func (s *transferSender) buildTransferMessage(ctx context.Context, in *core.MessageInOut) (syncasync.Sender, error) {
 	allowedTypes := []fftypes.FFEnum{
 		core.MessageTypeTransferBroadcast,
 		core.MessageTypeTransferPrivate,

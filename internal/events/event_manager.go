@@ -39,9 +39,9 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/multiparty"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -61,6 +61,7 @@ type EventManager interface {
 	DeletedSubscriptions() chan<- *fftypes.UUID
 	DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error)
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
+	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
 	Start() error
 	WaitStop()
 
@@ -84,13 +85,13 @@ type EventManager interface {
 	GetPlugins() []*core.NamespaceStatusPlugin
 
 	// Internal events
-	sysmessaging.SystemEvents
+	system.EventInterface
 }
 
 type eventManager struct {
 	ctx                   context.Context
 	namespace             *core.Namespace
-	ni                    sysmessaging.LocalNodeInfo
+	enricher              *eventEnricher
 	database              database.Plugin
 	txHelper              txcommon.Helper
 	identity              identity.Manager
@@ -115,8 +116,8 @@ type eventManager struct {
 	multiparty            multiparty.Manager // optional
 }
 
-func NewEventManager(ctx context.Context, ns *core.Namespace, ni sysmessaging.LocalNodeInfo, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
-	if ni == nil || di == nil || im == nil || dh == nil || dm == nil || ds == nil || am == nil {
+func NewEventManager(ctx context.Context, ns *core.Namespace, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
+	if di == nil || im == nil || dh == nil || dm == nil || om == nil || ds == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -124,7 +125,6 @@ func NewEventManager(ctx context.Context, ns *core.Namespace, ni sysmessaging.Lo
 	em := &eventManager{
 		ctx:            log.WithLogField(ctx, "role", "event-manager"),
 		namespace:      ns,
-		ni:             ni,
 		database:       di,
 		txHelper:       txHelper,
 		identity:       im,
@@ -145,7 +145,7 @@ func NewEventManager(ctx context.Context, ns *core.Namespace, ni sysmessaging.Lo
 		newEventNotifier:      newEventNotifier,
 		newPinNotifier:        newPinNotifier,
 		metrics:               mm,
-		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.EventListenerTopicCacheSize))),
+		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetInt64(coreconfig.EventListenerTopicCacheLimit))),
 		chainListenerCacheTTL: config.GetDuration(coreconfig.EventListenerTopicCacheTTL),
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
@@ -155,8 +155,10 @@ func NewEventManager(ctx context.Context, ns *core.Namespace, ni sysmessaging.Lo
 		em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 	}
 
+	em.enricher = newEventEnricher(ns.Name, di, dm, om, txHelper)
+
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, ns.Name, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, ns.Name, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
 		return nil, err
 	}
 
@@ -196,8 +198,13 @@ func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 
 func (em *eventManager) WaitStop() {
 	em.subManager.close()
-	em.blobReceiver.stop()
-	<-em.aggregator.eventPoller.closed
+	if em.blobReceiver != nil {
+		em.blobReceiver.stop()
+		em.blobReceiver = nil
+	}
+	if em.aggregator != nil {
+		<-em.aggregator.eventPoller.closed
+	}
 }
 
 func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error) {
@@ -267,4 +274,8 @@ func (em *eventManager) GetPlugins() []*core.NamespaceStatusPlugin {
 	}
 
 	return eventsArray
+}
+
+func (em *eventManager) EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
+	return em.enricher.enrichEvent(ctx, event)
 }

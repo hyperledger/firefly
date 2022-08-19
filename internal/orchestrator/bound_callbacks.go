@@ -30,8 +30,8 @@ type boundCallbacks struct {
 	om operations.Manager
 }
 
-func (bc *boundCallbacks) OperationUpdate(plugin core.Named, update *core.OperationUpdate) {
-	bc.om.SubmitOperationUpdate(plugin, update)
+func (bc *boundCallbacks) OperationUpdate(update *core.OperationUpdate) {
+	bc.om.SubmitOperationUpdate(update)
 }
 
 func (bc *boundCallbacks) SharedStorageBatchDownloaded(payloadRef string, data []byte) (*fftypes.UUID, error) {

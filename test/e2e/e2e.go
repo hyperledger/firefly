@@ -61,7 +61,7 @@ var WidgetSchemaJSON = []byte(`{
 func PollForUp(t *testing.T, client *client.FireFlyClient) {
 	var resp *resty.Response
 	var err error
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 12; i++ {
 		_, resp, err = client.GetStatus()
 		if err == nil && resp.StatusCode() == 200 {
 			break
@@ -223,7 +223,7 @@ func checkObject(t *testing.T, expected interface{}, actual interface{}) bool {
 }
 
 func VerifyAllOperationsSucceeded(t *testing.T, clients []*client.FireFlyClient, startTime time.Time) {
-	tries := 3
+	tries := 30
 	delay := 2 * time.Second
 
 	var pending string
@@ -232,13 +232,14 @@ func VerifyAllOperationsSucceeded(t *testing.T, clients []*client.FireFlyClient,
 		for _, client := range clients {
 			for _, op := range client.GetOperations(t, startTime) {
 				if op.Status != core.OpStatusSucceeded {
-					pending += fmt.Sprintf("Operation '%s' (%s) on '%s' is not successful\n", op.ID, op.Type, client.Client.BaseURL)
+					pending += fmt.Sprintf("Operation '%s' (%s) on '%s' status=%s\n", op.ID, op.Type, client.Client.BaseURL, op.Status)
 				}
 			}
 		}
 		if pending == "" {
 			return
 		}
+		t.Logf("Waiting on operations:\n%s", pending)
 		time.Sleep(delay)
 	}
 

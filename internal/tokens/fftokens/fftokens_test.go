@@ -826,48 +826,86 @@ func TestReceiptEvents(t *testing.T) {
 	mcb := &coremocks.OperationCallbacks{}
 	h.SetOperationHandler("ns1", mcb)
 	opID := fftypes.NewUUID()
+	mockCalled := make(chan bool)
 
 	// receipt: bad ID - passed through
-	mcb.On("OperationUpdate", h, mock.MatchedBy(func(update *core.OperationUpdate) bool {
-		return update.NamespacedOpID == "wrong " && update.Status == core.OpStatusFailed
-	})).Return(nil).Once()
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:wrong" &&
+			update.Status == core.OpStatusPending &&
+			update.Plugin == "fftokens"
+	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
 	fromServer <- fftypes.JSONObject{
 		"id":    "3",
 		"event": "receipt",
-		"data":  fftypes.JSONObject{"id": "wrong"}, // passed through to OperationUpdate to ignore
+		"data": fftypes.JSONObject{
+			"headers": fftypes.JSONObject{
+				"requestId": "ns1:wrong", // passed through to OperationUpdate to ignore
+				"type":      "TransactionUpdate",
+			},
+		},
 	}.String()
+	<-mockCalled
 
 	// receipt: success
-	mcb.On("OperationUpdate", h, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
 		return update.NamespacedOpID == "ns1:"+opID.String() &&
 			update.Status == core.OpStatusSucceeded &&
-			update.BlockchainTXID == "0xffffeeee"
-	})).Return(nil).Once()
+			update.BlockchainTXID == "0xffffeeee" &&
+			update.Plugin == "fftokens"
+	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
 	fromServer <- fftypes.JSONObject{
 		"id":    "4",
 		"event": "receipt",
 		"data": fftypes.JSONObject{
-			"id":              "ns1:" + opID.String(),
-			"success":         true,
+			"headers": fftypes.JSONObject{
+				"requestId": "ns1:" + opID.String(),
+				"type":      "TransactionSuccess",
+			},
 			"transactionHash": "0xffffeeee",
 		},
 	}.String()
+	<-mockCalled
 
-	// receipt: failure
-	mcb.On("OperationUpdate", h, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	// receipt: update
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
 		return update.NamespacedOpID == "ns1:"+opID.String() &&
-			update.Status == core.OpStatusFailed &&
+			update.Status == core.OpStatusPending &&
 			update.BlockchainTXID == "0xffffeeee"
-	})).Return(nil).Once()
+	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
 	fromServer <- fftypes.JSONObject{
 		"id":    "5",
 		"event": "receipt",
 		"data": fftypes.JSONObject{
-			"id":              "ns1:" + opID.String(),
-			"success":         false,
+			"headers": fftypes.JSONObject{
+				"requestId": "ns1:" + opID.String(),
+				"type":      "TransactionUpdate",
+			},
 			"transactionHash": "0xffffeeee",
 		},
 	}.String()
+	<-mockCalled
+
+	// receipt: failure
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:"+opID.String() &&
+			update.Status == core.OpStatusFailed &&
+			update.BlockchainTXID == "0xffffeeee" &&
+			update.Plugin == "fftokens"
+	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
+	fromServer <- fftypes.JSONObject{
+		"id":    "5",
+		"event": "receipt",
+		"data": fftypes.JSONObject{
+			"headers": fftypes.JSONObject{
+				"requestId": "ns1:" + opID.String(),
+				"type":      "TransactionFailed",
+			},
+			"transactionHash": "0xffffeeee",
+		},
+	}.String()
+	<-mockCalled
+
+	mcb.AssertExpectations(t)
 }
 
 func TestPoolEvents(t *testing.T) {
@@ -1236,6 +1274,7 @@ func TestApprovalEvents(t *testing.T) {
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
 			"id":          "000000000010/000020/000030/000040",
+			"poolData":    "ns1",
 			"subject":     "a:b",
 			"poolLocator": "F1",
 			"signer":      "0x0",
@@ -1261,14 +1300,19 @@ func TestApprovalEvents(t *testing.T) {
 	assert.Equal(t, `{"data":{"id":"19"},"event":"ack"}`, string(msg))
 
 	// token-approval: callback fail
+	errProcessed := make(chan struct{})
 	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
 		return t.Approved == true && t.Operator == "0x0" && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
-	})).Return(fmt.Errorf("pop")).Once()
+	})).Return(fmt.Errorf("pop")).Once().Run(func(args mock.Arguments) {
+		// We do not ack in the case of an error
+		close(errProcessed)
+	})
 	fromServer <- fftypes.JSONObject{
 		"id":    "20",
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
 			"id":          "000000000010/000020/000030/000040",
+			"poolData":    "", // deliberately to drive to all namespaces
 			"subject":     "a:b",
 			"poolLocator": "F1",
 			"signer":      "0x0",
@@ -1283,6 +1327,9 @@ func TestApprovalEvents(t *testing.T) {
 			},
 		},
 	}.String()
+	<-errProcessed
+
+	mcb.AssertExpectations(t)
 }
 
 func TestEventLoopReceiveClosed(t *testing.T) {

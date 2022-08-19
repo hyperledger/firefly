@@ -28,7 +28,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
-	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -93,7 +92,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
@@ -169,7 +168,7 @@ func TestMintTokenDefaultPoolSuccess(t *testing.T) {
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == tokenPools[0] && data.Transfer == &mint.TokenTransfer
@@ -339,7 +338,7 @@ func TestMintTokensFail(t *testing.T) {
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
@@ -373,10 +372,11 @@ func TestMintTokensOperationFail(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.EqualError(t, err, "pop")
@@ -384,6 +384,7 @@ func TestMintTokensOperationFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestMintTokensConfirm(t *testing.T) {
@@ -409,10 +410,10 @@ func TestMintTokensConfirm(t *testing.T) {
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenTransfer", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&core.TokenTransfer{}, nil)
@@ -451,7 +452,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &burn.TokenTransfer
@@ -516,10 +517,10 @@ func TestBurnTokensConfirm(t *testing.T) {
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenTransfer", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&core.TokenTransfer{}, nil)
@@ -561,7 +562,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
@@ -724,13 +725,13 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mbm := am.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mbm.On("NewBroadcast", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(nil)
@@ -820,13 +821,13 @@ func TestTransferTokensWithBroadcastMessageSendFail(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mbm := am.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mbm.On("NewBroadcast", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
@@ -865,7 +866,7 @@ func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 	}
 
 	mbm := am.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mbm.On("NewBroadcast", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
 
@@ -912,13 +913,13 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mpm := am.messaging.(*privatemessagingmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mpm.On("NewMessage", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(nil)
@@ -1028,10 +1029,10 @@ func TestTransferTokensConfirm(t *testing.T) {
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenTransfer", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&core.TokenTransfer{}, nil)
@@ -1085,26 +1086,26 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mbm := am.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
+	mms := &syncasyncmocks.Sender{}
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mbm.On("NewBroadcast", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(nil)
 	msa.On("WaitForMessage", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&core.Message{}, nil)
 	msa.On("WaitForTokenTransfer", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(&transfer.TokenTransfer, nil)

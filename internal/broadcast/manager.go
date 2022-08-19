@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/syncasync"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -45,7 +44,7 @@ const broadcastDispatcherName = "pinned_broadcast"
 type Manager interface {
 	core.Named
 
-	NewBroadcast(in *core.MessageInOut) sysmessaging.MessageSender
+	NewBroadcast(in *core.MessageInOut) syncasync.Sender
 	BroadcastMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
 	Start() error
 	WaitStop()

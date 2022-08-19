@@ -1255,10 +1255,11 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"receivedAt": 1630033474675
   }`)
 
-	em.On("OperationUpdate", e, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusSucceeded &&
-			update.BlockchainTXID == "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2"
+			update.BlockchainTXID == "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2" &&
+			update.Plugin == "fabric"
 	})).Return(nil)
 
 	err := json.Unmarshal(data, &reply)
@@ -1315,10 +1316,11 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2"
   }`)
 
-	em.On("OperationUpdate", e, mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusFailed &&
-			update.BlockchainTXID == "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2"
+			update.BlockchainTXID == "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2" &&
+			update.Plugin == "fabric"
 	})).Return(nil)
 
 	err := json.Unmarshal(data, &reply)

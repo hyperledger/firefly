@@ -93,7 +93,7 @@ func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
@@ -222,7 +222,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
@@ -273,10 +273,11 @@ func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "pop", err)
@@ -284,6 +285,7 @@ func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestCreateTokenPoolSyncSuccess(t *testing.T) {
@@ -302,7 +304,7 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
@@ -333,7 +335,7 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
@@ -365,10 +367,10 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenPool", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(context.Background())
 		}).
 		Return(nil, nil)
@@ -400,7 +402,7 @@ func TestActivateTokenPool(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetOperations", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
-	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
+	mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
@@ -438,8 +440,9 @@ func TestActivateTokenPoolOpInsertFail(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
+	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetOperations", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
-	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
+	mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(fmt.Errorf("pop"))
 
@@ -447,6 +450,7 @@ func TestActivateTokenPoolOpInsertFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestActivateTokenPoolFail(t *testing.T) {
@@ -461,7 +465,7 @@ func TestActivateTokenPoolFail(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetOperations", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
-	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
+	mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
@@ -525,7 +529,7 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetOperations", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
-	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
+	mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {

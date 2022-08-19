@@ -21,18 +21,15 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestBoundCallbacks(t *testing.T) {
 	mei := &eventmocks.EventManager{}
-	mbi := &blockchainmocks.Plugin{}
 	mss := &sharedstoragemocks.Plugin{}
 	mom := &operationmocks.Manager{}
 	bc := boundCallbacks{ei: mei, ss: mss, om: mom}
@@ -49,8 +46,8 @@ func TestBoundCallbacks(t *testing.T) {
 		ErrorMessage:   "error info",
 		Output:         info,
 	}
-	mom.On("SubmitOperationUpdate", mock.Anything, update).Return().Once()
-	bc.OperationUpdate(mbi, update)
+	mom.On("SubmitOperationUpdate", update).Return().Once()
+	bc.OperationUpdate(update)
 
 	mei.On("SharedStorageBatchDownloaded", mss, "payload1", []byte(`{}`)).Return(nil, fmt.Errorf("pop"))
 	_, err := bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
@@ -60,7 +57,6 @@ func TestBoundCallbacks(t *testing.T) {
 	bc.SharedStorageBlobDownloaded(*hash, 12345, "payload1")
 
 	mei.AssertExpectations(t)
-	mbi.AssertExpectations(t)
 	mss.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }

@@ -1,28 +1,33 @@
 {
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
-    "tag": "v3.2.0",
-    "sha": "f647a637368f06afa5cf1c95756913626def5ef4f9fb96a2bb484d6099370747"
+    "tag": "v3.2.4",
+    "sha": "7e4c73c8250b33d4605551dffb855d350346387d7535cc5e592d1b79eaee5c5e"
+  },
+  "evmconnect": {
+    "image": "ghcr.io/hyperledger/firefly-evmconnect",
+    "tag": "v0.1.1",
+    "sha": "36055236a80bf07d00928a43dda7d3f9fdbc28513283ff70effb2f9d005b0272"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.14",
-    "sha": "0dff97610990414d8ceb24859ced7712fa18b71b1d22b6a6f46fd51266413a22"
+    "tag": "v0.9.15",
+    "sha": "58f138ffb70bef488575bf9e52d65155108aabc5efd675d2bc41e6c8be6746df"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
-    "tag": "v1.0.0-20220801-11",
-    "sha": "f113ccbd1ad166c3a382ec744af93b0701e1741fc97be2f4c60c3edb29767570"
+    "tag": "v1.1.0",
+    "sha": "9b191cf693a5b4a3b0bff48aac36fa76cf040d94033607a240cbd83e4fd2942c"
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v1.0.3-20220801-35",
-    "sha": "09a91c1488c71588f6c051e227068dc5c3e05bf07de714ad4269c011a0d65670"
+    "tag": "v1.1.0",
+    "sha": "f7d29950bb1ed8879ac4f46bf2234d7fcb15616d7484917f5510c378d4b6d4a3"
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
-    "tag": "v1.0.2-20220801-54",
-    "sha": "d48f75a5b65d7583965f7999958b64e1b7c3b85fe0234e388521783fb17aa73a"
+    "tag": "v1.1.0",
+    "sha": "f97b37cbc753dae15ed5c7c6de01746a9140ed84485d477aaee3c3ac5847bb8b"
   },
   "build": {
     "firefly-builder": {
@@ -40,8 +45,8 @@
     }
   },
   "ui": {
-    "tag": "v1.1.0-alpha.2",
-    "release": "v1.1.0-alpha.2"
+    "tag": "v1.1.0-alpha.3",
+    "release": "v1.1.0-alpha.3"
   },
   "cli": {
     "tag": "v1.1.0-alpha.2"

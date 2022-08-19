@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -51,6 +52,9 @@ func TestSharedStorageBatchDownloadedOk(t *testing.T) {
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+
 	bid, err := em.SharedStorageBatchDownloaded(mss, "payload1", b)
 	assert.NoError(t, err)
 	assert.Equal(t, batch.ID, bid)
@@ -61,6 +65,7 @@ func TestSharedStorageBatchDownloadedOk(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mss.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 

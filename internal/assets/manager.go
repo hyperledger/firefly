@@ -28,7 +28,6 @@ import (
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/syncasync"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -51,14 +50,14 @@ type Manager interface {
 	GetTokenTransfers(ctx context.Context, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error)
 	GetTokenTransferByID(ctx context.Context, id string) (*core.TokenTransfer, error)
 
-	NewTransfer(transfer *core.TokenTransferInput) sysmessaging.MessageSender
+	NewTransfer(transfer *core.TokenTransferInput) syncasync.Sender
 	MintTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error)
 	BurnTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error)
 	TransferTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error)
 
 	GetTokenConnectors(ctx context.Context) []*core.TokenConnector
 
-	NewApproval(approve *core.TokenApprovalInput) sysmessaging.MessageSender
+	NewApproval(approve *core.TokenApprovalInput) syncasync.Sender
 	TokenApproval(ctx context.Context, approval *core.TokenApprovalInput, waitConfirm bool) (*core.TokenApproval, error)
 	GetTokenApprovals(ctx context.Context, filter database.AndFilter) ([]*core.TokenApproval, *database.FilterResult, error)
 

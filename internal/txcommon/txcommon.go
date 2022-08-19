@@ -35,8 +35,7 @@ type Helper interface {
 	SubmitNewTransaction(ctx context.Context, txType core.TransactionType) (*fftypes.UUID, error)
 	PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error
-	InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error
-	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
+	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
 	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error)
 	GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
 }
@@ -65,7 +64,7 @@ func NewTransactionHelper(ns string, di database.Plugin, dm data.Manager) Helper
 	t.blockchainEventCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.BlockchainEventCacheSize)),
+			MaxSize(config.GetInt64(coreconfig.BlockchainEventCacheLimit)),
 	)
 	return t
 }
@@ -105,14 +104,14 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType cor
 		return nil, err
 	}
 
+	t.updateTransactionsCache(tx)
 	return tx.ID, nil
 }
 
 // PersistTransaction is called when we need to ensure a transaction exists in the DB, and optionally associate a new BlockchainTXID to it
 func (t *transactionHelper) PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error) {
 
-	// TODO: Consider if this can exploit caching
-	tx, err := t.database.GetTransactionByID(ctx, t.namespace, id)
+	tx, err := t.GetTransactionByIDCached(ctx, id)
 	if err != nil {
 		return false, err
 	}
@@ -144,7 +143,6 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, id *fftypes.
 	}
 
 	t.updateTransactionsCache(tx)
-
 	return true, nil
 }
 
@@ -162,8 +160,8 @@ func (t *transactionHelper) AddBlockchainTX(ctx context.Context, tx *core.Transa
 	if err != nil {
 		return err
 	}
-	t.updateTransactionsCache(tx)
 
+	t.updateTransactionsCache(tx)
 	return nil
 }
 
@@ -185,11 +183,15 @@ func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id
 	return chainEvent, nil
 }
 
-func (t *transactionHelper) InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error {
-	err := t.database.InsertBlockchainEvent(ctx, chainEvent)
+func (t *transactionHelper) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error) {
+	existing, err = t.database.InsertOrGetBlockchainEvent(ctx, event)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	t.addBlockchainEventToCache(chainEvent)
-	return nil
+	if existing != nil {
+		t.addBlockchainEventToCache(existing)
+		return existing, nil
+	}
+	t.addBlockchainEventToCache(event)
+	return nil, nil
 }

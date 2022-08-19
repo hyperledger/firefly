@@ -12,16 +12,26 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
+        test-suite: [TestEthereumMultipartyE2ESuite, TestEthereumGatewayE2ESuite, TestEthereumMultipartyTokensRemoteNameE2ESuite, TestFabricGatewayE2ESuite, TestFabricMultipartyE2ESuite]
         blockchain-provider: [geth, besu, fabric]
         database-type: [sqlite3, postgres]
         exclude:
-          - blockchain-provider: geth
-            test-suite: TestFabricE2ESuite
-          - blockchain-provider: besu
-            test-suite: TestFabricE2ESuite
-          - blockchain-provider: fabric
-            test-suite: TestEthereumE2ESuite
+          - test-suite: TestEthereumGatewayE2ESuite
+            blockchain-provider: fabric
+          - test-suite: TestEthereumMultipartyE2ESuite
+            blockchain-provider: fabric
+          - test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
+            blockchain-provider: fabric
+          - test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
+            blockchain-provider: fabric
+          - test-suite: TestFabricGatewayE2ESuite
+            blockchain-provider: geth
+          - test-suite: TestFabricGatewayE2ESuite
+            blockchain-provider: besu
+          - test-suite: TestFabricMultipartyE2ESuite
+            blockchain-provider: geth
+          - test-suite: TestFabricMultipartyE2ESuite
+            blockchain-provider: besu
       fail-fast: false
     steps:
       - uses: actions/checkout@v2

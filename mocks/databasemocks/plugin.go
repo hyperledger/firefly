@@ -130,13 +130,13 @@ func (_m *Plugin) GetBatchByID(ctx context.Context, namespace string, id *fftype
 	return r0, r1
 }
 
-// GetBatchIDsForDataAttachments provides a mock function with given fields: ctx, dataIDs
-func (_m *Plugin) GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) ([]*fftypes.UUID, error) {
-	ret := _m.Called(ctx, dataIDs)
+// GetBatchIDsForDataAttachments provides a mock function with given fields: ctx, namespace, dataIDs
+func (_m *Plugin) GetBatchIDsForDataAttachments(ctx context.Context, namespace string, dataIDs []*fftypes.UUID) ([]*fftypes.UUID, error) {
+	ret := _m.Called(ctx, namespace, dataIDs)
 
 	var r0 []*fftypes.UUID
-	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.UUID) []*fftypes.UUID); ok {
-		r0 = rf(ctx, dataIDs)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*fftypes.UUID) []*fftypes.UUID); ok {
+		r0 = rf(ctx, namespace, dataIDs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.UUID)
@@ -144,8 +144,8 @@ func (_m *Plugin) GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.UUID) error); ok {
-		r1 = rf(ctx, dataIDs)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []*fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, dataIDs)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -153,13 +153,13 @@ func (_m *Plugin) GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*
 	return r0, r1
 }
 
-// GetBatchIDsForMessages provides a mock function with given fields: ctx, msgIDs
-func (_m *Plugin) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) ([]*fftypes.UUID, error) {
-	ret := _m.Called(ctx, msgIDs)
+// GetBatchIDsForMessages provides a mock function with given fields: ctx, namespace, msgIDs
+func (_m *Plugin) GetBatchIDsForMessages(ctx context.Context, namespace string, msgIDs []*fftypes.UUID) ([]*fftypes.UUID, error) {
+	ret := _m.Called(ctx, namespace, msgIDs)
 
 	var r0 []*fftypes.UUID
-	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.UUID) []*fftypes.UUID); ok {
-		r0 = rf(ctx, msgIDs)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*fftypes.UUID) []*fftypes.UUID); ok {
+		r0 = rf(ctx, namespace, msgIDs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.UUID)
@@ -167,8 +167,8 @@ func (_m *Plugin) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.UUID) error); ok {
-		r1 = rf(ctx, msgIDs)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []*fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, msgIDs)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2094,20 +2094,6 @@ func (_m *Plugin) InsertBlobs(ctx context.Context, blobs []*core.Blob) error {
 	return r0
 }
 
-// InsertBlockchainEvent provides a mock function with given fields: ctx, event
-func (_m *Plugin) InsertBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) error {
-	ret := _m.Called(ctx, event)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.BlockchainEvent) error); ok {
-		r0 = rf(ctx, event)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // InsertContractListener provides a mock function with given fields: ctx, sub
 func (_m *Plugin) InsertContractListener(ctx context.Context, sub *core.ContractListener) error {
 	ret := _m.Called(ctx, sub)
@@ -2220,6 +2206,29 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *core.Operation
 	return r0
 }
 
+// InsertOrGetBlockchainEvent provides a mock function with given fields: ctx, event
+func (_m *Plugin) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (*core.BlockchainEvent, error) {
+	ret := _m.Called(ctx, event)
+
+	var r0 *core.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BlockchainEvent) *core.BlockchainEvent); ok {
+		r0 = rf(ctx, event)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.BlockchainEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *core.BlockchainEvent) error); ok {
+		r1 = rf(ctx, event)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // InsertPins provides a mock function with given fields: ctx, pins
 func (_m *Plugin) InsertPins(ctx context.Context, pins []*core.Pin) error {
 	ret := _m.Called(ctx, pins)
@@ -2269,20 +2278,6 @@ func (_m *Plugin) ReplaceMessage(ctx context.Context, message *core.Message) err
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *core.Message) error); ok {
 		r0 = rf(ctx, message)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ResolveOperation provides a mock function with given fields: ctx, namespace, id, status, errorMsg, output
-func (_m *Plugin) ResolveOperation(ctx context.Context, namespace string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) error {
-	ret := _m.Called(ctx, namespace, id, status, errorMsg, output)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, core.OpStatus, *string, fftypes.JSONObject) error); ok {
-		r0 = rf(ctx, namespace, id, status, errorMsg, output)
 	} else {
 		r0 = ret.Error(0)
 	}

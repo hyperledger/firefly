@@ -42,6 +42,10 @@ type Events struct {
 	readAhead    uint16
 }
 
+type EventInterface interface {
+	AddSystemEventListener(ns string, el EventListener) error
+}
+
 type EventListener func(event *core.EventDelivery) error
 
 func (se *Events) Name() string { return SystemEventsTransport }

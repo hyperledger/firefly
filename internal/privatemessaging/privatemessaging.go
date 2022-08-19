@@ -34,7 +34,6 @@ import (
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/syncasync"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -49,7 +48,7 @@ type Manager interface {
 	core.Named
 	GroupManager
 
-	NewMessage(msg *core.MessageInOut) sysmessaging.MessageSender
+	NewMessage(msg *core.MessageInOut) syncasync.Sender
 	SendMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
 	RequestReply(ctx context.Context, request *core.MessageInOut) (reply *core.MessageInOut, err error)
 
@@ -118,7 +117,7 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 	pm.groupManager.groupCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.GroupCacheSize)),
+			MaxSize(config.GetInt64(coreconfig.GroupCacheLimit)),
 	)
 
 	bo := batch.DispatcherOptions{

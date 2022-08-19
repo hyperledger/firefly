@@ -65,7 +65,7 @@ type callbacks struct {
 func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.OperationUpdate) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(cb.plugin, update)
+		handler.OperationUpdate(update)
 	} else {
 		log.L(ctx).Errorf("No handler found for DX operation '%s'", update.NamespacedOpID)
 		update.OnComplete()
@@ -251,11 +251,7 @@ func (h *FFDX) checkInitialized(ctx context.Context) error {
 }
 
 func (h *FFDX) GetPeerID(peer fftypes.JSONObject) string {
-	id := peer.GetString("nodeID")
-	if id == "" {
-		id = peer.GetString("id")
-	}
-	return id
+	return peer.GetString("id")
 }
 
 func (h *FFDX) GetEndpointInfo(ctx context.Context, nodeName string) (peer fftypes.JSONObject, err error) {
@@ -270,7 +266,7 @@ func (h *FFDX) GetEndpointInfo(ctx context.Context, nodeName string) (peer fftyp
 		log.L(ctx).Errorf("Invalid DX info: %s", peer.String())
 		return nil, i18n.NewError(ctx, coremsgs.MsgDXInfoMissingID)
 	}
-	peer["nodeID"] = fmt.Sprintf("%s%s%s", id, DXIDSeparator, nodeName)
+	peer["id"] = fmt.Sprintf("%s%s%s", id, DXIDSeparator, nodeName)
 	return peer, nil
 }
 

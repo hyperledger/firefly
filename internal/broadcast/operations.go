@@ -176,6 +176,7 @@ func opUploadBatch(op *core.Operation, batch *core.Batch) *core.PreparedOperatio
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      uploadBatchData{Batch: batch},
 	}
@@ -185,6 +186,7 @@ func opUploadBlob(op *core.Operation, data *core.Data, blob *core.Blob) *core.Pr
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      uploadBlobData{Data: data, Blob: blob},
 	}

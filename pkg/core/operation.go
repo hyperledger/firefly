@@ -120,6 +120,7 @@ type OperationUpdateDTO struct {
 type PreparedOperation struct {
 	ID        *fftypes.UUID `json:"id"`
 	Namespace string        `json:"namespace"`
+	Plugin    string        `json:"plugin"`
 	Type      OpType        `json:"type" ffenum:"optype"`
 	Data      interface{}   `json:"data"`
 }
@@ -143,7 +144,7 @@ func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.
 }
 
 type OperationCallbacks interface {
-	OperationUpdate(plugin Named, update *OperationUpdate)
+	OperationUpdate(update *OperationUpdate)
 }
 
 // OperationUpdate notifies FireFly of an update to an operation.
@@ -152,6 +153,7 @@ type OperationCallbacks interface {
 // Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
 // Only the party submitting the transaction will see this data.
 type OperationUpdate struct {
+	Plugin         string
 	NamespacedOpID string
 	Status         OpStatus
 	BlockchainTXID string

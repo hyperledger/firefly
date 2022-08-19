@@ -14,7 +14,7 @@ GOGC=30
 
 all: build test go-mod-tidy
 test: deps lint
-		$(VGO) test ./internal/... ./pkg/... ./cmd/... ./docs -cover -coverprofile=coverage.txt -covermode=atomic -timeout=30s
+		$(VGO) test ./internal/... ./pkg/... ./cmd/... ./docs ./ffconfig/... -cover -coverprofile=coverage.txt -covermode=atomic -timeout=30s
 coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
@@ -53,9 +53,7 @@ $(eval $(call makemock, pkg/tokens,                Plugin,             tokenmock
 $(eval $(call makemock, pkg/tokens,                Callbacks,          tokenmocks))
 $(eval $(call makemock, internal/txcommon,         Helper,             txcommonmocks))
 $(eval $(call makemock, internal/identity,         Manager,            identitymanagermocks))
-$(eval $(call makemock, internal/sysmessaging,     SystemEvents,       sysmessagingmocks))
-$(eval $(call makemock, internal/sysmessaging,     MessageSender,      sysmessagingmocks))
-$(eval $(call makemock, internal/sysmessaging,     LocalNodeInfo,      sysmessagingmocks))
+$(eval $(call makemock, internal/syncasync,        Sender,             syncasyncmocks))
 $(eval $(call makemock, internal/syncasync,        Bridge,             syncasyncmocks))
 $(eval $(call makemock, internal/data,             Manager,            datamocks))
 $(eval $(call makemock, internal/batch,            Manager,            batchmocks))
@@ -66,6 +64,7 @@ $(eval $(call makemock, internal/shareddownload,   Callbacks,          shareddow
 $(eval $(call makemock, internal/definitions,      Handler,            definitionsmocks))
 $(eval $(call makemock, internal/definitions,      Sender,             definitionsmocks))
 $(eval $(call makemock, internal/events,           EventManager,       eventmocks))
+$(eval $(call makemock, internal/events/system,    EventInterface,     systemeventmocks))
 $(eval $(call makemock, internal/namespace,        Manager,            namespacemocks))
 $(eval $(call makemock, internal/networkmap,       Manager,            networkmapmocks))
 $(eval $(call makemock, internal/assets,           Manager,            assetmocks))

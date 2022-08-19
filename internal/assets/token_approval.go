@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -53,7 +53,7 @@ func (s *approveSender) setDefaults() {
 	s.approval.LocalID = fftypes.NewUUID()
 }
 
-func (am *assetManager) NewApproval(approval *core.TokenApprovalInput) sysmessaging.MessageSender {
+func (am *assetManager) NewApproval(approval *core.TokenApprovalInput) syncasync.Sender {
 	sender := &approveSender{
 		mgr:      am,
 		approval: approval,
@@ -111,7 +111,7 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 			txid,
 			core.TransactionTypeTokenApproval)
 		if err = txcommon.AddTokenApprovalInputs(op, &s.approval.TokenApproval); err == nil {
-			err = s.mgr.database.InsertOperation(ctx, op)
+			err = s.mgr.operations.AddOrReuseOperation(ctx, op)
 		}
 		return err
 	})

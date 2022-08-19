@@ -197,7 +197,6 @@ type orchestrator struct {
 	assets         assets.Manager
 	bc             boundCallbacks
 	contracts      contracts.Manager
-	node           *fftypes.UUID
 	metrics        metrics.Manager
 	operations     operations.Manager
 	txHelper       txcommon.Helper
@@ -420,11 +419,11 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace.Name, or.database(), or.data)
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace.Name, or.database(), or.data, or.operations)
 
 	if or.config.Multiparty.Enabled {
 		if or.batch == nil {
-			or.batch, err = batch.NewBatchManager(ctx, or.namespace.Name, or, or.database(), or.data, or.txHelper)
+			or.batch, err = batch.NewBatchManager(ctx, or.namespace.Name, or.database(), or.data, or.identity, or.txHelper)
 			if err != nil {
 				return err
 			}
@@ -496,7 +495,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events, or.multiparty)
+		or.events, err = events.NewEventManager(ctx, or.namespace, or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.operations, or.txHelper, or.plugins.Events, or.multiparty)
 		if err != nil {
 			return err
 		}

@@ -160,6 +160,7 @@ func opSendBlob(op *core.Operation, node *core.Identity, blob *core.Blob) *core.
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      transferBlobData{Node: node, Blob: blob},
 	}
@@ -169,6 +170,7 @@ func opSendBatch(op *core.Operation, node *core.Identity, transport *core.Transp
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      batchSendData{Node: node, Transport: transport},
 	}

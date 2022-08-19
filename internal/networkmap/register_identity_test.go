@@ -86,7 +86,7 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 		ctx := args[0].(context.Context)
 		id := args[1].(*fftypes.UUID)
 		assert.NotNil(t, id)
-		cb := args[2].(syncasync.RequestSender)
+		cb := args[2].(syncasync.SendFunction)
 		err := cb(ctx)
 		assert.NoError(t, err)
 	}).Return(nil, nil)

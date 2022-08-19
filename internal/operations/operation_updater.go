@@ -18,7 +18,6 @@ package operations
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"time"
 
@@ -195,7 +194,7 @@ func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates 
 func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*core.OperationUpdate) error {
 
 	// Get all the operations that match
-	opIDs := make([]driver.Value, 0, len(updates))
+	opIDs := make([]*fftypes.UUID, 0, len(updates))
 	for _, update := range updates {
 		_, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 		if err != nil {
@@ -207,25 +206,20 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*core.O
 	if len(opIDs) == 0 {
 		return nil
 	}
-	opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", opIDs)
-	ops, _, err := ou.database.GetOperations(ctx, ou.manager.namespace, opFilter)
+	ops, err := ou.manager.getOperationsCached(ctx, opIDs)
 	if err != nil {
 		return err
 	}
 
 	// Get all the transactions for these operations
-	txIDs := make([]driver.Value, 0, len(ops))
+	var transactions []*core.Transaction
 	for _, op := range ops {
 		if op.Transaction != nil {
-			txIDs = append(txIDs, op.Transaction)
-		}
-	}
-	var transactions []*core.Transaction
-	if len(txIDs) > 0 {
-		txFilter := database.TransactionQueryFactory.NewFilter(ctx).In("id", txIDs)
-		transactions, _, err = ou.database.GetTransactions(ctx, ou.manager.namespace, txFilter)
-		if err != nil {
-			return err
+			transaction, err := ou.txHelper.GetTransactionByIDCached(ctx, op.Transaction)
+			if err != nil {
+				return err
+			}
+			transactions = append(transactions, transaction)
 		}
 	}
 
@@ -241,7 +235,7 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*core.O
 
 func (ou *operationUpdater) doUpdate(ctx context.Context, update *core.OperationUpdate, ops []*core.Operation, transactions []*core.Transaction) error {
 
-	_, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
+	_, updateID, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if err != nil {
 		log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
 		return nil
@@ -250,7 +244,11 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *core.Operation
 	// Find the operation we already retrieved, and do the update
 	var op *core.Operation
 	for _, candidate := range ops {
-		if id.Equals(candidate.ID) {
+		if updateID.Equals(candidate.ID) {
+			if update.Plugin != candidate.Plugin {
+				log.L(ctx).Debugf("Operation update '%s' from '%s' ignored, as it does not match operation source '%s'", update.NamespacedOpID, update.Plugin, candidate.Plugin)
+				return nil
+			}
 			op = candidate
 			break
 		}
@@ -289,7 +287,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *core.Operation
 		}
 	}
 
-	if err := ou.database.ResolveOperation(ctx, op.Namespace, op.ID, update.Status, &update.ErrorMessage, update.Output); err != nil {
+	if err := ou.resolveOperation(ctx, op.Namespace, op.ID, update.Status, &update.ErrorMessage, update.Output); err != nil {
 		return err
 	}
 
@@ -341,4 +339,19 @@ func (ou *operationUpdater) close() {
 			<-workerDone
 		}
 	}
+}
+
+func (ou *operationUpdater) resolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error) {
+	update := database.OperationQueryFactory.NewUpdate(ctx).S()
+	if status != "" {
+		update = update.Set("status", status)
+	}
+	if errorMsg != nil {
+		update = update.Set("error", *errorMsg)
+	}
+	if output != nil {
+		update = update.Set("output", output)
+	}
+	ou.manager.updateCachedOperation(id, status, errorMsg, output, nil)
+	return ou.database.UpdateOperation(ctx, ns, id, update)
 }

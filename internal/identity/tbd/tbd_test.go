@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,4 +38,6 @@ func TestInit(t *testing.T) {
 	assert.NoError(t, err)
 	capabilities := oc.Capabilities()
 	assert.NotNil(t, capabilities)
+	cbs := &identitymocks.Callbacks{}
+	oc.SetHandler("ns1", cbs) // no-op
 }

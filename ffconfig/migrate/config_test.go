@@ -14,16 +14,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sysmessaging
+package migrate
 
 import (
-	"context"
+	"os"
+	"testing"
 
-	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/stretchr/testify/assert"
 )
 
-// LocalNodeInfo provides an interface to query the local node info
-type LocalNodeInfo interface {
-	// GetNodeUUID returns the local node UUID in a namespace, or nil if the node is not yet registered. It is cached for fast access
-	GetNodeUUID(ctx context.Context) *fftypes.UUID
+func TestDeleteList(t *testing.T) {
+	value := map[interface{}]interface{}{
+		"values": []interface{}{"test1", "test2"},
+	}
+	config := &ConfigItem{value: value, writer: os.Stdout}
+	config.Get("values").Each().Delete()
+	assert.Equal(t, 0, len(value))
+}
+
+func TestNoRename(t *testing.T) {
+	value := map[interface{}]interface{}{
+		"key1": "val1",
+		"key2": "val2",
+	}
+	config := &ConfigItem{value: value, writer: os.Stdout}
+	config.Get("key1").RenameTo("key2")
+	assert.Equal(t, map[interface{}]interface{}{
+		"key2": "val2",
+	}, value)
 }

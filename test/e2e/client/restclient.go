@@ -20,7 +20,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -100,14 +102,18 @@ func NewFireFly(l Logger, hostname, namespace string) *FireFlyClient {
 func NewResty(l Logger) *resty.Client {
 	client := resty.New()
 	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
-		l.Logf("==> %s %s %s", req.Method, req.URL, req.QueryParam)
+		var b []byte
+		if _, isReader := req.Body.(io.Reader); !isReader {
+			b, _ = json.Marshal(req.Body)
+		}
+		l.Logf("%s: ==> %s %s %s: %s", fftypes.Now(), req.Method, req.URL, req.QueryParam, string(b))
 		return nil
 	})
 	client.OnAfterResponse(func(c *resty.Client, resp *resty.Response) error {
 		if resp == nil {
 			return nil
 		}
-		l.Logf("<== %d", resp.StatusCode())
+		l.Logf("%s: <== %d", fftypes.Now(), resp.StatusCode())
 		if resp.IsError() {
 			l.Logf("<!! %s", resp.String())
 			l.Logf("Headers: %+v", resp.Header())

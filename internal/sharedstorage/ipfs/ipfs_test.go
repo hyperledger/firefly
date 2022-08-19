@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -63,6 +64,9 @@ func TestInit(t *testing.T) {
 	resetConf()
 	utConfig.SubSection(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+
+	cbs := &sharedstoragemocks.Callbacks{}
+	i.SetHandler("ns1", cbs) // no-op
 
 	err := i.Init(context.Background(), utConfig)
 	assert.Equal(t, "ipfs", i.Name())

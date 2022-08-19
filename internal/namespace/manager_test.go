@@ -1274,6 +1274,8 @@ func TestLoadNamespacesUseDefaults(t *testing.T) {
     - name: ns1
   org:
     name: org1
+  node:
+    name: node1
   `))
 	assert.NoError(t, err)
 

@@ -46,14 +46,14 @@ func TestRewinderE2E(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("GetDataRefs", mock.Anything, "ns1", mock.Anything).
 		Return(core.DataRefs{{ID: dataID}}, nil, nil)
-	mdi.On("GetBatchIDsForDataAttachments", mock.Anything, []*fftypes.UUID{dataID}).
+	mdi.On("GetBatchIDsForDataAttachments", mock.Anything, "ns1", []*fftypes.UUID{dataID}).
 		Return([]*fftypes.UUID{batchID2}, nil)
 	mdm.On("PeekMessageCache", mock.Anything, mock.Anything, data.CRORequireBatchID).Return(nil, nil)
-	mdi.On("GetBatchIDsForMessages", mock.Anything, mock.Anything).
+	mdi.On("GetBatchIDsForMessages", mock.Anything, "ns1", mock.Anything).
 		Return([]*fftypes.UUID{batchID3}, nil).Once()
 	mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).
 		Return([]*core.IDAndSequence{{ID: *fftypes.NewUUID()}}, nil).Once()
-	mdi.On("GetBatchIDsForMessages", mock.Anything, mock.Anything).
+	mdi.On("GetBatchIDsForMessages", mock.Anything, "ns1", mock.Anything).
 		Return([]*fftypes.UUID{batchID4}, nil).Once()
 
 	ag.rewinder.start()
@@ -96,7 +96,7 @@ func TestProcessStagedRewindsErrorMessages(t *testing.T) {
 
 	mockRunAsGroupPassthrough(mdi)
 	mdm.On("PeekMessageCache", mock.Anything, mock.Anything, data.CRORequireBatchID).Return(nil, nil)
-	mdi.On("GetBatchIDsForMessages", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBatchIDsForMessages", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	ag.rewinder.stagedRewinds = []*rewind{
 		{rewindType: rewindMessage},
@@ -143,7 +143,7 @@ func TestProcessStagedRewindsErrorBlobBatchIDs(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("GetDataRefs", mock.Anything, "ns1", mock.Anything).
 		Return(core.DataRefs{{ID: dataID}}, nil, nil)
-	mdi.On("GetBatchIDsForDataAttachments", mock.Anything, []*fftypes.UUID{dataID}).
+	mdi.On("GetBatchIDsForDataAttachments", mock.Anything, "ns1", []*fftypes.UUID{dataID}).
 		Return(nil, fmt.Errorf("pop"))
 
 	ag.rewinder.stagedRewinds = []*rewind{

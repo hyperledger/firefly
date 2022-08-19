@@ -24,11 +24,11 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) NewBroadcast(in *core.MessageInOut) sysmessaging.MessageSender {
+func (bm *broadcastManager) NewBroadcast(in *core.MessageInOut) syncasync.Sender {
 	broadcast := &broadcastSender{
 		mgr: bm,
 		msg: &data.NewMessage{

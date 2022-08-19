@@ -223,7 +223,7 @@ func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.
 	}
 
 	f.cacheTTL = config.GetDuration(coreconfig.CacheBlockchainTTL)
-	f.cache = ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.CacheBlockchainSize)))
+	f.cache = ccache.New(ccache.Configure().MaxSize(config.GetInt64(coreconfig.CacheBlockchainLimit)))
 
 	f.streams = newStreamManager(f.client, f.signer, f.cache, f.cacheTTL)
 	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)

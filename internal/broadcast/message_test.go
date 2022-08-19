@@ -113,7 +113,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	}
 	msa.On("WaitForMessage", ctx, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
+			send := args[2].(syncasync.SendFunction)
 			send(ctx)
 		}).
 		Return(replyMsg, nil)
