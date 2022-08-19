@@ -50,7 +50,7 @@ The runtimes are pluggable, allowing technology choice, and extensibility.
 - Infrastructure runtimes
   - Can be local runtimes, or cloud services
   - Blockchain nodes - Fabric, Ethereum, Corda etc.
-  - Database servers - PostreSQL, SQLite, CouchDB etc.
+  - Database servers - PostgreSQL, SQLite, CouchDB etc.
   - Private messaging - Kafka, RabbitMQ, ActiveMQ, Mosquitto etc.
   - Private blob storage - Kubernetes PVCs, AWS S3, Azure File etc.
   - Public blob storage - IPFS, etc.
