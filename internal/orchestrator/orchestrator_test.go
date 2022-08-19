@@ -477,3 +477,54 @@ func TestAuthorizeNoPlugin(t *testing.T) {
 	err := or.Authorize(context.Background(), &fftypes.AuthReq{})
 	assert.NoError(t, err)
 }
+
+func TestRewindPinsSeq(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	rewind := &core.PinRewind{Sequence: 100}
+	batchID := fftypes.NewUUID()
+
+	or.mdi.On("GetPins", mock.Anything, "ns", mock.Anything).Return([]*core.Pin{{Batch: batchID}}, nil, nil)
+	or.mem.On("QueueBatchRewind", batchID).Return()
+
+	result, err := or.RewindPins(context.Background(), rewind)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(100), result.Sequence)
+	assert.Equal(t, batchID, result.Batch)
+}
+
+func TestRewindPinsFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	rewind := &core.PinRewind{Sequence: 100}
+
+	or.mdi.On("GetPins", mock.Anything, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := or.RewindPins(context.Background(), rewind)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestRewindPinsNotFound(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	rewind := &core.PinRewind{Sequence: 100}
+
+	or.mdi.On("GetPins", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
+
+	_, err := or.RewindPins(context.Background(), rewind)
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestRewindPinsBatch(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	batchID := fftypes.NewUUID()
+	rewind := &core.PinRewind{Batch: batchID}
+
+	or.mem.On("QueueBatchRewind", batchID).Return()
+
+	result, err := or.RewindPins(context.Background(), rewind)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), result.Sequence)
+	assert.Equal(t, batchID, result.Batch)
+}

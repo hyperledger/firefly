@@ -108,6 +108,7 @@ type Orchestrator interface {
 	GetBlockchainEventByID(ctx context.Context, id string) (*core.BlockchainEvent, error)
 	GetBlockchainEvents(ctx context.Context, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error)
 	GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error)
+	RewindPins(ctx context.Context, rewind *core.PinRewind) (*core.PinRewind, error)
 
 	// Charts
 	GetChartHistogram(ctx context.Context, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error)
@@ -523,4 +524,20 @@ func (or *orchestrator) Authorize(ctx context.Context, authReq *fftypes.AuthReq)
 		return or.plugins.Auth.Plugin.Authorize(ctx, authReq)
 	}
 	return nil
+}
+
+func (or *orchestrator) RewindPins(ctx context.Context, rewind *core.PinRewind) (*core.PinRewind, error) {
+	if rewind.Sequence > 0 {
+		fb := database.PinQueryFactory.NewFilter(ctx)
+		if pins, _, err := or.GetPins(ctx, fb.And(fb.Eq("seq", rewind.Sequence))); err != nil {
+			return nil, err
+		} else if len(pins) > 0 {
+			rewind.Batch = pins[0].Batch
+			or.events.QueueBatchRewind(rewind.Batch)
+			return rewind, nil
+		}
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
+	}
+	or.events.QueueBatchRewind(rewind.Batch)
+	return rewind, nil
 }

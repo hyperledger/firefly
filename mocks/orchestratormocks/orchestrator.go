@@ -1223,6 +1223,29 @@ func (_m *Orchestrator) RequestReply(ctx context.Context, msg *core.MessageInOut
 	return r0, r1
 }
 
+// RewindPins provides a mock function with given fields: ctx, rewind
+func (_m *Orchestrator) RewindPins(ctx context.Context, rewind *core.PinRewind) (*core.PinRewind, error) {
+	ret := _m.Called(ctx, rewind)
+
+	var r0 *core.PinRewind
+	if rf, ok := ret.Get(0).(func(context.Context, *core.PinRewind) *core.PinRewind); ok {
+		r0 = rf(ctx, rewind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.PinRewind)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *core.PinRewind) error); ok {
+		r1 = rf(ctx, rewind)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Start provides a mock function with given fields:
 func (_m *Orchestrator) Start() error {
 	ret := _m.Called()
