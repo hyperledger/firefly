@@ -46,16 +46,16 @@ type Sender interface {
 }
 
 type definitionSender struct {
-	ctx              context.Context
-	namespace        string
-	multiparty       bool
-	database         database.Plugin
-	broadcast        broadcast.Manager // optional
-	identity         identity.Manager
-	data             data.Manager
-	contracts        contracts.Manager // optional
-	handler          *definitionHandler
-	tokenRemoteNames map[string]string // mapping of token connector name => remote name
+	ctx                 context.Context
+	namespace           string
+	multiparty          bool
+	database            database.Plugin
+	broadcast           broadcast.Manager // optional
+	identity            identity.Manager
+	data                data.Manager
+	contracts           contracts.Manager // optional
+	handler             *definitionHandler
+	tokenBroadcastNames map[string]string // mapping of token connector name => remote name
 }
 
 // Definitions that get processed immediately will create a temporary batch state and then finalize it inline
@@ -71,22 +71,22 @@ func fakeBatch(ctx context.Context, handler func(context.Context, *core.BatchSta
 	return err
 }
 
-func NewDefinitionSender(ctx context.Context, ns *core.Namespace, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, am assets.Manager, cm contracts.Manager, tokenRemoteNames map[string]string) (Sender, Handler, error) {
+func NewDefinitionSender(ctx context.Context, ns *core.Namespace, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, am assets.Manager, cm contracts.Manager, tokenBroadcastNames map[string]string) (Sender, Handler, error) {
 	if di == nil || im == nil || dm == nil {
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DefinitionSender")
 	}
 	ds := &definitionSender{
-		ctx:              ctx,
-		namespace:        ns.Name,
-		multiparty:       multiparty,
-		database:         di,
-		broadcast:        bm,
-		identity:         im,
-		data:             dm,
-		contracts:        cm,
-		tokenRemoteNames: tokenRemoteNames,
+		ctx:                 ctx,
+		namespace:           ns.Name,
+		multiparty:          multiparty,
+		database:            di,
+		broadcast:           bm,
+		identity:            im,
+		data:                dm,
+		contracts:           cm,
+		tokenBroadcastNames: tokenBroadcastNames,
 	}
-	dh, err := newDefinitionHandler(ctx, ns, multiparty, di, bi, dx, dm, im, am, cm, reverseMap(tokenRemoteNames))
+	dh, err := newDefinitionHandler(ctx, ns, multiparty, di, bi, dx, dm, im, am, cm, reverseMap(tokenBroadcastNames))
 	ds.handler = dh
 	return ds, dh, err
 }

@@ -69,11 +69,11 @@ func RandomName(t *testing.T) string {
 	return fmt.Sprintf("e2e_%x", b)
 }
 
-func AddPluginRemoteName(data map[string]interface{}, pluginType, remoteName string) {
+func AddPluginBroadcastName(data map[string]interface{}, pluginType, broadcastName string) {
 	pluginsConfig := data["plugins"].(map[interface{}]interface{})
 	plugins := pluginsConfig[pluginType].([]interface{})
 	plugin := plugins[0].(map[interface{}]interface{})
-	plugin["remotename"] = remoteName
+	plugin["broadcastName"] = broadcastName
 }
 
 // ChangeDefaultNSPluginLocalName changes the plugin local name and updates the plugin list for the default namespace

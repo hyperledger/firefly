@@ -107,11 +107,11 @@ type namespaceManager struct {
 		events        map[string]eventsPlugin
 		auth          map[string]authPlugin
 	}
-	metricsEnabled   bool
-	metrics          metrics.Manager
-	adminEvents      spievents.Manager
-	utOrchestrator   orchestrator.Orchestrator
-	tokenRemoteNames map[string]string
+	metricsEnabled      bool
+	metrics             metrics.Manager
+	adminEvents         spievents.Manager
+	utOrchestrator      orchestrator.Orchestrator
+	tokenBroadcastNames map[string]string
 }
 
 type blockchainPlugin struct {
@@ -168,9 +168,9 @@ func stringSlicesEqual(a, b []string) bool {
 
 func NewNamespaceManager(withDefaults bool) Manager {
 	nm := &namespaceManager{
-		namespaces:       make(map[string]*namespace),
-		metricsEnabled:   config.GetBool(coreconfig.MetricsEnabled),
-		tokenRemoteNames: make(map[string]string),
+		namespaces:          make(map[string]*namespace),
+		metricsEnabled:      config.GetBool(coreconfig.MetricsEnabled),
+		tokenBroadcastNames: make(map[string]string),
 	}
 
 	InitConfig(withDefaults)
@@ -442,8 +442,8 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 
 func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[string]tokensPlugin, err error) {
 	plugins = make(map[string]tokensPlugin)
-	// Remote names must be unique
-	remoteNames := make(map[string]bool)
+	// Broadcast names must be unique
+	broadcastNames := make(map[string]bool)
 
 	tokensConfigArraySize := tokensConfig.ArraySize()
 	for i := 0; i < tokensConfigArraySize; i++ {
@@ -452,16 +452,16 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[s
 		if err != nil {
 			return nil, err
 		}
-		remoteName := config.GetString(coreconfig.PluginRemoteName)
-		// If there is no remote name, use the plugin name
-		if remoteName == "" {
-			remoteName = name
+		broadcastName := config.GetString(coreconfig.PluginBroadcastName)
+		// If there is no broadcast name, use the plugin name
+		if broadcastName == "" {
+			broadcastName = name
 		}
-		if _, exists := remoteNames[remoteName]; exists {
-			return nil, i18n.NewError(ctx, coremsgs.MsgDuplicatePluginRemoteName, "tokens", remoteName)
+		if _, exists := broadcastNames[broadcastName]; exists {
+			return nil, i18n.NewError(ctx, coremsgs.MsgDuplicatePluginBroadcastName, "tokens", broadcastName)
 		}
-		remoteNames[remoteName] = true
-		nm.tokenRemoteNames[name] = remoteName
+		broadcastNames[broadcastName] = true
+		nm.tokenBroadcastNames[name] = broadcastName
 
 		plugin, err := tifactory.GetPlugin(ctx, pluginType)
 		if err != nil {
@@ -874,9 +874,9 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}
 
 	config := orchestrator.Config{
-		DefaultKey:       conf.GetString(coreconfig.NamespaceDefaultKey),
-		TokenRemoteNames: nm.tokenRemoteNames,
-		KeyNormalization: keyNormalization,
+		DefaultKey:          conf.GetString(coreconfig.NamespaceDefaultKey),
+		TokenBroadcastNames: nm.tokenBroadcastNames,
+		KeyNormalization:    keyNormalization,
 	}
 	if multipartyEnabled.(bool) {
 		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)

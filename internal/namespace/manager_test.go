@@ -93,10 +93,10 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 		mev:  &eventsmocks.Plugin{},
 		auth: &authmocks.Plugin{},
 		namespaceManager: namespaceManager{
-			ctx:              context.Background(),
-			namespaces:       make(map[string]*namespace),
-			pluginNames:      make(map[string]bool),
-			tokenRemoteNames: make(map[string]string),
+			ctx:                 context.Background(),
+			namespaces:          make(map[string]*namespace),
+			pluginNames:         make(map[string]bool),
+			tokenBroadcastNames: make(map[string]string),
 		},
 	}
 	nm.plugins.blockchain = map[string]blockchainPlugin{
@@ -998,7 +998,7 @@ func TestTokensPlugin(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestTokensPluginDuplicateRemoteName(t *testing.T) {
+func TestTokensPluginDuplicateBroadcastName(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 	tifactory.InitConfig(tokensConfig)
@@ -1007,12 +1007,12 @@ func TestTokensPluginDuplicateRemoteName(t *testing.T) {
   plugins:
     tokens:
     - name: test1
-      remotename: remote1
+      broadcastName: remote1
       type: fftokens
       fftokens:
         url: http://tokens:3000
     - name: test2
-      remotename: remote1
+      broadcastName: remote1
       type: fftokens
       fftokens:
         url: http://tokens:3000
@@ -1024,7 +1024,7 @@ func TestTokensPluginDuplicateRemoteName(t *testing.T) {
 	assert.Regexp(t, "FF10419", err)
 }
 
-func TestMultipleTokensPluginsWithRemoteName(t *testing.T) {
+func TestMultipleTokensPluginsWithBroadcastName(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 	tifactory.InitConfig(tokensConfig)
@@ -1033,12 +1033,12 @@ func TestMultipleTokensPluginsWithRemoteName(t *testing.T) {
   plugins:
     tokens:
     - name: test1
-      remotename: remote1
+      broadcastName: remote1
       type: fftokens
       fftokens:
         url: http://tokens:3000
     - name: test2
-      remotename: remote2
+      broadcastName: remote2
       type: fftokens
       fftokens:
         url: http://tokens:3000

@@ -711,7 +711,7 @@ nav_order: 2
 |dataexchange|The array of configured Data Exchange plugins |`string`|`<nil>`
 |identity|The list of available Identity plugins|`string`|`<nil>`
 |sharedstorage|The list of configured Shared Storage plugins|`string`|`<nil>`
-|tokens|The tokens plugin configurations. This will be used to configure tokens connectors|`string`|`<nil>`
+|tokens|The token plugin configurations|`string`|`<nil>`
 
 ## plugins.auth[]
 
@@ -1103,9 +1103,9 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|name|The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector|`string`|`<nil>`
-|remotename|The remote name of the Tokens Connector. This will be used in messages and events to refer to this specific Token Connector, if it differs from the name|`string`|`<nil>`
-|type|The type of the Tokens Connector plugin to use|`string`|`<nil>`
+|broadcastName|The name to be used in broadcast messages related to this token plugin, if it differs from the local plugin name|`string`|`<nil>`
+|name|A name to identify this token plugin|`string`|`<nil>`
+|type|The type of the token plugin to use|`string`|`<nil>`
 
 ## plugins.tokens[].fftokens
 
@@ -1118,7 +1118,7 @@ nav_order: 2
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
-|url|The URL of the Token Connector|URL `string`|`<nil>`
+|url|The URL of the token connector|URL `string`|`<nil>`
 
 ## plugins.tokens[].fftokens.auth
 
@@ -1131,7 +1131,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|Optional HTTP proxy server to use when connecting to the Token Connector|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to the token connector|URL `string`|`<nil>`
 
 ## plugins.tokens[].fftokens.retry
 
@@ -1317,11 +1317,11 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`<nil>`
-|name|The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector|`string`|`<nil>`
-|plugin|The name of the Tokens Connector plugin to use|`string`|`<nil>`
+|name|A name to identify this token plugin|`string`|`<nil>`
+|plugin|The type of the token plugin to use|`string`|`<nil>`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|url|The URL of the Token Connector|URL `string`|`<nil>`
+|url|The URL of the token connector|URL `string`|`<nil>`
 
 ## tokens[].auth
 
@@ -1334,7 +1334,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|Optional HTTP proxy server to use when connecting to the Token Connector|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to the token connector|URL `string`|`<nil>`
 
 ## tokens[].retry
 
