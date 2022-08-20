@@ -102,8 +102,9 @@ func TestExecOkRestartThenExit(t *testing.T) {
 		initCount++
 		if initCount == 2 {
 			init.ReturnArguments = mock.Arguments{fmt.Errorf("second run")}
+		} else {
+			cancelOrContext()
 		}
-		cancelOrContext()
 	}
 	o.On("Start").Return(nil)
 	ws := o.On("WaitStop")
@@ -151,7 +152,7 @@ func TestAPIServerError(t *testing.T) {
 	as.On("Serve", mock.Anything, o).Return(fmt.Errorf("pop"))
 
 	errChan := make(chan error)
-	go startFirefly(context.Background(), func() {}, o, as, errChan)
+	go startFirefly(context.Background(), func() {}, o, as, errChan, make(chan struct{}))
 	err := <-errChan
 	assert.EqualError(t, err, "pop")
 }
