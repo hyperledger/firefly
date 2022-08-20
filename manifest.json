@@ -6,8 +6,8 @@
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v0.1.1",
-    "sha": "36055236a80bf07d00928a43dda7d3f9fdbc28513283ff70effb2f9d005b0272"
+    "tag": "v0.1.2",
+    "sha": "0c37cc017c2aaea0ff9d5fa1103844ba8f2f2cedd6516e3390f27fe7e918a97d"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
@@ -21,8 +21,8 @@
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v1.1.0",
-    "sha": "f7d29950bb1ed8879ac4f46bf2234d7fcb15616d7484917f5510c378d4b6d4a3"
+    "tag": "v1.1.1",
+    "sha": "d146726a0c5b8b348e1cad556c93258ce146d721d10b8c489f89cb20cb43ac85"
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
