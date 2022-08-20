@@ -20411,8 +20411,8 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/pins/rewind:
     post:
-      description: Force a rewind the event aggregator to a previous position, to
-        re-evaluate all unconfirmed pins since that point
+      description: Force a rewind of the event aggregator to a previous position,
+        to re-evaluate all unconfirmed pins since that point
       operationId: postPinsRewindNamespace
       parameters:
       - description: The namespace which scopes this request
@@ -28037,8 +28037,8 @@ paths:
       - Default Namespace
   /pins/rewind:
     post:
-      description: Force a rewind the event aggregator to a previous position, to
-        re-evaluate all unconfirmed pins since that point
+      description: Force a rewind of the event aggregator to a previous position,
+        to re-evaluate all unconfirmed pins since that point
       operationId: postPinsRewind
       parameters:
       - description: Server-side request timeout (milliseconds, or set a custom suffix
