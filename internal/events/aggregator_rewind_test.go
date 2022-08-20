@@ -217,15 +217,15 @@ func TestProcessStagedRewindsNoDIDs(t *testing.T) {
 
 func TestPopRewindsDoublePopNoBlock(t *testing.T) {
 
-	ag, cancel := newTestAggregator()
-	defer cancel()
+	em, done := newTestEventManager(t)
+	defer done()
 
-	ag.rewinder.queuedRewinds = []*rewind{{rewindType: rewindBatch}}
-	batchIDs := ag.rewinder.popRewinds()
+	em.QueueBatchRewind(fftypes.NewUUID())
+	batchIDs := em.aggregator.rewinder.popRewinds()
 	assert.Empty(t, batchIDs)
 
-	ag.rewinder.queuedRewinds = []*rewind{{rewindType: rewindBatch}}
-	batchIDs = ag.rewinder.popRewinds()
+	em.QueueBatchRewind(fftypes.NewUUID())
+	batchIDs = em.aggregator.rewinder.popRewinds()
 	assert.Empty(t, batchIDs)
 
 }
