@@ -219,6 +219,11 @@ func (_m *EventManager) NewSubscriptions() chan<- *fftypes.UUID {
 	return r0
 }
 
+// QueueBatchRewind provides a mock function with given fields: batchID
+func (_m *EventManager) QueueBatchRewind(batchID *fftypes.UUID) {
+	_m.Called(batchID)
+}
+
 // SharedStorageBatchDownloaded provides a mock function with given fields: ss, payloadRef, data
 func (_m *EventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, payloadRef string, data []byte) (*fftypes.UUID, error) {
 	ret := _m.Called(ss, payloadRef, data)
