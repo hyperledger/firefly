@@ -100,13 +100,13 @@ ff accounts list optimism
 ​
 Copy the address listed in the output from this command. Go to [https://optimismfaucet.xyz/](https://optimismfaucet.xyz/). You will need to login to your Github account and  paste the address in the form.
 ​
-![Optimism Faucet](images/polygon_faucet.png)
+![Optimism Faucet](images/optimism_faucet.png)
 ​
 ### Confirm the transaction on Blockcscout
 You should be able to go lookup your account on [Blockscout for Optimism testnet https://blockscout.com/optimism/goerli](https://blockscout.com/optimism/goerli) and see that you now have a balance of 100 OP. Simply paste in your account address to search for it.
 
 ​
-![Blockscout Scan](images/polygonscan_matic.png)
+![Blockscout Scan](images/optimism_scan.png)
 ​
 ## Use the public testnet
 Now that you have everything set up, you can follow one of the other FireFly guides such as [Using Tokens](../tokens/index.md) or [Custom Smart Contracts](../custom_contracts/ethereum.md). For detailed instructions on deploying a custom smart contract to Optimism, please see the [Optimism docs](https://community.optimism.io/docs/developers/build/system-contracts/#getting-contract-artifacts-interfaces-and-abis) for instructions using various tools.

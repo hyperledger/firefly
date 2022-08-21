@@ -100,13 +100,13 @@ ff accounts list bsc
 ​
 Copy the address listed in the output from this command. Go to [https://testnet.binance.org/faucet-smart](https://testnet.binance.org/faucet-smart) and paste the address in the form. Go through the CAPTCH form and click the **Give me BNB** button.
 ​
-![BNB Faucet](images/polygon_faucet.png)
+![BSC Faucet](images/bsc_faucet.png)
 ​
 ### Confirm the transaction on Bscscan
 You should be able to go lookup your account on [Bscscan for the testnet https://testnet.bscscan.com/](https://testnet.bscscan.com/) and see that you now have a balance of 0.5 BNB. Simply paste in your account address to search for it.
 
 ​
-![BNB Scan](images/polygonscan_matic.png)
+![BSC Scan](images/bsc_scan.png)
 ​
 ## Use the public testnet
 Now that you have everything set up, you can follow one of the other FireFly guides such as [Using Tokens](../tokens/index.md) or [Custom Smart Contracts](../custom_contracts/ethereum.md). For detailed instructions on deploying a custom smart contract to Binance Smart Chain, please see the [Binance docs](https://docs.bnbchain.org/docs/chainide) for instructions using various tools.
