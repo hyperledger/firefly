@@ -106,7 +106,7 @@ Copy the address listed in the output from this command. Go to [https://faucet.a
 You should be able to go lookup your account on [Snowtrace for the Fuji testnet https://testnet.snowtrace.io/](https://testnet.snowtrace.io/) and see that you now have a balance of 2 AVAX. Simply paste in your account address or transaction ID to search for it.
 
 ​
-![Snowtrace Scan](images/polygonscan_matic.png)
+![Snowtrace Scan](images/avalanche_snowtrace_scan.png)
 ​
 ## Use the public testnet
 Now that you have everything set up, you can follow one of the other FireFly guides such as [Using Tokens](../tokens/index.md) or [Custom Smart Contracts](../custom_contracts/ethereum.md). For detailed instructions on deploying a custom smart contract to Avalanche, please see the [Avalanche docs](https://docs.avax.network/dapps/smart-contracts/deploy-a-smart-contract-on-avalanche-using-remix-and-metamask) for instructions using various tools.

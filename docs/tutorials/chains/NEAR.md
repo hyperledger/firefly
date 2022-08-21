@@ -49,7 +49,7 @@ To create a local FireFly development stack and connect it to the NEAR testnet, 
  - Use the `evmconnect` blockchain connector
  - Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.
  - Set the remote RPC node URL to `https://rpc.testnet.near.org` (RPC nodes for other NEAR networks may be found here https://docs.near.org/api/rpc/setup)
- - Set the chain ID to `dontcare` (the correct ID for NEAR testnet)
+ - Set the chain ID to any number (NEAR works with any chain ID)
  - Merge the custom config created above with the generated `evmconnect` config file
 ​
 To do this, run the following command:
@@ -60,8 +60,8 @@ ff init near 1 \
     -c evmconnect \
     -n remote-rpc \
     --remote-node-url https://rpc.testnet.near.org \
-    --chain-id dontcare \
-    --connector-config ~/Desktop/evmconnect.yml 
+    --chain-id 1 \
+    --connector-config ~/Desktop/evmconnect.yml
 ```
 ​
 ## Start the stack
@@ -92,28 +92,32 @@ First, you will need to know what signing address your FireFly node is using. To
 ff accounts list near
 [
   {
-    "address": "0x235461d246ab95d367925b4e91bd2755a921fdd8",
+    "address": "0xa4ed2a9a99dfdf46f1812c38a1656ff2ad1f61da",
     "privateKey": "..."
   }
 ]
 ```
+Note, for the NEAR protocol, the line labeled privateKey is the address you will use.
+
 ​Go to [https://near-faucet.io/](https://near-faucet.io/) and click **Connect with Near Testnet**. Next click **Create Accounte**, make an account ID, and choose a security method. Follow the steps for either the Seedphrase or Ledger Hardware Wallet until your NEAR account is created. Once complete you will be redirected to the original https://near-faucet.io/ page and are now able to request 20 NEAR tokens.
 
 Once the request for 20 NEAR tokens is completed, click the **Testnet Explorer** button and search via your account name. Once it is found click on the link under **Balance Profile** to access your NEAR wallet. From here, click the **Wallet** button and then **Send**. Choose a denomination of NEAR to send, enter your address from the FireFly CLI, and you will now have funded tokens in your account.
 ​
-![NEAR Faucet](image1)
-![NEAR Account](image2)
-![NEAR Account Name](image3)
-![Fund Account](image4)
+![NEAR Faucet](images/near_faucet.png) 
+![NEAR Account](images/near_account.png)
+![NEAR Account Name](images/near_account_name.png)
+![Fund Account](images/near_fund_account.png)
 ​
 ### Confirm the transaction on NEAR Testnet Explorer
-You should be able to go lookup your account on [Bscscan for the testnet https://explorer.testnet.near.org/](https://explorer.testnet.near.org/) and see that you now have the balance of NEAR that you sent above. Simply paste in your account address to search for it.
+You should be able to go lookup your account on [https://explorer.testnet.near.org/](https://explorer.testnet.near.org/) and see that you now have the balance of NEAR that you sent above. Simply paste in your account address to search for it.
 
 ​
-![NEAR Scan](image5)
-![Account Lookup](image6)
-![Navigate to Wallet](image7)
-![NEAR Wallet Send Funds](image8)
+![NEAR Scan](images/near_scan.png)
+![Account Lookup](images/near_account_lookup.png)
+![Navigate to Wallet](images/near_navigate_to_wallet.png)
+
+Finally, click send and enter your address. Remember this is a 64 character string that is denominated as privateKey in the CLI. 
+![NEAR Wallet Send Funds](images/near_wallet_send_funds.png)
 ​
 ## Use the public testnet
 Now that you have everything set up, you can follow one of the other FireFly guides such as [Using Tokens](../tokens/index.md) or [Custom Smart Contracts](../custom_contracts/ethereum.md). For detailed instructions on deploying a custom smart contract to NEAR, please see the [NEAR docs](https://docs.near.org/develop/contracts/introduction) for instructions using various tools.
