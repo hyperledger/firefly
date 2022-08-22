@@ -100,8 +100,6 @@ ff accounts list near
 Note, for the NEAR protocol, the line labeled privateKey is the address you will use.
 
 ​Go to [https://near-faucet.io/](https://near-faucet.io/) and click **Connect with Near Testnet**. Next click **Create Accounte**, make an account ID, and choose a security method. Follow the steps for either the Seedphrase or Ledger Hardware Wallet until your NEAR account is created. Once complete you will be redirected to the original https://near-faucet.io/ page and are now able to request 20 NEAR tokens.
-
-Once the request for 20 NEAR tokens is completed, click the **Testnet Explorer** button and search via your account name. Once it is found click on the link under **Balance Profile** to access your NEAR wallet. From here, click the **Wallet** button and then **Send**. Choose a denomination of NEAR to send, enter your address from the FireFly CLI, and you will now have funded tokens in your account.
 ​
 ![NEAR Faucet](images/near_faucet.png) 
 ![NEAR Account](images/near_account.png)
@@ -109,14 +107,11 @@ Once the request for 20 NEAR tokens is completed, click the **Testnet Explorer**
 ![Fund Account](images/near_fund_account.png)
 ​
 ### Confirm the transaction on NEAR Testnet Explorer
-You should be able to go lookup your account on [https://explorer.testnet.near.org/](https://explorer.testnet.near.org/) and see that you now have the balance of NEAR that you sent above. Simply paste in your account address to search for it.
+Once the request for 20 NEAR tokens is completed, go to [https://explorer.testnet.near.org/](https://explorer.testnet.near.org/) and search via your account name. Once it is found click on the link under **Balance Profile** to access your NEAR wallet. From here, click the **Wallet** button in the top left and then **Send**. Choose a denomination of NEAR to send, enter your 64 character string denominated as privateKey from the FireFly CLI, and you will now have funded tokens in your account.
 
 ​
 ![NEAR Scan](images/near_scan.png)
 ![Account Lookup](images/near_account_lookup.png)
-![Navigate to Wallet](images/near_navigate_to_wallet.png)
-
-Finally, click send and enter your address. Remember this is a 64 character string that is denominated as privateKey in the CLI. 
 ![NEAR Wallet Send Funds](images/near_wallet_send_funds.png)
 ​
 ## Use the public testnet
