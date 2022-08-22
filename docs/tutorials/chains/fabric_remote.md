@@ -3,8 +3,7 @@ layout: i18n_page
 title: pages.remote_fabric_network
 parent: pages.chains
 grand_parent: pages.tutorials
-nav_order: 2
-has_children: true
+nav_order: 7
 ---
 
 # Work with remote Hyperledger Fabric Network
