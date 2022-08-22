@@ -4,7 +4,6 @@ title: pages.polygon_testnet
 parent: pages.chains
 grand_parent: pages.tutorials
 nav_order: 1
-has_children: true
 ---
 
 
