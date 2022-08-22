@@ -39,6 +39,7 @@ lastSequence=
 lastProtocolId=
 
 echo "Checking all blockchain events on ${HOST} for increasing sequence and protocol ID."
+printf "%-12s %s\n" "Sequence" "Protocol ID"
 while [[ "$received" -eq "$limit" ]]; do
   events=$(curl -s "$HOST/api/v1/events?type=blockchain_event_received&fetchreferences&sort=sequence&skip=${skip}&limit=${limit}")
   received=$(jq ". | length" <<< "$events")
@@ -46,6 +47,10 @@ while [[ "$received" -eq "$limit" ]]; do
     event=$(jq ".[$((i - 1))]" <<< "$events")
     sequence=$(jq ".sequence" <<< "$event")
     protocolId=$(jq -r ".blockchainEvent.protocolId" <<< "$event")
+    listener=$(jq ".blockchainEvent.listener" <<< "$event")
+    if [[ "$listener" != "null" ]]; then
+      continue
+    fi
     printf "%-12s %s\n" "$sequence" "$protocolId"
     if ! [[ "$sequence" -gt "$lastSequence" && "$protocolId" > "$lastProtocolId" ]]; then
       echo "Out of order events detected!"
