@@ -11,7 +11,7 @@ CLI_VERSION=$(cat $CWD/../../manifest.json | jq -r .cli.tag)
 create_accounts() {
   if [ "$TEST_SUITE" == "TestEthereumMultipartyE2ESuite" ]; then
       # Create 4 new accounts for use in testing
-      for i in {1..4}
+      for i in {1..5}
       do
           $CLI accounts create $STACK_NAME
       done

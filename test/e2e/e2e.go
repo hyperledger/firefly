@@ -153,6 +153,17 @@ func WaitForMessageConfirmed(t *testing.T, c chan *core.EventDelivery, msgType c
 	}
 }
 
+func WaitForMessageRejected(t *testing.T, c chan *core.EventDelivery, msgType core.MessageType) *core.EventDelivery {
+	for {
+		ed := <-c
+		if ed.Type == core.EventTypeMessageRejected && ed.Message != nil && ed.Message.Header.Type == msgType {
+			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
+			return ed
+		}
+		t.Logf("Ignored event '%s'", ed.ID)
+	}
+}
+
 func WaitForIdentityConfirmed(t *testing.T, c chan *core.EventDelivery) *core.EventDelivery {
 	for {
 		ed := <-c

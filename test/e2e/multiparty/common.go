@@ -178,10 +178,10 @@ func beforeE2ETest(t *testing.T) *testState {
 	}
 	ts.org1key = ts.client1.GetIdentityBlockchainKeys(t, ts.org1.ID, 200)[0]
 	ts.org2key = ts.client2.GetIdentityBlockchainKeys(t, ts.org2.ID, 200)[0]
-	t.Logf("Org1: ID=%s DID=%s Key=%s", ts.org1.DID, ts.org1.ID, ts.org1key.Value)
-	t.Logf("Org2: ID=%s DID=%s Key=%s", ts.org2.DID, ts.org2.ID, ts.org2key.Value)
+	t.Logf("Org1: ID=%s DID=%s Key=%s", ts.org1.ID, ts.org1.DID, ts.org1key.Value)
+	t.Logf("Org2: ID=%s DID=%s Key=%s", ts.org2.ID, ts.org2.DID, ts.org2key.Value)
 
-	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed|message_rejected"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", ts.namespace, eventNames)
 	ts.ws1 = ts.client1.WebSocket(t, queryString, authHeader1)
 	ts.ws2 = ts.client2.WebSocket(t, queryString, authHeader2)

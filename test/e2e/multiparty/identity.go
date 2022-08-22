@@ -142,6 +142,36 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
 }
 
+func (suite *IdentityTestSuite) TestInvalidIdentityAlreadyRegistered() {
+	defer suite.testState.done()
+
+	received1 := e2e.WsReader(suite.testState.ws1)
+
+	key := getUnregisteredAccount(suite, suite.testState.org1.Name)
+	require.NotEqual(suite.T(), "", key)
+	ts := time.Now().Unix()
+
+	suite.testState.client1.ClaimCustomIdentity(suite.T(),
+		key,
+		fmt.Sprintf("custom_already_registered_%d_1", ts),
+		"Description 1",
+		fftypes.JSONObject{"profile": 1},
+		suite.testState.org1.ID,
+		false)
+
+	e2e.WaitForIdentityConfirmed(suite.T(), received1)
+
+	suite.testState.client1.ClaimCustomIdentity(suite.T(),
+		key,
+		fmt.Sprintf("custom_already_registered_%d_2", ts),
+		"Description 2",
+		fftypes.JSONObject{"profile": 2},
+		suite.testState.org1.ID,
+		false)
+
+	e2e.WaitForMessageRejected(suite.T(), received1, core.MessageTypeDefinition)
+}
+
 func getUnregisteredAccount(suite *IdentityTestSuite, orgName string) string {
 	verifiers := suite.testState.client1.GetVerifiers(suite.T())
 	suite.T().Logf("checking for account with orgName: %s", orgName)
