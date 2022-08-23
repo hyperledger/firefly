@@ -83,25 +83,31 @@ func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventSt
 	return streams, nil
 }
 
-func (s *streamManager) createEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
-	stream := eventStream{
+func buildEventStream(topic string, batchSize, batchTimeout uint) *eventStream {
+	return &eventStream{
 		Name:           topic,
 		ErrorHandling:  "block",
 		BatchSize:      batchSize,
 		BatchTimeoutMS: batchTimeout,
 		Type:           "websocket",
-		WebSocket:      eventStreamWebsocket{Topic: topic},
-		Timestamps:     true,
+		// Some implementations require a "topic" to be set separately, while others rely only on the name.
+		// We set them to the same thing for cross compatibility.
+		WebSocket:  eventStreamWebsocket{Topic: topic},
+		Timestamps: true,
 	}
+}
+
+func (s *streamManager) createEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+	stream := buildEventStream(topic, batchSize, batchTimeout)
 	res, err := s.client.R().
 		SetContext(ctx).
-		SetBody(&stream).
-		SetResult(&stream).
+		SetBody(stream).
+		SetResult(stream).
 		Post("/eventstreams")
 	if err != nil || !res.IsSuccess() {
 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
-	return &stream, nil
+	return stream, nil
 }
 
 func (s *streamManager) ensureEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
@@ -110,7 +116,7 @@ func (s *streamManager) ensureEventStream(ctx context.Context, topic string, bat
 		return nil, err
 	}
 	for _, stream := range existingStreams {
-		if stream.WebSocket.Topic == topic {
+		if stream.Name == topic {
 			return stream, nil
 		}
 	}
