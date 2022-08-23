@@ -17,8 +17,7 @@
 # limitations under the License.
 
 # This script will query all events of type blockchain_event_received, and
-# validate that both the event "sequence" and the blockchain event "protocolId"
-# are continuously increasing.
+# validate that the blockchain event "protocolId" is continuously increasing.
 
 set -euo pipefail
 
@@ -30,29 +29,41 @@ if [[ $# -lt 1 ]]; then
 fi
 HOST=$1
 
-skip=0
-limit=25
+blockchainType=$(curl -s $HOST/api/v1/status | jq ".plugins.blockchain[0].pluginType")
+
+expectedSource="${blockchainType}"
+expectedListener="null"
+
+limit=50
 received=$limit
 validated=0
 
-lastSequence=
+lastSequence=0
 lastProtocolId=
 
-echo "Checking all blockchain events on ${HOST} for increasing sequence and protocol ID."
-printf "%-12s %s\n" "Sequence" "Protocol ID"
+echo "Checking all blockchain events for increasing protocol ID."
+echo
+echo "Configuration:"
+echo "  host=${HOST}"
+echo "  source=${expectedSource}"
+echo "  listener=${expectedListener}"
+echo
+printf "%-10s %s\n" "Sequence" "Protocol ID"
 while [[ "$received" -eq "$limit" ]]; do
-  events=$(curl -s "$HOST/api/v1/events?type=blockchain_event_received&fetchreferences&sort=sequence&skip=${skip}&limit=${limit}")
+  seqQuery=">${lastSequence}"
+  events=$(curl -s "$HOST/api/v1/events?type=blockchain_event_received&fetchreferences&sort=sequence&sequence=${seqQuery}&limit=${limit}")
   received=$(jq ". | length" <<< "$events")
   for i in $(seq "$received"); do
     event=$(jq ".[$((i - 1))]" <<< "$events")
     sequence=$(jq ".sequence" <<< "$event")
     protocolId=$(jq -r ".blockchainEvent.protocolId" <<< "$event")
     listener=$(jq ".blockchainEvent.listener" <<< "$event")
-    if [[ "$listener" != "null" ]]; then
+    src=$(jq ".blockchainEvent.source" <<< "$event")
+    if [[ "$listener" != "$expectedListener" || "$src" != "$expectedSource" ]]; then
       continue
     fi
-    printf "%-12s %s\n" "$sequence" "$protocolId"
-    if ! [[ "$sequence" -gt "$lastSequence" && "$protocolId" > "$lastProtocolId" ]]; then
+    printf "%-10s %s\n" "$sequence" "$protocolId"
+    if ! [[ "$protocolId" > "$lastProtocolId" ]]; then
       echo "Out of order events detected!"
       exit 1
     fi
@@ -60,7 +71,6 @@ while [[ "$received" -eq "$limit" ]]; do
     lastProtocolId=$protocolId
     validated=$((validated + 1))
   done
-  skip=$((skip + received))
 done
 echo "${validated} events validated."
 exit 0
