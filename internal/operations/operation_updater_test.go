@@ -24,13 +24,13 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/karlseguin/ccache"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -57,11 +57,12 @@ func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabi
 	mom := &operationsManager{
 		namespace: "ns1",
 		handlers:  make(map[fftypes.FFEnum]OperationHandler),
-		cache:     ccache.New(ccache.Configure().MaxSize(100)),
+		cache:     cache.NewUmanagedCache(context.Background(), 100, 5*time.Minute),
 		database:  mdi,
 	}
 	mdm := &datamocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+	ctx := context.Background()
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
 	return newOperationUpdater(context.Background(), mom, mdi, txHelper)
 }
 
@@ -181,8 +182,7 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 	opID3 := fftypes.NewUUID()
 	tx1 := &core.Transaction{ID: fftypes.NewUUID()}
 
-	om.cache = ccache.New(ccache.Configure().MaxSize(100))
-	om.cacheTTL = time.Minute * 10
+	om.cache = cache.NewUmanagedCache(context.Background(), 100, 10*time.Minute)
 	om.cacheOperation(
 		&core.Operation{ID: opID1, Namespace: "ns1", Type: core.OpTypeBlockchainInvoke, Transaction: tx1.ID},
 	)

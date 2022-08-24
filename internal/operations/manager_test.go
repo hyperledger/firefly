@@ -23,13 +23,14 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/karlseguin/ccache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -66,7 +67,10 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 		Concurrency: true,
 	})
 	mdm := &datamocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+
+	cmi := &cachemocks.Manager{}
+	ctx := context.Background()
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -76,13 +80,13 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	om, err := NewOperationsManager(ctx, "ns1", mdi, txHelper)
+	om, err := NewOperationsManager(ctx, "ns1", mdi, txHelper, cmi)
 	assert.NoError(t, err)
 	return om.(*operationsManager), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewOperationsManager(context.Background(), "ns1", nil, nil)
+	_, err := NewOperationsManager(context.Background(), "ns1", nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -221,8 +225,7 @@ func TestRetryOperationSuccess(t *testing.T) {
 		Type: op.Type,
 	}
 
-	om.cache = ccache.New(ccache.Configure().MaxSize(100))
-	om.cacheTTL = time.Minute * 10
+	om.cache = cache.NewUmanagedCache(ctx, 100, 10*time.Minute)
 	om.cacheOperation(op)
 
 	mdi := om.database.(*databasemocks.Plugin)

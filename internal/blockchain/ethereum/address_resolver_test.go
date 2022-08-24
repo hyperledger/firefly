@@ -26,6 +26,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
@@ -59,7 +60,7 @@ func TestAddressResolverInEthereumOKCached(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, config)
+	ar, err := newAddressResolver(ctx, config, cache.NewCacheManager(ctx))
 	assert.NoError(t, err)
 
 	e := &Ethereum{
@@ -99,7 +100,7 @@ func TestAddressResolverPOSTOk(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, config)
+	ar, err := newAddressResolver(ctx, config, cache.NewCacheManager(ctx))
 	assert.NoError(t, err)
 
 	resolved, err := ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -126,7 +127,7 @@ func TestAddressResolverPOSTBadKey(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, config)
+	ar, err := newAddressResolver(ctx, config, cache.NewCacheManager(ctx))
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -149,7 +150,7 @@ func TestAddressResolverPOSTResponse(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, config)
+	ar, err := newAddressResolver(ctx, config, cache.NewCacheManager(ctx))
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -170,7 +171,7 @@ func TestAddressResolverFailureResponse(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, config)
+	ar, err := newAddressResolver(ctx, config, cache.NewCacheManager(ctx))
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -191,7 +192,7 @@ func TestAddressResolverErrorResponse(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, config)
+	ar, err := newAddressResolver(ctx, config, cache.NewCacheManager(ctx))
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -208,7 +209,7 @@ func TestAddressResolverBadBodyTemplate(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	_, err := newAddressResolver(ctx, config)
+	_, err := newAddressResolver(ctx, config, cache.NewCacheManager(ctx))
 	assert.Regexp(t, "FF10337.*bodyTemplate", err)
 
 }
@@ -221,7 +222,7 @@ func TestAddressResolverErrorURLTemplate(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, config)
+	ar, err := newAddressResolver(ctx, config, cache.NewCacheManager(ctx))
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -238,7 +239,7 @@ func TestAddressResolverErrorBodyTemplate(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, config)
+	ar, err := newAddressResolver(ctx, config, cache.NewCacheManager(ctx))
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")

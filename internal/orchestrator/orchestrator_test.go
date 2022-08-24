@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
@@ -196,6 +197,7 @@ func TestNewOrchestrator(t *testing.T) {
 		Config{},
 		&Plugins{},
 		&metricsmocks.Manager{},
+		&cachemocks.Manager{},
 	)
 	assert.NotNil(t, or)
 }

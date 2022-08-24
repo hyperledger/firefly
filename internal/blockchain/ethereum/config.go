@@ -31,8 +31,6 @@ const (
 
 	defaultAddressResolverMethod        = "GET"
 	defaultAddressResolverResponseField = "address"
-	defaultAddressResolverCacheSize     = 1000
-	defaultAddressResolverCacheTTL      = "24h"
 )
 
 const (
@@ -96,6 +94,6 @@ func (e *Ethereum) InitConfig(config config.Section) {
 	addressResolverConf.AddKnownKey(AddressResolverURLTemplate)
 	addressResolverConf.AddKnownKey(AddressResolverBodyTemplate)
 	addressResolverConf.AddKnownKey(AddressResolverResponseField, defaultAddressResolverResponseField)
-	addressResolverConf.AddKnownKey(AddressResolverCacheSize, defaultAddressResolverCacheSize)
-	addressResolverConf.AddKnownKey(AddressResolverCacheTTL, defaultAddressResolverCacheTTL)
+	addressResolverConf.AddKnownKey(AddressResolverCacheSize, 1000)
+	addressResolverConf.AddKnownKey(AddressResolverCacheTTL, "24h")
 }

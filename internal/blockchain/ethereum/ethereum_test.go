@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/coremocks"
@@ -40,7 +41,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/jarcoal/httpmock"
-	"github.com/karlseguin/ccache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -92,7 +92,7 @@ func newTestEthereum() (*Ethereum, func()) {
 		prefixLong:  defaultPrefixLong,
 		wsconn:      wsm,
 		metrics:     mm,
-		cache:       ccache.New(ccache.Configure().MaxSize(100)),
+		cache:       cache.NewUmanagedCache(ctx, 100, 5*time.Minute),
 		callbacks:   common.NewBlockchainCallbacks(),
 		subs:        common.NewFireflySubscriptions(),
 	}
@@ -106,7 +106,7 @@ func newTestEthereum() (*Ethereum, func()) {
 }
 
 func newTestStreamManager(client *resty.Client) *streamManager {
-	return newStreamManager(client, ccache.New(ccache.Configure()), 5*time.Minute)
+	return newStreamManager(client, cache.NewUmanagedCache(context.Background(), 100, 5*time.Minute))
 }
 
 func mockNetworkVersion(t *testing.T, version int) func(req *http.Request) (*http.Response, error) {
@@ -129,7 +129,7 @@ func TestInitMissingURL(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	resetConf(e)
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
@@ -138,7 +138,7 @@ func TestInitBadAddressResolver(t *testing.T) {
 	defer cancel()
 	resetConf(e)
 	utAddressResolverConf.Set(AddressResolverURLTemplate, "{{unclosed}")
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.Regexp(t, "FF10337.*urlTemplate", err)
 }
 
@@ -149,7 +149,7 @@ func TestInitMissingTopic(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x12345")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.Regexp(t, "FF10138.*topic", err)
 }
 
@@ -182,7 +182,7 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://fftm.example.com:12345")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 	assert.NotNil(t, e.fftmClient)
 
@@ -223,7 +223,7 @@ func TestWSInitFail(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.Regexp(t, "FF00149", err)
 
 }
@@ -268,7 +268,7 @@ func TestInitOldInstancePathContracts(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 }
@@ -303,7 +303,7 @@ func TestInitOldInstancePathInstances(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 }
@@ -327,7 +327,7 @@ func TestInitNewConfig(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.NoError(t, err)
 }
@@ -351,7 +351,7 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 }
 
@@ -380,7 +380,7 @@ func TestInitNetworkVersionNotFound(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 }
@@ -403,7 +403,7 @@ func TestStreamQueryError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.Regexp(t, "FF10111.*pop", err)
 
 }
@@ -429,7 +429,7 @@ func TestStreamCreateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.Regexp(t, "FF10111.*pop", err)
 
 }
@@ -455,7 +455,7 @@ func TestStreamUpdateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.Regexp(t, "FF10111.*pop", err)
 }
 
@@ -489,7 +489,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
@@ -529,7 +529,7 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
@@ -569,7 +569,7 @@ func TestInitAllExistingStreamsOld(t *testing.T) {
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
@@ -609,7 +609,7 @@ func TestInitAllExistingStreamsInvalidName(t *testing.T) {
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
@@ -639,7 +639,7 @@ func TestSubQueryError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 }
 
@@ -668,7 +668,7 @@ func TestSubQueryCreateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 }
 
@@ -3001,7 +3001,7 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -3043,7 +3043,7 @@ func TestAddFireflySubscriptionV1(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -3080,7 +3080,7 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -3117,7 +3117,7 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -3153,7 +3153,7 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics, cache.NewCacheManager(e.ctx))
 	assert.NoError(t, err)
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{

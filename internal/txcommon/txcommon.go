@@ -24,11 +24,11 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/karlseguin/ccache"
 )
 
 type Helper interface {
@@ -44,40 +44,78 @@ type transactionHelper struct {
 	namespace            string
 	database             database.Plugin
 	data                 data.Manager
-	transactionCache     *ccache.Cache
-	transactionCacheTTL  time.Duration
-	blockchainEventCache *ccache.Cache
-	blockchainEventTTL   time.Duration
+	transactionCache     cache.CInterface
+	blockchainEventCache cache.CInterface
 }
 
-func NewTransactionHelper(ns string, di database.Plugin, dm data.Manager) Helper {
+func NewTransactionHelper(ctx context.Context, ns string, di database.Plugin, dm data.Manager, cacheManager cache.Manager) (Helper, error) {
 	t := &transactionHelper{
 		namespace: ns,
 		database:  di,
 		data:      dm,
 	}
-	t.transactionCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.TransactionCacheSize)),
+
+	var transactionCacheSizeLimitOverride int64 = 0
+	var transactionCacheTTLOverride time.Duration = 0
+	if config.IsSet(coreconfig.TransactionCacheSizeDeprecated) && !config.IsSet(coreconfig.CacheTransactionLmit) {
+		transactionCacheSizeLimitOverride = config.GetInt64(coreconfig.TransactionCacheSizeDeprecated)
+	}
+	if config.IsSet(coreconfig.TransactionCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheTransactionTTL) {
+		transactionCacheTTLOverride = config.GetDuration(coreconfig.TransactionCacheTTLDeprecated)
+	}
+
+	transactionCache, err := cacheManager.GetCache(
+		cache.NewCacheConfigWithOverride(
+			ctx,
+			coreconfig.CacheTransactionLmit,
+			coreconfig.CacheTransactionTTL,
+			ns,
+			transactionCacheSizeLimitOverride,
+			transactionCacheTTLOverride,
+		),
 	)
-	t.blockchainEventCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetInt64(coreconfig.BlockchainEventCacheLimit)),
+
+	if err != nil {
+		return nil, err
+	}
+
+	t.transactionCache = transactionCache
+
+	var blockchainEventCacheSizeLimitOverride int64 = 0
+	var blockchainEventCacheTTLOverride time.Duration = 0
+	if config.IsSet(coreconfig.BlockchainEventCacheLimitDeprecated) && !config.IsSet(coreconfig.CacheBlockchainEventLimit) {
+		blockchainEventCacheSizeLimitOverride = config.GetInt64(coreconfig.BlockchainEventCacheLimitDeprecated)
+	}
+	if config.IsSet(coreconfig.BlockchainEventCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheBlockchainEventTTL) {
+		blockchainEventCacheTTLOverride = config.GetDuration(coreconfig.BlockchainEventCacheTTLDeprecated)
+	}
+
+	blockchainEventCache, err := cacheManager.GetCache(
+		cache.NewCacheConfigWithOverride(
+			ctx,
+			coreconfig.CacheBlockchainEventLimit,
+			coreconfig.CacheBlockchainEventTTL,
+			ns,
+			blockchainEventCacheSizeLimitOverride,
+			blockchainEventCacheTTLOverride,
+		),
 	)
-	return t
+
+	if err != nil {
+		return nil, err
+	}
+	t.blockchainEventCache = blockchainEventCache
+	return t, nil
 }
 
 func (t *transactionHelper) updateTransactionsCache(tx *core.Transaction) {
-	t.transactionCache.Set(tx.ID.String(), tx, t.transactionCacheTTL)
+	t.transactionCache.Set(tx.ID.String(), tx)
 }
 
 func (t *transactionHelper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error) {
-	cached := t.transactionCache.Get(id.String())
-	if cached != nil {
-		cached.Extend(t.transactionCacheTTL)
-		return cached.Value().(*core.Transaction), nil
+
+	if cachedValue := t.transactionCache.Get(id.String()); cachedValue != nil {
+		return cachedValue.(*core.Transaction), nil
 	}
 	tx, err := t.database.GetTransactionByID(ctx, t.namespace, id)
 	if err != nil || tx == nil {
@@ -166,14 +204,13 @@ func (t *transactionHelper) AddBlockchainTX(ctx context.Context, tx *core.Transa
 }
 
 func (t *transactionHelper) addBlockchainEventToCache(chainEvent *core.BlockchainEvent) {
-	t.blockchainEventCache.Set(chainEvent.ID.String(), chainEvent, t.blockchainEventTTL)
+	t.blockchainEventCache.Set(chainEvent.ID.String(), chainEvent)
 }
 
 func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
-	cached := t.blockchainEventCache.Get(id.String())
-	if cached != nil {
-		cached.Extend(t.blockchainEventTTL)
-		return cached.Value().(*core.BlockchainEvent), nil
+
+	if cachedValue := t.blockchainEventCache.Get(id.String()); cachedValue != nil {
+		return cachedValue.(*core.BlockchainEvent), nil
 	}
 	chainEvent, err := t.database.GetBlockchainEventByID(ctx, t.namespace, id)
 	if err != nil || chainEvent == nil {

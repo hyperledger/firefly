@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
@@ -52,6 +53,7 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	msh := &definitionsmocks.Handler{}
 	mim := &identitymanagermocks.Manager{}
 	mmi := &metricsmocks.Manager{}
+	cmi := &cachemocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	if metrics {
 		mmi.On("MessageConfirmed", mock.Anything, core.EventTypeMessageConfirmed).Return()
@@ -59,7 +61,7 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	mmi.On("IsMetricsEnabled").Return(metrics)
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	ctx, cancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, "ns1", mdi, mbi, mpm, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
+	ag, _ := newAggregator(ctx, "ns1", mdi, mbi, mpm, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi, cmi)
 	return ag, func() {
 		cancel()
 		ag.batchCache.Stop()

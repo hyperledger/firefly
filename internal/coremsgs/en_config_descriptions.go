@@ -93,8 +93,11 @@ var (
 	ConfigBlockchainFabricFabconnectURL          = ffc("config.blockchain.fabric.fabconnect.url", "The URL of the Fabconnect instance", "URL "+i18n.StringType)
 	ConfigBlockchainFabricFabconnectProxyURL     = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
 
-	ConfigCacheBlockchainTTL  = ffc("config.cache.blockchain.ttl", "Time to live for blockchain cache items", i18n.StringType)
-	ConfigCacheBlockchainSize = ffc("config.cache.blockchain.limit", "Max number of cache items for blockchain plugin cache", i18n.StringType)
+	ConfigCacheEnabled = ffc("config.cache.enabled", "Enables caching, defaults to true", i18n.BooleanType)
+
+	ConfigIdentityManagerCacheLimit = ffc("config.identity.manager.cache.limit", "The identity manager cache limit in count of items", i18n.IntType)
+	ConfigCacheBlockchainTTL        = ffc("config.cache.blockchain.ttl", "Time to live for blockchain cache items", i18n.StringType)
+	ConfigCacheBlockchainSize       = ffc("config.cache.blockchain.limit", "Max number of cache items for blockchain plugin cache", i18n.StringType)
 
 	ConfigCacheOperationsTTL  = ffc("config.cache.operations.ttl", "Time to live for operation cache items", i18n.StringType)
 	ConfigCacheOperationsSize = ffc("config.cache.operations.limit", "Max number of cache items for operations", i18n.StringType)
@@ -233,7 +236,6 @@ var (
 	ConfigPluginIdentityType = ffc("config.plugins.identity[].type", "The type of a configured Identity plugin", i18n.StringType)
 	ConfigPluginIdentityName = ffc("config.plugins.identity[].name", "The name of a configured Identity plugin", i18n.StringType)
 
-	ConfigIdentityManagerCacheLimit              = ffc("config.identity.manager.cache.limit", "The identity manager cache limit in count of items", i18n.IntType)
 	ConfigIdentityManagerLegacySystemIdentitites = ffc("config.identity.manager.legacySystemIdentities", "Whether the identity manager should resolve legacy identities registered on the ff_system namespace", i18n.BooleanType)
 
 	ConfigLogCompress   = ffc("config.log.compress", "Determines if the rotated log files should be compressed using gzip", i18n.BooleanType)

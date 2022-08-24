@@ -261,4 +261,7 @@ var (
 	MsgDuplicatePluginRemoteName          = ffe("FF10419", "Invalid %s plugin remote name: %s - remote names must be unique")
 	MsgInvalidConnectorName               = ffe("FF10420", "Could not find name %s for %s connector")
 	MsgCannotInitLegacyNS                 = ffe("FF10421", "could not initialize legacy '%s' namespace - found conflicting V1 multi-party config in %s and %s")
+	MsgCacheMissSizeLimitKeyInternal      = ffe("FF10422", "could not initialize cache - size limit config key is not provided")
+	MsgCacheMissTTLKeyInternal            = ffe("FF10423", "could not initialize cache - ttl config key is not provided")
+	MsgCacheConfigKeyMismatchInternal     = ffe("FF10425", "could not initialize cache - '%s' and '%s' do not have identical prefix, mismatching values are: '%s','%s' ")
 )

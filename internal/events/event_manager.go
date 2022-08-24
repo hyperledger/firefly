@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
@@ -50,7 +51,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
-	"github.com/karlseguin/ccache"
 )
 
 type EventManager interface {
@@ -90,39 +90,62 @@ type EventManager interface {
 }
 
 type eventManager struct {
-	ctx                   context.Context
-	namespace             core.NamespaceRef
-	enricher              *eventEnricher
-	database              database.Plugin
-	txHelper              txcommon.Helper
-	identity              identity.Manager
-	defsender             definitions.Sender
-	defhandler            definitions.Handler
-	data                  data.Manager
-	subManager            *subscriptionManager
-	retry                 retry.Retry
-	aggregator            *aggregator              // optional
-	broadcast             broadcast.Manager        // optional
-	messaging             privatemessaging.Manager // optional
-	assets                assets.Manager
-	sharedDownload        shareddownload.Manager // optional
-	blobReceiver          *blobReceiver          // optional
-	newEventNotifier      *eventNotifier
-	newPinNotifier        *eventNotifier
-	defaultTransport      string
-	internalEvents        *system.Events
-	metrics               metrics.Manager
-	chainListenerCache    *ccache.Cache
-	chainListenerCacheTTL time.Duration
-	multiparty            multiparty.Manager // optional
+	ctx                context.Context
+	namespace          core.NamespaceRef
+	enricher           *eventEnricher
+	database           database.Plugin
+	txHelper           txcommon.Helper
+	identity           identity.Manager
+	defsender          definitions.Sender
+	defhandler         definitions.Handler
+	data               data.Manager
+	subManager         *subscriptionManager
+	retry              retry.Retry
+	aggregator         *aggregator              // optional
+	broadcast          broadcast.Manager        // optional
+	messaging          privatemessaging.Manager // optional
+	assets             assets.Manager
+	sharedDownload     shareddownload.Manager // optional
+	blobReceiver       *blobReceiver          // optional
+	newEventNotifier   *eventNotifier
+	newPinNotifier     *eventNotifier
+	defaultTransport   string
+	internalEvents     *system.Events
+	metrics            metrics.Manager
+	chainListenerCache cache.CInterface
+	multiparty         multiparty.Manager // optional
 }
 
-func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
+func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager, cacheManager cache.Manager) (EventManager, error) {
 	if di == nil || im == nil || dh == nil || dm == nil || om == nil || ds == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
 	newEventNotifier := newEventNotifier(ctx, "events")
+
+	var eventCacheSizeLimitOverride int64 = 0
+	var eventCacheTTLOverride time.Duration = 0
+	if config.IsSet(coreconfig.EventListenerTopicCacheLimitDeprecated) && !config.IsSet(coreconfig.CacheEventListenerTopicLimit) {
+		eventCacheSizeLimitOverride = config.GetInt64(coreconfig.EventListenerTopicCacheLimitDeprecated)
+	}
+	if config.IsSet(coreconfig.EventListenerTopicCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheEventListenerTopicTTL) {
+		eventCacheTTLOverride = config.GetDuration(coreconfig.EventListenerTopicCacheTTLDeprecated)
+	}
+
+	eventListenerCache, err := cacheManager.GetCache(
+		cache.NewCacheConfigWithOverride(
+			ctx,
+			coreconfig.CacheEventListenerTopicLimit,
+			coreconfig.CacheEventListenerTopicTTL,
+			ns.RemoteName,
+			eventCacheSizeLimitOverride,
+			eventCacheTTLOverride,
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	em := &eventManager{
 		ctx:            log.WithLogField(ctx, "role", "event-manager"),
 		namespace:      ns,
@@ -142,23 +165,25 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plug
 			MaximumDelay: config.GetDuration(coreconfig.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(coreconfig.EventAggregatorRetryFactor),
 		},
-		defaultTransport:      config.GetString(coreconfig.EventTransportsDefault),
-		newEventNotifier:      newEventNotifier,
-		newPinNotifier:        newPinNotifier,
-		metrics:               mm,
-		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetInt64(coreconfig.EventListenerTopicCacheLimit))),
-		chainListenerCacheTTL: config.GetDuration(coreconfig.EventListenerTopicCacheTTL),
+		defaultTransport:   config.GetString(coreconfig.EventTransportsDefault),
+		newEventNotifier:   newEventNotifier,
+		newPinNotifier:     newPinNotifier,
+		metrics:            mm,
+		chainListenerCache: eventListenerCache,
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)
 	if bi != nil {
-		em.aggregator = newAggregator(ctx, ns.LocalName, di, bi, pm, dh, im, dm, newPinNotifier, mm)
+		aggregator, err := newAggregator(ctx, ns.LocalName, di, bi, pm, dh, im, dm, newPinNotifier, mm, cacheManager)
+		if err != nil {
+			return nil, err
+		}
+		em.aggregator = aggregator
 		em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 	}
 
 	em.enricher = newEventEnricher(ns.LocalName, di, dm, om, txHelper)
 
-	var err error
 	if em.subManager, err = newSubscriptionManager(ctx, ns.LocalName, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
 		return nil, err
 	}

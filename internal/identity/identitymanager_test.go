@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -38,17 +39,18 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mmp := &multipartymocks.Manager{}
+	cmi := &cachemocks.Manager{}
 
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 
 	ctx := context.Background()
-	im, err := NewIdentityManager(ctx, "ns1", "", mdi, mbi, mmp)
+	im, err := NewIdentityManager(ctx, "ns1", "", mdi, mbi, mmp, cmi)
 	assert.NoError(t, err)
 	return ctx, im.(*identityManager)
 }
 
 func TestNewIdentityManagerMissingDeps(t *testing.T) {
-	_, err := NewIdentityManager(context.Background(), "", "", nil, nil, nil)
+	_, err := NewIdentityManager(context.Background(), "", "", nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

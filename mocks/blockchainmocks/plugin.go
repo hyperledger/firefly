@@ -3,8 +3,10 @@
 package blockchainmocks
 
 import (
-	config "github.com/hyperledger/firefly-common/pkg/config"
+	cache "github.com/hyperledger/firefly/internal/cache"
 	blockchain "github.com/hyperledger/firefly/pkg/blockchain"
+
+	config "github.com/hyperledger/firefly-common/pkg/config"
 
 	context "context"
 
@@ -198,13 +200,13 @@ func (_m *Plugin) GetNetworkVersion(ctx context.Context, location *fftypes.JSONA
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, _a1, _a2
-func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, _a2 metrics.Manager) error {
-	ret := _m.Called(ctx, _a1, _a2)
+// Init provides a mock function with given fields: ctx, _a1, _a2, cacheManager
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, _a2 metrics.Manager, cacheManager cache.Manager) error {
+	ret := _m.Called(ctx, _a1, _a2, cacheManager)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Section, metrics.Manager) error); ok {
-		r0 = rf(ctx, _a1, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section, metrics.Manager, cache.Manager) error); ok {
+		r0 = rf(ctx, _a1, _a2, cacheManager)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -341,13 +343,13 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// SubmitBatchPin provides a mock function with given fields: ctx, nsOpID, networkNamespace, signingKey, batch, location
-func (_m *Plugin) SubmitBatchPin(ctx context.Context, nsOpID string, networkNamespace string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
-	ret := _m.Called(ctx, nsOpID, networkNamespace, signingKey, batch, location)
+// SubmitBatchPin provides a mock function with given fields: ctx, nsOpID, remtoeNamespace, signingKey, batch, location
+func (_m *Plugin) SubmitBatchPin(ctx context.Context, nsOpID string, remtoeNamespace string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+	ret := _m.Called(ctx, nsOpID, remtoeNamespace, signingKey, batch, location)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *blockchain.BatchPin, *fftypes.JSONAny) error); ok {
-		r0 = rf(ctx, nsOpID, networkNamespace, signingKey, batch, location)
+		r0 = rf(ctx, nsOpID, remtoeNamespace, signingKey, batch, location)
 	} else {
 		r0 = ret.Error(0)
 	}

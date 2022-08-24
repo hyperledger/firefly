@@ -23,6 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
@@ -42,7 +43,7 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	})
 	mdx := &dataexchangemocks.Plugin{}
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
-	dm, err := NewDataManager(ctx, ns, mdi, mdx)
+	dm, err := NewDataManager(ctx, ns, mdi, mdx, cache.NewCacheManager(ctx))
 	assert.NoError(t, err)
 	dm.Start()
 	return dm.(*dataManager), ctx, func() {
@@ -213,7 +214,7 @@ func TestWriteNewMessageE2E(t *testing.T) {
 }
 
 func TestInitBadDeps(t *testing.T) {
-	_, err := NewDataManager(context.Background(), core.NamespaceRef{}, nil, nil)
+	_, err := NewDataManager(context.Background(), core.NamespaceRef{}, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

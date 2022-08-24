@@ -36,7 +36,7 @@ func TestConfigDocsUpToDate(t *testing.T) {
 	// Initialize config of all plugins
 	namespace.NewNamespaceManager(false)
 	apiserver.InitConfig()
-	generatedConfig, err := config.GenerateConfigMarkdown(context.Background(), config.GetKnownKeys())
+	generatedConfig, err := config.GenerateConfigMarkdown(context.Background(), "", config.GetKnownKeys())
 	assert.NoError(t, err)
 	configOnDisk, err := os.ReadFile(filepath.Join("reference", "config.md"))
 	assert.NoError(t, err)

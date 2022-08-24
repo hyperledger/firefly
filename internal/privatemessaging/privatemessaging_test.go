@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -42,8 +43,8 @@ import (
 
 func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateMessaging, func()) {
 	coreconfig.Reset()
-	config.Set(coreconfig.GroupCacheTTL, "1m")
-	config.Set(coreconfig.GroupCacheLimit, 10)
+	config.Set(coreconfig.GroupCacheTTLDeprecated, "1m")
+	config.Set(coreconfig.GroupCacheLimitDeprecated, 10)
 
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
@@ -55,6 +56,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	mmp := &multipartymocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
+	cmi := &cachemocks.Manager{}
 	mockRunAsGroupPassthrough(mdi)
 
 	mba.On("RegisterDispatcher",
@@ -77,7 +79,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
-	pm, err := NewPrivateMessaging(ctx, ns, mdi, mdx, mbi, mim, mba, mdm, msa, mmp, mmi, mom)
+	pm, err := NewPrivateMessaging(ctx, ns, mdi, mdx, mbi, mim, mba, mdm, msa, mmp, mmi, mom, cmi)
 	assert.NoError(t, err)
 
 	// Default mocks to save boilerplate in the tests
@@ -212,7 +214,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 }
 
 func TestNewPrivateMessagingMissingDeps(t *testing.T) {
-	_, err := NewPrivateMessaging(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewPrivateMessaging(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

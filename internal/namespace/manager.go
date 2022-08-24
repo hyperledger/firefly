@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/database/difactory"
@@ -109,6 +110,7 @@ type namespaceManager struct {
 	}
 	metricsEnabled   bool
 	metrics          metrics.Manager
+	cacheManager     cache.Manager
 	adminEvents      spievents.Manager
 	utOrchestrator   orchestrator.Orchestrator
 	tokenRemoteNames map[string]string
@@ -303,7 +305,7 @@ func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 
 	or := nm.utOrchestrator
 	if or == nil {
-		or = orchestrator.NewOrchestrator(&ns.Namespace, ns.config, plugins, nm.metrics)
+		or = orchestrator.NewOrchestrator(&ns.Namespace, ns.config, plugins, nm.metrics, nm.cacheManager)
 	}
 	ns.orchestrator = or
 	orCtx, orCancel := context.WithCancel(nm.ctx)
@@ -373,6 +375,10 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 	nm.pluginNames = make(map[string]bool)
 	if nm.metrics == nil {
 		nm.metrics = metrics.NewMetricsManager(ctx)
+	}
+
+	if nm.cacheManager == nil {
+		nm.cacheManager = cache.NewCacheManager(ctx)
 	}
 
 	if nm.plugins.database == nil {
@@ -722,7 +728,7 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 		entry.plugin.SetHandler(database.GlobalHandler, nm)
 	}
 	for _, entry := range nm.plugins.blockchain {
-		if err = entry.plugin.Init(ctx, entry.config, nm.metrics); err != nil {
+		if err = entry.plugin.Init(ctx, entry.config, nm.metrics, nm.cacheManager); err != nil {
 			return err
 		}
 	}

@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
@@ -199,16 +200,18 @@ type orchestrator struct {
 	bc             boundCallbacks
 	contracts      contracts.Manager
 	metrics        metrics.Manager
+	cacheManager   cache.Manager
 	operations     operations.Manager
 	txHelper       txcommon.Helper
 }
 
-func NewOrchestrator(ns *core.Namespace, config Config, plugins *Plugins, metrics metrics.Manager) Orchestrator {
+func NewOrchestrator(ns *core.Namespace, config Config, plugins *Plugins, metrics metrics.Manager, cacheManager cache.Manager) Orchestrator {
 	or := &orchestrator{
-		namespace: ns,
-		config:    config,
-		plugins:   plugins,
-		metrics:   metrics,
+		namespace:    ns,
+		config:       config,
+		plugins:      plugins,
+		metrics:      metrics,
+		cacheManager: cacheManager,
 	}
 	return or
 }
@@ -392,11 +395,13 @@ func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.txHelper == nil {
-		or.txHelper = txcommon.NewTransactionHelper(or.namespace.LocalName, or.database(), or.data)
+		if or.txHelper, err = txcommon.NewTransactionHelper(ctx, or.namespace.LocalName, or.database(), or.data, or.cacheManager); err != nil {
+			return err
+		}
 	}
 
 	if or.operations == nil {
-		if or.operations, err = operations.NewOperationsManager(ctx, or.namespace.LocalName, or.database(), or.txHelper); err != nil {
+		if or.operations, err = operations.NewOperationsManager(ctx, or.namespace.LocalName, or.database(), or.txHelper, or.cacheManager); err != nil {
 			return err
 		}
 	}
@@ -414,7 +419,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.namespace.LocalName, or.config.DefaultKey, or.database(), or.blockchain(), or.multiparty)
+		or.identity, err = identity.NewIdentityManager(ctx, or.namespace.LocalName, or.config.DefaultKey, or.database(), or.blockchain(), or.multiparty, or.cacheManager)
 		if err != nil {
 			return err
 		}
@@ -431,7 +436,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 
 		if or.messaging == nil {
-			if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace.Ref(), or.database(), or.dataexchange(), or.blockchain(), or.identity, or.batch, or.data, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
+			if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace.Ref(), or.database(), or.dataexchange(), or.blockchain(), or.identity, or.batch, or.data, or.syncasync, or.multiparty, or.metrics, or.operations, or.cacheManager); err != nil {
 				return err
 			}
 		}
@@ -485,7 +490,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.namespace.Ref(), or.database(), or.dataexchange())
+		or.data, err = data.NewDataManager(ctx, or.namespace.Ref(), or.database(), or.dataexchange(), or.cacheManager)
 		if err != nil {
 			return err
 		}
@@ -496,7 +501,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.namespace.Ref(), or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.operations, or.txHelper, or.plugins.Events, or.multiparty)
+		or.events, err = events.NewEventManager(ctx, or.namespace.Ref(), or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.operations, or.txHelper, or.plugins.Events, or.multiparty, or.cacheManager)
 		if err != nil {
 			return err
 		}

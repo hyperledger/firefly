@@ -24,7 +24,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -36,12 +35,12 @@ import (
 	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -65,8 +64,7 @@ type Ethereum struct {
 	metrics         metrics.Manager
 	ethconnectConf  config.Section
 	subs            common.FireflySubscriptions
-	cache           *ccache.Cache
-	cacheTTL        time.Duration
+	cache           cache.CInterface
 }
 
 type eventStreamWebsocket struct {
@@ -117,7 +115,7 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metrics.Manager) (err error) {
+func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metrics.Manager, cacheManager cache.Manager) (err error) {
 	e.InitConfig(conf)
 	ethconnectConf := e.ethconnectConf
 	addressResolverConf := conf.SubSection(AddressResolverConfigKey)
@@ -130,7 +128,7 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 	e.subs = common.NewFireflySubscriptions()
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
-		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
+		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf, cacheManager); err != nil {
 			return err
 		}
 	}
@@ -160,10 +158,20 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 		return err
 	}
 
-	e.cacheTTL = config.GetDuration(coreconfig.CacheBlockchainTTL)
-	e.cache = ccache.New(ccache.Configure().MaxSize(config.GetInt64(coreconfig.CacheBlockchainLimit)))
+	cache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheBlockchainLimit,
+			coreconfig.CacheBlockchainTTL,
+			"",
+		),
+	)
+	if err != nil {
+		return err
+	}
+	e.cache = cache
 
-	e.streams = newStreamManager(e.client, e.cache, e.cacheTTL)
+	e.streams = newStreamManager(e.client, e.cache)
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
 	stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)
@@ -783,14 +791,13 @@ func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSON
 	}
 
 	cacheKey := "version:" + ethLocation.Address
-	if cached := e.cache.Get(cacheKey); cached != nil {
-		cached.Extend(e.cacheTTL)
-		return cached.Value().(int), nil
+	if cachedValue := e.cache.GetInt(cacheKey); cachedValue != 0 {
+		return cachedValue, nil
 	}
 
 	version, err = e.queryNetworkVersion(ctx, ethLocation.Address)
 	if err == nil {
-		e.cache.Set(cacheKey, version, e.cacheTTL)
+		e.cache.SetInt(cacheKey, version)
 	}
 	return version, err
 }
