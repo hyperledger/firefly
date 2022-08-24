@@ -221,7 +221,7 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 	if h.needsInit {
 		h.initialized = false
 		var status dxStatus
-		var body []fftypes.JSONObject
+		body := make([]fftypes.JSONObject, 0)
 		for _, node := range h.nodes {
 			body = append(body, node.Peer)
 		}
