@@ -60,47 +60,68 @@ jobs:
         exclude: [ blockchain-provider: geth, blockchain-provider: fabric ]
         include:
             - blockchain-provider: geth
+              blockchain-connector: ethconnect
               test-suite: TestEthereumMultipartyE2ESuite
               database-type: sqlite3
               token-provider: erc20_erc721
               multiparty-enabled: true
 
             - blockchain-provider: geth
+              blockchain-connector: ethconnect
               test-suite: TestEthereumMultipartyE2ESuite
               database-type: postgres
               token-provider: erc20_erc721
               multiparty-enabled: true
             
             - blockchain-provider: geth
+              blockchain-connector: ethconnect
               test-suite: TestEthereumMultipartyE2ESuite
               database-type: sqlite3
               token-provider: erc1155
               multiparty-enabled: true
 
             - blockchain-provider: geth
+              blockchain-connector: ethconnect
               test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
               database-type: postgres
               token-provider: erc20_erc721
               multiparty-enabled: true
 
-
             - blockchain-provider: fabric
+              blockchain-connector: fabconnect
               test-suite: TestFabricE2ESuite
               database-type: sqlite3
               token-provider: none
               multiparty-enabled: true
 
             - blockchain-provider: geth
+              blockchain-connector: ethconnect
               test-suite: TestEthereumGatewayE2ESuite
               database-type: sqlite3
               token-provider: erc20_erc721
               multiparty-enabled: false
 
             - blockchain-provider: fabric
+              blockchain-connector: fabconnect
               test-suite: TestFabricGatewayE2ESuite
               database-type: sqlite3
               token-provider: none
               multiparty-enabled: false
+
+            - blockchain-provider: geth
+              blockchain-connector: evmconnect
+              test-suite: TestEthereumMultipartyE2ESuite
+              database-type: sqlite3
+              token-provider: erc20_erc721
+              multiparty-enabled: true
+
+            - blockchain-provider: geth
+              blockchain-connector: evmconnect
+              test-suite: TestEthereumGatewayE2ESuite
+              database-type: sqlite3
+              token-provider: erc1155
+              multiparty-enabled: false
+
     steps:
       - uses: actions/checkout@v2
         with:
