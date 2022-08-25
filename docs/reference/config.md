@@ -101,13 +101,6 @@ nav_order: 2
 |password|Password|`string`|`<nil>`
 |username|Username|`string`|`<nil>`
 
-## blockchain.ethereum.addressResolver.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`1000`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`24h`
-
 ## blockchain.ethereum.addressResolver.proxy
 
 |Key|Description|Type|Default Value|
@@ -797,13 +790,6 @@ nav_order: 2
 |---|-----------|----|-------------|
 |password|Password|`string`|`<nil>`
 |username|Username|`string`|`<nil>`
-
-## plugins.blockchain[].ethereum.addressResolver.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`1000`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`24h`
 
 ## plugins.blockchain[].ethereum.addressResolver.proxy
 

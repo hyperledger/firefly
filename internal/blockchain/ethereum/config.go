@@ -64,10 +64,6 @@ const (
 	AddressResolverBodyTemplate = "bodyTemplate"
 	// AddressResolverResponseField the name of a JSON field that is provided in the response, that contains the ethereum address (default "address")
 	AddressResolverResponseField = "responseField"
-	// AddressResolverCacheSize the size of the LRU cache
-	AddressResolverCacheSize = "cache.size"
-	// AddressResolverCacheTTL the TTL on cache entries
-	AddressResolverCacheTTL = "cache.ttl"
 
 	// FFTMConfigKey is a sub-key in the config that optionally contains FireFly transaction connection information
 	FFTMConfigKey = "fftm"
@@ -94,6 +90,4 @@ func (e *Ethereum) InitConfig(config config.Section) {
 	addressResolverConf.AddKnownKey(AddressResolverURLTemplate)
 	addressResolverConf.AddKnownKey(AddressResolverBodyTemplate)
 	addressResolverConf.AddKnownKey(AddressResolverResponseField, defaultAddressResolverResponseField)
-	addressResolverConf.AddKnownKey(AddressResolverCacheSize, 1000)
-	addressResolverConf.AddKnownKey(AddressResolverCacheTTL, "24h")
 }
