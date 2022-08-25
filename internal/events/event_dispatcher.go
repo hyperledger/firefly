@@ -53,6 +53,7 @@ type eventDispatcher struct {
 	closed        chan struct{}
 	connID        string
 	ctx           context.Context
+	enricher      *eventEnricher
 	data          data.Manager
 	database      database.Plugin
 	transport     events.Plugin
@@ -69,7 +70,7 @@ type eventDispatcher struct {
 	txHelper      txcommon.Helper
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, connID string, sub *subscription, en *eventNotifier, txHelper txcommon.Helper) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.Plugin, di database.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, connID string, sub *subscription, en *eventNotifier, txHelper txcommon.Helper) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := config.GetUint(coreconfig.SubscriptionDefaultsReadAhead)
 	if sub.definition.Options.ReadAhead != nil {
@@ -82,6 +83,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		ctx: log.WithLogField(log.WithLogField(ctx,
 			"role", fmt.Sprintf("ed[%s]", connID)),
 			"sub", fmt.Sprintf("%s/%s:%s", sub.definition.ID, sub.definition.Namespace, sub.definition.Name)),
+		enricher:      enricher,
 		database:      di,
 		transport:     ei,
 		broadcast:     bm,
@@ -165,7 +167,7 @@ func (ed *eventDispatcher) enrichEvents(events []core.LocallySequenced) ([]*core
 	enriched := make([]*core.EventDelivery, len(events))
 	for i, ls := range events {
 		e := ls.(*core.Event)
-		enrichedEvent, err := ed.txHelper.EnrichEvent(ed.ctx, e)
+		enrichedEvent, err := ed.enricher.enrichEvent(ed.ctx, e)
 		if err != nil {
 			return nil, err
 		}

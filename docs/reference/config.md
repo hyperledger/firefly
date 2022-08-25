@@ -17,6 +17,12 @@ nav_order: 2
 ---
 
 
+## admin
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Deprecated - use spi.enabled instead|`boolean`|`<nil>`
+
 ## api
 
 |Key|Description|Type|Default Value|
@@ -30,13 +36,13 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|keynormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keynormalization)|`string`|`<nil>`
+|keyNormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keyNormalization)|`string`|`<nil>`
 
 ## batch.cache
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|limit|Max number of cache items for batches|`string`|`<nil>`
 |ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## batch.manager
@@ -268,7 +274,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|limit|Max number of cache items for blockchain events|`string`|`<nil>`
 |ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## broadcast.batch
@@ -284,8 +290,15 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|Size of blockchain cache|`string`|`<nil>`
+|limit|Max number of cache items for blockchain plugin cache|`string`|`<nil>`
 |ttl|Time to live for blockchain cache items|`string`|`<nil>`
+
+## cache.operations
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|limit|Max number of cache items for operations|`string`|`<nil>`
+|ttl|Time to live for operation cache items|`string`|`<nil>`
 
 ## cors
 
@@ -460,7 +473,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|limit|Max number of cache items for blockchain listener topics|`string`|`<nil>`
 |ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## event.transports
@@ -474,7 +487,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|limit|Max number of cache items for private group addresses|`string`|`<nil>`
 |ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## histograms
@@ -616,7 +629,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|defaultkey|A default signing key for blockchain transactions within this namespace|`string`|`<nil>`
+|defaultKey|A default signing key for blockchain transactions within this namespace|`string`|`<nil>`
 |description|A description for the namespace|`string`|`<nil>`
 |name|The name of the namespace (must be unique)|`string`|`<nil>`
 |plugins|The list of plugins for this namespace|`string`|`<nil>`
@@ -626,7 +639,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|keynormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization|`string`|`<nil>`
+|keyNormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization|`string`|`<nil>`
 
 ## namespaces.predefined[].multiparty
 

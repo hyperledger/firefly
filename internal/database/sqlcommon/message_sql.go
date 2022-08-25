@@ -208,6 +208,7 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*core.Message
 	if s.features.MultiRowInsert {
 		msgQuery := sq.Insert(messagesTable).Columns(msgColumns...)
 		dataRefQuery := sq.Insert(messagesDataJoinTable).Columns(
+			"namespace",
 			"message_id",
 			"data_id",
 			"data_hash",
@@ -217,7 +218,7 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*core.Message
 		for _, message := range messages {
 			msgQuery = s.setMessageInsertValues(msgQuery, message)
 			for idx, dataRef := range message.Data {
-				dataRefQuery = dataRefQuery.Values(message.Header.ID, dataRef.ID, dataRef.Hash, idx)
+				dataRefQuery = dataRefQuery.Values(message.LocalNamespace, message.Header.ID, dataRef.ID, dataRef.Hash, idx)
 				dataRefCount++
 			}
 		}
@@ -517,13 +518,15 @@ func (s *SQLCommon) GetMessageIDs(ctx context.Context, namespace string, filter 
 	return ids, nil
 }
 
-func (s *SQLCommon) GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error) {
-	query := sq.Select("m.batch_id").From("messages_data AS md").LeftJoin("messages AS m ON m.id = md.message_id").Where(sq.Eq{"md.data_id": dataIDs})
+func (s *SQLCommon) GetBatchIDsForDataAttachments(ctx context.Context, namespace string, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error) {
+	query := sq.Select("m.batch_id").From("messages_data AS md").LeftJoin("messages AS m ON m.id = md.message_id").
+		Where(sq.Eq{"md.data_id": dataIDs, "md.namespace": namespace})
 	return s.queryBatchIDs(ctx, query)
 }
 
-func (s *SQLCommon) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error) {
-	return s.queryBatchIDs(ctx, sq.Select("batch_id").From(messagesTable).Where(sq.Eq{"id": msgIDs}))
+func (s *SQLCommon) GetBatchIDsForMessages(ctx context.Context, namespace string, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error) {
+	return s.queryBatchIDs(ctx, sq.Select("batch_id").From(messagesTable).
+		Where(sq.Eq{"id": msgIDs, "namespace_local": namespace}))
 }
 
 func (s *SQLCommon) queryBatchIDs(ctx context.Context, query sq.SelectBuilder) (batchIDs []*fftypes.UUID, err error) {
@@ -571,7 +574,7 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, namespace string, da
 	query, fop, fi, err := s.filterSelect(
 		ctx, "m", sq.Select(cols...).From("messages_data AS md"),
 		filter, msgFilterFieldMap, []interface{}{"sequence"},
-		sq.Eq{"md.data_id": dataID, "namespace_local": namespace})
+		sq.Eq{"md.data_id": dataID, "md.namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

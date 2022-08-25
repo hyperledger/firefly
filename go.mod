@@ -6,6 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/aidarkhanov/nanoid v1.0.8
+	github.com/blang/semver/v4 v4.0.0
 	github.com/docker/go-units v0.4.0
 	github.com/getkin/kin-openapi v0.96.0
 	github.com/ghodss/yaml v1.0.0
@@ -13,8 +14,8 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/hyperledger/firefly-common v0.1.20
-	github.com/hyperledger/firefly-signer v0.9.12
+	github.com/hyperledger/firefly-common v1.1.0
+	github.com/hyperledger/firefly-signer v0.9.15
 	github.com/jarcoal/httpmock v1.1.0
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/lib/pq v1.10.6

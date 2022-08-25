@@ -97,6 +97,24 @@ func TestStartStopServer(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestStartLegacyAdminConfig(t *testing.T) {
+	coreconfig.Reset()
+	metrics.Clear()
+	InitConfig()
+	apiConfig.Set(httpserver.HTTPConfPort, 0)
+	spiConfig.Set(httpserver.HTTPConfPort, 0)
+	config.Set(coreconfig.UIPath, "test")
+	config.Set(coreconfig.LegacyAdminEnabled, true)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // server will immediately shut down
+	as := NewAPIServer()
+	mgr := &namespacemocks.Manager{}
+	mae := &spieventsmocks.Manager{}
+	mgr.On("SPIEvents").Return(mae)
+	err := as.Serve(ctx, mgr)
+	assert.NoError(t, err)
+}
+
 func TestStartAPIFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()

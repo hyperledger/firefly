@@ -207,6 +207,7 @@ func opCreatePool(op *core.Operation, pool *core.TokenPool) *core.PreparedOperat
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      createPoolData{Pool: pool},
 	}
@@ -216,6 +217,7 @@ func opActivatePool(op *core.Operation, pool *core.TokenPool) *core.PreparedOper
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      activatePoolData{Pool: pool},
 	}
@@ -225,6 +227,7 @@ func opTransfer(op *core.Operation, pool *core.TokenPool, transfer *core.TokenTr
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      transferData{Pool: pool, Transfer: transfer},
 	}
@@ -234,6 +237,7 @@ func opApproval(op *core.Operation, pool *core.TokenPool, approval *core.TokenAp
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      approvalData{Pool: pool, Approval: approval},
 	}

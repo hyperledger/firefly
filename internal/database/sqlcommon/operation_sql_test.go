@@ -97,11 +97,14 @@ func TestOperationE2EWithDB(t *testing.T) {
 
 	// Update
 	errMsg := "FF10143"
-	err = s.ResolveOperation(ctx, operation.Namespace, operation.ID, core.OpStatusFailed, &errMsg, fftypes.JSONObject{"extra": "info"})
+	update := database.OperationQueryFactory.NewUpdate(ctx).S()
+	update.Set("status", core.OpStatusFailed)
+	update.Set("error", errMsg)
+	err = s.UpdateOperation(ctx, operation.Namespace, operation.ID, update)
 	assert.NoError(t, err)
 
-	// Update not found is 4040
-	err = s.ResolveOperation(ctx, operation.Namespace, fftypes.NewUUID(), core.OpStatusSucceeded, nil, fftypes.JSONObject{"extra": "info"})
+	// Update not found is 404
+	err = s.UpdateOperation(ctx, operation.Namespace, fftypes.NewUUID(), update)
 	assert.Regexp(t, "FF10143", err)
 
 	// Test find updated value

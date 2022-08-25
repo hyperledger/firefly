@@ -31,6 +31,7 @@ var (
 	ConfigGlobalMigrationsDirectory = ffc("config.global.migrations.directory", "The directory containing the numerically ordered migration DDL files to apply to the database", i18n.StringType)
 	ConfigGlobalShutdownTimeout     = ffc("config.global.shutdownTimeout", "The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server", i18n.TimeDurationType)
 
+	ConfigLegacyAdmin     = ffc("config.admin.enabled", "Deprecated - use spi.enabled instead", i18n.BooleanType)
 	ConfigSPIAddress      = ffc("config.spi.address", "The IP address on which the admin HTTP API should listen", "IP Address "+i18n.StringType)
 	ConfigSPIEnabled      = ffc("config.spi.enabled", "Enables the admin HTTP API", i18n.BooleanType)
 	ConfigSPIPort         = ffc("config.spi.port", "The port on which the admin HTTP API should listen", i18n.IntType)
@@ -41,7 +42,7 @@ var (
 	ConfigAPIDefaultFilterLimit        = ffc("config.api.defaultFilterLimit", "The maximum number of rows to return if no limit is specified on an API request", i18n.IntType)
 	ConfigAPIMaxFilterLimit            = ffc("config.api.maxFilterLimit", "The largest value of `limit` that an HTTP client can specify in a request", i18n.IntType)
 	ConfigAPIRequestMaxTimeout         = ffc("config.api.requestMaxTimeout", "The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open", i18n.TimeDurationType)
-	ConfigAssetManagerKeyNormalization = ffc("config.asset.manager.keynormalization", "Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keynormalization)", i18n.StringType)
+	ConfigAssetManagerKeyNormalization = ffc("config.asset.manager.keyNormalization", "Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keyNormalization)", i18n.StringType)
 
 	ConfigBatchManagerMinimumPollDelay = ffc("config.batch.manager.minimumPollDelay", "The minimum time the batch manager waits between polls on the DB - to prevent thrashing", i18n.TimeDurationType)
 	ConfigBatchManagerPollTimeout      = ffc("config.batch.manager.pollTimeout", "How long to wait without any notifications of new messages before doing a page query", i18n.TimeDurationType)
@@ -93,7 +94,15 @@ var (
 	ConfigBlockchainFabricFabconnectProxyURL     = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
 
 	ConfigCacheBlockchainTTL  = ffc("config.cache.blockchain.ttl", "Time to live for blockchain cache items", i18n.StringType)
-	ConfigCacheBlockchainSize = ffc("config.cache.blockchain.size", "Size of blockchain cache", i18n.StringType)
+	ConfigCacheBlockchainSize = ffc("config.cache.blockchain.limit", "Max number of cache items for blockchain plugin cache", i18n.StringType)
+
+	ConfigCacheOperationsTTL  = ffc("config.cache.operations.ttl", "Time to live for operation cache items", i18n.StringType)
+	ConfigCacheOperationsSize = ffc("config.cache.operations.limit", "Max number of cache items for operations", i18n.StringType)
+
+	ConfigCacheBatchLimit           = ffc("config.batch.cache.limit", "Max number of cache items for batches", i18n.StringType)
+	ConfigCacheBlockchainEventLimit = ffc("config.blockchainevent.cache.limit", "Max number of cache items for blockchain events", i18n.StringType)
+	ConfigCacheListenerTopicLimit   = ffc("config.event.listenerTopic.cache.limit", "Max number of cache items for blockchain listener topics", i18n.StringType)
+	ConfigCacheGroupLimit           = ffc("config.group.cache.limit", "Max number of cache items for private group addresses", i18n.StringType)
 
 	ConfigPluginDatabase     = ffc("config.plugins.database", "The list of configured Database plugins", i18n.StringType)
 	ConfigPluginDatabaseName = ffc("config.plugins.database[].name", "The name of the Database plugin", i18n.StringType)
@@ -256,8 +265,8 @@ var (
 	ConfigNamespacesPredefinedDescription        = ffc("config.namespaces.predefined[].description", "A description for the namespace", i18n.StringType)
 	ConfigNamespacesPredefinedPlugins            = ffc("config.namespaces.predefined[].plugins", "The list of plugins for this namespace", i18n.StringType)
 	ConfigNamespacesPredefinedRemoteName         = ffc("config.namespaces.predefined[].remotename", "The namespace name to be sent in plugin calls, if it differs from namespace name", i18n.StringType)
-	ConfigNamespacesPredefinedDefaultKey         = ffc("config.namespaces.predefined[].defaultkey", "A default signing key for blockchain transactions within this namespace", i18n.StringType)
-	ConfigNamespacesPredefinedKeyNormalization   = ffc("config.namespaces.predefined[].asset.manager.keynormalization", "Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization", i18n.StringType)
+	ConfigNamespacesPredefinedDefaultKey         = ffc("config.namespaces.predefined[].defaultKey", "A default signing key for blockchain transactions within this namespace", i18n.StringType)
+	ConfigNamespacesPredefinedKeyNormalization   = ffc("config.namespaces.predefined[].asset.manager.keyNormalization", "Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization", i18n.StringType)
 	ConfigNamespacesMultipartyEnabled            = ffc("config.namespaces.predefined[].multiparty.enabled", "Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level)", i18n.BooleanType)
 	ConfigNamespacesMultipartyOrgName            = ffc("config.namespaces.predefined[].multiparty.org.name", "A short name for the local root organization within this namespace", i18n.StringType)
 	ConfigNamespacesMultipartyOrgDesc            = ffc("config.namespaces.predefined[].multiparty.org.description", "A description for the local root organization within this namespace", i18n.StringType)

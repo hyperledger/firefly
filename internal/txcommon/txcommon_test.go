@@ -48,7 +48,7 @@ func NewTestTransactionHelper(di database.Plugin, dm data.Manager) (Helper, *cca
 	t.blockchainEventCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.BlockchainEventCacheSize)),
+			MaxSize(config.GetByteSize(coreconfig.BlockchainEventCacheLimit)),
 	)
 	return t, t.transactionCache, t.blockchainEventCache
 }
@@ -391,9 +391,27 @@ func TestGetTransactionByIDCached(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, txid, tx.ID)
 
+	// second attempt is cached
 	tx, err = txHelper.GetTransactionByIDCached(ctx, txid)
 	assert.NoError(t, err)
 	assert.Equal(t, txid, tx.ID)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestGetTransactionByIDCachedFail(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper, _, _ := NewTestTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	txid := fftypes.NewUUID()
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(nil, fmt.Errorf("pop"))
+
+	_, err := txHelper.GetTransactionByIDCached(ctx, txid)
+	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 
@@ -471,9 +489,9 @@ func TestInsertGetBlockchainEventCached(t *testing.T) {
 		ID:        evID,
 		Namespace: "ns1",
 	}
-	mdi.On("InsertBlockchainEvent", ctx, chainEvent).Return(nil)
+	mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(nil, nil)
 
-	err := txHelper.InsertBlockchainEvent(ctx, chainEvent)
+	_, err := txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
 	assert.NoError(t, err)
 
 	cached, err := txHelper.GetBlockchainEventByIDCached(ctx, evID)
@@ -484,7 +502,7 @@ func TestInsertGetBlockchainEventCached(t *testing.T) {
 
 }
 
-func TestInsertGetBlockchainEventErr(t *testing.T) {
+func TestInsertBlockchainEventDuplicate(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -496,9 +514,32 @@ func TestInsertGetBlockchainEventErr(t *testing.T) {
 		ID:        evID,
 		Namespace: "ns1",
 	}
-	mdi.On("InsertBlockchainEvent", ctx, chainEvent).Return(fmt.Errorf("pop"))
+	existingEvent := &core.BlockchainEvent{}
+	mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(existingEvent, nil)
 
-	err := txHelper.InsertBlockchainEvent(ctx, chainEvent)
+	result, err := txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
+	assert.NoError(t, err)
+	assert.Equal(t, existingEvent, result)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestInsertBlockchainEventErr(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
+	ctx := context.Background()
+
+	evID := fftypes.NewUUID()
+	chainEvent := &core.BlockchainEvent{
+		ID:        evID,
+		Namespace: "ns1",
+	}
+	mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(nil, fmt.Errorf("pop"))
+
+	_, err := txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)

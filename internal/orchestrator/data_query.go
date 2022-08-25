@@ -36,7 +36,7 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, id string) (*cor
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetTransactionByID(ctx, or.namespace.LocalName, u)
+	return or.txHelper.GetTransactionByIDCached(ctx, u)
 }
 
 func (or *orchestrator) GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *database.FilterResult, error) {
@@ -124,7 +124,7 @@ func (or *orchestrator) GetOperationByID(ctx context.Context, id string) (*core.
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetOperationByID(ctx, or.namespace.LocalName, u)
+	return or.operations.GetOperationByIDCached(ctx, u)
 }
 
 func (or *orchestrator) GetEventByID(ctx context.Context, id string) (*core.Event, error) {
@@ -198,7 +198,7 @@ func (or *orchestrator) GetMessageTransaction(ctx context.Context, id string) (*
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetTransactionByID(ctx, or.namespace.LocalName, txID)
+	return or.txHelper.GetTransactionByIDCached(ctx, txID)
 }
 
 func (or *orchestrator) GetMessageEvents(ctx context.Context, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
@@ -251,7 +251,7 @@ func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, id string) (
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetBlockchainEventByID(ctx, or.namespace.LocalName, u)
+	return or.txHelper.GetBlockchainEventByIDCached(ctx, u)
 }
 
 func (or *orchestrator) GetBlockchainEvents(ctx context.Context, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
@@ -279,7 +279,7 @@ func (or *orchestrator) GetEventsWithReferences(ctx context.Context, filter data
 
 	enriched := make([]*core.EnrichedEvent, len(events))
 	for i, event := range events {
-		enrichedEvent, err := or.txHelper.EnrichEvent(or.ctx, event)
+		enrichedEvent, err := or.events.EnrichEvent(or.ctx, event)
 		if err != nil {
 			return nil, nil, err
 		}

@@ -253,7 +253,7 @@ func (rw *rewinder) getRewindsForMessages(ctx context.Context, msgRewinds []*fft
 
 	if len(cacheMisses) > 0 {
 		log.L(ctx).Debugf("Cache misses for message rewinds: %v", cacheMisses)
-		msgBatchIDs, err := rw.database.GetBatchIDsForMessages(ctx, cacheMisses)
+		msgBatchIDs, err := rw.database.GetBatchIDsForMessages(ctx, rw.aggregator.namespace, cacheMisses)
 		if err != nil {
 			return err
 		}
@@ -283,7 +283,7 @@ func (rw *rewinder) getRewindsForBlobs(ctx context.Context, newHashes []driver.V
 		for i, d := range data {
 			dataIDs[i] = d.ID
 		}
-		msgBatchIDs, err := rw.database.GetBatchIDsForDataAttachments(ctx, dataIDs)
+		msgBatchIDs, err := rw.database.GetBatchIDsForDataAttachments(ctx, rw.aggregator.namespace, dataIDs)
 		if err != nil {
 			return err
 		}

@@ -133,6 +133,7 @@ func opBatchPin(op *core.Operation, batch *core.BatchPersisted, contexts []*ffty
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      batchPinData{Batch: batch, Contexts: contexts, PayloadRef: payloadRef},
 	}
@@ -142,6 +143,7 @@ func opNetworkAction(op *core.Operation, actionType core.NetworkActionType, key 
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data: networkActionData{
 			Type: actionType,

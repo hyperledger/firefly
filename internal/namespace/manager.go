@@ -489,6 +489,7 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[s
 			if err = fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
 				return nil, err
 			}
+			nm.tokenRemoteNames[name] = name
 
 			plugin, err := tifactory.GetPlugin(ctx, pluginType)
 			if err != nil {

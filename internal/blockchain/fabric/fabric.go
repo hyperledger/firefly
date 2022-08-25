@@ -223,7 +223,7 @@ func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.
 	}
 
 	f.cacheTTL = config.GetDuration(coreconfig.CacheBlockchainTTL)
-	f.cache = ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.CacheBlockchainSize)))
+	f.cache = ccache.New(ccache.Configure().MaxSize(config.GetInt64(coreconfig.CacheBlockchainLimit)))
 
 	f.streams = newStreamManager(f.client, f.signer, f.cache, f.cacheTTL)
 	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
@@ -855,7 +855,15 @@ func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAn
 		return cached.Value().(int), nil
 	}
 
-	res, err := f.queryContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, networkVersionMethodName, f.signer, "", []*PrefixItem{}, map[string]interface{}{}, nil)
+	version, err = f.queryNetworkVersion(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode)
+	if err == nil {
+		f.cache.Set(cacheKey, version, f.cacheTTL)
+	}
+	return version, err
+}
+
+func (f *Fabric) queryNetworkVersion(ctx context.Context, channel, chaincode string) (version int, err error) {
+	res, err := f.queryContractMethod(ctx, channel, chaincode, networkVersionMethodName, f.signer, "", []*PrefixItem{}, map[string]interface{}{}, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Function not found" is interpreted as "default to version 1"
 		notFoundError := fmt.Sprintf("Function %s not found", networkVersionMethodName)
@@ -872,9 +880,6 @@ func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAn
 	switch result := output.Result.(type) {
 	case float64:
 		version = int(result)
-		if err == nil {
-			f.cache.Set(cacheKey, version, f.cacheTTL)
-		}
 	default:
 		err = i18n.NewError(ctx, coremsgs.MsgBadNetworkVersion, output.Result)
 	}

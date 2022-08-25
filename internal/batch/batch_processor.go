@@ -597,7 +597,7 @@ func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 
 func (bp *batchProcessor) dispatchBatch(state *DispatchState) error {
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
-	return operations.RunWithOperationCache(bp.ctx, func(ctx context.Context) error {
+	return operations.RunWithOperationContext(bp.ctx, func(ctx context.Context) error {
 		return bp.retry.Do(ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
 			return true, bp.conf.dispatch(ctx, state)
 		})

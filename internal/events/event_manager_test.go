@@ -36,6 +36,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/multipartymocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
@@ -84,6 +85,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mam := &assetmocks.Manager{}
 	mdd := &shareddownloadmocks.Manager{}
 	mmi := &metricsmocks.Manager{}
+	mom := &operationmocks.Manager{}
 	mev := &eventsmocks.Plugin{}
 	events := map[string]events.Plugin{"websockets": mev}
 	mmp := &multipartymocks.Manager{}
@@ -98,7 +100,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mev.On("SetHandler", "ns1", mock.Anything).Return(nil).Maybe()
 	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
-	emi, err := NewEventManager(ctx, ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, mdd, mmi, txHelper, events, mmp)
+	emi, err := NewEventManager(ctx, ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, mdd, mmi, mom, txHelper, events, mmp)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	mockRunAsGroupPassthrough(mdi)
@@ -133,7 +135,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -152,6 +154,7 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mam := &assetmocks.Manager{}
 	msd := &shareddownloadmocks.Manager{}
 	mm := &metricsmocks.Manager{}
+	mom := &operationmocks.Manager{}
 	mev := &eventsmocks.Plugin{}
 	events := map[string]events.Plugin{"websockets": mev}
 	mmp := &multipartymocks.Manager{}
@@ -160,7 +163,7 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	mev.On("SetHandler", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
-	_, err := NewEventManager(context.Background(), ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, txHelper, events, mmp)
+	_, err := NewEventManager(context.Background(), ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, mom, txHelper, events, mmp)
 	assert.EqualError(t, err, "pop")
 }
 

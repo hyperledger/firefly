@@ -176,7 +176,7 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 		txid,
 		core.OpTypeBlockchainInvoke)
 	if err = addBlockchainInvokeInputs(op, req); err == nil {
-		err = cm.database.InsertOperation(ctx, op)
+		err = cm.operations.AddOrReuseOperation(ctx, op)
 	}
 	return op, err
 }

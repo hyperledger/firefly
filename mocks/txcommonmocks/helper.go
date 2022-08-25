@@ -30,29 +30,6 @@ func (_m *Helper) AddBlockchainTX(ctx context.Context, tx *core.Transaction, blo
 	return r0
 }
 
-// EnrichEvent provides a mock function with given fields: ctx, event
-func (_m *Helper) EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
-	ret := _m.Called(ctx, event)
-
-	var r0 *core.EnrichedEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Event) *core.EnrichedEvent); ok {
-		r0 = rf(ctx, event)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.EnrichedEvent)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.Event) error); ok {
-		r1 = rf(ctx, event)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetBlockchainEventByIDCached provides a mock function with given fields: ctx, id
 func (_m *Helper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
 	ret := _m.Called(ctx, id)
@@ -99,18 +76,27 @@ func (_m *Helper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID
 	return r0, r1
 }
 
-// InsertBlockchainEvent provides a mock function with given fields: ctx, chainEvent
-func (_m *Helper) InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error {
-	ret := _m.Called(ctx, chainEvent)
+// InsertOrGetBlockchainEvent provides a mock function with given fields: ctx, event
+func (_m *Helper) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (*core.BlockchainEvent, error) {
+	ret := _m.Called(ctx, event)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.BlockchainEvent) error); ok {
-		r0 = rf(ctx, chainEvent)
+	var r0 *core.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BlockchainEvent) *core.BlockchainEvent); ok {
+		r0 = rf(ctx, event)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.BlockchainEvent)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *core.BlockchainEvent) error); ok {
+		r1 = rf(ctx, event)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // PersistTransaction provides a mock function with given fields: ctx, id, txType, blockchainTXID
