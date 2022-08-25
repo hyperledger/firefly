@@ -113,8 +113,8 @@ When a message is received, FireFly verifies the following:
 * The sender's `author` and `key` are specified in the message. The `author` must be a known org or custom identity. The `key` must match the
   blockchain key that was used to sign the on-chain portion of the message. For broadcast messages, the `key` must match the registered
   verifier for the `author`.
-* The sending `node` (as reported by data exchange) must be a known node identity which is a child of the message's `author` identity or one of
-  its ancestors.
+* For private messages, the sending `node` (as reported by data exchange) must be a known node identity which is a child of the message's
+  `author` identity or one of its ancestors. The combination of the `author` identity and the `node` must also be found in the message `group`.
 
 In addition, the data exchange plugin is responsible for verifying the sending and receiving identities for the off-chain
 data (such as validating the relevant certificates).
