@@ -18,9 +18,7 @@ package events
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql/driver"
-	"encoding/binary"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -161,10 +159,7 @@ func (bs *batchState) checkMaskedContextReady(ctx context.Context, msg *core.Mes
 	// For masked pins, we can only process if:
 	// - it is the next sequence on this context for one of the members of the group
 	// - there are no undispatched messages on this context earlier in the stream
-	h := sha256.New()
-	h.Write([]byte(topic))
-	h.Write((*msg.Header.Group)[:])
-	contextUnmasked := fftypes.HashResult(h)
+	contextUnmasked := privateContext(topic, msg.Header.Group)
 	npg, err := bs.stateForMaskedContext(ctx, msg.Header.Group, topic, contextUnmasked)
 	if err != nil {
 		return nil, err
@@ -323,14 +318,7 @@ func (nps *nextPinState) IncrementNextPin(ctx context.Context, namespace string)
 }
 
 func (npg *nextPinGroupState) calcPinHash(identity string, nonce int64) *fftypes.Bytes32 {
-	h := sha256.New()
-	h.Write([]byte(npg.topic))
-	h.Write((*npg.groupID)[:])
-	h.Write([]byte(identity))
-	nonceBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(nonceBytes, uint64(nonce))
-	h.Write(nonceBytes)
-	return fftypes.HashResult(h)
+	return privatePinHash(npg.topic, npg.groupID, identity, nonce)
 }
 
 func (bs *batchState) stateForMaskedContext(ctx context.Context, groupID *fftypes.Bytes32, topic string, contextUnmasked *fftypes.Bytes32) (*nextPinGroupState, error) {

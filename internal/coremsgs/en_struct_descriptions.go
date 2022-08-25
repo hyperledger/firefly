@@ -167,6 +167,7 @@ var (
 	BatchPersistedTX         = ffm("Batch.tx", "The FireFly transaction associated with this batch")
 	BatchPersistedPayloadRef = ffm("Batch.payloadRef", "For broadcast batches, this is the reference to the binary batch in shared storage")
 	BatchPersistedConfirmed  = ffm("Batch.confirmed", "The time when the batch was confirmed")
+	BatchPersistedPeer       = ffm("Batch.peer", "The data exchange peer from whom this batch was received")
 
 	// Transaction field descriptions
 	TransactionID            = ffm("Transaction.id", "The UUID of the FireFly transaction")

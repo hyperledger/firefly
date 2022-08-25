@@ -77,9 +77,12 @@ func sampleBatch(t *testing.T, batchType core.BatchType, txType core.Transaction
 			Data:     data,
 		},
 	}
+	if batchType == core.BatchTypePrivate {
+		batch.Group = fftypes.NewRandB32()
+	}
 	err := msg.Seal(context.Background())
 	assert.NoError(t, err)
-	bp, _ := batch.Confirmed()
+	bp, _ := batch.Confirmed("peer1")
 	batch.Hash = fftypes.HashString(bp.Manifest.String())
 	return batch
 }
@@ -411,7 +414,7 @@ func TestBatchPinCompleteNonMultiparty(t *testing.T) {
 func TestPersistBatchMissingID(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	batch, valid, err := em.persistBatch(context.Background(), &core.Batch{})
+	batch, valid, err := em.persistBatch(context.Background(), "", &core.Batch{})
 	assert.False(t, valid)
 	assert.Nil(t, batch)
 	assert.NoError(t, err)
@@ -440,7 +443,7 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKeyIdentity", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 	batch.Hash = batch.Payload.Hash()
-	_, valid, err := em.persistBatch(context.Background(), batch)
+	_, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.NoError(t, err) // retryable
 	assert.False(t, valid)
 }
@@ -468,7 +471,7 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKeyIdentity", mock.Anything, mock.Anything).Return("author2", nil)
 	batch.Hash = batch.Payload.Hash()
-	_, valid, err := em.persistBatch(context.Background(), batch)
+	_, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.NoError(t, err)
 	assert.False(t, valid)
 }
@@ -495,7 +498,7 @@ func TestPersistBatchMismatchChainHash(t *testing.T) {
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKeyIdentity", mock.Anything, mock.Anything).Return("author1", nil)
 	batch.Hash = batch.Payload.Hash()
-	_, valid, err := em.persistBatch(context.Background(), batch)
+	_, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.NoError(t, err)
 	assert.False(t, valid)
 }
@@ -509,7 +512,7 @@ func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(database.HashMismatch)
 
-	bp, valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.False(t, valid)
 	assert.Nil(t, bp)
 	assert.NoError(t, err)
@@ -523,7 +526,7 @@ func TestPersistBatchBadHash(t *testing.T) {
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	batch.Hash = fftypes.NewRandB32()
 
-	bp, valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.False(t, valid)
 	assert.Nil(t, bp)
 	assert.NoError(t, err)
@@ -549,7 +552,7 @@ func TestPersistBatchNoData(t *testing.T) {
 	}
 	batch.Hash = fftypes.NewRandB32()
 
-	bp, valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.False(t, valid)
 	assert.Nil(t, bp)
 	assert.NoError(t, err)
@@ -564,7 +567,7 @@ func TestPersistBatchUpsertBatchFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	bp, valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.Nil(t, bp)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
@@ -596,7 +599,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
 
-	bp, valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 	assert.Nil(t, bp)
@@ -617,7 +620,7 @@ func TestPersistBatchGoodDataUpsertOptimizeFail(t *testing.T) {
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 
-	bp, valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.Nil(t, bp)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
@@ -638,7 +641,7 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 
-	bp, valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.False(t, valid)
 	assert.Nil(t, bp)
 	assert.EqualError(t, err, "pop")
@@ -657,7 +660,7 @@ func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
 
-	bp, valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), "", batch)
 	assert.Nil(t, bp)
 	assert.False(t, valid)
 	assert.NoError(t, err)

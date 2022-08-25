@@ -1443,6 +1443,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: peer
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: tx.id
         schema:
           type: string
@@ -1533,6 +1538,10 @@ paths:
                       description: The UUID of the node that generated the batch
                       format: uuid
                       type: string
+                    peer:
+                      description: The data exchange peer from whom this batch was
+                        received
+                      type: string
                     tx:
                       description: The FireFly transaction associated with this batch
                       properties:
@@ -1616,6 +1625,9 @@ paths:
                   node:
                     description: The UUID of the node that generated the batch
                     format: uuid
+                    type: string
+                  peer:
+                    description: The data exchange peer from whom this batch was received
                     type: string
                   tx:
                     description: The FireFly transaction associated with this batch
@@ -10540,6 +10552,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: peer
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: tx.id
         schema:
           type: string
@@ -10629,6 +10646,10 @@ paths:
                     node:
                       description: The UUID of the node that generated the batch
                       format: uuid
+                      type: string
+                    peer:
+                      description: The data exchange peer from whom this batch was
+                        received
                       type: string
                     tx:
                       description: The FireFly transaction associated with this batch
@@ -10720,6 +10741,9 @@ paths:
                   node:
                     description: The UUID of the node that generated the batch
                     format: uuid
+                    type: string
+                  peer:
+                    description: The data exchange peer from whom this batch was received
                     type: string
                   tx:
                     description: The FireFly transaction associated with this batch

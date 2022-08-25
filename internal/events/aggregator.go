@@ -19,6 +19,7 @@ package events
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"strings"
 	"time"
@@ -63,6 +64,30 @@ type aggregator struct {
 type batchCacheEntry struct {
 	batch    *core.BatchPersisted
 	manifest *core.BatchManifest
+}
+
+func broadcastContext(topic string) *fftypes.Bytes32 {
+	h := sha256.New()
+	h.Write([]byte(topic))
+	return fftypes.HashResult(h)
+}
+
+func privateContext(topic string, group *fftypes.Bytes32) *fftypes.Bytes32 {
+	h := sha256.New()
+	h.Write([]byte(topic))
+	h.Write((*group)[:])
+	return fftypes.HashResult(h)
+}
+
+func privatePinHash(topic string, group *fftypes.Bytes32, identity string, nonce int64) *fftypes.Bytes32 {
+	h := sha256.New()
+	h.Write([]byte(topic))
+	h.Write((*group)[:])
+	h.Write([]byte(identity))
+	nonceBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(nonceBytes, uint64(nonce))
+	h.Write(nonceBytes)
+	return fftypes.HashResult(h)
 }
 
 func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.Handler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
@@ -469,9 +494,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 			}
 		} else {
 			for _, topic := range msg.Header.Topics {
-				h := sha256.New()
-				h.Write([]byte(topic))
-				msgContext := fftypes.HashResult(h)
+				msgContext := broadcastContext(topic)
 				unmaskedContexts = append(unmaskedContexts, msgContext)
 				ready, err := state.checkUnmaskedContextReady(ctx, msgContext, msg, pin.Sequence)
 				if err != nil || !ready {
