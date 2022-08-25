@@ -40,8 +40,8 @@ func newTestEventEnricher() *eventEnricher {
 }
 
 func TestEnrichMessageConfirmed(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -49,8 +49,7 @@ func TestEnrichMessageConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdm := em.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&core.Message{
+	em.mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&core.Message{
 		Header: core.MessageHeader{ID: ref1},
 	}, nil, true, nil)
 

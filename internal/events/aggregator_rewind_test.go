@@ -189,8 +189,8 @@ func TestProcessStagedRewindsNoDIDs(t *testing.T) {
 
 func TestPopRewindsDoublePopNoBlock(t *testing.T) {
 
-	em, done := newTestEventManager(t)
-	defer done()
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 
 	em.QueueBatchRewind(fftypes.NewUUID())
 	batchIDs := em.aggregator.rewinder.popRewinds()

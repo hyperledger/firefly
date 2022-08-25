@@ -55,15 +55,15 @@ type testAggregator struct {
 	mdh    *definitionsmocks.Handler
 }
 
-func (tor *testAggregator) cleanup(t *testing.T) {
-	tor.cancel()
-	tor.mdi.AssertExpectations(t)
-	tor.mdm.AssertExpectations(t)
-	tor.mpm.AssertExpectations(t)
-	tor.mbi.AssertExpectations(t)
-	tor.mim.AssertExpectations(t)
-	tor.mmi.AssertExpectations(t)
-	tor.mdh.AssertExpectations(t)
+func (tag *testAggregator) cleanup(t *testing.T) {
+	tag.cancel()
+	tag.mdi.AssertExpectations(t)
+	tag.mdm.AssertExpectations(t)
+	tag.mpm.AssertExpectations(t)
+	tag.mbi.AssertExpectations(t)
+	tag.mim.AssertExpectations(t)
+	tag.mmi.AssertExpectations(t)
+	tag.mdh.AssertExpectations(t)
 }
 
 func newTestAggregatorCommon(metrics bool) *testAggregator {
