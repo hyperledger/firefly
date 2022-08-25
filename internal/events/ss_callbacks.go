@@ -52,7 +52,7 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, pa
 
 	err = em.retry.Do(em.ctx, "persist batch", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			_, _, err := em.persistBatch(ctx, batch)
+			_, _, err := em.persistBatch(ctx, "", batch)
 			return err
 		})
 		if err != nil {

@@ -32,7 +32,7 @@ type messageAndData struct {
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (em *eventManager) persistBatch(ctx context.Context, batch *core.Batch) (persistedBatch *core.BatchPersisted, valid bool, err error) {
+func (em *eventManager) persistBatch(ctx context.Context, peerID string, batch *core.Batch) (persistedBatch *core.BatchPersisted, valid bool, err error) {
 	l := log.L(ctx)
 
 	if batch.ID == nil || batch.Payload.TX.ID == nil || batch.Hash == nil {
@@ -54,7 +54,7 @@ func (em *eventManager) persistBatch(ctx context.Context, batch *core.Batch) (pe
 	}
 
 	// Set confirmed on the batch (the messages should not be confirmed at this point - that's the aggregator's job)
-	persistedBatch, manifest := batch.Confirmed()
+	persistedBatch, manifest := batch.Confirmed(peerID)
 	manifestHash := fftypes.HashString(persistedBatch.Manifest.String())
 
 	// Verify the hash calculation.

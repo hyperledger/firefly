@@ -328,19 +328,24 @@ func (ag *aggregator) cacheBatch(cacheKey string, batch *core.BatchPersisted, ma
 func (ag *aggregator) processPins(ctx context.Context, pins []*core.Pin, state *batchState) (err error) {
 	l := log.L(ctx)
 
-	// Keep a batch cache for this list of pins
-	manifests := make(map[fftypes.UUID]*core.BatchManifest)
+	localCache := make(map[fftypes.UUID]*batchCacheEntry)
+	var manifest *core.BatchManifest
+	var batch *core.BatchPersisted
+
 	// As messages can have multiple topics, we need to avoid processing the message twice in the same poll loop.
 	// We must check all the contexts in the message, and mark them dispatched together.
 	dupMsgCheck := make(map[fftypes.UUID]bool)
 	for _, pin := range pins {
-		manifest, ok := manifests[*pin.Batch]
-		if !ok {
-			_, manifest, err = ag.GetBatchForPin(ctx, pin)
+		found, ok := localCache[*pin.Batch] // avoid trying to fetch the same batch repeatedly (mainly for cache misses)
+		if ok {
+			manifest = found.manifest
+			batch = found.batch
+		} else {
+			batch, manifest, err = ag.GetBatchForPin(ctx, pin)
 			if err != nil {
 				return err
 			}
-			manifests[*pin.Batch] = manifest
+			localCache[*pin.Batch] = &batchCacheEntry{manifest: manifest, batch: batch}
 		}
 		if manifest == nil {
 			l.Debugf("Pin %.10d batch unavailable: batch=%s pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
@@ -361,7 +366,7 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*core.Pin, state *
 		dupMsgCheck[*msgEntry.ID] = true
 
 		// Attempt to process the message (only returns errors for database persistence issues)
-		err := ag.processMessage(ctx, manifest, pin, msgBaseIndex, msgEntry, state)
+		err := ag.processMessage(ctx, manifest, pin, msgBaseIndex, msgEntry, batch.Peer, state)
 		if err != nil {
 			return err
 		}
@@ -411,7 +416,7 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 	return true, nil
 }
 
-func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchManifest, pin *core.Pin, msgBaseIndex int64, msgEntry *core.MessageManifestEntry, state *batchState) (err error) {
+func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchManifest, pin *core.Pin, msgBaseIndex int64, msgEntry *core.MessageManifestEntry, peerID string, state *batchState) (err error) {
 	l := log.L(ctx)
 
 	unmaskedContexts := make([]*fftypes.Bytes32, 0)
@@ -476,7 +481,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		}
 
 		l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
-		newState, dispatched, err = ag.attemptMessageDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
+		newState, dispatched, err = ag.attemptMessageDispatch(ctx, msg, data, manifest.TX.ID, peerID, state, pin)
 		if err != nil {
 			return err
 		}
@@ -499,7 +504,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 	return nil
 }
 
-func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState, pin *core.Pin) (newState core.MessageState, dispatched bool, err error) {
+func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, peerID string, state *batchState, pin *core.Pin) (newState core.MessageState, dispatched bool, err error) {
 	var customCorrelator *fftypes.UUID
 
 	// Check the pin signer is valid for the message
@@ -556,6 +561,13 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 			if err != nil {
 				return "", false, err
 			}
+		}
+	}
+
+	if valid && msg.Header.Group != nil {
+		valid, err = ag.checkReceivedOffchainIdentity(ctx, msg.Header.Group, peerID, msg.Header.Author)
+		if err != nil {
+			return "", false, err
 		}
 	}
 

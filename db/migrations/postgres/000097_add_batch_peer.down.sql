@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE batches DROP COLUMN peer;
+COMMIT;

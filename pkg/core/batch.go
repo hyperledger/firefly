@@ -82,6 +82,7 @@ type BatchPersisted struct {
 	Manifest  *fftypes.JSONAny `ffstruct:"Batch" json:"manifest"`
 	TX        TransactionRef   `ffstruct:"Batch" json:"tx"`
 	Confirmed *fftypes.FFTime  `ffstruct:"Batch" json:"confirmed"`
+	Peer      string           `ffstruct:"Batch" json:"peer"`
 }
 
 // BatchPayload contains the full JSON of the messages and data, but
@@ -160,7 +161,7 @@ func (b *BatchPersisted) GenInflight(messages []*Message, data DataArray) *Batch
 }
 
 // Confirmed generates a newly confirmed persisted batch, including (re-)generating the manifest
-func (b *Batch) Confirmed() (*BatchPersisted, *BatchManifest) {
+func (b *Batch) Confirmed(peerID string) (*BatchPersisted, *BatchManifest) {
 	manifest := b.Payload.Manifest(b.ID)
 	manifestString := manifest.String()
 	return &BatchPersisted{
@@ -169,5 +170,6 @@ func (b *Batch) Confirmed() (*BatchPersisted, *BatchManifest) {
 		TX:          b.Payload.TX,
 		Manifest:    fftypes.JSONAnyPtr(manifestString),
 		Confirmed:   fftypes.Now(),
+		Peer:        peerID,
 	}, manifest
 }
