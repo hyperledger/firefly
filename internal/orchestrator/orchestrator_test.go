@@ -20,9 +20,11 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/mocks/authmocks"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
@@ -74,6 +76,7 @@ type testOrchestrator struct {
 	mti *tokenmocks.Plugin
 	mcm *contractmocks.Manager
 	mmi *metricsmocks.Manager
+	cmi *cachemocks.Manager
 	mom *operationmocks.Manager
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
@@ -100,6 +103,7 @@ func (tor *testOrchestrator) cleanup(t *testing.T) {
 	tor.mti.AssertExpectations(t)
 	tor.mcm.AssertExpectations(t)
 	tor.mmi.AssertExpectations(t)
+	tor.cmi.AssertExpectations(t)
 	tor.mom.AssertExpectations(t)
 	tor.mth.AssertExpectations(t)
 	tor.msd.AssertExpectations(t)
@@ -133,6 +137,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mti: &tokenmocks.Plugin{},
 		mcm: &contractmocks.Manager{},
 		mmi: &metricsmocks.Manager{},
+		cmi: &cachemocks.Manager{},
 		mom: &operationmocks.Manager{},
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
@@ -152,6 +157,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.metrics = tor.mmi
+	tor.orchestrator.cacheManager = tor.cmi
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.txHelper = tor.mth
@@ -188,6 +194,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mmi.On("Name").Return("mock-mm").Maybe()
 	tor.mmp.On("Name").Return("mock-mp").Maybe()
 	tor.mds.On("Init", mock.Anything).Maybe()
+	tor.cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tor.ctx, 100, 5*time.Minute), nil).Maybe()
 	return tor
 }
 

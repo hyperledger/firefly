@@ -30,7 +30,7 @@ import (
 
 type CConfig struct {
 	ctx               context.Context
-	namesapce         string
+	namespace         string
 	maxLimitConfigKey config.RootKey
 	ttlConfigKey      config.RootKey
 }
@@ -41,7 +41,7 @@ func NewCacheConfig(ctx context.Context, maxLimitConfigKey config.RootKey, ttlCo
 	}
 	cc := &CConfig{
 		ctx:               ctx,
-		namesapce:         namespace,
+		namespace:         namespace,
 		maxLimitConfigKey: maxLimitConfigKey,
 		ttlConfigKey:      ttlConfigKey,
 	}
@@ -53,10 +53,7 @@ func (cc *CConfig) UniqueName() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if cc.namesapce == "" {
-		cc.namesapce = "default"
-	}
-	return category + "." + cc.namesapce, nil
+	return cc.namespace + "::" + category, nil
 }
 
 func (cc *CConfig) Category() (string, error) {
@@ -86,11 +83,10 @@ func (cc *CConfig) TTL() time.Duration {
 
 type Manager interface {
 	GetCache(cc *CConfig) (CInterface, error)
+	ListKeys() []string
 }
 
 type CInterface interface {
-	Stop()
-
 	Get(key string) interface{}
 	Set(key string, val interface{})
 
@@ -107,13 +103,6 @@ type CCache struct {
 	name     string
 	cache    *ccache.Cache
 	cacheTTL time.Duration
-}
-
-func (c *CCache) Stop() {
-	if !c.enabled {
-		return
-	}
-	c.cache.Stop()
 }
 
 func (c *CCache) Set(key string, val interface{}) {
@@ -184,6 +173,14 @@ func (cm *cacheManager) GetCache(cc *CConfig) (CInterface, error) {
 	return cache, nil
 }
 
+func (cm *cacheManager) ListKeys() []string {
+	keys := make([]string, 0, len(cm.configuredCaches))
+	for k := range cm.configuredCaches {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func NewCacheManager(ctx context.Context) Manager {
 	cm := &cacheManager{
 		ctx:              ctx,
@@ -193,6 +190,7 @@ func NewCacheManager(ctx context.Context) Manager {
 	return cm
 }
 
+// should only be used for testing purpose
 func NewUmanagedCache(ctx context.Context, sizeLimit int64, ttl time.Duration) CInterface {
 	return &CCache{
 		ctx:      ctx,

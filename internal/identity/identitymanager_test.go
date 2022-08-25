@@ -20,8 +20,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -39,11 +41,11 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mmp := &multipartymocks.Manager{}
+	ctx := context.Background()
 	cmi := &cachemocks.Manager{}
-
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 
-	ctx := context.Background()
 	im, err := NewIdentityManager(ctx, "ns1", "", mdi, mbi, mmp, cmi)
 	assert.NoError(t, err)
 	return ctx, im.(*identityManager)

@@ -410,7 +410,7 @@ func TestGetTransactionByIDCachedFail(t *testing.T) {
 }
 
 func TestGetBlockchainEventByIDCached(t *testing.T) {
-
+	config.Set(coreconfig.CacheEnabled, true)
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	ctx := context.Background()

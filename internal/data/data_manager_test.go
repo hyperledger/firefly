@@ -219,7 +219,6 @@ func TestInitBadDeps(t *testing.T) {
 }
 
 func TestValidatorLookupCached(t *testing.T) {
-
 	coreconfig.Reset()
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -88,6 +89,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mdd := &shareddownloadmocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	mom := &operationmocks.Manager{}
 	mev := &eventsmocks.Plugin{}
 	events := map[string]events.Plugin{"websockets": mev}
@@ -161,8 +163,9 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mev := &eventsmocks.Plugin{}
 	events := map[string]events.Plugin{"websockets": mev}
 	mmp := &multipartymocks.Manager{}
-	cmi := &cachemocks.Manager{}
 	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)

@@ -22,10 +22,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
@@ -46,6 +48,7 @@ import (
 
 func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	coreconfig.Reset()
+	ctx, cancel := context.WithCancel(context.Background())
 	logrus.SetLevel(logrus.DebugLevel)
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -54,17 +57,16 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	mim := &identitymanagermocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	mbi := &blockchainmocks.Plugin{}
 	if metrics {
 		mmi.On("MessageConfirmed", mock.Anything, core.EventTypeMessageConfirmed).Return()
 	}
 	mmi.On("IsMetricsEnabled").Return(metrics)
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
-	ctx, cancel := context.WithCancel(context.Background())
 	ag, _ := newAggregator(ctx, "ns1", mdi, mbi, mpm, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi, cmi)
 	return ag, func() {
 		cancel()
-		ag.batchCache.Stop()
 	}
 }
 

@@ -68,8 +68,9 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	})
 	mdm := &datamocks.Manager{}
 
-	cmi := &cachemocks.Manager{}
 	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()

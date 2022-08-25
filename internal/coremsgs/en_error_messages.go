@@ -263,5 +263,5 @@ var (
 	MsgCannotInitLegacyNS                 = ffe("FF10421", "could not initialize legacy '%s' namespace - found conflicting V1 multi-party config in %s and %s")
 	MsgCacheMissSizeLimitKeyInternal      = ffe("FF10422", "could not initialize cache - size limit config key is not provided")
 	MsgCacheMissTTLKeyInternal            = ffe("FF10423", "could not initialize cache - ttl config key is not provided")
-	MsgCacheConfigKeyMismatchInternal     = ffe("FF10425", "could not initialize cache - '%s' and '%s' do not have identical prefix, mismatching values are: '%s','%s' ")
+	MsgCacheConfigKeyMismatchInternal     = ffe("FF10424", "could not initialize cache - '%s' and '%s' do not have identical prefix, mismatching prefixes are: '%s','%s'")
 )
