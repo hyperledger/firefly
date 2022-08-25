@@ -20,9 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -78,38 +76,25 @@ func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.
 		defaultKey: defaultKey,
 	}
 
-	var identityCacheSizeLimitOverride int64 = 0
-	var identityCacheTTLOverride time.Duration = 0
-	if config.IsSet(coreconfig.IdentityManagerCacheLimitDeprecated) && !config.IsSet(coreconfig.CacheIdentityManagerLimit) {
-		identityCacheSizeLimitOverride = config.GetInt64(coreconfig.IdentityManagerCacheLimitDeprecated)
-	}
-	if config.IsSet(coreconfig.IdentityManagerCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheIdentityManagerTTL) {
-		identityCacheTTLOverride = config.GetDuration(coreconfig.IdentityManagerCacheTTLDeprecated)
-	}
-
 	identityCache, err := cacheManager.GetCache(
-		cache.NewCacheConfigWithOverride(
+		cache.NewCacheConfig(
 			ctx,
-			coreconfig.CacheIdentityManagerLimit,
-			coreconfig.CacheIdentityManagerTTL,
+			coreconfig.CacheIdentityLimit,
+			coreconfig.CacheIdentityTTL,
 			ns,
-			identityCacheSizeLimitOverride,
-			identityCacheTTLOverride,
 		),
 	)
-
 	if err != nil {
 		return nil, err
 	}
+	im.identityCache = identityCache
 
 	signingKeyCache, err := cacheManager.GetCache(
-		cache.NewCacheConfigWithOverride(
+		cache.NewCacheConfig(
 			ctx,
-			coreconfig.CacheIdentityManagerLimit,
-			coreconfig.CacheIdentityManagerTTL,
+			coreconfig.CacheSigningKeyLimit,
+			coreconfig.CacheSigningKeyTTL,
 			ns,
-			identityCacheSizeLimitOverride,
-			identityCacheTTLOverride,
 		),
 	)
 	if err != nil {
@@ -117,7 +102,6 @@ func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.
 	}
 
 	// For the identity and signingkey caches, we just treat them all equally sized and the max items
-	im.identityCache = identityCache
 	im.signingKeyCache = signingKeyCache
 
 	return im, nil

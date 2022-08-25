@@ -33,24 +33,9 @@ type CConfig struct {
 	namesapce         string
 	maxLimitConfigKey config.RootKey
 	ttlConfigKey      config.RootKey
-	maxOverride       int64
-	ttlOverride       time.Duration
 }
 
 func NewCacheConfig(ctx context.Context, maxLimitConfigKey config.RootKey, ttlConfigKey config.RootKey, namespace string) *CConfig {
-	if namespace == "" {
-		namespace = "global"
-	}
-	cc := &CConfig{
-		ctx:               ctx,
-		namesapce:         namespace,
-		maxLimitConfigKey: maxLimitConfigKey,
-		ttlConfigKey:      ttlConfigKey,
-	}
-	return cc
-}
-
-func NewCacheConfigWithOverride(ctx context.Context, maxLimitConfigKey config.RootKey, ttlConfigKey config.RootKey, namespace string, maxOverride int64, ttlOverride time.Duration) *CConfig {
 	if namespace == "" {
 		namespace = "global"
 	}
@@ -91,18 +76,12 @@ func (cc *CConfig) Category() (string, error) {
 	return string(categoryDerivedFromMaxLimitConfigKey), nil
 }
 
-func (cc *CConfig) MaxSize() (int64, error) {
-	if cc.maxOverride != 0 {
-		return cc.maxOverride, nil
-	}
-	return config.GetInt64(cc.maxLimitConfigKey), nil
+func (cc *CConfig) MaxSize() int64 {
+	return config.GetInt64(cc.maxLimitConfigKey)
 }
 
-func (cc *CConfig) TTL() (time.Duration, error) {
-	if cc.ttlOverride != 0 {
-		return cc.ttlOverride, nil
-	}
-	return config.GetDuration(cc.ttlConfigKey), nil
+func (cc *CConfig) TTL() time.Duration {
+	return config.GetDuration(cc.ttlConfigKey)
 }
 
 type Manager interface {
@@ -193,19 +172,11 @@ func (cm *cacheManager) GetCache(cc *CConfig) (CInterface, error) {
 	}
 	cache, exists := cm.configuredCaches[cacheName]
 	if !exists {
-		maxSize, err := cc.MaxSize()
-		if err != nil {
-			return nil, err
-		}
-		ttl, err := cc.TTL()
-		if err != nil {
-			return nil, err
-		}
 		cache = &CCache{
 			ctx:      cc.ctx,
 			name:     cacheName,
-			cache:    ccache.New(ccache.Configure().MaxSize(maxSize)),
-			cacheTTL: ttl,
+			cache:    ccache.New(ccache.Configure().MaxSize(cc.MaxSize())),
+			cacheTTL: cc.TTL(),
 			enabled:  cm.enabled,
 		}
 		cm.configuredCaches[cacheName] = cache

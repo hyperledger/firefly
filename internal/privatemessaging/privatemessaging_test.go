@@ -43,8 +43,8 @@ import (
 
 func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateMessaging, func()) {
 	coreconfig.Reset()
-	config.Set(coreconfig.GroupCacheTTLDeprecated, "1m")
-	config.Set(coreconfig.GroupCacheLimitDeprecated, 10)
+	config.Set(coreconfig.CacheGroupLimit, "1m")
+	config.Set(coreconfig.CacheGroupTTL, 10)
 
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}

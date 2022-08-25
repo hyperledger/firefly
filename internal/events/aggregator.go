@@ -21,7 +21,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -78,23 +77,12 @@ func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockc
 		metrics:      mm,
 	}
 
-	var batchCacheSizeLimitOverride int64 = 0
-	var batchCacheTTLOverride time.Duration = 0
-	if config.IsSet(coreconfig.BatchCacheLimitDeprecated) && !config.IsSet(coreconfig.CacheBatchLimit) {
-		batchCacheSizeLimitOverride = config.GetInt64(coreconfig.BatchCacheLimitDeprecated)
-	}
-	if config.IsSet(coreconfig.BatchCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheBatchTTL) {
-		batchCacheTTLOverride = config.GetDuration(coreconfig.BatchCacheTTLDeprecated)
-	}
-
 	batchCache, err := cacheManager.GetCache(
-		cache.NewCacheConfigWithOverride(
+		cache.NewCacheConfig(
 			ctx,
 			coreconfig.CacheBatchLimit,
 			coreconfig.CacheBatchTTL,
 			ns,
-			batchCacheSizeLimitOverride,
-			batchCacheTTLOverride,
 		),
 	)
 	if err != nil {

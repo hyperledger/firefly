@@ -20,7 +20,6 @@ import (
 	"context"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -54,22 +53,12 @@ type addressResolverInserts struct {
 }
 
 func newAddressResolver(ctx context.Context, localConfig config.Section, cacheManager cache.Manager) (ar *addressResolver, err error) {
-	var cacheSizeLimitOverride int64 = 0
-	var cacheTTLOverride time.Duration = 0
-	if localConfig.IsSet(AddressResolverCacheSize) && !config.IsSet(coreconfig.CacheAddressResolverLimit) {
-		cacheSizeLimitOverride = localConfig.GetInt64(AddressResolverCacheSize)
-	}
-	if localConfig.IsSet(AddressResolverCacheTTL) && !config.IsSet(coreconfig.CacheAddressResolverTTL) {
-		cacheTTLOverride = localConfig.GetDuration(AddressResolverCacheTTL)
-	}
 	cache, err := cacheManager.GetCache(
-		cache.NewCacheConfigWithOverride(
+		cache.NewCacheConfig(
 			ctx,
 			coreconfig.CacheAddressResolverLimit,
 			coreconfig.CacheAddressResolverTTL,
 			"",
-			cacheSizeLimitOverride,
-			cacheTTLOverride,
 		),
 	)
 	if err != nil {

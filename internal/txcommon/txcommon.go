@@ -19,9 +19,7 @@ package txcommon
 import (
 	"context"
 	"strings"
-	"time"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/cache"
@@ -55,23 +53,12 @@ func NewTransactionHelper(ctx context.Context, ns string, di database.Plugin, dm
 		data:      dm,
 	}
 
-	var transactionCacheSizeLimitOverride int64 = 0
-	var transactionCacheTTLOverride time.Duration = 0
-	if config.IsSet(coreconfig.TransactionCacheSizeDeprecated) && !config.IsSet(coreconfig.CacheTransactionLmit) {
-		transactionCacheSizeLimitOverride = config.GetInt64(coreconfig.TransactionCacheSizeDeprecated)
-	}
-	if config.IsSet(coreconfig.TransactionCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheTransactionTTL) {
-		transactionCacheTTLOverride = config.GetDuration(coreconfig.TransactionCacheTTLDeprecated)
-	}
-
 	transactionCache, err := cacheManager.GetCache(
-		cache.NewCacheConfigWithOverride(
+		cache.NewCacheConfig(
 			ctx,
 			coreconfig.CacheTransactionLmit,
 			coreconfig.CacheTransactionTTL,
 			ns,
-			transactionCacheSizeLimitOverride,
-			transactionCacheTTLOverride,
 		),
 	)
 
@@ -81,23 +68,12 @@ func NewTransactionHelper(ctx context.Context, ns string, di database.Plugin, dm
 
 	t.transactionCache = transactionCache
 
-	var blockchainEventCacheSizeLimitOverride int64 = 0
-	var blockchainEventCacheTTLOverride time.Duration = 0
-	if config.IsSet(coreconfig.BlockchainEventCacheLimitDeprecated) && !config.IsSet(coreconfig.CacheBlockchainEventLimit) {
-		blockchainEventCacheSizeLimitOverride = config.GetInt64(coreconfig.BlockchainEventCacheLimitDeprecated)
-	}
-	if config.IsSet(coreconfig.BlockchainEventCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheBlockchainEventTTL) {
-		blockchainEventCacheTTLOverride = config.GetDuration(coreconfig.BlockchainEventCacheTTLDeprecated)
-	}
-
 	blockchainEventCache, err := cacheManager.GetCache(
-		cache.NewCacheConfigWithOverride(
+		cache.NewCacheConfig(
 			ctx,
 			coreconfig.CacheBlockchainEventLimit,
 			coreconfig.CacheBlockchainEventTTL,
 			ns,
-			blockchainEventCacheSizeLimitOverride,
-			blockchainEventCacheTTLOverride,
 		),
 	)
 

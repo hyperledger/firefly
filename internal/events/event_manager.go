@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -123,23 +122,12 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plug
 	newPinNotifier := newEventNotifier(ctx, "pins")
 	newEventNotifier := newEventNotifier(ctx, "events")
 
-	var eventCacheSizeLimitOverride int64 = 0
-	var eventCacheTTLOverride time.Duration = 0
-	if config.IsSet(coreconfig.EventListenerTopicCacheLimitDeprecated) && !config.IsSet(coreconfig.CacheEventListenerTopicLimit) {
-		eventCacheSizeLimitOverride = config.GetInt64(coreconfig.EventListenerTopicCacheLimitDeprecated)
-	}
-	if config.IsSet(coreconfig.EventListenerTopicCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheEventListenerTopicTTL) {
-		eventCacheTTLOverride = config.GetDuration(coreconfig.EventListenerTopicCacheTTLDeprecated)
-	}
-
 	eventListenerCache, err := cacheManager.GetCache(
-		cache.NewCacheConfigWithOverride(
+		cache.NewCacheConfig(
 			ctx,
 			coreconfig.CacheEventListenerTopicLimit,
 			coreconfig.CacheEventListenerTopicTTL,
-			ns.RemoteName,
-			eventCacheSizeLimitOverride,
-			eventCacheTTLOverride,
+			ns.LocalName,
 		),
 	)
 	if err != nil {

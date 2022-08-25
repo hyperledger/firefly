@@ -114,6 +114,9 @@ var (
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
 	BroadcastBatchTimeout = ffc("broadcast.batch.timeout")
 
+	// CacheEnabled determines whether cache will be enabled or not, default to true
+	CacheEnabled = ffc("cache.enabled")
+
 	// AddressResolver cache config
 	CacheAddressResolverLimit = ffc("cache.addressresolver.limit")
 	CacheAddressResolverTTL   = ffc("cache.addressresolver.ttl")
@@ -122,30 +125,33 @@ var (
 	CacheBatchLimit = ffc("cache.batch.limit")
 	CacheBatchTTL   = ffc("cache.batch.ttl")
 
-	// BlockchainEvent cache config
+	// Transaction - BlockchainEvent cache config
 	CacheBlockchainEventLimit = ffc("cache.blockchainevent.limit")
 	CacheBlockchainEventTTL   = ffc("cache.blockchainevent.ttl")
-
 	// Transaction cache config
 	CacheTransactionLmit = ffc("cache.transaction.limit")
 	CacheTransactionTTL  = ffc("cache.transaction.ttl")
 
 	// EventListenerTopic cache config
-	CacheEventListenerTopicLimit = ffc("cache.event.listenerTopic.limit")
-	CacheEventListenerTopicTTL   = ffc("cache.event.listenerTopic.ttl")
+	CacheEventListenerTopicLimit = ffc("cache.eventlistenertopic.limit")
+	CacheEventListenerTopicTTL   = ffc("cache.eventlistenertopic.ttl")
 
 	// Group cache config
 	CacheGroupLimit = ffc("cache.group.limit")
 	CacheGroupTTL   = ffc("cache.group.ttl")
 
-	// IdentityManager cache config
-	CacheIdentityManagerLimit = ffc("cache.identity.manager.limit")
-	CacheIdentityManagerTTL   = ffc("cache.identity.manager.ttl")
+	// IdentityManager identity cache config
+	CacheIdentityLimit = ffc("cache.identity.limit")
+	CacheIdentityTTL   = ffc("cache.identity.ttl")
 
-	// Message cache config
+	// IdentityManager signing key cache config
+	CacheSigningKeyLimit = ffc("cache.signingkey.limit")
+	CacheSigningKeyTTL   = ffc("cache.signingkey.ttl")
+
+	// DataManager Message cache config
 	CacheMessageLimit = ffc("cache.message.limit")
 	CacheMessageTTL   = ffc("cache.message.ttl")
-	// Validator cache config
+	// DataManager Validator cache config
 	CacheValidatorLimit = ffc("cache.validator.limit")
 	CacheValidatorTTL   = ffc("cache.validator.ttl")
 
@@ -153,11 +159,11 @@ var (
 	CacheBlockchainTTL = ffc("cache.blockchain.ttl")
 	// CacheBlockchainLimit max number of cache items for blockchain plugin cache
 	CacheBlockchainLimit = ffc("cache.blockchain.limit")
-	// CacheEnabled determines whether cache will be enabled or not, default to true
-	CacheEnabled = ffc("cache.enabled")
+
 	// Operations cache config
 	CacheOperationsLimit = ffc("cache.operations.limit")
 	CacheOperationsTTL   = ffc("cache.operations.ttl")
+
 	// DownloadWorkerCount is the number of download workers created to pull data from shared storage to the local DX
 	DownloadWorkerCount = ffc("download.worker.count")
 	// DownloadWorkerQueueLength is the length of the work queue in the channel to the workers - defaults to 2x the worker count
@@ -311,41 +317,6 @@ var (
 	UIEnabled = ffc("ui.enabled")
 	// UIPath the path on which to serve the UI
 	UIPath = ffc("ui.path")
-
-	// Deprecated cache config spellings
-
-	// BatchCacheLimitDeprecated max number of cache items for batches
-	BatchCacheLimitDeprecated = ffc("batch.cache.limit")
-	// BatchCacheTTLDeprecated time to live for cache of batches
-	BatchCacheTTLDeprecated = ffc("batch.cache.ttl")
-	// BlockchainEventCacheLimitDeprecated max number of cache items for blockchain events
-	BlockchainEventCacheLimitDeprecated = ffc("blockchainevent.cache.limit")
-	// BlockchainEventCacheTTLDeprecated time to live for cache of blockchain events
-	BlockchainEventCacheTTLDeprecated = ffc("blockchainevent.cache.ttl")
-	// TransactionCacheSizeDeprecated max size for cache of transactions
-	TransactionCacheSizeDeprecated = ffc("transaction.cache.size")
-	// TransactionCacheTTLDeprecated time-to-live for cache of transactions
-	TransactionCacheTTLDeprecated = ffc("transaction.cache.ttl")
-	// ValidatorCacheSizeDeprecated max size for cache of validators
-	ValidatorCacheSizeDeprecated = ffc("validator.cache.size")
-	// ValidatorCacheTTLDeprecated time-to-live for cache of validators
-	ValidatorCacheTTLDeprecated = ffc("validator.cache.ttl")
-	// MessageCacheSizeDeprecated max size for cache of messages
-	MessageCacheSizeDeprecated = ffc("message.cache.size")
-	// MessageCacheTTLDeprecated time-to-live for cache of messages
-	MessageCacheTTLDeprecated = ffc("message.cache.ttl")
-	// IdentityManagerCacheTTLDeprecated the identity manager cache time to live
-	IdentityManagerCacheTTLDeprecated = ffc("identity.manager.cache.ttl")
-	// IdentityManagerCacheLimitDeprecated the identity manager cache limit in count of items
-	IdentityManagerCacheLimitDeprecated = ffc("identity.manager.cache.limit")
-	// EventListenerTopicCacheLimitDeprecated max number of cache items for blockchain listener topics
-	EventListenerTopicCacheLimitDeprecated = ffc("event.listenerTopic.cache.limit")
-	// EventListenerTopicCacheTTLDeprecated time-to-live for for cache of blockchain listener topics
-	EventListenerTopicCacheTTLDeprecated = ffc("event.listenerTopic.cache.ttl")
-	// GroupCacheLimitDeprecated cache size for private group addresses
-	GroupCacheLimitDeprecated = ffc("group.cache.limit")
-	// GroupCacheTTLDeprecated cache time-to-live for private group addresses
-	GroupCacheTTLDeprecated = ffc("group.cache.ttl")
 )
 
 func setDefaults() {
@@ -357,8 +328,6 @@ func setDefaults() {
 	viper.SetDefault(string(APIMaxFilterSkip), 1000) // protects database (skip+limit pagination is not for bulk operations)
 	viper.SetDefault(string(APIRequestTimeout), "120s")
 	viper.SetDefault(string(AssetManagerKeyNormalization), "blockchain_plugin")
-	viper.SetDefault(string(BatchCacheLimitDeprecated), 100) // deprecated
-	viper.SetDefault(string(BatchCacheTTLDeprecated), "5m")  // deprecated
 	viper.SetDefault(string(CacheBatchLimit), 100)
 	viper.SetDefault(string(CacheBatchTTL), "5m")
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
@@ -376,8 +345,6 @@ func setDefaults() {
 	viper.SetDefault(string(BlobReceiverWorkerBatchTimeout), "50ms")
 	viper.SetDefault(string(BlobReceiverWorkerCount), 5)
 	viper.SetDefault(string(BlobReceiverWorkerBatchMaxInserts), 200)
-	viper.SetDefault(string(BlockchainEventCacheLimitDeprecated), 100) // deprecated
-	viper.SetDefault(string(BlockchainEventCacheTTLDeprecated), "5m")  // deprecated
 	viper.SetDefault(string(CacheBlockchainEventLimit), 100)
 	viper.SetDefault(string(CacheBlockchainEventTTL), "5m")
 	viper.SetDefault(string(BroadcastBatchAgentTimeout), "2m")
@@ -414,12 +381,8 @@ func setDefaults() {
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
 	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets", "webhooks"})
 	viper.SetDefault(string(EventTransportsDefault), "websockets")
-	viper.SetDefault(string(EventListenerTopicCacheLimitDeprecated), 100) // deprecated
-	viper.SetDefault(string(EventListenerTopicCacheTTLDeprecated), "5m")  // deprecated
 	viper.SetDefault(string(CacheEventListenerTopicLimit), 100)
 	viper.SetDefault(string(CacheEventListenerTopicTTL), "5m")
-	viper.SetDefault(string(GroupCacheLimitDeprecated), 50) // deprecated
-	viper.SetDefault(string(GroupCacheTTLDeprecated), "1h") // deprecated
 	viper.SetDefault(string(CacheGroupLimit), 50)
 	viper.SetDefault(string(CacheGroupTTL), "1h")
 	viper.SetDefault(string(SPIEnabled), false)
@@ -427,8 +390,6 @@ func setDefaults() {
 	viper.SetDefault(string(SPIWebSocketWriteBufferSize), "16Kb")
 	viper.SetDefault(string(SPIWebSocketBlockedWarnInterval), "1m")
 	viper.SetDefault(string(SPIWebSocketEventQueueLength), 250)
-	viper.SetDefault(string(MessageCacheSizeDeprecated), "50Mb") // deprecated
-	viper.SetDefault(string(MessageCacheTTLDeprecated), "5m")    // deprecated
 	viper.SetDefault(string(CacheMessageLimit), "50Mb")
 	viper.SetDefault(string(CacheMessageTTL), "5m")
 	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)
@@ -455,19 +416,15 @@ func setDefaults() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
-	viper.SetDefault(string(TransactionCacheSizeDeprecated), "1Mb") // deprecated
-	viper.SetDefault(string(TransactionCacheTTLDeprecated), "5m")   // deprecated
 	viper.SetDefault(string(CacheTransactionLmit), "1Mb")
 	viper.SetDefault(string(CacheTransactionTTL), "5m")
 	viper.SetDefault(string(UIEnabled), true)
-	viper.SetDefault(string(ValidatorCacheSizeDeprecated), "1Mb") // deprecated
-	viper.SetDefault(string(ValidatorCacheTTLDeprecated), "1h")   // deprecated
 	viper.SetDefault(string(CacheValidatorLimit), "1Mb")
 	viper.SetDefault(string(CacheValidatorTTL), "1h")
-	viper.SetDefault(string(IdentityManagerCacheLimitDeprecated), 100 /* items */) // deprecated
-	viper.SetDefault(string(IdentityManagerCacheTTLDeprecated), "1h")              // deprecated
-	viper.SetDefault(string(CacheIdentityManagerLimit), 100 /* items */)
-	viper.SetDefault(string(CacheIdentityManagerTTL), "1h")
+	viper.SetDefault(string(CacheIdentityLimit), 100)
+	viper.SetDefault(string(CacheIdentityTTL), "1h")
+	viper.SetDefault(string(CacheSigningKeyLimit), 100)
+	viper.SetDefault(string(CacheSigningKeyTTL), "1h")
 }
 
 func Reset() {

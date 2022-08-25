@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
@@ -106,23 +105,12 @@ func NewDataManager(ctx context.Context, ns core.NamespaceRef, di database.Plugi
 		exchange: dx,
 	}
 
-	var validatorCacheSizeLimitOverride int64 = 0
-	var validatorCacheTTLOverride time.Duration = 0
-	if config.IsSet(coreconfig.ValidatorCacheSizeDeprecated) && !config.IsSet(coreconfig.CacheValidatorLimit) {
-		validatorCacheSizeLimitOverride = config.GetInt64(coreconfig.ValidatorCacheSizeDeprecated)
-	}
-	if config.IsSet(coreconfig.ValidatorCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheValidatorTTL) {
-		validatorCacheTTLOverride = config.GetDuration(coreconfig.ValidatorCacheTTLDeprecated)
-	}
-
 	validatorCache, err := cacheManager.GetCache(
-		cache.NewCacheConfigWithOverride(
+		cache.NewCacheConfig(
 			ctx,
 			coreconfig.CacheValidatorLimit,
 			coreconfig.CacheValidatorTTL,
 			ns.LocalName,
-			validatorCacheSizeLimitOverride,
-			validatorCacheTTLOverride,
 		),
 	)
 	if err != nil {
@@ -130,23 +118,12 @@ func NewDataManager(ctx context.Context, ns core.NamespaceRef, di database.Plugi
 	}
 	dm.validatorCache = validatorCache
 
-	var messageCacheSizeLimitOverride int64 = 0
-	var messageCacheTTLOverride time.Duration = 0
-	if config.IsSet(coreconfig.MessageCacheSizeDeprecated) && !config.IsSet(coreconfig.CacheMessageLimit) {
-		messageCacheSizeLimitOverride = config.GetInt64(coreconfig.MessageCacheSizeDeprecated)
-	}
-	if config.IsSet(coreconfig.MessageCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheMessageTTL) {
-		messageCacheTTLOverride = config.GetDuration(coreconfig.MessageCacheTTLDeprecated)
-	}
-
 	messageCache, err := cacheManager.GetCache(
-		cache.NewCacheConfigWithOverride(
+		cache.NewCacheConfig(
 			ctx,
 			coreconfig.CacheValidatorLimit,
 			coreconfig.CacheValidatorTTL,
-			ns.RemoteName,
-			messageCacheSizeLimitOverride,
-			messageCacheTTLOverride,
+			ns.LocalName,
 		),
 	)
 	if err != nil {

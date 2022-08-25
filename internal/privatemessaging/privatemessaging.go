@@ -19,7 +19,6 @@ package privatemessaging
 import (
 	"context"
 	"sync"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -115,26 +114,14 @@ func NewPrivateMessaging(ctx context.Context, ns core.NamespaceRef, di database.
 		orgFirstNodes:         make(map[fftypes.UUID]*core.Identity),
 	}
 
-	var groupCacheSizeLimitOverride int64 = 0
-	var groupCacheTTLOverride time.Duration = 0
-	if config.IsSet(coreconfig.GroupCacheLimitDeprecated) && !config.IsSet(coreconfig.CacheGroupLimit) {
-		groupCacheSizeLimitOverride = config.GetInt64(coreconfig.GroupCacheLimitDeprecated)
-	}
-	if config.IsSet(coreconfig.GroupCacheTTLDeprecated) && !config.IsSet(coreconfig.CacheGroupTTL) {
-		groupCacheTTLOverride = config.GetDuration(coreconfig.GroupCacheTTLDeprecated)
-	}
-
 	groupCache, err := cacheManager.GetCache(
-		cache.NewCacheConfigWithOverride(
+		cache.NewCacheConfig(
 			ctx,
 			coreconfig.CacheGroupLimit,
 			coreconfig.CacheGroupTTL,
-			ns.RemoteName,
-			groupCacheSizeLimitOverride,
-			groupCacheTTLOverride,
+			ns.LocalName,
 		),
 	)
-
 	if err != nil {
 		return nil, err
 	}
