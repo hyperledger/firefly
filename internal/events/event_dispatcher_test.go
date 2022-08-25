@@ -940,8 +940,8 @@ func TestAckClosed(t *testing.T) {
 }
 
 func TestGetEvents(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
+	ag := newTestAggregator()
+	defer ag.cleanup(t)
 
 	sub := &subscription{
 		definition: &core.Subscription{
