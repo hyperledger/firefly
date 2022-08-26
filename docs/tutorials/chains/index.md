@@ -2,7 +2,7 @@
 layout: i18n_page
 title: pages.chains
 parent: pages.tutorials
-nav_order: 8
+nav_order: 9
 has_children: true
 ---
 
