@@ -108,15 +108,16 @@ func (suite *NamespaceAliasSuite) TestMultiTenancy() {
 	admin1.SetBaseURL(suite.testState.adminHost1 + "/spi/v1")
 	admin2.SetBaseURL(suite.testState.adminHost2 + "/spi/v1")
 
-	// Reset both nodes to pick up the new namespace
-	e2e.ResetFireFly(suite.T(), admin1)
-	e2e.ResetFireFly(suite.T(), admin2)
-	e2e.PollForUp(suite.T(), suite.testState.client1)
-	e2e.PollForUp(suite.T(), suite.testState.client2)
-
 	clientAlice := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, nsAlice)
 	clientBob := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, nsBob)
 	clientCharlie := client.NewFireFly(suite.T(), suite.testState.client2.Hostname, nsCharlie)
+
+	// Reset both nodes to pick up the new namespace
+	e2e.ResetFireFly(suite.T(), admin1)
+	e2e.ResetFireFly(suite.T(), admin2)
+	e2e.PollForUp(suite.T(), clientAlice)
+	e2e.PollForUp(suite.T(), clientBob)
+	e2e.PollForUp(suite.T(), clientCharlie)
 
 	eventNames := "message_confirmed"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s", nsAlice, eventNames)
