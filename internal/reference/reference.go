@@ -501,8 +501,8 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 		},
 
 		&core.Namespace{
-			LocalName:   "default",
-			RemoteName:  "default",
+			Name:        "default",
+			NetworkName: "default",
 			Description: "Default predefined namespace",
 			Created:     fftypes.UnixTime(1652664196),
 		},

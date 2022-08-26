@@ -201,8 +201,7 @@ func TestGetNamespaceFromSubName(t *testing.T) {
 }
 
 func TestSubscriptionsAddRemoveSubscription(t *testing.T) {
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
-
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	subs := NewFireflySubscriptions()
 
 	subs.AddSubscription(context.Background(), ns, 2, "sub1", nil)
@@ -212,8 +211,7 @@ func TestSubscriptionsAddRemoveSubscription(t *testing.T) {
 }
 
 func TestSubscriptionsAddRemoveSubscriptionV1(t *testing.T) {
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
-
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	subs := NewFireflySubscriptions()
 
 	subs.AddSubscription(context.Background(), ns, 1, "sub1", nil)

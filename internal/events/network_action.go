@@ -56,7 +56,7 @@ func (em *eventManager) BlockchainNetworkAction(action string, location *fftypes
 		}
 
 		if err == nil {
-			chainEvent := buildBlockchainEvent(em.namespace.LocalName, nil, event, &core.BlockchainTransactionRef{
+			chainEvent := buildBlockchainEvent(em.namespace.Name, nil, event, &core.BlockchainTransactionRef{
 				BlockchainID: event.BlockchainTXID,
 			})
 			err = em.maybePersistBlockchainEvent(em.ctx, chainEvent, nil)

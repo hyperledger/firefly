@@ -53,7 +53,7 @@ func (bs *blobStore) uploadVerifyBlob(ctx context.Context, id *fftypes.UUID, rea
 		copyDone <- err
 	}()
 
-	payloadRef, uploadHash, uploadSize, dxErr := bs.exchange.UploadBlob(ctx, bs.dm.namespace.RemoteName, *id, dxReader)
+	payloadRef, uploadHash, uploadSize, dxErr := bs.exchange.UploadBlob(ctx, bs.dm.namespace.NetworkName, *id, dxReader)
 	dxReader.Close()
 	copyErr := <-copyDone
 	if dxErr != nil {
@@ -85,7 +85,7 @@ func (bs *blobStore) UploadBlob(ctx context.Context, inData *core.DataRefOrValue
 
 	data := &core.Data{
 		ID:        fftypes.NewUUID(),
-		Namespace: bs.dm.namespace.LocalName,
+		Namespace: bs.dm.namespace.Name,
 		Created:   fftypes.Now(),
 		Validator: inData.Validator,
 		Datatype:  inData.Datatype,
@@ -151,7 +151,7 @@ func (bs *blobStore) DownloadBlob(ctx context.Context, dataID string) (*core.Blo
 		return nil, nil, err
 	}
 
-	data, err := bs.database.GetDataByID(ctx, bs.dm.namespace.LocalName, id, false)
+	data, err := bs.database.GetDataByID(ctx, bs.dm.namespace.Name, id, false)
 	if err != nil {
 		return nil, nil, err
 	}

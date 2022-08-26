@@ -81,11 +81,11 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, w
 		log.L(em.ctx).Errorf("Ignoring private batch from non-multiparty network!")
 		return "", nil
 	}
-	if batch.Namespace != em.namespace.RemoteName {
+	if batch.Namespace != em.namespace.NetworkName {
 		log.L(em.ctx).Debugf("Ignoring private batch from different namespace '%s'", batch.Namespace)
 		return "", nil
 	}
-	batch.Namespace = em.namespace.LocalName
+	batch.Namespace = em.namespace.Name
 
 	// Retry for persistence errors (not validation errors)
 	err = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
@@ -157,7 +157,7 @@ func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch
 		Set("state", core.MessageStateConfirmed).
 		Set("confirmed", fftypes.Now())
 
-	if err := em.database.UpdateMessages(ctx, em.namespace.LocalName, filter, update); err != nil {
+	if err := em.database.UpdateMessages(ctx, em.namespace.Name, filter, update); err != nil {
 		return err
 	}
 
@@ -212,7 +212,7 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 		event.Ack() // Still confirm the event
 		return
 	}
-	if br.Namespace != em.namespace.RemoteName {
+	if br.Namespace != em.namespace.NetworkName {
 		log.L(em.ctx).Debugf("Ignoring blob from different namespace '%s'", br.Namespace)
 		event.Ack() // Still confirm the event
 		return

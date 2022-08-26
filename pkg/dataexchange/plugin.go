@@ -65,7 +65,7 @@ type Plugin interface {
 
 	// SetHandler registers a handler to receive callbacks
 	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace and node
-	SetHandler(remoteNamespace, nodeName string, handler Callbacks)
+	SetHandler(networkNamespace, nodeName string, handler Callbacks)
 
 	// SetOperationHandler registers a handler to receive async operation status
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
@@ -82,7 +82,7 @@ type Plugin interface {
 
 	// AddNode registers details on a node in the multiparty network
 	// This may be information loaded from the database at init, or received in flight while running
-	AddNode(ctx context.Context, remoteNamespace, nodeName string, peer fftypes.JSONObject) (err error)
+	AddNode(ctx context.Context, networkNamespace, nodeName string, peer fftypes.JSONObject) (err error)
 
 	// UploadBlob streams a blob to storage, and returns the hash to confirm the hash calculated in Core matches the hash calculated in the plugin
 	UploadBlob(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error)

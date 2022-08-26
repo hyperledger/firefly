@@ -23,13 +23,13 @@ type Plugin struct {
 	mock.Mock
 }
 
-// AddNode provides a mock function with given fields: ctx, remoteNamespace, nodeName, peer
-func (_m *Plugin) AddNode(ctx context.Context, remoteNamespace string, nodeName string, peer fftypes.JSONObject) error {
-	ret := _m.Called(ctx, remoteNamespace, nodeName, peer)
+// AddNode provides a mock function with given fields: ctx, networkNamespace, nodeName, peer
+func (_m *Plugin) AddNode(ctx context.Context, networkNamespace string, nodeName string, peer fftypes.JSONObject) error {
+	ret := _m.Called(ctx, networkNamespace, nodeName, peer)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(ctx, remoteNamespace, nodeName, peer)
+		r0 = rf(ctx, networkNamespace, nodeName, peer)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -160,9 +160,9 @@ func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peer fftypes.J
 	return r0
 }
 
-// SetHandler provides a mock function with given fields: remoteNamespace, nodeName, handler
-func (_m *Plugin) SetHandler(remoteNamespace string, nodeName string, handler dataexchange.Callbacks) {
-	_m.Called(remoteNamespace, nodeName, handler)
+// SetHandler provides a mock function with given fields: networkNamespace, nodeName, handler
+func (_m *Plugin) SetHandler(networkNamespace string, nodeName string, handler dataexchange.Callbacks) {
+	_m.Called(networkNamespace, nodeName, handler)
 }
 
 // SetOperationHandler provides a mock function with given fields: namespace, handler

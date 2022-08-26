@@ -50,13 +50,13 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 	// from the event (without downloading and parsing the msg)
 	correlator := pool.ID
 
-	pool.Namespace = dh.namespace
+	pool.Namespace = dh.namespace.Name
 	if err := pool.Validate(ctx); err != nil {
 		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID, err)
 	}
 
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
-	if existingPool, err := dh.database.GetTokenPoolByID(ctx, dh.namespace, pool.ID); err != nil {
+	if existingPool, err := dh.database.GetTokenPoolByID(ctx, dh.namespace.Name, pool.ID); err != nil {
 		return HandlerResult{Action: ActionRetry}, err
 	} else if existingPool != nil && existingPool.State == core.TokenPoolStateConfirmed {
 		return HandlerResult{Action: ActionConfirm, CustomCorrelator: correlator}, nil

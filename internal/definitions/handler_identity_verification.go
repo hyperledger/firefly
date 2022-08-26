@@ -30,7 +30,7 @@ func (dh *definitionHandler) handleIdentityVerificationBroadcast(ctx context.Con
 	if !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity verification", verifyMsg.Header.ID)
 	}
-	verification.Identity.Namespace = dh.namespace
+	verification.Identity.Namespace = dh.namespace.Name
 	err := verification.Identity.Validate(ctx)
 	if err != nil || verification.Identity.Parent == nil || verification.Claim.ID == nil || verification.Claim.Hash == nil {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "identity verification", verifyMsg.Header.ID, err)
@@ -50,7 +50,7 @@ func (dh *definitionHandler) handleIdentityVerificationBroadcast(ctx context.Con
 
 	// At this point, this is a valid verification, but we don't know if the claim has arrived.
 	// See if the message has already arrived, if so we need to queue a rewind to it
-	claimMsg, err := dh.database.GetMessageByID(ctx, dh.namespace, verification.Claim.ID)
+	claimMsg, err := dh.database.GetMessageByID(ctx, dh.namespace.Name, verification.Claim.ID)
 	if err != nil {
 		return HandlerResult{Action: ActionRetry}, err
 	}

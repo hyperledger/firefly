@@ -109,7 +109,7 @@ func (dh *definitionHandler) confirmVerificationForClaim(ctx context.Context, st
 		fb.Eq("state", core.MessageStateConfirmed),
 		fb.Eq("tag", core.SystemTagIdentityVerification),
 	)
-	candidates, _, err := dh.database.GetMessages(ctx, dh.namespace, filter)
+	candidates, _, err := dh.database.GetMessages(ctx, dh.namespace.Name, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (dh *definitionHandler) confirmVerificationForClaim(ctx context.Context, st
 			if !dh.getSystemBroadcastPayload(ctx, candidate, data, &verification) {
 				return nil, nil
 			}
-			verification.Identity.Namespace = dh.namespace
+			verification.Identity.Namespace = dh.namespace.Name
 			identityMatches = verification.Identity.Equals(ctx, &identity.IdentityBase)
 			verificationID = verification.Claim.ID
 			verificationHash = verification.Claim.Hash
@@ -152,7 +152,7 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 	l := log.L(ctx)
 
 	identity := identityClaim.Identity
-	identity.Namespace = dh.namespace
+	identity.Namespace = dh.namespace.Name
 	parent, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
 	if err != nil {
 		if retryable {
@@ -175,7 +175,7 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 
 	existingIdentity, err := dh.database.GetIdentityByName(ctx, identity.Type, identity.Namespace, identity.Name)
 	if err == nil && existingIdentity == nil {
-		existingIdentity, err = dh.database.GetIdentityByID(ctx, dh.namespace, identity.ID)
+		existingIdentity, err = dh.database.GetIdentityByID(ctx, dh.namespace.Name, identity.ID)
 	}
 	if err != nil {
 		return HandlerResult{Action: ActionRetry}, err // retry database errors
@@ -234,7 +234,7 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 		state.AddPreFinalize(
 			func(ctx context.Context) error {
 				// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
-				return dh.exchange.AddNode(ctx, dh.remoteNamespace, identity.Name, identity.Profile)
+				return dh.exchange.AddNode(ctx, dh.namespace.NetworkName, identity.Name, identity.Profile)
 			})
 	}
 

@@ -247,7 +247,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.NoError(t, err)
 
@@ -286,7 +286,7 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.NoError(t, err)
 
@@ -323,7 +323,7 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
 	assert.Regexp(t, "pop", err)
 }
@@ -359,7 +359,7 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
 	assert.Regexp(t, "pop", err)
 }
@@ -395,7 +395,7 @@ func TestAddAndRemoveFireflySubscriptionDeprecatedSubName(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	subID, err := e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.NoError(t, err)
 
@@ -438,7 +438,7 @@ func TestAddFireflySubscriptionInvalidSubName(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.Regexp(t, "FF10416", err)
 }
@@ -448,7 +448,7 @@ func TestAddFFSubscriptionBadLocation(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"bad": "bad",
 	}.String())
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err := e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.Regexp(t, "F10310", err)
 }
@@ -564,7 +564,7 @@ func TestSubQueryCreateError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.Regexp(t, "FF10284.*pop", err)
 
@@ -605,7 +605,7 @@ func TestSubQueryCreate(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.NoError(t, err)
 
@@ -997,7 +997,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e", "firefly",
 	)
 
@@ -1059,7 +1059,7 @@ func TestHandleMessageBatchPinMissingChaincodeID(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e", "firefly",
 	)
 
@@ -1091,7 +1091,7 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e", "firefly",
 	)
 
@@ -1112,7 +1112,7 @@ func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e", "firefly",
 	)
 
@@ -1728,7 +1728,7 @@ func TestHandleMessageContractOldSubError(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", "firefly",
 	)
 
@@ -1809,7 +1809,7 @@ func TestHandleMessageContractGetSubError(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", "firefly",
 	)
 
@@ -2187,7 +2187,7 @@ func TestHandleNetworkAction(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e", "firefly",
 	)
 
@@ -2231,7 +2231,7 @@ func TestHandleNetworkActionFail(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e", "firefly",
 	)
 

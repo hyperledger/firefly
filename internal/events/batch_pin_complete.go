@@ -40,7 +40,7 @@ func (em *eventManager) BatchPinComplete(namespace string, batchPin *blockchain.
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
 	}
-	if namespace != em.namespace.LocalName {
+	if namespace != em.namespace.Name {
 		log.L(em.ctx).Debugf("Ignoring batch pin from different namespace '%s'", namespace)
 		return nil // move on
 	}
@@ -60,7 +60,7 @@ func (em *eventManager) BatchPinComplete(namespace string, batchPin *blockchain.
 			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
 				return err
 			}
-			chainEvent := buildBlockchainEvent(em.namespace.LocalName, nil, &batchPin.Event, &core.BlockchainTransactionRef{
+			chainEvent := buildBlockchainEvent(em.namespace.Name, nil, &batchPin.Event, &core.BlockchainTransactionRef{
 				Type:         core.TransactionTypeBatchPin,
 				ID:           batchPin.TransactionID,
 				BlockchainID: batchPin.Event.BlockchainTXID,
@@ -102,7 +102,7 @@ func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchai
 	pins := make([]*core.Pin, len(batchPin.Contexts))
 	for idx, hash := range batchPin.Contexts {
 		pins[idx] = &core.Pin{
-			Namespace: em.namespace.LocalName,
+			Namespace: em.namespace.Name,
 			Masked:    private,
 			Hash:      hash,
 			Batch:     batchPin.BatchID,
