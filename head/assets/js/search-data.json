@@ -835,7 +835,7 @@
   },"139": {
     "doc": "Configuration Reference",
     "title": "namespaces.predefined[]",
-    "content": "| Key | Description | Type | Default Value | . | defaultKey | A default signing key for blockchain transactions within this namespace | string | &lt;nil&gt; | . | description | A description for the namespace | string | &lt;nil&gt; | . | name | The name of the namespace (must be unique) | string | &lt;nil&gt; | . | plugins | The list of plugins for this namespace | string | &lt;nil&gt; | . | remotename | The namespace name to be sent in plugin calls, if it differs from namespace name | string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | defaultKey | A default signing key for blockchain transactions within this namespace | string | &lt;nil&gt; | . | description | A description for the namespace | string | &lt;nil&gt; | . | name | The name of the namespace (must be unique) | string | &lt;nil&gt; | . | plugins | The list of plugins for this namespace | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespacespredefined",
     "relUrl": "/reference/config.html#namespacespredefined"
   },"140": {
@@ -847,7 +847,7 @@
   },"141": {
     "doc": "Configuration Reference",
     "title": "namespaces.predefined[].multiparty",
-    "content": "| Key | Description | Type | Default Value | . | enabled | Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level) | boolean | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | enabled | Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level) | boolean | &lt;nil&gt; | . | networknamespace | The shared namespace name to be sent in multiparty messages, if it differs from the local namespace name | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespacespredefinedmultiparty",
     "relUrl": "/reference/config.html#namespacespredefinedmultiparty"
   },"142": {
@@ -901,7 +901,7 @@
   },"150": {
     "doc": "Configuration Reference",
     "title": "plugins",
-    "content": "| Key | Description | Type | Default Value | . | auth | Authorization plugin configuration | map[string]string | &lt;nil&gt; | . | blockchain | The list of configured Blockchain plugins | string | &lt;nil&gt; | . | database | The list of configured Database plugins | string | &lt;nil&gt; | . | dataexchange | The array of configured Data Exchange plugins | string | &lt;nil&gt; | . | identity | The list of available Identity plugins | string | &lt;nil&gt; | . | sharedstorage | The list of configured Shared Storage plugins | string | &lt;nil&gt; | . | tokens | The tokens plugin configurations. This will be used to configure tokens connectors | string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | auth | Authorization plugin configuration | map[string]string | &lt;nil&gt; | . | blockchain | The list of configured Blockchain plugins | string | &lt;nil&gt; | . | database | The list of configured Database plugins | string | &lt;nil&gt; | . | dataexchange | The array of configured Data Exchange plugins | string | &lt;nil&gt; | . | identity | The list of available Identity plugins | string | &lt;nil&gt; | . | sharedstorage | The list of configured Shared Storage plugins | string | &lt;nil&gt; | . | tokens | The token plugin configurations | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#plugins",
     "relUrl": "/reference/config.html#plugins"
   },"151": {
@@ -1165,13 +1165,13 @@
   },"194": {
     "doc": "Configuration Reference",
     "title": "plugins.tokens[]",
-    "content": "| Key | Description | Type | Default Value | . | name | The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector | string | &lt;nil&gt; | . | remotename | The remote name of the Tokens Connector. This will be used in messages and events to refer to this specific Token Connector, if it differs from the name | string | &lt;nil&gt; | . | type | The type of the Tokens Connector plugin to use | string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | broadcastName | The name to be used in broadcast messages related to this token plugin, if it differs from the local plugin name | string | &lt;nil&gt; | . | name | A name to identify this token plugin | string | &lt;nil&gt; | . | type | The type of the token plugin to use | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginstokens",
     "relUrl": "/reference/config.html#pluginstokens"
   },"195": {
     "doc": "Configuration Reference",
     "title": "plugins.tokens[].fftokens",
-    "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL of the Token Connector | URL string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL of the token connector | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginstokensfftokens",
     "relUrl": "/reference/config.html#pluginstokensfftokens"
   },"196": {
@@ -1183,7 +1183,7 @@
   },"197": {
     "doc": "Configuration Reference",
     "title": "plugins.tokens[].fftokens.proxy",
-    "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the Token Connector | URL string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the token connector | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginstokensfftokensproxy",
     "relUrl": "/reference/config.html#pluginstokensfftokensproxy"
   },"198": {
@@ -1315,7 +1315,7 @@
   },"219": {
     "doc": "Configuration Reference",
     "title": "tokens[]",
-    "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | &lt;nil&gt; | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | &lt;nil&gt; | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | &lt;nil&gt; | . | maxIdleConns | The max number of idle connections to hold pooled | int | &lt;nil&gt; | . | name | The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector | string | &lt;nil&gt; | . | plugin | The name of the Tokens Connector plugin to use | string | &lt;nil&gt; | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | &lt;nil&gt; | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | &lt;nil&gt; | . | url | The URL of the Token Connector | URL string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | &lt;nil&gt; | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | &lt;nil&gt; | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | &lt;nil&gt; | . | maxIdleConns | The max number of idle connections to hold pooled | int | &lt;nil&gt; | . | name | A name to identify this token plugin | string | &lt;nil&gt; | . | plugin | The type of the token plugin to use | string | &lt;nil&gt; | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | &lt;nil&gt; | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | &lt;nil&gt; | . | url | The URL of the token connector | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#tokens",
     "relUrl": "/reference/config.html#tokens"
   },"220": {
@@ -1327,7 +1327,7 @@
   },"221": {
     "doc": "Configuration Reference",
     "title": "tokens[].proxy",
-    "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the Token Connector | URL string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the token connector | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#tokensproxy",
     "relUrl": "/reference/config.html#tokensproxy"
   },"222": {
@@ -2935,7 +2935,7 @@
   },"489": {
     "doc": "Namespace",
     "title": "Namespace",
-    "content": "A namespace is a logical isolation domain for different applications, or tenants, that share the FireFly node. Significant evolution of the Hyperledger FireFly namespace construct, is proposed under FIR-12 . Example . { \"name\": \"default\", \"remoteName\": \"default\", \"description\": \"Default predefined namespace\", \"created\": \"2022-05-16T01:23:16Z\" } . Field Descriptions . | Field Name | Description | Type | . | name | The local namespace name | string | . | remoteName | The namespace name within the multiparty network | string | . | description | A description of the namespace | string | . | created | The time the namespace was created | FFTime | . ",
+    "content": "A namespace is a logical isolation domain for different applications, or tenants, that share the FireFly node. Significant evolution of the Hyperledger FireFly namespace construct, is proposed under FIR-12 . Example . { \"name\": \"default\", \"networkName\": \"default\", \"description\": \"Default predefined namespace\", \"created\": \"2022-05-16T01:23:16Z\" } . Field Descriptions . | Field Name | Description | Type | . | name | The local namespace name | string | . | networkName | The shared namespace name within the multiparty network | string | . | description | A description of the namespace | string | . | created | The time the namespace was created | FFTime | . ",
     "url": "/firefly/head/reference/types/namespace.html",
     "relUrl": "/reference/types/namespace.html"
   },"490": {

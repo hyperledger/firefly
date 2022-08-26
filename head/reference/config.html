@@ -3298,12 +3298,6 @@
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
-    <tr>
-      <td>remotename</td>
-      <td>The namespace name to be sent in plugin calls, if it differs from namespace name</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
   </tbody>
 </table>
       <h2 id="namespacespredefinedassetmanager">
@@ -3356,6 +3350,12 @@
       <td>enabled</td>
       <td>Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level)</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>networknamespace</td>
+      <td>The shared namespace name to be sent in multiparty messages, if it differs from the local namespace name</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
   </tbody>
@@ -3705,7 +3705,7 @@
     </tr>
     <tr>
       <td>tokens</td>
-      <td>The tokens plugin configurations. This will be used to configure tokens connectors</td>
+      <td>The token plugin configurations</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -5660,20 +5660,20 @@
   </thead>
   <tbody>
     <tr>
-      <td>name</td>
-      <td>The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector</td>
+      <td>broadcastName</td>
+      <td>The name to be used in broadcast messages related to this token plugin, if it differs from the local plugin name</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
-      <td>remotename</td>
-      <td>The remote name of the Tokens Connector. This will be used in messages and events to refer to this specific Token Connector, if it differs from the name</td>
+      <td>name</td>
+      <td>A name to identify this token plugin</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>type</td>
-      <td>The type of the Tokens Connector plugin to use</td>
+      <td>The type of the token plugin to use</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -5742,7 +5742,7 @@
     </tr>
     <tr>
       <td>url</td>
-      <td>The URL of the Token Connector</td>
+      <td>The URL of the token connector</td>
       <td>URL <code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -5802,7 +5802,7 @@
   <tbody>
     <tr>
       <td>url</td>
-      <td>Optional HTTP proxy server to use when connecting to the Token Connector</td>
+      <td>Optional HTTP proxy server to use when connecting to the token connector</td>
       <td>URL <code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -6720,13 +6720,13 @@
     </tr>
     <tr>
       <td>name</td>
-      <td>The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector</td>
+      <td>A name to identify this token plugin</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>plugin</td>
-      <td>The name of the Tokens Connector plugin to use</td>
+      <td>The type of the token plugin to use</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -6744,7 +6744,7 @@
     </tr>
     <tr>
       <td>url</td>
-      <td>The URL of the Token Connector</td>
+      <td>The URL of the token connector</td>
       <td>URL <code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -6804,7 +6804,7 @@
   <tbody>
     <tr>
       <td>url</td>
-      <td>Optional HTTP proxy server to use when connecting to the Token Connector</td>
+      <td>Optional HTTP proxy server to use when connecting to the token connector</td>
       <td>URL <code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
