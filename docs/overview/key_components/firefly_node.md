@@ -19,7 +19,7 @@ nav_order: 12
 
 ## FireFly node runtimes
 
-A FireFly node is a collection of multiple microservice runtimes with a single unified HTTPS/Websocket API (exposed by the Core).
+A FireFly node is a collection of multiple microservice runtimes with a single unified HTTPS/Websocket API (exposed by the Core)..
 
 ![The FireFly node](../images/firefly_node.png "The FireFly node")
 
