@@ -1,8 +1,9 @@
 ---
-layout: i18n_page
-title: pages.broadcast_shared_data
-parent: pages.understanding_firefly
-nav_order: 8
+layout: default
+title: Broadcast shared data
+parent: Multiparty Mode
+grand_parent: pages.understanding_firefly
+nav_order: 2
 ---
 
 # Broadcast / shared data
@@ -23,7 +24,7 @@ often that needs to include certain reference data that is available
 to all parties in the network. The data needs to be "broadcast" to all
 members, and also need to be available to new members that join the network
 
-![Multi-party Systems](../images/multiparty_system.png "Multi-Party System")
+![Multi-party Systems](../../../images/multiparty_system.png "Multi-Party System")
 
 ## Blockchain backed broadcast
 

@@ -44,17 +44,18 @@ func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
 	mdm := &datamocks.Manager{}
 	mam := &assetmocks.Manager{}
 	mcm := &contractmocks.Manager{}
-	tokenRemoteNames := make(map[string]string)
-	tokenRemoteNames["connector1"] = "remote1"
+	tokenBroadcastNames := make(map[string]string)
+	tokenBroadcastNames["connector1"] = "remote1"
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ds, _, err := NewDefinitionSender(ctx, "ns1", "ns1", false, mdi, mbi, mdx, mbm, mim, mdm, mam, mcm, tokenRemoteNames)
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	ds, _, err := NewDefinitionSender(ctx, ns, false, mdi, mbi, mdx, mbm, mim, mdm, mam, mcm, tokenBroadcastNames)
 	assert.NoError(t, err)
 	return ds.(*definitionSender), cancel
 }
 
 func TestInitSenderFail(t *testing.T) {
-	_, _, err := NewDefinitionSender(context.Background(), "", "", false, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, _, err := NewDefinitionSender(context.Background(), &core.Namespace{}, false, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

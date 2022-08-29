@@ -31,7 +31,7 @@ import (
 func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *core.MessageInOut) error {
 	if in.Header.Group != nil {
 		log.L(ctx).Debugf("Group '%s' specified for message", in.Header.Group)
-		group, err := pm.database.GetGroupByHash(ctx, pm.namespace.LocalName, in.Header.Group)
+		group, err := pm.database.GetGroupByHash(ctx, pm.namespace.Name, in.Header.Group)
 		if err != nil {
 			return err
 		}
@@ -66,7 +66,7 @@ func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *co
 			fb.Eq("parent", identity.ID),
 			fb.Eq("type", core.IdentityTypeNode),
 		)
-		nodes, _, err := pm.database.GetIdentities(ctx, pm.namespace.LocalName, filter)
+		nodes, _, err := pm.database.GetIdentities(ctx, pm.namespace.Name, filter)
 		if err != nil || len(nodes) == 0 {
 			return nil, err
 		}

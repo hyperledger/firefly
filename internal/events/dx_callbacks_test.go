@@ -242,7 +242,7 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 func TestMessageReceivedWrongNS(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	em.namespace.RemoteName = "ns2"
+	em.namespace.NetworkName = "ns2"
 
 	_, b := sampleBatchTransfer(t, core.TransactionTypeBatchPin)
 
@@ -460,7 +460,7 @@ func TestPrivateBlobReceivedGetBlobsFails(t *testing.T) {
 func TestPrivateBlobReceivedWrongNS(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // retryable error
-	em.namespace.RemoteName = "ns2"
+	em.namespace.NetworkName = "ns2"
 	hash := fftypes.NewRandB32()
 
 	mdx := &dataexchangemocks.Plugin{}

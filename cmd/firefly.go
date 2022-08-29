@@ -24,6 +24,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -118,7 +119,6 @@ func run() error {
 	}
 
 	// Setup signal handling to cancel the context, which shuts down the API Server
-	errChan := make(chan error)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
@@ -126,7 +126,9 @@ func run() error {
 		rootCtx, rootCancelCtx := context.WithCancel(ctx)
 		mgr := getRootManager()
 		as := apiserver.NewAPIServer()
-		go startFirefly(rootCtx, rootCancelCtx, mgr, as, errChan)
+		errChan := make(chan error, 1)
+		ffDone := make(chan struct{})
+		go startFirefly(rootCtx, rootCancelCtx, mgr, as, errChan, ffDone)
 		select {
 		case sig := <-sigs:
 			log.L(ctx).Infof("Shutting down due to %s", sig.String())
@@ -136,6 +138,8 @@ func run() error {
 		case <-rootCtx.Done():
 			log.L(ctx).Infof("Restarting due to configuration change")
 			mgr.WaitStop()
+			// Must wait for the server to close before we restart
+			<-ffDone
 			// Re-read the configuration
 			resetConfig()
 			if err := config.ReadConfig(configSuffix, cfgFile); err != nil {
@@ -149,9 +153,10 @@ func run() error {
 	}
 }
 
-func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespace.Manager, as apiserver.Server, errChan chan error) {
+func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespace.Manager, as apiserver.Server, errChan chan error, ffDone chan struct{}) {
 	var err error
 	// Start debug listener
+	var debugServer *http.Server
 	debugPort := config.GetInt(coreconfig.DebugPort)
 	if debugPort >= 0 {
 		r := mux.NewRouter()
@@ -160,11 +165,19 @@ func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespa
 		r.PathPrefix("/debug/pprof/symbol").HandlerFunc(pprof.Symbol)
 		r.PathPrefix("/debug/pprof/trace").HandlerFunc(pprof.Trace)
 		r.PathPrefix("/debug/pprof/").HandlerFunc(pprof.Index)
+		debugServer = &http.Server{Addr: fmt.Sprintf("localhost:%d", debugPort), Handler: r, ReadHeaderTimeout: 30 * time.Second}
 		go func() {
-			_ = http.ListenAndServe(fmt.Sprintf("localhost:%d", debugPort), r)
+			_ = debugServer.ListenAndServe()
 		}()
 		log.L(ctx).Debugf("Debug HTTP endpoint listening on localhost:%d", debugPort)
 	}
+
+	defer func() {
+		if debugServer != nil {
+			_ = debugServer.Close()
+		}
+		close(ffDone)
+	}()
 
 	if err = mgr.Init(ctx, cancelCtx); err != nil {
 		errChan <- err

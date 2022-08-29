@@ -377,7 +377,7 @@ var (
 
 	// Namespace field descriptions
 	NamespaceName                  = ffm("Namespace.name", "The local namespace name")
-	NamespaceRemoteName            = ffm("Namespace.remoteName", "The namespace name within the multiparty network")
+	NamespaceNetworkName           = ffm("Namespace.networkName", "The shared namespace name within the multiparty network")
 	NamespaceDescription           = ffm("Namespace.description", "A description of the namespace")
 	NamespaceCreated               = ffm("Namespace.created", "The time the namespace was created")
 	MultipartyContractsActive      = ffm("MultipartyContracts.active", "The currently active FireFly smart contract")
@@ -452,16 +452,18 @@ var (
 	BatchFlushStatusTotalErrors          = ffm("BatchFlushStatus.totalErrors", "The total count of error flushed encountered by this processor since it started")
 
 	// Pin field descriptions
-	PinSequence   = ffm("Pin.sequence", "The order of the pin in the local FireFly database, which matches the order in which pins were delivered to FireFly by the blockchain connector event stream")
-	PinNamespace  = ffm("Pin.namespace", "The namespace of the pin")
-	PinMasked     = ffm("Pin.masked", "True if the pin is for a private message, and hence is masked with the group ID and salted with a nonce so observers of the blockchain cannot use pin hash to match this transaction to other transactions or participants")
-	PinHash       = ffm("Pin.hash", "The hash represents a topic within a message in the batch. If a message has multiple topics, then multiple pins are created. If the message is private, the hash is masked for privacy")
-	PinBatch      = ffm("Pin.batch", "The UUID of the batch of messages this pin is part of")
-	PinBatchHash  = ffm("Pin.batchHash", "The manifest hash batch of messages this pin is part of")
-	PinIndex      = ffm("Pin.index", "The index of this pin within the batch. One pin is created for each topic, of each message in the batch")
-	PinDispatched = ffm("Pin.dispatched", "Once true, this pin has been processed and will not be processed again")
-	PinSigner     = ffm("Pin.signer", "The blockchain signing key that submitted this transaction, as passed through to FireFly by the smart contract that emitted the blockchain event")
-	PinCreated    = ffm("Pin.created", "The time the FireFly node created the pin")
+	PinSequence       = ffm("Pin.sequence", "The order of the pin in the local FireFly database, which matches the order in which pins were delivered to FireFly by the blockchain connector event stream")
+	PinNamespace      = ffm("Pin.namespace", "The namespace of the pin")
+	PinMasked         = ffm("Pin.masked", "True if the pin is for a private message, and hence is masked with the group ID and salted with a nonce so observers of the blockchain cannot use pin hash to match this transaction to other transactions or participants")
+	PinHash           = ffm("Pin.hash", "The hash represents a topic within a message in the batch. If a message has multiple topics, then multiple pins are created. If the message is private, the hash is masked for privacy")
+	PinBatch          = ffm("Pin.batch", "The UUID of the batch of messages this pin is part of")
+	PinBatchHash      = ffm("Pin.batchHash", "The manifest hash batch of messages this pin is part of")
+	PinIndex          = ffm("Pin.index", "The index of this pin within the batch. One pin is created for each topic, of each message in the batch")
+	PinDispatched     = ffm("Pin.dispatched", "Once true, this pin has been processed and will not be processed again")
+	PinSigner         = ffm("Pin.signer", "The blockchain signing key that submitted this transaction, as passed through to FireFly by the smart contract that emitted the blockchain event")
+	PinCreated        = ffm("Pin.created", "The time the FireFly node created the pin")
+	PinRewindSequence = ffm("PinRewind.sequence", "The sequence of the pin to which the event aggregator should rewind. Either sequence or batch must be specified")
+	PinRewindBatch    = ffm("PinRewind.batch", "The ID of the batch to which the event aggregator should rewind. Either sequence or batch must be specified")
 
 	// Subscription field descriptions
 	SubscriptionID        = ffm("Subscription.id", "The UUID of the subscription")

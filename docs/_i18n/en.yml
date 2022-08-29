@@ -10,8 +10,8 @@ pages:
   architecture: Architecture
   api_post_syntax: API Post Syntax
   api_query_syntax: API Query Syntax
-  blockchain_protocols: Blockchain protocols
-  broadcast_shared_data: Broadcast / shared data
+  blockchain_protocols: Blockchain Protocols
+  broadcast_shared_data: Broadcast / Shared Data
   broadcast_data: Broadcast data
   code_hierarchy: FireFly Code Hierarchy
   code_overview: FireFly Code Overview
@@ -21,7 +21,19 @@ pages:
   custom_smart_contracts: Work with custom smart contracts
   faqs: FAQs
   getting_started: Getting Started
-  private_data_exchange: Private data exchange
+  data_exchange: Data Exchange
   reference: Reference
   tutorials: Tutorials
   understanding_firefly: Understanding FireFly
+  chains: Connecting to other chains
+  remote_fabric_network: Remote Fabric Network
+  polygon_testnet: Polygon Testnet
+  arbitrum: Arbitrum Testnet
+  avalanche: Avalanche Testnet
+  binance_smart_chain: Binance Smartchain Testnet
+  near: NEAR Testnet
+  optimism: Optimism Testnet
+  multiparty_mode: Multiparty Mode
+  deterministic: Deterministic Compute
+  multiparty_flow: Multiparty Process Flow
+  firefly_core: Firefly Core

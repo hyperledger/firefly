@@ -1,4 +1,4 @@
----
+<!-- ---
 layout: default
 title: Public and Permissioned
 parent: pages.understanding_firefly
@@ -106,10 +106,10 @@ The architecture is summarized as follows:
 - **Event Streams**
   - Extracted from the Ethconnect codebase
   - Checkpoint restart based reliable at-least-once delivery of events
-  - WebSockets interface upstream to FireFly Core  
+  - WebSockets interface upstream to FireFly Core
 
-This evolution involves a significant refactoring of components used for production solutions in the FireFly Ethconnect 
+This evolution involves a significant refactoring of components used for production solutions in the FireFly Ethconnect
 microservice since mid 2018. This was summarized in [firefly-ethconnect#149](https://github.com/hyperledger/firefly-ethconnect/issues/149),
 and cumulated in the creation of a new repository in 2022.
 
-You can follow the progress and contribute in this repo: https://github.com/hyperledger/firefly-transaction-manager
+You can follow the progress and contribute in this repo: https://github.com/hyperledger/firefly-transaction-manager -->

@@ -160,7 +160,7 @@ func (mm *multipartyManager) configureContractCommon(ctx context.Context, migrat
 		}
 	}
 
-	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.Ref(), location, firstEvent)
+	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace, location, firstEvent)
 	if err == nil {
 		active.Location = location
 		active.FirstEvent = firstEvent
@@ -175,7 +175,7 @@ func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contrac
 	if len(mm.config.Contracts) > 0 || contractIndex > 0 {
 		if contractIndex >= len(mm.config.Contracts) {
 			return nil, "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex,
-				fmt.Sprintf("%s.multiparty.contracts[%d]", mm.namespace.LocalName, contractIndex))
+				fmt.Sprintf("%s.multiparty.contracts[%d]", mm.namespace.Name, contractIndex))
 		}
 		active := mm.config.Contracts[contractIndex]
 		location = active.Location
@@ -221,7 +221,7 @@ func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey
 
 	op := core.NewOperation(
 		mm.blockchain,
-		mm.namespace.LocalName,
+		mm.namespace.Name,
 		txid,
 		core.OpTypeBlockchainNetworkAction)
 	addNetworkActionInputs(op, action.Type, signingKey)
@@ -236,7 +236,7 @@ func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey
 func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
 	op := core.NewOperation(
 		mm.blockchain,
-		mm.namespace.LocalName,
+		mm.namespace.Name,
 		batch.TX.ID,
 		core.OpTypeBlockchainPinBatch)
 	addBatchPinInputs(op, batch.ID, contexts, payloadRef)

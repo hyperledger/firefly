@@ -9,4 +9,4 @@ has_children: true
 
 ---
 
-This section developer reference information
+This section contains detailed reference information for developers using FireFly.

@@ -83,7 +83,7 @@ func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, o
 		fb.Eq("tx", tx),
 		fb.Eq("type", opType),
 	)
-	if operations, _, err := em.database.GetOperations(ctx, em.namespace.LocalName, filter); err != nil {
+	if operations, _, err := em.database.GetOperations(ctx, em.namespace.Name, filter); err != nil {
 		return nil, err
 	} else if len(operations) > 0 {
 		return operations[0], nil
@@ -92,7 +92,7 @@ func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, o
 }
 
 func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
-	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace.LocalName, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
+	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace.Name, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
 		return existingPool, err
 	}
 	if err = addPoolDetailsFromPlugin(existingPool, pool); err != nil {

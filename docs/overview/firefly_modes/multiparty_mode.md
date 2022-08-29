@@ -1,8 +1,9 @@
 ---
 layout: default
-title: Multi-party Systems
+title: Multiparty Mode
 parent: pages.understanding_firefly
-nav_order: 2
+nav_order: 4
+has_children: true
 ---
 
 # Enterprise multi-party systems
@@ -18,7 +19,9 @@ nav_order: 2
 
 ## Introduction
 
-Multi-party systems are a class of application empowered by the technology revolution
+Multiparty mode is an extension of Gateway Mode and is used for multi-party systems. All features available in Gateway mode are present in Multiparty mode as well.
+
+A multi-party system is a class of application empowered by the technology revolution
 of blockchain digital ledger technology (DLT), and emerging cryptographic proof technologies
 like zero-knowledge proofs (ZKPs) and trusted execution environments (TEEs).
 
@@ -26,11 +29,11 @@ By combining these technologies with existing best practice technologies for
 data security in regulated industries, multi-party systems allow businesses to
 collaborate in ways previously impossible.
 
-![Multi-party Systems](../images/multiparty_system.png "Multi-Party System")
+![Multi-party Systems](../../images/multiparty_system.png "Multi-Party System")
 
 Through agreement on a common source of truth, such as the completion of a step in a
 business process to proceed, or the existence and ownership of a unique asset, businesses
-can cut out huge inefficiencies in existing multi-party processes. 
+can cut out huge inefficiencies in existing multi-party processes.
 
 New business and transaction models can be achieved, unlocking value in assets and data
 that were previously siloed within a single organization. Governance and incentive
@@ -55,3 +58,16 @@ party retains sovereignty over:
   - Their business processes
   - Their proprietary business logic
   - Their internal business processes and IT controls
+
+
+## Use Case Example
+
+There are many multiparty use cases. An example for healthcare is detailed below.
+
+Patient care requires multiple entities to work together including healthcare providers, insurance companies, and medical systems. Sharing data between these parties is inefficient and prone to errors and patient information must be kept secure and up to date. Blockchain's shared ledger makes it possible to automate data sharing while ensuring accuracy and privacy.
+
+In a Multi-party FireFly system, entities are able to share data privately as detailed in the "Data Exchange" section. For example, imagine a scenario where there is 1 healthcare provide and 2 insurance companies operating in a multi-party system. Insurance company A may send private data to the healthcare provider that insurance company B is not privy to. While insurance company B may not know the contents of data transferred, it may verify that a transfer of data did occur. This validation is all thats needed to maintain an up to date state of the blockchain.
+
+In a larger healthcare ecosystem with many members, a similar concept may emerge with multiple variations of members.
+
+<!-- ADD DIAGRAMS FOR THIS EXAMPLE. -->

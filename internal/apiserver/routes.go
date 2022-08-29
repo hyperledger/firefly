@@ -143,6 +143,7 @@ var routes = append(
 		postNewOrganizationSelf,
 		postNodesSelf,
 		postOpRetry,
+		postPinsRewind,
 		postTokenApproval,
 		postTokenBurn,
 		postTokenMint,

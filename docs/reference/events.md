@@ -2,7 +2,7 @@
 layout: default
 title: Event Bus
 parent: pages.reference
-nav_order: 4
+nav_order: 5
 ---
 
 # Event Bus
@@ -30,7 +30,7 @@ like NATS, Kafka, and JMS Servers can be connected through plugins.
 Each application creates one or more [Subscriptions](./types/subscription.md)
 to identify itself.
 In this subscription the application can choose to receive all events that
-are emitted within a `namespace`, or can use server-side filtering to 
+are emitted within a `namespace`, or can use server-side filtering to
 only receive a sub-set of events.
 
 The event bus reliably keeps track of which events have been delivered to which
@@ -136,7 +136,7 @@ cheat, and must follow the rules. How much of that rule enforcement
 needs to be executed on-chain vs. off-chain (backed by a deterministic order
 through the blockchain) is different for each use case.
 
-> Remember that tokens provide a great set of building blocks for on-chain steps in 
+> Remember that tokens provide a great set of building blocks for on-chain steps in
 > your decentralized applications. Enterprise NFTs allow generation of a globally
 > unique ID, and track ownership. Fungible tokens allow value transfer, and can be
 > extended with smart contracts that to lock/unlock funds in "digital escrow"
@@ -246,7 +246,7 @@ API and Events directly.
 Event aggregation between data arriving off-chain, and the associated ordered
 proof/transaction events being confirmed on-chain, is a complex orchestration task.
 
-The universal order and additional transaction logic **on-chain must be the 
+The universal order and additional transaction logic **on-chain must be the
 source of truth** for when and how an event is processed.
 
 However, that event cannot be processed until the off-chain private/broadcast data

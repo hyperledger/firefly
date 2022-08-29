@@ -43,7 +43,7 @@ func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, tr
 		fb.Eq("tx", tx),
 		fb.Eq("type", core.OpTypeTokenTransfer),
 	)
-	operations, _, err := em.database.GetOperations(ctx, em.namespace.LocalName, filter)
+	operations, _, err := em.database.GetOperations(ctx, em.namespace.Name, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, tr
 			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
 		} else if input != nil && input.Connector == transfer.Connector && input.Pool.Equals(transfer.Pool) {
 			// Check if the LocalID has already been used
-			if existing, err := em.database.GetTokenTransferByID(ctx, em.namespace.LocalName, input.LocalID); err != nil {
+			if existing, err := em.database.GetTokenTransferByID(ctx, em.namespace.Name, input.LocalID); err != nil {
 				return nil, err
 			} else if existing == nil {
 				// Everything matches - use the LocalID that was assigned up-front when the operation was submitted
@@ -70,7 +70,7 @@ func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, tr
 func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *tokens.TokenTransfer) (valid bool, err error) {
 	// Check that this is from a known pool
 	// TODO: should cache this lookup for efficiency
-	pool, err := em.database.GetTokenPoolByLocator(ctx, em.namespace.LocalName, transfer.Connector, transfer.PoolLocator)
+	pool, err := em.database.GetTokenPoolByLocator(ctx, em.namespace.Name, transfer.Connector, transfer.PoolLocator)
 	if err != nil {
 		return false, err
 	}
@@ -82,7 +82,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	transfer.Pool = pool.ID
 
 	// Check that transfer has not already been recorded
-	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, em.namespace.LocalName, transfer.Connector, transfer.ProtocolID); err != nil {
+	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, em.namespace.Name, transfer.Connector, transfer.ProtocolID); err != nil {
 		return false, err
 	} else if existing != nil {
 		log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.ProtocolID)
@@ -138,7 +138,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 			}
 
 			if transfer.Message != nil {
-				msg, err := em.database.GetMessageByID(ctx, em.namespace.LocalName, transfer.Message)
+				msg, err := em.database.GetMessageByID(ctx, em.namespace.Name, transfer.Message)
 				switch {
 				case err != nil:
 					return err

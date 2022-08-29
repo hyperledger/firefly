@@ -1,11 +1,12 @@
 ---
-layout: default
-title:  Multi-party process flow
-parent: pages.understanding_firefly
-nav_order: 9
+layout: i18n_page
+title: pages.multiparty_flow
+parent: Multiparty Mode
+grand_parent: pages.understanding_firefly
+nav_order: 5
 ---
 
-# Multi-party process flow
+# Multiparty Process Flows
 {: .no_toc }
 
 ## Table of contents
@@ -22,7 +23,7 @@ The ability to globally sequence events _across parties_ is a game changing capa
 systems. FireFly is designed to allow developers to harnesses that power in the application layer, to build
 sophisticated multi-party APIs and user experiences.
 
-[![Multi-party business process flow](../images/multiparty_business_process_flow.svg "Multi-party business process flow")](../images/multiparty_business_process_flow.svg)
+[![Multi-party business process flow](../../../images/multiparty_business_process_flow.svg "Multi-party business process flow")](../../../images/multiparty_business_process_flow.svg)
 
 - Build multi-party business processes where there is one agreed outcome:
   - Agree the trigger, inputs, outputs of each step in the process
@@ -73,10 +74,10 @@ In the _deterministic compute_ section we talked about the value that determinis
 of multi-party logic can have. Either through on-chain execution, or advanced privacy preserving
 techniques.
 
-It's important to state that almost every process can be enhanced with more sophisticated 
+It's important to state that almost every process can be enhanced with more sophisticated
 on-chain constructs like tokens. Maybe it's to build a token economy that enhances the value
 parties get from the system, or encourages healthy participation (and discourages leaching value).
-Or maybe it's to track exactly which party owns a document, asset, or action within a process using NFTs. 
+Or maybe it's to track exactly which party owns a document, asset, or action within a process using NFTs.
 
 There are also cases where the foundation constructs are insufficient to implement the level of
 automation or efficiency you need in your multi-party process. Here making the investment in building
