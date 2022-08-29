@@ -31,7 +31,7 @@ of datatypes, as is used to broadcast the data itself.
 
 ## Additional info
 
-- Key Concepts: [Broadcast / shared data](../overview//broadcast.md)
+- Key Concepts: [Broadcast / shared data](../overview/firefly_modes/multiparty/broadcast.md)
 - Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewDatatype" data-proofer-ignore>POST /api/v1/namespaces/{ns}/datatypes</a>
 
 ### Example 1: Broadcast new datatype
@@ -199,7 +199,7 @@ In the sandbox, enter the datatype's name, version, and JSON Schema as seen in t
 
 Notice how the `data` field in the center panel updates in real time.
 
-Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds. 
+Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds.
 
 ![Message Broadcast](../images/message_broadcast_sample_result.png)
 

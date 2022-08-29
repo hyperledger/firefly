@@ -33,7 +33,7 @@ nav_order: 1
 
 ## Additional info
 
-- Key Concepts: [Broadcast / shared data](../overview/broadcast.md)
+- Key Concepts: [Broadcast / shared data](../overview/firefly_modes/multiparty/broadcast.md)
 - Swagger Reference: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessageBroadcast" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/broadcast</a>
 
 ## Example 1: Inline string data
@@ -221,7 +221,7 @@ In the sandbox, enter your message into the message field as seen in the screens
 
 Notice how the `data` field in the center panel updates in real time.
 
-Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds. 
+Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds.
 
 ![Broadcast Result](../images/message_broadcast_sample_result.png)
 
