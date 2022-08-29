@@ -1,8 +1,9 @@
 ---
 layout: default
-title: The FireFly node
-parent: pages.understanding_firefly
-nav_order: 3
+title: The Firefly Node
+parent: The Key Components
+grand_parent: pages.understanding_firefly
+nav_order: 12
 ---
 
 # The FireFly node

@@ -1,8 +1,9 @@
 ---
 layout: i18n_page
 title: pages.blockchain_protocols
-parent: pages.understanding_firefly
-nav_order: 4
+parent: Multiparty Mode
+grand_parent: pages.understanding_firefly
+nav_order: 1
 ---
 
 # Blockchain protocols
@@ -27,7 +28,7 @@ So you can choose the blockchain ecosystem that best meets the functional and
 non-functional requirements of your business network, and still benefit from the developer
 friendly APIs, event-driven programming model, and on-chain/off-chain coordination provided by FireFly.
 
-![FireFly Multiple Blockchain Protocols](../images/multi_protocol.png "FireFly Multiple Blockchain Protocols")
+![FireFly Multiple Blockchain Protocols](../../../images/multi_protocol.png "FireFly Multiple Blockchain Protocols")
 
 ## Core constructs and custom on-chain logic
 

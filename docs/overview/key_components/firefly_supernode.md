@@ -1,11 +1,12 @@
----
+<!-- ---
 layout: default
-title: Introduction to Supernodes
-parent: pages.understanding_firefly
+title: Supernodes
+parent: The Key Components
+grand_parent: pages.understanding_firefly
 nav_order: 1
 ---
 
-# Introduction to Supernodes
+# Introduction to SuperNodes
 {: .no_toc }
 
 ## Table of contents
@@ -16,7 +17,7 @@ nav_order: 1
 
 ---
 
-## What is a Supernode
+## What is a SuperNode
 
 Over the last decade of enterprise blockchain projects, architects and developers have realized
 that they need much more than a blockchain node for their projects to be successful.
@@ -27,7 +28,7 @@ that came before.
 
 A raw blockchain node is simply not enough.
 
-## Your project with or without a Supernode
+## Your project with or without a SuperNode
 
 ![Without FireFly / with FireFly](../images/without_firefly_with_firefly.png)
 
@@ -249,4 +250,4 @@ A platform like Hyperledger FireFly provides you the ability to:
 - Integrate multiple different signing/custody solutions in a proven way
 - Manage the mapping of off-chain identities to on-chain signing identities
 - Provide a plug-point for policy-based decision making on high value transactions
-- Manage connections to multiple different blockchain solutions
+- Manage connections to multiple different blockchain solutions -->

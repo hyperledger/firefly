@@ -1,11 +1,12 @@
 ---
-layout: default
-title: Deterministic compute
-parent: pages.understanding_firefly
-nav_order: 6
+layout: i18n_page
+title: pages.deterministic
+parent: Multiparty Mode
+grand_parent: pages.understanding_firefly
+nav_order: 3
 ---
 
-# Deterministic compute
+# Deterministic Compute
 {: .no_toc }
 
 ## Table of contents
@@ -121,4 +122,4 @@ Not to be overlooked is the sometimes astonishing efficiency increase that can b
 business relationships, by being able to agree the order and sequence of a set of events. Having the
 tools to digitize processes that previously took physical documents flying round the world, into
 near-immediate digital agreement where the arbitration of a dispute can be resolved at a tiny fraction
-of what would have been possible without a shared and immutable audit trail of who said what when.
+of what would have been possible without a shared and immutable audit trail of who said what when. -->

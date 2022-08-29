@@ -1,8 +1,9 @@
 ---
 layout: i18n_page
-title: pages.private_data_exchange
-parent: pages.understanding_firefly
-nav_order: 7
+title: pages.data_exchange
+parent: Multiparty Mode
+grand_parent: pages.understanding_firefly
+nav_order: 3
 ---
 
 # Private data exchange
@@ -23,7 +24,7 @@ happens today. One party private sends data to another, over a pipe that has bee
 agreed as sufficiently secure between the two parties. That might be a REST API,
 SOAP Web Service, FTP / EDI, Message Queue (MQ), or other B2B Gateway technology.
 
-![Multi-party Systems](../images/multiparty_system.png "Multi-Party System")
+![Multi-party Systems](../../../images/multiparty_system.png "Multi-Party System")
 
 The ability to perform these same private data exchanges within
 a multi-party system is critical. In fact it's common for the majority of business
