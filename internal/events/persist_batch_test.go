@@ -84,10 +84,10 @@ func TestPersistBatch(t *testing.T) {
 			},
 		},
 	}
-	bp, _ := batch.Confirmed("peer1")
+	bp, _ := batch.Confirmed()
 	batch.Hash = fftypes.HashString(bp.Manifest.String())
 
-	_, _, err = em.persistBatch(em.ctx, "peer1", batch)
+	_, _, err = em.persistBatch(em.ctx, batch)
 	assert.EqualError(t, err, "pop") // Confirms we got to upserting the batch
 
 }
@@ -105,10 +105,10 @@ func TestPersistBatchNoCacheDataNotInBatch(t *testing.T) {
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	data.ID = fftypes.NewUUID()
 	_ = data.Seal(em.ctx, nil)
-	bp, _ := batch.Confirmed("peer1")
+	bp, _ := batch.Confirmed()
 	batch.Hash = fftypes.HashString(bp.Manifest.String())
 
-	_, valid, err := em.persistBatch(em.ctx, "peer1", batch)
+	_, valid, err := em.persistBatch(em.ctx, batch)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
@@ -128,10 +128,10 @@ func TestPersistBatchExtraDataInBatch(t *testing.T) {
 	data2 := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test2"`)}
 	_ = data2.Seal(em.ctx, nil)
 	batch.Payload.Data = append(batch.Payload.Data, data2)
-	bp, _ := batch.Confirmed("peer1")
+	bp, _ := batch.Confirmed()
 	batch.Hash = fftypes.HashString(bp.Manifest.String())
 
-	_, valid, err := em.persistBatch(em.ctx, "peer1", batch)
+	_, valid, err := em.persistBatch(em.ctx, batch)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
@@ -364,5 +364,31 @@ func TestPersistBatchContentDataMissingBlobRef(t *testing.T) {
 	assert.False(t, ok)
 
 	mdi.AssertExpectations(t)
+
+}
+
+func TestPersistBatchInvalidTXType(t *testing.T) {
+
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
+		Hash: fftypes.NewRandB32(),
+		Payload: core.BatchPayload{
+			TX: core.TransactionRef{
+				ID:   fftypes.NewUUID(),
+				Type: core.TransactionTypeContractInvoke,
+			},
+			Messages: []*core.Message{{}},
+			Data:     core.DataArray{{}},
+		},
+	}
+
+	_, ok, err := em.persistBatch(em.ctx, batch)
+	assert.NoError(t, err)
+	assert.False(t, ok)
 
 }

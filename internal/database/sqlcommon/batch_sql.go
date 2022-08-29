@@ -44,7 +44,6 @@ var (
 		"tx_type",
 		"tx_id",
 		"node_id",
-		"peer",
 	}
 	batchFilterFieldMap = map[string]string{
 		"type":    "btype",
@@ -102,7 +101,6 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *core.BatchPersisted)
 				Set("tx_type", batch.TX.Type).
 				Set("tx_id", batch.TX.ID).
 				Set("node_id", batch.Node).
-				Set("peer", batch.Peer).
 				Where(sq.Eq{"id": batch.ID, "namespace": batch.Namespace}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, core.ChangeEventTypeUpdated, batch.Namespace, batch.ID)
@@ -129,7 +127,6 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *core.BatchPersisted)
 					batch.TX.Type,
 					batch.TX.ID,
 					batch.Node,
-					batch.Peer,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, core.ChangeEventTypeCreated, batch.Namespace, batch.ID)
@@ -158,7 +155,6 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*core.Batch
 		&batch.TX.Type,
 		&batch.TX.ID,
 		&batch.Node,
-		&batch.Peer,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, batchesTable)

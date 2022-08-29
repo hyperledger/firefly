@@ -39,7 +39,7 @@ func TestBatchManifest(t *testing.T) {
 			},
 		},
 	}
-	bp, _ := tw.Batch.Confirmed("peer1")
+	bp, _ := tw.Batch.Confirmed()
 	tm := bp.GenManifest(tw.Batch.Payload.Messages, tw.Batch.Payload.Data)
 	assert.Equal(t, 2, len(tm.Messages))
 	assert.Equal(t, tw.Batch.Payload.Messages[0].Header.ID.String(), tm.Messages[0].ID.String())

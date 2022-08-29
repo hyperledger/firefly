@@ -1,1 +1,0 @@
-ALTER TABLE batches DROP COLUMN peer;

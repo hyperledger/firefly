@@ -58,7 +58,7 @@ type Plugin interface {
 	NormalizeSigningKey(ctx context.Context, keyRef string) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
-	SubmitBatchPin(ctx context.Context, nsOpID, remtoeNamespace, signingKey string, batch *BatchPin, location *fftypes.JSONAny) error
+	SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *BatchPin, location *fftypes.JSONAny) error
 
 	// SubmitNetworkAction writes a special "BatchPin" event which signals the plugin to take an action
 	SubmitNetworkAction(ctx context.Context, nsOpID, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error

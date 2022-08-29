@@ -144,6 +144,8 @@ func TestPinnedReceiveOK(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
+	batch.Node = node1.ID
+
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 	mim := em.identity.(*identitymanagermocks.Manager)
@@ -191,25 +193,43 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 		},
 	}
 
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
+		Type:  core.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
 
 	mde := newMessageReceived("peer1", b, "")
 	em.messageReceived(mdx, mde)
 
 	mde.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestMessageReceivePersistBatchError(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // retryable error
 
-	_, b := sampleBatchTransfer(t, core.TransactionTypeBatchPin)
+	batch, b := sampleBatchTransfer(t, core.TransactionTypeBatchPin)
+
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
+	batch.Node = node1.ID
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
+		Type:  core.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
@@ -219,6 +239,7 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestMessageReceivedWrongNS(t *testing.T) {
@@ -264,6 +285,10 @@ func TestMessageReceiveNodeLookupError(t *testing.T) {
 		BatchHeader: core.BatchHeader{
 			Namespace: "ns1",
 			Group:     groupID,
+			Node:      fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "org1",
+			},
 		},
 		Payload: core.BatchPayload{
 			TX: core.TransactionRef{
@@ -281,9 +306,6 @@ func TestMessageReceiveNodeLookupError(t *testing.T) {
 		Value: "peer1",
 	}).Return(nil, fmt.Errorf("pop"))
 
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", groupID).Return(&core.Group{}, nil)
-
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
@@ -294,7 +316,6 @@ func TestMessageReceiveNodeLookupError(t *testing.T) {
 	mde.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mdx.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
@@ -305,8 +326,11 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{}, nil)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -319,14 +343,13 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(nil, true, fmt.Errorf("pop"))
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
 
 	// no ack as we are simulating termination mid retry
 	mde := newMessageReceivedNoAck("peer1", tw)
 	em.messageReceived(mdx, mde)
 
 	mde.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mpm.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -340,8 +363,11 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{}, nil)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -354,13 +380,12 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(nil, false, nil)
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
 
 	mde := newMessageReceived("peer1", tw, "")
 	em.messageReceived(mdx, mde)
 
 	mde.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mpm.AssertExpectations(t)
@@ -374,8 +399,11 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{}, nil)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -388,13 +416,12 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(newTestOrg("org2"), false, nil)
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
 
 	mde := newMessageReceived("peer1", tw, "")
 	em.messageReceived(mdx, mde)
 
 	mde.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mpm.AssertExpectations(t)
@@ -502,9 +529,11 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 	org2.Parent = org1.ID
 	node1 := newTestNode("node1", org1)
 	b, tw := sampleBatchTransfer(t, core.TransactionTypeUnpinned)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{}, nil)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -518,7 +547,7 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(nil, fmt.Errorf("pop"))
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
 
 	// no ack as we are simulating termination mid retry
 	mde := newMessageReceivedNoAck("peer1", tw)
@@ -528,7 +557,42 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mpm.AssertExpectations(t)
-	mdi.AssertExpectations(t)
+}
+
+func TestMessageReceiveNodeNotFound(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	org1 := newTestOrg("org1")
+	org2 := newTestOrg("org2")
+	org2.Parent = org1.ID
+	node1 := newTestNode("node1", org1)
+	b, tw := sampleBatchTransfer(t, core.TransactionTypeUnpinned)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
+		Type:  core.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(nil, nil)
+
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
+
+	mde := newMessageReceived("peer1", tw, "")
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }
 
 func TestMessageReceiveMessageIdentityParentNotFound(t *testing.T) {
@@ -540,9 +604,11 @@ func TestMessageReceiveMessageIdentityParentNotFound(t *testing.T) {
 	org2.Parent = org1.ID
 	node1 := newTestNode("node1", org1)
 	b, tw := sampleBatchTransfer(t, core.TransactionTypeUnpinned)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{}, nil)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -556,7 +622,7 @@ func TestMessageReceiveMessageIdentityParentNotFound(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(nil, nil)
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
 
 	mde := newMessageReceived("peer1", tw, "")
 	em.messageReceived(mdx, mde)
@@ -564,7 +630,6 @@ func TestMessageReceiveMessageIdentityParentNotFound(t *testing.T) {
 	mde.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mpm.AssertExpectations(t)
 }
 
@@ -578,9 +643,11 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	org2.Parent = org1.ID
 	node1 := newTestNode("node1", org1)
 	b, tw := sampleBatchTransfer(t, core.TransactionTypeUnpinned)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{}, nil)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -594,7 +661,7 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(org3, nil)
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
 
 	mde := newMessageReceived("peer1", tw, "")
 	em.messageReceived(mdx, mde)
@@ -602,7 +669,6 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	mde.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mpm.AssertExpectations(t)
 }
 
@@ -614,21 +680,17 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{
-		GroupIdentity: core.GroupIdentity{
-			Members: core.Members{
-				{Identity: b.Author, Node: node1.ID},
-			},
-		},
-	}, nil)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
 
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
@@ -638,6 +700,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization fail"))
@@ -662,21 +725,17 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{
-		GroupIdentity: core.GroupIdentity{
-			Members: core.Members{
-				{Identity: b.Author, Node: node1.ID},
-			},
-		},
-	}, nil)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
 
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
@@ -686,6 +745,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(fmt.Errorf("optimization miss"))
 	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
@@ -708,21 +768,18 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", batch.Group).Return(&core.Group{
-		GroupIdentity: core.GroupIdentity{
-			Members: core.Members{
-				{Identity: batch.Author, Node: node1.ID},
-			},
-		},
-	}, nil)
+	batch.Node = node1.ID
+	creator := &core.Member{
+		Identity: batch.Author,
+		Node:     batch.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
+
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
 		Type:  core.VerifierTypeFFDXPeerID,
@@ -731,6 +788,7 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
@@ -759,21 +817,18 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{
-		GroupIdentity: core.GroupIdentity{
-			Members: core.Members{
-				{Identity: b.Author, Node: node1.ID},
-			},
-		},
-	}, nil)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
+
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
 		Type:  core.VerifierTypeFFDXPeerID,
@@ -782,6 +837,7 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
@@ -810,21 +866,18 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{
-		GroupIdentity: core.GroupIdentity{
-			Members: core.Members{
-				{Identity: b.Author, Node: node1.ID},
-			},
-		},
-	}, nil)
+	b.Node = node1.ID
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(true, nil)
+
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
 		Type:  core.VerifierTypeFFDXPeerID,
@@ -833,6 +886,7 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
@@ -858,16 +912,20 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	_, b := sampleBatchTransfer(t, core.TransactionTypeUnpinned)
+	b, tw := sampleBatchTransfer(t, core.TransactionTypeUnpinned)
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, fmt.Errorf("pop"))
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(false, fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
-	mde := newMessageReceivedNoAck("peer1", b)
+	mde := newMessageReceivedNoAck("peer1", tw)
 	em.messageReceived(mdx, mde)
 
 	mde.AssertExpectations(t)
@@ -879,50 +937,17 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	_, b := sampleBatchTransfer(t, core.TransactionTypeUnpinned)
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-
-	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, nil)
-
-	mde := newMessageReceived("peer1", b, "")
-	em.messageReceived(mdx, mde)
-
-	mde.AssertExpectations(t)
-	mdx.AssertExpectations(t)
-	mpm.AssertExpectations(t)
-}
-
-func TestMessageReceiveMessageBadGroup(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	cancel() // to avoid infinite retry
-
 	b, tw := sampleBatchTransfer(t, core.TransactionTypeUnpinned)
-
-	org1 := newTestOrg("org1")
-	node1 := newTestNode("node1", org1)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", em.ctx, "ns1", b.Group).Return(&core.Group{
-		GroupIdentity: core.GroupIdentity{
-			Members: core.Members{},
-		},
-	}, nil)
+	creator := &core.Member{
+		Identity: b.Author,
+		Node:     b.Node,
+	}
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
-		Type:  core.VerifierTypeFFDXPeerID,
-		Value: "peer1",
-	}).Return(node1, nil)
-	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
-
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything, creator).Return(false, nil)
 
 	mde := newMessageReceived("peer1", tw, "")
 	em.messageReceived(mdx, mde)
@@ -930,5 +955,4 @@ func TestMessageReceiveMessageBadGroup(t *testing.T) {
 	mde.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mpm.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }

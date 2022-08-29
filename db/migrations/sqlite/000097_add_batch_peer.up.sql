@@ -1,1 +1,0 @@
-ALTER TABLE batches ADD COLUMN peer VARCHAR(256);

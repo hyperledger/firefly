@@ -60,7 +60,6 @@ func TestBatch2EWithDB(t *testing.T) {
 				{MessageRef: core.MessageRef{ID: msgID1}},
 			},
 		}).String()),
-		Peer: "node1",
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBatches, core.ChangeEventTypeCreated, "ns1", batchID, mock.Anything).Return()

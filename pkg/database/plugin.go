@@ -703,7 +703,6 @@ var BatchQueryFactory = &queryFields{
 	"tx.type":    &StringField{},
 	"tx.id":      &UUIDField{},
 	"node":       &UUIDField{},
-	"peer":       &StringField{},
 }
 
 // TransactionQueryFactory filter fields for transactions
