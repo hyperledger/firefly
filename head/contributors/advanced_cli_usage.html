@@ -263,9 +263,6 @@
       </li>
       <li><a href="#running-a-locally-built-firefly-core-image" id="markdown-toc-running-a-locally-built-firefly-core-image">Running a locally built FireFly Core image</a>        <ol>
           <li><a href="#build-a-new-image-of-firefly-locally" id="markdown-toc-build-a-new-image-of-firefly-locally">Build a new image of FireFly locally</a></li>
-        </ol>
-      </li>
-      <li><a href="#edit-your-manifestjson-file-1" id="markdown-toc-edit-your-manifestjson-file-1">Edit your <code class="language-plaintext highlighter-rouge">manifest.json</code> file</a>        <ol>
           <li><a href="#initialize-the-stack-with-the-custom-manifestjson-file-1" id="markdown-toc-initialize-the-stack-with-the-custom-manifestjson-file-1">Initialize the stack with the custom <code class="language-plaintext highlighter-rouge">manifest.json</code> file</a></li>
         </ol>
       </li>
@@ -418,25 +415,8 @@
     
 <p>From the firefly project directory, build and tag a new Docker image:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker build -t ghcr.io/hyperledger/firefly .
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>make docker
 </code></pre></div></div>
-      <h2 id="edit-your-manifestjson-file-1">
-        
-        
-          <a href="#edit-your-manifestjson-file-1" class="anchor-heading" aria-labelledby="edit-your-manifestjson-file-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Edit your <code class="language-plaintext highlighter-rouge">manifest.json</code> file
-        
-        
-      </h2>
-    
-<p>Next, edit the <code class="language-plaintext highlighter-rouge">fabconnect</code> section of the <code class="language-plaintext highlighter-rouge">manifest.json</code> file and add the following section:</p>
-
-<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">...</span><span class="w">
-  </span><span class="nl">"firefly"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ghcr.io/hyperledger/firefly"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"local"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
-  </span><span class="p">}</span><span class="err">,</span><span class="w">
-</span><span class="err">...</span><span class="w">
-</span></code></pre></div></div>
       <h3 id="initialize-the-stack-with-the-custom-manifestjson-file-1">
         
         
