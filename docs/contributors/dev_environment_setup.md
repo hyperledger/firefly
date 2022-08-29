@@ -115,3 +115,7 @@ Now you should have a full FireFly stack up and running, and be able to debug Fi
 
 
 > **NOTE**: Because `firefly-ui` is a separate repo, unless you also start a UI dev server for the external FireFly core, the default UI path will not load. This is expected, and if you're just working on FireFly core itself, you don't need to worry about it.`
+
+## Set up dev environment for other components
+
+Refer to [Advanced CLI Usage](./advanced_cli_usage.md).
