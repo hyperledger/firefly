@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -31,15 +32,19 @@ var getEventByID = &ffapi.Route{
 	PathParams: []*ffapi.PathParam{
 		{Name: "eid", Description: coremsgs.APIParamsEventID},
 	},
-	QueryParams:     nil,
+	QueryParams: []*ffapi.QueryParam{
+		{Name: "fetchreference", Example: "true", Description: coremsgs.APIParamsFetchReference, IsBool: true},
+	},
 	Description:     coremsgs.APIEndpointsGetEventByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetEventByID(cr.ctx, r.PP["eid"])
-			return output, err
+			if strings.EqualFold(r.QP["fetchreference"], "true") {
+				return cr.or.GetEventByIDWithReference(cr.ctx, r.PP["eid"])
+			}
+			return cr.or.GetEventByID(cr.ctx, r.PP["eid"])
 		},
 	},
 }

@@ -515,6 +515,29 @@ func (_m *Orchestrator) GetEventByID(ctx context.Context, id string) (*core.Even
 	return r0, r1
 }
 
+// GetEventByIDWithReference provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetEventByIDWithReference(ctx context.Context, id string) (*core.EnrichedEvent, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *core.EnrichedEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.EnrichedEvent); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.EnrichedEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetEvents provides a mock function with given fields: ctx, filter
 func (_m *Orchestrator) GetEvents(ctx context.Context, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)

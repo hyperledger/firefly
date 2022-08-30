@@ -103,6 +103,7 @@ type Orchestrator interface {
 	GetOperationByID(ctx context.Context, id string) (*core.Operation, error)
 	GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
 	GetEventByID(ctx context.Context, id string) (*core.Event, error)
+	GetEventByIDWithReference(ctx context.Context, id string) (*core.EnrichedEvent, error)
 	GetEvents(ctx context.Context, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
 	GetEventsWithReferences(ctx context.Context, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error)
 	GetBlockchainEventByID(ctx context.Context, id string) (*core.BlockchainEvent, error)
