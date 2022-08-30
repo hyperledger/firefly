@@ -33,6 +33,7 @@ var getEvents = &ffapi.Route{
 	PathParams: nil,
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "fetchreferences", Example: "true", Description: coremsgs.APIParamsFetchReferences, IsBool: true},
+		{Name: "fetchreference", Example: "true", Description: coremsgs.APIParamsFetchReference, IsBool: true},
 	},
 	Description:     coremsgs.APIEndpointsGetEvents,
 	JSONInputValue:  nil,
@@ -41,7 +42,7 @@ var getEvents = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.EventQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			if strings.EqualFold(r.QP["fetchreferences"], "true") {
+			if strings.EqualFold(r.QP["fetchreferences"], "true") || strings.EqualFold(r.QP["fetchreference"], "true") {
 				return filterResult(cr.or.GetEventsWithReferences(cr.ctx, cr.filter))
 			}
 			return filterResult(cr.or.GetEvents(cr.ctx, cr.filter))

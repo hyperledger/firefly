@@ -5249,9 +5249,16 @@ paths:
       operationId: getEvents
       parameters:
       - description: When set, the API will return the record that this item references
-          in its 'ref' field
+          in its 'reference' field
         in: query
         name: fetchreferences
+        schema:
+          example: "true"
+          type: string
+      - description: When set, the API will return the record that this item references
+          in its 'reference' field
+        in: query
+        name: fetchreference
         schema:
           example: "true"
           type: string
@@ -5434,7 +5441,7 @@ paths:
         schema:
           type: string
       - description: When set, the API will return the record that this item references
-          in its 'ref' field
+          in its 'reference' field
         in: query
         name: fetchreference
         schema:
@@ -14522,9 +14529,16 @@ paths:
           example: default
           type: string
       - description: When set, the API will return the record that this item references
-          in its 'ref' field
+          in its 'reference' field
         in: query
         name: fetchreferences
+        schema:
+          example: "true"
+          type: string
+      - description: When set, the API will return the record that this item references
+          in its 'reference' field
+        in: query
+        name: fetchreference
         schema:
           example: "true"
           type: string
@@ -14714,7 +14728,7 @@ paths:
           example: default
           type: string
       - description: When set, the API will return the record that this item references
-          in its 'ref' field
+          in its 'reference' field
         in: query
         name: fetchreference
         schema:
