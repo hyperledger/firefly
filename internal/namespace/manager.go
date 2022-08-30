@@ -197,7 +197,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	if err = nm.loadPlugins(ctx); err != nil {
 		return err
 	}
-	if err = nm.initPlugins(ctx); err != nil {
+	if err = nm.initPlugins(ctx, cancelCtx); err != nil {
 		return err
 	}
 	if err = nm.loadNamespaces(ctx); err != nil {
@@ -714,7 +714,7 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 	return plugins, err
 }
 
-func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
+func (nm *namespaceManager) initPlugins(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
 	for _, entry := range nm.plugins.database {
 		if err = entry.plugin.Init(ctx, entry.config); err != nil {
 			return err
@@ -722,12 +722,12 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 		entry.plugin.SetHandler(database.GlobalHandler, nm)
 	}
 	for _, entry := range nm.plugins.blockchain {
-		if err = entry.plugin.Init(ctx, entry.config, nm.metrics); err != nil {
+		if err = entry.plugin.Init(ctx, cancelCtx, entry.config, nm.metrics); err != nil {
 			return err
 		}
 	}
 	for _, entry := range nm.plugins.dataexchange {
-		if err = entry.plugin.Init(ctx, entry.config); err != nil {
+		if err = entry.plugin.Init(ctx, cancelCtx, entry.config); err != nil {
 			return err
 		}
 	}
@@ -737,7 +737,7 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 		}
 	}
 	for name, entry := range nm.plugins.tokens {
-		if err = entry.plugin.Init(ctx, name, entry.config); err != nil {
+		if err = entry.plugin.Init(ctx, cancelCtx, name, entry.config); err != nil {
 			return err
 		}
 	}

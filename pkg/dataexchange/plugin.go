@@ -61,7 +61,7 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	Init(ctx context.Context, config config.Section) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section) error
 
 	// SetHandler registers a handler to receive callbacks
 	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace and node

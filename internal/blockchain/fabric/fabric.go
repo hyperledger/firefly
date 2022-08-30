@@ -48,6 +48,7 @@ const (
 
 type Fabric struct {
 	ctx            context.Context
+	cancelCtx      context.CancelFunc
 	topic          string
 	defaultChannel string
 	signer         string
@@ -187,11 +188,12 @@ func (f *Fabric) VerifierType() core.VerifierType {
 	return core.VerifierTypeMSPIdentity
 }
 
-func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.Manager) (err error) {
+func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf config.Section, metrics metrics.Manager) (err error) {
 	f.InitConfig(conf)
 	fabconnectConf := f.fabconnectConf
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
+	f.cancelCtx = cancelCtx
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
@@ -472,6 +474,7 @@ func (f *Fabric) eventLoop() {
 		case msgBytes, ok := <-f.wsconn.Receive():
 			if !ok {
 				l.Debugf("Event loop exiting (receive channel closed)")
+				f.cancelCtx()
 				return
 			}
 
@@ -494,9 +497,9 @@ func (f *Fabric) eventLoop() {
 				continue
 			}
 
-			// Send the ack - only fails if shutting down
 			if err != nil {
 				l.Errorf("Event loop exiting: %s", err)
+				f.cancelCtx()
 				return
 			}
 		}

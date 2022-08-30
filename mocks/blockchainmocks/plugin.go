@@ -198,13 +198,13 @@ func (_m *Plugin) GetNetworkVersion(ctx context.Context, location *fftypes.JSONA
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, _a1, _a2
-func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, _a2 metrics.Manager) error {
-	ret := _m.Called(ctx, _a1, _a2)
+// Init provides a mock function with given fields: ctx, cancelCtx, _a2, _a3
+func (_m *Plugin) Init(ctx context.Context, cancelCtx context.CancelFunc, _a2 config.Section, _a3 metrics.Manager) error {
+	ret := _m.Called(ctx, cancelCtx, _a2, _a3)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Section, metrics.Manager) error); ok {
-		r0 = rf(ctx, _a1, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc, config.Section, metrics.Manager) error); ok {
+		r0 = rf(ctx, cancelCtx, _a2, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}

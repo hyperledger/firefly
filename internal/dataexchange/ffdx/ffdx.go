@@ -40,6 +40,7 @@ const DXIDSeparator = "/"
 
 type FFDX struct {
 	ctx          context.Context
+	cancelCtx    context.CancelFunc
 	capabilities *dataexchange.Capabilities
 	callbacks    callbacks
 	client       *resty.Client
@@ -166,8 +167,9 @@ func (h *FFDX) Name() string {
 	return "ffdx"
 }
 
-func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
+func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
+	h.cancelCtx = cancelCtx
 	h.ackChannel = make(chan *ack)
 	h.callbacks = callbacks{
 		plugin:     h,
@@ -398,6 +400,7 @@ func (h *FFDX) eventLoop() {
 		case msgBytes, ok := <-h.wsconn.Receive():
 			if !ok {
 				l.Debugf("Event loop exiting (receive channel closed)")
+				h.cancelCtx()
 				return
 			}
 
