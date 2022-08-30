@@ -97,10 +97,10 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 		mev:  &eventsmocks.Plugin{},
 		auth: &authmocks.Plugin{},
 		namespaceManager: namespaceManager{
-			ctx:              context.Background(),
-			namespaces:       make(map[string]*namespace),
-			pluginNames:      make(map[string]bool),
-			tokenRemoteNames: make(map[string]string),
+			ctx:                 context.Background(),
+			namespaces:          make(map[string]*namespace),
+			pluginNames:         make(map[string]bool),
+			tokenBroadcastNames: make(map[string]string),
 		},
 	}
 	nm.plugins.blockchain = map[string]blockchainPlugin{
@@ -651,7 +651,7 @@ func TestInitNamespaceQueryFail(t *testing.T) {
 
 	ns := &namespace{
 		Namespace: core.Namespace{
-			LocalName: "default",
+			Name: "default",
 		},
 		plugins: []string{"postgres"},
 	}
@@ -668,12 +668,15 @@ func TestInitNamespaceExistingUpsertFail(t *testing.T) {
 
 	ns := &namespace{
 		Namespace: core.Namespace{
-			LocalName: "default",
+			Name: "default",
 		},
 		plugins: []string{"postgres"},
 	}
+	existing := &core.Namespace{
+		NetworkName: "ns1",
+	}
 
-	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(&core.Namespace{}, nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(existing, nil)
 	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
 
 	err := nm.initNamespace(ns)
@@ -999,7 +1002,7 @@ func TestTokensPlugin(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestTokensPluginDuplicateRemoteName(t *testing.T) {
+func TestTokensPluginDuplicateBroadcastName(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 	tifactory.InitConfig(tokensConfig)
@@ -1008,12 +1011,12 @@ func TestTokensPluginDuplicateRemoteName(t *testing.T) {
   plugins:
     tokens:
     - name: test1
-      remotename: remote1
+      broadcastName: remote1
       type: fftokens
       fftokens:
         url: http://tokens:3000
     - name: test2
-      remotename: remote1
+      broadcastName: remote1
       type: fftokens
       fftokens:
         url: http://tokens:3000
@@ -1025,7 +1028,7 @@ func TestTokensPluginDuplicateRemoteName(t *testing.T) {
 	assert.Regexp(t, "FF10419", err)
 }
 
-func TestMultipleTokensPluginsWithRemoteName(t *testing.T) {
+func TestMultipleTokensPluginsWithBroadcastName(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 	tifactory.InitConfig(tokensConfig)
@@ -1034,12 +1037,12 @@ func TestMultipleTokensPluginsWithRemoteName(t *testing.T) {
   plugins:
     tokens:
     - name: test1
-      remotename: remote1
+      broadcastName: remote1
       type: fftokens
       fftokens:
         url: http://tokens:3000
     - name: test2
-      remotename: remote2
+      broadcastName: remote2
       type: fftokens
       fftokens:
         url: http://tokens:3000
@@ -1181,6 +1184,26 @@ func TestLoadNamespacesReservedName(t *testing.T) {
     default: ns1
     predefined:
     - name: ff_system
+    `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10388", err)
+}
+
+func TestLoadNamespacesReservedNetworkName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      multiparty:
+        enabled: true
+        networknamespace: ff_system
     `))
 	assert.NoError(t, err)
 

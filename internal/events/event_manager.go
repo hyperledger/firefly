@@ -90,7 +90,7 @@ type EventManager interface {
 
 type eventManager struct {
 	ctx                context.Context
-	namespace          core.NamespaceRef
+	namespace          *core.Namespace
 	enricher           *eventEnricher
 	database           database.Plugin
 	txHelper           txcommon.Helper
@@ -115,7 +115,7 @@ type eventManager struct {
 	multiparty         multiparty.Manager // optional
 }
 
-func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager, cacheManager cache.Manager) (EventManager, error) {
+func NewEventManager(ctx context.Context, ns *core.Namespace, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager, cacheManager cache.Manager) (EventManager, error) {
 	if di == nil || im == nil || dh == nil || dm == nil || om == nil || ds == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
@@ -127,7 +127,7 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plug
 			ctx,
 			coreconfig.CacheEventListenerTopicLimit,
 			coreconfig.CacheEventListenerTopicTTL,
-			ns.LocalName,
+			ns.Name,
 		),
 	)
 	if err != nil {
@@ -162,7 +162,7 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plug
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)
 	if bi != nil {
-		aggregator, err := newAggregator(ctx, ns.LocalName, di, bi, pm, dh, im, dm, newPinNotifier, mm, cacheManager)
+		aggregator, err := newAggregator(ctx, ns.Name, di, bi, pm, dh, im, dm, newPinNotifier, mm, cacheManager)
 		if err != nil {
 			return nil, err
 		}
@@ -170,9 +170,9 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plug
 		em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 	}
 
-	em.enricher = newEventEnricher(ns.LocalName, di, dm, om, txHelper)
+	em.enricher = newEventEnricher(ns.Name, di, dm, om, txHelper)
 
-	if em.subManager, err = newSubscriptionManager(ctx, ns.LocalName, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, ns.Name, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
 		return nil, err
 	}
 
@@ -256,7 +256,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 	} else {
 		// We lock in the starting sequence at creation time, rather than when the first dispatcher
 		// starts, as that's a more obvious behavior for users
-		sequence, err := calcFirstOffset(ctx, em.namespace.LocalName, em.database, subDef.Options.FirstEvent)
+		sequence, err := calcFirstOffset(ctx, em.namespace.Name, em.database, subDef.Options.FirstEvent)
 		if err != nil {
 			return err
 		}
@@ -270,7 +270,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 
 func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error) {
 	// The event in the database for the deletion of the susbscription, will asynchronously update the submanager
-	return em.database.DeleteSubscriptionByID(ctx, em.namespace.LocalName, subDef.ID)
+	return em.database.DeleteSubscriptionByID(ctx, em.namespace.Name, subDef.ID)
 }
 
 func (em *eventManager) AddSystemEventListener(ns string, el system.EventListener) error {

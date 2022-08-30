@@ -104,7 +104,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
 	mev.On("SetHandler", "ns1", mock.Anything).Return(nil).Maybe()
 	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	emi, err := NewEventManager(ctx, ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, mdd, mmi, mom, txHelper, events, mmp, cmi)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
@@ -140,7 +140,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), &core.Namespace{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -170,7 +170,7 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	mev.On("SetHandler", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err := NewEventManager(context.Background(), ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, mom, txHelper, events, mmp, cmi)
 	assert.EqualError(t, err, "pop")
 }

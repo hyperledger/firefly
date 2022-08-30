@@ -77,6 +77,9 @@ func sampleBatch(t *testing.T, batchType core.BatchType, txType core.Transaction
 			Data:     data,
 		},
 	}
+	if batchType == core.BatchTypePrivate {
+		batch.Group = fftypes.NewRandB32()
+	}
 	err := msg.Seal(context.Background())
 	assert.NoError(t, err)
 	bp, _ := batch.Confirmed()

@@ -29,14 +29,12 @@ const (
 	PluginConfigName = "name"
 	// PluginConfigType is the type of the plugin to be loaded
 	PluginConfigType = "type"
-	// PluginRemoteName is the plugin name to be sent in plugin calls
-	PluginRemoteName = "remotename"
+	// PluginBroadcastName is the plugin name to be sent in multi-party broadcasts, if it differs from the local plugin name
+	PluginBroadcastName = "broadcastName"
 	// NamespaceName is the short name for a pre-defined namespace
 	NamespaceName = "name"
 	// NamespaceName is the long description for a pre-defined namespace
 	NamespaceDescription = "description"
-	// NamespaceRemoteName is the namespace name to be sent in plugin calls
-	NamespaceRemoteName = "remotename"
 	// NamespacePlugins is the list of namespace plugins
 	NamespacePlugins = "plugins"
 	// NamespaceDefaultKey is the default signing key for blockchain transactions within this namespace
@@ -47,6 +45,8 @@ const (
 	NamespaceMultiparty = "multiparty"
 	// NamespaceMultipartyEnabled specifies if multi-party mode is enabled for a namespace
 	NamespaceMultipartyEnabled = "enabled"
+	// NamespaceMultipartyNetworkNamespace is the shared namespace name to be used in off-chain messaging
+	NamespaceMultipartyNetworkNamespace = "networknamespace"
 	// NamespaceMultipartyOrgName is a short name for the local root org within a namespace
 	NamespaceMultipartyOrgName = "org.name"
 	// NamespaceMultipartyOrgDescription is a description for the local root org within a namespace

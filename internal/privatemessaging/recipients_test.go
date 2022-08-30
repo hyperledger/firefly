@@ -48,8 +48,15 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "remoteorg").Return(remoteOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, localOrg.DID).Return(localOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, remoteOrg.DID).Return(remoteOrg, false, nil)
+	mim.On("CachedIdentityLookupByID", pm.ctx, localNode.ID).Return(localNode, nil)
+	mim.On("CachedIdentityLookupByID", pm.ctx, remoteNode.ID).Return(remoteNode, nil)
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
+	mim.On("ValidateNodeOwner", pm.ctx, localNode, localOrg).Return(true, nil)
+	mim.On("ValidateNodeOwner", pm.ctx, remoteNode, remoteOrg).Return(true, nil)
+
 	ud := mdi.On("UpsertData", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	ud.RunFn = func(a mock.Arguments) {
 		data := a[1].(*core.Data)

@@ -77,7 +77,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 		if err != nil {
 			return nil, err
 		}
-		bp, err := bm.database.GetBatchByID(ctx, bm.namespace.LocalName, id)
+		bp, err := bm.database.GetBatchByID(ctx, bm.namespace.Name, id)
 		if err != nil {
 			return nil, err
 		} else if bp == nil {
@@ -94,7 +94,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 		if err != nil {
 			return nil, err
 		}
-		d, err := bm.database.GetDataByID(ctx, bm.namespace.LocalName, dataID, false)
+		d, err := bm.database.GetDataByID(ctx, bm.namespace.Name, dataID, false)
 		if err != nil {
 			return nil, err
 		} else if d == nil || d.Blob == nil {
@@ -127,7 +127,7 @@ func (bm *broadcastManager) RunOperation(ctx context.Context, op *core.PreparedO
 // uploadBatch uploads the serialized batch to public storage
 func (bm *broadcastManager) uploadBatch(ctx context.Context, data uploadBatchData) (outputs fftypes.JSONObject, complete bool, err error) {
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
-	data.Batch.Namespace = bm.namespace.RemoteName
+	data.Batch.Namespace = bm.namespace.NetworkName
 	payload, err := json.Marshal(data.Batch)
 	if err != nil {
 		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
@@ -159,7 +159,7 @@ func (bm *broadcastManager) uploadBlob(ctx context.Context, data uploadBlobData)
 	}
 
 	// Update the data in the DB
-	err = bm.database.UpdateData(ctx, bm.namespace.LocalName, data.Data.ID, database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", data.Data.Blob.Public))
+	err = bm.database.UpdateData(ctx, bm.namespace.Name, data.Data.ID, database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", data.Data.Blob.Public))
 	if err != nil {
 		return nil, false, err
 	}

@@ -19,6 +19,7 @@ package events
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"strings"
 
@@ -61,6 +62,30 @@ type aggregator struct {
 type batchCacheEntry struct {
 	batch    *core.BatchPersisted
 	manifest *core.BatchManifest
+}
+
+func broadcastContext(topic string) *fftypes.Bytes32 {
+	h := sha256.New()
+	h.Write([]byte(topic))
+	return fftypes.HashResult(h)
+}
+
+func privateContext(topic string, group *fftypes.Bytes32) *fftypes.Bytes32 {
+	h := sha256.New()
+	h.Write([]byte(topic))
+	h.Write((*group)[:])
+	return fftypes.HashResult(h)
+}
+
+func privatePinHash(topic string, group *fftypes.Bytes32, identity string, nonce int64) *fftypes.Bytes32 {
+	h := sha256.New()
+	h.Write([]byte(topic))
+	h.Write((*group)[:])
+	h.Write([]byte(identity))
+	nonceBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(nonceBytes, uint64(nonce))
+	h.Write(nonceBytes)
+	return fftypes.HashResult(h)
 }
 
 func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.Handler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager, cacheManager cache.Manager) (*aggregator, error) {
@@ -332,19 +357,24 @@ func (ag *aggregator) cacheBatch(cacheKey string, batch *core.BatchPersisted, ma
 func (ag *aggregator) processPins(ctx context.Context, pins []*core.Pin, state *batchState) (err error) {
 	l := log.L(ctx)
 
-	// Keep a batch cache for this list of pins
-	manifests := make(map[fftypes.UUID]*core.BatchManifest)
+	localCache := make(map[fftypes.UUID]*batchCacheEntry)
+	var manifest *core.BatchManifest
+	var batch *core.BatchPersisted
+
 	// As messages can have multiple topics, we need to avoid processing the message twice in the same poll loop.
 	// We must check all the contexts in the message, and mark them dispatched together.
 	dupMsgCheck := make(map[fftypes.UUID]bool)
 	for _, pin := range pins {
-		manifest, ok := manifests[*pin.Batch]
-		if !ok {
-			_, manifest, err = ag.GetBatchForPin(ctx, pin)
+		found, ok := localCache[*pin.Batch] // avoid trying to fetch the same batch repeatedly (mainly for cache misses)
+		if ok {
+			manifest = found.manifest
+			batch = found.batch
+		} else {
+			batch, manifest, err = ag.GetBatchForPin(ctx, pin)
 			if err != nil {
 				return err
 			}
-			manifests[*pin.Batch] = manifest
+			localCache[*pin.Batch] = &batchCacheEntry{manifest: manifest, batch: batch}
 		}
 		if manifest == nil {
 			l.Debugf("Pin %.10d batch unavailable: batch=%s pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
@@ -365,7 +395,7 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*core.Pin, state *
 		dupMsgCheck[*msgEntry.ID] = true
 
 		// Attempt to process the message (only returns errors for database persistence issues)
-		err := ag.processMessage(ctx, manifest, pin, msgBaseIndex, msgEntry, state)
+		err := ag.processMessage(ctx, manifest, pin, msgBaseIndex, msgEntry, batch, state)
 		if err != nil {
 			return err
 		}
@@ -415,7 +445,7 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 	return true, nil
 }
 
-func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchManifest, pin *core.Pin, msgBaseIndex int64, msgEntry *core.MessageManifestEntry, state *batchState) (err error) {
+func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchManifest, pin *core.Pin, msgBaseIndex int64, msgEntry *core.MessageManifestEntry, batch *core.BatchPersisted, state *batchState) (err error) {
 	l := log.L(ctx)
 
 	unmaskedContexts := make([]*fftypes.Bytes32, 0)
@@ -460,7 +490,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 					l.Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, manifest.ID, i, pinStr)
 					return nil
 				}
-				nextPin, err := state.checkMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext, nonceStr)
+				nextPin, err := state.checkMaskedContextReady(ctx, msg, batch, msg.Header.Topics[i], pin.Sequence, &msgContext, nonceStr)
 				if err != nil || nextPin == nil {
 					return err
 				}
@@ -468,9 +498,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 			}
 		} else {
 			for _, topic := range msg.Header.Topics {
-				h := sha256.New()
-				h.Write([]byte(topic))
-				msgContext := fftypes.HashResult(h)
+				msgContext := broadcastContext(topic)
 				unmaskedContexts = append(unmaskedContexts, msgContext)
 				ready, err := state.checkUnmaskedContextReady(ctx, msgContext, msg, pin.Sequence)
 				if err != nil || !ready {

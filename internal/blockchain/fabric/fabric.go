@@ -387,7 +387,7 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
 	f.callbacks.OperationUpdate(ctx, f, requestID, updateType, txHash, message, reply)
 }
 
-func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace core.NamespaceRef, location *fftypes.JSONAny, firstEvent string) (string, error) {
+func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return "", err
@@ -398,7 +398,7 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace core.Name
 		return "", err
 	}
 
-	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.LocalName, version, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
+	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
 	if err != nil {
 		return "", err
 	}
@@ -601,7 +601,7 @@ func hexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, remoteNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -626,7 +626,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, remoteNamespace, si
 	if version == 1 {
 		prefixItems = batchPinPrefixItemsV1
 		pinInput = map[string]interface{}{
-			"namespace":  remoteNamespace,
+			"namespace":  networkNamespace,
 			"uuids":      hexFormatB32(&uuids),
 			"batchHash":  hexFormatB32(batch.BatchHash),
 			"payloadRef": batch.BatchPayloadRef,

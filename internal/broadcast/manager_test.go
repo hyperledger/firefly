@@ -76,7 +76,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	b, err := NewBroadcastManager(ctx, ns, mdi, mbi, mdx, mpi, mim, mdm, mba, msa, mmp, mmi, mom)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
@@ -94,7 +94,7 @@ func newTestBroadcastWithMetrics(t *testing.T) (*broadcastManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBroadcastManager(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewBroadcastManager(context.Background(), &core.Namespace{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

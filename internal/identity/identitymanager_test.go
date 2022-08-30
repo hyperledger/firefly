@@ -1393,3 +1393,136 @@ func TestParseKeyNormalizationConfig(t *testing.T) {
 	assert.Equal(t, KeyNormalizationNone, ParseKeyNormalizationConfig("none"))
 	assert.Equal(t, KeyNormalizationNone, ParseKeyNormalizationConfig(""))
 }
+
+func TestValidateNodeOwner(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:   fftypes.NewUUID(),
+			Type: core.IdentityTypeOrg,
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeNode,
+			Parent: org.ID,
+		},
+	}
+
+	valid, err := im.ValidateNodeOwner(ctx, node, org)
+	assert.NoError(t, err)
+	assert.True(t, valid)
+}
+
+func TestValidateNodeOwnerInvalid(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:   fftypes.NewUUID(),
+			Type: core.IdentityTypeOrg,
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:   fftypes.NewUUID(),
+			Type: core.IdentityTypeNode,
+		},
+	}
+
+	valid, err := im.ValidateNodeOwner(ctx, node, org)
+	assert.NoError(t, err)
+	assert.False(t, valid)
+}
+
+func TestValidateNodeOwnerGrandparent(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:   fftypes.NewUUID(),
+			Type: core.IdentityTypeOrg,
+		},
+	}
+	child := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeCustom,
+			Parent: org.ID,
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeNode,
+			Parent: org.ID,
+		},
+	}
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentityByID", ctx, "ns1", org.ID).Return(org, nil)
+
+	valid, err := im.ValidateNodeOwner(ctx, node, child)
+	assert.NoError(t, err)
+	assert.True(t, valid)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestValidateNodeOwnerUnknownParent(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeOrg,
+			Parent: fftypes.NewUUID(),
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeNode,
+			Parent: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentityByID", ctx, "ns1", org.Parent).Return(nil, nil)
+
+	valid, err := im.ValidateNodeOwner(ctx, node, org)
+	assert.NoError(t, err)
+	assert.False(t, valid)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestValidateNodeOwnerGetError(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeOrg,
+			Parent: fftypes.NewUUID(),
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeNode,
+			Parent: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentityByID", ctx, "ns1", org.Parent).Return(nil, fmt.Errorf("pop"))
+
+	valid, err := im.ValidateNodeOwner(ctx, node, org)
+	assert.EqualError(t, err, "pop")
+	assert.False(t, valid)
+
+	mdi.AssertExpectations(t)
+}

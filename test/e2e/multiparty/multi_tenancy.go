@@ -45,19 +45,19 @@ func (suite *NamespaceAliasSuite) AfterTest(suiteName, testName string) {
 	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
 }
 
-func newNamespace(remoteName, contractAddress string) (ns, org, node map[string]interface{}) {
+func newNamespace(networkNamespace, contractAddress string) (ns, org, node map[string]interface{}) {
 	org = make(map[string]interface{})
 	node = make(map[string]interface{})
 	ns = map[string]interface{}{
-		"remotename": remoteName,
 		"multiparty": map[string]interface{}{
-			"enabled": true,
-			"org":     org,
-			"node":    node,
+			"enabled":          true,
+			"networkNamespace": networkNamespace,
+			"org":              org,
+			"node":             node,
 			"contract": []map[string]interface{}{
 				{
 					"location":   map[string]interface{}{"address": contractAddress},
-					"firstevent": "0",
+					"firstEvent": "0",
 				},
 			},
 		},
@@ -108,15 +108,16 @@ func (suite *NamespaceAliasSuite) TestMultiTenancy() {
 	admin1.SetBaseURL(suite.testState.adminHost1 + "/spi/v1")
 	admin2.SetBaseURL(suite.testState.adminHost2 + "/spi/v1")
 
-	// Reset both nodes to pick up the new namespace
-	e2e.ResetFireFly(suite.T(), admin1)
-	e2e.ResetFireFly(suite.T(), admin2)
-	e2e.PollForUp(suite.T(), suite.testState.client1)
-	e2e.PollForUp(suite.T(), suite.testState.client2)
-
 	clientAlice := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, nsAlice)
 	clientBob := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, nsBob)
 	clientCharlie := client.NewFireFly(suite.T(), suite.testState.client2.Hostname, nsCharlie)
+
+	// Reset both nodes to pick up the new namespace
+	e2e.ResetFireFly(suite.T(), admin1)
+	e2e.ResetFireFly(suite.T(), admin2)
+	e2e.PollForUp(suite.T(), clientAlice)
+	e2e.PollForUp(suite.T(), clientBob)
+	e2e.PollForUp(suite.T(), clientCharlie)
 
 	eventNames := "message_confirmed"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s", nsAlice, eventNames)

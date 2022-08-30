@@ -366,3 +366,29 @@ func TestPersistBatchContentDataMissingBlobRef(t *testing.T) {
 	mdi.AssertExpectations(t)
 
 }
+
+func TestPersistBatchInvalidTXType(t *testing.T) {
+
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
+		Hash: fftypes.NewRandB32(),
+		Payload: core.BatchPayload{
+			TX: core.TransactionRef{
+				ID:   fftypes.NewUUID(),
+				Type: core.TransactionTypeContractInvoke,
+			},
+			Messages: []*core.Message{{}},
+			Data:     core.DataArray{{}},
+		},
+	}
+
+	_, ok, err := em.persistBatch(em.ctx, batch)
+	assert.NoError(t, err)
+	assert.False(t, ok)
+
+}

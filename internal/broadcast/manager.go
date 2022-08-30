@@ -56,7 +56,7 @@ type Manager interface {
 
 type broadcastManager struct {
 	ctx                   context.Context
-	namespace             core.NamespaceRef
+	namespace             *core.Namespace
 	database              database.Plugin
 	identity              identity.Manager
 	data                  data.Manager
@@ -70,7 +70,7 @@ type broadcastManager struct {
 	operations            operations.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, im identity.Manager, dm data.Manager, ba batch.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, ns *core.Namespace, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, im identity.Manager, dm data.Manager, ba batch.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BroadcastManager")
 	}
@@ -128,7 +128,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	// Upload the batch itself
 	op := core.NewOperation(
 		bm.sharedstorage,
-		bm.namespace.LocalName,
+		bm.namespace.Name,
 		state.Persisted.TX.ID,
 		core.OpTypeSharedStorageUploadBatch)
 	addUploadBatchInputs(op, state.Persisted.ID)
@@ -156,7 +156,7 @@ func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, d
 
 			op := core.NewOperation(
 				bm.sharedstorage,
-				bm.namespace.LocalName,
+				bm.namespace.Name,
 				tx,
 				core.OpTypeSharedStorageUploadBlob)
 			addUploadBlobInputs(op, d.ID)

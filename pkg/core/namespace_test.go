@@ -23,16 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNamespace(t *testing.T) {
-	ns := &Namespace{
-		LocalName:  "local",
-		RemoteName: "remote",
-	}
-	ref := ns.Ref()
-	assert.Equal(t, "local", ref.LocalName)
-	assert.Equal(t, "remote", ref.RemoteName)
-}
-
 func TestMultipartyContractsDatabaseSerialization(t *testing.T) {
 	contracts1 := &MultipartyContracts{
 		Active: &MultipartyContract{

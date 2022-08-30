@@ -678,6 +678,52 @@ func TestWebsocketWithReinit(t *testing.T) {
 	assert.True(t, h.initialized)
 }
 
+func TestWebsocketWithEmptyNodesInit(t *testing.T) {
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	_, _, wsURL, cancel := wsclient.NewTestWSServer(nil)
+	defer cancel()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+	h := &FFDX{}
+
+	coreconfig.Reset()
+	h.InitConfig(utConfig)
+	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
+	utConfig.Set(ffresty.HTTPCustomClient, mockedClient)
+	utConfig.Set(DataExchangeInitEnabled, true)
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			var reqNodes []fftypes.JSONObject
+
+			// we want to make sure when theres are no peer nodes, an empty list is being
+			// passed as the req, not "null"
+			err := json.NewDecoder(req.Body).Decode(&reqNodes)
+			assert.NoError(t, err)
+			assert.Empty(t, reqNodes)
+			assert.NotNil(t, reqNodes)
+
+			return httpmock.NewJsonResponse(200, fftypes.JSONObject{
+				"status": "ready",
+			})
+		})
+
+	h.InitConfig(utConfig)
+	err := h.Init(context.Background(), utConfig)
+	assert.NoError(t, err)
+
+	err = h.Start()
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, httpmock.GetTotalCallCount())
+	assert.True(t, h.initialized)
+}
+
 func TestDXUninitialized(t *testing.T) {
 	h, _, _, _, done := newTestFFDX(t, false)
 	defer done()

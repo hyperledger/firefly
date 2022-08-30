@@ -56,7 +56,7 @@ type Manager interface {
 
 type dataManager struct {
 	blobStore
-	namespace      core.NamespaceRef
+	namespace      *core.Namespace
 	database       database.Plugin
 	validatorCache cache.CInterface
 	messageCache   cache.CInterface
@@ -91,7 +91,7 @@ const (
 	CRORequireBatchID
 )
 
-func NewDataManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, dx dataexchange.Plugin, cacheManager cache.Manager) (Manager, error) {
+func NewDataManager(ctx context.Context, ns *core.Namespace, di database.Plugin, dx dataexchange.Plugin, cacheManager cache.Manager) (Manager, error) {
 	if di == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DataManager")
 	}
@@ -110,7 +110,7 @@ func NewDataManager(ctx context.Context, ns core.NamespaceRef, di database.Plugi
 			ctx,
 			coreconfig.CacheValidatorSize,
 			coreconfig.CacheValidatorTTL,
-			ns.LocalName,
+			ns.Name,
 		),
 	)
 	if err != nil {
@@ -123,7 +123,7 @@ func NewDataManager(ctx context.Context, ns core.NamespaceRef, di database.Plugi
 			ctx,
 			coreconfig.CacheValidatorSize,
 			coreconfig.CacheValidatorTTL,
-			ns.LocalName,
+			ns.Name,
 		),
 	)
 	if err != nil {
@@ -143,7 +143,7 @@ func (dm *dataManager) Start() {
 }
 
 func (dm *dataManager) CheckDatatype(ctx context.Context, datatype *core.Datatype) error {
-	_, err := newJSONValidator(ctx, dm.namespace.LocalName, datatype)
+	_, err := newJSONValidator(ctx, dm.namespace.Name, datatype)
 	return err
 }
 
@@ -154,25 +154,25 @@ func (dm *dataManager) getValidatorForDatatype(ctx context.Context, validator co
 	}
 
 	if datatypeRef == nil || datatypeRef.Name == "" || datatypeRef.Version == "" {
-		log.L(ctx).Warnf("Invalid datatype reference '%s:%s:%s'", validator, dm.namespace, datatypeRef)
+		log.L(ctx).Warnf("Invalid datatype reference '%s:%s:%s'", validator, dm.namespace.Name, datatypeRef)
 		return nil, nil
 	}
 
-	key := fmt.Sprintf("%s:%s:%s", validator, dm.namespace, datatypeRef)
+	key := fmt.Sprintf("%s:%s:%s", validator, dm.namespace.Name, datatypeRef)
 	if cachedValue := dm.validatorCache.Get(key); cachedValue != nil {
 		return cachedValue.(Validator), nil
 	}
 
-	datatype, err := dm.database.GetDatatypeByName(ctx, dm.namespace.LocalName, datatypeRef.Name, datatypeRef.Version)
+	datatype, err := dm.database.GetDatatypeByName(ctx, dm.namespace.Name, datatypeRef.Name, datatypeRef.Version)
 	if err != nil {
 		return nil, err
 	}
 	if datatype == nil {
 		return nil, nil
 	}
-	v, err := newJSONValidator(ctx, dm.namespace.LocalName, datatype)
+	v, err := newJSONValidator(ctx, dm.namespace.Name, datatype)
 	if err != nil {
-		log.L(ctx).Errorf("Invalid validator stored for '%s:%s:%s': %s", validator, dm.namespace, datatypeRef, err)
+		log.L(ctx).Errorf("Invalid validator stored for '%s:%s:%s': %s", validator, dm.namespace.Name, datatypeRef, err)
 		return nil, nil
 	}
 
@@ -187,7 +187,7 @@ func (dm *dataManager) GetMessageWithDataCached(ctx context.Context, msgID *ffty
 	if mce := dm.queryMessageCache(ctx, msgID, options...); mce != nil {
 		return mce.msg, mce.data, true, nil
 	}
-	msg, err = dm.database.GetMessageByID(ctx, dm.namespace.LocalName, msgID)
+	msg, err = dm.database.GetMessageByID(ctx, dm.namespace.Name, msgID)
 	if err != nil || msg == nil {
 		return nil, nil, false, err
 	}
@@ -255,7 +255,7 @@ func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, 
 		}
 	}
 	log.L(ctx).Debugf("Cache hit for message %s", id)
-	mce.msg.LocalNamespace = dm.namespace.LocalName // always populate LocalNamespace on the way out of the cache
+	mce.msg.LocalNamespace = dm.namespace.Name // always populate LocalNamespace on the way out of the cache
 	return mce
 }
 
@@ -333,7 +333,7 @@ func (dm *dataManager) resolveRef(ctx context.Context, dataRef *core.DataRef) (*
 		log.L(ctx).Warnf("data is nil")
 		return nil, nil
 	}
-	d, err := dm.database.GetDataByID(ctx, dm.namespace.LocalName, dataRef.ID, true)
+	d, err := dm.database.GetDataByID(ctx, dm.namespace.Name, dataRef.ID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +412,7 @@ func (dm *dataManager) validateInputData(ctx context.Context, inData *core.DataR
 	data = &core.Data{
 		Validator: validator,
 		Datatype:  datatype,
-		Namespace: dm.namespace.LocalName,
+		Namespace: dm.namespace.Name,
 		Value:     value,
 		Blob:      blobRef,
 	}
@@ -490,7 +490,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *core.Ba
 	batch := persistedBatch.GenInflight(make([]*core.Message, len(manifest.Messages)), make(core.DataArray, len(manifest.Data)))
 
 	for i, mr := range manifest.Messages {
-		m, err := dm.database.GetMessageByID(ctx, dm.namespace.LocalName, mr.ID)
+		m, err := dm.database.GetMessageByID(ctx, dm.namespace.Name, mr.ID)
 		if err != nil || m == nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgFailedToRetrieve, "message", mr.ID)
 		}
@@ -498,7 +498,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *core.Ba
 		batch.Payload.Messages[i] = m.BatchMessage()
 	}
 	for i, dr := range manifest.Data {
-		d, err := dm.database.GetDataByID(ctx, dm.namespace.LocalName, dr.ID, true)
+		d, err := dm.database.GetDataByID(ctx, dm.namespace.Name, dr.ID, true)
 		if err != nil || d == nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgFailedToRetrieve, "data", dr.ID)
 		}

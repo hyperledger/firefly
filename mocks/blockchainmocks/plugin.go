@@ -39,18 +39,18 @@ func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.Co
 }
 
 // AddFireflySubscription provides a mock function with given fields: ctx, namespace, location, firstEvent
-func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace core.NamespaceRef, location *fftypes.JSONAny, firstEvent string) (string, error) {
+func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
 	ret := _m.Called(ctx, namespace, location, firstEvent)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, core.NamespaceRef, *fftypes.JSONAny, string) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *fftypes.JSONAny, string) string); ok {
 		r0 = rf(ctx, namespace, location, firstEvent)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, core.NamespaceRef, *fftypes.JSONAny, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Namespace, *fftypes.JSONAny, string) error); ok {
 		r1 = rf(ctx, namespace, location, firstEvent)
 	} else {
 		r1 = ret.Error(1)
