@@ -35,8 +35,8 @@ import (
 type GroupManager interface {
 	GetGroupByID(ctx context.Context, id string) (*core.Group, error)
 	GetGroups(ctx context.Context, filter database.AndFilter) ([]*core.Group, *database.FilterResult, error)
-	ResolveInitGroup(ctx context.Context, msg *core.Message) (*core.Group, error)
-	EnsureLocalGroup(ctx context.Context, group *core.Group) (ok bool, err error)
+	ResolveInitGroup(ctx context.Context, msg *core.Message, creator *core.Member) (*core.Group, error)
+	EnsureLocalGroup(ctx context.Context, group *core.Group, creator *core.Member) (ok bool, err error)
 }
 
 type groupManager struct {
@@ -53,7 +53,7 @@ type groupHashEntry struct {
 	nodes []*core.Identity
 }
 
-func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *core.Group) (ok bool, err error) {
+func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *core.Group, creator *core.Member) (ok bool, err error) {
 	if group == nil {
 		return false, i18n.NewError(ctx, coremsgs.MsgGroupRequired)
 	}
@@ -75,6 +75,10 @@ func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *core.Group)
 		log.L(ctx).Errorf("Attempt to insert invalid group %s: %s", group.Hash, err)
 		return false, nil
 	}
+	if !gm.groupContains(ctx, group, creator) {
+		return false, nil
+	}
+
 	err = gm.database.UpsertGroup(ctx, group, database.UpsertOptimizationNew /* it could have been created by another thread, but we think we're first */)
 	if err != nil {
 		return false, err
@@ -103,6 +107,24 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 		return i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 	}
 	group.LocalNamespace = gm.namespace.Name
+
+	// Ensure all group members are valid
+	for _, member := range group.Members {
+		node, err := gm.identity.CachedIdentityLookupByID(ctx, member.Node)
+		if err != nil {
+			return err
+		}
+		org, _, err := gm.identity.CachedIdentityLookupMustExist(ctx, member.Identity)
+		if err != nil {
+			return err
+		}
+		valid, err := gm.identity.ValidateNodeOwner(ctx, node, org)
+		if err != nil {
+			return err
+		} else if !valid {
+			return i18n.NewError(ctx, coremsgs.MsgInvalidGroupMember, node.DID, member.Identity)
+		}
+	}
 
 	// Create a private send message referring to the data
 	msg := &core.Message{
@@ -203,7 +225,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 // Otherwise, the existing group must exist.
 //
 // Errors are only returned for database issues. For validation issues, a nil group is returned without an error.
-func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *core.Message) (*core.Group, error) {
+func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *core.Message, member *core.Member) (*core.Group, error) {
 	if msg.Header.Tag == core.SystemTagDefineGroup {
 		// Store the new group
 		data, foundAll, err := gm.data.GetMessageDataCached(ctx, msg)
@@ -244,5 +266,19 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *core.Message)
 		log.L(ctx).Warnf("Group %s not found for first message in context. type=%s", msg.Header.Group, msg.Header.Type)
 		return nil, nil
 	}
+
+	if !gm.groupContains(ctx, group, member) {
+		return nil, nil
+	}
 	return group, nil
+}
+
+func (gm *groupManager) groupContains(ctx context.Context, group *core.Group, member *core.Member) (valid bool) {
+	for _, m := range group.Members {
+		if m.Identity == member.Identity && m.Node.Equals(member.Node) {
+			return true
+		}
+	}
+	log.L(ctx).Errorf("Group '%s' does not contain member identity=%s node=%s", group.Hash, member.Identity, member.Node)
+	return false
 }

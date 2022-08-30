@@ -27,53 +27,41 @@ import (
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
-// Check data exchange peer the data came from, has been registered to the org listed in the batch.
-// Note the on-chain identity check is performed separately by the aggregator (across broadcast and private consistently).
-func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerID, author string) (node *core.Identity, err error) {
-	l := log.L(em.ctx)
+// Check that the sending data exchange peer corresponds to the node listed in the batch,
+// and that the node has been registered to the org listed in the batch.
+func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerID, author string, nodeID *fftypes.UUID) (valid bool, err error) {
+	l := log.L(ctx)
 
-	// Resolve the node for the peer ID
-	node, err = em.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
+	// Resolve the node for the peer ID and check against the node specified on the batch
+	node, err := em.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
 		Type:  core.VerifierTypeFFDXPeerID,
 		Value: peerID,
 	})
 	if err != nil {
-		return nil, err
+		return false, err
+	}
+	if node == nil {
+		l.Errorf("Peer '%s' could not be resolved", peerID)
+		return false, nil
+	}
+	if !node.ID.Equals(nodeID) {
+		l.Errorf("Peer '%s' resolved to node '%s', which does not match expected '%s'", peerID, node.ID, nodeID)
+		return false, nil
 	}
 
-	// Find the identity in the mesage
+	// Look up the identity specified on the batch
 	org, retryable, err := em.identity.CachedIdentityLookupMustExist(ctx, author)
 	if err != nil && retryable {
 		l.Errorf("Failed to retrieve org: %v", err)
-		return nil, err // retryable error
+		return false, err // retryable error
 	}
 	if org == nil || err != nil {
 		l.Errorf("Identity %s not found", author)
-		return nil, nil
+		return false, nil
 	}
 
 	// One of the orgs in the hierarchy of the author must be the owner of the peer node
-	candidate := org
-	foundNodeOrg := org.ID.Equals(node.Parent)
-	for !foundNodeOrg && candidate.Parent != nil {
-		parent := candidate.Parent
-		candidate, err = em.identity.CachedIdentityLookupByID(ctx, parent)
-		if err != nil {
-			l.Errorf("Failed to retrieve node org '%s': %v", parent, err)
-			return nil, err // retry for persistence error
-		}
-		if candidate == nil {
-			l.Errorf("Did not find org '%s' in chain for identity '%s' (%s)", parent, org.DID, org.ID)
-			return nil, nil
-		}
-		foundNodeOrg = candidate.ID.Equals(node.Parent)
-	}
-	if !foundNodeOrg {
-		l.Errorf("No org in the chain matches owner '%s' of node '%s' ('%s')", node.Parent, node.ID, node.Name)
-		return nil, nil
-	}
-
-	return node, nil
+	return em.identity.ValidateNodeOwner(ctx, node, org)
 }
 
 func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, wrapperGroup *core.Group) (manifest string, err error) {
@@ -87,34 +75,37 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, w
 	}
 	batch.Namespace = em.namespace.Name
 
+	sender := &core.Member{
+		Identity: batch.Author,
+		Node:     batch.Node,
+	}
+
 	// Retry for persistence errors (not validation errors)
 	err = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
 		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			l := log.L(ctx)
 
-			if wrapperGroup != nil && batch.Payload.TX.Type == core.TransactionTypeUnpinned {
-				valid, err := em.messaging.EnsureLocalGroup(ctx, wrapperGroup)
-				if err != nil {
-					return err
-				}
-				if !valid {
-					l.Errorf("Invalid transmission: invalid group: %+v", wrapperGroup)
-					return nil
+			if batch.Payload.TX.Type == core.TransactionTypeUnpinned {
+				if wrapperGroup != nil {
+					if valid, err := em.messaging.EnsureLocalGroup(ctx, wrapperGroup, sender); err != nil {
+						return err
+					} else if !valid {
+						l.Errorf("Invalid transmission: invalid group: %+v", wrapperGroup)
+						return nil
+					}
 				}
 			}
 
-			node, err := em.checkReceivedOffchainIdentity(ctx, peerID, batch.Author)
-			if err != nil {
+			if valid, err := em.checkReceivedOffchainIdentity(ctx, peerID, batch.Author, batch.Node); err != nil {
 				return err
-			}
-			if node == nil {
-				l.Errorf("Batch received from invalid author '%s' for peer ID '%s'", batch.Author, peerID)
+			} else if !valid {
+				l.Errorf("Batch '%s' received from invalid author '%s' for peer '%s'", batch.ID, batch.Author, peerID)
 				return nil
 			}
 
 			persistedBatch, valid, err := em.persistBatch(ctx, batch)
 			if err != nil || !valid {
-				l.Errorf("Batch received from org=%s node=%s processing failed valid=%t: %s", node.Parent, node.Name, valid, err)
+				l.Errorf("Batch '%s' from %s processing failed valid=%t: %s", batch.ID, peerID, valid, err)
 				return err // retry - persistBatch only returns retryable errors
 			}
 
@@ -124,6 +115,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, w
 					return err
 				}
 			}
+
 			manifest = persistedBatch.Manifest.String()
 			return nil
 		})
