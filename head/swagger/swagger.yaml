@@ -5249,9 +5249,16 @@ paths:
       operationId: getEvents
       parameters:
       - description: When set, the API will return the record that this item references
-          in its 'ref' field
+          in its 'reference' field
         in: query
         name: fetchreferences
+        schema:
+          example: "true"
+          type: string
+      - description: When set, the API will return the record that this item references
+          in its 'reference' field
+        in: query
+        name: fetchreference
         schema:
           example: "true"
           type: string
@@ -5432,6 +5439,13 @@ paths:
         name: eid
         required: true
         schema:
+          type: string
+      - description: When set, the API will return the record that this item references
+          in its 'reference' field
+        in: query
+        name: fetchreference
+        schema:
+          example: "true"
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
@@ -14515,9 +14529,16 @@ paths:
           example: default
           type: string
       - description: When set, the API will return the record that this item references
-          in its 'ref' field
+          in its 'reference' field
         in: query
         name: fetchreferences
+        schema:
+          example: "true"
+          type: string
+      - description: When set, the API will return the record that this item references
+          in its 'reference' field
+        in: query
+        name: fetchreference
         schema:
           example: "true"
           type: string
@@ -14705,6 +14726,13 @@ paths:
         required: true
         schema:
           example: default
+          type: string
+      - description: When set, the API will return the record that this item references
+          in its 'reference' field
+        in: query
+        name: fetchreference
+        schema:
+          example: "true"
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
