@@ -129,7 +129,7 @@ var (
 	CacheBlockchainEventLimit = ffc("cache.blockchainevent.limit")
 	CacheBlockchainEventTTL   = ffc("cache.blockchainevent.ttl")
 	// Transaction cache config
-	CacheTransactionLmit = ffc("cache.transaction.limit")
+	CacheTransactionSize = ffc("cache.transaction.size")
 	CacheTransactionTTL  = ffc("cache.transaction.ttl")
 
 	// EventListenerTopic cache config
@@ -149,11 +149,11 @@ var (
 	CacheSigningKeyTTL   = ffc("cache.signingkey.ttl")
 
 	// DataManager Message cache config
-	CacheMessageLimit = ffc("cache.message.limit")
-	CacheMessageTTL   = ffc("cache.message.ttl")
+	CacheMessageSize = ffc("cache.message.size")
+	CacheMessageTTL  = ffc("cache.message.ttl")
 	// DataManager Validator cache config
-	CacheValidatorLimit = ffc("cache.validator.limit")
-	CacheValidatorTTL   = ffc("cache.validator.ttl")
+	CacheValidatorSize = ffc("cache.validator.size")
+	CacheValidatorTTL  = ffc("cache.validator.ttl")
 
 	// CacheBlockchainTTL time to live of blockchain plugin cache
 	CacheBlockchainTTL = ffc("cache.blockchain.ttl")
@@ -390,7 +390,7 @@ func setDefaults() {
 	viper.SetDefault(string(SPIWebSocketWriteBufferSize), "16Kb")
 	viper.SetDefault(string(SPIWebSocketBlockedWarnInterval), "1m")
 	viper.SetDefault(string(SPIWebSocketEventQueueLength), 250)
-	viper.SetDefault(string(CacheMessageLimit), "50Mb")
+	viper.SetDefault(string(CacheMessageSize), "50Mb")
 	viper.SetDefault(string(CacheMessageTTL), "5m")
 	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)
 	viper.SetDefault(string(MessageWriterBatchTimeout), "10ms")
@@ -416,10 +416,10 @@ func setDefaults() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
-	viper.SetDefault(string(CacheTransactionLmit), "1Mb")
+	viper.SetDefault(string(CacheTransactionSize), "1Mb")
 	viper.SetDefault(string(CacheTransactionTTL), "5m")
 	viper.SetDefault(string(UIEnabled), true)
-	viper.SetDefault(string(CacheValidatorLimit), "1Mb")
+	viper.SetDefault(string(CacheValidatorSize), "1Mb")
 	viper.SetDefault(string(CacheValidatorTTL), "1h")
 	viper.SetDefault(string(CacheIdentityLimit), 100)
 	viper.SetDefault(string(CacheIdentityTTL), "1h")

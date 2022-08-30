@@ -18,6 +18,7 @@ package cache
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -64,17 +65,32 @@ func (cc *CConfig) Category() (string, error) {
 		return "", i18n.NewError(cc.ctx, coremsgs.MsgCacheMissTTLKeyInternal)
 	}
 
-	categoryDerivedFromMaxLimitConfigKey := cc.maxLimitConfigKey[0 : len(cc.maxLimitConfigKey)-len(".limit")]
-	categoryDerivedFromTTLConfigKey := cc.ttlConfigKey[0 : len(cc.ttlConfigKey)-len(".ttl")]
+	categoryDerivedFromMaxLimitConfigKey, _ := parseConfigKeyString(string(cc.maxLimitConfigKey))
+	categoryDerivedFromTTLConfigKey, _ := parseConfigKeyString(string(cc.ttlConfigKey))
 	if categoryDerivedFromMaxLimitConfigKey != categoryDerivedFromTTLConfigKey {
 		return "", i18n.NewError(cc.ctx, coremsgs.MsgCacheConfigKeyMismatchInternal, cc.maxLimitConfigKey, cc.ttlConfigKey, categoryDerivedFromMaxLimitConfigKey, categoryDerivedFromTTLConfigKey)
 
 	}
-	return string(categoryDerivedFromMaxLimitConfigKey), nil
+	return categoryDerivedFromMaxLimitConfigKey, nil
 }
 
-func (cc *CConfig) MaxSize() int64 {
-	return config.GetInt64(cc.maxLimitConfigKey)
+func parseConfigKeyString(configKey string) (string, string) {
+	keyParts := strings.Split(configKey, ".")
+	categoryString := strings.Join(keyParts[:len(keyParts)-1], ".")
+	configName := keyParts[len(keyParts)-1]
+	return categoryString, configName
+}
+
+func (cc *CConfig) MaxSize() (int64, error) {
+	_, sizeConfigName := parseConfigKeyString(string(cc.maxLimitConfigKey))
+	switch sizeConfigName {
+	case "limit":
+		return config.GetInt64(cc.maxLimitConfigKey), nil
+	case "size":
+		return config.GetByteSize(cc.maxLimitConfigKey), nil
+	default:
+		return 0, i18n.NewError(cc.ctx, coremsgs.MsgCacheUnexpectedSizeKeyNameInternal, sizeConfigName)
+	}
 }
 
 func (cc *CConfig) TTL() time.Duration {
@@ -159,12 +175,16 @@ func (cm *cacheManager) GetCache(cc *CConfig) (CInterface, error) {
 	if err != nil {
 		return nil, err
 	}
+	maxSize, err := cc.MaxSize()
+	if err != nil {
+		return nil, err
+	}
 	cache, exists := cm.configuredCaches[cacheName]
 	if !exists {
 		cache = &CCache{
 			ctx:      cc.ctx,
 			name:     cacheName,
-			cache:    ccache.New(ccache.Configure().MaxSize(cc.MaxSize())),
+			cache:    ccache.New(ccache.Configure().MaxSize(maxSize)),
 			cacheTTL: cc.TTL(),
 			enabled:  cm.enabled,
 		}

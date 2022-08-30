@@ -40,7 +40,7 @@ func NewTestTransactionHelper(di database.Plugin, dm data.Manager) (Helper, cach
 		database:  di,
 		data:      dm,
 	}
-	t.transactionCache = cache.NewUmanagedCache(context.Background(), config.GetByteSize(coreconfig.CacheTransactionLmit), config.GetDuration(coreconfig.CacheTransactionTTL))
+	t.transactionCache = cache.NewUmanagedCache(context.Background(), config.GetByteSize(coreconfig.CacheTransactionSize), config.GetDuration(coreconfig.CacheTransactionTTL))
 	t.blockchainEventCache = cache.NewUmanagedCache(context.Background(), config.GetByteSize(coreconfig.CacheBlockchainEventLimit), config.GetDuration(coreconfig.CacheBlockchainEventTTL))
 	return t, t.transactionCache, t.blockchainEventCache
 }

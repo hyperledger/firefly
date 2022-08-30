@@ -108,7 +108,7 @@ func NewDataManager(ctx context.Context, ns core.NamespaceRef, di database.Plugi
 	validatorCache, err := cacheManager.GetCache(
 		cache.NewCacheConfig(
 			ctx,
-			coreconfig.CacheValidatorLimit,
+			coreconfig.CacheValidatorSize,
 			coreconfig.CacheValidatorTTL,
 			ns.LocalName,
 		),
@@ -121,7 +121,7 @@ func NewDataManager(ctx context.Context, ns core.NamespaceRef, di database.Plugi
 	messageCache, err := cacheManager.GetCache(
 		cache.NewCacheConfig(
 			ctx,
-			coreconfig.CacheValidatorLimit,
+			coreconfig.CacheValidatorSize,
 			coreconfig.CacheValidatorTTL,
 			ns.LocalName,
 		),

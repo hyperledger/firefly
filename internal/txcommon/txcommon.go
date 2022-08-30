@@ -56,7 +56,7 @@ func NewTransactionHelper(ctx context.Context, ns string, di database.Plugin, dm
 	transactionCache, err := cacheManager.GetCache(
 		cache.NewCacheConfig(
 			ctx,
-			coreconfig.CacheTransactionLmit,
+			coreconfig.CacheTransactionSize,
 			coreconfig.CacheTransactionTTL,
 			ns,
 		),

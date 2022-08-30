@@ -324,7 +324,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached messages for data manager|`int`|`<nil>`
+|size|Max size of cached messages for data manager|`int`|`<nil>`
 |ttl|Time to live of cached messages for data manager|`string`|`<nil>`
 
 ## cache.operations
@@ -345,14 +345,14 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached transactions|`int`|`<nil>`
+|size|Max size of cached transactions|`int`|`<nil>`
 |ttl|Time to live of cached transactions|`string`|`<nil>`
 
 ## cache.validator
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached validators for data manager|`int`|`<nil>`
+|size|Max size of cached validators for data manager|`int`|`<nil>`
 |ttl|Time to live of cached validators for data manager|`string`|`<nil>`
 
 ## cors

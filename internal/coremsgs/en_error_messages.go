@@ -264,4 +264,5 @@ var (
 	MsgCacheMissSizeLimitKeyInternal      = ffe("FF10422", "could not initialize cache - size limit config key is not provided")
 	MsgCacheMissTTLKeyInternal            = ffe("FF10423", "could not initialize cache - ttl config key is not provided")
 	MsgCacheConfigKeyMismatchInternal     = ffe("FF10424", "could not initialize cache - '%s' and '%s' do not have identical prefix, mismatching prefixes are: '%s','%s'")
+	MsgCacheUnexpectedSizeKeyNameInternal = ffe("FF10425", "could not initialize cache - '%s' is not an expected size configuration key suffix. Expected values are: 'size', 'limit'")
 )

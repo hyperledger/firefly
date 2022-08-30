@@ -36,6 +36,8 @@ func TestNewCacheCreationFail(t *testing.T) {
 	assert.Equal(t, "FF10422: could not initialize cache - size limit config key is not provided", err.Error())
 	_, err = cacheManager.GetCache(NewCacheConfig(ctx, "test.limit", "", ""))
 	assert.Equal(t, "FF10423: could not initialize cache - ttl config key is not provided", err.Error())
+	_, err = cacheManager.GetCache(NewCacheConfig(ctx, "test.max", "test.ttl", ""))
+	assert.Equal(t, "FF10425: could not initialize cache - 'max' is not an expected size configuration key suffix. Expected values are: 'size', 'limit'", err.Error())
 }
 
 func TestGetCacheReturnsSameCacheForSameConfig(t *testing.T) {
@@ -58,7 +60,7 @@ func TestTwoSeparateCacheWorksIndependently(t *testing.T) {
 	ctx := context.Background()
 	cacheManager := NewCacheManager(ctx)
 	cache0, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.batch.limit", "cache.batch.ttl", ""))
-	cache1, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.operations.limit", "cache.operations.ttl", ""))
+	cache1, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.message.size", "cache.message.ttl", ""))
 
 	cache0.SetInt("int0", 100)
 	assert.Equal(t, 100, cache0.GetInt("int0"))
