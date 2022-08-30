@@ -5433,6 +5433,13 @@ paths:
         required: true
         schema:
           type: string
+      - description: When set, the API will return the record that this item references
+          in its 'ref' field
+        in: query
+        name: fetchreference
+        schema:
+          example: "true"
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -14705,6 +14712,13 @@ paths:
         required: true
         schema:
           example: default
+          type: string
+      - description: When set, the API will return the record that this item references
+          in its 'ref' field
+        in: query
+        name: fetchreference
+        schema:
+          example: "true"
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
