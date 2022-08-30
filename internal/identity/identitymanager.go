@@ -52,6 +52,7 @@ type Manager interface {
 	GetMultipartyRootOrg(ctx context.Context) (*core.Identity, error)
 	GetLocalNode(ctx context.Context) (node *core.Identity, err error)
 	VerifyIdentityChain(ctx context.Context, identity *core.Identity) (immediateParent *core.Identity, retryable bool, err error)
+	ValidateNodeOwner(ctx context.Context, node *core.Identity, identity *core.Identity) (valid bool, err error)
 }
 
 type identityManager struct {
@@ -507,4 +508,29 @@ func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fft
 		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
 	}
 	return identity, nil
+}
+
+// Validate that the given identity or one of its ancestors owns the given node.
+func (im *identityManager) ValidateNodeOwner(ctx context.Context, node *core.Identity, identity *core.Identity) (valid bool, err error) {
+	l := log.L(ctx)
+	candidate := identity
+	foundOwner := candidate.ID.Equals(node.Parent)
+	for !foundOwner && candidate.Parent != nil {
+		parent := candidate.Parent
+		candidate, err = im.CachedIdentityLookupByID(ctx, parent)
+		if err != nil {
+			l.Errorf("Failed to retrieve node org '%s': %v", parent, err)
+			return false, err // retry for persistence error
+		}
+		if candidate == nil {
+			l.Errorf("Did not find '%s' in chain for identity '%s' (%s)", parent, identity.DID, identity.ID)
+			return false, nil
+		}
+		foundOwner = candidate.ID.Equals(node.Parent)
+	}
+	if !foundOwner {
+		l.Errorf("No identity in the chain matches owner '%s' of node '%s' ('%s')", node.Parent, node.ID, node.Name)
+		return false, nil
+	}
+	return true, nil
 }

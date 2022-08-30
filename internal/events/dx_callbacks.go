@@ -61,27 +61,7 @@ func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerI
 	}
 
 	// One of the orgs in the hierarchy of the author must be the owner of the peer node
-	candidate := org
-	foundNodeOrg := candidate.ID.Equals(node.Parent)
-	for !foundNodeOrg && candidate.Parent != nil {
-		parent := candidate.Parent
-		candidate, err = em.identity.CachedIdentityLookupByID(ctx, parent)
-		if err != nil {
-			l.Errorf("Failed to retrieve node org '%s': %v", parent, err)
-			return false, err // retry for persistence error
-		}
-		if candidate == nil {
-			l.Errorf("Did not find org '%s' in chain for identity '%s' (%s)", parent, org.DID, org.ID)
-			return false, nil
-		}
-		foundNodeOrg = candidate.ID.Equals(node.Parent)
-	}
-	if !foundNodeOrg {
-		l.Errorf("No org in the chain matches owner '%s' of node '%s' ('%s')", node.Parent, node.ID, node.Name)
-		return false, nil
-	}
-
-	return true, nil
+	return em.identity.ValidateNodeOwner(ctx, node, org)
 }
 
 func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, wrapperGroup *core.Group) (manifest string, err error) {

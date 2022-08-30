@@ -108,6 +108,24 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 	}
 	group.LocalNamespace = gm.namespace.LocalName
 
+	// Ensure all group members are valid
+	for _, member := range group.Members {
+		node, err := gm.identity.CachedIdentityLookupByID(ctx, member.Node)
+		if err != nil {
+			return err
+		}
+		org, _, err := gm.identity.CachedIdentityLookupMustExist(ctx, member.Identity)
+		if err != nil {
+			return err
+		}
+		valid, err := gm.identity.ValidateNodeOwner(ctx, node, org)
+		if err != nil {
+			return err
+		} else if !valid {
+			return i18n.NewError(ctx, coremsgs.MsgInvalidGroupMember, node.DID, member.Identity)
+		}
+	}
+
 	// Create a private send message referring to the data
 	msg := &core.Message{
 		State:          core.MessageStateReady,
