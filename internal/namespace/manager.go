@@ -71,7 +71,7 @@ var (
 )
 
 type Manager interface {
-	Init(ctx context.Context, cancelCtx context.CancelFunc) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool) error
 	Start() error
 	WaitStop()
 	Reset(ctx context.Context)
@@ -92,8 +92,7 @@ type namespace struct {
 }
 
 type namespaceManager struct {
-	ctx         context.Context
-	cancelCtx   context.CancelFunc
+	reset       chan bool
 	nsMux       sync.Mutex
 	namespaces  map[string]*namespace
 	pluginNames map[string]bool
@@ -192,9 +191,8 @@ func NewNamespaceManager(withDefaults bool) Manager {
 	return nm
 }
 
-func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
-	nm.ctx = ctx
-	nm.cancelCtx = cancelCtx
+func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool) (err error) {
+	nm.reset = reset
 
 	if err = nm.loadPlugins(ctx); err != nil {
 		return err
@@ -220,7 +218,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	var v1Contract *core.MultipartyContract
 
 	for _, ns := range nm.namespaces {
-		if err := nm.initNamespace(ns); err != nil {
+		if err := nm.initNamespace(ctx, ns); err != nil {
 			return err
 		}
 		multiparty := ns.config.Multiparty.Enabled
@@ -253,7 +251,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		systemNS.Name = core.LegacySystemNamespace
 		systemNS.NetworkName = core.LegacySystemNamespace
 		nm.namespaces[core.LegacySystemNamespace] = systemNS
-		err = nm.initNamespace(systemNS)
+		err = nm.initNamespace(ctx, systemNS)
 		log.L(ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, v1Namespace.Name)
 	}
 	return err
@@ -271,19 +269,19 @@ func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContra
 	return nil
 }
 
-func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
+func (nm *namespaceManager) initNamespace(ctx context.Context, ns *namespace) (err error) {
 	var plugins *orchestrator.Plugins
 	if ns.config.Multiparty.Enabled {
-		plugins, err = nm.validateMultiPartyConfig(nm.ctx, ns.Name, ns.plugins)
+		plugins, err = nm.validateMultiPartyConfig(ctx, ns.Name, ns.plugins)
 	} else {
-		plugins, err = nm.validateNonMultipartyConfig(nm.ctx, ns.Name, ns.plugins)
+		plugins, err = nm.validateNonMultipartyConfig(ctx, ns.Name, ns.plugins)
 	}
 	if err != nil {
 		return err
 	}
 
 	database := plugins.Database.Plugin
-	existing, err := database.GetNamespace(nm.ctx, ns.Name)
+	existing, err := database.GetNamespace(ctx, ns.Name)
 	switch {
 	case err != nil:
 		return err
@@ -291,7 +289,7 @@ func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 		ns.Created = existing.Created
 		ns.Contracts = existing.Contracts
 		if ns.NetworkName != existing.NetworkName {
-			log.L(nm.ctx).Warnf("Namespace '%s' - network name unexpectedly changed from '%s' to '%s'", ns.Name, existing.NetworkName, ns.NetworkName)
+			log.L(ctx).Warnf("Namespace '%s' - network name unexpectedly changed from '%s' to '%s'", ns.Name, existing.NetworkName, ns.NetworkName)
 		}
 	default:
 		ns.Created = fftypes.Now()
@@ -299,7 +297,7 @@ func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 			Active: &core.MultipartyContract{},
 		}
 	}
-	if err = database.UpsertNamespace(nm.ctx, &ns.Namespace, true); err != nil {
+	if err = database.UpsertNamespace(ctx, &ns.Namespace, true); err != nil {
 		return err
 	}
 
@@ -308,7 +306,7 @@ func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 		or = orchestrator.NewOrchestrator(&ns.Namespace, ns.config, plugins, nm.metrics)
 	}
 	ns.orchestrator = or
-	orCtx, orCancel := context.WithCancel(nm.ctx)
+	orCtx, orCancel := context.WithCancel(ctx)
 	if err := or.Init(orCtx, orCancel); err != nil {
 		return err
 	}
@@ -316,7 +314,7 @@ func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 		<-orCtx.Done()
 		nm.nsMux.Lock()
 		defer nm.nsMux.Unlock()
-		log.L(nm.ctx).Infof("Terminated namespace '%s'", ns.Name)
+		log.L(ctx).Infof("Terminated namespace '%s'", ns.Name)
 		delete(nm.namespaces, ns.Name)
 	}()
 	return nil
@@ -367,7 +365,7 @@ func (nm *namespaceManager) Reset(ctx context.Context) {
 	// (allows caller to cleanly finish processing the current request/event).
 	go func() {
 		<-ctx.Done()
-		nm.cancelCtx()
+		nm.reset <- true
 	}()
 }
 
@@ -744,12 +742,12 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 		}
 	}
 	for _, entry := range nm.plugins.events {
-		if err = entry.plugin.Init(nm.ctx, entry.config); err != nil {
+		if err = entry.plugin.Init(ctx, entry.config); err != nil {
 			return err
 		}
 	}
 	for name, entry := range nm.plugins.auth {
-		if err = entry.plugin.Init(nm.ctx, name, entry.config); err != nil {
+		if err = entry.plugin.Init(ctx, name, entry.config); err != nil {
 			return err
 		}
 	}
