@@ -3,7 +3,7 @@ layout: default
 title: Digital Assets
 parent: The Key Components
 grand_parent: pages.understanding_firefly
-nav_order: 4
+nav_order: 3
 ---
 
 # Digital Assets

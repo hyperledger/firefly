@@ -14,6 +14,6 @@ has_children: true
 ---
 ![Hyperledger FireFly features](../images/firefly_functionality_overview.png)
 
-Hyperledger FireFly has 7 key parts that
+This section will introduce in detail the 5 key layers to a FireFly Supernode.
 
 

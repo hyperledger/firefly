@@ -3,7 +3,7 @@ layout: default
 title: FireFly Core
 parent: The Key Components
 grand_parent: pages.understanding_firefly
-nav_order: 2
+nav_order: 5
 ---
 
 # FireFly Core

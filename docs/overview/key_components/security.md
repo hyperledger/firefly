@@ -3,7 +3,7 @@ layout: default
 title: Security
 parent: The Key Components
 grand_parent: pages.understanding_firefly
-nav_order: 8
+nav_order: 1
 ---
 
 # Security

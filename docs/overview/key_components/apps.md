@@ -3,7 +3,7 @@ layout: default
 title: Apps
 parent: The Key Components
 grand_parent: pages.understanding_firefly
-nav_order: 3
+nav_order: 2
 ---
 
 # Apps

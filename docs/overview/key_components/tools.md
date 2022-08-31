@@ -3,7 +3,7 @@ layout: default
 title: Tools
 parent: The Key Components
 grand_parent: pages.understanding_firefly
-nav_order: 5
+nav_order: 4
 ---
 
 # Tools

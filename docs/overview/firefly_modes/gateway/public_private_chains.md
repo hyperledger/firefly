@@ -6,7 +6,7 @@ grand_parent: pages.understanding_firefly
 nav_order: 1
 ---
 
-# Public and Permissioned Blockchain
+# Public vs. Private Chains
 {: .no_toc }
 
 ---
