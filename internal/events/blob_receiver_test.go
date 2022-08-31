@@ -21,20 +21,18 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestBlobReceiverBackgroundDispatchOK(t *testing.T) {
 
-	em, cancel := newTestEventManagerWithDBConcurrency(t)
-	defer cancel()
+	em := newTestEventManagerWithDBConcurrency(t)
+	defer em.cleanup(t)
 	em.blobReceiver.start()
 
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
-	mdi.On("InsertBlobs", mock.Anything, mock.Anything).Return(nil, nil)
+	em.mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
+	em.mdi.On("InsertBlobs", mock.Anything, mock.Anything).Return(nil, nil)
 
 	blobHash := fftypes.NewRandB32()
 	done := make(chan struct{})
@@ -53,15 +51,15 @@ func TestBlobReceiverBackgroundDispatchOK(t *testing.T) {
 	})
 	<-done
 
-	mdi.AssertExpectations(t)
 	em.blobReceiver.stop()
 
 }
 
 func TestBlobReceiverBackgroundDispatchCancelled(t *testing.T) {
 
-	em, cancel := newTestEventManagerWithDBConcurrency(t)
-	cancel()
+	em := newTestEventManagerWithDBConcurrency(t)
+	defer em.cleanup(t)
+	em.cancel()
 	em.blobReceiver.start()
 
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
@@ -75,13 +73,13 @@ func TestBlobReceiverBackgroundDispatchCancelled(t *testing.T) {
 
 func TestBlobReceiverBackgroundDispatchFail(t *testing.T) {
 
-	em, cancel := newTestEventManagerWithDBConcurrency(t)
+	em := newTestEventManagerWithDBConcurrency(t)
+	defer em.cleanup(t)
 	em.blobReceiver.start()
 
 	done := make(chan struct{})
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobs", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Run(func(args mock.Arguments) {
-		cancel()
+	em.mdi.On("GetBlobs", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Run(func(args mock.Arguments) {
+		em.cancel()
 		close(done)
 	})
 
@@ -92,20 +90,18 @@ func TestBlobReceiverBackgroundDispatchFail(t *testing.T) {
 	})
 	<-done
 
-	mdi.AssertExpectations(t)
 	em.blobReceiver.stop()
 
 }
 
 func TestBlobReceiverDispatchDup(t *testing.T) {
 
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 
 	blobHash := fftypes.NewRandB32()
 
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*core.Blob{
+	em.mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*core.Blob{
 		{Hash: blobHash, PayloadRef: "payload1"},
 	}, nil, nil)
 
@@ -115,7 +111,5 @@ func TestBlobReceiverDispatchDup(t *testing.T) {
 			PayloadRef: "payload1",
 		},
 	})
-
-	mdi.AssertExpectations(t)
 
 }

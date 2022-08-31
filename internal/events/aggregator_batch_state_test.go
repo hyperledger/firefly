@@ -21,20 +21,17 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestFlushPinsFailUpdatePins(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-	bs := newBatchState(ag)
+	ag := newTestAggregator()
+	defer ag.cleanup(t)
+	bs := newBatchState(&ag.aggregator)
 
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ag.mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	bs.markMessageDispatched(fftypes.NewUUID(), &core.Message{
 		Header: core.MessageHeader{
@@ -49,16 +46,14 @@ func TestFlushPinsFailUpdatePins(t *testing.T) {
 }
 
 func TestFlushPinsFailUpdateMessages(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-	bs := newBatchState(ag)
+	ag := newTestAggregator()
+	defer ag.cleanup(t)
+	bs := newBatchState(&ag.aggregator)
 	msgID := fftypes.NewUUID()
 
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("UpdateMessageStateIfCached", ag.ctx, msgID, core.MessageStateConfirmed, mock.Anything).Return()
+	ag.mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
+	ag.mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, msgID, core.MessageStateConfirmed, mock.Anything).Return()
 
 	bs.markMessageDispatched(fftypes.NewUUID(), &core.Message{
 		Header: core.MessageHeader{
@@ -73,9 +68,9 @@ func TestFlushPinsFailUpdateMessages(t *testing.T) {
 }
 
 func TestSetContextBlockedByNoState(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-	bs := newBatchState(ag)
+	ag := newTestAggregator()
+	defer ag.cleanup(t)
+	bs := newBatchState(&ag.aggregator)
 
 	unmaskedContext := fftypes.NewRandB32()
 	bs.SetContextBlockedBy(ag.ctx, *unmaskedContext, 10)
