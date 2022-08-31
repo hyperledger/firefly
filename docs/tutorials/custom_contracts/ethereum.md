@@ -549,7 +549,7 @@ Here is an example of sending 100 wei with a transaction:
 
 Now that we've seen how to submit transactions and preform read-only queries to the blockchain, let's look at how to receive blockchain events so we know when things are happening in realtime.
 
-If you look at the source code for the smart contract we're working with above, you'll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an **Event Listener**. The `/contracts/listeners` endpoint is RESTful so there are `POST`, `GET`, and `DELETE` methods available on it. To create a new listener, we will make a `POST` request. We are going to tell FireFly to listen to events with name `"Changed"` from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events.
+If you look at the source code for the smart contract we're working with above, you'll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an **Event Listener**. The `/contracts/listeners` endpoint is RESTful so there are `POST`, `GET`, and `DELETE` methods available on it. To create a new listener, we will make a `POST` request. We are going to tell FireFly to listen to events with name `"Changed"` from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events, and the topic to assign these events to. Topics are a way for applications to subscribe to events they are interested in.
 
 ### Request
 
@@ -565,8 +565,9 @@ If you look at the source code for the smart contract we're working with above, 
   },
   "eventPath": "Changed",
   "options": {
-    "firstEvent": "oldest"
-  }
+    "firstEvent": "new"
+  },
+  "topic": "simple-storage"
 }
 ```
 
@@ -619,6 +620,69 @@ If you look at the source code for the smart contract we're working with above, 
 ```
 
 We can see in the response, that FireFly pulls all the schema information from the FireFly Interface that we broadcasted earlier and creates the listener with that schema. This is useful so that we don't have to enter all of that data again.
+
+
+### Querying listener status
+
+If you are interested in learning about the current state of a listener you have created, you can query with the `fetchstatus` parameter. For FireFly stacks with an EVM compatible blockchain connector, the response will include checkpoint information and if the listener is currently in catchup mode.
+
+#### Request / Response
+
+`GET` `http://localhost:5000/api/v1/namespaces/default/contracts/listeners/1bfa3b0f-3d90-403e-94a4-af978d8c5b14?fetchstatus`
+```json
+{
+  "id": "1bfa3b0f-3d90-403e-94a4-af978d8c5b14",
+  "interface": {
+    "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
+  },
+  "namespace": "default",
+  "name": "sb-66209ffc-d355-4ac0-7151-bc82490ca9df",
+  "protocolId": "sb-66209ffc-d355-4ac0-7151-bc82490ca9df",
+  "location": {
+    "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+  },
+  "created": "2022-02-17T22:02:36.34549538Z",
+  "event": {
+    "name": "Changed",
+    "description": "",
+    "params": [
+      {
+        "name": "from",
+        "schema": {
+          "type": "string",
+          "details": {
+            "type": "address",
+            "internalType": "address",
+            "indexed": true
+          }
+        }
+      },
+      {
+        "name": "value",
+        "schema": {
+          "type": "integer",
+          "details": {
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        }
+      }
+    ]
+  },
+  "status": {
+    "checkpoint": {
+        "block": 0,
+        "transactionIndex": -1,
+        "logIndex": -1
+    },
+    "catchup": true
+  },
+  "options": {
+    "firstEvent": "oldest"
+  }
+}
+```
+
 
 ## Subscribe to events from our contract
 
@@ -746,6 +810,36 @@ After creating the subscription, you should see an event arrive on the connected
 You can see in the event received over the WebSocket connection, the blockchain event that was emitted from our first transaction, which happened in the past. We received this event, because when we set up both the Listener, and the Subscription, we specified the `"firstEvent"` as `"oldest"`. This tells FireFly to look for this event from the beginning of the blockchain, and that your app is interested in FireFly events since the beginning of FireFly's event history.
 
 In the event, we can also see the `blockchainevent` itself, which has an `output` object. These are the `params` in our FireFly Interface, and the actual output of the event. Here we can see the `value` is `3` which is what we set the integer to in our original transaction.
+
+### Subscription offset
+If you query by the ID of your subscription with the `fetchstatus` parameter, you can see its current `offset`.
+
+`GET` `http://localhost:5000/api/v1/namespaces/default/subscriptions/f826269c-65ed-4634-b24c-4f399ec53a32`
+```json
+{
+  "id": "f826269c-65ed-4634-b24c-4f399ec53a32",
+  "namespace": "default",
+  "name": "simple-storage",
+  "transport": "websockets",
+  "filter": {
+    "events": "blockchain_event_received",
+    "message": {},
+    "transaction": {},
+    "blockchainevent": {
+      "listener": "1bfa3b0f-3d90-403e-94a4-af978d8c5b14"
+    }
+  },
+  "options": {
+    "firstEvent": "-1",
+    "withData": false
+  },
+  "status": {
+    "offset": 20
+  }
+  "created": "2022-03-15T17:35:30.131698921Z",
+  "updated": null
+}
+```
 
 **You've reached the end of the main guide to working with custom smart contracts in FireFly**. Hopefully this was helpful and gives you what you need to get up and running with your own contracts. There are several additional ways to invoke or query smart contracts detailed below, so feel free to keep reading if you're curious.
 
