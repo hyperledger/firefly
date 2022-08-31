@@ -91,13 +91,13 @@ func (_m *Plugin) CreateTokenPool(ctx context.Context, nsOpID string, pool *core
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, name, _a2
-func (_m *Plugin) Init(ctx context.Context, name string, _a2 config.Section) error {
-	ret := _m.Called(ctx, name, _a2)
+// Init provides a mock function with given fields: ctx, cancelCtx, name, _a3
+func (_m *Plugin) Init(ctx context.Context, cancelCtx context.CancelFunc, name string, _a3 config.Section) error {
+	ret := _m.Called(ctx, cancelCtx, name, _a3)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, config.Section) error); ok {
-		r0 = rf(ctx, name, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc, string, config.Section) error); ok {
+		r0 = rf(ctx, cancelCtx, name, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}

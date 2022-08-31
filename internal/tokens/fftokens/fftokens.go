@@ -35,6 +35,7 @@ import (
 
 type FFTokens struct {
 	ctx            context.Context
+	cancelCtx      context.CancelFunc
 	capabilities   *tokens.Capabilities
 	callbacks      callbacks
 	configuredName string
@@ -204,8 +205,9 @@ func (ft *FFTokens) Name() string {
 	return "fftokens"
 }
 
-func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section) (err error) {
+func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name string, config config.Section) (err error) {
 	ft.ctx = log.WithLogField(ctx, "proto", "fftokens")
+	ft.cancelCtx = cancelCtx
 	ft.configuredName = name
 	ft.capabilities = &tokens.Capabilities{}
 	ft.callbacks = callbacks{
@@ -543,11 +545,13 @@ func (ft *FFTokens) eventLoop() {
 			return
 		case msgBytes, ok := <-ft.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
+				ft.cancelCtx()
 				return
 			}
 			if err := ft.handleMessage(ctx, msgBytes); err != nil {
-				l.Errorf("Event loop exiting: %s", err)
+				l.Errorf("Event loop exiting (%s). Terminating server!", err)
+				ft.cancelCtx()
 				return
 			}
 		}

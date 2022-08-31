@@ -50,6 +50,7 @@ const (
 
 type Ethereum struct {
 	ctx             context.Context
+	cancelCtx       context.CancelFunc
 	topic           string
 	prefixShort     string
 	prefixLong      string
@@ -117,13 +118,14 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metrics.Manager) (err error) {
+func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf config.Section, metrics metrics.Manager) (err error) {
 	e.InitConfig(conf)
 	ethconnectConf := e.ethconnectConf
 	addressResolverConf := conf.SubSection(AddressResolverConfigKey)
 	fftmConf := conf.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
+	e.cancelCtx = cancelCtx
 	e.metrics = metrics
 	e.capabilities = &blockchain.Capabilities{}
 	e.callbacks = common.NewBlockchainCallbacks()
@@ -425,7 +427,8 @@ func (e *Ethereum) eventLoop() {
 			return
 		case msgBytes, ok := <-e.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
+				e.cancelCtx()
 				return
 			}
 
@@ -448,9 +451,9 @@ func (e *Ethereum) eventLoop() {
 				continue
 			}
 
-			// Send the ack - only fails if shutting down
 			if err != nil {
-				l.Errorf("Event loop exiting: %s", err)
+				l.Errorf("Event loop exiting (%s). Terminating server!", err)
+				e.cancelCtx()
 				return
 			}
 		}
