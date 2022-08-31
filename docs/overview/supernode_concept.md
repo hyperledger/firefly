@@ -1,6 +1,6 @@
 ---
 layout: default
-title: The FireFly SuperNode
+title: Introduction to Supernodes
 parent: pages.understanding_firefly
 nav_order: 1
 ---
@@ -16,9 +16,9 @@ nav_order: 1
 
 ---
 
-## What is a SuperNode
+## What is a Supernode
 
-A FireFly SuperNode is designed to be an organization's Web 3 gateway to all the blockchain ecosystems that they participate in - multiple blockchains, multiple token economis, or multiple business networks. What makes a SuperNode "super" compared to a regular node is that it includes a blockchain developers toolkit under the hood. This includes a security layer, orchestration engine, token connectors, API identity management, and much more.
+A FireFly Supernode is designed to be an organization's Web 3 gateway to all the blockchain ecosystems that they participate in - multiple blockchains, multiple token economis, or multiple business networks. What makes a SuperNode "super" compared to a regular node is that it includes a blockchain developers toolkit under the hood. This includes a security layer, orchestration engine, token connectors, API identity management, and much more.
 
 Over the last decade of enterprise blockchain projects, architects and developers have realized
 that they need much more than a blockchain node for their projects to be successful.
@@ -29,7 +29,7 @@ that came before.
 
 A raw blockchain node is simply not enough.
 
-## Your project with or without a SuperNode
+## Your project with or without a Supernode
 
 ![Without FireFly / with FireFly](../images/without_firefly_with_firefly1.png)
 
@@ -47,13 +47,13 @@ decentralized application and can be deployed against one or more public/private
 
 Thus allowing development teams to focus on differentiation where it matters - at the solution layer.
 
-## Multiparty and Gateway Mode
+## Web3 Gateway and Multiparty Mode
 
-There are two main modes that a SuperNode can operate in which are multiparty and gateway mode.
+There are two main modes that a Supernode can operate in which are Web3 Gateway and Multiparty mode.
 
-Gateway mode may be used to simplify the processes of invoking smart contracts, interacting with digital assets, and exchanging value in existing blockchain ecosystems. Existing ecosystems may be public chains (i.e. Ethereum, Polygon, etc.) or private chains that have been created.
+Web3 Gateway mode may be used to simplify the processes of invoking smart contracts, interacting with digital assets, and exchanging value in existing blockchain ecosystems. Existing ecosystems may be public chains (i.e. Ethereum, Polygon, etc.) or private chains that have been created.
 
-Multiparty mode is used with multi-party systems. These are private blockchains where a decentralized application is running across a set of participants. Every member in the ecosystemr uns their own FireFly node consistently, with a copy of the same application stack on top. FireFly is used in this case to establish and share identity, data definitions, and data (private and broadcast) across the multiple parties.
+Multiparty mode is used with multi-party systems. These are private blockchains where a decentralized application is running across a set of participants. Every member in the ecosystem runs their own FireFly node consistently, with a copy of the same application stack on top. FireFly is used in this case to establish and share identity, data definitions, and data (private and broadcast) across the multiple parties.
 
-To learn more about each mode, check out the Gateway Mode and Multiparty Mode sections.
+To learn more about each mode, check out the Web3 Gateway Mode and Multiparty Mode sections.
 

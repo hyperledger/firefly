@@ -9,15 +9,11 @@ nav_order: 8
 # Security
 {: .no_toc }
 
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
 ---
 
 ## Security
+
+
 
 Data, value, and process flow are how decentralized systems function. In an enterprise context
 not all of this data can be shared with all parties, and some is very sensitive.

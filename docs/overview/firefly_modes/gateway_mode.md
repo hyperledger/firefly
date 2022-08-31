@@ -1,15 +1,17 @@
 ---
 layout: default
-title: Gateway Mode
+title: Web3 Gateway Mode
 parent: pages.understanding_firefly
 nav_order: 3
 has_children: true
 ---
 
 # Gateway Mode
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
@@ -19,10 +21,12 @@ has_children: true
 
 ## Introduction
 
-Gateway mode allows your FireFly SuperNode to connect to the world of Web 3. This includes public and private networks allowing you to interact with smart contracts, digital assets, and monitor data on any chain. There are many potential use cases with Gateway Mode including the following.
+Web3 Gateway Mode allows your FireFly Supernode to connect to any blockchain ecosystem, public or private. When a chain is connected, the FireFly Supernode may invoke custom smart contracts, interact with tokens, and monitor transactions. A single FireFly Supernode is able to have multiple namespaces, or isolated environments, where each namespace is a connection to a different chain.
 
-### Use Case 1: Monitor data on multiple chains
+![Gateway Mode](../../images/gateway_mode.png "Gateway Mode")
 
-Gateway mode allows your FireFly SuperNode to connect and monitor transactions on multiple chains, all in one environemnt. Additionally, you will also be able to set filters so that only blockchain events that you care about are delivered. Imagine a scenario where you have
+## Use Case Example
 
-### Use Case 2:
+There are many ways to use Gateway Mode. An example could be an interaction with a public chain such as Polygon.
+
+Imagine as a developer that there are multiple smart contracts that you have written for use on Polygon. You can start with FireFly's API generation to have a easy to use REST API interface to interact with the smart contracts. Next, imagine that one or more of your smart contracts conforms to the ERC-20 standard. Your Supernode is able to index the token operations (mint/burn/transfer/approvals) to see transaction history and balances associated with that contract. Finally, using FireFly’s tokens api, you may further interact with that ERC20.

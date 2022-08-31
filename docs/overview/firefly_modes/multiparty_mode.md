@@ -7,9 +7,11 @@ has_children: true
 ---
 
 # Enterprise multi-party systems
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
@@ -19,7 +21,7 @@ has_children: true
 
 ## Introduction
 
-Multiparty mode is an extension of Gateway Mode and is used for multi-party systems. All features available in Gateway mode are present in Multiparty mode as well.
+Multiparty mode has all the features in Gateway mode with the added benefit of multi-party process flows.
 
 A multi-party system is a class of application empowered by the technology revolution
 of blockchain digital ledger technology (DLT), and emerging cryptographic proof technologies
@@ -29,7 +31,7 @@ By combining these technologies with existing best practice technologies for
 data security in regulated industries, multi-party systems allow businesses to
 collaborate in ways previously impossible.
 
-![Multi-party Systems](../../images/multiparty_system.png "Multi-Party System")
+![Multiparty Mode](../../images/multiparty_mode.png "Multiparty Mode")
 
 Through agreement on a common source of truth, such as the completion of a step in a
 business process to proceed, or the existence and ownership of a unique asset, businesses
@@ -53,12 +55,12 @@ each party, rather than seeking to unify or replace them.
 
 Multi-party systems are different from centralized third-party systems, because each
 party retains sovereignty over:
-  - Their application instance
-  - Their private data
-  - Their business processes
-  - Their proprietary business logic
-  - Their internal business processes and IT controls
 
+- Their application instance
+- Their private data
+- Their business processes
+- Their proprietary business logic
+- Their internal business processes and IT controls
 
 ## Use Case Example
 

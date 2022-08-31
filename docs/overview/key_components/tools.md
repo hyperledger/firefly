@@ -7,17 +7,12 @@ nav_order: 5
 ---
 
 # Tools
+
 {: .no_toc }
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
 
 ---
 
-## Tools
+## Tools Overview
 
 There are three main tools within FireFly which are the command line interface (CLI), FireFly Explorer, and FireFly Sandbox.
 
@@ -35,7 +30,7 @@ The FireFly Sandbox sits logically outside the Supernode, and it acts like an "e
 
 > 🗒 Technical details: The FireFly Sandbox is an example "full-stack" web app. It has a backend written in TypeScript / Node.js, and a frontend in TypeScript / React. When you click a button in your browser, the frontend makes a request to the backend, which then uses the [FireFly Node.js SDK](https://www.npmjs.com/package/@hyperledger/firefly-sdk) to make requests to FireFly's API.
 
-## What is the FireFly Explorer?
+## FireFly Explorer
 
 The FireFly explorer is a part of FireFly Core itself. It is a view into the system that allows operators to monitor the current state of the system and investigate specific transactions, messages, and events. It is also a great way for developers to see the results of running their code against FireFly's API.
 

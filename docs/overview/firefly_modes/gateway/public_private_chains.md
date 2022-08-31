@@ -1,68 +1,66 @@
 ---
 layout: default
 title: Public vs. Private chains
-parent: Gateway Mode
+parent: Web3 Gateway Mode
 grand_parent: pages.understanding_firefly
 nav_order: 1
 ---
 
-# Flows
+# Public and Permissioned Blockchain
 {: .no_toc }
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
 
 ---
 
-## Flow features
+## Public and Permissioned Blockchain
 
-Data, value, and process flow are how decentralized systems function. In an enterprise context
-not all of this data can be shared with all parties, and some is very sensitive.
+A separate choice to the technology for your blockchain, is what combination
+of blockchain ecosystems you will integrate with.
 
-### Private data flow
+There are a huge variety of options, and increasingly you might find yourself
+integrating with multiple ecosystems in your solutions.
 
-Managing the flows of data so that the right information is shared with the right parties,
-at the right time, means thinking carefully about what data flows over what channel.
+A rough (and incomplete) high level classification of the blockchains available is as follows:
 
-The number of enterprise solutions where all data can flow directly through the blockchain,
-is vanishingly small.
+- Layer 1 public blockchains
+  - This is where most token ecosystems are rooted and some of the popular ones include Ethereum, Avalanche, BNB Chain, etc.)
+- Layer 2 public scaling solutions backed by a Layer 1 blockchain
+  - These are increasing where transaction execution takes place that
+    needs to be reflected eventually back to a Layer 1 blockchain (due
+    to cost/congestion in the Layer 1 chains). An example of a Layer 2 solution would be Arbitrum which uses rollups to connect back to Ethereum.
+- Permissioned side-chains
+  - Historically this has been where the majority of production adoption of
+    enterprise blockchain has focussed, due to the predictable cost, performance,
+    and ability to manage the validator set and boundary API security
+    alongside a business network governance policy
+  - These might have their state check-pointed/rolled-up to a Layer 2 or Layer 1 chain
 
-Coordinating these different data flows is often one of the biggest pieces of heavy lifting solved
-on behalf of the application by a robust framework like FireFly:
+The lines are blurring between these categorizations as the technologies and ecosystems evolve.
 
-- Establishing the identity of participants so data can be shared
-- Securing the transfer of data off-chain
-- Coordinating off-chain data flow with on-chain data flow
-- Managing sequence for deterministic outcomes for all parties
-- Integrating off-chain private execution with multi-step stateful business logic
+## Public blockchain variations
 
-### Multi-party business process flow
+For the public Layer 1 and 2 solutions, there are too many subclassifications to go into in detail here:
 
-Web3 has the potential to transform how ecosystems interact. Digitally transforming
-legacy process flows, by giving deterministic outcomes that are trusted by all parties,
-backed by new forms of digital trust between parties.
+- Whether ecosystems supports custom smart contract execution (EVM based is most common, where contracts are supported)
+- What types of token standards are supported, or other chain specific embedded smart contracts
+- Whether the chain follows an unspent transaction output (UTXO) or Account model
+- How value is bridged in-to / out-of the ecosystem
+- How the validator set of the chain is established - most common is Proof of Stake (PoS)
+- How data availability is maintained - to check the working of the validators ensure the historical state is not lost
+- The consensus algorithm, and how it interacts with the consensus of other blockchains
+- How state in a Layer 2 is provable in a parent Layer 1 chain (rollup technologies etc.)
 
-Some of the most interesting use cases require complex multi-step business process across
-participants. The Web3 version of business process management, comes with a some new challenges.
+## Common public considerations
 
-So you need the platform to:
+The thing most consistent across public blockchain technologies, is that the technical decisions are
+backed by token economics.
 
-- Provide a robust event-driven programming model fitting a "state machine" approach
-- Integrate with the decentralized application stack of each participant
-- Allow integration with the core-systems and human decision making of each participant
-- Provide deterministic ordering between all parties
-- Provide identity assurance and proofs for data flow / transition logic
+Put simply, creating a system where it's more financially rewarding to behave honestly, than it
+is to subvert and cheat the system.
 
-### Data exchange
+This means that participation costs, and that the mechanisms needed to reliably get your transactions
+into these systems are complex. Also that the time it might take to get a transaction onto the chain
+can be much longer than for a permissioned blockchain, with the potential to have to make a number
+of adjustments/resubmissions.
 
-Business processes need data, and that data comes in many shapes and sizes.
-
-The platform needs to handle all of them:
-
-- Large files and documents, as well as application data
-- Uniqueness / Enterprise NFTs - agreement on a single "foreign key" for a record
-- Non-repudiation, and acknowledgement of receipt
-- Coordination of flows of data, with flows of value - delivery vs. payment scenarios
+The choice of whether to run your own node, or use a managed API, to access these blockchain ecosystems
+is also a factor in the behavior of the transaction submission and event streaming.

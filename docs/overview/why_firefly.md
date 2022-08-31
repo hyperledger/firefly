@@ -5,17 +5,11 @@ parent: pages.understanding_firefly
 nav_order: 5
 ---
 
-# The Key Components
+# Why FireFly
 {: .no_toc }
 
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
 
 ---
-
 ## Types of blockchain project that benefit
 
 There are two main reasons your project might be exploring Supernodes, and considering the open source
@@ -47,4 +41,3 @@ projects.
 
 A gateway tier at the edge between the core systems of the enterprise, and the Web3 transactions,
 helps reduce the overhead, and reduce risk.
-
