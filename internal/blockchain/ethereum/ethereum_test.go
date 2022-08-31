@@ -3194,7 +3194,7 @@ func TestGetContractListenerStatus(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics)
 	assert.NoError(t, err)
 
 	status, err := e.GetContractListenerStatus(context.Background(), "sub1")
@@ -3224,7 +3224,7 @@ func TestGetContractListenerStatusGetSubFail(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics)
 	assert.NoError(t, err)
 
 	status, err := e.GetContractListenerStatus(context.Background(), "sub1")
