@@ -328,19 +328,6 @@ func TestQueryResSwallowError(t *testing.T) {
 	assert.Equal(t, int64(-1), *res.TotalCount)
 }
 
-func TestDoubleLock(t *testing.T) {
-	s, mdb := newMockProvider().init()
-	mdb.ExpectBegin()
-	mdb.ExpectExec("LOCK .*").WillReturnResult(driver.ResultNoRows)
-	ctx, tx, _, err := s.beginOrUseTx(context.Background())
-	assert.NoError(t, err)
-	err = s.lockTableExclusiveTx(ctx, "table1", tx)
-	assert.NoError(t, err)
-	err = s.lockTableExclusiveTx(ctx, "table1", tx)
-	assert.NoError(t, err)
-	assert.NoError(t, mdb.ExpectationsWereMet())
-}
-
 func TestInsertTxRowsBadConfig(t *testing.T) {
 	s, mdb := newMockProvider().init()
 	mdb.ExpectBegin()
