@@ -1,13 +1,13 @@
 {
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
-    "tag": "v3.2.4",
-    "sha": "7e4c73c8250b33d4605551dffb855d350346387d7535cc5e592d1b79eaee5c5e"
+    "tag": "v3.2.5",
+    "sha": "5751f6c96de2cfdf9333a4486c69fda5e47118e166e04b31b8e120a0600a6218"
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.1.2-20220826-11",
-    "sha": "cc61a4fd3488b8c1efa0e87f001fef53474c5aecdda61715e4cc5026de3a1c1c"
+    "tag": "v1.1.4",
+    "sha": "d4370836799aeb69ad06b6a2761306b95c60dc03824d5d0a4f088ebd5ccb02bb"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
@@ -31,8 +31,8 @@
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",
-    "tag": "v0.9.16-20220825-18",
-    "sha": "99267b26023856c2a47cc078d8bc2f4df9a790a4570dc465f121eafb46d0c64b"
+    "tag": "v0.9.19",
+    "sha": "359247e503d6a0ae17d8e01210abd35d7ade7787f7dae104594f603f57b140a2"
   },
   "build": {
     "firefly-builder": {
@@ -50,8 +50,8 @@
     }
   },
   "ui": {
-    "tag": "v1.1.0-alpha.3",
-    "release": "v1.1.0-alpha.3"
+    "tag": "v1.1.0-rc.2",
+    "release": "v1.1.0-rc.2"
   },
   "cli": {
     "tag": "v1.1.0-rc.1"
