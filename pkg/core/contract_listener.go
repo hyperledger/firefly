@@ -39,6 +39,10 @@ type ContractListener struct {
 	Options   *ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
 }
 
+type ContractListenerWithStatus struct {
+	ContractListener
+	Status *fftypes.JSONAny `ffstruct:"ContractListenerWithStatus" json:"status,omitempty" ffexcludeinput:"true"`
+}
 type ContractListenerOptions struct {
 	FirstEvent string `ffstruct:"ContractListenerOptions" json:"firstEvent,omitempty"`
 }

@@ -235,6 +235,29 @@ func (_m *Manager) GetContractListenerByNameOrID(ctx context.Context, nameOrID s
 	return r0, r1
 }
 
+// GetContractListenerByNameOrIDWithStatus provides a mock function with given fields: ctx, nameOrID
+func (_m *Manager) GetContractListenerByNameOrIDWithStatus(ctx context.Context, nameOrID string) (*core.ContractListenerWithStatus, error) {
+	ret := _m.Called(ctx, nameOrID)
+
+	var r0 *core.ContractListenerWithStatus
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.ContractListenerWithStatus); ok {
+		r0 = rf(ctx, nameOrID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.ContractListenerWithStatus)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, nameOrID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetContractListeners provides a mock function with given fields: ctx, filter
 func (_m *Manager) GetContractListeners(ctx context.Context, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)

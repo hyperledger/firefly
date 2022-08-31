@@ -728,6 +728,19 @@ func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *cor
 	return e.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
+func (e *Ethereum) GetContractListenerStatus(ctx context.Context, subID string) (status *fftypes.JSONAny, err error) {
+	sub, err := e.streams.getSubscription(ctx, subID)
+	if err != nil {
+		return nil, err
+	}
+
+	normalized, err := json.Marshal(sub.subscriptionCheckpoint)
+	if err == nil {
+		status = fftypes.JSONAnyPtrBytes(normalized)
+	}
+	return status, nil
+}
+
 func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	return &ffi2abi.ParamValidator{}, nil
 }

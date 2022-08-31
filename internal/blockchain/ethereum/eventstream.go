@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
@@ -51,12 +52,19 @@ type eventStream struct {
 }
 
 type subscription struct {
-	ID        string     `json:"id"`
-	Name      string     `json:"name,omitempty"`
-	Stream    string     `json:"stream"`
-	FromBlock string     `json:"fromBlock"`
-	Address   string     `json:"address"`
-	Event     *abi.Entry `json:"event"`
+	ID               string            `json:"id"`
+	Name             string            `json:"name,omitempty"`
+	Stream           string            `json:"stream"`
+	FromBlock        string            `json:"fromBlock"`
+	EthCompatAddress string            `json:"address,omitempty"`
+	EthCompatEvent   *abi.Entry        `json:"event,omitempty"`
+	Filters          []fftypes.JSONAny `json:"filters"`
+	subscriptionCheckpoint
+}
+
+type subscriptionCheckpoint struct {
+	Checkpoint *fftypes.JSONAny `json:"checkpoint,omitempty"`
+	Catchup    bool             `json:"catchup,omitempty"`
 }
 
 func newStreamManager(client *resty.Client, cache *ccache.Cache, cacheTTL time.Duration) *streamManager {
@@ -181,11 +189,11 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		fromBlock = "latest"
 	}
 	sub := subscription{
-		Name:      subName,
-		Stream:    stream,
-		FromBlock: fromBlock,
-		Address:   location.Address,
-		Event:     abi,
+		Name:             subName,
+		Stream:           stream,
+		FromBlock:        fromBlock,
+		EthCompatAddress: location.Address,
+		EthCompatEvent:   abi,
 	}
 	res, err := s.client.R().
 		SetContext(ctx).

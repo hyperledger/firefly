@@ -2519,3 +2519,14 @@ func TestSubmitNetworkActionVersionError(t *testing.T) {
 	err := e.SubmitNetworkAction(context.Background(), "", signer, core.NetworkActionTerminate, location)
 	assert.Regexp(t, "FF10284", err)
 }
+
+func TestGetContractListenerStatus(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	status, err := e.GetContractListenerStatus(context.Background(), "id")
+	assert.Nil(t, status)
+	assert.NoError(t, err)
+}

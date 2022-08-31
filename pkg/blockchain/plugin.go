@@ -75,6 +75,8 @@ type Plugin interface {
 	// DeleteContractListener deletes a previously-created subscription
 	DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error
 
+	GetContractListenerStatus(ctx context.Context, subID string) (*fftypes.JSONAny, error)
+
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
 	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)
 
