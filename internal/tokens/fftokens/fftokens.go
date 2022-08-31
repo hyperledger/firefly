@@ -545,12 +545,12 @@ func (ft *FFTokens) eventLoop() {
 			return
 		case msgBytes, ok := <-ft.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
 				ft.cancelCtx()
 				return
 			}
 			if err := ft.handleMessage(ctx, msgBytes); err != nil {
-				l.Errorf("Event loop exiting: %s", err)
+				l.Errorf("Event loop exiting (%s). Terminating server!", err)
 				ft.cancelCtx()
 				return
 			}

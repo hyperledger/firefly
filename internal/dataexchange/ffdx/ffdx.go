@@ -399,7 +399,7 @@ func (h *FFDX) eventLoop() {
 			return
 		case msgBytes, ok := <-h.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
 				h.cancelCtx()
 				return
 			}

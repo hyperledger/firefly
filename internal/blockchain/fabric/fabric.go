@@ -473,7 +473,7 @@ func (f *Fabric) eventLoop() {
 			return
 		case msgBytes, ok := <-f.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
 				f.cancelCtx()
 				return
 			}
@@ -498,7 +498,7 @@ func (f *Fabric) eventLoop() {
 			}
 
 			if err != nil {
-				l.Errorf("Event loop exiting: %s", err)
+				l.Errorf("Event loop exiting (%s). Terminating server!", err)
 				f.cancelCtx()
 				return
 			}
