@@ -63,7 +63,7 @@ var (
 	APIParamsMetadata                       = ffm("api.params.metadata", "Metadata associated with this data item")
 	APIParamsAutometa                       = ffm("api.params.autometa", "When set, FireFly will automatically generate JSON metadata with the upload details")
 	APIParamsContractAPIID                  = ffm("api.params.contractAPIID", "The ID of the contract API")
-	APIParamsFetchStatus                    = ffm("api.params.fetchStatus", "When set, the API will return additional status information")
+	APIParamsFetchStatus                    = ffm("api.params.fetchStatus", "When set, the API will return additional status information if available")
 
 	APIEndpointsAdminGetNamespaceByName = ffm("api.endpoints.adminGetNamespaceByName", "Gets a namespace by name")
 	APIEndpointsAdminGetNamespaces      = ffm("api.endpoints.adminGetNamespaces", "List namespaces")

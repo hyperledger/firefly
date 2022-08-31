@@ -74,6 +74,7 @@ type Orchestrator interface {
 	// Subscription management
 	GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
 	GetSubscriptionByID(ctx context.Context, id string) (*core.Subscription, error)
+	GetSubscriptionByIDWithStatus(ctx context.Context, id string) (*core.SubscriptionWithStatus, error)
 	CreateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
 	CreateUpdateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
 	DeleteSubscription(ctx context.Context, id string) error

@@ -3846,7 +3846,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: When set, the API will return additional status information
+      - description: When set, the API will return additional status information if
+          available
         in: query
         name: fetchstatus
         schema:
@@ -13062,7 +13063,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: When set, the API will return additional status information
+      - description: When set, the API will return additional status information if
+          available
         in: query
         name: fetchstatus
         schema:
@@ -22102,6 +22104,12 @@ paths:
         schema:
           example: default
           type: string
+      - description: When set, the API will return additional status information if
+          available
+        in: query
+        name: fetchstatus
+        schema:
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -29671,6 +29679,12 @@ paths:
         in: path
         name: subid
         required: true
+        schema:
+          type: string
+      - description: When set, the API will return additional status information if
+          available
+        in: query
+        name: fetchstatus
         schema:
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
