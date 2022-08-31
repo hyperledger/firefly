@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE tokentransfers ALTER COLUMN 'key' DROP NOT NULL;
+
+COMMIT;
