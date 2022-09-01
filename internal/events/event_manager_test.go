@@ -226,7 +226,7 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	ctx := context.Background()
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	mev.On("SetHandler", "ns1", mock.Anything).Return(fmt.Errorf("pop"))

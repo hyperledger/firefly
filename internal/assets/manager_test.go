@@ -18,11 +18,13 @@ package assets
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
@@ -57,9 +59,11 @@ func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
 	mpm := &privatemessagingmocks.Manager{}
 	mti := &tokenmocks.Plugin{}
 	mm := &metricsmocks.Manager{}
-	mom := &operationmocks.Manager{}
+	cmi := &cachemocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	mom := &operationmocks.Manager{}
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	mm.On("IsMetricsEnabled").Return(metrics)
 	mm.On("TransferSubmitted", mock.Anything)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)

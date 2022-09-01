@@ -20,11 +20,13 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -43,7 +45,10 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	})
 	mdx := &dataexchangemocks.Plugin{}
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	dm, err := NewDataManager(ctx, ns, mdi, mdx, cache.NewCacheManager(ctx))
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	dm, err := NewDataManager(ctx, ns, mdi, mdx, cmi)
 	assert.NoError(t, err)
 	dm.Start()
 	return dm.(*dataManager), ctx, func() {

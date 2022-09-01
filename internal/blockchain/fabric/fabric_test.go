@@ -36,6 +36,7 @@ import (
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/coremocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
@@ -127,7 +128,10 @@ func TestInitMissingURL(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 	resetConf(e)
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
@@ -139,7 +143,9 @@ func TestInitMissingTopic(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "Firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.Regexp(t, "FF10138.*topic", err)
 }
 
@@ -172,7 +178,9 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "fabric", e.Name())
@@ -212,7 +220,9 @@ func TestWSInitFail(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.Regexp(t, "FF00149", err)
 
 }
@@ -246,7 +256,9 @@ func TestInitAllExistingStreams(t *testing.T) {
 		"chaincode": "simplestorage",
 	}.String())
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
@@ -285,7 +297,9 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 		"chaincode": "simplestorage",
 	}.String())
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
@@ -322,7 +336,9 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 		"chaincode": "simplestorage",
 	}.String())
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
@@ -358,7 +374,9 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 		"chaincode": "simplestorage",
 	}.String())
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
@@ -394,7 +412,9 @@ func TestAddAndRemoveFireflySubscriptionDeprecatedSubName(t *testing.T) {
 		"chaincode": "simplestorage",
 	}.String())
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	subID, err := e.AddFireflySubscription(e.ctx, ns, location, "oldest")
@@ -437,7 +457,9 @@ func TestAddFireflySubscriptionInvalidSubName(t *testing.T) {
 		"chaincode": "simplestorage",
 	}.String())
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
@@ -471,7 +493,9 @@ func TestInitNewConfig(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, httpmock.GetTotalCallCount())
@@ -498,7 +522,9 @@ func TestStreamQueryError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.Regexp(t, "FF10284.*pop", err)
 
 }
@@ -525,7 +551,9 @@ func TestStreamCreateError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.Regexp(t, "FF10284.*pop", err)
 
 }
@@ -563,7 +591,9 @@ func TestSubQueryCreateError(t *testing.T) {
 		"chaincode": "simplestorage",
 	}.String())
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
@@ -604,7 +634,9 @@ func TestSubQueryCreate(t *testing.T) {
 		"chaincode": "simplestorage",
 	}.String())
 
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cache.NewCacheManager(e.ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")

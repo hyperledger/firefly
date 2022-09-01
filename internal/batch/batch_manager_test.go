@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
@@ -49,7 +50,9 @@ func newTestBatchManager(t *testing.T) (*batchManager, func()) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bm, err := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
 	assert.NoError(t, err)
 	return bm.(*batchManager), bm.(*batchManager).cancelCtx
@@ -62,7 +65,9 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 
 	readyForDispatch := make(chan bool)
@@ -180,7 +185,9 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 
 	readyForDispatch := make(chan bool)
@@ -293,7 +300,9 @@ func TestDispatchUnknownType(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	ctx, cancel := context.WithCancel(context.Background())
 	bmi, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
 	bm := bmi.(*batchManager)
@@ -325,7 +334,9 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bm, _ := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
 	defer bm.Close()
 	_, err := bm.(*batchManager).getProcessor(core.BatchTypeBroadcast, "wrong", nil, &core.SignerRef{})
@@ -337,7 +348,9 @@ func TestMessageSequencerCancelledContext(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop")).Once()
 	bm, _ := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
 	defer bm.Close()
@@ -353,7 +366,9 @@ func TestMessageSequencerMissingMessageData(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bm, _ := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
 	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeNone, []core.MessageType{core.MessageTypeBroadcast},
 		func(c context.Context, state *DispatchState) error {
@@ -396,7 +411,9 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
@@ -452,7 +469,9 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
@@ -493,7 +512,9 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 	bm, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
 	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypeBroadcast},
@@ -578,7 +599,9 @@ func TestAssembleMessageDataNilData(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bm, _ := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
 	bm.Close()
 	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(nil, nil, false, nil)
@@ -591,7 +614,9 @@ func TestGetMessageDataFail(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bm, _ := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
 	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(nil, nil, false, fmt.Errorf("pop"))
 	bm.Close()
@@ -605,7 +630,9 @@ func TestGetMessageNotFound(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bm, _ := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
 	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(nil, nil, false, nil)
 	bm.Close()

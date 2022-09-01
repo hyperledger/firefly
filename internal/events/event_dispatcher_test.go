@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -29,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
@@ -52,7 +54,9 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mpm := &privatemessagingmocks.Manager{}
 	mom := &operationmocks.Manager{}
 	ctx := context.Background()
-	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cache.NewCacheManager(ctx))
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	enricher := newEventEnricher("ns1", mdi, mdm, mom, txHelper)
 	ctx, cancel := context.WithCancel(context.Background())
 	return newEventDispatcher(ctx, enricher, mei, mdi, mdm, mbm, mpm, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), txHelper), func() {
