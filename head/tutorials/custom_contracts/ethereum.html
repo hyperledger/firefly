@@ -297,6 +297,10 @@
   <li><a href="#create-a-blockchain-event-listener" id="markdown-toc-create-a-blockchain-event-listener">Create a blockchain event listener</a>    <ol>
       <li><a href="#request-6" id="markdown-toc-request-6">Request</a></li>
       <li><a href="#response-6" id="markdown-toc-response-6">Response</a></li>
+      <li><a href="#querying-listener-status" id="markdown-toc-querying-listener-status">Querying listener status</a>        <ol>
+          <li><a href="#request--response" id="markdown-toc-request--response">Request / Response</a></li>
+        </ol>
+      </li>
     </ol>
   </li>
   <li><a href="#subscribe-to-events-from-our-contract" id="markdown-toc-subscribe-to-events-from-our-contract">Subscribe to events from our contract</a>    <ol>
@@ -306,6 +310,7 @@
   </li>
   <li><a href="#receive-custom-smart-contract-events" id="markdown-toc-receive-custom-smart-contract-events">Receive custom smart contract events</a>    <ol>
       <li><a href="#websocket-event" id="markdown-toc-websocket-event">WebSocket event</a></li>
+      <li><a href="#subscription-offset" id="markdown-toc-subscription-offset">Subscription offset</a></li>
     </ol>
   </li>
   <li><a href="#appendix-i-work-with-a-custom-contract-without-creating-a-named-api" id="markdown-toc-appendix-i-work-with-a-custom-contract-without-creating-a-named-api">Appendix I: Work with a custom contract without creating a named API</a>    <ol>
@@ -982,7 +987,7 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
 
 <p>Now that we’ve seen how to submit transactions and preform read-only queries to the blockchain, let’s look at how to receive blockchain events so we know when things are happening in realtime.</p>
 
-<p>If you look at the source code for the smart contract we’re working with above, you’ll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an <strong>Event Listener</strong>. The <code class="language-plaintext highlighter-rouge">/contracts/listeners</code> endpoint is RESTful so there are <code class="language-plaintext highlighter-rouge">POST</code>, <code class="language-plaintext highlighter-rouge">GET</code>, and <code class="language-plaintext highlighter-rouge">DELETE</code> methods available on it. To create a new listener, we will make a <code class="language-plaintext highlighter-rouge">POST</code> request. We are going to tell FireFly to listen to events with name <code class="language-plaintext highlighter-rouge">"Changed"</code> from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events.</p>
+<p>If you look at the source code for the smart contract we’re working with above, you’ll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an <strong>Event Listener</strong>. The <code class="language-plaintext highlighter-rouge">/contracts/listeners</code> endpoint is RESTful so there are <code class="language-plaintext highlighter-rouge">POST</code>, <code class="language-plaintext highlighter-rouge">GET</code>, and <code class="language-plaintext highlighter-rouge">DELETE</code> methods available on it. To create a new listener, we will make a <code class="language-plaintext highlighter-rouge">POST</code> request. We are going to tell FireFly to listen to events with name <code class="language-plaintext highlighter-rouge">"Changed"</code> from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events, and the topic to assign these events to. Topics are a way for applications to subscribe to events they are interested in.</p>
       <h3 id="request-6">
         
         
@@ -1003,8 +1008,9 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
   </span><span class="p">},</span><span class="w">
   </span><span class="nl">"eventPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
   </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"oldest"</span><span class="w">
-  </span><span class="p">}</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"new"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"topic"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simple-storage"</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
       <h3 id="response-6">
@@ -1062,6 +1068,78 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
 </span></code></pre></div></div>
 
 <p>We can see in the response, that FireFly pulls all the schema information from the FireFly Interface that we broadcasted earlier and creates the listener with that schema. This is useful so that we don’t have to enter all of that data again.</p>
+      <h3 id="querying-listener-status">
+        
+        
+          <a href="#querying-listener-status" class="anchor-heading" aria-labelledby="querying-listener-status"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Querying listener status
+        
+        
+      </h3>
+    
+
+<p>If you are interested in learning about the current state of a listener you have created, you can query with the <code class="language-plaintext highlighter-rouge">fetchstatus</code> parameter. For FireFly stacks with an EVM compatible blockchain connector, the response will include checkpoint information and if the listener is currently in catchup mode.</p>
+      <h4 id="request--response">
+        
+        
+          <a href="#request--response" class="anchor-heading" aria-labelledby="request--response"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request / Response
+        
+        
+      </h4>
+    
+
+<p><code class="language-plaintext highlighter-rouge">GET</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/contracts/listeners/1bfa3b0f-3d90-403e-94a4-af978d8c5b14?fetchstatus</code></p>
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1bfa3b0f-3d90-403e-94a4-af978d8c5b14"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sb-66209ffc-d355-4ac0-7151-bc82490ca9df"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"protocolId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sb-66209ffc-d355-4ac0-7151-bc82490ca9df"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-02-17T22:02:36.34549538Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"event"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"from"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"indexed"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">]</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"checkpoint"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"block"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"transactionIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">-1</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"logIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">-1</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"catchup"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"oldest"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
       <h2 id="subscribe-to-events-from-our-contract">
         
         
@@ -1217,6 +1295,41 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
 <p>You can see in the event received over the WebSocket connection, the blockchain event that was emitted from our first transaction, which happened in the past. We received this event, because when we set up both the Listener, and the Subscription, we specified the <code class="language-plaintext highlighter-rouge">"firstEvent"</code> as <code class="language-plaintext highlighter-rouge">"oldest"</code>. This tells FireFly to look for this event from the beginning of the blockchain, and that your app is interested in FireFly events since the beginning of FireFly’s event history.</p>
 
 <p>In the event, we can also see the <code class="language-plaintext highlighter-rouge">blockchainevent</code> itself, which has an <code class="language-plaintext highlighter-rouge">output</code> object. These are the <code class="language-plaintext highlighter-rouge">params</code> in our FireFly Interface, and the actual output of the event. Here we can see the <code class="language-plaintext highlighter-rouge">value</code> is <code class="language-plaintext highlighter-rouge">3</code> which is what we set the integer to in our original transaction.</p>
+      <h3 id="subscription-offset">
+        
+        
+          <a href="#subscription-offset" class="anchor-heading" aria-labelledby="subscription-offset"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Subscription offset
+        
+        
+      </h3>
+    
+<p>If you query by the ID of your subscription with the <code class="language-plaintext highlighter-rouge">fetchstatus</code> parameter, you can see its current <code class="language-plaintext highlighter-rouge">offset</code>.</p>
+
+<p><code class="language-plaintext highlighter-rouge">GET</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/subscriptions/f826269c-65ed-4634-b24c-4f399ec53a32</code></p>
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f826269c-65ed-4634-b24c-4f399ec53a32"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simple-storage"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"transport"</span><span class="p">:</span><span class="w"> </span><span class="s2">"websockets"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"filter"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_event_received"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+    </span><span class="nl">"transaction"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+    </span><span class="nl">"blockchainevent"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"listener"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1bfa3b0f-3d90-403e-94a4-af978d8c5b14"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-1"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"withData"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"offset"</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+  </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-03-15T17:35:30.131698921Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"updated"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
 
 <p><strong>You’ve reached the end of the main guide to working with custom smart contracts in FireFly</strong>. Hopefully this was helpful and gives you what you need to get up and running with your own contracts. There are several additional ways to invoke or query smart contracts detailed below, so feel free to keep reading if you’re curious.</p>
       <h2 id="appendix-i-work-with-a-custom-contract-without-creating-a-named-api">
