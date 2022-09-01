@@ -72,7 +72,7 @@ nav_order: 15
 | `id` | The UUID of the message. Unique to each message | [`UUID`](simpletypes#uuid) |
 | `cid` | The correlation ID of the message. Set this when a message is a response to another message | [`UUID`](simpletypes#uuid) |
 | `type` | The type of the message | `FFEnum`:<br/>`"definition"`<br/>`"broadcast"`<br/>`"private"`<br/>`"groupinit"`<br/>`"transfer_broadcast"`<br/>`"transfer_private"` |
-| `txtype` | The type of transaction used to order/deliver this message | `FFEnum`:<br/>`"none"`<br/>`"unpinned"`<br/>`"batch_pin"`<br/>`"network_action"`<br/>`"token_pool"`<br/>`"token_transfer"`<br/>`"contract_invoke"`<br/>`"token_approval"` |
+| `txtype` | The type of transaction used to order/deliver this message | `FFEnum`:<br/>`"none"`<br/>`"unpinned"`<br/>`"batch_pin"`<br/>`"network_action"`<br/>`"token_pool"`<br/>`"token_transfer"`<br/>`"contract_invoke"`<br/>`"token_approval"`<br/>`"data_publish"` |
 | `author` | The DID of identity of the submitter | `string` |
 | `key` | The on-chain signing key used to sign the transaction | `string` |
 | `created` | The creation time of the message | [`FFTime`](simpletypes#fftime) |

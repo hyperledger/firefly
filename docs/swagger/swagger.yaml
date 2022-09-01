@@ -676,6 +676,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -748,6 +749,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -3306,6 +3308,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -3378,6 +3381,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -4152,6 +4156,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: public
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: validator
         schema:
           type: string
@@ -4214,9 +4223,9 @@ paths:
                             for search
                           type: string
                         public:
-                          description: If this data has been published to shared storage,
-                            this field is the id of the data in the shared storage
-                            plugin (IPFS hash etc.)
+                          description: If the blob data has been published to shared
+                            storage, this field is the id of the data in the shared
+                            storage plugin (IPFS hash etc.)
                           type: string
                         size:
                           description: The size of the binary data
@@ -4250,6 +4259,11 @@ paths:
                       type: string
                     namespace:
                       description: The namespace of the data resource
+                      type: string
+                    public:
+                      description: If the JSON value has been published to shared
+                        storage, this field is the id of the data in the shared storage
+                        plugin (IPFS hash etc.)
                       type: string
                     validator:
                       description: The data validator type
@@ -4345,9 +4359,9 @@ paths:
                           for search
                         type: string
                       public:
-                        description: If this data has been published to shared storage,
-                          this field is the id of the data in the shared storage plugin
-                          (IPFS hash etc.)
+                        description: If the blob data has been published to shared
+                          storage, this field is the id of the data in the shared
+                          storage plugin (IPFS hash etc.)
                         type: string
                       size:
                         description: The size of the binary data
@@ -4381,6 +4395,11 @@ paths:
                     type: string
                   namespace:
                     description: The namespace of the data resource
+                    type: string
+                  public:
+                    description: If the JSON value has been published to shared storage,
+                      this field is the id of the data in the shared storage plugin
+                      (IPFS hash etc.)
                     type: string
                   validator:
                     description: The data validator type
@@ -4432,9 +4451,9 @@ paths:
                           for search
                         type: string
                       public:
-                        description: If this data has been published to shared storage,
-                          this field is the id of the data in the shared storage plugin
-                          (IPFS hash etc.)
+                        description: If the blob data has been published to shared
+                          storage, this field is the id of the data in the shared
+                          storage plugin (IPFS hash etc.)
                         type: string
                       size:
                         description: The size of the binary data
@@ -4468,6 +4487,11 @@ paths:
                     type: string
                   namespace:
                     description: The namespace of the data resource
+                    type: string
+                  public:
+                    description: If the JSON value has been published to shared storage,
+                      this field is the id of the data in the shared storage plugin
+                      (IPFS hash etc.)
                     type: string
                   validator:
                     description: The data validator type
@@ -4621,6 +4645,105 @@ paths:
               schema:
                 format: byte
                 type: string
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /data/{dataid}/blob/publish:
+    post:
+      description: Publishes the binary blob attachment stored in your local data
+        exchange, to shared storage
+      operationId: postDataBlobPublish
+      parameters:
+      - description: The blob ID
+        in: path
+        name: dataid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: {}
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  blob:
+                    description: An optional hash reference to a binary blob attachment
+                    properties:
+                      hash:
+                        description: The hash of the binary blob data
+                        format: byte
+                        type: string
+                      name:
+                        description: The name field from the metadata attached to
+                          the blob, commonly used as a path/filename, and indexed
+                          for search
+                        type: string
+                      public:
+                        description: If the blob data has been published to shared
+                          storage, this field is the id of the data in the shared
+                          storage plugin (IPFS hash etc.)
+                        type: string
+                      size:
+                        description: The size of the binary data
+                        format: int64
+                        type: integer
+                    type: object
+                  created:
+                    description: The creation time of the data resource
+                    format: date-time
+                    type: string
+                  datatype:
+                    description: The optional datatype to use of validation of this
+                      data
+                    properties:
+                      name:
+                        description: The name of the datatype
+                        type: string
+                      version:
+                        description: The version of the datatype. Semantic versioning
+                          is encouraged, such as v1.0.1
+                        type: string
+                    type: object
+                  hash:
+                    description: The hash of the data resource. Derived from the value
+                      and the hash of any binary blob attachment
+                    format: byte
+                    type: string
+                  id:
+                    description: The UUID of the data resource
+                    format: uuid
+                    type: string
+                  namespace:
+                    description: The namespace of the data resource
+                    type: string
+                  public:
+                    description: If the JSON value has been published to shared storage,
+                      this field is the id of the data in the shared storage plugin
+                      (IPFS hash etc.)
+                    type: string
+                  validator:
+                    description: The data validator type
+                    type: string
+                  value:
+                    description: The value for the data, stored in the FireFly core
+                      database. Can be any JSON type - object, array, string, number
+                      or boolean. Can be combined with a binary blob attachment
+                type: object
           description: Success
         default:
           description: ""
@@ -4857,6 +4980,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -4890,6 +5014,250 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /data/{dataid}/value:
+    get:
+      description: Downloads the JSON value of the data resource, without the associated
+        metadata
+      operationId: getDataValue
+      parameters:
+      - description: The blob ID
+        in: path
+        name: dataid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: author
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: batch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: cid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: confirmed
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: group
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: pins
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: state
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tag
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: topics
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txtype
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                format: byte
+                type: string
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /data/{dataid}/value/publish:
+    post:
+      description: Publishes the JSON value from the specified data resource, to shared
+        storage
+      operationId: postDataValuePublish
+      parameters:
+      - description: The blob ID
+        in: path
+        name: dataid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: {}
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  blob:
+                    description: An optional hash reference to a binary blob attachment
+                    properties:
+                      hash:
+                        description: The hash of the binary blob data
+                        format: byte
+                        type: string
+                      name:
+                        description: The name field from the metadata attached to
+                          the blob, commonly used as a path/filename, and indexed
+                          for search
+                        type: string
+                      public:
+                        description: If the blob data has been published to shared
+                          storage, this field is the id of the data in the shared
+                          storage plugin (IPFS hash etc.)
+                        type: string
+                      size:
+                        description: The size of the binary data
+                        format: int64
+                        type: integer
+                    type: object
+                  created:
+                    description: The creation time of the data resource
+                    format: date-time
+                    type: string
+                  datatype:
+                    description: The optional datatype to use of validation of this
+                      data
+                    properties:
+                      name:
+                        description: The name of the datatype
+                        type: string
+                      version:
+                        description: The version of the datatype. Semantic versioning
+                          is encouraged, such as v1.0.1
+                        type: string
+                    type: object
+                  hash:
+                    description: The hash of the data resource. Derived from the value
+                      and the hash of any binary blob attachment
+                    format: byte
+                    type: string
+                  id:
+                    description: The UUID of the data resource
+                    format: uuid
+                    type: string
+                  namespace:
+                    description: The namespace of the data resource
+                    type: string
+                  public:
+                    description: If the JSON value has been published to shared storage,
+                      this field is the id of the data in the shared storage plugin
+                      (IPFS hash etc.)
+                    type: string
+                  validator:
+                    description: The data validator type
+                    type: string
+                  value:
+                    description: The value for the data, stored in the FireFly core
+                      database. Can be any JSON type - object, array, string, number
+                      or boolean. Can be combined with a binary blob attachment
                 type: object
           description: Success
         default:
@@ -7014,6 +7382,7 @@ paths:
                           - token_transfer
                           - contract_invoke
                           - token_approval
+                          - data_publish
                           type: string
                         type:
                           description: The type of the message
@@ -7116,9 +7485,9 @@ paths:
                                 indexed for search
                               type: string
                             public:
-                              description: If this data has been published to shared
-                                storage, this field is the id of the data in the shared
-                                storage plugin (IPFS hash etc.)
+                              description: If the blob data has been published to
+                                shared storage, this field is the id of the data in
+                                the shared storage plugin (IPFS hash etc.)
                               type: string
                             size:
                               description: The size of the binary data
@@ -7256,6 +7625,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -7333,9 +7703,9 @@ paths:
                             for search
                           type: string
                         public:
-                          description: If this data has been published to shared storage,
-                            this field is the id of the data in the shared storage
-                            plugin (IPFS hash etc.)
+                          description: If the blob data has been published to shared
+                            storage, this field is the id of the data in the shared
+                            storage plugin (IPFS hash etc.)
                           type: string
                         size:
                           description: The size of the binary data
@@ -7369,6 +7739,11 @@ paths:
                       type: string
                     namespace:
                       description: The namespace of the data resource
+                      type: string
+                    public:
+                      description: If the JSON value has been published to shared
+                        storage, this field is the id of the data in the shared storage
+                        plugin (IPFS hash etc.)
                       type: string
                     validator:
                       description: The data validator type
@@ -7622,6 +7997,7 @@ paths:
                     - token_transfer
                     - contract_invoke
                     - token_approval
+                    - data_publish
                     type: string
                 type: object
           description: Success
@@ -7727,6 +8103,7 @@ paths:
                       - token_transfer
                       - contract_invoke
                       - token_approval
+                      - data_publish
                       type: string
                     type:
                       description: The type of the message
@@ -7833,6 +8210,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -7960,6 +8338,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -8135,6 +8514,7 @@ paths:
                       - token_transfer
                       - contract_invoke
                       - token_approval
+                      - data_publish
                       type: string
                     type:
                       description: The type of the message
@@ -8247,6 +8627,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -8380,6 +8761,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -8551,6 +8933,7 @@ paths:
                       - token_transfer
                       - contract_invoke
                       - token_approval
+                      - data_publish
                       type: string
                     type:
                       description: The type of the message
@@ -8603,9 +8986,9 @@ paths:
                                 indexed for search
                               type: string
                             public:
-                              description: If this data has been published to shared
-                                storage, this field is the id of the data in the shared
-                                storage plugin (IPFS hash etc.)
+                              description: If the blob data has been published to
+                                shared storage, this field is the id of the data in
+                                the shared storage plugin (IPFS hash etc.)
                               type: string
                             size:
                               description: The size of the binary data
@@ -8743,6 +9126,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -9640,6 +10024,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -9712,6 +10097,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -12495,6 +12881,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -12567,6 +12954,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -13383,6 +13771,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: public
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: validator
         schema:
           type: string
@@ -13445,9 +13838,9 @@ paths:
                             for search
                           type: string
                         public:
-                          description: If this data has been published to shared storage,
-                            this field is the id of the data in the shared storage
-                            plugin (IPFS hash etc.)
+                          description: If the blob data has been published to shared
+                            storage, this field is the id of the data in the shared
+                            storage plugin (IPFS hash etc.)
                           type: string
                         size:
                           description: The size of the binary data
@@ -13481,6 +13874,11 @@ paths:
                       type: string
                     namespace:
                       description: The namespace of the data resource
+                      type: string
+                    public:
+                      description: If the JSON value has been published to shared
+                        storage, this field is the id of the data in the shared storage
+                        plugin (IPFS hash etc.)
                       type: string
                     validator:
                       description: The data validator type
@@ -13583,9 +13981,9 @@ paths:
                           for search
                         type: string
                       public:
-                        description: If this data has been published to shared storage,
-                          this field is the id of the data in the shared storage plugin
-                          (IPFS hash etc.)
+                        description: If the blob data has been published to shared
+                          storage, this field is the id of the data in the shared
+                          storage plugin (IPFS hash etc.)
                         type: string
                       size:
                         description: The size of the binary data
@@ -13619,6 +14017,11 @@ paths:
                     type: string
                   namespace:
                     description: The namespace of the data resource
+                    type: string
+                  public:
+                    description: If the JSON value has been published to shared storage,
+                      this field is the id of the data in the shared storage plugin
+                      (IPFS hash etc.)
                     type: string
                   validator:
                     description: The data validator type
@@ -13677,9 +14080,9 @@ paths:
                           for search
                         type: string
                       public:
-                        description: If this data has been published to shared storage,
-                          this field is the id of the data in the shared storage plugin
-                          (IPFS hash etc.)
+                        description: If the blob data has been published to shared
+                          storage, this field is the id of the data in the shared
+                          storage plugin (IPFS hash etc.)
                         type: string
                       size:
                         description: The size of the binary data
@@ -13713,6 +14116,11 @@ paths:
                     type: string
                   namespace:
                     description: The namespace of the data resource
+                    type: string
+                  public:
+                    description: If the JSON value has been published to shared storage,
+                      this field is the id of the data in the shared storage plugin
+                      (IPFS hash etc.)
                     type: string
                   validator:
                     description: The data validator type
@@ -13873,6 +14281,112 @@ paths:
               schema:
                 format: byte
                 type: string
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/data/{dataid}/blob/publish:
+    post:
+      description: Publishes the binary blob attachment stored in your local data
+        exchange, to shared storage
+      operationId: postDataBlobPublishNamespace
+      parameters:
+      - description: The blob ID
+        in: path
+        name: dataid
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: {}
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  blob:
+                    description: An optional hash reference to a binary blob attachment
+                    properties:
+                      hash:
+                        description: The hash of the binary blob data
+                        format: byte
+                        type: string
+                      name:
+                        description: The name field from the metadata attached to
+                          the blob, commonly used as a path/filename, and indexed
+                          for search
+                        type: string
+                      public:
+                        description: If the blob data has been published to shared
+                          storage, this field is the id of the data in the shared
+                          storage plugin (IPFS hash etc.)
+                        type: string
+                      size:
+                        description: The size of the binary data
+                        format: int64
+                        type: integer
+                    type: object
+                  created:
+                    description: The creation time of the data resource
+                    format: date-time
+                    type: string
+                  datatype:
+                    description: The optional datatype to use of validation of this
+                      data
+                    properties:
+                      name:
+                        description: The name of the datatype
+                        type: string
+                      version:
+                        description: The version of the datatype. Semantic versioning
+                          is encouraged, such as v1.0.1
+                        type: string
+                    type: object
+                  hash:
+                    description: The hash of the data resource. Derived from the value
+                      and the hash of any binary blob attachment
+                    format: byte
+                    type: string
+                  id:
+                    description: The UUID of the data resource
+                    format: uuid
+                    type: string
+                  namespace:
+                    description: The namespace of the data resource
+                    type: string
+                  public:
+                    description: If the JSON value has been published to shared storage,
+                      this field is the id of the data in the shared storage plugin
+                      (IPFS hash etc.)
+                    type: string
+                  validator:
+                    description: The data validator type
+                    type: string
+                  value:
+                    description: The value for the data, stored in the FireFly core
+                      database. Can be any JSON type - object, array, string, number
+                      or boolean. Can be combined with a binary blob attachment
+                type: object
           description: Success
         default:
           description: ""
@@ -14116,6 +14630,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -14149,6 +14664,264 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/data/{dataid}/value:
+    get:
+      description: Downloads the JSON value of the data resource, without the associated
+        metadata
+      operationId: getDataValueNamespace
+      parameters:
+      - description: The blob ID
+        in: path
+        name: dataid
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: author
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: batch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: cid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: confirmed
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: group
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: pins
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: state
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tag
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: topics
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txtype
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                format: byte
+                type: string
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/data/{dataid}/value/publish:
+    post:
+      description: Publishes the JSON value from the specified data resource, to shared
+        storage
+      operationId: postDataValuePublishNamespace
+      parameters:
+      - description: The blob ID
+        in: path
+        name: dataid
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: {}
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  blob:
+                    description: An optional hash reference to a binary blob attachment
+                    properties:
+                      hash:
+                        description: The hash of the binary blob data
+                        format: byte
+                        type: string
+                      name:
+                        description: The name field from the metadata attached to
+                          the blob, commonly used as a path/filename, and indexed
+                          for search
+                        type: string
+                      public:
+                        description: If the blob data has been published to shared
+                          storage, this field is the id of the data in the shared
+                          storage plugin (IPFS hash etc.)
+                        type: string
+                      size:
+                        description: The size of the binary data
+                        format: int64
+                        type: integer
+                    type: object
+                  created:
+                    description: The creation time of the data resource
+                    format: date-time
+                    type: string
+                  datatype:
+                    description: The optional datatype to use of validation of this
+                      data
+                    properties:
+                      name:
+                        description: The name of the datatype
+                        type: string
+                      version:
+                        description: The version of the datatype. Semantic versioning
+                          is encouraged, such as v1.0.1
+                        type: string
+                    type: object
+                  hash:
+                    description: The hash of the data resource. Derived from the value
+                      and the hash of any binary blob attachment
+                    format: byte
+                    type: string
+                  id:
+                    description: The UUID of the data resource
+                    format: uuid
+                    type: string
+                  namespace:
+                    description: The namespace of the data resource
+                    type: string
+                  public:
+                    description: If the JSON value has been published to shared storage,
+                      this field is the id of the data in the shared storage plugin
+                      (IPFS hash etc.)
+                    type: string
+                  validator:
+                    description: The data validator type
+                    type: string
+                  value:
+                    description: The value for the data, stored in the FireFly core
+                      database. Can be any JSON type - object, array, string, number
+                      or boolean. Can be combined with a binary blob attachment
                 type: object
           description: Success
         default:
@@ -16378,6 +17151,7 @@ paths:
                           - token_transfer
                           - contract_invoke
                           - token_approval
+                          - data_publish
                           type: string
                         type:
                           description: The type of the message
@@ -16487,9 +17261,9 @@ paths:
                                 indexed for search
                               type: string
                             public:
-                              description: If this data has been published to shared
-                                storage, this field is the id of the data in the shared
-                                storage plugin (IPFS hash etc.)
+                              description: If the blob data has been published to
+                                shared storage, this field is the id of the data in
+                                the shared storage plugin (IPFS hash etc.)
                               type: string
                             size:
                               description: The size of the binary data
@@ -16627,6 +17401,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -16711,9 +17486,9 @@ paths:
                             for search
                           type: string
                         public:
-                          description: If this data has been published to shared storage,
-                            this field is the id of the data in the shared storage
-                            plugin (IPFS hash etc.)
+                          description: If the blob data has been published to shared
+                            storage, this field is the id of the data in the shared
+                            storage plugin (IPFS hash etc.)
                           type: string
                         size:
                           description: The size of the binary data
@@ -16747,6 +17522,11 @@ paths:
                       type: string
                     namespace:
                       description: The namespace of the data resource
+                      type: string
+                    public:
+                      description: If the JSON value has been published to shared
+                        storage, this field is the id of the data in the shared storage
+                        plugin (IPFS hash etc.)
                       type: string
                     validator:
                       description: The data validator type
@@ -17014,6 +17794,7 @@ paths:
                     - token_transfer
                     - contract_invoke
                     - token_approval
+                    - data_publish
                     type: string
                 type: object
           description: Success
@@ -17164,6 +17945,7 @@ paths:
                       - token_transfer
                       - contract_invoke
                       - token_approval
+                      - data_publish
                       type: string
                     type:
                       description: The type of the message
@@ -17276,6 +18058,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -17409,6 +18192,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -17591,6 +18375,7 @@ paths:
                       - token_transfer
                       - contract_invoke
                       - token_approval
+                      - data_publish
                       type: string
                     type:
                       description: The type of the message
@@ -17703,6 +18488,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -17836,6 +18622,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -18014,6 +18801,7 @@ paths:
                       - token_transfer
                       - contract_invoke
                       - token_approval
+                      - data_publish
                       type: string
                     type:
                       description: The type of the message
@@ -18066,9 +18854,9 @@ paths:
                                 indexed for search
                               type: string
                             public:
-                              description: If this data has been published to shared
-                                storage, this field is the id of the data in the shared
-                                storage plugin (IPFS hash etc.)
+                              description: If the blob data has been published to
+                                shared storage, this field is the id of the data in
+                                the shared storage plugin (IPFS hash etc.)
                               type: string
                             size:
                               description: The size of the binary data
@@ -18206,6 +18994,7 @@ paths:
                         - token_transfer
                         - contract_invoke
                         - token_approval
+                        - data_publish
                         type: string
                       type:
                         description: The type of the message
@@ -19058,7 +19847,9 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: {}
+            schema:
+              additionalProperties: {}
+              type: object
       responses:
         "200":
           content:
@@ -19751,7 +20542,9 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: {}
+            schema:
+              additionalProperties: {}
+              type: object
       responses:
         "200":
           content:
@@ -20072,6 +20865,7 @@ paths:
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
+                      - sharedstorage_upload_value
                       - sharedstorage_download_batch
                       - sharedstorage_download_blob
                       - dataexchange_send_batch
@@ -20175,6 +20969,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -20222,7 +21017,9 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: {}
+            schema:
+              additionalProperties: {}
+              type: object
       responses:
         "202":
           content:
@@ -20281,6 +21078,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -23249,6 +24047,7 @@ paths:
                           - token_transfer
                           - contract_invoke
                           - token_approval
+                          - data_publish
                           type: string
                         type:
                           description: The type of the message
@@ -23687,6 +24486,7 @@ paths:
                           - token_transfer
                           - contract_invoke
                           - token_approval
+                          - data_publish
                           type: string
                         type:
                           description: The type of the message
@@ -24903,6 +25703,7 @@ paths:
                           - token_transfer
                           - contract_invoke
                           - token_approval
+                          - data_publish
                           type: string
                         type:
                           description: The type of the message
@@ -25371,6 +26172,7 @@ paths:
                       - token_transfer
                       - contract_invoke
                       - token_approval
+                      - data_publish
                       type: string
                   type: object
                 type: array
@@ -25500,6 +26302,7 @@ paths:
                     - token_transfer
                     - contract_invoke
                     - token_approval
+                    - data_publish
                     type: string
                 type: object
           description: Success
@@ -25692,6 +26495,7 @@ paths:
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
+                      - sharedstorage_upload_value
                       - sharedstorage_download_batch
                       - sharedstorage_download_blob
                       - dataexchange_send_batch
@@ -26747,7 +27551,9 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: {}
+            schema:
+              additionalProperties: {}
+              type: object
       responses:
         "200":
           content:
@@ -27412,7 +28218,9 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: {}
+            schema:
+              additionalProperties: {}
+              type: object
       responses:
         "200":
           content:
@@ -27726,6 +28534,7 @@ paths:
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
+                      - sharedstorage_upload_value
                       - sharedstorage_download_batch
                       - sharedstorage_download_blob
                       - dataexchange_send_batch
@@ -27822,6 +28631,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -27862,7 +28672,9 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: {}
+            schema:
+              additionalProperties: {}
+              type: object
       responses:
         "202":
           content:
@@ -27921,6 +28733,7 @@ paths:
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
                     - sharedstorage_download_batch
                     - sharedstorage_download_blob
                     - dataexchange_send_batch
@@ -30784,6 +31597,7 @@ paths:
                           - token_transfer
                           - contract_invoke
                           - token_approval
+                          - data_publish
                           type: string
                         type:
                           description: The type of the message
@@ -31200,6 +32014,7 @@ paths:
                           - token_transfer
                           - contract_invoke
                           - token_approval
+                          - data_publish
                           type: string
                         type:
                           description: The type of the message
@@ -32381,6 +33196,7 @@ paths:
                           - token_transfer
                           - contract_invoke
                           - token_approval
+                          - data_publish
                           type: string
                         type:
                           description: The type of the message
@@ -32835,6 +33651,7 @@ paths:
                       - token_transfer
                       - contract_invoke
                       - token_approval
+                      - data_publish
                       type: string
                   type: object
                 type: array
@@ -32957,6 +33774,7 @@ paths:
                     - token_transfer
                     - contract_invoke
                     - token_approval
+                    - data_publish
                     type: string
                 type: object
           description: Success
@@ -33135,6 +33953,7 @@ paths:
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
+                      - sharedstorage_upload_value
                       - sharedstorage_download_batch
                       - sharedstorage_download_blob
                       - dataexchange_send_batch

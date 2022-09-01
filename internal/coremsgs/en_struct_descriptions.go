@@ -112,7 +112,7 @@ var (
 	BlobRefHash   = ffm("BlobRef.hash", "The hash of the binary blob data")
 	BlobRefSize   = ffm("BlobRef.size", "The size of the binary data")
 	BlobRefName   = ffm("BlobRef.name", "The name field from the metadata attached to the blob, commonly used as a path/filename, and indexed for search")
-	BlobRefPublic = ffm("BlobRef.public", "If this data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)")
+	BlobRefPublic = ffm("BlobRef.public", "If the blob data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)")
 
 	// Data field descriptions
 	DataID        = ffm("Data.id", "The UUID of the data resource")
@@ -123,6 +123,7 @@ var (
 	DataDatatype  = ffm("Data.datatype", "The optional datatype to use of validation of this data")
 	DataValue     = ffm("Data.value", "The value for the data, stored in the FireFly core database. Can be any JSON type - object, array, string, number or boolean. Can be combined with a binary blob attachment")
 	DataBlob      = ffm("Data.blob", "An optional hash reference to a binary blob attachment")
+	DataPublic    = ffm("Data.public", "If the JSON value has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)")
 
 	// DatatypeRef field descriptions
 	DatatypeRefName    = ffm("DatatypeRef.name", "The name of the datatype")
