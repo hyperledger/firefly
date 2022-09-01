@@ -440,6 +440,11 @@ MIME type from the file upload.</p>
       <td><a href="simpletypes#jsonany"><code class="language-plaintext highlighter-rouge">JSONAny</code></a></td>
     </tr>
     <tr>
+      <td><code class="language-plaintext highlighter-rouge">public</code></td>
+      <td>If the JSON value has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
       <td><code class="language-plaintext highlighter-rouge">blob</code></td>
       <td>An optional hash reference to a binary blob attachment</td>
       <td><a href="#blobref"><code class="language-plaintext highlighter-rouge">BlobRef</code></a></td>
@@ -511,7 +516,7 @@ MIME type from the file upload.</p>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">public</code></td>
-      <td>If this data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)</td>
+      <td>If the blob data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
   </tbody>
