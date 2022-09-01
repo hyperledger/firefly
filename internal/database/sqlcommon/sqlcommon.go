@@ -90,7 +90,6 @@ type txWrapper struct {
 	sqlTX           *sql.Tx
 	preCommitEvents []*core.Event
 	postCommit      []func()
-	tableLocks      []string
 }
 
 func (s *SQLCommon) Init(ctx context.Context, provider Provider, config config.Section, capabilities *database.Capabilities) (err error) {
@@ -413,28 +412,18 @@ func (s *SQLCommon) addPreCommitEvent(tx *txWrapper, event *core.Event) {
 	tx.preCommitEvents = append(tx.preCommitEvents, event)
 }
 
-func (tx *txWrapper) tableIsLocked(table string) bool {
-	for _, t := range tx.tableLocks {
-		if t == table {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *SQLCommon) lockTableExclusiveTx(ctx context.Context, table string, tx *txWrapper) error {
+func (s *SQLCommon) acquireLockTx(ctx context.Context, lockName string, tx *txWrapper) error {
 	l := log.L(ctx)
-	if s.features.ExclusiveTableLockSQL != nil && !tx.tableIsLocked(table) {
-		sqlQuery := s.features.ExclusiveTableLockSQL(table)
+	if s.features.AcquireLock != nil {
+		sqlQuery := s.features.AcquireLock(lockName)
 
-		l.Debugf(`SQL-> lock %s`, table)
+		l.Debugf(`SQL-> lock %s`, lockName)
 		_, err := tx.sqlTX.ExecContext(ctx, sqlQuery)
 		if err != nil {
 			l.Errorf(`SQL lock failed: %s sql=[ %s ]`, err, sqlQuery)
 			return i18n.WrapError(ctx, err, coremsgs.MsgDBLockFailed)
 		}
-		tx.tableLocks = append(tx.tableLocks, table)
-		l.Debugf(`SQL<- lock %s`, table)
+		l.Debugf(`SQL<- lock %s`, lockName)
 	}
 	return nil
 }

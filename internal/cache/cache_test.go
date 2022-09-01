@@ -31,13 +31,13 @@ func TestNewCacheCreationFail(t *testing.T) {
 	ctx := context.Background()
 	cacheManager := NewCacheManager(ctx)
 	_, err := cacheManager.GetCache(NewCacheConfig(ctx, "", "", ""))
-	assert.Equal(t, "FF10423: could not initialize cache - size limit config key is not provided", err.Error())
+	assert.Equal(t, "FF10424: could not initialize cache - size limit config key is not provided", err.Error())
 	_, err = cacheManager.GetCache(NewCacheConfig(ctx, "test.limit", "", ""))
-	assert.Equal(t, "FF10424: could not initialize cache - ttl config key is not provided", err.Error())
+	assert.Equal(t, "FF10425: could not initialize cache - ttl config key is not provided", err.Error())
 	_, err = cacheManager.GetCache(NewCacheConfig(ctx, "inconsistent1.limit", "inconsistent2.ttl", ""))
-	assert.Equal(t, "FF10425: could not initialize cache - 'inconsistent1.limit' and 'inconsistent2.ttl' do not have identical prefix, mismatching prefixes are: 'inconsistent1','inconsistent2'", err.Error())
+	assert.Equal(t, "FF10426: could not initialize cache - 'inconsistent1.limit' and 'inconsistent2.ttl' do not have identical prefix, mismatching prefixes are: 'inconsistent1','inconsistent2'", err.Error())
 	_, err = cacheManager.GetCache(NewCacheConfig(ctx, "test.max", "test.ttl", ""))
-	assert.Equal(t, "FF10426: could not initialize cache - 'max' is not an expected size configuration key suffix. Expected values are: 'size', 'limit'", err.Error())
+	assert.Equal(t, "FF10427: could not initialize cache - 'max' is not an expected size configuration key suffix. Expected values are: 'size', 'limit'", err.Error())
 }
 
 func TestGetCacheReturnsSameCacheForSameConfig(t *testing.T) {

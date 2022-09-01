@@ -34,7 +34,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/cache"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -47,6 +46,7 @@ const (
 
 type Fabric struct {
 	ctx            context.Context
+	cancelCtx      context.CancelFunc
 	topic          string
 	defaultChannel string
 	signer         string
@@ -185,11 +185,12 @@ func (f *Fabric) VerifierType() core.VerifierType {
 	return core.VerifierTypeMSPIdentity
 }
 
-func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.Manager, cacheManager cache.Manager) (err error) {
+func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf config.Section, metrics metrics.Manager, cacheManager cache.Manager) (err error) {
 	f.InitConfig(conf)
 	fabconnectConf := f.fabconnectConf
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
+	f.cancelCtx = cancelCtx
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
@@ -219,18 +220,6 @@ func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.
 	if err != nil {
 		return err
 	}
-	cache, err := cacheManager.GetCache(
-		cache.NewCacheConfig(
-			ctx,
-			coreconfig.CacheBlockchainLimit,
-			coreconfig.CacheBlockchainTTL,
-			"",
-		),
-	)
-	if err != nil {
-		return err
-	}
-	f.cache = cache
 
 	f.streams = newStreamManager(f.client, f.signer, f.cache)
 	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
@@ -478,7 +467,8 @@ func (f *Fabric) eventLoop() {
 			return
 		case msgBytes, ok := <-f.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
+				f.cancelCtx()
 				return
 			}
 
@@ -501,9 +491,9 @@ func (f *Fabric) eventLoop() {
 				continue
 			}
 
-			// Send the ack - only fails if shutting down
 			if err != nil {
-				l.Errorf("Event loop exiting: %s", err)
+				l.Errorf("Event loop exiting (%s). Terminating server!", err)
+				f.cancelCtx()
 				return
 			}
 		}
@@ -835,6 +825,11 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *core.Contrac
 
 func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
 	return f.streams.deleteSubscription(ctx, subscription.BackendID)
+}
+
+func (f *Fabric) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {
+	// Fabconnect does not currently provide any additional status info for listener subscriptions
+	return nil, nil
 }
 
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {

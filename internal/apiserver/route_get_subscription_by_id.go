@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -31,15 +32,19 @@ var getSubscriptionByID = &ffapi.Route{
 	PathParams: []*ffapi.PathParam{
 		{Name: "subid", Description: coremsgs.APIParamsSubscriptionID},
 	},
-	QueryParams:     nil,
+	QueryParams: []*ffapi.QueryParam{
+		{Name: "fetchstatus", Description: coremsgs.APIParamsFetchStatus, IsBool: true},
+	},
 	Description:     coremsgs.APIEndpointsGetSubscriptionByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetSubscriptionByID(cr.ctx, r.PP["subid"])
-			return output, err
+			if strings.EqualFold(r.QP["fetchstatus"], "true") {
+				return cr.or.GetSubscriptionByIDWithStatus(cr.ctx, r.PP["subid"])
+			}
+			return cr.or.GetSubscriptionByID(cr.ctx, r.PP["subid"])
 		},
 	},
 }

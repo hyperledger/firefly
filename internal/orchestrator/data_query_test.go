@@ -691,6 +691,49 @@ func TestGetEventsWithReferencesEnrichFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestGetEventWithReferenceQueryFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	id := fftypes.NewUUID()
+	or.mdi.On("GetEventByID", mock.Anything, "ns", mock.Anything).Return(nil, fmt.Errorf("pop"))
+	_, err := or.GetEventByIDWithReference(context.Background(), id.String())
+	assert.EqualError(t, err, "pop")
+}
+
+func TestGetEventWithReferenceParseUUIDFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	_, err := or.GetEventByIDWithReference(context.Background(), "1")
+	assert.Regexp(t, "FF00138", err)
+}
+
+func TestGetEventWithReferenceOK(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	blockchainEvent := &core.Event{
+		ID:        ev1,
+		Sequence:  10000001,
+		Reference: ref1,
+		Type:      core.EventTypeBlockchainEventReceived,
+	}
+
+	or.mem.On("EnrichEvent", mock.Anything, blockchainEvent).Return(&core.EnrichedEvent{
+		Event: *blockchainEvent,
+		BlockchainEvent: &core.BlockchainEvent{
+			ID: ref1,
+		},
+	}, nil)
+
+	or.mdi.On("GetEventByID", mock.Anything, "ns", mock.Anything).Return(blockchainEvent, nil)
+	_, err := or.GetEventByIDWithReference(context.Background(), ev1.String())
+	assert.NoError(t, err)
+}
+
 func TestGetBlockchainEventByID(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)

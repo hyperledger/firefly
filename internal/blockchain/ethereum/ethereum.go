@@ -49,6 +49,7 @@ const (
 
 type Ethereum struct {
 	ctx             context.Context
+	cancelCtx       context.CancelFunc
 	topic           string
 	prefixShort     string
 	prefixLong      string
@@ -88,6 +89,17 @@ type Location struct {
 	Address string `json:"address"`
 }
 
+type ListenerCheckpoint struct {
+	Block            int64 `json:"block"`
+	TransactionIndex int64 `json:"transactionIndex"`
+	LogIndex         int64 `json:"logIndex"`
+}
+
+type ListenerStatus struct {
+	Checkpoint ListenerCheckpoint `json:"checkpoint"`
+	Catchup    bool               `json:"catchup"`
+}
+
 type EthconnectMessageRequest struct {
 	Headers EthconnectMessageHeaders `json:"headers,omitempty"`
 	To      string                   `json:"to"`
@@ -115,13 +127,14 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metrics.Manager, cacheManager cache.Manager) (err error) {
+func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf config.Section, metrics metrics.Manager, cacheManager cache.Manager) (err error) {
 	e.InitConfig(conf)
 	ethconnectConf := e.ethconnectConf
 	addressResolverConf := conf.SubSection(AddressResolverConfigKey)
 	fftmConf := conf.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
+	e.cancelCtx = cancelCtx
 	e.metrics = metrics
 	e.capabilities = &blockchain.Capabilities{}
 	e.callbacks = common.NewBlockchainCallbacks()
@@ -433,7 +446,8 @@ func (e *Ethereum) eventLoop() {
 			return
 		case msgBytes, ok := <-e.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
+				e.cancelCtx()
 				return
 			}
 
@@ -456,9 +470,9 @@ func (e *Ethereum) eventLoop() {
 				continue
 			}
 
-			// Send the ack - only fails if shutting down
 			if err != nil {
-				l.Errorf("Event loop exiting: %s", err)
+				l.Errorf("Event loop exiting (%s). Terminating server!", err)
+				e.cancelCtx()
 				return
 			}
 		}
@@ -731,6 +745,24 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 
 func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
 	return e.streams.deleteSubscription(ctx, subscription.BackendID)
+}
+
+func (e *Ethereum) GetContractListenerStatus(ctx context.Context, subID string) (status interface{}, err error) {
+	sub, err := e.streams.getSubscription(ctx, subID)
+	if err != nil {
+		return nil, err
+	}
+
+	checkpoint := &ListenerStatus{
+		Catchup: sub.Catchup,
+		Checkpoint: ListenerCheckpoint{
+			Block:            sub.Checkpoint.Block,
+			TransactionIndex: sub.Checkpoint.TransactionIndex,
+			LogIndex:         sub.Checkpoint.LogIndex,
+		},
+	}
+
+	return checkpoint, nil
 }
 
 func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {

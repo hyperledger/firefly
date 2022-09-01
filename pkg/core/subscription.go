@@ -122,6 +122,15 @@ type Subscription struct {
 	Updated   *fftypes.FFTime     `ffstruct:"Subscription" json:"updated" ffexcludeinput:"true"`
 }
 
+type SubscriptionWithStatus struct {
+	Subscription
+	Status SubscriptionStatus `ffstruct:"SubscriptionWithStatus" json:"status,omitempty" ffexcludeinput:"true"`
+}
+
+type SubscriptionStatus struct {
+	CurrentOffset int64 `ffstruct:"SubscriptionStatus" json:"currentOffset,omitempty" ffexcludeinout:"true"`
+}
+
 func (so *SubscriptionOptions) UnmarshalJSON(b []byte) error {
 	so.additionalOptions = fftypes.JSONObject{}
 	err := json.Unmarshal(b, &so.additionalOptions)

@@ -34,7 +34,7 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	Init(ctx context.Context, config config.Section, metrics metrics.Manager, cacheManager cache.Manager) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section, metrics metrics.Manager, cacheManager cache.Manager) error
 
 	// SetHandler registers a handler to receive callbacks
 	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace
@@ -75,6 +75,8 @@ type Plugin interface {
 
 	// DeleteContractListener deletes a previously-created subscription
 	DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error
+
+	GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error)
 
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
 	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)
