@@ -833,6 +833,11 @@ func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.
 	return f.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
+func (f *Fabric) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {
+	// Fabconnect does not currently provide any additional status info for listener subscriptions
+	return nil, nil
+}
+
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	// Fabconnect does not require any additional validation beyond "JSON Schema correctness" at this time
 	return nil, nil

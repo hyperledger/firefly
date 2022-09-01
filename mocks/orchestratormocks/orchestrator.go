@@ -971,6 +971,29 @@ func (_m *Orchestrator) GetSubscriptionByID(ctx context.Context, id string) (*co
 	return r0, r1
 }
 
+// GetSubscriptionByIDWithStatus provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetSubscriptionByIDWithStatus(ctx context.Context, id string) (*core.SubscriptionWithStatus, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *core.SubscriptionWithStatus
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.SubscriptionWithStatus); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.SubscriptionWithStatus)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetSubscriptions provides a mock function with given fields: ctx, filter
 func (_m *Orchestrator) GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)

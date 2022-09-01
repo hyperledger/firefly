@@ -3846,6 +3846,13 @@ paths:
         required: true
         schema:
           type: string
+      - description: When set, the API will return additional status information if
+          available
+        in: query
+        name: fetchstatus
+        schema:
+          example: "true"
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -13056,6 +13063,13 @@ paths:
         schema:
           example: default
           type: string
+      - description: When set, the API will return additional status information if
+          available
+        in: query
+        name: fetchstatus
+        schema:
+          example: "true"
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -22090,6 +22104,12 @@ paths:
         schema:
           example: default
           type: string
+      - description: When set, the API will return additional status information if
+          available
+        in: query
+        name: fetchstatus
+        schema:
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -22400,7 +22420,7 @@ paths:
       operationId: getTokenAccountPoolsNamespace
       parameters:
       - description: The key for the token account. The exact format may vary based
-          on the token connector use.
+          on the token connector use
         in: path
         name: key
         required: true
@@ -29661,6 +29681,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: When set, the API will return additional status information if
+          available
+        in: query
+        name: fetchstatus
+        schema:
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -29964,7 +29990,7 @@ paths:
       operationId: getTokenAccountPools
       parameters:
       - description: The key for the token account. The exact format may vary based
-          on the token connector use.
+          on the token connector use
         in: path
         name: key
         required: true

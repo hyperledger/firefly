@@ -1579,6 +1579,51 @@ func TestGetContractListenerByNameOrID(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetContractListenerByNameOrIDWithStatus(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+
+	id := fftypes.NewUUID()
+	backendID := "testID"
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{BackendID: backendID}, nil)
+	mbi.On("GetContractListenerStatus", context.Background(), backendID).Return(fftypes.JSONAnyPtr(fftypes.JSONObject{}.String()), nil)
+
+	_, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
+	assert.NoError(t, err)
+}
+
+func TestGetContractListenerByNameOrIDWithStatusListenerFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	id := fftypes.NewUUID()
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
+	assert.EqualError(t, err, "pop")
+}
+
+func TestGetContractListenerByNameOrIDWithStatusPluginFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+
+	id := fftypes.NewUUID()
+	backendID := "testID"
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{BackendID: backendID}, nil)
+	mbi.On("GetContractListenerStatus", context.Background(), backendID).Return(nil, fmt.Errorf("pop"))
+
+	listener, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
+
+	testError := core.ListenerStatusError{
+		StatusError: "pop",
+	}
+
+	assert.Equal(t, listener.Status, testError)
+	assert.NoError(t, err)
+}
+
 func TestGetContractListenerByNameOrIDFail(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)

@@ -154,6 +154,29 @@ func (_m *Plugin) GetAndConvertDeprecatedContractConfig(ctx context.Context) (*f
 	return r0, r1, r2
 }
 
+// GetContractListenerStatus provides a mock function with given fields: ctx, subID
+func (_m *Plugin) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {
+	ret := _m.Called(ctx, subID)
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, string) interface{}); ok {
+		r0 = rf(ctx, subID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, subID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetFFIParamValidator provides a mock function with given fields: ctx
 func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	ret := _m.Called(ctx)

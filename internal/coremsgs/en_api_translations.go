@@ -50,7 +50,7 @@ var (
 	APIParamsDID                            = ffm("api.params.DID", "The identity DID")
 	APIParamsNodeNameOrID                   = ffm("api.params.nodeNameOrID", "The name or ID of the node")
 	APIParamsOrgNameOrID                    = ffm("api.params.orgNameOrID", "The name or ID of the org")
-	APIParamsTokenAccountKey                = ffm("api.params.tokenAccountKey", "The key for the token account. The exact format may vary based on the token connector use.")
+	APIParamsTokenAccountKey                = ffm("api.params.tokenAccountKey", "The key for the token account. The exact format may vary based on the token connector use")
 	APIParamsTokenPoolNameOrID              = ffm("api.params.tokenPoolNameOrID", "The token pool name or ID")
 	APIParamsTokenTransferFromOrTo          = ffm("api.params.tokenTransferFromOrTo", "The sending or receiving token account for a token transfer")
 	APIParamsTokenTransferID                = ffm("api.params.tokenTransferID", "The token transfer ID")
@@ -63,6 +63,7 @@ var (
 	APIParamsMetadata                       = ffm("api.params.metadata", "Metadata associated with this data item")
 	APIParamsAutometa                       = ffm("api.params.autometa", "When set, FireFly will automatically generate JSON metadata with the upload details")
 	APIParamsContractAPIID                  = ffm("api.params.contractAPIID", "The ID of the contract API")
+	APIParamsFetchStatus                    = ffm("api.params.fetchStatus", "When set, the API will return additional status information if available")
 
 	APIEndpointsAdminGetNamespaceByName = ffm("api.endpoints.adminGetNamespaceByName", "Gets a namespace by name")
 	APIEndpointsAdminGetNamespaces      = ffm("api.endpoints.adminGetNamespaces", "List namespaces")
