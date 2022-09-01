@@ -365,7 +365,6 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 
 	if protocolID == "" ||
 		poolLocator == "" ||
-		signerAddress == "" ||
 		value == "" ||
 		(t != core.TokenTransferTypeMint && fromAddress == "") ||
 		(t != core.TokenTransferTypeBurn && toAddress == "") ||
@@ -438,7 +437,6 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	if protocolID == "" ||
 		subject == "" ||
 		poolLocator == "" ||
-		signerAddress == "" ||
 		operatorAddress == "" ||
 		blockchainEvent == nil {
 		log.L(ctx).Errorf("Approval event is not valid - missing data: %+v", data)
