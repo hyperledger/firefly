@@ -155,15 +155,15 @@ func (_m *Plugin) GetAndConvertDeprecatedContractConfig(ctx context.Context) (*f
 }
 
 // GetContractListenerStatus provides a mock function with given fields: ctx, subID
-func (_m *Plugin) GetContractListenerStatus(ctx context.Context, subID string) (*fftypes.JSONAny, error) {
+func (_m *Plugin) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {
 	ret := _m.Called(ctx, subID)
 
-	var r0 *fftypes.JSONAny
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.JSONAny); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, string) interface{}); ok {
 		r0 = rf(ctx, subID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.JSONAny)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 

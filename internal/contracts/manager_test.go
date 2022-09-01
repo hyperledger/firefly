@@ -1614,8 +1614,14 @@ func TestGetContractListenerByNameOrIDWithStatusPluginFail(t *testing.T) {
 	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{BackendID: backendID}, nil)
 	mbi.On("GetContractListenerStatus", context.Background(), backendID).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
-	assert.EqualError(t, err, "pop")
+	listener, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
+
+	testError := core.ListenerStatusError{
+		StatusError: "pop",
+	}
+
+	assert.Equal(t, listener.Status, testError)
+	assert.NoError(t, err)
 }
 
 func TestGetContractListenerByNameOrIDFail(t *testing.T) {

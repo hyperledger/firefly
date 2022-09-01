@@ -833,7 +833,7 @@ func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.
 	return f.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
-func (f *Fabric) GetContractListenerStatus(ctx context.Context, subID string) (*fftypes.JSONAny, error) {
+func (f *Fabric) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {
 	// Fabconnect does not currently provide any additional status info for listener subscriptions
 	return nil, nil
 }

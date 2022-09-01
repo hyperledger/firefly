@@ -3170,11 +3170,11 @@ func TestGetContractListenerStatus(t *testing.T) {
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	checkpoint := fftypes.JSONAnyPtr(fftypes.JSONObject{
-		"block":            0,
-		"transactionIndex": -1,
-		"logIndex":         -1,
-	}.String())
+	checkpoint := ListenerCheckpoint{
+		Block:            0,
+		TransactionIndex: -1,
+		LogIndex:         -1,
+	}
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))

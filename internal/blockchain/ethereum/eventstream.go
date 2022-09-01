@@ -63,8 +63,8 @@ type subscription struct {
 }
 
 type subscriptionCheckpoint struct {
-	Checkpoint *fftypes.JSONAny `json:"checkpoint,omitempty"`
-	Catchup    bool             `json:"catchup,omitempty"`
+	Checkpoint ListenerCheckpoint `json:"checkpoint,omitempty"`
+	Catchup    bool               `json:"catchup,omitempty"`
 }
 
 func newStreamManager(client *resty.Client, cache *ccache.Cache, cacheTTL time.Duration) *streamManager {

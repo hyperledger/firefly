@@ -580,7 +580,9 @@ func (cm *contractManager) GetContractListenerByNameOrIDWithStatus(ctx context.C
 	}
 	status, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID)
 	if err != nil {
-		return nil, err
+		status = core.ListenerStatusError{
+			StatusError: err.Error(),
+		}
 	}
 	enrichedListener = &core.ContractListenerWithStatus{
 		ContractListener: *listener,
