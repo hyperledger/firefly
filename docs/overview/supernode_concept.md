@@ -51,7 +51,9 @@ There are two main modes that a Supernode can operate in which are Web3 Gateway 
 
 Web3 Gateway mode may be used to simplify the processes of invoking smart contracts, interacting with digital assets, and exchanging value in existing blockchain ecosystems. Existing ecosystems may be public chains (i.e. Ethereum, Polygon, etc.) or private chains that have been created.
 
-Multiparty mode is used with multi-party systems. These are private blockchains where a decentralized application is running across a set of participants. Every member in the ecosystem runs their own FireFly node consistently, with a copy of the same application stack on top. FireFly is used in this case to establish and share identity, data definitions, and data (private and broadcast) across the multiple parties.
+Multiparty mode is used with multi-party systems. The key difference compared to Gateway mode is that not only can your Supernode interact with a blockchain, but it can also share data, send messages, and transact with other members in the multi-party system. A multi-party system is a blockchain where a decentralized application is running across a set of participants. Every member in the ecosystem runs their own FireFly Supernode with a copy of the same application stack on top.
+
+![Gateway & Multiparty Mode](../images/gateway_multiparty_mode.png "Gateway & Multiparty Mode")
 
 To learn more about each mode, check out the [Web3 Gateway Mode](./firefly_modes/gateway_mode.html) and [Multiparty Mode](./firefly_modes/multiparty_mode.html) sections.
 
