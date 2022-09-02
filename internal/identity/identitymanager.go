@@ -415,11 +415,6 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 	if err != nil {
 		return nil, err
 	} else if verifier == nil {
-		if namespace != core.LegacySystemNamespace && im.multiparty != nil && im.multiparty.GetNetworkVersion() == 1 {
-			// For V1 networks, fall back to LegacySystemNamespace for looking up identities
-			// This assumes that the system namespace shares a database with this manager's namespace!
-			return im.cachedIdentityLookupByVerifierRef(ctx, core.LegacySystemNamespace, verifierRef)
-		}
 		return nil, err
 	}
 	identity, err := im.database.GetIdentityByID(ctx, namespace, verifier.Identity)
