@@ -48,7 +48,7 @@ var postData = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusCreated},
 	Extensions: &coreExtensions{
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
-			return or.MultiParty() != nil
+			return or.Data() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			output, err = cr.or.Data().UploadJSON(cr.ctx, r.Input.(*core.DataRefOrValue))

@@ -20,6 +20,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -27,6 +28,8 @@ import (
 
 func TestGetMessagesForData(t *testing.T) {
 	o, r := newTestAPIServer()
+	mmp := &multipartymocks.Manager{}
+	o.On("MultiParty").Return(mmp)
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/data/abcd1234/messages", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")

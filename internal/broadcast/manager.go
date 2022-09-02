@@ -75,7 +75,7 @@ type broadcastManager struct {
 }
 
 func NewBroadcastManager(ctx context.Context, ns *core.Namespace, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, im identity.Manager, dm data.Manager, ba batch.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
-	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil || mult == nil || txHelper == nil {
+	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || mm == nil || om == nil || txHelper == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BroadcastManager")
 	}
 	bm := &broadcastManager{
@@ -95,21 +95,23 @@ func NewBroadcastManager(ctx context.Context, ns *core.Namespace, di database.Pl
 		txHelper:              txHelper,
 	}
 
-	bo := batch.DispatcherOptions{
-		BatchType:      core.BatchTypeBroadcast,
-		BatchMaxSize:   config.GetUint(coreconfig.BroadcastBatchSize),
-		BatchMaxBytes:  bm.maxBatchPayloadLength,
-		BatchTimeout:   config.GetDuration(coreconfig.BroadcastBatchTimeout),
-		DisposeTimeout: config.GetDuration(coreconfig.BroadcastBatchAgentTimeout),
-	}
+	if ba != nil && mult != nil {
+		bo := batch.DispatcherOptions{
+			BatchType:      core.BatchTypeBroadcast,
+			BatchMaxSize:   config.GetUint(coreconfig.BroadcastBatchSize),
+			BatchMaxBytes:  bm.maxBatchPayloadLength,
+			BatchTimeout:   config.GetDuration(coreconfig.BroadcastBatchTimeout),
+			DisposeTimeout: config.GetDuration(coreconfig.BroadcastBatchAgentTimeout),
+		}
 
-	ba.RegisterDispatcher(broadcastDispatcherName,
-		core.TransactionTypeBatchPin,
-		[]core.MessageType{
-			core.MessageTypeBroadcast,
-			core.MessageTypeDefinition,
-			core.MessageTypeTransferBroadcast,
-		}, bm.dispatchBatch, bo)
+		ba.RegisterDispatcher(broadcastDispatcherName,
+			core.TransactionTypeBatchPin,
+			[]core.MessageType{
+				core.MessageTypeBroadcast,
+				core.MessageTypeDefinition,
+				core.MessageTypeTransferBroadcast,
+			}, bm.dispatchBatch, bo)
+	}
 
 	om.RegisterHandler(ctx, bm, []core.OpType{
 		core.OpTypeSharedStorageUploadBatch,

@@ -437,7 +437,9 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 				return err
 			}
 		}
+	}
 
+	if or.dataexchange() != nil && or.sharedstorage() != nil {
 		if or.broadcast == nil {
 			if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.namespace, or.database(), or.blockchain(), or.dataexchange(), or.sharedstorage(), or.identity, or.data, or.batch, or.syncasync, or.multiparty, or.metrics, or.operations, or.txHelper); err != nil {
 				return err
@@ -486,7 +488,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
-	if or.data == nil {
+	if or.data == nil && or.dataexchange() != nil {
 		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.dataexchange())
 		if err != nil {
 			return err
