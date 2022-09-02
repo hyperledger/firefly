@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/cache"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -220,6 +221,18 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 	if err != nil {
 		return err
 	}
+	cache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheBlockchainLimit,
+			coreconfig.CacheBlockchainTTL,
+			"",
+		),
+	)
+	if err != nil {
+		return err
+	}
+	f.cache = cache
 
 	f.streams = newStreamManager(f.client, f.signer, f.cache)
 	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)

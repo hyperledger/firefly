@@ -121,8 +121,8 @@ func NewDataManager(ctx context.Context, ns *core.Namespace, di database.Plugin,
 	messageCache, err := cacheManager.GetCache(
 		cache.NewCacheConfig(
 			ctx,
-			coreconfig.CacheValidatorSize,
-			coreconfig.CacheValidatorTTL,
+			coreconfig.CacheMessageSize,
+			coreconfig.CacheMessageTTL,
 			ns.Name,
 		),
 	)

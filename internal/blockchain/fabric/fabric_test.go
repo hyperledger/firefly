@@ -130,7 +130,6 @@ func TestInitMissingURL(t *testing.T) {
 	resetConf(e)
 
 	cmi := &cachemocks.Manager{}
-	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.Regexp(t, "FF10138.*url", err)
 }
@@ -181,6 +180,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+	cmi.AssertNumberOfCalls(t, "GetCache", 1)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "fabric", e.Name())

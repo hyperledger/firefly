@@ -155,9 +155,8 @@ var (
 	CacheValidatorSize = ffc("cache.validator.size")
 	CacheValidatorTTL  = ffc("cache.validator.ttl")
 
-	// CacheBlockchainTTL time to live of blockchain plugin cache
-	CacheBlockchainTTL = ffc("cache.blockchain.ttl")
-	// CacheBlockchainLimit max number of cache items for blockchain plugin cache
+	// Blockchain cache config
+	CacheBlockchainTTL   = ffc("cache.blockchain.ttl")
 	CacheBlockchainLimit = ffc("cache.blockchain.limit")
 
 	// Operations cache config
