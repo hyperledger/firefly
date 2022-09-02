@@ -38,13 +38,6 @@ nav_order: 2
 |---|-----------|----|-------------|
 |keyNormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keyNormalization)|`string`|`<nil>`
 
-## batch.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|limit|Max number of cache items for batches|`string`|`<nil>`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-
 ## batch.manager
 
 |Key|Description|Type|Default Value|
@@ -107,13 +100,6 @@ nav_order: 2
 |---|-----------|----|-------------|
 |password|Password|`string`|`<nil>`
 |username|Username|`string`|`<nil>`
-
-## blockchain.ethereum.addressResolver.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`1000`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`24h`
 
 ## blockchain.ethereum.addressResolver.proxy
 
@@ -270,13 +256,6 @@ nav_order: 2
 |readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 |writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 
-## blockchainevent.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|limit|Max number of cache items for blockchain events|`string`|`<nil>`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-
 ## broadcast.batch
 
 |Key|Description|Type|Default Value|
@@ -286,19 +265,95 @@ nav_order: 2
 |size|The maximum number of messages that can be packed into a batch|`int`|`<nil>`
 |timeout|The timeout to wait for a batch to fill, before sending|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
+## cache
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Enables caching, defaults to true|`boolean`|`<nil>`
+
+## cache.addressresolver
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|limit|Max number of cached items for address resolver|`int`|`<nil>`
+|ttl|Time to live of cached items for address resolver|`string`|`<nil>`
+
+## cache.batch
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|limit|Max number of cached items for batches|`int`|`<nil>`
+|ttl|Time to live of cache items for batches|`string`|`<nil>`
+
 ## cache.blockchain
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cache items for blockchain plugin cache|`string`|`<nil>`
-|ttl|Time to live for blockchain cache items|`string`|`<nil>`
+|limit|Max number of cached items for blockchain|`int`|`<nil>`
+|ttl|Time to live of cached items for blockchain|`string`|`<nil>`
+
+## cache.blockchainevent
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|limit|Max number of cached blockchain events for transactions|`int`|`<nil>`
+|ttl|Time to live of cached blockchain events for transactions|`string`|`<nil>`
+
+## cache.eventlistenertopic
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|limit|Max number of cached items for blockchain listener topics|`int`|`<nil>`
+|ttl|Time to live of cached items for blockchain listener topics|`string`|`<nil>`
+
+## cache.group
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|limit|Max number of cached items for groups|`int`|`<nil>`
+|ttl|Time to live of cached items for groups|`string`|`<nil>`
+
+## cache.identity
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|limit|Max number of cached identities for identity manager|`int`|`<nil>`
+|ttl|Time to live of cached identities for identity manager|`string`|`<nil>`
+
+## cache.message
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|size|Max size of cached messages for data manager|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|ttl|Time to live of cached messages for data manager|`string`|`<nil>`
 
 ## cache.operations
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cache items for operations|`string`|`<nil>`
-|ttl|Time to live for operation cache items|`string`|`<nil>`
+|limit|Max number of cached items for operations|`int`|`<nil>`
+|ttl|Time to live of cached items for operations|`string`|`<nil>`
+
+## cache.signingkey
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|limit|Max number of cached signing keys for identity manager|`int`|`<nil>`
+|ttl|Time to live of cached signing keys for identity manager|`string`|`<nil>`
+
+## cache.transaction
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|size|Max size of cached transactions|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|ttl|Time to live of cached transactions|`string`|`<nil>`
+
+## cache.validator
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|size|Max size of cached validators for data manager|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|ttl|Time to live of cached validators for data manager|`string`|`<nil>`
 
 ## cors
 
@@ -469,26 +524,12 @@ nav_order: 2
 |initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
-## event.listenerTopic.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|limit|Max number of cache items for blockchain listener topics|`string`|`<nil>`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-
 ## event.transports
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |default|The default event transport for new subscriptions|`string`|`<nil>`
 |enabled|Which event interface plugins are enabled|`boolean`|`<nil>`
-
-## group.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|limit|Max number of cache items for private group addresses|`string`|`<nil>`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## histograms
 
@@ -529,13 +570,6 @@ nav_order: 2
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 
-## identity.manager.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|limit|The identity manager cache limit in count of items|`int`|`<nil>`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-
 ## log
 
 |Key|Description|Type|Default Value|
@@ -567,13 +601,6 @@ nav_order: 2
 |level|Configures the JSON key containing the log level|`string`|`<nil>`
 |message|Configures the JSON key containing the log message|`string`|`<nil>`
 |timestamp|Configures the JSON key containing the timestamp of the log|`string`|`<nil>`
-
-## message.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## message.writer
 
@@ -763,13 +790,6 @@ nav_order: 2
 |---|-----------|----|-------------|
 |password|Password|`string`|`<nil>`
 |username|Username|`string`|`<nil>`
-
-## plugins.blockchain[].ethereum.addressResolver.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`1000`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`24h`
 
 ## plugins.blockchain[].ethereum.addressResolver.proxy
 
@@ -1361,23 +1381,9 @@ nav_order: 2
 |readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
 |writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
 
-## transaction.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-
 ## ui
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |enabled|Enables the web user interface|`boolean`|`<nil>`
 |path|The file system path which contains the static HTML, CSS, and JavaScript files for the user interface|`string`|`<nil>`
-
-## validator.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
