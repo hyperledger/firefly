@@ -394,6 +394,22 @@ func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 	return nil
 }
 
+func (or *orchestrator) initMultiPartyComponents(ctx context.Context) (err error) {
+	if or.batch == nil {
+		or.batch, err = batch.NewBatchManager(ctx, or.namespace.Name, or.database(), or.data, or.identity, or.txHelper)
+		if err != nil {
+			return err
+		}
+	}
+
+	if or.messaging == nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace, or.database(), or.dataexchange(), or.blockchain(), or.identity, or.batch, or.data, or.syncasync, or.multiparty, or.metrics, or.operations, or.cacheManager); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.txHelper == nil {
@@ -430,17 +446,8 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace.Name, or.database(), or.data, or.operations)
 
 	if or.config.Multiparty.Enabled {
-		if or.batch == nil {
-			or.batch, err = batch.NewBatchManager(ctx, or.namespace.Name, or.database(), or.data, or.identity, or.txHelper)
-			if err != nil {
-				return err
-			}
-		}
-
-		if or.messaging == nil {
-			if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace, or.database(), or.dataexchange(), or.blockchain(), or.identity, or.batch, or.data, or.syncasync, or.multiparty, or.metrics, or.operations, or.cacheManager); err != nil {
-				return err
-			}
+		if err = or.initMultiPartyComponents(ctx); err != nil {
+			return err
 		}
 	}
 
