@@ -26787,6 +26787,65 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /namespaces/{ns}/verifiers/resolve:
+    post:
+      description: Resolves an input key to a signing key
+      operationId: postVerifiersResolveNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                type:
+                  description: The type of the verifier
+                  enum:
+                  - ethereum_address
+                  - fabric_msp_id
+                  - dx_peer_id
+                  type: string
+                value:
+                  description: The verifier string, such as an Ethereum address, or
+                    Fabric MSP identifier
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  type:
+                    description: The type of the verifier
+                    enum:
+                    - ethereum_address
+                    - fabric_msp_id
+                    - dx_peer_id
+                    type: string
+                  value:
+                    description: The verifier string, such as an Ethereum address,
+                      or Fabric MSP identifier
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
   /network/action:
     post:
       description: Notify all nodes in the network of a new governance action
@@ -34207,6 +34266,58 @@ paths:
                   namespace:
                     description: The namespace of the verifier
                     type: string
+                  type:
+                    description: The type of the verifier
+                    enum:
+                    - ethereum_address
+                    - fabric_msp_id
+                    - dx_peer_id
+                    type: string
+                  value:
+                    description: The verifier string, such as an Ethereum address,
+                      or Fabric MSP identifier
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /verifiers/resolve:
+    post:
+      description: Resolves an input key to a signing key
+      operationId: postVerifiersResolve
+      parameters:
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                type:
+                  description: The type of the verifier
+                  enum:
+                  - ethereum_address
+                  - fabric_msp_id
+                  - dx_peer_id
+                  type: string
+                value:
+                  description: The verifier string, such as an Ethereum address, or
+                    Fabric MSP identifier
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
                   type:
                     description: The type of the verifier
                     enum:

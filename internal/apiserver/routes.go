@@ -154,6 +154,7 @@ var routes = append(
 		postTokenTransfer,
 		putContractAPI,
 		putSubscription,
+		postVerifiersResolve,
 	})...,
 )
 

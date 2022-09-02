@@ -88,6 +88,22 @@ func (or *orchestrator) GetMessageByIDWithData(ctx context.Context, id string) (
 	return or.fetchMessageData(ctx, msg)
 }
 
+func (or *orchestrator) ResolveSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
+	if inputKey.Type != or.blockchain().VerifierType() {
+		return nil, i18n.NewError(ctx, coremsgs.MsgVerifierTypeCannotBeResolved)
+	}
+
+	signingKey, err := or.blockchain().NormalizeSigningKey(ctx, inputKey.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.VerifierRef{
+		Type:  inputKey.Type,
+		Value: signingKey,
+	}, nil
+}
+
 func (or *orchestrator) GetBatchByID(ctx context.Context, id string) (*core.BatchPersisted, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {

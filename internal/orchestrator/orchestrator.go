@@ -79,6 +79,8 @@ type Orchestrator interface {
 	CreateUpdateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
 	DeleteSubscription(ctx context.Context, id string) error
 
+	ResolveSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error)
+
 	// Data Query
 	GetNamespace(ctx context.Context) *core.Namespace
 	GetTransactionByID(ctx context.Context, id string) (*core.Transaction, error)
