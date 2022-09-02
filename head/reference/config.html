@@ -345,39 +345,6 @@
     </tr>
   </tbody>
 </table>
-      <h2 id="batchcache">
-        
-        
-          <a href="#batchcache" class="anchor-heading" aria-labelledby="batchcache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> batch.cache
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>limit</td>
-      <td>Max number of cache items for batches</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>The time to live (TTL) for the cache</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
       <h2 id="batchmanager">
         
         
@@ -690,39 +657,6 @@
       <td>Username</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
-      <h2 id="blockchainethereumaddressresolvercache">
-        
-        
-          <a href="#blockchainethereumaddressresolvercache" class="anchor-heading" aria-labelledby="blockchainethereumaddressresolvercache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> blockchain.ethereum.addressResolver.cache
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>size</td>
-      <td>The size of the cache</td>
-      <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">1000</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>The time to live (TTL) for the cache</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">24h</code></td>
     </tr>
   </tbody>
 </table>
@@ -1512,39 +1446,6 @@
     </tr>
   </tbody>
 </table>
-      <h2 id="blockchaineventcache">
-        
-        
-          <a href="#blockchaineventcache" class="anchor-heading" aria-labelledby="blockchaineventcache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> blockchainevent.cache
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>limit</td>
-      <td>Max number of cache items for blockchain events</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>The time to live (TTL) for the cache</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
       <h2 id="broadcastbatch">
         
         
@@ -1590,6 +1491,99 @@
     </tr>
   </tbody>
 </table>
+      <h2 id="cache">
+        
+        
+          <a href="#cache" class="anchor-heading" aria-labelledby="cache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>enabled</td>
+      <td>Enables caching, defaults to true</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cacheaddressresolver">
+        
+        
+          <a href="#cacheaddressresolver" class="anchor-heading" aria-labelledby="cacheaddressresolver"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.addressresolver
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>limit</td>
+      <td>Max number of cached items for address resolver</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cached items for address resolver</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cachebatch">
+        
+        
+          <a href="#cachebatch" class="anchor-heading" aria-labelledby="cachebatch"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.batch
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>limit</td>
+      <td>Max number of cached items for batches</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cache items for batches</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
       <h2 id="cacheblockchain">
         
         
@@ -1611,13 +1605,178 @@
   <tbody>
     <tr>
       <td>limit</td>
-      <td>Max number of cache items for blockchain plugin cache</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td>Max number of cached items for blockchain</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>ttl</td>
-      <td>Time to live for blockchain cache items</td>
+      <td>Time to live of cached items for blockchain</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cacheblockchainevent">
+        
+        
+          <a href="#cacheblockchainevent" class="anchor-heading" aria-labelledby="cacheblockchainevent"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.blockchainevent
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>limit</td>
+      <td>Max number of cached blockchain events for transactions</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cached blockchain events for transactions</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cacheeventlistenertopic">
+        
+        
+          <a href="#cacheeventlistenertopic" class="anchor-heading" aria-labelledby="cacheeventlistenertopic"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.eventlistenertopic
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>limit</td>
+      <td>Max number of cached items for blockchain listener topics</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cached items for blockchain listener topics</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cachegroup">
+        
+        
+          <a href="#cachegroup" class="anchor-heading" aria-labelledby="cachegroup"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.group
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>limit</td>
+      <td>Max number of cached items for groups</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cached items for groups</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cacheidentity">
+        
+        
+          <a href="#cacheidentity" class="anchor-heading" aria-labelledby="cacheidentity"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.identity
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>limit</td>
+      <td>Max number of cached identities for identity manager</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cached identities for identity manager</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cachemessage">
+        
+        
+          <a href="#cachemessage" class="anchor-heading" aria-labelledby="cachemessage"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.message
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>size</td>
+      <td>Max size of cached messages for data manager</td>
+      <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cached messages for data manager</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -1644,13 +1803,112 @@
   <tbody>
     <tr>
       <td>limit</td>
-      <td>Max number of cache items for operations</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td>Max number of cached items for operations</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>ttl</td>
-      <td>Time to live for operation cache items</td>
+      <td>Time to live of cached items for operations</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cachesigningkey">
+        
+        
+          <a href="#cachesigningkey" class="anchor-heading" aria-labelledby="cachesigningkey"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.signingkey
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>limit</td>
+      <td>Max number of cached signing keys for identity manager</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cached signing keys for identity manager</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cachetransaction">
+        
+        
+          <a href="#cachetransaction" class="anchor-heading" aria-labelledby="cachetransaction"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.transaction
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>size</td>
+      <td>Max size of cached transactions</td>
+      <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cached transactions</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cachevalidator">
+        
+        
+          <a href="#cachevalidator" class="anchor-heading" aria-labelledby="cachevalidator"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.validator
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>size</td>
+      <td>Max size of cached validators for data manager</td>
+      <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cached validators for data manager</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -2490,39 +2748,6 @@
     </tr>
   </tbody>
 </table>
-      <h2 id="eventlistenertopiccache">
-        
-        
-          <a href="#eventlistenertopiccache" class="anchor-heading" aria-labelledby="eventlistenertopiccache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> event.listenerTopic.cache
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>limit</td>
-      <td>Max number of cache items for blockchain listener topics</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>The time to live (TTL) for the cache</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
       <h2 id="eventtransports">
         
         
@@ -2552,39 +2777,6 @@
       <td>enabled</td>
       <td>Which event interface plugins are enabled</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
-      <h2 id="groupcache">
-        
-        
-          <a href="#groupcache" class="anchor-heading" aria-labelledby="groupcache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> group.cache
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>limit</td>
-      <td>Max number of cache items for private group addresses</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>The time to live (TTL) for the cache</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
   </tbody>
@@ -2778,39 +2970,6 @@
     </tr>
   </tbody>
 </table>
-      <h2 id="identitymanagercache">
-        
-        
-          <a href="#identitymanagercache" class="anchor-heading" aria-labelledby="identitymanagercache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> identity.manager.cache
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>limit</td>
-      <td>The identity manager cache limit in count of items</td>
-      <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>The time to live (TTL) for the cache</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
       <h2 id="log">
         
         
@@ -2972,39 +3131,6 @@
       <td>timestamp</td>
       <td>Configures the JSON key containing the timestamp of the log</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
-      <h2 id="messagecache">
-        
-        
-          <a href="#messagecache" class="anchor-heading" aria-labelledby="messagecache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> message.cache
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>size</td>
-      <td>The size of the cache</td>
-      <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>The time to live (TTL) for the cache</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
   </tbody>
@@ -3933,39 +4059,6 @@
       <td>Username</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
-      <h2 id="pluginsblockchainethereumaddressresolvercache">
-        
-        
-          <a href="#pluginsblockchainethereumaddressresolvercache" class="anchor-heading" aria-labelledby="pluginsblockchainethereumaddressresolvercache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.blockchain[].ethereum.addressResolver.cache
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>size</td>
-      <td>The size of the cache</td>
-      <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">1000</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>The time to live (TTL) for the cache</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">24h</code></td>
     </tr>
   </tbody>
 </table>
@@ -6906,39 +6999,6 @@
     </tr>
   </tbody>
 </table>
-      <h2 id="transactioncache">
-        
-        
-          <a href="#transactioncache" class="anchor-heading" aria-labelledby="transactioncache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> transaction.cache
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>size</td>
-      <td>The size of the cache</td>
-      <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>The time to live (TTL) for the cache</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
       <h2 id="ui">
         
         
@@ -6968,39 +7028,6 @@
       <td>path</td>
       <td>The file system path which contains the static HTML, CSS, and JavaScript files for the user interface</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
-      <h2 id="validatorcache">
-        
-        
-          <a href="#validatorcache" class="anchor-heading" aria-labelledby="validatorcache"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> validator.cache
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>size</td>
-      <td>The size of the cache</td>
-      <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>The time to live (TTL) for the cache</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
   </tbody>
