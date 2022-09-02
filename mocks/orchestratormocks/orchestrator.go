@@ -24,6 +24,8 @@ import (
 
 	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
+	identity "github.com/hyperledger/firefly/internal/identity"
+
 	mock "github.com/stretchr/testify/mock"
 
 	multiparty "github.com/hyperledger/firefly/internal/multiparty"
@@ -1166,6 +1168,22 @@ func (_m *Orchestrator) GetTransactions(ctx context.Context, filter database.And
 	}
 
 	return r0, r1, r2
+}
+
+// Identity provides a mock function with given fields:
+func (_m *Orchestrator) Identity() identity.Manager {
+	ret := _m.Called()
+
+	var r0 identity.Manager
+	if rf, ok := ret.Get(0).(func() identity.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(identity.Manager)
+		}
+	}
+
+	return r0
 }
 
 // Init provides a mock function with given fields: ctx, cancelCtx

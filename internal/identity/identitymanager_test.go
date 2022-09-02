@@ -69,6 +69,93 @@ func TestNewIdentityManagerMissingDeps(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestResolveInputSigningKeyMissingBlockchain(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
+
+	inputKey := &core.VerifierRef{
+		Type:  "testType",
+		Value: "testValue",
+	}
+
+	_, err := im.ResolveInputSigningKey(ctx, inputKey)
+	assert.Regexp(t, "FF10417", err)
+}
+
+func TestResolveInputSigningKeyUnknownVerifier(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress, nil)
+
+	inputKey := &core.VerifierRef{
+		Type:  "unknownVerifier",
+		Value: "testValue",
+	}
+
+	_, err := im.ResolveInputSigningKey(ctx, inputKey)
+
+	assert.Regexp(t, "FF10428", err)
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveInputSigningKeyNoVerifierOK(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress, nil)
+	mbi.On("NormalizeSigningKey", ctx, "testValue").Return("fullkey123", nil)
+
+	inputKey := &core.VerifierRef{
+		Value: "testValue",
+	}
+
+	res, err := im.ResolveInputSigningKey(ctx, inputKey)
+
+	assert.NoError(t, err)
+	assert.Equal(t, core.VerifierTypeEthAddress, res.Type)
+	assert.Equal(t, "fullkey123", res.Value)
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveInputSigningKeyErrorNormalizingKey(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress, nil)
+	mbi.On("NormalizeSigningKey", ctx, "testValue").Return("", fmt.Errorf("pop"))
+
+	inputKey := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "testValue",
+	}
+
+	_, err := im.ResolveInputSigningKey(ctx, inputKey)
+
+	assert.Regexp(t, "pop", err)
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveInputSigningKeySuccess(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress, nil)
+	mbi.On("NormalizeSigningKey", ctx, "testValue").Return("fullkey123", nil)
+
+	inputKey := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "testValue",
+	}
+
+	res, err := im.ResolveInputSigningKey(ctx, inputKey)
+
+	assert.NoError(t, err)
+	assert.Equal(t, core.VerifierTypeEthAddress, res.Type)
+	assert.Equal(t, "fullkey123", res.Value)
+	mbi.AssertExpectations(t)
+}
+
 func TestResolveInputSigningIdentityNoKey(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)

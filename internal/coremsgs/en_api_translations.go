@@ -177,6 +177,7 @@ var (
 	APIEndpointsPutSubscription                 = ffm("api.endpoints.putSubscription", "Update an existing subscription")
 	APIEndpointsGetContractAPIInterface         = ffm("api.endpoints.getContractAPIInterface", "Gets a contract interface for a contract API")
 	APIEndpointsPostNetworkAction               = ffm("api.endpoints.postNetworkAction", "Notify all nodes in the network of a new governance action")
+	APIEndpointsPostVerifiersResolve            = ffm("api.endpoints.postVerifiersResolve", "Resolves an input key to a signing key")
 
 	APIFilterParamDesc         = ffm("api.filterParam", "Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^")
 	APIFilterSortDesc          = ffm("api.filterSort", "Sort field. For multi-field sort use comma separated values (or multiple query values) with '-' prefix for descending")

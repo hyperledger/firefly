@@ -68,6 +68,7 @@ type Orchestrator interface {
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
 	Operations() operations.Manager
+	Identity() identity.Manager
 
 	// Status
 	GetStatus(ctx context.Context) (*core.NamespaceStatus, error)
@@ -354,6 +355,10 @@ func (or *orchestrator) Operations() operations.Manager {
 
 func (or *orchestrator) MultiParty() multiparty.Manager {
 	return or.multiparty
+}
+
+func (or *orchestrator) Identity() identity.Manager {
+	return or.identity
 }
 
 func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
