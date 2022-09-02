@@ -305,7 +305,8 @@ func (ft *FFTokens) buildBlockchainEvent(eventData fftypes.JSONObject) *blockcha
 	return nil
 }
 
-func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
+func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject, poolData *tokenData) (err error) {
+
 	tokenType := data.GetString("type")
 	poolLocator := data.GetString("poolLocator")
 
@@ -321,13 +322,14 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	info := data.GetObject("info")
 	blockchainEvent := data.GetObject("blockchain")
 
-	// We want to process all events, even those not initiated by FireFly.
-	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
 	poolDataString := data.GetString("data")
-	var poolData tokenData
-	if err = json.Unmarshal([]byte(poolDataString), &poolData); err != nil {
-		log.L(ctx).Infof("TokenPool event data could not be parsed - continuing anyway (%s): %+v", err, data)
-		poolData = tokenData{}
+	if poolData == nil && poolDataString != "" {
+		// We want to process all events, even those not initiated by FireFly.
+		// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
+		if err = json.Unmarshal([]byte(poolDataString), &poolData); err != nil {
+			log.L(ctx).Warnf("TokenPool event data could not be parsed - continuing anyway (%s): %+v", err, data)
+			poolData = &tokenData{}
+		}
 	}
 
 	txType := poolData.TXType
@@ -351,6 +353,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
+	log.L(ctx).Debugf("Calling TokenPoolCreated callback. Locator='%s' TX=%s/%s", pool.PoolLocator, txType, poolData.TX)
 	return ft.callbacks.TokenPoolCreated(ctx, pool)
 }
 
@@ -505,7 +508,7 @@ func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (err err
 			}
 		}
 	case messageTokenPool:
-		err = ft.handleTokenPoolCreate(eventCtx, msg.Data)
+		err = ft.handleTokenPoolCreate(eventCtx, msg.Data, nil /* need to extract poolData from event */)
 	case messageTokenMint:
 		err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeMint, msg.Data)
 	case messageTokenBurn:
@@ -571,10 +574,11 @@ func wrapError(ctx context.Context, errRes *tokenError, res *resty.Response, err
 }
 
 func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error) {
-	data, _ := json.Marshal(tokenData{
+	tokenData := &tokenData{
 		TX:     pool.TX.ID,
 		TXType: pool.TX.Type,
-	})
+	}
+	data, _ := json.Marshal(tokenData)
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&createPool{
@@ -597,7 +601,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *co
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
 			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
-		return true, ft.handleTokenPoolCreate(ctx, obj)
+		return true, ft.handleTokenPoolCreate(ctx, obj, tokenData)
 	}
 	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
 	return false, nil
@@ -623,7 +627,10 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
 			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
-		return true, ft.handleTokenPoolCreate(ctx, obj)
+		return true, ft.handleTokenPoolCreate(ctx, obj, &tokenData{
+			TX:     pool.TX.ID,
+			TXType: pool.TX.Type,
+		})
 	} else if res.StatusCode() == 204 {
 		// HTTP 204: Activation was successful, but pool details are not available
 		// This will resolve the operation, but connector is responsible for re-delivering pool details on the websocket.

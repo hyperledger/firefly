@@ -452,11 +452,10 @@ func TestJSONDisabledRoute(t *testing.T) {
 func TestFormDataDisabledRoute(t *testing.T) {
 	mgr, o, as := newTestServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	o.On("Data").Return(nil)
 	r := as.createMuxRouter(context.Background(), mgr)
 	s := httptest.NewServer(r)
 	defer s.Close()
-
-	o.On("MultiParty").Return(nil)
 
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)

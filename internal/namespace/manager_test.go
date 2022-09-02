@@ -428,6 +428,7 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
       plugins: [ethereum, postgres, erc721, ipfs, ffdx]
       multiparty:
         enabled: true
+        networkNamespace: default
     - name: ns2
       plugins: [ethereum, postgres, erc1155, ipfs, ffdx]
       multiparty:
@@ -1652,64 +1653,6 @@ func TestLoadNamespacesMultipartyMissingPlugins(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10391", err)
-}
-
-func TestLoadNamespacesNonMultipartyWithDX(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	viper.SetConfigType("yaml")
-	err := viper.ReadConfig(strings.NewReader(`
-  namespaces:
-    default: ns1
-    predefined:
-    - name: ns1
-      plugins: [ffdx]
-  `))
-	assert.NoError(t, err)
-
-	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
-	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx, nm.reset)
-	assert.Regexp(t, "FF10393", err)
-}
-
-func TestLoadNamespacesNonMultipartyWithSharedStorage(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	viper.SetConfigType("yaml")
-	err := viper.ReadConfig(strings.NewReader(`
-  namespaces:
-    default: ns1
-    predefined:
-    - name: ns1
-      plugins: [ipfs]
-  `))
-	assert.NoError(t, err)
-
-	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
-	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx, nm.reset)
-	assert.Regexp(t, "FF10393", err)
 }
 
 func TestLoadNamespacesNonMultipartyUnknownPlugin(t *testing.T) {

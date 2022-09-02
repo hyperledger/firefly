@@ -726,6 +726,7 @@ var DataQueryFactory = &queryFields{
 	"blob.size":        &Int64Field{},
 	"created":          &TimeField{},
 	"value":            &JSONField{},
+	"public":           &StringField{},
 }
 
 // DatatypeQueryFactory filter fields for data definitions

@@ -62,6 +62,7 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 		ns.Name,
 	))
 	assert.NoError(t, err)
+	assert.True(t, dm.BlobsEnabled())
 	dm.Start()
 	return dm.(*dataManager), ctx, func() {
 		cancel()

@@ -284,6 +284,48 @@ func TestPrepareAndRunUploadBlob(t *testing.T) {
 
 }
 
+func TestPrepareAndRunValue(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadValue,
+	}
+	data := &core.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtr(`{"some":"data"}`),
+	}
+	addUploadValueInputs(op, data.ID)
+
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
+	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
+	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.MatchedBy(func(update database.Update) bool {
+		info, _ := update.Finalize()
+		assert.Equal(t, 1, len(info.SetOperations))
+		assert.Equal(t, "public", info.SetOperations[0].Field)
+		val, _ := info.SetOperations[0].Value.Value()
+		assert.Equal(t, "123", val)
+		return true
+	})).Return(nil)
+
+	po, err := bm.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, data, po.Data.(uploadValue).Data)
+
+	outputs, complete, err := bm.RunOperation(context.Background(), opUploadValue(op, data))
+	assert.Equal(t, "123", outputs["payloadRef"])
+
+	assert.True(t, complete)
+	assert.NoError(t, err)
+
+	mps.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+
+}
+
 func TestPrepareUploadBlobGetBlobMissing(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
@@ -318,7 +360,7 @@ func TestPrepareUploadBlobGetBlobMissing(t *testing.T) {
 
 }
 
-func TestPrepareUploadBlobGetBlobFailg(t *testing.T) {
+func TestPrepareUploadBlobGetBlobFailing(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
@@ -369,6 +411,27 @@ func TestPrepareUploadBlobGetDataMissing(t *testing.T) {
 
 }
 
+func TestPrepareUploadValueGetDataMissing(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadValue,
+	}
+	dataID := fftypes.NewUUID()
+	addUploadBlobInputs(op, dataID)
+
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetDataByID", mock.Anything, "ns1", dataID, false).Return(nil, nil)
+
+	_, err := bm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF10109", err)
+
+	mdi.AssertExpectations(t)
+
+}
+
 func TestPrepareUploadBlobGetDataFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
@@ -390,12 +453,46 @@ func TestPrepareUploadBlobGetDataFail(t *testing.T) {
 
 }
 
+func TestPrepareUploadValueGetDataFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadValue,
+	}
+	dataID := fftypes.NewUUID()
+	addUploadBlobInputs(op, dataID)
+
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetDataByID", mock.Anything, "ns1", dataID, false).Return(nil, fmt.Errorf("pop"))
+
+	_, err := bm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+
+}
+
 func TestPrepareUploadBlobGetDataBadID(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
 	op := &core.Operation{
 		Type: core.OpTypeSharedStorageUploadBlob,
+	}
+
+	_, err := bm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF00138", err)
+
+}
+
+func TestPrepareUploadValueGetDataBadID(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadValue,
 	}
 
 	_, err := bm.PrepareOperation(context.Background(), op)
@@ -437,6 +534,31 @@ func TestRunOperationUploadBlobUpdateFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestRunOperationUploadValueUpdateFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &core.Operation{}
+	data := &core.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtr(`{"some":"data"}`),
+	}
+
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
+	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.Anything).Return(fmt.Errorf("pop"))
+
+	_, complete, err := bm.RunOperation(context.Background(), opUploadValue(op, data))
+
+	assert.False(t, complete)
+	assert.Regexp(t, "pop", err)
+
+	mps.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestRunOperationUploadBlobUploadFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
@@ -466,6 +588,27 @@ func TestRunOperationUploadBlobUploadFail(t *testing.T) {
 
 	mps.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+}
+
+func TestRunOperationUploadValueUploadFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &core.Operation{}
+	data := &core.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtr(`{"some":"data"}`),
+	}
+
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mps.On("UploadData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
+
+	_, complete, err := bm.RunOperation(context.Background(), opUploadValue(op, data))
+
+	assert.False(t, complete)
+	assert.Regexp(t, "pop", err)
+
+	mps.AssertExpectations(t)
 }
 
 func TestRunOperationUploadBlobDownloadFail(t *testing.T) {

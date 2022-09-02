@@ -42,6 +42,7 @@ var (
 		"blob_public",
 		"blob_name",
 		"blob_size",
+		"public",
 		"value_size",
 	}
 	dataColumnsWithValue = append(append([]string{}, dataColumnsNoValue...), "value")
@@ -78,6 +79,7 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *
 			Set("blob_public", blob.Public).
 			Set("blob_name", blob.Name).
 			Set("blob_size", blob.Size).
+			Set("public", data.Public).
 			Set("value_size", data.ValueSize).
 			Set("value", data.Value).
 			Where(sq.Eq{
@@ -111,6 +113,7 @@ func (s *SQLCommon) setDataInsertValues(query sq.InsertBuilder, data *core.Data)
 		blob.Public,
 		blob.Name,
 		blob.Size,
+		data.Public,
 		data.ValueSize,
 		data.Value,
 	)
@@ -235,6 +238,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue boo
 		&data.Blob.Public,
 		&data.Blob.Name,
 		&data.Blob.Size,
+		&data.Public,
 		&data.ValueSize,
 	}
 	if withValue {

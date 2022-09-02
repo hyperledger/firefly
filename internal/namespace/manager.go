@@ -838,14 +838,14 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		multipartyEnabled = orgName != "" || orgKey != ""
 	}
 
-	var networkName string
+	networkName := name
 	if multipartyEnabled.(bool) {
-		networkName = multipartyConf.GetString(coreconfig.NamespaceMultipartyNetworkNamespace)
-		if networkName == core.LegacySystemNamespace {
+		mpNetworkName := multipartyConf.GetString(coreconfig.NamespaceMultipartyNetworkNamespace)
+		if mpNetworkName == core.LegacySystemNamespace {
 			return nil, i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.LegacySystemNamespace)
 		}
-		if networkName == "" {
-			networkName = name
+		if mpNetworkName != "" {
+			networkName = mpNetworkName
 		}
 	}
 
@@ -923,7 +923,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}, nil
 }
 
-func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+func (nm *namespaceManager) validatePlugins(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
 	var result orchestrator.Plugins
 	for _, pluginName := range plugins {
 		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
@@ -990,6 +990,15 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 
 		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
 	}
+	return &result, nil
+}
+
+func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+
+	result, err := nm.validatePlugins(ctx, name, plugins)
+	if err != nil {
+		return nil, err
+	}
 
 	if result.Database.Plugin == nil ||
 		result.SharedStorage.Plugin == nil ||
@@ -1002,54 +1011,14 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 	for name, entry := range nm.plugins.events {
 		result.Events[name] = entry.plugin
 	}
-	return &result, nil
+	return result, nil
 }
 
 func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
-	var result orchestrator.Plugins
-	for _, pluginName := range plugins {
-		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
-			if result.Blockchain.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "blockchain")
-			}
-			result.Blockchain = orchestrator.BlockchainPlugin{
-				Name:   pluginName,
-				Plugin: instance.plugin,
-			}
-			continue
-		}
-		if _, ok := nm.plugins.dataexchange[pluginName]; ok {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsNonMultiparty, name)
-		}
-		if _, ok := nm.plugins.sharedstorage[pluginName]; ok {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsNonMultiparty, name)
-		}
-		if instance, ok := nm.plugins.database[pluginName]; ok {
-			if result.Database.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "database")
-			}
-			result.Database = orchestrator.DatabasePlugin{
-				Name:   pluginName,
-				Plugin: instance.plugin,
-			}
-			continue
-		}
-		if instance, ok := nm.plugins.tokens[pluginName]; ok {
-			result.Tokens = append(result.Tokens, orchestrator.TokensPlugin{
-				Name:   pluginName,
-				Plugin: instance.plugin,
-			})
-			continue
-		}
-		if instance, ok := nm.plugins.auth[pluginName]; ok {
-			result.Auth = orchestrator.AuthPlugin{
-				Name:   pluginName,
-				Plugin: instance.plugin,
-			}
-			continue
-		}
 
-		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
+	result, err := nm.validatePlugins(ctx, name, plugins)
+	if err != nil {
+		return nil, err
 	}
 
 	if result.Database.Plugin == nil {
@@ -1060,7 +1029,7 @@ func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, nam
 	for name, entry := range nm.plugins.events {
 		result.Events[name] = entry.plugin
 	}
-	return &result, nil
+	return result, nil
 }
 
 func (nm *namespaceManager) SPIEvents() spievents.Manager {

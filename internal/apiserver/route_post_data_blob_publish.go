@@ -23,28 +23,26 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getDataMsgs = &ffapi.Route{
-	Name:   "getDataMsgs",
-	Path:   "data/{dataid}/messages",
-	Method: http.MethodGet,
+var postDataBlobPublish = &ffapi.Route{
+	Name:   "postDataBlobPublish",
+	Path:   "data/{dataid}/blob/publish",
+	Method: http.MethodPost,
 	PathParams: []*ffapi.PathParam{
-		{Name: "dataid", Description: coremsgs.APIParamsDataID},
+		{Name: "dataid", Description: coremsgs.APIParamsBlobID},
 	},
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsGetDataMsgs,
-	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &core.Message{} },
+	Description:     coremsgs.APIEndpointsPostDataBlobPublish,
+	JSONInputValue:  func() interface{} { return &core.EmptyInput{} },
+	JSONOutputValue: func() interface{} { return &core.Data{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.MessageQueryFactory,
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
-			return or.MultiParty() != nil
+			return or.Broadcast() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetMessagesForData(cr.ctx, r.PP["dataid"], cr.filter))
+			return cr.or.Broadcast().PublishDataBlob(cr.ctx, r.PP["dataid"])
 		},
 	},
 }

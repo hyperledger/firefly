@@ -232,7 +232,6 @@ var (
 	MsgNamespaceUnknownPlugin             = ffe("FF10390", "Invalid %s namespace configuration - unknown plugin %s")
 	MsgNamespaceWrongPluginsMultiparty    = ffe("FF10391", "Invalid %s namespace configuration - multiparty mode requires database, blockchain, shared storage, and data exchange plugins")
 	MsgNamespaceNoDatabase                = ffe("FF10392", "Invalid %s namespace configuration - a database plugin is required")
-	MsgNamespaceWrongPluginsNonMultiparty = ffe("FF10393", "Invalid %s namespace configuration - cannot specify data exchange or shared storage plugins when multiparty mode is disabled")
 	MsgNamespaceMultiplePluginType        = ffe("FF10394", "Invalid %s namespace configuration - multiple %s plugins provided")
 	MsgDuplicatePluginName                = ffe("FF10395", "Invalid plugin configuration - plugin with name %s already exists")
 	MsgInvalidFireFlyContractIndex        = ffe("FF10396", "No configuration found for FireFly contract at %s")
