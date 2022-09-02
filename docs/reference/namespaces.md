@@ -16,7 +16,7 @@ nav_order:  7
 
 ---
 
-![FireFly Namespaces Example](../images/hyperledger-firefly-namespaces-example-with-org.png "FireFly namespaces example")
+[![FireFly Namespaces Example](../images/hyperledger-firefly-namespaces-example-with-org.png "FireFly namespaces example")](../images/hyperledger-firefly-namespaces-example-with-org.png)
 
 ## Introduction to Namespaces
 
