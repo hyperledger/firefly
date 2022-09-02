@@ -18,7 +18,7 @@ often that needs to include certain reference data that is available
 to all parties in the network. The data needs to be "broadcast" to all
 members, and also need to be available to new members that join the network
 
-![Multi-party Systems](../../../images/multiparty_system.png "Multi-Party System")
+![Multi-party Systems](../../../images/multiparty_system1.png "Multi-Party System")
 
 ## Blockchain backed broadcast
 

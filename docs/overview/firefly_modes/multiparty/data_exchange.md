@@ -18,7 +18,7 @@ happens today. One party private sends data to another, over a pipe that has bee
 agreed as sufficiently secure between the two parties. That might be a REST API,
 SOAP Web Service, FTP / EDI, Message Queue (MQ), or other B2B Gateway technology.
 
-![Multi-party Systems](../../../images/multiparty_system.png "Multi-Party System")
+![Multi-party Systems](../../../images/multiparty_system1.png "Multi-Party System")
 
 The ability to perform these same private data exchanges within
 a multi-party system is critical. In fact it's common for the majority of business

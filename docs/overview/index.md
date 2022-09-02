@@ -15,6 +15,6 @@ has_children: true
 
 ---
 
-![Hyperledger FireFly features](../images/firefly_functionality_overview.png)
+![Hyperledger FireFly features](../images/understanding_firefly1.png)
 
-
+In this section we'll go over what FireFly is, the different modes, and why you should use FireFly. For a more technical discussion check out our [Reference](../reference/) and [Architecture](../architecture/) sections.
