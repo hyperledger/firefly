@@ -81,8 +81,15 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	om, err := NewOperationsManager(ctx, "ns1", mdi, txHelper, cmi)
+	ns := "ns1"
+	om, err := NewOperationsManager(ctx, ns, mdi, txHelper, cmi)
 	assert.NoError(t, err)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheOperationsLimit,
+		coreconfig.CacheOperationsTTL,
+		ns,
+	))
 	return om.(*operationsManager), cancel
 }
 

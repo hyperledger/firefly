@@ -49,7 +49,6 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	dm, err := NewDataManager(ctx, ns, mdi, mdx, cmi)
-	cmi.AssertNumberOfCalls(t, "GetCache", 2)
 	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
 		ctx,
 		coreconfig.CacheMessageSize,

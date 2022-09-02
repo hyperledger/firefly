@@ -3042,9 +3042,15 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	originalContext := e.ctx
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		originalContext,
+		coreconfig.CacheBlockchainLimit,
+		coreconfig.CacheBlockchainTTL,
+		"",
+	))
 	assert.NoError(t, err)
-
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())

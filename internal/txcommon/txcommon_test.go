@@ -223,7 +223,20 @@ func TestPersistTransactionExistingNoChange(t *testing.T) {
 	ctx := context.Background()
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
-	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+	ns := "ns1"
+	txHelper, _ := NewTransactionHelper(ctx, ns, mdi, mdm, cmi)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheTransactionSize,
+		coreconfig.CacheTransactionTTL,
+		ns,
+	))
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheBlockchainEventLimit,
+		coreconfig.CacheBlockchainEventTTL,
+		ns,
+	))
 
 	txid := fftypes.NewUUID()
 	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(&core.Transaction{

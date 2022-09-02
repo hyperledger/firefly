@@ -253,6 +253,12 @@ func TestAddressResolverErrorBodyTemplate(t *testing.T) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	ar, err := newAddressResolver(ctx, config, cmi)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheAddressResolverLimit,
+		coreconfig.CacheAddressResolverTTL,
+		"",
+	))
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")

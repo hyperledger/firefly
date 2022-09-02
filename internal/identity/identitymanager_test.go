@@ -45,9 +45,22 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
-
-	im, err := NewIdentityManager(ctx, "ns1", "", mdi, mbi, mmp, cmi)
+	ns := "ns1"
+	im, err := NewIdentityManager(ctx, ns, "", mdi, mbi, mmp, cmi)
 	assert.NoError(t, err)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheIdentityLimit,
+		coreconfig.CacheIdentityTTL,
+		ns,
+	))
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheSigningKeyLimit,
+		coreconfig.CacheSigningKeyTTL,
+		ns,
+	))
+
 	return ctx, im.(*identityManager)
 }
 

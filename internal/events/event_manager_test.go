@@ -151,6 +151,12 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) *testE
 	em := emi.(*eventManager)
 	mockRunAsGroupPassthrough(mdi)
 	assert.NoError(t, err)
+	cmi.AssertCalled(t, "GetCache", 		cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheEventListenerTopicLimit,
+		coreconfig.CacheEventListenerTopicTTL,
+		ns.Name,
+	),)
 	return &testEventManager{
 		eventManager: *em,
 		cancel:       cancel,

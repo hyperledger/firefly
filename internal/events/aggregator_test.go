@@ -171,6 +171,31 @@ func newTestManifest(mType core.MessageType, groupID *fftypes.Bytes32) (*core.Me
 	}
 }
 
+func TestNewAggregator(t *testing.T) {
+	coreconfig.Reset()
+	ctx := context.Background()
+	logrus.SetLevel(logrus.DebugLevel)
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mdh := &definitionsmocks.Handler{}
+	mim := &identitymanagermocks.Manager{}
+	mmi := &metricsmocks.Manager{}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	mbi := &blockchainmocks.Plugin{}
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
+	ns := "ns1"
+	_, err := newAggregator(ctx, ns, mdi, mbi, mpm, mdh, mim, mdm, newEventNotifier(ctx, "ut"), mmi, cmi)
+	assert.NoError(t, err)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheBatchLimit,
+		coreconfig.CacheBatchTTL,
+		ns,
+	))
+}
+
 func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	ag := newTestAggregatorWithMetrics()

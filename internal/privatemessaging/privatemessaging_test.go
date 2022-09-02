@@ -84,7 +84,12 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	pm, err := NewPrivateMessaging(ctx, ns, mdi, mdx, mbi, mim, mba, mdm, msa, mmp, mmi, mom, cmi)
 	assert.NoError(t, err)
-
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheGroupLimit,
+		coreconfig.CacheGroupTTL,
+		ns.Name,
+	))
 	// Default mocks to save boilerplate in the tests
 	mdx.On("Name").Return("utdx").Maybe()
 	mbi.On("Name").Return("utblk").Maybe()
