@@ -46,6 +46,7 @@ type Manager interface {
 	UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state core.MessageState, confirmed *fftypes.FFTime)
 	ResolveInlineData(ctx context.Context, msg *NewMessage) error
 	WriteNewMessage(ctx context.Context, newMsg *NewMessage) error
+	BlobsEnabled() bool
 
 	UploadJSON(ctx context.Context, inData *core.DataRefOrValue) (*core.Data, error)
 	UploadBlob(ctx context.Context, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error)
@@ -129,6 +130,10 @@ func NewDataManager(ctx context.Context, ns *core.Namespace, di database.Plugin,
 
 func (dm *dataManager) Start() {
 	dm.messageWriter.start()
+}
+
+func (dm *dataManager) BlobsEnabled() bool {
+	return dm.blobStore.exchange != nil
 }
 
 func (dm *dataManager) CheckDatatype(ctx context.Context, datatype *core.Datatype) error {

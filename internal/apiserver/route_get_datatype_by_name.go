@@ -21,7 +21,6 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -39,9 +38,6 @@ var getDatatypeByName = &ffapi.Route{
 	JSONOutputValue: func() interface{} { return &core.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		EnabledIf: func(or orchestrator.Orchestrator) bool {
-			return or.Data() != nil
-		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			output, err = cr.or.GetDatatypeByName(cr.ctx, r.PP["name"], r.PP["version"])
 			return output, err

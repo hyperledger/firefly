@@ -488,7 +488,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
-	if or.data == nil && or.dataexchange() != nil {
+	if or.data == nil {
 		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.dataexchange())
 		if err != nil {
 			return err

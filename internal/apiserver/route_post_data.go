@@ -24,6 +24,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -55,6 +56,10 @@ var postData = &ffapi.Route{
 			return output, err
 		},
 		CoreFormUploadHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			if !cr.or.Data().BlobsEnabled() {
+				return nil, i18n.NewError(r.Req.Context(), coremsgs.MsgActionNotSupported)
+			}
+
 			data := &core.DataRefOrValue{}
 			validator := r.FP["validator"]
 			if len(validator) > 0 {

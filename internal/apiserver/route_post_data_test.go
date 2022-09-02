@@ -78,6 +78,7 @@ func TestPostDataBinary(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
+	mdm.On("BlobsEnabled").Return(true)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
@@ -105,6 +106,7 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
+	mdm.On("BlobsEnabled").Return(true)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
@@ -153,6 +155,7 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
+	mdm.On("BlobsEnabled").Return(true)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
@@ -188,6 +191,7 @@ func TestPostDataTrailingMetadata(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
+	mdm.On("BlobsEnabled").Return(true)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
@@ -221,6 +225,7 @@ func TestPostDataBinaryMissing(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
+	mdm.On("BlobsEnabled").Return(true)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
@@ -247,6 +252,7 @@ func TestPostDataBadForm(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
+	mdm.On("BlobsEnabled").Return(true)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
@@ -254,6 +260,33 @@ func TestPostDataBadForm(t *testing.T) {
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/data", &b)
 	req.Header.Set("Content-Type", "multipart/form-data")
 
+	res := httptest.NewRecorder()
+
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*ffapi.Multipart"), false).
+		Return(&core.Data{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 400, res.Result().StatusCode)
+}
+
+func TestPostDataNoBlobs(t *testing.T) {
+	log.SetLevel("debug")
+
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	mdm := &datamocks.Manager{}
+	mdm.On("BlobsEnabled").Return(false)
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
+	o.On("Data").Return(mdm)
+
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	writer, err := w.CreateFormFile("file", "filename.ext")
+	assert.NoError(t, err)
+	writer.Write([]byte(`some data`))
+	w.Close()
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/data", &b)
+	req.Header.Set("Content-Type", w.FormDataContentType())
 	res := httptest.NewRecorder()
 
 	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*ffapi.Multipart"), false).
