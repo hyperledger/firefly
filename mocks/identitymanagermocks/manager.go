@@ -249,6 +249,29 @@ func (_m *Manager) ResolveInputSigningIdentity(ctx context.Context, signerRef *c
 	return r0
 }
 
+// ResolveInputSigningKey provides a mock function with given fields: ctx, inputKey
+func (_m *Manager) ResolveInputSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
+	ret := _m.Called(ctx, inputKey)
+
+	var r0 *core.VerifierRef
+	if rf, ok := ret.Get(0).(func(context.Context, *core.VerifierRef) *core.VerifierRef); ok {
+		r0 = rf(ctx, inputKey)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.VerifierRef)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *core.VerifierRef) error); ok {
+		r1 = rf(ctx, inputKey)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ValidateNodeOwner provides a mock function with given fields: ctx, node, _a2
 func (_m *Manager) ValidateNodeOwner(ctx context.Context, node *core.Identity, _a2 *core.Identity) (bool, error) {
 	ret := _m.Called(ctx, node, _a2)

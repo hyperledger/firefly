@@ -36,7 +36,7 @@ var postVerifiersResolve = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.ResolveSigningKey(cr.ctx, r.Input.(*core.VerifierRef))
+			return cr.or.Identity().ResolveInputSigningKey(cr.ctx, r.Input.(*core.VerifierRef))
 		},
 	},
 }

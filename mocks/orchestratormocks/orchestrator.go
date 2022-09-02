@@ -24,6 +24,8 @@ import (
 
 	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
+	identity "github.com/hyperledger/firefly/internal/identity"
+
 	mock "github.com/stretchr/testify/mock"
 
 	multiparty "github.com/hyperledger/firefly/internal/multiparty"
@@ -1168,6 +1170,22 @@ func (_m *Orchestrator) GetTransactions(ctx context.Context, filter database.And
 	return r0, r1, r2
 }
 
+// Identity provides a mock function with given fields:
+func (_m *Orchestrator) Identity() identity.Manager {
+	ret := _m.Called()
+
+	var r0 identity.Manager
+	if rf, ok := ret.Get(0).(func() identity.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(identity.Manager)
+		}
+	}
+
+	return r0
+}
+
 // Init provides a mock function with given fields: ctx, cancelCtx
 func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) error {
 	ret := _m.Called(ctx, cancelCtx)
@@ -1262,29 +1280,6 @@ func (_m *Orchestrator) RequestReply(ctx context.Context, msg *core.MessageInOut
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *core.MessageInOut) error); ok {
 		r1 = rf(ctx, msg)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ResolveSigningKey provides a mock function with given fields: ctx, inputKey
-func (_m *Orchestrator) ResolveSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
-	ret := _m.Called(ctx, inputKey)
-
-	var r0 *core.VerifierRef
-	if rf, ok := ret.Get(0).(func(context.Context, *core.VerifierRef) *core.VerifierRef); ok {
-		r0 = rf(ctx, inputKey)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.VerifierRef)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.VerifierRef) error); ok {
-		r1 = rf(ctx, inputKey)
 	} else {
 		r1 = ret.Error(1)
 	}

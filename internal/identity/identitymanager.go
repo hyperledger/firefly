@@ -42,6 +42,7 @@ const (
 
 type Manager interface {
 	ResolveInputSigningIdentity(ctx context.Context, signerRef *core.SignerRef) (err error)
+	ResolveInputSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error)
 	NormalizeSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, verifier *core.VerifierRef) (identity *core.Identity, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error)
@@ -144,6 +145,34 @@ func (im *identityManager) NormalizeSigningKey(ctx context.Context, inputKey str
 		return "", err
 	}
 	return signer.Value, nil
+}
+
+func (im *identityManager) ResolveInputSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
+	log.L(ctx).Debugf("Resolving input signing key: type='%s' value='%s'", inputKey.Type, inputKey.Value)
+
+	if im.blockchain == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainNotConfigured)
+	}
+
+	verifierType := inputKey.Type
+
+	if verifierType.String() == "" {
+		verifierType = im.blockchain.VerifierType()
+	}
+
+	if verifierType != im.blockchain.VerifierType() {
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownVerifierType)
+	}
+
+	signingKey, err := im.blockchain.NormalizeSigningKey(ctx, inputKey.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.VerifierRef{
+		Type:  verifierType,
+		Value: signingKey,
+	}, nil
 }
 
 // ResolveInputIdentity takes in blockchain signing input information from an API call (which may

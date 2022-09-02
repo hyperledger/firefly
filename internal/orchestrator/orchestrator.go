@@ -67,6 +67,7 @@ type Orchestrator interface {
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
 	Operations() operations.Manager
+	Identity() identity.Manager
 
 	// Status
 	GetStatus(ctx context.Context) (*core.NamespaceStatus, error)
@@ -78,8 +79,6 @@ type Orchestrator interface {
 	CreateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
 	CreateUpdateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
 	DeleteSubscription(ctx context.Context, id string) error
-
-	ResolveSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error)
 
 	// Data Query
 	GetNamespace(ctx context.Context) *core.Namespace
@@ -353,6 +352,10 @@ func (or *orchestrator) Operations() operations.Manager {
 
 func (or *orchestrator) MultiParty() multiparty.Manager {
 	return or.multiparty
+}
+
+func (or *orchestrator) Identity() identity.Manager {
+	return or.identity
 }
 
 func (or *orchestrator) initHandlers(ctx context.Context) (err error) {

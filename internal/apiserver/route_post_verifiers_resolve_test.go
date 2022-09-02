@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,6 +31,8 @@ import (
 func TestPostVerifiersResolve(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	im := &identitymanagermocks.Manager{}
+	o.On("Identity").Return(im)
 	input := core.VerifierRef{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -37,7 +40,7 @@ func TestPostVerifiersResolve(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("ResolveSigningKey", mock.Anything, mock.AnythingOfType("*core.VerifierRef")).
+	im.On("ResolveInputSigningKey", mock.Anything, mock.AnythingOfType("*core.VerifierRef")).
 		Return(&core.VerifierRef{}, nil)
 	r.ServeHTTP(res, req)
 

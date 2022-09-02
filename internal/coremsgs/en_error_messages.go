@@ -263,5 +263,5 @@ var (
 	MsgCannotInitLegacyNS                 = ffe("FF10421", "could not initialize legacy '%s' namespace - found conflicting V1 multi-party config in %s and %s")
 	MsgInvalidGroupMember                 = ffe("FF10422", "invalid group member - node '%s' is not owned by '%s' or any of its ancestors")
 	MsgContractListenerStatusInvalid      = ffe("FF10423", "Failed to validate contract listener status: %v", 400)
-	MsgVerifierTypeCannotBeResolved       = ffe("FF10424", "Verifier type cannot be resolved", 400)
+	MsgUnknownVerifierType                = ffe("FF10424", "Unknown verifier type", 400)
 )
