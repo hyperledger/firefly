@@ -40,7 +40,7 @@ var postNewMessageBroadcast = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	Extensions: &coreExtensions{
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
-			return or.Broadcast() != nil
+			return or.MultiParty() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")

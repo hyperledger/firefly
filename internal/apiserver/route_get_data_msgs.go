@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -39,6 +40,9 @@ var getDataMsgs = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		FilterFactory: database.MessageQueryFactory,
+		EnabledIf: func(or orchestrator.Orchestrator) bool {
+			return or.MultiParty() != nil
+		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			return filterResult(cr.or.GetMessagesForData(cr.ctx, r.PP["dataid"], cr.filter))
 		},

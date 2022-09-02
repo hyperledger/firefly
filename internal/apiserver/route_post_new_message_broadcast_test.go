@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -31,6 +32,8 @@ import (
 func TestPostNewMessageBroadcast(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	mmp := &multipartymocks.Manager{}
+	o.On("MultiParty").Return(mmp)
 	mbm := &broadcastmocks.Manager{}
 	o.On("Broadcast").Return(mbm)
 	input := core.MessageInOut{}
@@ -50,6 +53,8 @@ func TestPostNewMessageBroadcast(t *testing.T) {
 func TestPostNewMessageBroadcastSync(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	mmp := &multipartymocks.Manager{}
+	o.On("MultiParty").Return(mmp)
 	mbm := &broadcastmocks.Manager{}
 	o.On("Broadcast").Return(mbm)
 	input := core.MessageInOut{}

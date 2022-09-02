@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -31,6 +32,8 @@ import (
 func TestPostNewMessagePrivate(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	mmp := &multipartymocks.Manager{}
+	o.On("MultiParty").Return(mmp)
 	mpm := &privatemessagingmocks.Manager{}
 	o.On("PrivateMessaging").Return(mpm)
 	input := core.MessageInOut{}
@@ -50,6 +53,8 @@ func TestPostNewMessagePrivate(t *testing.T) {
 func TestPostNewMessagePrivateSync(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	mmp := &multipartymocks.Manager{}
+	o.On("MultiParty").Return(mmp)
 	mpm := &privatemessagingmocks.Manager{}
 	o.On("PrivateMessaging").Return(mpm)
 	input := core.MessageInOut{}

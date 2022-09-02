@@ -38,6 +38,7 @@ var getDataValue = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		FilterFactory: database.MessageQueryFactory,
+
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			d, err := cr.or.GetDataByID(cr.ctx, r.PP["dataid"])
 			if err != nil {
