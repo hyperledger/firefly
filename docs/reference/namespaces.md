@@ -152,6 +152,9 @@ The `namespaces.predefined` object contains the follow sub-keys:
 All namespaces must be called out in the FireFly config file in order to be valid. Namespaces found in
 the database but _not_ represented in the config file will be ignored.
 
+## Definitions
+In FireFly, definitions are immutable payloads that are used to define identities, datatypes, smart contract interfaces, token pools, and other constructs. Each type of definition in FireFly has a schema that it must adhere to. Some definitions also have a name and a version which must be unique within a namespace. In a multiparty namespace, definitions are broadcasted to other organizations. 
+
 ## Local Definitions
 
 The following are all "definition" types in FireFly:
