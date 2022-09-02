@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,8 @@ import (
 func TestPostDataValuePublish(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	mdm := &datamocks.Manager{}
+	o.On("Data").Return(mdm)
 	mbm := &broadcastmocks.Manager{}
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Broadcast").Return(mbm)

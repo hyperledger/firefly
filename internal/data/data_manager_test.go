@@ -44,6 +44,7 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	dm, err := NewDataManager(ctx, ns, mdi, mdx)
 	assert.NoError(t, err)
+	assert.True(t, dm.BlobsEnabled())
 	dm.Start()
 	return dm.(*dataManager), ctx, func() {
 		cancel()

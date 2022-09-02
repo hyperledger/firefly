@@ -442,7 +442,9 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 				return err
 			}
 		}
+	}
 
+	if or.dataexchange() != nil && or.sharedstorage() != nil {
 		if or.broadcast == nil {
 			if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.namespace, or.database(), or.blockchain(), or.dataexchange(), or.sharedstorage(), or.identity, or.data, or.batch, or.syncasync, or.multiparty, or.metrics, or.operations, or.txHelper); err != nil {
 				return err

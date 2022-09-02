@@ -42,7 +42,7 @@ var getDataBlob = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.MessageQueryFactory,
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
-			return or.MultiParty() != nil
+			return or.Data().BlobsEnabled()
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			blob, reader, err := cr.or.Data().DownloadBlob(cr.ctx, r.PP["dataid"])

@@ -39,7 +39,7 @@ var postDataValuePublish = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
-			return or.MultiParty() != nil
+			return or.Broadcast() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			return cr.or.Broadcast().PublishDataValue(cr.ctx, r.PP["dataid"])
