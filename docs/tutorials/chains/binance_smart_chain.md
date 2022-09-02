@@ -30,12 +30,13 @@ In order to connect to the Binance Smart Chain testnet, you will need to set a f
 
 ```yml
 confirmations:
-    required: 4
+    required: 4 // choose the number of confirmations you require
 policyengine.simple:
     fixedGasPrice: null
     gasOracle:
         mode: connector
 ```
+For more info about `confirmations`, see [Public vs. Permissioned](../../overview/public_vs_permissioned.md)
 
 For this tutorial, we will assume this file is saved at `~/Desktop/evmconnect.yml`. If your path is different, you will need to adjust the path in the next command below.
 
