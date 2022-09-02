@@ -22,12 +22,12 @@ import (
 	"encoding/binary"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
@@ -37,7 +37,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -45,20 +44,19 @@ const (
 )
 
 type aggregator struct {
-	ctx           context.Context
-	namespace     string
-	database      database.Plugin
-	messaging     privatemessaging.Manager
-	definitions   definitions.Handler
-	identity      identity.Manager
-	data          data.Manager
-	eventPoller   *eventPoller
-	verifierType  core.VerifierType
-	retry         *retry.Retry
-	metrics       metrics.Manager
-	batchCache    *ccache.Cache
-	batchCacheTTL time.Duration
-	rewinder      *rewinder
+	ctx          context.Context
+	namespace    string
+	database     database.Plugin
+	messaging    privatemessaging.Manager
+	definitions  definitions.Handler
+	identity     identity.Manager
+	data         data.Manager
+	eventPoller  *eventPoller
+	verifierType core.VerifierType
+	retry        *retry.Retry
+	metrics      metrics.Manager
+	batchCache   cache.CInterface
+	rewinder     *rewinder
 }
 
 type batchCacheEntry struct {
@@ -90,25 +88,32 @@ func privatePinHash(topic string, group *fftypes.Bytes32, identity string, nonce
 	return fftypes.HashResult(h)
 }
 
-func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.Handler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
+func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.Handler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager, cacheManager cache.Manager) (*aggregator, error) {
 	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
-		ctx:           log.WithLogField(ctx, "role", "aggregator"),
-		namespace:     ns,
-		database:      di,
-		messaging:     pm,
-		definitions:   sh,
-		identity:      im,
-		data:          dm,
-		verifierType:  bi.VerifierType(),
-		metrics:       mm,
-		batchCacheTTL: config.GetDuration(coreconfig.BatchCacheTTL),
+		ctx:          log.WithLogField(ctx, "role", "aggregator"),
+		namespace:    ns,
+		database:     di,
+		messaging:    pm,
+		definitions:  sh,
+		identity:     im,
+		data:         dm,
+		verifierType: bi.VerifierType(),
+		metrics:      mm,
 	}
-	ag.batchCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetInt64(coreconfig.BatchCacheLimit)),
+
+	batchCache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheBatchLimit,
+			coreconfig.CacheBatchTTL,
+			ns,
+		),
 	)
+	if err != nil {
+		return nil, err
+	}
+	ag.batchCache = batchCache
 	firstEvent := core.SubOptsFirstEvent(config.GetString(coreconfig.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
 		eventBatchSize:             batchSize,
@@ -135,7 +140,7 @@ func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockc
 	})
 	ag.retry = &ag.eventPoller.conf.retry
 	ag.rewinder = newRewinder(ag)
-	return ag
+	return ag, nil
 }
 
 func (ag *aggregator) start() {
@@ -314,10 +319,9 @@ func (ag *aggregator) getBatchCacheKey(id *fftypes.UUID, hash *fftypes.Bytes32) 
 
 func (ag *aggregator) GetBatchForPin(ctx context.Context, pin *core.Pin) (*core.BatchPersisted, *core.BatchManifest, error) {
 	cacheKey := ag.getBatchCacheKey(pin.Batch, pin.BatchHash)
-	cached := ag.batchCache.Get(cacheKey)
-	if cached != nil {
-		cached.Extend(ag.batchCacheTTL)
-		bce := cached.Value().(*batchCacheEntry)
+	cachedValue := ag.batchCache.Get(cacheKey)
+	if cachedValue != nil {
+		bce := cachedValue.(*batchCacheEntry)
 		log.L(ag.ctx).Debugf("Batch cache hit %s", cacheKey)
 		return bce.batch, bce.manifest, nil
 	}
@@ -346,7 +350,7 @@ func (ag *aggregator) cacheBatch(cacheKey string, batch *core.BatchPersisted, ma
 		batch:    batch,
 		manifest: manifest,
 	}
-	ag.batchCache.Set(cacheKey, bce, ag.batchCacheTTL)
+	ag.batchCache.Set(cacheKey, bce)
 	log.L(ag.ctx).Debugf("Cached batch %s", cacheKey)
 }
 

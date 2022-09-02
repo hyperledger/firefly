@@ -20,19 +20,18 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/karlseguin/ccache"
 )
 
 type Manager interface {
@@ -58,13 +57,11 @@ type Manager interface {
 
 type dataManager struct {
 	blobStore
-	namespace         *core.Namespace
-	database          database.Plugin
-	validatorCache    *ccache.Cache
-	validatorCacheTTL time.Duration
-	messageCache      *ccache.Cache
-	messageCacheTTL   time.Duration
-	messageWriter     *messageWriter
+	namespace      *core.Namespace
+	database       database.Plugin
+	validatorCache cache.CInterface
+	messageCache   cache.CInterface
+	messageWriter  *messageWriter
 }
 
 type messageCacheEntry struct {
@@ -95,31 +92,45 @@ const (
 	CRORequireBatchID
 )
 
-func NewDataManager(ctx context.Context, ns *core.Namespace, di database.Plugin, dx dataexchange.Plugin) (Manager, error) {
+func NewDataManager(ctx context.Context, ns *core.Namespace, di database.Plugin, dx dataexchange.Plugin, cacheManager cache.Manager) (Manager, error) {
 	if di == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DataManager")
 	}
 	dm := &dataManager{
-		namespace:         ns,
-		database:          di,
-		validatorCacheTTL: config.GetDuration(coreconfig.ValidatorCacheTTL),
-		messageCacheTTL:   config.GetDuration(coreconfig.MessageCacheTTL),
+		namespace: ns,
+		database:  di,
 	}
 	dm.blobStore = blobStore{
 		dm:       dm,
 		database: di,
 		exchange: dx,
 	}
-	dm.validatorCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.ValidatorCacheSize)),
+
+	validatorCache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheValidatorSize,
+			coreconfig.CacheValidatorTTL,
+			ns.Name,
+		),
 	)
-	dm.messageCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.MessageCacheSize)),
+	if err != nil {
+		return nil, err
+	}
+	dm.validatorCache = validatorCache
+
+	messageCache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheMessageSize,
+			coreconfig.CacheMessageTTL,
+			ns.Name,
+		),
 	)
+	if err != nil {
+		return nil, err
+	}
+	dm.messageCache = messageCache
 	dm.messageWriter = newMessageWriter(ctx, di, &messageWriterConf{
 		workerCount:  config.GetInt(coreconfig.MessageWriterCount),
 		batchTimeout: config.GetDuration(coreconfig.MessageWriterBatchTimeout),
@@ -153,9 +164,8 @@ func (dm *dataManager) getValidatorForDatatype(ctx context.Context, validator co
 	}
 
 	key := fmt.Sprintf("%s:%s:%s", validator, dm.namespace.Name, datatypeRef)
-	if cached := dm.validatorCache.Get(key); cached != nil {
-		cached.Extend(dm.validatorCacheTTL)
-		return cached.Value().(Validator), nil
+	if cachedValue := dm.validatorCache.Get(key); cachedValue != nil {
+		return cachedValue.(Validator), nil
 	}
 
 	datatype, err := dm.database.GetDatatypeByName(ctx, dm.namespace.Name, datatypeRef.Name, datatypeRef.Version)
@@ -171,7 +181,7 @@ func (dm *dataManager) getValidatorForDatatype(ctx context.Context, validator co
 		return nil, nil
 	}
 
-	dm.validatorCache.Set(key, v, dm.validatorCacheTTL)
+	dm.validatorCache.Set(key, v)
 	return v, err
 }
 
@@ -222,12 +232,12 @@ func (dm *dataManager) PeekMessageCache(ctx context.Context, id *fftypes.UUID, o
 }
 
 func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, options ...CacheReadOption) *messageCacheEntry {
-	cached := dm.messageCache.Get(id.String())
-	if cached == nil {
+	cachedValue := dm.messageCache.Get(id.String())
+	if cachedValue == nil {
 		log.L(context.Background()).Debugf("Cache miss for message %s", id)
 		return nil
 	}
-	mce := cached.Value().(*messageCacheEntry)
+	mce := cachedValue.(*messageCacheEntry)
 	for _, opt := range options {
 		switch opt {
 		case CRORequirePublicBlobRefs:
@@ -250,7 +260,6 @@ func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, 
 		}
 	}
 	log.L(ctx).Debugf("Cache hit for message %s", id)
-	cached.Extend(dm.messageCacheTTL)
 	mce.msg.LocalNamespace = dm.namespace.Name // always populate LocalNamespace on the way out of the cache
 	return mce
 }
@@ -263,7 +272,7 @@ func (dm *dataManager) UpdateMessageCache(msg *core.Message, data core.DataArray
 		data: data,
 		size: msg.EstimateSize(true),
 	}
-	dm.messageCache.Set(msg.Header.ID.String(), cacheEntry, dm.messageCacheTTL)
+	dm.messageCache.Set(msg.Header.ID.String(), cacheEntry)
 	log.L(context.Background()).Debugf("Added to message cache: %s (topics=%d,pins=%d)", msg.Header.ID.String(), len(msg.Header.Topics), len(msg.Pins))
 }
 

@@ -21,14 +21,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
@@ -68,6 +71,7 @@ func (tag *testAggregator) cleanup(t *testing.T) {
 
 func newTestAggregatorCommon(metrics bool) *testAggregator {
 	coreconfig.Reset()
+	ctx, ctxCancel := context.WithCancel(context.Background())
 	logrus.SetLevel(logrus.DebugLevel)
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -75,18 +79,18 @@ func newTestAggregatorCommon(metrics bool) *testAggregator {
 	mdh := &definitionsmocks.Handler{}
 	mim := &identitymanagermocks.Manager{}
 	mmi := &metricsmocks.Manager{}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	mbi := &blockchainmocks.Plugin{}
 	if metrics {
 		mmi.On("MessageConfirmed", mock.Anything, core.EventTypeMessageConfirmed).Return()
 	}
 	mmi.On("IsMetricsEnabled").Return(metrics).Maybe()
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
-	ctx, ctxCancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, "ns1", mdi, mbi, mpm, mdh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
+	ag, _ := newAggregator(ctx, "ns1", mdi, mbi, mpm, mdh, mim, mdm, newEventNotifier(ctx, "ut"), mmi, cmi)
 	cancel := func() {
 		ctxCancel()
 		if ag.batchCache != nil {
-			ag.batchCache.Stop()
 			ag.batchCache = nil
 		}
 	}
@@ -165,6 +169,31 @@ func newTestManifest(mType core.MessageType, groupID *fftypes.Bytes32) (*core.Me
 			},
 		},
 	}
+}
+
+func TestNewAggregator(t *testing.T) {
+	coreconfig.Reset()
+	ctx := context.Background()
+	logrus.SetLevel(logrus.DebugLevel)
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mdh := &definitionsmocks.Handler{}
+	mim := &identitymanagermocks.Manager{}
+	mmi := &metricsmocks.Manager{}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	mbi := &blockchainmocks.Plugin{}
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
+	ns := "ns1"
+	_, err := newAggregator(ctx, ns, mdi, mbi, mpm, mdh, mim, mdm, newEventNotifier(ctx, "ut"), mmi, cmi)
+	assert.NoError(t, err)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheBatchLimit,
+		coreconfig.CacheBatchTTL,
+		ns,
+	))
 }
 
 func TestAggregationMaskedZeroNonceMatch(t *testing.T) {

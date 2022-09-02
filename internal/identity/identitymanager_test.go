@@ -20,11 +20,14 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -38,17 +41,31 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mmp := &multipartymocks.Manager{}
-
-	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
-
 	ctx := context.Background()
-	im, err := NewIdentityManager(ctx, "ns1", "", mdi, mbi, mmp)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
+	ns := "ns1"
+	im, err := NewIdentityManager(ctx, ns, "", mdi, mbi, mmp, cmi)
 	assert.NoError(t, err)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheIdentityLimit,
+		coreconfig.CacheIdentityTTL,
+		ns,
+	))
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheSigningKeyLimit,
+		coreconfig.CacheSigningKeyTTL,
+		ns,
+	))
+
 	return ctx, im.(*identityManager)
 }
 
 func TestNewIdentityManagerMissingDeps(t *testing.T) {
-	_, err := NewIdentityManager(context.Background(), "", "", nil, nil, nil)
+	_, err := NewIdentityManager(context.Background(), "", "", nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
