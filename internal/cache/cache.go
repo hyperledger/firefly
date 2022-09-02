@@ -19,6 +19,7 @@ package cache
 import (
 	"context"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -165,6 +166,7 @@ func (c *CCache) GetInt(key string) int {
 type cacheManager struct {
 	ctx     context.Context
 	enabled bool
+	m       sync.Mutex
 	// maintain a list of named configured CCache, the name are unique configuration category id
 	// e.g. cache.batch
 	configuredCaches map[string]CInterface
@@ -179,6 +181,7 @@ func (cm *cacheManager) GetCache(cc *CConfig) (CInterface, error) {
 	if err != nil {
 		return nil, err
 	}
+	cm.m.Lock()
 	cache, exists := cm.configuredCaches[cacheName]
 	if !exists {
 		cache = &CCache{
@@ -190,6 +193,7 @@ func (cm *cacheManager) GetCache(cc *CConfig) (CInterface, error) {
 		}
 		cm.configuredCaches[cacheName] = cache
 	}
+	cm.m.Unlock()
 	return cache, nil
 }
 
