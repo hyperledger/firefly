@@ -1,13 +1,13 @@
 {
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
-    "tag": "v3.2.6",
-    "sha": "b1e1cdb9785ffc4053488417a1fc5c495ed03ae5f9ac5fbedee0d3b19256f6ff"
+    "tag": "v3.2.7",
+    "sha": "39ea63586b322de7c33f127f859b1d4c6fc7ff9e377049898e34a0dea30ab2d7"
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.1.4",
-    "sha": "d4370836799aeb69ad06b6a2761306b95c60dc03824d5d0a4f088ebd5ccb02bb"
+    "tag": "v1.1.6",
+    "sha": "1fc4bbf662477e96701684446f7b4639bb1cfa1c39ceb2bd0a422877f32578cd"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
@@ -50,10 +50,10 @@
     }
   },
   "ui": {
-    "tag": "v1.1.0-rc.2",
-    "release": "v1.1.0-rc.2"
+    "tag": "v1.1.0-rc.3",
+    "release": "v1.1.0-rc.3"
   },
   "cli": {
-    "tag": "v1.1.0-rc.2"
+    "tag": "v1.1.0-rc.3"
   }
 }
