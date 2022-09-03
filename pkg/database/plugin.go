@@ -106,10 +106,10 @@ type iMessageCollection interface {
 	GetMessagesForData(ctx context.Context, namespace string, dataID *fftypes.UUID, filter Filter) (message []*core.Message, res *FilterResult, err error)
 
 	// GetBatchIDsForMessages - an optimized query to retrieve any non-null batch IDs for a list of message IDs
-	GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
+	GetBatchIDsForMessages(ctx context.Context, namespace string, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
 
 	// GetBatchIDsForDataAttachments - an optimized query to retrieve any non-null batch IDs for a list of data IDs that might be attached to messages in batches
-	GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
+	GetBatchIDsForDataAttachments(ctx context.Context, namespace string, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
 }
 
 type iDataCollection interface {
@@ -210,9 +210,6 @@ type iPinCollection interface {
 type iOperationCollection interface {
 	// InsertOperation - Insert an operation
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
-
-	// ResolveOperation - Resolve operation upon completion
-	ResolveOperation(ctx context.Context, namespace string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error)
 
 	// UpdateOperation - Update an operation
 	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, update Update) (err error)
@@ -482,8 +479,9 @@ type iContractListenerCollection interface {
 }
 
 type iBlockchainEventCollection interface {
-	// InsertBlockchainEvent - insert an event from the blockchain
-	InsertBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (err error)
+	// InsertOrGetBlockchainEvent - insert an event from the blockchain
+	// If the ProtocolID has already been recorded, it does not insert but returns the existing row
+	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
 
 	// GetBlockchainEventByID - get blockchain event by ID
 	GetBlockchainEventByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.BlockchainEvent, error)
@@ -728,6 +726,7 @@ var DataQueryFactory = &queryFields{
 	"blob.size":        &Int64Field{},
 	"created":          &TimeField{},
 	"value":            &JSONField{},
+	"public":           &StringField{},
 }
 
 // DatatypeQueryFactory filter fields for data definitions

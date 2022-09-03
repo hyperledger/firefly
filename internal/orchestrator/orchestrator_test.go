@@ -20,15 +20,18 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/mocks/authmocks"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
@@ -73,6 +76,7 @@ type testOrchestrator struct {
 	mti *tokenmocks.Plugin
 	mcm *contractmocks.Manager
 	mmi *metricsmocks.Manager
+	cmi *cachemocks.Manager
 	mom *operationmocks.Manager
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
@@ -99,6 +103,7 @@ func (tor *testOrchestrator) cleanup(t *testing.T) {
 	tor.mti.AssertExpectations(t)
 	tor.mcm.AssertExpectations(t)
 	tor.mmi.AssertExpectations(t)
+	tor.cmi.AssertExpectations(t)
 	tor.mom.AssertExpectations(t)
 	tor.mth.AssertExpectations(t)
 	tor.msd.AssertExpectations(t)
@@ -114,7 +119,7 @@ func newTestOrchestrator() *testOrchestrator {
 		orchestrator: orchestrator{
 			ctx:       ctx,
 			cancelCtx: cancel,
-			namespace: &core.Namespace{LocalName: "ns", RemoteName: "ns"},
+			namespace: &core.Namespace{Name: "ns", NetworkName: "ns"},
 		},
 		mdi: &databasemocks.Plugin{},
 		mdm: &datamocks.Manager{},
@@ -132,6 +137,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mti: &tokenmocks.Plugin{},
 		mcm: &contractmocks.Manager{},
 		mmi: &metricsmocks.Manager{},
+		cmi: &cachemocks.Manager{},
 		mom: &operationmocks.Manager{},
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
@@ -151,6 +157,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.metrics = tor.mmi
+	tor.orchestrator.cacheManager = tor.cmi
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.txHelper = tor.mth
@@ -187,15 +194,17 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mmi.On("Name").Return("mock-mm").Maybe()
 	tor.mmp.On("Name").Return("mock-mp").Maybe()
 	tor.mds.On("Init", mock.Anything).Maybe()
+	tor.cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tor.ctx, 100, 5*time.Minute), nil).Maybe()
 	return tor
 }
 
 func TestNewOrchestrator(t *testing.T) {
 	or := NewOrchestrator(
-		&core.Namespace{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		Config{},
 		&Plugins{},
 		&metricsmocks.Manager{},
+		&cachemocks.Manager{},
 	)
 	assert.NotNil(t, or)
 }
@@ -203,7 +212,7 @@ func TestNewOrchestrator(t *testing.T) {
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.namespace.RemoteName = "ns2"
+	or.namespace.NetworkName = "ns2"
 	or.config.Multiparty.Node.Name = "node1"
 	node := &core.Identity{
 		IdentityBase: core.IdentityBase{
@@ -439,7 +448,7 @@ func TestStartStopOk(t *testing.T) {
 
 func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
-	or.namespace.LocalName = core.LegacySystemNamespace
+	or.namespace.Name = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action).Return(nil)
@@ -449,7 +458,7 @@ func TestNetworkAction(t *testing.T) {
 
 func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
-	or.namespace.LocalName = core.LegacySystemNamespace
+	or.namespace.Name = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	err := or.SubmitNetworkAction(context.Background(), action)
@@ -476,4 +485,55 @@ func TestAuthorizeNoPlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	err := or.Authorize(context.Background(), &fftypes.AuthReq{})
 	assert.NoError(t, err)
+}
+
+func TestRewindPinsSeq(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	rewind := &core.PinRewind{Sequence: 100}
+	batchID := fftypes.NewUUID()
+
+	or.mdi.On("GetPins", mock.Anything, "ns", mock.Anything).Return([]*core.Pin{{Batch: batchID}}, nil, nil)
+	or.mem.On("QueueBatchRewind", batchID).Return()
+
+	result, err := or.RewindPins(context.Background(), rewind)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(100), result.Sequence)
+	assert.Equal(t, batchID, result.Batch)
+}
+
+func TestRewindPinsFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	rewind := &core.PinRewind{Sequence: 100}
+
+	or.mdi.On("GetPins", mock.Anything, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := or.RewindPins(context.Background(), rewind)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestRewindPinsNotFound(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	rewind := &core.PinRewind{Sequence: 100}
+
+	or.mdi.On("GetPins", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
+
+	_, err := or.RewindPins(context.Background(), rewind)
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestRewindPinsBatch(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	batchID := fftypes.NewUUID()
+	rewind := &core.PinRewind{Batch: batchID}
+
+	or.mem.On("QueueBatchRewind", batchID).Return()
+
+	result, err := or.RewindPins(context.Background(), rewind)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), result.Sequence)
+	assert.Equal(t, batchID, result.Batch)
 }

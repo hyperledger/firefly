@@ -18,9 +18,7 @@ package events
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql/driver"
-	"encoding/binary"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -155,16 +153,13 @@ func (bs *batchState) checkUnmaskedContextReady(ctx context.Context, contextUnma
 
 }
 
-func (bs *batchState) checkMaskedContextReady(ctx context.Context, msg *core.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32, nonceStr string) (*nextPinState, error) {
+func (bs *batchState) checkMaskedContextReady(ctx context.Context, msg *core.Message, batch *core.BatchPersisted, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32, nonceStr string) (*nextPinState, error) {
 	l := log.L(ctx)
 
 	// For masked pins, we can only process if:
 	// - it is the next sequence on this context for one of the members of the group
 	// - there are no undispatched messages on this context earlier in the stream
-	h := sha256.New()
-	h.Write([]byte(topic))
-	h.Write((*msg.Header.Group)[:])
-	contextUnmasked := fftypes.HashResult(h)
+	contextUnmasked := privateContext(topic, msg.Header.Group)
 	npg, err := bs.stateForMaskedContext(ctx, msg.Header.Group, topic, contextUnmasked)
 	if err != nil {
 		return nil, err
@@ -173,7 +168,7 @@ func (bs *batchState) checkMaskedContextReady(ctx context.Context, msg *core.Mes
 		// If this is the first time we've seen the context, then this message is read as long as it is
 		// the first (nonce=0) message on the context, for one of the members, and there aren't any earlier
 		// messages that are nonce=0.
-		return bs.attemptContextInit(ctx, msg, topic, firstMsgPinSequence, contextUnmasked, pin)
+		return bs.attemptContextInit(ctx, msg, batch, topic, firstMsgPinSequence, contextUnmasked, pin)
 	}
 
 	// This message must be the next hash for the author
@@ -323,14 +318,7 @@ func (nps *nextPinState) IncrementNextPin(ctx context.Context, namespace string)
 }
 
 func (npg *nextPinGroupState) calcPinHash(identity string, nonce int64) *fftypes.Bytes32 {
-	h := sha256.New()
-	h.Write([]byte(npg.topic))
-	h.Write((*npg.groupID)[:])
-	h.Write([]byte(identity))
-	nonceBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(nonceBytes, uint64(nonce))
-	h.Write(nonceBytes)
-	return fftypes.HashResult(h)
+	return privatePinHash(npg.topic, npg.groupID, identity, nonce)
 }
 
 func (bs *batchState) stateForMaskedContext(ctx context.Context, groupID *fftypes.Bytes32, topic string, contextUnmasked *fftypes.Bytes32) (*nextPinGroupState, error) {
@@ -359,12 +347,17 @@ func (bs *batchState) stateForMaskedContext(ctx context.Context, groupID *fftype
 
 }
 
-func (bs *batchState) attemptContextInit(ctx context.Context, msg *core.Message, topic string, pinnedSequence int64, contextUnmasked, pin *fftypes.Bytes32) (*nextPinState, error) {
+func (bs *batchState) attemptContextInit(ctx context.Context, msg *core.Message, batch *core.BatchPersisted, topic string, pinnedSequence int64, contextUnmasked, pin *fftypes.Bytes32) (*nextPinState, error) {
 	l := log.L(ctx)
+
+	sender := &core.Member{
+		Identity: batch.Author,
+		Node:     batch.Node,
+	}
 
 	// It might be the system topic/context initializing the group
 	// - This performs the actual database updates in-line, as it is idempotent
-	group, err := bs.messaging.ResolveInitGroup(ctx, msg)
+	group, err := bs.messaging.ResolveInitGroup(ctx, msg, sender)
 	if err != nil || group == nil {
 		return nil, err
 	}

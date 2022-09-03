@@ -19,24 +19,21 @@ package txcommon
 import (
 	"context"
 	"strings"
-	"time"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/karlseguin/ccache"
 )
 
 type Helper interface {
 	SubmitNewTransaction(ctx context.Context, txType core.TransactionType) (*fftypes.UUID, error)
 	PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error
-	InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error
-	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
+	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
 	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error)
 	GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
 }
@@ -45,40 +42,56 @@ type transactionHelper struct {
 	namespace            string
 	database             database.Plugin
 	data                 data.Manager
-	transactionCache     *ccache.Cache
-	transactionCacheTTL  time.Duration
-	blockchainEventCache *ccache.Cache
-	blockchainEventTTL   time.Duration
+	transactionCache     cache.CInterface
+	blockchainEventCache cache.CInterface
 }
 
-func NewTransactionHelper(ns string, di database.Plugin, dm data.Manager) Helper {
+func NewTransactionHelper(ctx context.Context, ns string, di database.Plugin, dm data.Manager, cacheManager cache.Manager) (Helper, error) {
 	t := &transactionHelper{
 		namespace: ns,
 		database:  di,
 		data:      dm,
 	}
-	t.transactionCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.TransactionCacheSize)),
+
+	transactionCache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheTransactionSize,
+			coreconfig.CacheTransactionTTL,
+			ns,
+		),
 	)
-	t.blockchainEventCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.BlockchainEventCacheSize)),
+
+	if err != nil {
+		return nil, err
+	}
+
+	t.transactionCache = transactionCache
+
+	blockchainEventCache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheBlockchainEventLimit,
+			coreconfig.CacheBlockchainEventTTL,
+			ns,
+		),
 	)
-	return t
+
+	if err != nil {
+		return nil, err
+	}
+	t.blockchainEventCache = blockchainEventCache
+	return t, nil
 }
 
 func (t *transactionHelper) updateTransactionsCache(tx *core.Transaction) {
-	t.transactionCache.Set(tx.ID.String(), tx, t.transactionCacheTTL)
+	t.transactionCache.Set(tx.ID.String(), tx)
 }
 
 func (t *transactionHelper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error) {
-	cached := t.transactionCache.Get(id.String())
-	if cached != nil {
-		cached.Extend(t.transactionCacheTTL)
-		return cached.Value().(*core.Transaction), nil
+
+	if cachedValue := t.transactionCache.Get(id.String()); cachedValue != nil {
+		return cachedValue.(*core.Transaction), nil
 	}
 	tx, err := t.database.GetTransactionByID(ctx, t.namespace, id)
 	if err != nil || tx == nil {
@@ -105,14 +118,14 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType cor
 		return nil, err
 	}
 
+	t.updateTransactionsCache(tx)
 	return tx.ID, nil
 }
 
 // PersistTransaction is called when we need to ensure a transaction exists in the DB, and optionally associate a new BlockchainTXID to it
 func (t *transactionHelper) PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error) {
 
-	// TODO: Consider if this can exploit caching
-	tx, err := t.database.GetTransactionByID(ctx, t.namespace, id)
+	tx, err := t.GetTransactionByIDCached(ctx, id)
 	if err != nil {
 		return false, err
 	}
@@ -144,7 +157,6 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, id *fftypes.
 	}
 
 	t.updateTransactionsCache(tx)
-
 	return true, nil
 }
 
@@ -162,20 +174,19 @@ func (t *transactionHelper) AddBlockchainTX(ctx context.Context, tx *core.Transa
 	if err != nil {
 		return err
 	}
-	t.updateTransactionsCache(tx)
 
+	t.updateTransactionsCache(tx)
 	return nil
 }
 
 func (t *transactionHelper) addBlockchainEventToCache(chainEvent *core.BlockchainEvent) {
-	t.blockchainEventCache.Set(chainEvent.ID.String(), chainEvent, t.blockchainEventTTL)
+	t.blockchainEventCache.Set(chainEvent.ID.String(), chainEvent)
 }
 
 func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
-	cached := t.blockchainEventCache.Get(id.String())
-	if cached != nil {
-		cached.Extend(t.blockchainEventTTL)
-		return cached.Value().(*core.BlockchainEvent), nil
+
+	if cachedValue := t.blockchainEventCache.Get(id.String()); cachedValue != nil {
+		return cachedValue.(*core.BlockchainEvent), nil
 	}
 	chainEvent, err := t.database.GetBlockchainEventByID(ctx, t.namespace, id)
 	if err != nil || chainEvent == nil {
@@ -185,11 +196,15 @@ func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id
 	return chainEvent, nil
 }
 
-func (t *transactionHelper) InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error {
-	err := t.database.InsertBlockchainEvent(ctx, chainEvent)
+func (t *transactionHelper) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error) {
+	existing, err = t.database.InsertOrGetBlockchainEvent(ctx, event)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	t.addBlockchainEventToCache(chainEvent)
-	return nil
+	if existing != nil {
+		t.addBlockchainEventToCache(existing)
+		return existing, nil
+	}
+	t.addBlockchainEventToCache(event)
+	return nil, nil
 }

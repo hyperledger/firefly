@@ -14,7 +14,7 @@ GOGC=30
 
 all: build test go-mod-tidy
 test: deps lint
-		$(VGO) test ./internal/... ./pkg/... ./cmd/... ./docs -cover -coverprofile=coverage.txt -covermode=atomic -timeout=30s
+		$(VGO) test ./internal/... ./pkg/... ./cmd/... ./docs ./ffconfig/... -cover -coverprofile=coverage.txt -covermode=atomic -timeout=30s
 coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
@@ -73,6 +73,7 @@ $(eval $(call makemock, internal/spievents,        Manager,            spievents
 $(eval $(call makemock, internal/orchestrator,     Orchestrator,       orchestratormocks))
 $(eval $(call makemock, internal/apiserver,        FFISwaggerGen,      apiservermocks))
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))
+$(eval $(call makemock, internal/cache,            Manager,            cachemocks))
 $(eval $(call makemock, internal/metrics,          Manager,            metricsmocks))
 $(eval $(call makemock, internal/operations,       Manager,            operationmocks))
 $(eval $(call makemock, internal/multiparty,       Manager,            multipartymocks))

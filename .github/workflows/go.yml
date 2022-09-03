@@ -60,47 +60,68 @@ jobs:
         exclude: [ blockchain-provider: geth, blockchain-provider: fabric ]
         include:
             - blockchain-provider: geth
+              blockchain-connector: ethconnect
               test-suite: TestEthereumMultipartyE2ESuite
               database-type: sqlite3
               token-provider: erc20_erc721
               multiparty-enabled: true
 
             - blockchain-provider: geth
+              blockchain-connector: ethconnect
               test-suite: TestEthereumMultipartyE2ESuite
               database-type: postgres
               token-provider: erc20_erc721
               multiparty-enabled: true
             
             - blockchain-provider: geth
+              blockchain-connector: ethconnect
               test-suite: TestEthereumMultipartyE2ESuite
               database-type: sqlite3
               token-provider: erc1155
               multiparty-enabled: true
 
             - blockchain-provider: geth
+              blockchain-connector: ethconnect
               test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
               database-type: postgres
               token-provider: erc20_erc721
               multiparty-enabled: true
 
-
             - blockchain-provider: fabric
+              blockchain-connector: fabconnect
               test-suite: TestFabricE2ESuite
               database-type: sqlite3
               token-provider: none
               multiparty-enabled: true
 
             - blockchain-provider: geth
+              blockchain-connector: ethconnect
               test-suite: TestEthereumGatewayE2ESuite
               database-type: sqlite3
               token-provider: erc20_erc721
               multiparty-enabled: false
 
             - blockchain-provider: fabric
+              blockchain-connector: fabconnect
               test-suite: TestFabricGatewayE2ESuite
               database-type: sqlite3
               token-provider: none
               multiparty-enabled: false
+
+            - blockchain-provider: geth
+              blockchain-connector: evmconnect
+              test-suite: TestEthereumMultipartyE2ESuite
+              database-type: sqlite3
+              token-provider: erc20_erc721
+              multiparty-enabled: true
+
+            - blockchain-provider: geth
+              blockchain-connector: evmconnect
+              test-suite: TestEthereumGatewayE2ESuite
+              database-type: sqlite3
+              token-provider: erc1155
+              multiparty-enabled: false
+
     steps:
       - uses: actions/checkout@v2
         with:
@@ -124,6 +145,7 @@ jobs:
           BUILD_FIREFLY: false
           TEST_SUITE: ${{ matrix.test-suite }}
           BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
+          BLOCKCHAIN_CONNECTOR: ${{ matrix.blockchain-connector }}
           TOKENS_PROVIDER: ${{ matrix.token-provider }}
           DATABASE_TYPE: ${{ matrix.database-type }}
           MULTIPARTY_ENABLED: ${{ matrix.multiparty-enabled }}
@@ -133,5 +155,5 @@ jobs:
         uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-provider }}-${{ matrix.database-type }}-${{ matrix.token-provider }}
+          name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-provider }}-${{ matrix.blockchain-connector }}-${{ matrix.database-type }}-${{ matrix.token-provider }}
           path: containerlogs/logs.txt

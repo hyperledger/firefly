@@ -45,20 +45,64 @@ func TestGroupInitWriteGroupFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	member := &core.Member{Identity: "id1", Node: fftypes.NewUUID()}
+	node := &core.Identity{}
+	org := &core.Identity{}
+
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(node, nil)
+	mim.On("CachedIdentityLookupMustExist", mock.Anything, member.Identity).Return(org, false, nil)
+	mim.On("ValidateNodeOwner", mock.Anything, node, org).Return(true, nil)
 
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
 			Namespace: "ns1",
-			Members: core.Members{
-				{Identity: "id1", Node: fftypes.NewUUID()},
-			},
+			Members:   core.Members{member},
 		},
 	}
 	group.Seal()
 	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
 	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+}
+
+func TestGroupInitWriteMessageFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	member := &core.Member{Identity: "id1", Node: fftypes.NewUUID()}
+	node := &core.Identity{}
+	org := &core.Identity{}
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(node, nil)
+	mim.On("CachedIdentityLookupMustExist", mock.Anything, member.Identity).Return(org, false, nil)
+	mim.On("ValidateNodeOwner", mock.Anything, node, org).Return(true, nil)
+
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Namespace: "ns1",
+			Members:   core.Members{member},
+		},
+	}
+	group.Seal()
+	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestGroupInitWriteDataFail(t *testing.T) {
@@ -66,21 +110,132 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	member := &core.Member{Identity: "id1", Node: fftypes.NewUUID()}
+	node := &core.Identity{}
+	org := &core.Identity{}
+
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroup", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(node, nil)
+	mim.On("CachedIdentityLookupMustExist", mock.Anything, member.Identity).Return(org, false, nil)
+	mim.On("ValidateNodeOwner", mock.Anything, node, org).Return(true, nil)
 
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
 			Namespace: "ns1",
-			Members: core.Members{
-				{Identity: "id1", Node: fftypes.NewUUID()},
-			},
+			Members:   core.Members{member},
 		},
 	}
 	group.Seal()
 	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
 	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+}
+
+func TestGroupInitNodeFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	member := &core.Member{Identity: "id1", Node: fftypes.NewUUID()}
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(nil, fmt.Errorf("pop"))
+
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Namespace: "ns1",
+			Members:   core.Members{member},
+		},
+	}
+	group.Seal()
+	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
+	assert.Regexp(t, "pop", err)
+
+	mim.AssertExpectations(t)
+}
+
+func TestGroupInitOrgFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	member := &core.Member{Identity: "id1", Node: fftypes.NewUUID()}
+	node := &core.Identity{}
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(node, nil)
+	mim.On("CachedIdentityLookupMustExist", mock.Anything, member.Identity).Return(nil, false, fmt.Errorf("pop"))
+
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Namespace: "ns1",
+			Members:   core.Members{member},
+		},
+	}
+	group.Seal()
+	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
+	assert.Regexp(t, "pop", err)
+
+	mim.AssertExpectations(t)
+}
+
+func TestGroupInitValidateError(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	member := &core.Member{Identity: "id1", Node: fftypes.NewUUID()}
+	node := &core.Identity{}
+	org := &core.Identity{}
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(node, nil)
+	mim.On("CachedIdentityLookupMustExist", mock.Anything, member.Identity).Return(org, false, nil)
+	mim.On("ValidateNodeOwner", mock.Anything, node, org).Return(false, fmt.Errorf("pop"))
+
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Namespace: "ns1",
+			Members:   core.Members{member},
+		},
+	}
+	group.Seal()
+	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
+	assert.Regexp(t, "pop", err)
+
+	mim.AssertExpectations(t)
+}
+
+func TestGroupInitValidateFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	member := &core.Member{Identity: "id1", Node: fftypes.NewUUID()}
+	node := &core.Identity{}
+	org := &core.Identity{}
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(node, nil)
+	mim.On("CachedIdentityLookupMustExist", mock.Anything, member.Identity).Return(org, false, nil)
+	mim.On("ValidateNodeOwner", mock.Anything, node, org).Return(false, nil)
+
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Namespace: "ns1",
+			Members:   core.Members{member},
+		},
+	}
+	group.Seal()
+	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
+	assert.Regexp(t, "FF10422", err)
+
+	mim.AssertExpectations(t)
 }
 
 func TestResolveInitGroupMissingData(t *testing.T) {
@@ -101,7 +256,7 @@ func TestResolveInitGroupMissingData(t *testing.T) {
 				Key:    "0x12345",
 			},
 		},
-	})
+	}, &core.Member{})
 	assert.NoError(t, err)
 
 }
@@ -126,7 +281,7 @@ func TestResolveInitGroupBadData(t *testing.T) {
 				Key:    "0x12345",
 			},
 		},
-	})
+	}, &core.Member{})
 	assert.NoError(t, err)
 
 }
@@ -151,7 +306,7 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 				Key:    "0x12345",
 			},
 		},
-	})
+	}, &core.Member{})
 	assert.NoError(t, err)
 
 }
@@ -160,13 +315,12 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	member := &core.Member{Identity: "abce12345", Node: fftypes.NewUUID()}
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
 			Name:      "group1",
 			Namespace: "ns1",
-			Members: core.Members{
-				{Identity: "abce12345", Node: fftypes.NewUUID()},
-			},
+			Members:   core.Members{member},
 		},
 	}
 	group.Seal()
@@ -189,7 +343,7 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 				Key:    "0x12345",
 			},
 		},
-	})
+	}, member)
 	assert.NoError(t, err)
 
 }
@@ -198,13 +352,12 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	member := &core.Member{Identity: "abce12345", Node: fftypes.NewUUID()}
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
 			Name:      "group1",
 			Namespace: "ns1",
-			Members: core.Members{
-				{Identity: "abce12345", Node: fftypes.NewUUID()},
-			},
+			Members:   core.Members{member},
 		},
 	}
 	group.Seal()
@@ -229,7 +382,7 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 				Key:    "0x12345",
 			},
 		},
-	})
+	}, member)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -238,13 +391,12 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	member := &core.Member{Identity: "abce12345", Node: fftypes.NewUUID()}
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
 			Name:      "group1",
 			Namespace: "ns1",
-			Members: core.Members{
-				{Identity: "abce12345", Node: fftypes.NewUUID()},
-			},
+			Members:   core.Members{member},
 		},
 	}
 	group.Seal()
@@ -270,7 +422,7 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 				Key:    "0x12345",
 			},
 		},
-	})
+	}, member)
 	assert.NoError(t, err)
 
 }
@@ -279,9 +431,19 @@ func TestResolveInitGroupExistingOK(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	member := &core.Member{Identity: "abce12345", Node: fftypes.NewUUID()}
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Name:      "group1",
+			Namespace: "ns1",
+			Members:   core.Members{member},
+		},
+	}
+	group.Seal()
+
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(&core.Group{}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(group, nil)
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
 		Header: core.MessageHeader{
@@ -294,7 +456,40 @@ func TestResolveInitGroupExistingOK(t *testing.T) {
 				Key:    "0x12345",
 			},
 		},
-	})
+	}, member)
+	assert.NoError(t, err)
+}
+
+func TestResolveInitGroupExistingWithoutCreator(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	member := &core.Member{Identity: "abce12345", Node: fftypes.NewUUID()}
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Name:      "group1",
+			Namespace: "ns1",
+			Members:   core.Members{member},
+		},
+	}
+	group.Seal()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(group, nil)
+
+	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
+		Header: core.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Tag:       "mytag",
+			Group:     fftypes.NewRandB32(),
+			SignerRef: core.SignerRef{
+				Author: "author1",
+				Key:    "0x12345",
+			},
+		},
+	}, &core.Member{Identity: "abc", Node: fftypes.NewUUID()})
 	assert.NoError(t, err)
 }
 
@@ -316,7 +511,7 @@ func TestResolveInitGroupExistingFail(t *testing.T) {
 				Key:    "0x12345",
 			},
 		},
-	})
+	}, &core.Member{})
 	assert.EqualError(t, err, "pop")
 }
 
@@ -338,7 +533,7 @@ func TestResolveInitGroupExistingNotFound(t *testing.T) {
 				Key:    "0x12345",
 			},
 		},
-	})
+	}, &core.Member{})
 	assert.NoError(t, err)
 	assert.Nil(t, group)
 }
@@ -499,12 +694,11 @@ func TestEnsureLocalGroupNewOk(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
+	member := &core.Member{Node: node1, Identity: "id1"}
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
 			Namespace: "ns1",
-			Members: core.Members{
-				&core.Member{Node: node1, Identity: "id1"},
-			},
+			Members:   core.Members{member},
 		},
 	}
 	group.Seal()
@@ -513,7 +707,7 @@ func TestEnsureLocalGroupNewOk(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 	mdi.On("UpsertGroup", pm.ctx, group, database.UpsertOptimizationNew).Return(nil)
 
-	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group, member)
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
@@ -524,7 +718,7 @@ func TestEnsureLocalGroupNil(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	ok, err := pm.EnsureLocalGroup(pm.ctx, nil)
+	ok, err := pm.EnsureLocalGroup(pm.ctx, nil, &core.Member{})
 	assert.Regexp(t, "FF10344", err)
 	assert.False(t, ok)
 }
@@ -534,18 +728,17 @@ func TestEnsureLocalGroupExistingOk(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
+	member := &core.Member{Node: node1, Identity: "id1"}
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
-			Members: core.Members{
-				&core.Member{Node: node1},
-			},
+			Members: core.Members{member},
 		},
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(group, nil)
 
-	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group, member)
 	assert.NoError(t, err)
 	assert.True(t, ok)
 
@@ -557,18 +750,17 @@ func TestEnsureLocalGroupLookupErr(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
+	member := &core.Member{Node: node1, Identity: "id1"}
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
-			Members: core.Members{
-				&core.Member{Node: node1},
-			},
+			Members: core.Members{member},
 		},
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group, member)
 	assert.EqualError(t, err, "pop")
 	assert.False(t, ok)
 
@@ -580,12 +772,11 @@ func TestEnsureLocalGroupInsertErr(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
+	member := &core.Member{Node: node1, Identity: "id1"}
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
 			Namespace: "ns1",
-			Members: core.Members{
-				&core.Member{Node: node1, Identity: "id1"},
-			},
+			Members:   core.Members{member},
 		},
 	}
 	group.Seal()
@@ -594,7 +785,7 @@ func TestEnsureLocalGroupInsertErr(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
-	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group, member)
 	assert.EqualError(t, err, "pop")
 	assert.False(t, ok)
 
@@ -610,7 +801,31 @@ func TestEnsureLocalGroupBadGroup(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 
-	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group, &core.Member{})
+	assert.NoError(t, err)
+	assert.False(t, ok)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestEnsureLocalGroupWithoutCreator(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	node1 := fftypes.NewUUID()
+	member := &core.Member{Node: node1, Identity: "id1"}
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Namespace: "ns1",
+			Members:   core.Members{member},
+		},
+	}
+	group.Seal()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group, &core.Member{Node: node1, Identity: "id2"})
 	assert.NoError(t, err)
 	assert.False(t, ok)
 

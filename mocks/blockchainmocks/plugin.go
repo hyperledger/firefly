@@ -3,8 +3,10 @@
 package blockchainmocks
 
 import (
-	config "github.com/hyperledger/firefly-common/pkg/config"
+	cache "github.com/hyperledger/firefly/internal/cache"
 	blockchain "github.com/hyperledger/firefly/pkg/blockchain"
+
+	config "github.com/hyperledger/firefly-common/pkg/config"
 
 	context "context"
 
@@ -37,18 +39,18 @@ func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.Co
 }
 
 // AddFireflySubscription provides a mock function with given fields: ctx, namespace, location, firstEvent
-func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace core.NamespaceRef, location *fftypes.JSONAny, firstEvent string) (string, error) {
+func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
 	ret := _m.Called(ctx, namespace, location, firstEvent)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, core.NamespaceRef, *fftypes.JSONAny, string) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *fftypes.JSONAny, string) string); ok {
 		r0 = rf(ctx, namespace, location, firstEvent)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, core.NamespaceRef, *fftypes.JSONAny, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Namespace, *fftypes.JSONAny, string) error); ok {
 		r1 = rf(ctx, namespace, location, firstEvent)
 	} else {
 		r1 = ret.Error(1)
@@ -154,6 +156,29 @@ func (_m *Plugin) GetAndConvertDeprecatedContractConfig(ctx context.Context) (*f
 	return r0, r1, r2
 }
 
+// GetContractListenerStatus provides a mock function with given fields: ctx, subID
+func (_m *Plugin) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {
+	ret := _m.Called(ctx, subID)
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, string) interface{}); ok {
+		r0 = rf(ctx, subID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, subID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetFFIParamValidator provides a mock function with given fields: ctx
 func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	ret := _m.Called(ctx)
@@ -198,13 +223,13 @@ func (_m *Plugin) GetNetworkVersion(ctx context.Context, location *fftypes.JSONA
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, _a1, _a2
-func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, _a2 metrics.Manager) error {
-	ret := _m.Called(ctx, _a1, _a2)
+// Init provides a mock function with given fields: ctx, cancelCtx, _a2, _a3, cacheManager
+func (_m *Plugin) Init(ctx context.Context, cancelCtx context.CancelFunc, _a2 config.Section, _a3 metrics.Manager, cacheManager cache.Manager) error {
+	ret := _m.Called(ctx, cancelCtx, _a2, _a3, cacheManager)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Section, metrics.Manager) error); ok {
-		r0 = rf(ctx, _a1, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc, config.Section, metrics.Manager, cache.Manager) error); ok {
+		r0 = rf(ctx, cancelCtx, _a2, _a3, cacheManager)
 	} else {
 		r0 = ret.Error(0)
 	}

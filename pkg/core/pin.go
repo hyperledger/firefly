@@ -54,3 +54,8 @@ type Pin struct {
 func (p *Pin) LocalSequence() int64 {
 	return p.Sequence
 }
+
+type PinRewind struct {
+	Sequence int64         `ffstruct:"PinRewind" json:"sequence"`
+	Batch    *fftypes.UUID `ffstruct:"PinRewind" json:"batch"`
+}

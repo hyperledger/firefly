@@ -41,6 +41,8 @@ var (
 	OpTypeSharedStorageUploadBatch = fftypes.FFEnumValue("optype", "sharedstorage_upload_batch")
 	// OpTypeSharedStorageUploadBlob is a shared storage operation to upload blob data
 	OpTypeSharedStorageUploadBlob = fftypes.FFEnumValue("optype", "sharedstorage_upload_blob")
+	// OpTypeSharedStorageUploadValue is a shared storage operation to upload the value JSON from a data record directly
+	OpTypeSharedStorageUploadValue = fftypes.FFEnumValue("optype", "sharedstorage_upload_value")
 	// OpTypeSharedStorageDownloadBatch is a shared storage operation to download broadcast data
 	OpTypeSharedStorageDownloadBatch = fftypes.FFEnumValue("optype", "sharedstorage_download_batch")
 	// OpTypeSharedStorageDownloadBlob is a shared storage operation to download broadcast data
@@ -120,6 +122,7 @@ type OperationUpdateDTO struct {
 type PreparedOperation struct {
 	ID        *fftypes.UUID `json:"id"`
 	Namespace string        `json:"namespace"`
+	Plugin    string        `json:"plugin"`
 	Type      OpType        `json:"type" ffenum:"optype"`
 	Data      interface{}   `json:"data"`
 }

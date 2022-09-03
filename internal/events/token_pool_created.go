@@ -50,6 +50,7 @@ func addPoolDetailsFromPlugin(ffPool *core.TokenPool, pluginPool *tokens.TokenPo
 }
 
 func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, ev *blockchain.Event) error {
+	log.L(em.ctx).Debugf("Confirming pool ID=%s Locator='%s'", pool.ID, pool.Locator)
 	var blockchainID string
 	if ev != nil {
 		// Some pools will not include a blockchain event for creation (such as when indexing a pre-existing pool)
@@ -83,16 +84,18 @@ func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, o
 		fb.Eq("tx", tx),
 		fb.Eq("type", opType),
 	)
-	if operations, _, err := em.database.GetOperations(ctx, em.namespace.LocalName, filter); err != nil {
+	if operations, _, err := em.database.GetOperations(ctx, em.namespace.Name, filter); err != nil {
 		return nil, err
 	} else if len(operations) > 0 {
 		return operations[0], nil
 	}
+	log.L(ctx).Debugf("No pool found for tx=%s status=%s", tx, core.OpTypeTokenCreatePool)
 	return nil, nil
 }
 
 func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
-	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace.LocalName, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
+	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace.Name, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
+		log.L(ctx).Debugf("Pool not found with ns=%s connector=%s locator=%s (err=%v)", em.namespace.Name, pool.Connector, pool.PoolLocator, err)
 		return existingPool, err
 	}
 	if err = addPoolDetailsFromPlugin(existingPool, pool); err != nil {
@@ -100,6 +103,7 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 		return nil, nil
 	}
 
+	log.L(ctx).Debugf("shouldConfirm checking pool: state=%s name=%s connector=%s locator=%s", existingPool.State, em.namespace.Name, pool.Connector, pool.PoolLocator)
 	if existingPool.State == core.TokenPoolStateUnknown {
 		// Unknown pool state - should only happen on first run after database migration
 		// Activate the pool, then immediately confirm
@@ -150,6 +154,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			}
 			if existingPool != nil {
 				if existingPool.State == core.TokenPoolStateConfirmed {
+					log.L(em.ctx).Debugf("Token pool ID=%s Locator='%s' already confirmed", existingPool.ID, pool.PoolLocator)
 					return nil // already confirmed
 				}
 				msgIDforRewind = existingPool.Message
@@ -169,7 +174,11 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			}
 
 			// Otherwise this event can be ignored
-			log.L(ctx).Debugf("Ignoring token pool transaction '%s' - pool %s is not active", pool.Event.ProtocolID, pool.PoolLocator)
+			var protoID string
+			if pool.Event != nil {
+				protoID = pool.Event.ProtocolID
+			}
+			log.L(ctx).Debugf("Handler ignoring token pool created notification. Pool is not active for namespace event='%s' locator='%s'", protoID, pool.PoolLocator)
 			return nil
 		})
 		return err != nil, err

@@ -19,6 +19,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"math/big"
 
 	"database/sql"
 
@@ -54,12 +55,21 @@ func (psql *Postgres) MigrationsDir() string {
 	return psql.Name()
 }
 
+// Attempt to create a unique 64-bit int from the given name, by selecting 4 bytes from the
+// beginning and end of the string.
+func lockIndex(lockName string) int64 {
+	if len(lockName) >= 4 {
+		lockName = lockName[0:4] + lockName[len(lockName)-4:]
+	}
+	return big.NewInt(0).SetBytes([]byte(lockName)).Int64()
+}
+
 func (psql *Postgres) Features() sqlcommon.SQLFeatures {
 	features := sqlcommon.DefaultSQLProviderFeatures()
 	features.PlaceholderFormat = sq.Dollar
 	features.UseILIKE = false // slower than lower()
-	features.ExclusiveTableLockSQL = func(table string) string {
-		return fmt.Sprintf(`LOCK TABLE "%s" IN EXCLUSIVE MODE;`, table)
+	features.AcquireLock = func(lockName string) string {
+		return fmt.Sprintf(`SELECT pg_advisory_xact_lock(%d);`, lockIndex(lockName))
 	}
 	features.MultiRowInsert = true
 	return features

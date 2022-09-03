@@ -148,7 +148,7 @@ func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobDa
 	defer reader.Close()
 
 	// ... to data exchange
-	dxPayloadRef, hash, blobSize, err := dm.dataexchange.UploadBlob(ctx, dm.namespace.RemoteName, *data.DataID, reader)
+	dxPayloadRef, hash, blobSize, err := dm.dataexchange.UploadBlob(ctx, dm.namespace.NetworkName, *data.DataID, reader)
 	if err != nil {
 		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
 	}
@@ -168,6 +168,7 @@ func opDownloadBatch(op *core.Operation, payloadRef string) *core.PreparedOperat
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data: downloadBatchData{
 			PayloadRef: payloadRef,
@@ -179,6 +180,7 @@ func opDownloadBlob(op *core.Operation, dataID *fftypes.UUID, payloadRef string)
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data: downloadBlobData{
 			DataID:     dataID,

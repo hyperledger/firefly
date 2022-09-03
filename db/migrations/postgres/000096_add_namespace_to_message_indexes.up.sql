@@ -44,6 +44,7 @@ DROP TABLE messages_data_old;
 UPDATE messages_data SET namespace = msg.namespace
   FROM (SELECT namespace, id FROM messages) AS msg
   WHERE messages_data.message_id = msg.id;
+ALTER TABLE messages_data ALTER COLUMN namespace SET NOT NULL;
 
 CREATE INDEX messages_data_message ON messages_data(namespace, message_id);
 CREATE INDEX messages_data_data ON messages_data(namespace, data_id);

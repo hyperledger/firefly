@@ -19,14 +19,15 @@ package events
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
@@ -36,7 +37,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -44,20 +44,19 @@ const (
 )
 
 type aggregator struct {
-	ctx           context.Context
-	namespace     string
-	database      database.Plugin
-	messaging     privatemessaging.Manager
-	definitions   definitions.Handler
-	identity      identity.Manager
-	data          data.Manager
-	eventPoller   *eventPoller
-	verifierType  core.VerifierType
-	retry         *retry.Retry
-	metrics       metrics.Manager
-	batchCache    *ccache.Cache
-	batchCacheTTL time.Duration
-	rewinder      *rewinder
+	ctx          context.Context
+	namespace    string
+	database     database.Plugin
+	messaging    privatemessaging.Manager
+	definitions  definitions.Handler
+	identity     identity.Manager
+	data         data.Manager
+	eventPoller  *eventPoller
+	verifierType core.VerifierType
+	retry        *retry.Retry
+	metrics      metrics.Manager
+	batchCache   cache.CInterface
+	rewinder     *rewinder
 }
 
 type batchCacheEntry struct {
@@ -65,25 +64,56 @@ type batchCacheEntry struct {
 	manifest *core.BatchManifest
 }
 
-func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.Handler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
+func broadcastContext(topic string) *fftypes.Bytes32 {
+	h := sha256.New()
+	h.Write([]byte(topic))
+	return fftypes.HashResult(h)
+}
+
+func privateContext(topic string, group *fftypes.Bytes32) *fftypes.Bytes32 {
+	h := sha256.New()
+	h.Write([]byte(topic))
+	h.Write((*group)[:])
+	return fftypes.HashResult(h)
+}
+
+func privatePinHash(topic string, group *fftypes.Bytes32, identity string, nonce int64) *fftypes.Bytes32 {
+	h := sha256.New()
+	h.Write([]byte(topic))
+	h.Write((*group)[:])
+	h.Write([]byte(identity))
+	nonceBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(nonceBytes, uint64(nonce))
+	h.Write(nonceBytes)
+	return fftypes.HashResult(h)
+}
+
+func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.Handler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager, cacheManager cache.Manager) (*aggregator, error) {
 	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
-		ctx:           log.WithLogField(ctx, "role", "aggregator"),
-		namespace:     ns,
-		database:      di,
-		messaging:     pm,
-		definitions:   sh,
-		identity:      im,
-		data:          dm,
-		verifierType:  bi.VerifierType(),
-		metrics:       mm,
-		batchCacheTTL: config.GetDuration(coreconfig.BatchCacheTTL),
+		ctx:          log.WithLogField(ctx, "role", "aggregator"),
+		namespace:    ns,
+		database:     di,
+		messaging:    pm,
+		definitions:  sh,
+		identity:     im,
+		data:         dm,
+		verifierType: bi.VerifierType(),
+		metrics:      mm,
 	}
-	ag.batchCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.BatchCacheSize)),
+
+	batchCache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheBatchLimit,
+			coreconfig.CacheBatchTTL,
+			ns,
+		),
 	)
+	if err != nil {
+		return nil, err
+	}
+	ag.batchCache = batchCache
 	firstEvent := core.SubOptsFirstEvent(config.GetString(coreconfig.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
 		eventBatchSize:             batchSize,
@@ -110,7 +140,7 @@ func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockc
 	})
 	ag.retry = &ag.eventPoller.conf.retry
 	ag.rewinder = newRewinder(ag)
-	return ag
+	return ag, nil
 }
 
 func (ag *aggregator) start() {
@@ -289,10 +319,9 @@ func (ag *aggregator) getBatchCacheKey(id *fftypes.UUID, hash *fftypes.Bytes32) 
 
 func (ag *aggregator) GetBatchForPin(ctx context.Context, pin *core.Pin) (*core.BatchPersisted, *core.BatchManifest, error) {
 	cacheKey := ag.getBatchCacheKey(pin.Batch, pin.BatchHash)
-	cached := ag.batchCache.Get(cacheKey)
-	if cached != nil {
-		cached.Extend(ag.batchCacheTTL)
-		bce := cached.Value().(*batchCacheEntry)
+	cachedValue := ag.batchCache.Get(cacheKey)
+	if cachedValue != nil {
+		bce := cachedValue.(*batchCacheEntry)
 		log.L(ag.ctx).Debugf("Batch cache hit %s", cacheKey)
 		return bce.batch, bce.manifest, nil
 	}
@@ -321,30 +350,35 @@ func (ag *aggregator) cacheBatch(cacheKey string, batch *core.BatchPersisted, ma
 		batch:    batch,
 		manifest: manifest,
 	}
-	ag.batchCache.Set(cacheKey, bce, ag.batchCacheTTL)
+	ag.batchCache.Set(cacheKey, bce)
 	log.L(ag.ctx).Debugf("Cached batch %s", cacheKey)
 }
 
 func (ag *aggregator) processPins(ctx context.Context, pins []*core.Pin, state *batchState) (err error) {
 	l := log.L(ctx)
 
-	// Keep a batch cache for this list of pins
-	var batch *core.BatchPersisted
+	localCache := make(map[fftypes.UUID]*batchCacheEntry)
 	var manifest *core.BatchManifest
+	var batch *core.BatchPersisted
+
 	// As messages can have multiple topics, we need to avoid processing the message twice in the same poll loop.
 	// We must check all the contexts in the message, and mark them dispatched together.
 	dupMsgCheck := make(map[fftypes.UUID]bool)
 	for _, pin := range pins {
-
-		if batch == nil || !batch.ID.Equals(pin.Batch) {
+		found, ok := localCache[*pin.Batch] // avoid trying to fetch the same batch repeatedly (mainly for cache misses)
+		if ok {
+			manifest = found.manifest
+			batch = found.batch
+		} else {
 			batch, manifest, err = ag.GetBatchForPin(ctx, pin)
 			if err != nil {
 				return err
 			}
-			if batch == nil {
-				l.Debugf("Pin %.10d batch unavailable: batch=%s pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
-				continue
-			}
+			localCache[*pin.Batch] = &batchCacheEntry{manifest: manifest, batch: batch}
+		}
+		if manifest == nil {
+			l.Debugf("Pin %.10d batch unavailable: batch=%s pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
+			continue
 		}
 
 		// Extract the message from the batch - where the index is of a topic within a message
@@ -361,7 +395,7 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*core.Pin, state *
 		dupMsgCheck[*msgEntry.ID] = true
 
 		// Attempt to process the message (only returns errors for database persistence issues)
-		err := ag.processMessage(ctx, manifest, pin, msgBaseIndex, msgEntry, state)
+		err := ag.processMessage(ctx, manifest, pin, msgBaseIndex, msgEntry, batch, state)
 		if err != nil {
 			return err
 		}
@@ -411,8 +445,13 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 	return true, nil
 }
 
-func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchManifest, pin *core.Pin, msgBaseIndex int64, msgEntry *core.MessageManifestEntry, state *batchState) (err error) {
+func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchManifest, pin *core.Pin, msgBaseIndex int64, msgEntry *core.MessageManifestEntry, batch *core.BatchPersisted, state *batchState) (err error) {
 	l := log.L(ctx)
+
+	unmaskedContexts := make([]*fftypes.Bytes32, 0)
+	nextPins := make([]*nextPinState, 0)
+	var newState core.MessageState
+	var dispatched bool
 
 	var cro data.CacheReadOption
 	if pin.Masked {
@@ -426,59 +465,48 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		return err
 	case msg == nil:
 		l.Debugf("Message '%s' in batch '%s' is not yet available", msgEntry.ID, manifest.ID)
-		return nil
 	case !dataAvailable:
 		l.Errorf("Message '%s' in batch '%s' is missing data", msgEntry.ID, manifest.ID)
-		return nil
-	}
-
-	// Check if it's ready to be processed
-	unmaskedContexts := make([]*fftypes.Bytes32, 0, len(msg.Header.Topics))
-	nextPins := make([]*nextPinState, 0, len(msg.Header.Topics))
-	if pin.Masked {
-		// Private messages have one or more masked "pin" hashes that allow us to work
-		// out if it's the next message in the sequence, given the previous messages
-		if msg.Header.Group == nil || len(msg.Pins) == 0 || len(msg.Header.Topics) != len(msg.Pins) {
-			l.Errorf("Message '%s' in batch '%s' has invalid pin data pins=%v topics=%v", msg.Header.ID, manifest.ID, msg.Pins, msg.Header.Topics)
-			return nil
-		}
-		for i, pinStr := range msg.Pins {
-			var msgContext fftypes.Bytes32
-			pinSplit := strings.Split(pinStr, ":")
-			nonceStr := ""
-			if len(pinSplit) > 1 {
-				// We introduced a "HASH:NONCE" syntax into the pin strings, to aid debug, but the inclusion of the
-				// nonce after the hash is not necessary.
-				nonceStr = pinSplit[1]
-			}
-			err := msgContext.UnmarshalText([]byte(pinSplit[0]))
-			if err != nil {
-				l.Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, manifest.ID, i, pinStr)
+	default:
+		// Check if it's ready to be processed
+		if pin.Masked {
+			// Private messages have one or more masked "pin" hashes that allow us to work
+			// out if it's the next message in the sequence, given the previous messages
+			if msg.Header.Group == nil || len(msg.Pins) == 0 || len(msg.Header.Topics) != len(msg.Pins) {
+				l.Errorf("Message '%s' in batch '%s' has invalid pin data pins=%v topics=%v", msg.Header.ID, manifest.ID, msg.Pins, msg.Header.Topics)
 				return nil
 			}
-			nextPin, err := state.checkMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext, nonceStr)
-			if err != nil || nextPin == nil {
-				return err
+			for i, pinStr := range msg.Pins {
+				var msgContext fftypes.Bytes32
+				pinSplit := strings.Split(pinStr, ":")
+				nonceStr := ""
+				if len(pinSplit) > 1 {
+					// We introduced a "HASH:NONCE" syntax into the pin strings, to aid debug, but the inclusion of the
+					// nonce after the hash is not necessary.
+					nonceStr = pinSplit[1]
+				}
+				err := msgContext.UnmarshalText([]byte(pinSplit[0]))
+				if err != nil {
+					l.Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, manifest.ID, i, pinStr)
+					return nil
+				}
+				nextPin, err := state.checkMaskedContextReady(ctx, msg, batch, msg.Header.Topics[i], pin.Sequence, &msgContext, nonceStr)
+				if err != nil || nextPin == nil {
+					return err
+				}
+				nextPins = append(nextPins, nextPin)
 			}
-			nextPins = append(nextPins, nextPin)
-		}
-	} else {
-		for _, topic := range msg.Header.Topics {
-			h := sha256.New()
-			h.Write([]byte(topic))
-			msgContext := fftypes.HashResult(h)
-			unmaskedContexts = append(unmaskedContexts, msgContext)
-			ready, err := state.checkUnmaskedContextReady(ctx, msgContext, msg, pin.Sequence)
-			if err != nil || !ready {
-				return err
+		} else {
+			for _, topic := range msg.Header.Topics {
+				msgContext := broadcastContext(topic)
+				unmaskedContexts = append(unmaskedContexts, msgContext)
+				ready, err := state.checkUnmaskedContextReady(ctx, msgContext, msg, pin.Sequence)
+				if err != nil || !ready {
+					return err
+				}
 			}
 		}
 
-	}
-
-	dispatched := false
-	var newState core.MessageState
-	if dataAvailable {
 		l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
 		newState, dispatched, err = ag.attemptMessageDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
 		if err != nil {
@@ -503,61 +531,63 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 	return nil
 }
 
-func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState, pin *core.Pin) (newState core.MessageState, valid bool, err error) {
+func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState, pin *core.Pin) (newState core.MessageState, dispatched bool, err error) {
+	var customCorrelator *fftypes.UUID
 
 	// Check the pin signer is valid for the message
-	if valid, err := ag.checkOnchainConsistency(ctx, msg, pin); err != nil || !valid {
+	valid, err := ag.checkOnchainConsistency(ctx, msg, pin)
+	if err != nil {
 		return "", false, err
 	}
 
-	// Verify we have all the blobs for the data
-	if resolved, err := ag.resolveBlobs(ctx, data); err != nil || !resolved {
-		return "", false, err
-	}
-
-	// For transfers, verify the transfer has come through
-	if msg.Header.Type == core.MessageTypeTransferBroadcast || msg.Header.Type == core.MessageTypeTransferPrivate {
-		fb := database.TokenTransferQueryFactory.NewFilter(ctx)
-		filter := fb.And(
-			fb.Eq("message", msg.Header.ID),
-		)
-		if transfers, _, err := ag.database.GetTokenTransfers(ctx, ag.namespace, filter); err != nil || len(transfers) == 0 {
-			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
-			return "", false, err
-		} else if !msg.Hash.Equals(transfers[0].MessageHash) {
-			log.L(ctx).Errorf("Message hash %s does not match hash recorded in transfer: %s", msg.Hash, transfers[0].MessageHash)
-			return "", false, nil
-		}
-	}
-
-	// Validate the message data
-	valid = true
-	var customCorrelator *fftypes.UUID
-	switch {
-	case msg.Header.Type == core.MessageTypeDefinition:
-		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
-		// dispatched subsequent events before we have processed the definition events they depend on.
-		handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
-		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
-		if handlerResult.Action == definitions.ActionRetry {
+	if valid {
+		// Verify we have all the blobs for the data
+		if resolved, err := ag.resolveBlobs(ctx, data); err != nil || !resolved {
 			return "", false, err
 		}
-		if handlerResult.Action == definitions.ActionWait {
-			return "", false, nil
-		}
-		if handlerResult.Action == definitions.ActionReject {
-			log.L(ctx).Warnf("Definition broadcast rejected: %s", err)
-		}
-		customCorrelator = handlerResult.CustomCorrelator
-		valid = handlerResult.Action == definitions.ActionConfirm
 
-	case msg.Header.Type == core.MessageTypeGroupInit:
-		// Already handled as part of resolving the context - do nothing.
+		// For transfers, verify the transfer has come through
+		if msg.Header.Type == core.MessageTypeTransferBroadcast || msg.Header.Type == core.MessageTypeTransferPrivate {
+			fb := database.TokenTransferQueryFactory.NewFilter(ctx)
+			filter := fb.And(
+				fb.Eq("message", msg.Header.ID),
+			)
+			if transfers, _, err := ag.database.GetTokenTransfers(ctx, ag.namespace, filter); err != nil || len(transfers) == 0 {
+				log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
+				return "", false, err
+			} else if !msg.Hash.Equals(transfers[0].MessageHash) {
+				log.L(ctx).Errorf("Message hash %s does not match hash recorded in transfer: %s", msg.Hash, transfers[0].MessageHash)
+				return "", false, nil
+			}
+		}
 
-	case len(msg.Data) > 0:
-		valid, err = ag.data.ValidateAll(ctx, data)
-		if err != nil {
-			return "", false, err
+		// Validate the message data
+		switch {
+		case msg.Header.Type == core.MessageTypeDefinition:
+			// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
+			// dispatched subsequent events before we have processed the definition events they depend on.
+			handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
+			log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
+			if handlerResult.Action == definitions.ActionRetry {
+				return "", false, err
+			}
+			if handlerResult.Action == definitions.ActionWait {
+				return "", false, nil
+			}
+			if handlerResult.Action == definitions.ActionReject {
+				log.L(ctx).Warnf("Definition broadcast rejected: %s", err)
+			}
+			customCorrelator = handlerResult.CustomCorrelator
+			valid = handlerResult.Action == definitions.ActionConfirm
+
+		case msg.Header.Type == core.MessageTypeGroupInit:
+			// Already handled as part of resolving the context - do nothing.
+
+		case len(msg.Data) > 0:
+			valid, err = ag.data.ValidateAll(ctx, data)
+			if err != nil {
+				return "", false, err
+			}
 		}
 	}
 

@@ -34,6 +34,7 @@ func TestGetDataBlob(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
+	mdm.On("BlobsEnabled").Return(true)
 	o.On("Data").Return(mdm)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/data/abcd1234/blob", nil)

@@ -37,7 +37,7 @@ var postNewMessageRequestReply = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	Extensions: &coreExtensions{
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
-			return or.PrivateMessaging() != nil
+			return or.MultiParty() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			output, err = cr.or.RequestReply(cr.ctx, r.Input.(*core.MessageInOut))

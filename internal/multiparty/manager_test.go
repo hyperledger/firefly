@@ -58,8 +58,8 @@ func newTestMultipartyManager() *testMultipartyManager {
 		mth: &txcommonmocks.Helper{},
 		multipartyManager: multipartyManager{
 			namespace: &core.Namespace{
-				LocalName:  "ns1",
-				RemoteName: "ns1",
+				Name:        "ns1",
+				NetworkName: "ns1",
 				Contracts: &core.MultipartyContracts{
 					Active: &core.MultipartyContract{},
 				},
@@ -90,7 +90,7 @@ func TestNewMultipartyManager(t *testing.T) {
 		core.OpTypeBlockchainPinBatch,
 		core.OpTypeBlockchainNetworkAction,
 	}).Return()
-	ns := &core.Namespace{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	nm, err := NewMultipartyManager(context.Background(), ns, config, mdi, mbi, mom, mmi, mth)
 	assert.NotNil(t, nm)
 	assert.NoError(t, err)
@@ -156,21 +156,25 @@ func TestConfigureContractLocationChanged(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestResolveContractDeprecatedConfig(t *testing.T) {
+func TestConfigureContractDeprecatedConfig(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
+	mp.namespace.Contracts = nil
 
 	mp.mbi.On("GetAndConvertDeprecatedContractConfig", context.Background()).Return(fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String()), "0", nil)
+	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
+	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	loc, firstBlock, err := mp.resolveFireFlyContract(context.Background(), 0)
+	err := mp.ConfigureContract(context.Background())
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
-	assert.Equal(t, location, loc)
-	assert.Equal(t, "0", firstBlock)
+	assert.Equal(t, location, mp.namespace.Contracts.Active.Location)
+	assert.Equal(t, "0", mp.namespace.Contracts.Active.FirstEvent)
 	assert.NoError(t, err)
 }
 

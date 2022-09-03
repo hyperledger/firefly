@@ -36,13 +36,13 @@ var (
 func InitConfig(withDefaults bool) {
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceName)
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceDescription)
-	namespacePredefined.AddKnownKey(coreconfig.NamespaceRemoteName)
 	namespacePredefined.AddKnownKey(coreconfig.NamespacePlugins)
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceDefaultKey)
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceAssetKeyNormalization)
 
 	multipartyConf := namespacePredefined.SubSection(coreconfig.NamespaceMultiparty)
 	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyEnabled)
+	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyNetworkNamespace)
 	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyOrgName)
 	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyOrgDescription)
 	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyOrgKey)

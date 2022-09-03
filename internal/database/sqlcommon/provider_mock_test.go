@@ -79,8 +79,8 @@ func (mp *mockProvider) MigrationsDir() string {
 func (psql *mockProvider) Features() SQLFeatures {
 	features := DefaultSQLProviderFeatures()
 	features.UseILIKE = true
-	features.ExclusiveTableLockSQL = func(table string) string {
-		return fmt.Sprintf(`LOCK TABLE "%s" IN EXCLUSIVE MODE;`, table)
+	features.AcquireLock = func(lockName string) string {
+		return fmt.Sprintf(`<acquire lock %s>`, lockName)
 	}
 	return features
 }

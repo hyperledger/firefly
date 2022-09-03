@@ -86,7 +86,7 @@ func (mm *multipartyManager) PrepareOperation(ctx context.Context, op *core.Oper
 		if err != nil {
 			return nil, err
 		}
-		batch, err := mm.database.GetBatchByID(ctx, mm.namespace.LocalName, batchID)
+		batch, err := mm.database.GetBatchByID(ctx, mm.namespace.Name, batchID)
 		if err != nil {
 			return nil, err
 		} else if batch == nil {
@@ -133,6 +133,7 @@ func opBatchPin(op *core.Operation, batch *core.BatchPersisted, contexts []*ffty
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      batchPinData{Batch: batch, Contexts: contexts, PayloadRef: payloadRef},
 	}
@@ -142,6 +143,7 @@ func opNetworkAction(op *core.Operation, actionType core.NetworkActionType, key 
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data: networkActionData{
 			Type: actionType,

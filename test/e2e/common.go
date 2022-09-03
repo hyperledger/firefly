@@ -49,7 +49,18 @@ func WriteConfig(t *testing.T, configFile string, data map[string]interface{}) {
 }
 
 func AddNamespace(data map[string]interface{}, ns map[string]interface{}) {
+	if _, ok := data["namespaces"]; !ok {
+		data["namespaces"] = make(map[interface{}]interface{})
+	}
 	namespaces := data["namespaces"].(map[interface{}]interface{})
+	if _, ok := namespaces["default"]; !ok {
+		namespaces["default"] = "default"
+	}
+	if _, ok := namespaces["predefined"]; !ok {
+		namespaces["predefined"] = []interface{}{
+			map[string]interface{}{"name": namespaces["default"]},
+		}
+	}
 	predefined := namespaces["predefined"].([]interface{})
 	namespaces["predefined"] = append(predefined, ns)
 }
@@ -69,11 +80,11 @@ func RandomName(t *testing.T) string {
 	return fmt.Sprintf("e2e_%x", b)
 }
 
-func AddPluginRemoteName(data map[string]interface{}, pluginType, remoteName string) {
+func AddPluginBroadcastName(data map[string]interface{}, pluginType, broadcastName string) {
 	pluginsConfig := data["plugins"].(map[interface{}]interface{})
 	plugins := pluginsConfig[pluginType].([]interface{})
 	plugin := plugins[0].(map[interface{}]interface{})
-	plugin["remotename"] = remoteName
+	plugin["broadcastName"] = broadcastName
 }
 
 // ChangeDefaultNSPluginLocalName changes the plugin local name and updates the plugin list for the default namespace

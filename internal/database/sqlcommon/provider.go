@@ -28,10 +28,10 @@ const (
 )
 
 type SQLFeatures struct {
-	UseILIKE              bool
-	MultiRowInsert        bool
-	PlaceholderFormat     sq.PlaceholderFormat
-	ExclusiveTableLockSQL func(table string) string
+	UseILIKE          bool
+	MultiRowInsert    bool
+	PlaceholderFormat sq.PlaceholderFormat
+	AcquireLock       func(lockName string) string
 }
 
 func DefaultSQLProviderFeatures() SQLFeatures {

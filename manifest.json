@@ -1,13 +1,13 @@
 {
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
-    "tag": "v3.2.4",
-    "sha": "7e4c73c8250b33d4605551dffb855d350346387d7535cc5e592d1b79eaee5c5e"
+    "tag": "v3.2.6",
+    "sha": "b1e1cdb9785ffc4053488417a1fc5c495ed03ae5f9ac5fbedee0d3b19256f6ff"
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v0.1.0-20220810-2",
-    "sha": "bf580fd1698d9d2665a134d394cdb28e549b9e573d5f11b51dbe117ac1683ef9"
+    "tag": "v1.1.4",
+    "sha": "d4370836799aeb69ad06b6a2761306b95c60dc03824d5d0a4f088ebd5ccb02bb"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
@@ -16,18 +16,23 @@
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
-    "tag": "v1.0.0-20220810-13",
-    "sha": "3d6ae0c37065c590ed872c96b004854fa1bf89c52b8a5c1fca676d6bb4bf31d6"
+    "tag": "v1.1.0",
+    "sha": "9b191cf693a5b4a3b0bff48aac36fa76cf040d94033607a240cbd83e4fd2942c"
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v1.0.3-20220811-36",
-    "sha": "91bf3c42eb981c69f5b6109efe9257b2952b4c1ae86f2e7f4291f2528849b84c"
+    "tag": "v1.1.2",
+    "sha": "552e65b971709f605fb07d98c5a8899f5f567b717c783eeb0282136dc961c6d4"
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
-    "tag": "v1.0.2-20220810-57",
-    "sha": "6740efec8f181e0f40840a33aad5c5295198974048d612fb175f79bb5368ac84"
+    "tag": "v1.1.1",
+    "sha": "2e04f9be8ed0b72ac0754ff8bb9ce52c4e1d79b45716fd2677e5bf1e193697f3"
+  },
+  "signer": {
+    "image": "ghcr.io/hyperledger/firefly-signer",
+    "tag": "v0.9.19",
+    "sha": "359247e503d6a0ae17d8e01210abd35d7ade7787f7dae104594f603f57b140a2"
   },
   "build": {
     "firefly-builder": {
@@ -45,10 +50,10 @@
     }
   },
   "ui": {
-    "tag": "v1.1.0-alpha.2",
-    "release": "v1.1.0-alpha.2"
+    "tag": "v1.1.0-rc.2",
+    "release": "v1.1.0-rc.2"
   },
   "cli": {
-    "tag": "v1.1.0-alpha.2"
+    "tag": "v1.1.0-rc.2"
   }
 }

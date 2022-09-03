@@ -18,11 +18,14 @@ package operations
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/cache"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -41,8 +44,9 @@ type Manager interface {
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
 	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
-	AddOrReuseOperation(ctx context.Context, op *core.Operation) error
+	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
 	SubmitOperationUpdate(update *core.OperationUpdate)
+	GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
 	Start() error
 	WaitStop()
@@ -60,20 +64,35 @@ type operationsManager struct {
 	database  database.Plugin
 	handlers  map[core.OpType]OperationHandler
 	updater   *operationUpdater
+	cache     cache.CInterface
 }
 
-func NewOperationsManager(ctx context.Context, ns string, di database.Plugin, txHelper txcommon.Helper) (Manager, error) {
+func NewOperationsManager(ctx context.Context, ns string, di database.Plugin, txHelper txcommon.Helper, cacheManager cache.Manager) (Manager, error) {
 	if di == nil || txHelper == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "OperationsManager")
 	}
+
+	cache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheOperationsLimit,
+			coreconfig.CacheOperationsTTL,
+			ns,
+		),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
 	om := &operationsManager{
 		ctx:       ctx,
 		namespace: ns,
 		database:  di,
 		handlers:  make(map[core.OpType]OperationHandler),
 	}
-	updater := newOperationUpdater(ctx, om, di, txHelper)
-	om.updater = updater
+	om.updater = newOperationUpdater(ctx, om, di, txHelper)
+	om.cache = cache
 	return om, nil
 }
 
@@ -108,16 +127,26 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 	log.L(ctx).Tracef("Operation detail: %+v", op)
 	outputs, complete, err := handler.RunOperation(ctx, op)
 	if err != nil {
-		om.writeOperationFailure(ctx, op.ID, outputs, err, failState)
-		return nil, err
+		om.SubmitOperationUpdate(&core.OperationUpdate{
+			NamespacedOpID: op.NamespacedIDString(),
+			Plugin:         op.Plugin,
+			Status:         failState,
+			ErrorMessage:   err.Error(),
+			Output:         outputs,
+		})
 	} else if complete {
-		om.writeOperationSuccess(ctx, op.ID, outputs)
+		om.SubmitOperationUpdate(&core.OperationUpdate{
+			NamespacedOpID: op.NamespacedIDString(),
+			Plugin:         op.Plugin,
+			Status:         core.OpStatusSucceeded,
+			Output:         outputs,
+		})
 	}
-	return outputs, nil
+	return outputs, err
 }
 
 func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *core.Operation, err error) {
-	op, err = om.database.GetOperationByID(ctx, om.namespace, opID)
+	op, err = om.GetOperationByIDCached(ctx, opID)
 	if err != nil {
 		return nil, err
 	}
@@ -145,9 +174,11 @@ func (om *operationsManager) RetryOperation(ctx context.Context, opID *fftypes.U
 		if err = om.database.InsertOperation(ctx, op); err != nil {
 			return err
 		}
+		om.cacheOperation(op)
 
 		// Update the old operation to point to the new one
 		update := database.OperationQueryFactory.NewUpdate(ctx).Set("retry", op.ID)
+		om.updateCachedOperation(opID, "", nil, nil, op.ID)
 		if err = om.database.UpdateOperation(ctx, om.namespace, opID, update); err != nil {
 			return err
 		}
@@ -163,22 +194,8 @@ func (om *operationsManager) RetryOperation(ctx context.Context, opID *fftypes.U
 	return op, err
 }
 
-func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject) {
-	emptyString := ""
-	if err := om.database.ResolveOperation(ctx, om.namespace, opID, core.OpStatusSucceeded, &emptyString, outputs); err != nil {
-		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
-	}
-}
-
-func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newStatus core.OpStatus) {
-	errMsg := err.Error()
-	if err := om.database.ResolveOperation(ctx, om.namespace, opID, newStatus, &errMsg, outputs); err != nil {
-		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
-	}
-}
-
 func (om *operationsManager) ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error {
-	return om.database.ResolveOperation(ctx, om.namespace, opID, op.Status, op.Error, op.Output)
+	return om.updater.resolveOperation(ctx, om.namespace, opID, op.Status, op.Error, op.Output)
 }
 
 func (om *operationsManager) SubmitOperationUpdate(update *core.OperationUpdate) {
@@ -197,4 +214,70 @@ func (om *operationsManager) Start() error {
 
 func (om *operationsManager) WaitStop() {
 	om.updater.close()
+}
+
+func (om *operationsManager) GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error) {
+	if cached := om.getCachedOperation(opID); cached != nil {
+		return cached, nil
+	}
+	op, err := om.database.GetOperationByID(ctx, om.namespace, opID)
+	if err == nil && op != nil {
+		om.cacheOperation(op)
+	}
+	return op, err
+}
+
+func (om *operationsManager) getOperationsCached(ctx context.Context, opIDs []*fftypes.UUID) ([]*core.Operation, error) {
+	ops := make([]*core.Operation, 0, len(opIDs))
+	cacheMisses := make([]driver.Value, 0)
+	for _, id := range opIDs {
+		if op := om.getCachedOperation(id); op != nil {
+			ops = append(ops, op)
+		} else {
+			cacheMisses = append(cacheMisses, id)
+		}
+	}
+
+	if len(cacheMisses) > 0 {
+		opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", cacheMisses)
+		dbOps, _, err := om.database.GetOperations(ctx, om.namespace, opFilter)
+		if err != nil {
+			return nil, err
+		}
+		for _, op := range dbOps {
+			om.cacheOperation(op)
+		}
+		ops = append(ops, dbOps...)
+	}
+	return ops, nil
+}
+
+func (om *operationsManager) getCachedOperation(id *fftypes.UUID) *core.Operation {
+	if cachedValue := om.cache.Get(id.String()); cachedValue != nil {
+		return cachedValue.(*core.Operation)
+	}
+	return nil
+}
+
+func (om *operationsManager) cacheOperation(op *core.Operation) {
+	om.cache.Set(op.ID.String(), op)
+}
+
+func (om *operationsManager) updateCachedOperation(id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject, retry *fftypes.UUID) {
+	if cachedValue := om.cache.Get(id.String()); cachedValue != nil {
+		val := cachedValue.(*core.Operation)
+		if status != "" {
+			val.Status = status
+		}
+		if errorMsg != nil {
+			val.Error = *errorMsg
+		}
+		if output != nil {
+			val.Output = output
+		}
+		if retry != nil {
+			val.Retry = retry
+		}
+		om.cacheOperation(val)
+	}
 }

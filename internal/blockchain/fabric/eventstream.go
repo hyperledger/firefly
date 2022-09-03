@@ -19,22 +19,20 @@ package fabric
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/karlseguin/ccache"
 )
 
 type streamManager struct {
-	client   *resty.Client
-	signer   string
-	cache    *ccache.Cache
-	cacheTTL time.Duration
+	client *resty.Client
+	signer string
+	cache  cache.CInterface
 }
 
 type eventStream struct {
@@ -63,12 +61,11 @@ type eventFilter struct {
 	EventFilter string `json:"eventFilter"`
 }
 
-func newStreamManager(client *resty.Client, signer string, cache *ccache.Cache, cacheTTL time.Duration) *streamManager {
+func newStreamManager(client *resty.Client, signer string, cache cache.CInterface) *streamManager {
 	return &streamManager{
-		client:   client,
-		signer:   signer,
-		cache:    cache,
-		cacheTTL: cacheTTL,
+		client: client,
+		signer: signer,
+		cache:  cache,
 	}
 }
 
@@ -83,25 +80,31 @@ func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventSt
 	return streams, nil
 }
 
-func (s *streamManager) createEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
-	stream := eventStream{
+func buildEventStream(topic string, batchSize, batchTimeout uint) *eventStream {
+	return &eventStream{
 		Name:           topic,
 		ErrorHandling:  "block",
 		BatchSize:      batchSize,
 		BatchTimeoutMS: batchTimeout,
 		Type:           "websocket",
-		WebSocket:      eventStreamWebsocket{Topic: topic},
-		Timestamps:     true,
+		// Some implementations require a "topic" to be set separately, while others rely only on the name.
+		// We set them to the same thing for cross compatibility.
+		WebSocket:  eventStreamWebsocket{Topic: topic},
+		Timestamps: true,
 	}
+}
+
+func (s *streamManager) createEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+	stream := buildEventStream(topic, batchSize, batchTimeout)
 	res, err := s.client.R().
 		SetContext(ctx).
-		SetBody(&stream).
-		SetResult(&stream).
+		SetBody(stream).
+		SetResult(stream).
 		Post("/eventstreams")
 	if err != nil || !res.IsSuccess() {
 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
-	return &stream, nil
+	return stream, nil
 }
 
 func (s *streamManager) ensureEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
@@ -110,7 +113,7 @@ func (s *streamManager) ensureEventStream(ctx context.Context, topic string, bat
 		return nil, err
 	}
 	for _, stream := range existingStreams {
-		if stream.WebSocket.Topic == topic {
+		if stream.Name == topic {
 			return stream, nil
 		}
 	}
@@ -140,17 +143,14 @@ func (s *streamManager) getSubscription(ctx context.Context, subID string) (sub 
 }
 
 func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (string, error) {
-	cached := s.cache.Get("sub:" + subID)
-	if cached != nil {
-		cached.Extend(s.cacheTTL)
-		return cached.Value().(string), nil
+	if cachedValue := s.cache.GetString("sub:" + subID); cachedValue != "" {
+		return cachedValue, nil
 	}
-
 	sub, err := s.getSubscription(ctx, subID)
 	if err != nil {
 		return "", err
 	}
-	s.cache.Set("sub:"+subID, sub.Name, s.cacheTTL)
+	s.cache.SetString("sub:"+subID, sub.Name)
 	return sub.Name, nil
 }
 

@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/httpserver"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
@@ -93,22 +94,30 @@ func (as *apiServer) Serve(ctx context.Context, mgr namespace.Manager) (err erro
 	spiErrChan := make(chan error)
 	metricsErrChan := make(chan error)
 
-	apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, mgr), httpErrChan, apiConfig, corsConfig)
+	apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, mgr), httpErrChan, apiConfig, corsConfig, &httpserver.ServerOptions{
+		MaximumRequestTimeout: as.apiMaxTimeout,
+	})
 	if err != nil {
 		return err
 	}
 	go apiHTTPServer.ServeHTTP(ctx)
 
 	if config.GetBool(coreconfig.SPIEnabled) {
-		spiHTTPServer, err := httpserver.NewHTTPServer(ctx, "spi", as.createAdminMuxRouter(mgr), spiErrChan, spiConfig, corsConfig)
+		spiHTTPServer, err := httpserver.NewHTTPServer(ctx, "spi", as.createAdminMuxRouter(mgr), spiErrChan, spiConfig, corsConfig, &httpserver.ServerOptions{
+			MaximumRequestTimeout: as.apiMaxTimeout,
+		})
 		if err != nil {
 			return err
 		}
 		go spiHTTPServer.ServeHTTP(ctx)
+	} else if config.GetBool(coreconfig.LegacyAdminEnabled) {
+		log.L(ctx).Warnf("Your config includes an 'admin' section, which should be renamed to 'spi' - SPI server will not be enabled until this is corrected")
 	}
 
 	if as.metricsEnabled {
-		metricsHTTPServer, err := httpserver.NewHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(), metricsErrChan, metricsConfig, corsConfig)
+		metricsHTTPServer, err := httpserver.NewHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(), metricsErrChan, metricsConfig, corsConfig, &httpserver.ServerOptions{
+			MaximumRequestTimeout: as.apiMaxTimeout,
+		})
 		if err != nil {
 			return err
 		}

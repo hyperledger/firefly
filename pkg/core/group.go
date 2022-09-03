@@ -52,6 +52,17 @@ type Member struct {
 	Node     *fftypes.UUID `ffstruct:"Member" json:"node,omitempty"`
 }
 
+func (m *Member) Equals(m2 *Member) bool {
+	switch {
+	case m == nil && m2 == nil:
+		return true
+	case m == nil || m2 == nil:
+		return false
+	default:
+		return m.Identity == m2.Identity && m.Node.Equals(m2.Node)
+	}
+}
+
 type MemberInput struct {
 	Identity string `ffstruct:"MemberInput" json:"identity,omitempty"`
 	Node     string `ffstruct:"MemberInput" json:"node,omitempty"`

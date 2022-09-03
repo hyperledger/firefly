@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
@@ -57,6 +58,7 @@ type testNamespaceManager struct {
 	mmi  *metricsmocks.Manager
 	mae  *spieventsmocks.Manager
 	mbi  *blockchainmocks.Plugin
+	cmi  *cachemocks.Manager
 	mdi  *databasemocks.Plugin
 	mdx  *dataexchangemocks.Plugin
 	mps  *sharedstoragemocks.Plugin
@@ -69,6 +71,7 @@ func (nm *testNamespaceManager) cleanup(t *testing.T) {
 	nm.mmi.AssertExpectations(t)
 	nm.mae.AssertExpectations(t)
 	nm.mbi.AssertExpectations(t)
+	nm.cmi.AssertExpectations(t)
 	nm.mdi.AssertExpectations(t)
 	nm.mdx.AssertExpectations(t)
 	nm.mps.AssertExpectations(t)
@@ -86,6 +89,7 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 		mmi:  &metricsmocks.Manager{},
 		mae:  &spieventsmocks.Manager{},
 		mbi:  &blockchainmocks.Plugin{},
+		cmi:  &cachemocks.Manager{},
 		mdi:  &databasemocks.Plugin{},
 		mdx:  &dataexchangemocks.Plugin{},
 		mps:  &sharedstoragemocks.Plugin{},
@@ -93,10 +97,10 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 		mev:  &eventsmocks.Plugin{},
 		auth: &authmocks.Plugin{},
 		namespaceManager: namespaceManager{
-			ctx:              context.Background(),
-			namespaces:       make(map[string]*namespace),
-			pluginNames:      make(map[string]bool),
-			tokenRemoteNames: make(map[string]string),
+			reset:               make(chan bool, 1),
+			namespaces:          make(map[string]*namespace),
+			pluginNames:         make(map[string]bool),
+			tokenBroadcastNames: make(map[string]string),
 		},
 	}
 	nm.plugins.blockchain = map[string]blockchainPlugin{
@@ -153,17 +157,18 @@ func TestInit(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.NoError(t, err)
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
@@ -182,7 +187,7 @@ func TestInitDatabaseFail(t *testing.T) {
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -194,10 +199,10 @@ func TestInitBlockchainFail(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(fmt.Errorf("pop"))
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -209,11 +214,11 @@ func TestInitDataExchangeFail(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -225,12 +230,12 @@ func TestInitSharedStorageFail(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -242,13 +247,13 @@ func TestInitTokensFail(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything, nil).Return(fmt.Errorf("pop"))
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -260,14 +265,15 @@ func TestInitEventsFail(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -279,15 +285,16 @@ func TestInitAuthFail(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -300,18 +307,19 @@ func TestInitOrchestratorFail(t *testing.T) {
 	})
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
 	nm.mbi.On("GetAndConvertDeprecatedContractConfig", mock.Anything).Return(nil, "", fmt.Errorf("pop"))
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -335,10 +343,11 @@ func TestInitVersion1(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -347,7 +356,7 @@ func TestInitVersion1(t *testing.T) {
 	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.NoError(t, err)
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
@@ -384,10 +393,11 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
@@ -395,7 +405,7 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.NoError(t, err)
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
@@ -418,6 +428,7 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
       plugins: [ethereum, postgres, erc721, ipfs, ffdx]
       multiparty:
         enabled: true
+        networkNamespace: default
     - name: ns2
       plugins: [ethereum, postgres, erc1155, ipfs, ffdx]
       multiparty:
@@ -450,10 +461,11 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
@@ -461,7 +473,7 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10421", err)
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
@@ -516,10 +528,11 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
@@ -527,7 +540,7 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10421", err)
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
@@ -582,10 +595,11 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
@@ -594,7 +608,7 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.NoError(t, err)
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
@@ -623,10 +637,11 @@ func TestInitVersion1Fail(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -635,7 +650,7 @@ func TestInitVersion1Fail(t *testing.T) {
 	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.EqualError(t, err, "pop")
 
 	mo.AssertExpectations(t)
@@ -647,14 +662,14 @@ func TestInitNamespaceQueryFail(t *testing.T) {
 
 	ns := &namespace{
 		Namespace: core.Namespace{
-			LocalName: "default",
+			Name: "default",
 		},
 		plugins: []string{"postgres"},
 	}
 
 	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, fmt.Errorf("pop"))
 
-	err := nm.initNamespace(ns)
+	err := nm.initNamespace(context.Background(), ns)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -664,15 +679,18 @@ func TestInitNamespaceExistingUpsertFail(t *testing.T) {
 
 	ns := &namespace{
 		Namespace: core.Namespace{
-			LocalName: "default",
+			Name: "default",
 		},
 		plugins: []string{"postgres"},
 	}
+	existing := &core.Namespace{
+		NetworkName: "ns1",
+	}
 
-	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(&core.Namespace{}, nil)
+	nm.mdi.On("GetNamespace", mock.Anything, "default").Return(existing, nil)
 	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
 
-	err := nm.initNamespace(ns)
+	err := nm.initNamespace(context.Background(), ns)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -727,8 +745,9 @@ func TestDatabasePluginBadName(t *testing.T) {
 	config.Set("plugins.database", []fftypes.JSONObject{{}})
 	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "wrong////")
 	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "postgres")
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Error(t, err)
 }
 
@@ -761,8 +780,9 @@ func TestIdentityPluginNoType(t *testing.T) {
 	iifactory.InitConfig(identityConfig)
 	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
 	config.Set("plugins.identity", []fftypes.JSONObject{{}})
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10386.*type", err)
 }
 
@@ -826,8 +846,9 @@ func TestBlockchainPluginBadType(t *testing.T) {
 	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
 	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
 	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Error(t, err)
 }
 
@@ -880,8 +901,9 @@ func TestSharedStoragePluginBadType(t *testing.T) {
 	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
 	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
 	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Error(t, err)
 }
 
@@ -934,8 +956,9 @@ func TestDataExchangePluginBadType(t *testing.T) {
 	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
 	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
 	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Error(t, err)
 }
 
@@ -995,7 +1018,7 @@ func TestTokensPlugin(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestTokensPluginDuplicateRemoteName(t *testing.T) {
+func TestTokensPluginDuplicateBroadcastName(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 	tifactory.InitConfig(tokensConfig)
@@ -1004,12 +1027,12 @@ func TestTokensPluginDuplicateRemoteName(t *testing.T) {
   plugins:
     tokens:
     - name: test1
-      remotename: remote1
+      broadcastName: remote1
       type: fftokens
       fftokens:
         url: http://tokens:3000
     - name: test2
-      remotename: remote1
+      broadcastName: remote1
       type: fftokens
       fftokens:
         url: http://tokens:3000
@@ -1021,7 +1044,7 @@ func TestTokensPluginDuplicateRemoteName(t *testing.T) {
 	assert.Regexp(t, "FF10419", err)
 }
 
-func TestMultipleTokensPluginsWithRemoteName(t *testing.T) {
+func TestMultipleTokensPluginsWithBroadcastName(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 	tifactory.InitConfig(tokensConfig)
@@ -1030,12 +1053,12 @@ func TestMultipleTokensPluginsWithRemoteName(t *testing.T) {
   plugins:
     tokens:
     - name: test1
-      remotename: remote1
+      broadcastName: remote1
       type: fftokens
       fftokens:
         url: http://tokens:3000
     - name: test2
-      remotename: remote2
+      broadcastName: remote2
       type: fftokens
       fftokens:
         url: http://tokens:3000
@@ -1065,8 +1088,9 @@ func TestTokensPluginBadType(t *testing.T) {
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
 	tokensConfig.AddKnownKey(coreconfig.PluginConfigName, "erc20_erc721")
 	tokensConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Error(t, err)
 }
 
@@ -1111,8 +1135,9 @@ func TestAuthPluginBadType(t *testing.T) {
 	config.Set("plugins.auth", []fftypes.JSONObject{{}})
 	authConfig.AddKnownKey(coreconfig.PluginConfigName, "basicauth")
 	authConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Error(t, err)
 }
 
@@ -1133,8 +1158,9 @@ func TestEventsPluginBadType(t *testing.T) {
 	defer nm.cleanup(t)
 	nm.plugins.events = nil
 	config.Set(coreconfig.EventTransportsEnabled, []string{"!unknown!"})
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Error(t, err)
 }
 
@@ -1146,10 +1172,11 @@ func TestInitBadNamespace(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -1163,7 +1190,7 @@ func TestInitBadNamespace(t *testing.T) {
 	assert.NoError(t, err)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF00140", err)
 }
 
@@ -1177,6 +1204,26 @@ func TestLoadNamespacesReservedName(t *testing.T) {
     default: ns1
     predefined:
     - name: ff_system
+    `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10388", err)
+}
+
+func TestLoadNamespacesReservedNetworkName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      multiparty:
+        enabled: true
+        networknamespace: ff_system
     `))
 	assert.NoError(t, err)
 
@@ -1277,15 +1324,16 @@ func TestLoadNamespacesNonMultipartyNoDatabase(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10392", err)
 }
 
@@ -1307,15 +1355,16 @@ func TestLoadNamespacesMultipartyUnknownPlugin(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10390.*unknown", err)
 }
 
@@ -1337,15 +1386,16 @@ func TestLoadNamespacesMultipartyMultipleBlockchains(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10394.*blockchain", err)
 }
 
@@ -1367,15 +1417,16 @@ func TestLoadNamespacesMultipartyMultipleDX(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10394.*dataexchange", err)
 }
 
@@ -1397,15 +1448,16 @@ func TestLoadNamespacesMultipartyMultipleSS(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10394.*sharedstorage", err)
 }
 
@@ -1427,15 +1479,16 @@ func TestLoadNamespacesMultipartyMultipleDB(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10394.*database", err)
 }
 
@@ -1529,15 +1582,16 @@ func TestLoadNamespacesNonMultipartyMultipleDB(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10394.*database", err)
 }
 
@@ -1557,15 +1611,16 @@ func TestLoadNamespacesNonMultipartyMultipleBlockchains(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10394.*blockchain", err)
 }
 
@@ -1587,72 +1642,17 @@ func TestLoadNamespacesMultipartyMissingPlugins(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10391", err)
-}
-
-func TestLoadNamespacesNonMultipartyWithDX(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	viper.SetConfigType("yaml")
-	err := viper.ReadConfig(strings.NewReader(`
-  namespaces:
-    default: ns1
-    predefined:
-    - name: ns1
-      plugins: [ffdx]
-  `))
-	assert.NoError(t, err)
-
-	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10393", err)
-}
-
-func TestLoadNamespacesNonMultipartyWithSharedStorage(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	viper.SetConfigType("yaml")
-	err := viper.ReadConfig(strings.NewReader(`
-  namespaces:
-    default: ns1
-    predefined:
-    - name: ns1
-      plugins: [ipfs]
-  `))
-	assert.NoError(t, err)
-
-	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10393", err)
 }
 
 func TestLoadNamespacesNonMultipartyUnknownPlugin(t *testing.T) {
@@ -1671,15 +1671,16 @@ func TestLoadNamespacesNonMultipartyUnknownPlugin(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc721", nil).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, "erc1155", nil).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.auth.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10390.*unknown", err)
 }
 
@@ -1826,15 +1827,11 @@ func TestReset(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	parentCtx, parentCancel := context.WithCancel(context.Background())
-	nm.namespaceManager.ctx = parentCtx
-	nm.namespaceManager.cancelCtx = parentCancel
-
 	childCtx, childCancel := context.WithCancel(context.Background())
 	nm.Reset(childCtx)
 	childCancel()
 
-	<-parentCtx.Done()
+	assert.True(t, <-nm.namespaceManager.reset)
 }
 
 func TestLoadMetrics(t *testing.T) {
@@ -2006,6 +2003,6 @@ func TestValidateNonMultipartyConfig(t *testing.T) {
     `))
 	assert.NoError(t, err)
 
-	_, err = nm.validateNonMultipartyConfig(nm.ctx, "ns1", []string{"postgres", "erc721"})
+	_, err = nm.validateNonMultipartyConfig(context.Background(), "ns1", []string{"postgres", "erc721"})
 	assert.NoError(t, err)
 }

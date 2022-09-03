@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -30,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
@@ -39,6 +39,7 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/multiparty"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -49,7 +50,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
-	"github.com/karlseguin/ccache"
 )
 
 type EventManager interface {
@@ -60,6 +60,8 @@ type EventManager interface {
 	DeletedSubscriptions() chan<- *fftypes.UUID
 	DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error)
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
+	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
+	QueueBatchRewind(batchID *fftypes.UUID)
 	Start() error
 	WaitStop()
 
@@ -87,38 +89,51 @@ type EventManager interface {
 }
 
 type eventManager struct {
-	ctx                   context.Context
-	namespace             core.NamespaceRef
-	database              database.Plugin
-	txHelper              txcommon.Helper
-	identity              identity.Manager
-	defsender             definitions.Sender
-	defhandler            definitions.Handler
-	data                  data.Manager
-	subManager            *subscriptionManager
-	retry                 retry.Retry
-	aggregator            *aggregator              // optional
-	broadcast             broadcast.Manager        // optional
-	messaging             privatemessaging.Manager // optional
-	assets                assets.Manager
-	sharedDownload        shareddownload.Manager // optional
-	blobReceiver          *blobReceiver          // optional
-	newEventNotifier      *eventNotifier
-	newPinNotifier        *eventNotifier
-	defaultTransport      string
-	internalEvents        *system.Events
-	metrics               metrics.Manager
-	chainListenerCache    *ccache.Cache
-	chainListenerCacheTTL time.Duration
-	multiparty            multiparty.Manager // optional
+	ctx                context.Context
+	namespace          *core.Namespace
+	enricher           *eventEnricher
+	database           database.Plugin
+	txHelper           txcommon.Helper
+	identity           identity.Manager
+	defsender          definitions.Sender
+	defhandler         definitions.Handler
+	data               data.Manager
+	subManager         *subscriptionManager
+	retry              retry.Retry
+	aggregator         *aggregator              // optional
+	broadcast          broadcast.Manager        // optional
+	messaging          privatemessaging.Manager // optional
+	assets             assets.Manager
+	sharedDownload     shareddownload.Manager // optional
+	blobReceiver       *blobReceiver          // optional
+	newEventNotifier   *eventNotifier
+	newPinNotifier     *eventNotifier
+	defaultTransport   string
+	internalEvents     *system.Events
+	metrics            metrics.Manager
+	chainListenerCache cache.CInterface
+	multiparty         multiparty.Manager // optional
 }
 
-func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
-	if di == nil || im == nil || dh == nil || dm == nil || ds == nil || am == nil {
+func NewEventManager(ctx context.Context, ns *core.Namespace, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager, cacheManager cache.Manager) (EventManager, error) {
+	if di == nil || im == nil || dh == nil || dm == nil || om == nil || ds == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
 	newEventNotifier := newEventNotifier(ctx, "events")
+
+	eventListenerCache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheEventListenerTopicLimit,
+			coreconfig.CacheEventListenerTopicTTL,
+			ns.Name,
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	em := &eventManager{
 		ctx:            log.WithLogField(ctx, "role", "event-manager"),
 		namespace:      ns,
@@ -138,22 +153,26 @@ func NewEventManager(ctx context.Context, ns core.NamespaceRef, di database.Plug
 			MaximumDelay: config.GetDuration(coreconfig.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(coreconfig.EventAggregatorRetryFactor),
 		},
-		defaultTransport:      config.GetString(coreconfig.EventTransportsDefault),
-		newEventNotifier:      newEventNotifier,
-		newPinNotifier:        newPinNotifier,
-		metrics:               mm,
-		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.EventListenerTopicCacheSize))),
-		chainListenerCacheTTL: config.GetDuration(coreconfig.EventListenerTopicCacheTTL),
+		defaultTransport:   config.GetString(coreconfig.EventTransportsDefault),
+		newEventNotifier:   newEventNotifier,
+		newPinNotifier:     newPinNotifier,
+		metrics:            mm,
+		chainListenerCache: eventListenerCache,
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)
 	if bi != nil {
-		em.aggregator = newAggregator(ctx, ns.LocalName, di, bi, pm, dh, im, dm, newPinNotifier, mm)
+		aggregator, err := newAggregator(ctx, ns.Name, di, bi, pm, dh, im, dm, newPinNotifier, mm, cacheManager)
+		if err != nil {
+			return nil, err
+		}
+		em.aggregator = aggregator
 		em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 	}
 
-	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, ns.LocalName, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
+	em.enricher = newEventEnricher(ns.Name, di, dm, om, txHelper)
+
+	if em.subManager, err = newSubscriptionManager(ctx, ns.Name, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
 		return nil, err
 	}
 
@@ -193,8 +212,13 @@ func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 
 func (em *eventManager) WaitStop() {
 	em.subManager.close()
-	em.blobReceiver.stop()
-	<-em.aggregator.eventPoller.closed
+	if em.blobReceiver != nil {
+		em.blobReceiver.stop()
+		em.blobReceiver = nil
+	}
+	if em.aggregator != nil {
+		<-em.aggregator.eventPoller.closed
+	}
 }
 
 func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error) {
@@ -232,7 +256,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 	} else {
 		// We lock in the starting sequence at creation time, rather than when the first dispatcher
 		// starts, as that's a more obvious behavior for users
-		sequence, err := calcFirstOffset(ctx, em.namespace.LocalName, em.database, subDef.Options.FirstEvent)
+		sequence, err := calcFirstOffset(ctx, em.namespace.Name, em.database, subDef.Options.FirstEvent)
 		if err != nil {
 			return err
 		}
@@ -246,7 +270,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 
 func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error) {
 	// The event in the database for the deletion of the susbscription, will asynchronously update the submanager
-	return em.database.DeleteSubscriptionByID(ctx, em.namespace.LocalName, subDef.ID)
+	return em.database.DeleteSubscriptionByID(ctx, em.namespace.Name, subDef.ID)
 }
 
 func (em *eventManager) AddSystemEventListener(ns string, el system.EventListener) error {
@@ -264,4 +288,12 @@ func (em *eventManager) GetPlugins() []*core.NamespaceStatusPlugin {
 	}
 
 	return eventsArray
+}
+
+func (em *eventManager) EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
+	return em.enricher.enrichEvent(ctx, event)
+}
+
+func (em *eventManager) QueueBatchRewind(batchID *fftypes.UUID) {
+	em.aggregator.queueBatchRewind(batchID)
 }

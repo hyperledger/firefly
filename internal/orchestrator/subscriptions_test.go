@@ -157,3 +157,63 @@ func TestGetSubscriptionDefsByIDBadID(t *testing.T) {
 	_, err := or.GetSubscriptionByID(context.Background(), "")
 	assert.Regexp(t, "FF00138", err)
 }
+
+func TestGetSGetSubscriptionsByIDWithStatus(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	u := fftypes.NewUUID()
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			ID:        u,
+			Name:      "sub1",
+			Namespace: "ns1",
+		},
+	}
+	or.mdi.On("GetSubscriptionByID", context.Background(), "ns", u).Return(sub, nil)
+	or.mdi.On("GetOffset", context.Background(), core.OffsetTypeSubscription, u.String()).Return(&core.Offset{Current: 100}, nil)
+	subWithStatus, err := or.GetSubscriptionByIDWithStatus(context.Background(), u.String())
+	assert.NoError(t, err)
+	assert.NotNil(t, subWithStatus)
+}
+
+func TestGetSGetSubscriptionsByIDWithStatusQuerySubFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	u := fftypes.NewUUID()
+	or.mdi.On("GetSubscriptionByID", context.Background(), "ns", u).Return(nil, fmt.Errorf("pop"))
+	subWithStatus, err := or.GetSubscriptionByIDWithStatus(context.Background(), u.String())
+	assert.EqualError(t, err, "pop")
+	assert.Nil(t, subWithStatus)
+}
+
+func TestGetSGetSubscriptionsByIDWithStatusOffsetQueryError(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	u := fftypes.NewUUID()
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			ID:        u,
+			Name:      "sub1",
+			Namespace: "ns1",
+		},
+	}
+	or.mdi.On("GetSubscriptionByID", context.Background(), "ns", u).Return(sub, nil)
+	or.mdi.On("GetOffset", context.Background(), core.OffsetTypeSubscription, u.String()).Return(nil, fmt.Errorf("pop"))
+	subWithStatus, err := or.GetSubscriptionByIDWithStatus(context.Background(), u.String())
+	assert.EqualError(t, err, "pop")
+	assert.Nil(t, subWithStatus)
+}
+
+func TestGetSGetSubscriptionsByIDWithStatusUnknownSub(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	u := fftypes.NewUUID()
+	or.mdi.On("GetSubscriptionByID", context.Background(), "ns", u).Return(nil, nil)
+	subWithStatus, err := or.GetSubscriptionByIDWithStatus(context.Background(), u.String())
+	assert.NoError(t, err)
+	assert.Nil(t, subWithStatus)
+}

@@ -53,14 +53,14 @@ func (suite *TokensRemoteNameTestSuite) TestE2EFungibleTokensWithRemoteNameAsync
 	newLocalName := "tokens1"
 
 	config1 := e2e.ReadConfig(suite.T(), suite.testState.configFile1)
-	e2e.AddPluginRemoteName(config1, "tokens", "testremote")
+	e2e.AddPluginBroadcastName(config1, "tokens", "testremote")
 
 	// Change plugin local name and update plugin list
 	e2e.ChangeDefaultNSPluginLocalName(config1, "tokens", newLocalName)
 	e2e.WriteConfig(suite.T(), suite.testState.configFile1, config1)
 
 	config2 := e2e.ReadConfig(suite.T(), suite.testState.configFile2)
-	e2e.AddPluginRemoteName(config2, "tokens", "testremote")
+	e2e.AddPluginBroadcastName(config2, "tokens", "testremote")
 	e2e.WriteConfig(suite.T(), suite.testState.configFile2, config2)
 
 	admin1 := client.NewResty(suite.T())

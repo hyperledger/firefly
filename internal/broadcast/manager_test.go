@@ -37,6 +37,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -55,6 +56,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	mmp := &multipartymocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
+	mtx := &txcommonmocks.Helper{}
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
 	mbi.On("Name").Return("ut_blockchain").Maybe()
 	mpi.On("Name").Return("ut_sharedstorage").Maybe()
@@ -76,8 +78,8 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
-	b, err := NewBroadcastManager(ctx, ns, mdi, mbi, mdx, mpi, mim, mdm, mba, msa, mmp, mmi, mom)
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	b, err := NewBroadcastManager(ctx, ns, mdi, mbi, mdx, mpi, mim, mdm, mba, msa, mmp, mmi, mom, mtx)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
 }
@@ -94,7 +96,7 @@ func newTestBroadcastWithMetrics(t *testing.T) (*broadcastManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBroadcastManager(context.Background(), core.NamespaceRef{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewBroadcastManager(context.Background(), &core.Namespace{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -301,21 +303,29 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
-func TestUploadBlobsPublishFail(t *testing.T) {
+func TestUploadBlobPublishFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mom := bm.operations.(*operationmocks.Manager)
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
 
 	blob := &core.Blob{
 		Hash:       fftypes.NewRandB32(),
 		PayloadRef: "blob/1",
 	}
-	dataID := fftypes.NewUUID()
+	d := &core.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &core.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
 
 	ctx := context.Background()
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
 	mdi.On("GetBlobMatchingHash", ctx, blob.Hash).Return(blob, nil)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
@@ -323,14 +333,7 @@ func TestUploadBlobsPublishFail(t *testing.T) {
 		return op.Type == core.OpTypeSharedStorageUploadBlob && data.Blob == blob
 	})).Return(nil, fmt.Errorf("pop"))
 
-	err := bm.uploadBlobs(ctx, fftypes.NewUUID(), core.DataArray{
-		{
-			ID: dataID,
-			Blob: &core.BlobRef{
-				Hash: blob.Hash,
-			},
-		},
-	})
+	_, err := bm.PublishDataBlob(ctx, d.ID.String())
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -428,5 +431,245 @@ func TestUploadBlobsGetBlobInsertOpFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	mom.AssertExpectations(t)
+
+}
+
+func TestUploadValueNotFound(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(nil, nil)
+
+	_, err := bm.PublishDataValue(bm.ctx, fftypes.NewUUID().String())
+	assert.Regexp(t, "FF10109", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestUploadBlobLookupError(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(nil, fmt.Errorf("pop"))
+
+	_, err := bm.PublishDataBlob(bm.ctx, fftypes.NewUUID().String())
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestUploadValueBadID(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	_, err := bm.PublishDataValue(bm.ctx, "badness")
+	assert.Regexp(t, "FF00138", err)
+
+}
+
+func TestUploadValueFailPrepare(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	d := &core.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtr(`{"some": "value"}`),
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", mock.Anything, "ns1", d.ID, true).Return(d, nil)
+
+	mom := bm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+
+	_, err := bm.PublishDataValue(bm.ctx, d.ID.String())
+	assert.EqualError(t, err, "pop")
+
+	mom.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestUploadValueFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	d := &core.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtr(`{"some": "value"}`),
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", mock.Anything, "ns1", d.ID, true).Return(d, nil)
+
+	mom := bm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(uploadValue)
+		return op.Type == core.OpTypeSharedStorageUploadValue && data.Data.ID.Equals(d.ID)
+	})).Return(nil, fmt.Errorf("pop"))
+
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+
+	_, err := bm.PublishDataValue(bm.ctx, d.ID.String())
+	assert.EqualError(t, err, "pop")
+
+	mom.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestUploadValueOK(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	d := &core.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtr(`{"some": "value"}`),
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", mock.Anything, "ns1", d.ID, true).Return(d, nil)
+
+	mom := bm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(uploadValue)
+		return op.Type == core.OpTypeSharedStorageUploadValue && data.Data.ID.Equals(d.ID)
+	})).Return(nil, nil)
+
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+
+	d1, err := bm.PublishDataValue(bm.ctx, d.ID.String())
+	assert.NoError(t, err)
+	assert.Equal(t, d.ID, d1.ID)
+
+	mom.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestUploadBlobFailNoBlob(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	d := &core.Data{
+		ID:   fftypes.NewUUID(),
+		Blob: nil,
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", mock.Anything, "ns1", d.ID, true).Return(d, nil)
+
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+
+	_, err := bm.PublishDataBlob(bm.ctx, d.ID.String())
+	assert.Regexp(t, "FF10241", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestUploadBlobOK(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdi := bm.database.(*databasemocks.Plugin)
+	mom := bm.operations.(*operationmocks.Manager)
+
+	blob := &core.Blob{
+		Hash:       fftypes.NewRandB32(),
+		PayloadRef: "blob/1",
+	}
+	d := &core.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &core.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
+
+	ctx := context.Background()
+	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
+	mdi.On("GetBlobMatchingHash", ctx, blob.Hash).Return(blob, nil)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(uploadBlobData)
+		return op.Type == core.OpTypeSharedStorageUploadBlob && data.Blob == blob
+	})).Return(nil, nil)
+
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+
+	d1, err := bm.PublishDataBlob(ctx, d.ID.String())
+	assert.NoError(t, err)
+	assert.Equal(t, d.ID, d1.ID)
+
+	mdi.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mps.AssertExpectations(t)
+
+}
+
+func TestUploadBlobTXFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	blob := &core.Blob{
+		Hash:       fftypes.NewRandB32(),
+		PayloadRef: "blob/1",
+	}
+	d := &core.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &core.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
+
+	ctx := context.Background()
+	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
+
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(nil, fmt.Errorf("pop"))
+
+	_, err := bm.PublishDataBlob(ctx, d.ID.String())
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mps.AssertExpectations(t)
+
+}
+
+func TestUploadValueTXFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	d := &core.Data{
+		ID: fftypes.NewUUID(),
+	}
+
+	ctx := context.Background()
+	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
+
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(nil, fmt.Errorf("pop"))
+
+	_, err := bm.PublishDataValue(ctx, d.ID.String())
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mps.AssertExpectations(t)
 
 }

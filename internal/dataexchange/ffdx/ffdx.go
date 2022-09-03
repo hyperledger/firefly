@@ -40,6 +40,7 @@ const DXIDSeparator = "/"
 
 type FFDX struct {
 	ctx          context.Context
+	cancelCtx    context.CancelFunc
 	capabilities *dataexchange.Capabilities
 	callbacks    callbacks
 	client       *resty.Client
@@ -166,8 +167,9 @@ func (h *FFDX) Name() string {
 	return "ffdx"
 }
 
-func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
+func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
+	h.cancelCtx = cancelCtx
 	h.ackChannel = make(chan *ack)
 	h.callbacks = callbacks{
 		plugin:     h,
@@ -197,8 +199,8 @@ func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
 	return nil
 }
 
-func (h *FFDX) SetHandler(remoteNamespace, nodeName string, handler dataexchange.Callbacks) {
-	key := remoteNamespace + ":" + nodeName
+func (h *FFDX) SetHandler(networkNamespace, nodeName string, handler dataexchange.Callbacks) {
+	key := networkNamespace + ":" + nodeName
 	h.callbacks.handlers[key] = handler
 }
 
@@ -221,7 +223,7 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 	if h.needsInit {
 		h.initialized = false
 		var status dxStatus
-		var body []fftypes.JSONObject
+		body := make([]fftypes.JSONObject, 0)
 		for _, node := range h.nodes {
 			body = append(body, node.Peer)
 		}
@@ -270,11 +272,11 @@ func (h *FFDX) GetEndpointInfo(ctx context.Context, nodeName string) (peer fftyp
 	return peer, nil
 }
 
-func (h *FFDX) AddNode(ctx context.Context, remoteNamespace, nodeName string, peer fftypes.JSONObject) (err error) {
+func (h *FFDX) AddNode(ctx context.Context, networkNamespace, nodeName string, peer fftypes.JSONObject) (err error) {
 	h.initMutex.Lock()
 	defer h.initMutex.Unlock()
 
-	key := remoteNamespace + ":" + h.GetPeerID(peer)
+	key := networkNamespace + ":" + h.GetPeerID(peer)
 	h.nodes[key] = &dxNode{
 		Peer: peer,
 		Name: nodeName,
@@ -397,7 +399,8 @@ func (h *FFDX) eventLoop() {
 			return
 		case msgBytes, ok := <-h.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
+				h.cancelCtx()
 				return
 			}
 

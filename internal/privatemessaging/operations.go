@@ -102,13 +102,13 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 		} else if node == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		group, err := pm.database.GetGroupByHash(ctx, pm.namespace.LocalName, groupHash)
+		group, err := pm.database.GetGroupByHash(ctx, pm.namespace.Name, groupHash)
 		if err != nil {
 			return nil, err
 		} else if group == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		bp, err := pm.database.GetBatchByID(ctx, pm.namespace.LocalName, batchID)
+		bp, err := pm.database.GetBatchByID(ctx, pm.namespace.Name, batchID)
 		if err != nil {
 			return nil, err
 		} else if bp == nil {
@@ -160,6 +160,7 @@ func opSendBlob(op *core.Operation, node *core.Identity, blob *core.Blob) *core.
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      transferBlobData{Node: node, Blob: blob},
 	}
@@ -169,6 +170,7 @@ func opSendBatch(op *core.Operation, node *core.Identity, transport *core.Transp
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      batchSendData{Node: node, Transport: transport},
 	}

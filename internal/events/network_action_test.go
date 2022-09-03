@@ -21,10 +21,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/multipartymocks"
-	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -32,8 +28,8 @@ import (
 )
 
 func TestNetworkAction(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 
 	location := fftypes.JSONAnyPtr("{}")
 	event := &blockchain.Event{ProtocolID: "0001"}
@@ -42,30 +38,20 @@ func TestNetworkAction(t *testing.T) {
 		Value: "0x1234",
 	}
 
-	mmp := em.multiparty.(*multipartymocks.Manager)
-	mdi := em.database.(*databasemocks.Plugin)
-	mth := em.txHelper.(*txcommonmocks.Helper)
-	mii := em.identity.(*identitymanagermocks.Manager)
-
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
-	mdi.On("GetBlockchainEventByProtocolID", em.ctx, "ns1", (*fftypes.UUID)(nil), "0001").Return(nil, nil)
-	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(be *core.BlockchainEvent) bool {
+	em.mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
+	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(be *core.BlockchainEvent) bool {
 		return be.ProtocolID == "0001"
-	})).Return(nil)
-	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
-	mmp.On("TerminateContract", em.ctx, location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	})).Return(nil, nil)
+	em.mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
+	em.mmp.On("TerminateContract", em.ctx, location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
 	err := em.BlockchainNetworkAction("terminate", location, event, verifier)
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-	mth.AssertExpectations(t)
-	mii.AssertExpectations(t)
 }
 
 func TestNetworkActionUnknownIdentity(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 
 	location := fftypes.JSONAnyPtr("{}")
 	verifier := &core.VerifierRef{
@@ -73,20 +59,16 @@ func TestNetworkActionUnknownIdentity(t *testing.T) {
 		Value: "0x1234",
 	}
 
-	mii := em.identity.(*identitymanagermocks.Manager)
-
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, fmt.Errorf("pop")).Once()
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, nil).Once()
+	em.mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, fmt.Errorf("pop")).Once()
+	em.mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, nil).Once()
 
 	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
-
-	mii.AssertExpectations(t)
 }
 
 func TestNetworkActionNonRootIdentity(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 
 	location := fftypes.JSONAnyPtr("{}")
 	verifier := &core.VerifierRef{
@@ -94,9 +76,7 @@ func TestNetworkActionNonRootIdentity(t *testing.T) {
 		Value: "0x1234",
 	}
 
-	mii := em.identity.(*identitymanagermocks.Manager)
-
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{
+	em.mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			Parent: fftypes.NewUUID(),
 		},
@@ -104,13 +84,11 @@ func TestNetworkActionNonRootIdentity(t *testing.T) {
 
 	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
-
-	mii.AssertExpectations(t)
 }
 
 func TestNetworkActionNonMultiparty(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 	em.multiparty = nil
 
 	location := fftypes.JSONAnyPtr("{}")
@@ -124,8 +102,8 @@ func TestNetworkActionNonMultiparty(t *testing.T) {
 }
 
 func TestNetworkActionUnknown(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 
 	location := fftypes.JSONAnyPtr("{}")
 	verifier := &core.VerifierRef{
@@ -133,30 +111,20 @@ func TestNetworkActionUnknown(t *testing.T) {
 		Value: "0x1234",
 	}
 
-	mii := em.identity.(*identitymanagermocks.Manager)
-
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
+	em.mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
 
 	err := em.BlockchainNetworkAction("bad", location, &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
-
-	mii.AssertExpectations(t)
 }
 
 func TestActionTerminateFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 
 	location := fftypes.JSONAnyPtr("{}")
 
-	mmp := em.multiparty.(*multipartymocks.Manager)
-	mdi := em.database.(*databasemocks.Plugin)
-
-	mmp.On("TerminateContract", em.ctx, location, mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
+	em.mmp.On("TerminateContract", em.ctx, location, mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
 
 	err := em.actionTerminate(location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
-
-	mmp.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }

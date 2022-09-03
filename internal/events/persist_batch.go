@@ -99,7 +99,7 @@ func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batc
 		if valid, err = em.checkAndInitiateBlobDownloads(ctx, batch, i, data); !valid || err != nil {
 			return false, err
 		}
-		data.Namespace = em.namespace.LocalName
+		data.Namespace = em.namespace.Name
 		dataByID[*data.ID] = data
 	}
 
@@ -108,7 +108,7 @@ func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batc
 		if valid = em.validateBatchMessage(ctx, batch, i, msg); !valid {
 			return false, nil
 		}
-		msg.LocalNamespace = em.namespace.LocalName
+		msg.LocalNamespace = em.namespace.Name
 	}
 
 	// We require that the batch contains exactly the set of data that is in the messages - no more or less.

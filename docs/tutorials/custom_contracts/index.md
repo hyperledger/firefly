@@ -2,7 +2,7 @@
 layout: i18n_page
 title: pages.custom_smart_contracts
 parent: pages.tutorials
-nav_order: 10
+nav_order: 7
 has_children: true
 ---
 

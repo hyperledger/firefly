@@ -24,6 +24,8 @@ import (
 
 	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
+	identity "github.com/hyperledger/firefly/internal/identity"
+
 	mock "github.com/stretchr/testify/mock"
 
 	multiparty "github.com/hyperledger/firefly/internal/multiparty"
@@ -515,6 +517,29 @@ func (_m *Orchestrator) GetEventByID(ctx context.Context, id string) (*core.Even
 	return r0, r1
 }
 
+// GetEventByIDWithReference provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetEventByIDWithReference(ctx context.Context, id string) (*core.EnrichedEvent, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *core.EnrichedEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.EnrichedEvent); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.EnrichedEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetEvents provides a mock function with given fields: ctx, filter
 func (_m *Orchestrator) GetEvents(ctx context.Context, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
@@ -948,6 +973,29 @@ func (_m *Orchestrator) GetSubscriptionByID(ctx context.Context, id string) (*co
 	return r0, r1
 }
 
+// GetSubscriptionByIDWithStatus provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetSubscriptionByIDWithStatus(ctx context.Context, id string) (*core.SubscriptionWithStatus, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *core.SubscriptionWithStatus
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.SubscriptionWithStatus); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.SubscriptionWithStatus)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetSubscriptions provides a mock function with given fields: ctx, filter
 func (_m *Orchestrator) GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
@@ -1122,6 +1170,22 @@ func (_m *Orchestrator) GetTransactions(ctx context.Context, filter database.And
 	return r0, r1, r2
 }
 
+// Identity provides a mock function with given fields:
+func (_m *Orchestrator) Identity() identity.Manager {
+	ret := _m.Called()
+
+	var r0 identity.Manager
+	if rf, ok := ret.Get(0).(func() identity.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(identity.Manager)
+		}
+	}
+
+	return r0
+}
+
 // Init provides a mock function with given fields: ctx, cancelCtx
 func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) error {
 	ret := _m.Called(ctx, cancelCtx)
@@ -1216,6 +1280,29 @@ func (_m *Orchestrator) RequestReply(ctx context.Context, msg *core.MessageInOut
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *core.MessageInOut) error); ok {
 		r1 = rf(ctx, msg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RewindPins provides a mock function with given fields: ctx, rewind
+func (_m *Orchestrator) RewindPins(ctx context.Context, rewind *core.PinRewind) (*core.PinRewind, error) {
+	ret := _m.Called(ctx, rewind)
+
+	var r0 *core.PinRewind
+	if rf, ok := ret.Get(0).(func(context.Context, *core.PinRewind) *core.PinRewind); ok {
+		r0 = rf(ctx, rewind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.PinRewind)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *core.PinRewind) error); ok {
+		r1 = rf(ctx, rewind)
 	} else {
 		r1 = ret.Error(1)
 	}

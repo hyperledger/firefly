@@ -53,6 +53,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.Now(),
 		Value:     fftypes.JSONAnyPtr(val.String()),
+		Public:    "some IPFS ref",
 		ValueSize: 12345,
 	}
 

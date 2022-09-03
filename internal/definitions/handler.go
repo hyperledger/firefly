@@ -77,35 +77,33 @@ func (dma DefinitionMessageAction) String() string {
 }
 
 type definitionHandler struct {
-	namespace       string
-	remoteNamespace string
-	multiparty      bool
-	database        database.Plugin
-	blockchain      blockchain.Plugin   // optional
-	exchange        dataexchange.Plugin // optional
-	data            data.Manager
-	identity        identity.Manager
-	assets          assets.Manager
-	contracts       contracts.Manager // optional
-	tokenNames      map[string]string // mapping of token connector remote name => name
+	namespace  *core.Namespace
+	multiparty bool
+	database   database.Plugin
+	blockchain blockchain.Plugin   // optional
+	exchange   dataexchange.Plugin // optional
+	data       data.Manager
+	identity   identity.Manager
+	assets     assets.Manager
+	contracts  contracts.Manager // optional
+	tokenNames map[string]string // mapping of token connector remote name => name
 }
 
-func newDefinitionHandler(ctx context.Context, ns, remoteNS string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager, tokenNames map[string]string) (*definitionHandler, error) {
+func newDefinitionHandler(ctx context.Context, ns *core.Namespace, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager, tokenNames map[string]string) (*definitionHandler, error) {
 	if di == nil || dm == nil || im == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DefinitionHandler")
 	}
 	return &definitionHandler{
-		namespace:       ns,
-		remoteNamespace: remoteNS,
-		multiparty:      multiparty,
-		database:        di,
-		blockchain:      bi,
-		exchange:        dx,
-		data:            dm,
-		identity:        im,
-		assets:          am,
-		contracts:       cm,
-		tokenNames:      tokenNames,
+		namespace:  ns,
+		multiparty: multiparty,
+		database:   di,
+		blockchain: bi,
+		exchange:   dx,
+		data:       dm,
+		identity:   im,
+		assets:     am,
+		contracts:  cm,
+		tokenNames: tokenNames,
 	}, nil
 }
 

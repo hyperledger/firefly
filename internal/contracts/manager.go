@@ -54,6 +54,7 @@ type Manager interface {
 	AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error)
 	AddContractAPIListener(ctx context.Context, apiName, eventPath string, listener *core.ContractListener) (output *core.ContractListener, err error)
 	GetContractListenerByNameOrID(ctx context.Context, nameOrID string) (*core.ContractListener, error)
+	GetContractListenerByNameOrIDWithStatus(ctx context.Context, nameOrID string) (*core.ContractListenerWithStatus, error)
 	GetContractListeners(ctx context.Context, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error)
 	GetContractAPIListeners(ctx context.Context, apiName, eventPath string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error)
 	DeleteContractListenerByNameOrID(ctx context.Context, nameOrID string) error
@@ -176,7 +177,7 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 		txid,
 		core.OpTypeBlockchainInvoke)
 	if err = addBlockchainInvokeInputs(op, req); err == nil {
-		err = cm.database.InsertOperation(ctx, op)
+		err = cm.operations.AddOrReuseOperation(ctx, op)
 	}
 	return op, err
 }
@@ -570,6 +571,24 @@ func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, na
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return listener, nil
+}
+
+func (cm *contractManager) GetContractListenerByNameOrIDWithStatus(ctx context.Context, nameOrID string) (enrichedListener *core.ContractListenerWithStatus, err error) {
+	listener, err := cm.GetContractListenerByNameOrID(ctx, nameOrID)
+	if err != nil {
+		return nil, err
+	}
+	status, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID)
+	if err != nil {
+		status = core.ListenerStatusError{
+			StatusError: err.Error(),
+		}
+	}
+	enrichedListener = &core.ContractListenerWithStatus{
+		ContractListener: *listener,
+		Status:           status,
+	}
+	return enrichedListener, nil
 }
 
 func (cm *contractManager) GetContractListeners(ctx context.Context, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {

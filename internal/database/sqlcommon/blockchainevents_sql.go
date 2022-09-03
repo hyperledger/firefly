@@ -55,38 +55,52 @@ var (
 
 const blockchaineventsTable = "blockchainevents"
 
-func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (err error) {
+func (s *SQLCommon) setBlockchainEventInsertValues(query sq.InsertBuilder, event *core.BlockchainEvent) sq.InsertBuilder {
+	return query.Values(
+		event.ID,
+		event.Source,
+		event.Namespace,
+		event.Name,
+		event.ProtocolID,
+		event.Listener,
+		event.Output,
+		event.Info,
+		event.Timestamp,
+		event.TX.Type,
+		event.TX.ID,
+		event.TX.BlockchainID,
+	)
+}
+
+func (s *SQLCommon) attemptBlockchainEventInsert(ctx context.Context, tx *txWrapper, event *core.BlockchainEvent, requestConflictEmptyResult bool) (err error) {
+	_, err = s.insertTxExt(ctx, messagesTable, tx,
+		s.setBlockchainEventInsertValues(sq.Insert(blockchaineventsTable).Columns(blockchainEventColumns...), event),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, event.Namespace, event.ID)
+		}, requestConflictEmptyResult)
+	return err
+}
+
+func (s *SQLCommon) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	if _, err = s.insertTx(ctx, blockchaineventsTable, tx,
-		sq.Insert(blockchaineventsTable).
-			Columns(blockchainEventColumns...).
-			Values(
-				event.ID,
-				event.Source,
-				event.Namespace,
-				event.Name,
-				event.ProtocolID,
-				event.Listener,
-				event.Output,
-				event.Info,
-				event.Timestamp,
-				event.TX.Type,
-				event.TX.ID,
-				event.TX.BlockchainID,
-			),
-		func() {
-			s.callbacks.UUIDCollectionNSEvent(database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, event.Namespace, event.ID)
-		},
-	); err != nil {
-		return err
+	opErr := s.attemptBlockchainEventInsert(ctx, tx, event, true /* we want a failure here we can progress past */)
+	if opErr == nil {
+		return nil, s.commitTx(ctx, tx, autoCommit)
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	// Do a select within the transaction to determine if the protocolID already exists
+	existing, err = s.GetBlockchainEventByProtocolID(ctx, event.Namespace, event.Listener, event.ProtocolID)
+	if err != nil || existing != nil {
+		return existing, err
+	}
+
+	// Error was apparently not a protocolID conflict - must have been something else
+	return nil, opErr
 }
 
 func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*core.BlockchainEvent, error) {

@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/database/difactory"
@@ -71,7 +72,7 @@ var (
 )
 
 type Manager interface {
-	Init(ctx context.Context, cancelCtx context.CancelFunc) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool) error
 	Start() error
 	WaitStop()
 	Reset(ctx context.Context)
@@ -92,8 +93,7 @@ type namespace struct {
 }
 
 type namespaceManager struct {
-	ctx         context.Context
-	cancelCtx   context.CancelFunc
+	reset       chan bool
 	nsMux       sync.Mutex
 	namespaces  map[string]*namespace
 	pluginNames map[string]bool
@@ -107,11 +107,12 @@ type namespaceManager struct {
 		events        map[string]eventsPlugin
 		auth          map[string]authPlugin
 	}
-	metricsEnabled   bool
-	metrics          metrics.Manager
-	adminEvents      spievents.Manager
-	utOrchestrator   orchestrator.Orchestrator
-	tokenRemoteNames map[string]string
+	metricsEnabled      bool
+	cacheManager        cache.Manager
+	metrics             metrics.Manager
+	adminEvents         spievents.Manager
+	utOrchestrator      orchestrator.Orchestrator
+	tokenBroadcastNames map[string]string
 }
 
 type blockchainPlugin struct {
@@ -168,9 +169,9 @@ func stringSlicesEqual(a, b []string) bool {
 
 func NewNamespaceManager(withDefaults bool) Manager {
 	nm := &namespaceManager{
-		namespaces:       make(map[string]*namespace),
-		metricsEnabled:   config.GetBool(coreconfig.MetricsEnabled),
-		tokenRemoteNames: make(map[string]string),
+		namespaces:          make(map[string]*namespace),
+		metricsEnabled:      config.GetBool(coreconfig.MetricsEnabled),
+		tokenBroadcastNames: make(map[string]string),
 	}
 
 	InitConfig(withDefaults)
@@ -192,14 +193,13 @@ func NewNamespaceManager(withDefaults bool) Manager {
 	return nm
 }
 
-func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
-	nm.ctx = ctx
-	nm.cancelCtx = cancelCtx
+func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool) (err error) {
+	nm.reset = reset
 
 	if err = nm.loadPlugins(ctx); err != nil {
 		return err
 	}
-	if err = nm.initPlugins(ctx); err != nil {
+	if err = nm.initPlugins(ctx, cancelCtx); err != nil {
 		return err
 	}
 	if err = nm.loadNamespaces(ctx); err != nil {
@@ -220,7 +220,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	var v1Contract *core.MultipartyContract
 
 	for _, ns := range nm.namespaces {
-		if err := nm.initNamespace(ns); err != nil {
+		if err := nm.initNamespace(ctx, ns); err != nil {
 			return err
 		}
 		multiparty := ns.config.Multiparty.Enabled
@@ -228,7 +228,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		if multiparty {
 			version = fmt.Sprintf("%d", ns.Namespace.Contracts.Active.Info.Version)
 		}
-		log.L(ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.LocalName, strconv.FormatBool(multiparty), version)
+		log.L(ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.Name, strconv.FormatBool(multiparty), version)
 		if multiparty {
 			contract := nm.findV1Contract(ns)
 			if contract != nil {
@@ -238,7 +238,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 				} else if !stringSlicesEqual(v1Namespace.plugins, ns.plugins) ||
 					v1Contract.Location.String() != contract.Location.String() ||
 					v1Contract.FirstEvent != contract.FirstEvent {
-					return i18n.NewError(ctx, coremsgs.MsgCannotInitLegacyNS, core.LegacySystemNamespace, v1Namespace.LocalName, ns.LocalName)
+					return i18n.NewError(ctx, coremsgs.MsgCannotInitLegacyNS, core.LegacySystemNamespace, v1Namespace.Name, ns.Name)
 				}
 			}
 		}
@@ -250,11 +250,11 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 			config:    v1Namespace.config,
 			plugins:   v1Namespace.plugins,
 		}
-		systemNS.LocalName = core.LegacySystemNamespace
-		systemNS.RemoteName = core.LegacySystemNamespace
+		systemNS.Name = core.LegacySystemNamespace
+		systemNS.NetworkName = core.LegacySystemNamespace
 		nm.namespaces[core.LegacySystemNamespace] = systemNS
-		err = nm.initNamespace(systemNS)
-		log.L(ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, v1Namespace.LocalName)
+		err = nm.initNamespace(ctx, systemNS)
+		log.L(ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, v1Namespace.Name)
 	}
 	return err
 }
@@ -271,42 +271,44 @@ func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContra
 	return nil
 }
 
-func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
+func (nm *namespaceManager) initNamespace(ctx context.Context, ns *namespace) (err error) {
 	var plugins *orchestrator.Plugins
 	if ns.config.Multiparty.Enabled {
-		plugins, err = nm.validateMultiPartyConfig(nm.ctx, ns.LocalName, ns.plugins)
+		plugins, err = nm.validateMultiPartyConfig(ctx, ns.Name, ns.plugins)
 	} else {
-		plugins, err = nm.validateNonMultipartyConfig(nm.ctx, ns.LocalName, ns.plugins)
+		plugins, err = nm.validateNonMultipartyConfig(ctx, ns.Name, ns.plugins)
 	}
 	if err != nil {
 		return err
 	}
 
 	database := plugins.Database.Plugin
-	existing, err := database.GetNamespace(nm.ctx, ns.LocalName)
+	existing, err := database.GetNamespace(ctx, ns.Name)
 	switch {
 	case err != nil:
 		return err
 	case existing != nil:
 		ns.Created = existing.Created
 		ns.Contracts = existing.Contracts
-		// TODO: should we check for discrepancies in the multiparty contract config?
+		if ns.NetworkName != existing.NetworkName {
+			log.L(ctx).Warnf("Namespace '%s' - network name unexpectedly changed from '%s' to '%s'", ns.Name, existing.NetworkName, ns.NetworkName)
+		}
 	default:
 		ns.Created = fftypes.Now()
 		ns.Contracts = &core.MultipartyContracts{
 			Active: &core.MultipartyContract{},
 		}
 	}
-	if err = database.UpsertNamespace(nm.ctx, &ns.Namespace, true); err != nil {
+	if err = database.UpsertNamespace(ctx, &ns.Namespace, true); err != nil {
 		return err
 	}
 
 	or := nm.utOrchestrator
 	if or == nil {
-		or = orchestrator.NewOrchestrator(&ns.Namespace, ns.config, plugins, nm.metrics)
+		or = orchestrator.NewOrchestrator(&ns.Namespace, ns.config, plugins, nm.metrics, nm.cacheManager)
 	}
 	ns.orchestrator = or
-	orCtx, orCancel := context.WithCancel(nm.ctx)
+	orCtx, orCancel := context.WithCancel(ctx)
 	if err := or.Init(orCtx, orCancel); err != nil {
 		return err
 	}
@@ -314,8 +316,8 @@ func (nm *namespaceManager) initNamespace(ns *namespace) (err error) {
 		<-orCtx.Done()
 		nm.nsMux.Lock()
 		defer nm.nsMux.Unlock()
-		log.L(nm.ctx).Infof("Terminated namespace '%s'", ns.LocalName)
-		delete(nm.namespaces, ns.LocalName)
+		log.L(ctx).Infof("Terminated namespace '%s'", ns.Name)
+		delete(nm.namespaces, ns.Name)
 	}()
 	return nil
 }
@@ -365,7 +367,7 @@ func (nm *namespaceManager) Reset(ctx context.Context) {
 	// (allows caller to cleanly finish processing the current request/event).
 	go func() {
 		<-ctx.Done()
-		nm.cancelCtx()
+		nm.reset <- true
 	}()
 }
 
@@ -373,6 +375,10 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 	nm.pluginNames = make(map[string]bool)
 	if nm.metrics == nil {
 		nm.metrics = metrics.NewMetricsManager(ctx)
+	}
+
+	if nm.cacheManager == nil {
+		nm.cacheManager = cache.NewCacheManager(ctx)
 	}
 
 	if nm.plugins.database == nil {
@@ -440,8 +446,8 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 
 func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[string]tokensPlugin, err error) {
 	plugins = make(map[string]tokensPlugin)
-	// Remote names must be unique
-	remoteNames := make(map[string]bool)
+	// Broadcast names must be unique
+	broadcastNames := make(map[string]bool)
 
 	tokensConfigArraySize := tokensConfig.ArraySize()
 	for i := 0; i < tokensConfigArraySize; i++ {
@@ -450,16 +456,16 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[s
 		if err != nil {
 			return nil, err
 		}
-		remoteName := config.GetString(coreconfig.PluginRemoteName)
-		// If there is no remote name, use the plugin name
-		if remoteName == "" {
-			remoteName = name
+		broadcastName := config.GetString(coreconfig.PluginBroadcastName)
+		// If there is no broadcast name, use the plugin name
+		if broadcastName == "" {
+			broadcastName = name
 		}
-		if _, exists := remoteNames[remoteName]; exists {
-			return nil, i18n.NewError(ctx, coremsgs.MsgDuplicatePluginRemoteName, "tokens", remoteName)
+		if _, exists := broadcastNames[broadcastName]; exists {
+			return nil, i18n.NewError(ctx, coremsgs.MsgDuplicatePluginBroadcastName, "tokens", broadcastName)
 		}
-		remoteNames[remoteName] = true
-		nm.tokenRemoteNames[name] = remoteName
+		broadcastNames[broadcastName] = true
+		nm.tokenBroadcastNames[name] = broadcastName
 
 		plugin, err := tifactory.GetPlugin(ctx, pluginType)
 		if err != nil {
@@ -489,6 +495,7 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[s
 			if err = fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
 				return nil, err
 			}
+			nm.tokenBroadcastNames[name] = name
 
 			plugin, err := tifactory.GetPlugin(ctx, pluginType)
 			if err != nil {
@@ -713,7 +720,7 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 	return plugins, err
 }
 
-func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
+func (nm *namespaceManager) initPlugins(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
 	for _, entry := range nm.plugins.database {
 		if err = entry.plugin.Init(ctx, entry.config); err != nil {
 			return err
@@ -721,12 +728,12 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 		entry.plugin.SetHandler(database.GlobalHandler, nm)
 	}
 	for _, entry := range nm.plugins.blockchain {
-		if err = entry.plugin.Init(ctx, entry.config, nm.metrics); err != nil {
+		if err = entry.plugin.Init(ctx, cancelCtx, entry.config, nm.metrics, nm.cacheManager); err != nil {
 			return err
 		}
 	}
 	for _, entry := range nm.plugins.dataexchange {
-		if err = entry.plugin.Init(ctx, entry.config); err != nil {
+		if err = entry.plugin.Init(ctx, cancelCtx, entry.config); err != nil {
 			return err
 		}
 	}
@@ -736,17 +743,17 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 		}
 	}
 	for name, entry := range nm.plugins.tokens {
-		if err = entry.plugin.Init(ctx, name, entry.config); err != nil {
+		if err = entry.plugin.Init(ctx, cancelCtx, name, entry.config); err != nil {
 			return err
 		}
 	}
 	for _, entry := range nm.plugins.events {
-		if err = entry.plugin.Init(nm.ctx, entry.config); err != nil {
+		if err = entry.plugin.Init(ctx, entry.config); err != nil {
 			return err
 		}
 	}
 	for name, entry := range nm.plugins.auth {
-		if err = entry.plugin.Init(nm.ctx, name, entry.config); err != nil {
+		if err = entry.plugin.Init(ctx, name, entry.config); err != nil {
 			return err
 		}
 	}
@@ -783,12 +790,8 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	if err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
 		return nil, err
 	}
-	remoteName := conf.GetString(coreconfig.NamespaceRemoteName)
-	if name == core.LegacySystemNamespace || remoteName == core.LegacySystemNamespace {
+	if name == core.LegacySystemNamespace {
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.LegacySystemNamespace)
-	}
-	if remoteName == "" {
-		remoteName = name
 	}
 
 	keyNormalization := conf.GetString(coreconfig.NamespaceAssetKeyNormalization)
@@ -835,6 +838,17 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		multipartyEnabled = orgName != "" || orgKey != ""
 	}
 
+	networkName := name
+	if multipartyEnabled.(bool) {
+		mpNetworkName := multipartyConf.GetString(coreconfig.NamespaceMultipartyNetworkNamespace)
+		if mpNetworkName == core.LegacySystemNamespace {
+			return nil, i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.LegacySystemNamespace)
+		}
+		if mpNetworkName != "" {
+			networkName = mpNetworkName
+		}
+	}
+
 	// If no plugins are listed under this namespace, use all defined plugins by default
 	pluginsRaw := conf.Get(coreconfig.NamespacePlugins)
 	plugins := conf.GetStringSlice(coreconfig.NamespacePlugins)
@@ -865,9 +879,9 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}
 
 	config := orchestrator.Config{
-		DefaultKey:       conf.GetString(coreconfig.NamespaceDefaultKey),
-		TokenRemoteNames: nm.tokenRemoteNames,
-		KeyNormalization: keyNormalization,
+		DefaultKey:          conf.GetString(coreconfig.NamespaceDefaultKey),
+		TokenBroadcastNames: nm.tokenBroadcastNames,
+		KeyNormalization:    keyNormalization,
 	}
 	if multipartyEnabled.(bool) {
 		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
@@ -900,8 +914,8 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 
 	return &namespace{
 		Namespace: core.Namespace{
-			LocalName:   name,
-			RemoteName:  remoteName,
+			Name:        name,
+			NetworkName: networkName,
 			Description: conf.GetString(coreconfig.NamespaceDescription),
 		},
 		config:  config,
@@ -909,7 +923,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}, nil
 }
 
-func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+func (nm *namespaceManager) validatePlugins(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
 	var result orchestrator.Plugins
 	for _, pluginName := range plugins {
 		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
@@ -976,6 +990,15 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 
 		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
 	}
+	return &result, nil
+}
+
+func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+
+	result, err := nm.validatePlugins(ctx, name, plugins)
+	if err != nil {
+		return nil, err
+	}
 
 	if result.Database.Plugin == nil ||
 		result.SharedStorage.Plugin == nil ||
@@ -988,54 +1011,14 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 	for name, entry := range nm.plugins.events {
 		result.Events[name] = entry.plugin
 	}
-	return &result, nil
+	return result, nil
 }
 
 func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
-	var result orchestrator.Plugins
-	for _, pluginName := range plugins {
-		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
-			if result.Blockchain.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "blockchain")
-			}
-			result.Blockchain = orchestrator.BlockchainPlugin{
-				Name:   pluginName,
-				Plugin: instance.plugin,
-			}
-			continue
-		}
-		if _, ok := nm.plugins.dataexchange[pluginName]; ok {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsNonMultiparty, name)
-		}
-		if _, ok := nm.plugins.sharedstorage[pluginName]; ok {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsNonMultiparty, name)
-		}
-		if instance, ok := nm.plugins.database[pluginName]; ok {
-			if result.Database.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "database")
-			}
-			result.Database = orchestrator.DatabasePlugin{
-				Name:   pluginName,
-				Plugin: instance.plugin,
-			}
-			continue
-		}
-		if instance, ok := nm.plugins.tokens[pluginName]; ok {
-			result.Tokens = append(result.Tokens, orchestrator.TokensPlugin{
-				Name:   pluginName,
-				Plugin: instance.plugin,
-			})
-			continue
-		}
-		if instance, ok := nm.plugins.auth[pluginName]; ok {
-			result.Auth = orchestrator.AuthPlugin{
-				Name:   pluginName,
-				Plugin: instance.plugin,
-			}
-			continue
-		}
 
-		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
+	result, err := nm.validatePlugins(ctx, name, plugins)
+	if err != nil {
+		return nil, err
 	}
 
 	if result.Database.Plugin == nil {
@@ -1046,7 +1029,7 @@ func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, nam
 	for name, entry := range nm.plugins.events {
 		result.Events[name] = entry.plugin
 	}
-	return &result, nil
+	return result, nil
 }
 
 func (nm *namespaceManager) SPIEvents() spievents.Manager {

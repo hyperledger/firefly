@@ -11,13 +11,13 @@ CLI_VERSION=$(cat $CWD/../../manifest.json | jq -r .cli.tag)
 create_accounts() {
   if [ "$TEST_SUITE" == "TestEthereumMultipartyE2ESuite" ]; then
       # Create 4 new accounts for use in testing
-      for i in {1..4}
+      for i in {1..5}
       do
           $CLI accounts create $STACK_NAME
       done
   elif [ "$TEST_SUITE" == "TestFabricMultipartyE2ESuite" ]; then
       # Create 4 new accounts for the first org for use in testing
-      for i in {1..3}
+      for i in {1..4}
       do
           $CLI accounts create $STACK_NAME org_0 user_$(openssl rand -hex 10)
       done

@@ -32,15 +32,16 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/coremocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/jarcoal/httpmock"
-	"github.com/karlseguin/ccache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -86,13 +87,14 @@ func newTestEthereum() (*Ethereum, func()) {
 	mm.On("BlockchainQuery", mock.Anything, mock.Anything).Return(nil)
 	e := &Ethereum{
 		ctx:         ctx,
+		cancelCtx:   cancel,
 		client:      resty.New().SetBaseURL("http://localhost:12345"),
 		topic:       "topic1",
 		prefixShort: defaultPrefixShort,
 		prefixLong:  defaultPrefixLong,
 		wsconn:      wsm,
 		metrics:     mm,
-		cache:       ccache.New(ccache.Configure().MaxSize(100)),
+		cache:       cache.NewUmanagedCache(ctx, 100, 5*time.Minute),
 		callbacks:   common.NewBlockchainCallbacks(),
 		subs:        common.NewFireflySubscriptions(),
 	}
@@ -106,7 +108,7 @@ func newTestEthereum() (*Ethereum, func()) {
 }
 
 func newTestStreamManager(client *resty.Client) *streamManager {
-	return newStreamManager(client, ccache.New(ccache.Configure()), 5*time.Minute)
+	return newStreamManager(client, cache.NewUmanagedCache(context.Background(), 100, 5*time.Minute))
 }
 
 func mockNetworkVersion(t *testing.T, version int) func(req *http.Request) (*http.Response, error) {
@@ -129,7 +131,9 @@ func TestInitMissingURL(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	resetConf(e)
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
@@ -137,8 +141,10 @@ func TestInitBadAddressResolver(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	resetConf(e)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	utAddressResolverConf.Set(AddressResolverURLTemplate, "{{unclosed}")
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.Regexp(t, "FF10337.*urlTemplate", err)
 }
 
@@ -149,7 +155,9 @@ func TestInitMissingTopic(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x12345")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.Regexp(t, "FF10138.*topic", err)
 }
 
@@ -182,7 +190,9 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://fftm.example.com:12345")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	assert.NotNil(t, e.fftmClient)
 
@@ -223,7 +233,9 @@ func TestWSInitFail(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.Regexp(t, "FF00149", err)
 
 }
@@ -268,7 +280,9 @@ func TestInitOldInstancePathContracts(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 }
@@ -303,7 +317,9 @@ func TestInitOldInstancePathInstances(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 }
@@ -327,7 +343,9 @@ func TestInitNewConfig(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.NoError(t, err)
 }
@@ -351,7 +369,9 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 }
 
@@ -380,7 +400,9 @@ func TestInitNetworkVersionNotFound(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 }
@@ -403,7 +425,9 @@ func TestStreamQueryError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.Regexp(t, "FF10111.*pop", err)
 
 }
@@ -429,7 +453,9 @@ func TestStreamCreateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.Regexp(t, "FF10111.*pop", err)
 
 }
@@ -444,7 +470,7 @@ func TestStreamUpdateError(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
 	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
 		httpmock.NewStringResponder(500, `pop`))
 
@@ -455,7 +481,9 @@ func TestStreamUpdateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.Regexp(t, "FF10111.*pop", err)
 }
 
@@ -468,13 +496,13 @@ func TestInitAllExistingStreams(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "ns1_BatchPin_3078373143373635" /* this is the subname for our combo of instance path and BatchPin */},
 		}))
 	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
-		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1"}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
@@ -489,9 +517,11 @@ func TestInitAllExistingStreams(t *testing.T) {
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.NoError(t, err)
 
@@ -508,13 +538,13 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin_3078373143373635" /* this is the subname for our combo of instance path and BatchPin */},
 		}))
 	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
-		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1"}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
@@ -529,9 +559,11 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.NoError(t, err)
 
@@ -548,13 +580,13 @@ func TestInitAllExistingStreamsOld(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
 		}))
 	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
-		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1"}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
@@ -569,9 +601,11 @@ func TestInitAllExistingStreamsOld(t *testing.T) {
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.NoError(t, err)
 
@@ -588,13 +622,13 @@ func TestInitAllExistingStreamsInvalidName(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin_3078373143373635" /* this is the subname for our combo of instance path and BatchPin */},
 		}))
 	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
-		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1"}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
@@ -609,9 +643,11 @@ func TestInitAllExistingStreamsInvalidName(t *testing.T) {
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.Regexp(t, "FF10416", err)
 }
@@ -639,7 +675,9 @@ func TestSubQueryError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 }
 
@@ -668,7 +706,9 @@ func TestSubQueryCreateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 }
 
@@ -1026,7 +1066,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 
@@ -1116,7 +1156,7 @@ func TestHandleMessageBatchPinMissingAddress(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 
@@ -1134,7 +1174,7 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	}
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 
@@ -1158,7 +1198,7 @@ func TestHandleMessageBatchMissingData(t *testing.T) {
 	}
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 
@@ -1184,7 +1224,7 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	}
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 
@@ -1221,7 +1261,7 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	}
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 
@@ -1712,7 +1752,7 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 	e.streams = newTestStreamManager(e.client)
@@ -1788,7 +1828,7 @@ func TestHandleMessageContractEventErrorOldSubscription(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 	e.streams = newTestStreamManager(e.client)
@@ -1851,7 +1891,7 @@ func TestHandleMessageContractEventWithNamespace(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 	e.streams = newTestStreamManager(e.client)
@@ -1925,7 +1965,7 @@ func TestHandleMessageContractEventNoNamespaceHandlers(t *testing.T) {
 	e.SetHandler("ns2", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 	e.streams = newTestStreamManager(e.client)
@@ -1976,7 +2016,7 @@ func TestHandleMessageContractEventSubNameError(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 	e.streams = newTestStreamManager(e.client)
@@ -2024,7 +2064,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 	e.streams = newTestStreamManager(e.client)
@@ -2663,7 +2703,7 @@ func TestHandleNetworkAction(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 
@@ -2715,7 +2755,7 @@ func TestHandleNetworkActionFail(t *testing.T) {
 	e.SetHandler("ns1", em)
 	e.subs.AddSubscription(
 		context.Background(),
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{Name: "ns1", NetworkName: "ns1"},
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 
@@ -2970,7 +3010,7 @@ func TestAddSubBadLocation(t *testing.T) {
 		"bad": "bad",
 	}.String())
 
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err := e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.Regexp(t, "FF10310", err)
 }
@@ -2996,19 +3036,26 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 		}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
 
-	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	originalContext := e.ctx
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		originalContext,
+		coreconfig.CacheBlockchainLimit,
+		coreconfig.CacheBlockchainTTL,
+		"",
+	))
 	assert.NoError(t, err)
-
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
 
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	subID, err := e.AddFireflySubscription(e.ctx, ns, location, "newest")
 	assert.NoError(t, err)
 	assert.NotNil(t, e.subs.GetSubscription("sub1"))
@@ -3038,19 +3085,20 @@ func TestAddFireflySubscriptionV1(t *testing.T) {
 		}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
 
-	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
 
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
 	assert.NoError(t, err)
 	assert.NotNil(t, e.subs.GetSubscription("sub1"))
@@ -3075,19 +3123,20 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
 
-	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
 
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.Regexp(t, "FF10111", err)
 }
@@ -3112,19 +3161,20 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 	httpmock.RegisterResponder("POST", "http://localhost:12345/",
 		httpmock.NewJsonResponderOrPanic(500, `pop`))
 
-	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
 
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
 	assert.Regexp(t, "FF10111", err)
 }
@@ -3148,19 +3198,95 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(500, `pop`))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
 
-	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, e.metrics)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
 
-	ns := core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestGetContractListenerStatus(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	checkpoint := ListenerCheckpoint{
+		Block:            0,
+		TransactionIndex: -1,
+		LogIndex:         -1,
+	}
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sub1",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sub1", Stream: "es12345", Name: "ff-sub-1132312312312", subscriptionCheckpoint: subscriptionCheckpoint{
+				Catchup:    false,
+				Checkpoint: checkpoint,
+			},
+		}))
+
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	status, err := e.GetContractListenerStatus(context.Background(), "sub1")
+	assert.NotNil(t, status)
+	assert.NoError(t, err)
+}
+
+func TestGetContractListenerStatusGetSubFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sub1",
+		httpmock.NewJsonResponderOrPanic(500, `pop`))
+
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	status, err := e.GetContractListenerStatus(context.Background(), "sub1")
+	assert.Nil(t, status)
 	assert.Regexp(t, "FF10111", err)
 }
