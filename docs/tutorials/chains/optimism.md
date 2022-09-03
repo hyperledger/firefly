@@ -30,7 +30,7 @@ In order to connect to the Optimism testnet, you will need to set a few configur
 
 ```yml
 confirmations:
-    required: 4 // choose the number of confirmations you require
+    required: 4 # choose the number of confirmations you require
 policyengine.simple:
     fixedGasPrice: null
     gasOracle:
