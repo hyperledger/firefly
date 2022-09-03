@@ -2,7 +2,7 @@
 layout: default
 title: Listen for events
 parent: pages.tutorials
-nav_order: 6
+nav_order: 5
 ---
 
 # Listen for events
