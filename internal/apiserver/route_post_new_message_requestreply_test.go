@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,8 @@ func TestPostNewMessageRequestReply(t *testing.T) {
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	o.On("PrivateMessaging").Return(&privatemessagingmocks.Manager{})
 	o.On("RequestReply", mock.Anything, mock.Anything).Return(&core.MessageInOut{}, nil)
+	mmp := &multipartymocks.Manager{}
+	o.On("MultiParty").Return(mmp)
 	input := &core.MessageInOut{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

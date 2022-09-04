@@ -93,11 +93,17 @@ func (s *SQLCommon) eventInserted(ctx context.Context, event *core.Event) {
 
 func (s *SQLCommon) insertEventsPreCommit(ctx context.Context, tx *txWrapper, events []*core.Event) (err error) {
 
-	// We take the cost of a full table lock on the events table.
-	// This allows us to rely on the sequence to always be increasing, even when writing events
-	// concurrently (it does not guarantee we won't get a gap in the sequences).
-	if err = s.lockTableExclusiveTx(ctx, eventsTable, tx); err != nil {
-		return err
+	namespaces := make(map[string]bool)
+	for _, event := range events {
+		namespaces[event.Namespace] = true
+	}
+	for namespace := range namespaces {
+		// We take the cost of a lock - scoped to the namespace(s) being updated.
+		// This allows us to rely on the sequence to always be increasing, even when writing events
+		// concurrently (it does not guarantee we won't get a gap in the sequences).
+		if err = s.acquireLockTx(ctx, namespace, tx); err != nil {
+			return err
+		}
 	}
 
 	if s.features.MultiRowInsert {

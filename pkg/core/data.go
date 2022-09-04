@@ -48,9 +48,10 @@ type Data struct {
 	Created   *fftypes.FFTime  `ffstruct:"Data" json:"created,omitempty"`
 	Datatype  *DatatypeRef     `ffstruct:"Data" json:"datatype,omitempty"`
 	Value     *fftypes.JSONAny `ffstruct:"Data" json:"value"`
+	Public    string           `ffstruct:"Data" json:"public,omitempty"`
 	Blob      *BlobRef         `ffstruct:"Data" json:"blob,omitempty"`
 
-	ValueSize int64 `json:"-"` // Used internally for message size calcuation, without full payload retrieval
+	ValueSize int64 `json:"-"` // Used internally for message size calculation, without full payload retrieval
 }
 
 func (br *BlobRef) BatchBlobRef(batchType BatchType) *BlobRef {
@@ -60,7 +61,7 @@ func (br *BlobRef) BatchBlobRef(batchType BatchType) *BlobRef {
 	switch batchType {
 	case BatchTypePrivate:
 		// For private we omit the "public" ref in all cases, to avoid an potential for the batch pay to change due
-		// to the same data being allocated by the same data being sent in a broadcast batch (thus assigining a public ref).
+		// to the same data being allocated by the same data being sent in a broadcast batch (thus assigning a public ref).
 		return &BlobRef{
 			Hash: br.Hash,
 			Size: br.Size,

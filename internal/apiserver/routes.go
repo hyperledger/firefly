@@ -73,6 +73,7 @@ var routes = append(
 		getContractListeners,
 		getData,
 		getDataBlob,
+		getDataValue,
 		getDataByID,
 		getDataMsgs,
 		getDatatypeByName,
@@ -129,6 +130,8 @@ var routes = append(
 		postContractInvoke,
 		postContractQuery,
 		postData,
+		postDataBlobPublish,
+		postDataValuePublish,
 		postNetworkAction,
 		postNewContractAPI,
 		postNewContractInterface,
@@ -151,6 +154,7 @@ var routes = append(
 		postTokenTransfer,
 		putContractAPI,
 		putSubscription,
+		postVerifiersResolve,
 	})...,
 )
 

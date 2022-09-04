@@ -24,7 +24,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -36,12 +35,12 @@ import (
 	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -50,6 +49,7 @@ const (
 
 type Ethereum struct {
 	ctx             context.Context
+	cancelCtx       context.CancelFunc
 	topic           string
 	prefixShort     string
 	prefixLong      string
@@ -65,8 +65,7 @@ type Ethereum struct {
 	metrics         metrics.Manager
 	ethconnectConf  config.Section
 	subs            common.FireflySubscriptions
-	cache           *ccache.Cache
-	cacheTTL        time.Duration
+	cache           cache.CInterface
 }
 
 type eventStreamWebsocket struct {
@@ -88,6 +87,17 @@ type ethError struct {
 
 type Location struct {
 	Address string `json:"address"`
+}
+
+type ListenerCheckpoint struct {
+	Block            int64 `json:"block"`
+	TransactionIndex int64 `json:"transactionIndex"`
+	LogIndex         int64 `json:"logIndex"`
+}
+
+type ListenerStatus struct {
+	Checkpoint ListenerCheckpoint `json:"checkpoint"`
+	Catchup    bool               `json:"catchup"`
 }
 
 type EthconnectMessageRequest struct {
@@ -117,20 +127,21 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metrics.Manager) (err error) {
+func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf config.Section, metrics metrics.Manager, cacheManager cache.Manager) (err error) {
 	e.InitConfig(conf)
 	ethconnectConf := e.ethconnectConf
 	addressResolverConf := conf.SubSection(AddressResolverConfigKey)
 	fftmConf := conf.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
+	e.cancelCtx = cancelCtx
 	e.metrics = metrics
 	e.capabilities = &blockchain.Capabilities{}
 	e.callbacks = common.NewBlockchainCallbacks()
 	e.subs = common.NewFireflySubscriptions()
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
-		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
+		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf, cacheManager); err != nil {
 			return err
 		}
 	}
@@ -160,10 +171,20 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metric
 		return err
 	}
 
-	e.cacheTTL = config.GetDuration(coreconfig.CacheBlockchainTTL)
-	e.cache = ccache.New(ccache.Configure().MaxSize(config.GetInt64(coreconfig.CacheBlockchainLimit)))
+	cache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheBlockchainLimit,
+			coreconfig.CacheBlockchainTTL,
+			"",
+		),
+	)
+	if err != nil {
+		return err
+	}
+	e.cache = cache
 
-	e.streams = newStreamManager(e.client, e.cache, e.cacheTTL)
+	e.streams = newStreamManager(e.client, e.cache)
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
 	stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)
@@ -425,7 +446,8 @@ func (e *Ethereum) eventLoop() {
 			return
 		case msgBytes, ok := <-e.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
+				e.cancelCtx()
 				return
 			}
 
@@ -448,9 +470,9 @@ func (e *Ethereum) eventLoop() {
 				continue
 			}
 
-			// Send the ack - only fails if shutting down
 			if err != nil {
-				l.Errorf("Event loop exiting: %s", err)
+				l.Errorf("Event loop exiting (%s). Terminating server!", err)
+				e.cancelCtx()
 				return
 			}
 		}
@@ -725,6 +747,24 @@ func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *cor
 	return e.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
+func (e *Ethereum) GetContractListenerStatus(ctx context.Context, subID string) (status interface{}, err error) {
+	sub, err := e.streams.getSubscription(ctx, subID)
+	if err != nil {
+		return nil, err
+	}
+
+	checkpoint := &ListenerStatus{
+		Catchup: sub.Catchup,
+		Checkpoint: ListenerCheckpoint{
+			Block:            sub.Checkpoint.Block,
+			TransactionIndex: sub.Checkpoint.TransactionIndex,
+			LogIndex:         sub.Checkpoint.LogIndex,
+		},
+	}
+
+	return checkpoint, nil
+}
+
 func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	return &ffi2abi.ParamValidator{}, nil
 }
@@ -783,14 +823,13 @@ func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSON
 	}
 
 	cacheKey := "version:" + ethLocation.Address
-	if cached := e.cache.Get(cacheKey); cached != nil {
-		cached.Extend(e.cacheTTL)
-		return cached.Value().(int), nil
+	if cachedValue := e.cache.GetInt(cacheKey); cachedValue != 0 {
+		return cachedValue, nil
 	}
 
 	version, err = e.queryNetworkVersion(ctx, ethLocation.Address)
 	if err == nil {
-		e.cache.Set(cacheKey, version, e.cacheTTL)
+		e.cache.SetInt(cacheKey, version)
 	}
 	return version, err
 }

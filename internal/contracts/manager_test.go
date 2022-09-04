@@ -20,13 +20,16 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
@@ -46,7 +49,10 @@ func newTestContractManager() *contractManager {
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	msa := &syncasyncmocks.Bridge{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
@@ -80,7 +86,10 @@ func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	msa := &syncasyncmocks.Bridge{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, fmt.Errorf("pop"))
 	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mim, mom, txHelper, msa)
@@ -93,7 +102,10 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	msa := &syncasyncmocks.Bridge{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ffi2abi.ParamValidator{}, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
@@ -1576,6 +1588,51 @@ func TestGetContractListenerByNameOrID(t *testing.T) {
 	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{}, nil)
 
 	_, err := cm.GetContractListenerByNameOrID(context.Background(), id.String())
+	assert.NoError(t, err)
+}
+
+func TestGetContractListenerByNameOrIDWithStatus(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+
+	id := fftypes.NewUUID()
+	backendID := "testID"
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{BackendID: backendID}, nil)
+	mbi.On("GetContractListenerStatus", context.Background(), backendID).Return(fftypes.JSONAnyPtr(fftypes.JSONObject{}.String()), nil)
+
+	_, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
+	assert.NoError(t, err)
+}
+
+func TestGetContractListenerByNameOrIDWithStatusListenerFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	id := fftypes.NewUUID()
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
+	assert.EqualError(t, err, "pop")
+}
+
+func TestGetContractListenerByNameOrIDWithStatusPluginFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+
+	id := fftypes.NewUUID()
+	backendID := "testID"
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{BackendID: backendID}, nil)
+	mbi.On("GetContractListenerStatus", context.Background(), backendID).Return(nil, fmt.Errorf("pop"))
+
+	listener, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
+
+	testError := core.ListenerStatusError{
+		StatusError: "pop",
+	}
+
+	assert.Equal(t, listener.Status, testError)
 	assert.NoError(t, err)
 }
 

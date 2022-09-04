@@ -19,17 +19,16 @@ package privatemessaging
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/karlseguin/ccache"
 )
 
 type GroupManager interface {
@@ -40,12 +39,11 @@ type GroupManager interface {
 }
 
 type groupManager struct {
-	namespace     *core.Namespace
-	database      database.Plugin
-	identity      identity.Manager
-	data          data.Manager
-	groupCacheTTL time.Duration
-	groupCache    *ccache.Cache
+	namespace  *core.Namespace
+	database   database.Plugin
+	identity   identity.Manager
+	data       data.Manager
+	groupCache cache.CInterface
 }
 
 type groupHashEntry struct {
@@ -181,9 +179,8 @@ func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter
 
 func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32, allowNil bool) (*core.Group, []*core.Identity, error) {
 
-	if cached := gm.groupCache.Get(groupHash.String()); cached != nil {
-		cached.Extend(gm.groupCacheTTL)
-		ghe := cached.Value().(*groupHashEntry)
+	if cachedValue := gm.groupCache.Get(groupHash.String()); cachedValue != nil {
+		ghe := cachedValue.(*groupHashEntry)
 		return ghe.group, ghe.nodes, nil
 	}
 
@@ -216,7 +213,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 	gm.groupCache.Set(group.Hash.String(), &groupHashEntry{
 		group: group,
 		nodes: nodes,
-	}, gm.groupCacheTTL)
+	})
 	return group, nodes, nil
 }
 

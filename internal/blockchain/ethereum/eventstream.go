@@ -21,22 +21,21 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/karlseguin/ccache"
 )
 
 type streamManager struct {
-	client   *resty.Client
-	cache    *ccache.Cache
-	cacheTTL time.Duration
+	client *resty.Client
+	cache  cache.CInterface
 }
 
 type eventStream struct {
@@ -51,19 +50,25 @@ type eventStream struct {
 }
 
 type subscription struct {
-	ID        string     `json:"id"`
-	Name      string     `json:"name,omitempty"`
-	Stream    string     `json:"stream"`
-	FromBlock string     `json:"fromBlock"`
-	Address   string     `json:"address"`
-	Event     *abi.Entry `json:"event"`
+	ID               string            `json:"id"`
+	Name             string            `json:"name,omitempty"`
+	Stream           string            `json:"stream"`
+	FromBlock        string            `json:"fromBlock"`
+	EthCompatAddress string            `json:"address,omitempty"`
+	EthCompatEvent   *abi.Entry        `json:"event,omitempty"`
+	Filters          []fftypes.JSONAny `json:"filters"`
+	subscriptionCheckpoint
 }
 
-func newStreamManager(client *resty.Client, cache *ccache.Cache, cacheTTL time.Duration) *streamManager {
+type subscriptionCheckpoint struct {
+	Checkpoint ListenerCheckpoint `json:"checkpoint,omitempty"`
+	Catchup    bool               `json:"catchup,omitempty"`
+}
+
+func newStreamManager(client *resty.Client, cache cache.CInterface) *streamManager {
 	return &streamManager{
-		client:   client,
-		cache:    cache,
-		cacheTTL: cacheTTL,
+		client: client,
+		cache:  cache,
 	}
 }
 
@@ -158,17 +163,15 @@ func (s *streamManager) getSubscription(ctx context.Context, subID string) (sub 
 }
 
 func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (string, error) {
-	cached := s.cache.Get("sub:" + subID)
-	if cached != nil {
-		cached.Extend(s.cacheTTL)
-		return cached.Value().(string), nil
+	if cachedValue := s.cache.GetString("sub:" + subID); cachedValue != "" {
+		return cachedValue, nil
 	}
 
 	sub, err := s.getSubscription(ctx, subID)
 	if err != nil {
 		return "", err
 	}
-	s.cache.Set("sub:"+subID, sub.Name, s.cacheTTL)
+	s.cache.SetString("sub:"+subID, sub.Name)
 	return sub.Name, nil
 }
 
@@ -181,11 +184,11 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		fromBlock = "latest"
 	}
 	sub := subscription{
-		Name:      subName,
-		Stream:    stream,
-		FromBlock: fromBlock,
-		Address:   location.Address,
-		Event:     abi,
+		Name:             subName,
+		Stream:           stream,
+		FromBlock:        fromBlock,
+		EthCompatAddress: location.Address,
+		EthCompatEvent:   abi,
 	}
 	res, err := s.client.R().
 		SetContext(ctx).

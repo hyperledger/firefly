@@ -20,9 +20,12 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
@@ -35,13 +38,16 @@ func newTestEventEnricher() *eventEnricher {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mom := &operationmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	return newEventEnricher("ns1", mdi, mdm, mom, txHelper)
 }
 
 func TestEnrichMessageConfirmed(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -49,8 +55,7 @@ func TestEnrichMessageConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdm := em.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&core.Message{
+	em.mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&core.Message{
 		Header: core.MessageHeader{ID: ref1},
 	}, nil, true, nil)
 

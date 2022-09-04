@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/batch"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
@@ -38,7 +39,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/karlseguin/ccache"
 )
 
 const pinnedPrivateDispatcherName = "pinned_private"
@@ -82,7 +82,7 @@ type blobTransferTracker struct {
 	op       *core.PreparedOperation
 }
 
-func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
+func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager, cacheManager cache.Manager) (Manager, error) {
 	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "PrivateMessaging")
 	}
@@ -98,11 +98,10 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 		syncasync:  sa,
 		multiparty: mult,
 		groupManager: groupManager{
-			namespace:     ns,
-			database:      di,
-			identity:      im,
-			data:          dm,
-			groupCacheTTL: config.GetDuration(coreconfig.GroupCacheTTL),
+			namespace: ns,
+			database:  di,
+			identity:  im,
+			data:      dm,
 		},
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(coreconfig.PrivateMessagingRetryInitDelay),
@@ -114,11 +113,20 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 		operations:            om,
 		orgFirstNodes:         make(map[fftypes.UUID]*core.Identity),
 	}
-	pm.groupManager.groupCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetInt64(coreconfig.GroupCacheLimit)),
+
+	groupCache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheGroupLimit,
+			coreconfig.CacheGroupTTL,
+			ns.Name,
+		),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	pm.groupManager.groupCache = groupCache
 
 	bo := batch.DispatcherOptions{
 		BatchType:      core.BatchTypePrivate,

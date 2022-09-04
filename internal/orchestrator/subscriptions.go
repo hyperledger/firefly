@@ -76,3 +76,30 @@ func (or *orchestrator) GetSubscriptionByID(ctx context.Context, id string) (*co
 	}
 	return or.database().GetSubscriptionByID(ctx, or.namespace.Name, u)
 }
+
+func (or *orchestrator) GetSubscriptionByIDWithStatus(ctx context.Context, id string) (*core.SubscriptionWithStatus, error) {
+	sub, err := or.GetSubscriptionByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if sub == nil {
+		return nil, nil
+	}
+
+	offset, err := or.database().GetOffset(ctx, core.OffsetTypeSubscription, sub.ID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	subWithStatus := &core.SubscriptionWithStatus{
+		Subscription: *sub,
+	}
+
+	if offset != nil {
+		subWithStatus.Status = core.SubscriptionStatus{
+			CurrentOffset: offset.Current,
+		}
+	}
+
+	return subWithStatus, nil
+}

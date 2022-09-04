@@ -20,10 +20,13 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -42,8 +45,24 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	})
 	mdx := &dataexchangemocks.Plugin{}
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	dm, err := NewDataManager(ctx, ns, mdi, mdx)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	dm, err := NewDataManager(ctx, ns, mdi, mdx, cmi)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheMessageSize,
+		coreconfig.CacheMessageTTL,
+		ns.Name,
+	))
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheValidatorSize,
+		coreconfig.CacheValidatorTTL,
+		ns.Name,
+	))
 	assert.NoError(t, err)
+	assert.True(t, dm.BlobsEnabled())
 	dm.Start()
 	return dm.(*dataManager), ctx, func() {
 		cancel()
@@ -213,12 +232,11 @@ func TestWriteNewMessageE2E(t *testing.T) {
 }
 
 func TestInitBadDeps(t *testing.T) {
-	_, err := NewDataManager(context.Background(), &core.Namespace{}, nil, nil)
+	_, err := NewDataManager(context.Background(), &core.Namespace{}, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
 func TestValidatorLookupCached(t *testing.T) {
-
 	coreconfig.Reset()
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()

@@ -22,6 +22,20 @@ type Manager struct {
 	mock.Mock
 }
 
+// BlobsEnabled provides a mock function with given fields:
+func (_m *Manager) BlobsEnabled() bool {
+	ret := _m.Called()
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // CheckDatatype provides a mock function with given fields: ctx, datatype
 func (_m *Manager) CheckDatatype(ctx context.Context, datatype *core.Datatype) error {
 	ret := _m.Called(ctx, datatype)

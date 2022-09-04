@@ -19,22 +19,20 @@ package fabric
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/karlseguin/ccache"
 )
 
 type streamManager struct {
-	client   *resty.Client
-	signer   string
-	cache    *ccache.Cache
-	cacheTTL time.Duration
+	client *resty.Client
+	signer string
+	cache  cache.CInterface
 }
 
 type eventStream struct {
@@ -63,12 +61,11 @@ type eventFilter struct {
 	EventFilter string `json:"eventFilter"`
 }
 
-func newStreamManager(client *resty.Client, signer string, cache *ccache.Cache, cacheTTL time.Duration) *streamManager {
+func newStreamManager(client *resty.Client, signer string, cache cache.CInterface) *streamManager {
 	return &streamManager{
-		client:   client,
-		signer:   signer,
-		cache:    cache,
-		cacheTTL: cacheTTL,
+		client: client,
+		signer: signer,
+		cache:  cache,
 	}
 }
 
@@ -146,17 +143,14 @@ func (s *streamManager) getSubscription(ctx context.Context, subID string) (sub 
 }
 
 func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (string, error) {
-	cached := s.cache.Get("sub:" + subID)
-	if cached != nil {
-		cached.Extend(s.cacheTTL)
-		return cached.Value().(string), nil
+	if cachedValue := s.cache.GetString("sub:" + subID); cachedValue != "" {
+		return cachedValue, nil
 	}
-
 	sub, err := s.getSubscription(ctx, subID)
 	if err != nil {
 		return "", err
 	}
-	s.cache.Set("sub:"+subID, sub.Name, s.cacheTTL)
+	s.cache.SetString("sub:"+subID, sub.Name)
 	return sub.Name, nil
 }
 

@@ -20,19 +20,17 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -42,6 +40,7 @@ const (
 
 type Manager interface {
 	ResolveInputSigningIdentity(ctx context.Context, signerRef *core.SignerRef) (err error)
+	ResolveInputSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error)
 	NormalizeSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, verifier *core.VerifierRef) (identity *core.Identity, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error)
@@ -63,32 +62,49 @@ type identityManager struct {
 	defaultKey             string
 	multipartyRootVerifier *core.VerifierRef
 	localNode              *core.Identity
-	identityCacheTTL       time.Duration
-	identityCache          *ccache.Cache
-	signingKeyCacheTTL     time.Duration
-	signingKeyCache        *ccache.Cache
+	identityCache          cache.CInterface
+	signingKeyCache        cache.CInterface
 }
 
-func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager) (Manager, error) {
+func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager, cacheManager cache.Manager) (Manager, error) {
 	if di == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "IdentityManager")
 	}
 	im := &identityManager{
-		database:           di,
-		blockchain:         bi,
-		namespace:          ns,
-		multiparty:         mp,
-		defaultKey:         defaultKey,
-		identityCacheTTL:   config.GetDuration(coreconfig.IdentityManagerCacheTTL),
-		signingKeyCacheTTL: config.GetDuration(coreconfig.IdentityManagerCacheTTL),
+		database:   di,
+		blockchain: bi,
+		namespace:  ns,
+		multiparty: mp,
+		defaultKey: defaultKey,
 	}
+
+	identityCache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheIdentityLimit,
+			coreconfig.CacheIdentityTTL,
+			ns,
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	im.identityCache = identityCache
+
+	signingKeyCache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheSigningKeyLimit,
+			coreconfig.CacheSigningKeyTTL,
+			ns,
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	// For the identity and signingkey caches, we just treat them all equally sized and the max items
-	im.identityCache = ccache.New(
-		ccache.Configure().MaxSize(config.GetInt64(coreconfig.IdentityManagerCacheLimit)),
-	)
-	im.signingKeyCache = ccache.New(
-		ccache.Configure().MaxSize(config.GetInt64(coreconfig.IdentityManagerCacheLimit)),
-	)
+	im.signingKeyCache = signingKeyCache
 
 	return im, nil
 }
@@ -144,6 +160,34 @@ func (im *identityManager) NormalizeSigningKey(ctx context.Context, inputKey str
 		return "", err
 	}
 	return signer.Value, nil
+}
+
+func (im *identityManager) ResolveInputSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
+	log.L(ctx).Debugf("Resolving input signing key: type='%s' value='%s'", inputKey.Type, inputKey.Value)
+
+	if im.blockchain == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainNotConfigured)
+	}
+
+	verifierType := inputKey.Type
+
+	if verifierType.String() == "" {
+		verifierType = im.blockchain.VerifierType()
+	}
+
+	if verifierType != im.blockchain.VerifierType() {
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownVerifierType)
+	}
+
+	signingKey, err := im.blockchain.NormalizeSigningKey(ctx, inputKey.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.VerifierRef{
+		Type:  verifierType,
+		Value: signingKey,
+	}, nil
 }
 
 // ResolveInputIdentity takes in blockchain signing input information from an API call (which may
@@ -289,9 +333,8 @@ func (im *identityManager) normalizeKeyViaBlockchainPlugin(ctx context.Context, 
 		return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainNotConfigured)
 	}
 
-	if cached := im.signingKeyCache.Get(inputKey); cached != nil {
-		cached.Extend(im.identityCacheTTL)
-		return cached.Value().(*core.VerifierRef), nil
+	if cachedValue := im.signingKeyCache.Get(inputKey); cachedValue != nil {
+		return cachedValue.(*core.VerifierRef), nil
 	}
 	keyString, err := im.blockchain.NormalizeSigningKey(ctx, inputKey)
 	if err != nil {
@@ -301,7 +344,7 @@ func (im *identityManager) normalizeKeyViaBlockchainPlugin(ctx context.Context, 
 		Type:  im.blockchain.VerifierType(),
 		Value: keyString,
 	}
-	im.signingKeyCache.Set(inputKey, verifier, im.identityCacheTTL)
+	im.signingKeyCache.Set(inputKey, verifier)
 	return verifier, nil
 }
 
@@ -407,19 +450,13 @@ func (im *identityManager) validateParentType(ctx context.Context, child *core.I
 
 func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context, namespace string, verifierRef *core.VerifierRef) (*core.Identity, error) {
 	cacheKey := fmt.Sprintf("key=%s|%s|%s", namespace, verifierRef.Type, verifierRef.Value)
-	if cached := im.identityCache.Get(cacheKey); cached != nil {
-		cached.Extend(im.identityCacheTTL)
-		return cached.Value().(*core.Identity), nil
+	if cachedValue := im.identityCache.Get(cacheKey); cachedValue != nil {
+		return cachedValue.(*core.Identity), nil
 	}
 	verifier, err := im.database.GetVerifierByValue(ctx, verifierRef.Type, namespace, verifierRef.Value)
 	if err != nil {
 		return nil, err
 	} else if verifier == nil {
-		if namespace != core.LegacySystemNamespace && im.multiparty != nil && im.multiparty.GetNetworkVersion() == 1 {
-			// For V1 networks, fall back to LegacySystemNamespace for looking up identities
-			// This assumes that the system namespace shares a database with this manager's namespace!
-			return im.cachedIdentityLookupByVerifierRef(ctx, core.LegacySystemNamespace, verifierRef)
-		}
 		return nil, err
 	}
 	identity, err := im.database.GetIdentityByID(ctx, namespace, verifier.Identity)
@@ -430,7 +467,7 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 		return nil, i18n.NewError(ctx, i18n.MsgEmptyMemberIdentity, verifier.Identity)
 	}
 	// Cache the result
-	im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
+	im.identityCache.Set(cacheKey, identity)
 	return identity, nil
 }
 
@@ -446,9 +483,8 @@ func (im *identityManager) CachedIdentityLookupNilOK(ctx context.Context, didLoo
 		}
 		log.L(ctx).Debugf("Resolved DID '%s' to identity: %s / %s (err=%v)", didLookupStr, uuidResolved, didResolved, err)
 	}()
-	if cached := im.identityCache.Get(cacheKey); cached != nil {
-		cached.Extend(im.identityCacheTTL)
-		identity = cached.Value().(*core.Identity)
+	if cachedValue := im.identityCache.Get(cacheKey); cachedValue != nil {
+		identity = cachedValue.(*core.Identity)
 	} else {
 		if strings.HasPrefix(didLookupStr, core.DIDPrefix) {
 			if !strings.HasPrefix(didLookupStr, core.FireFlyDIDPrefix) {
@@ -476,7 +512,7 @@ func (im *identityManager) CachedIdentityLookupNilOK(ctx context.Context, didLoo
 
 		if identity != nil {
 			// Cache the result
-			im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
+			im.identityCache.Set(cacheKey, identity)
 		}
 	}
 	return identity, false, nil
@@ -496,16 +532,15 @@ func (im *identityManager) CachedIdentityLookupMustExist(ctx context.Context, di
 func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *core.Identity, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
 	cacheKey := fmt.Sprintf("id=%s", id)
-	if cached := im.identityCache.Get(cacheKey); cached != nil {
-		cached.Extend(im.identityCacheTTL)
-		identity = cached.Value().(*core.Identity)
+	if cachedValue := im.identityCache.Get(cacheKey); cachedValue != nil {
+		identity = cachedValue.(*core.Identity)
 	} else {
 		identity, err = im.database.GetIdentityByID(ctx, im.namespace, id)
 		if err != nil || identity == nil {
 			return identity, err
 		}
 		// Cache the result
-		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
+		im.identityCache.Set(cacheKey, identity)
 	}
 	return identity, nil
 }

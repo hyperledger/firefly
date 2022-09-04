@@ -63,7 +63,7 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	h.InitConfig(utConfig)
 
 	dxCtx, dxCancel := context.WithCancel(context.Background())
-	err := h.Init(dxCtx, utConfig)
+	err := h.Init(dxCtx, dxCancel, utConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -111,7 +111,8 @@ func TestInitBadURL(t *testing.T) {
 	h := &FFDX{}
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), utConfig)
+	ctx, cancel := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancel, utConfig)
 	assert.Regexp(t, "FF00149", err)
 }
 
@@ -119,7 +120,8 @@ func TestInitMissingURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFDX{}
 	h.InitConfig(utConfig)
-	err := h.Init(context.Background(), utConfig)
+	ctx, cancel := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancel, utConfig)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -573,8 +575,10 @@ func TestEventsWithManifest(t *testing.T) {
 func TestEventLoopReceiveClosed(t *testing.T) {
 	dxc := &dataexchangemocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
+	called := false
 	h := &FFDX{
 		ctx:       context.Background(),
+		cancelCtx: func() { called = true },
 		callbacks: callbacks{handlers: map[string]dataexchange.Callbacks{"ns1": dxc}},
 		wsconn:    wsm,
 	}
@@ -582,7 +586,8 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	close(r)
 	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
-	h.eventLoop() // we're simply looking for it exiting
+	h.eventLoop()
+	assert.True(t, called)
 }
 
 func TestEventLoopSendClosed(t *testing.T) {
@@ -667,7 +672,8 @@ func TestWebsocketWithReinit(t *testing.T) {
 		})
 
 	h.InitConfig(utConfig)
-	err := h.Init(context.Background(), utConfig)
+	ctx, cancel := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancel, utConfig)
 	assert.NoError(t, err)
 	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{})
 
@@ -714,7 +720,8 @@ func TestWebsocketWithEmptyNodesInit(t *testing.T) {
 		})
 
 	h.InitConfig(utConfig)
-	err := h.Init(context.Background(), utConfig)
+	ctx, cancel := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancel, utConfig)
 	assert.NoError(t, err)
 
 	err = h.Start()

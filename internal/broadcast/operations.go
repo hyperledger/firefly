@@ -35,7 +35,11 @@ type uploadBatchData struct {
 
 type uploadBlobData struct {
 	Data *core.Data `json:"data"`
-	Blob *core.Blob `json:"batch"`
+	Blob *core.Blob `json:"blob"`
+}
+
+type uploadValue struct {
+	Data *core.Data `json:"data"`
 }
 
 func addUploadBatchInputs(op *core.Operation, batchID *fftypes.UUID) {
@@ -56,6 +60,12 @@ func addUploadBlobInputs(op *core.Operation, dataID *fftypes.UUID) {
 	}
 }
 
+func addUploadValueInputs(op *core.Operation, dataID *fftypes.UUID) {
+	op.Input = fftypes.JSONObject{
+		"dataId": dataID.String(),
+	}
+}
+
 func getUploadBlobOutputs(payloadRef string) fftypes.JSONObject {
 	return fftypes.JSONObject{
 		"payloadRef": payloadRef,
@@ -67,6 +77,10 @@ func retrieveUploadBatchInputs(ctx context.Context, op *core.Operation) (*fftype
 }
 
 func retrieveUploadBlobInputs(ctx context.Context, op *core.Operation) (*fftypes.UUID, error) {
+	return fftypes.ParseUUID(ctx, op.Input.GetString("dataId"))
+}
+
+func retrieveUploadValueInputs(ctx context.Context, op *core.Operation) (*fftypes.UUID, error) {
 	return fftypes.ParseUUID(ctx, op.Input.GetString("dataId"))
 }
 
@@ -108,6 +122,18 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 		}
 		return opUploadBlob(op, d, blob), nil
 
+	case core.OpTypeSharedStorageUploadValue:
+		dataID, err := retrieveUploadValueInputs(ctx, op)
+		if err != nil {
+			return nil, err
+		}
+		d, err := bm.database.GetDataByID(ctx, bm.namespace.Name, dataID, false)
+		if err != nil {
+			return nil, err
+		} else if d == nil {
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
+		}
+		return opUploadValue(op, d), nil
 	default:
 		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
@@ -119,6 +145,8 @@ func (bm *broadcastManager) RunOperation(ctx context.Context, op *core.PreparedO
 		return bm.uploadBatch(ctx, data)
 	case uploadBlobData:
 		return bm.uploadBlob(ctx, data)
+	case uploadValue:
+		return bm.uploadValue(ctx, data)
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
@@ -168,6 +196,25 @@ func (bm *broadcastManager) uploadBlob(ctx context.Context, data uploadBlobData)
 	return getUploadBlobOutputs(data.Data.Blob.Public), true, nil
 }
 
+// uploadValue streams the value JSON from a data record to public storage
+func (bm *broadcastManager) uploadValue(ctx context.Context, data uploadValue) (outputs fftypes.JSONObject, complete bool, err error) {
+
+	// Upload to shared storage
+	data.Data.Public, err = bm.sharedstorage.UploadData(ctx, bytes.NewReader(data.Data.Value.Bytes()))
+	if err != nil {
+		return nil, false, err
+	}
+
+	// Update the public reference for the data in the DB
+	err = bm.database.UpdateData(ctx, bm.namespace.Name, data.Data.ID, database.DataQueryFactory.NewUpdate(ctx).Set("public", data.Data.Public))
+	if err != nil {
+		return nil, false, err
+	}
+
+	log.L(ctx).Infof("Published value for data '%s' to shared storage: '%s'", data.Data.ID, data.Data.Public)
+	return getUploadBlobOutputs(data.Data.Public), true, nil
+}
+
 func (bm *broadcastManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {
 	return nil
 }
@@ -189,5 +236,15 @@ func opUploadBlob(op *core.Operation, data *core.Data, blob *core.Blob) *core.Pr
 		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      uploadBlobData{Data: data, Blob: blob},
+	}
+}
+
+func opUploadValue(op *core.Operation, data *core.Data) *core.PreparedOperation {
+	return &core.PreparedOperation{
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
+		Type:      op.Type,
+		Data:      uploadValue{Data: data},
 	}
 }
