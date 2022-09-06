@@ -85,18 +85,17 @@ func run(host string) error {
 		received = len(events)
 
 		for _, event := range events {
+			lastSequence = event.Sequence
 			listener := event.BlockchainEvent.Listener
 			src := event.BlockchainEvent.Source
 			if listener.String() != expectedListener || src != expectedSource {
 				continue
 			}
-			sequence := event.Sequence
 			protocolID := event.BlockchainEvent.ProtocolID
-			fmt.Printf("%-10d %s\n", sequence, protocolID)
+			fmt.Printf("%-10d %s\n", lastSequence, protocolID)
 			if protocolID <= lastProtocolID {
 				return fmt.Errorf("out of order events detected")
 			}
-			lastSequence = sequence
 			lastProtocolID = protocolID
 			validated++
 		}
