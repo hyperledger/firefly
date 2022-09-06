@@ -18,6 +18,7 @@ package orchestrator
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -244,6 +245,19 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mnm, or.NetworkMap())
 	assert.Equal(t, or.mmp, or.MultiParty())
+	assert.Equal(t, or.identity, or.Identity())
+}
+
+func TestCacheInitFail(t *testing.T) {
+	or := newTestOrchestrator()
+	cacheInitError := errors.New("Initialization error.")
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+	or.txHelper = nil
+	or.cacheManager = cmi
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
+	err := or.initManagers(context.Background())
+	assert.Equal(t, cacheInitError, err)
 }
 
 func TestInitDataexchangeLookupNodesFail(t *testing.T) {

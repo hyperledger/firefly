@@ -18,6 +18,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -151,12 +152,12 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) *testE
 	em := emi.(*eventManager)
 	mockRunAsGroupPassthrough(mdi)
 	assert.NoError(t, err)
-	cmi.AssertCalled(t, "GetCache", 		cache.NewCacheConfig(
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
 		ctx,
 		coreconfig.CacheEventListenerTopicLimit,
 		coreconfig.CacheEventListenerTopicTTL,
 		ns.Name,
-	),)
+	))
 	return &testEventManager{
 		eventManager: *em,
 		cancel:       cancel,
@@ -209,6 +210,110 @@ func TestStartStopBadDependencies(t *testing.T) {
 	_, err := NewEventManager(context.Background(), &core.Namespace{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
+}
+
+func TestAggregatorCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	config.Set(coreconfig.EventTransportsEnabled, []string{"wrongun"})
+	defer coreconfig.Reset()
+	mdi := &databasemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
+	mdm := &datamocks.Manager{}
+	msh := &definitionsmocks.Handler{}
+	mds := &definitionsmocks.Sender{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mam := &assetmocks.Manager{}
+	msd := &shareddownloadmocks.Manager{}
+	mm := &metricsmocks.Manager{}
+	mom := &operationmocks.Manager{}
+	mev := &eventsmocks.Plugin{}
+	events := map[string]events.Plugin{"websockets": mev}
+	mmp := &multipartymocks.Manager{}
+	ctx := context.Background()
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheEventListenerTopicLimit,
+		coreconfig.CacheEventListenerTopicTTL,
+		ns.Name,
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	cmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheTransactionSize,
+		coreconfig.CacheTransactionTTL,
+		ns.Name,
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	cmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheBlockchainEventLimit,
+		coreconfig.CacheBlockchainEventTTL,
+		ns.Name,
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	cmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheBatchLimit,
+		coreconfig.CacheBatchTTL,
+		ns.Name,
+	)).Return(nil, cacheInitError)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, ns.Name, mdi, mdm, cmi)
+	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
+	mev.On("SetHandler", "ns1", mock.Anything).Return(nil).Maybe()
+	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
+	_, err := NewEventManager(context.Background(), ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, mom, txHelper, events, mmp, cmi)
+	assert.Equal(t, cacheInitError, err)
+}
+
+func TestEventCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	config.Set(coreconfig.EventTransportsEnabled, []string{"wrongun"})
+	defer coreconfig.Reset()
+	mdi := &databasemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
+	mdm := &datamocks.Manager{}
+	msh := &definitionsmocks.Handler{}
+	mds := &definitionsmocks.Sender{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mam := &assetmocks.Manager{}
+	msd := &shareddownloadmocks.Manager{}
+	mm := &metricsmocks.Manager{}
+	mom := &operationmocks.Manager{}
+	mev := &eventsmocks.Plugin{}
+	events := map[string]events.Plugin{"websockets": mev}
+	mmp := &multipartymocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	cmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheEventListenerTopicLimit,
+		coreconfig.CacheEventListenerTopicTTL,
+		ns.Name,
+	)).Return(nil, cacheInitError)
+	cmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheTransactionSize,
+		coreconfig.CacheTransactionTTL,
+		ns.Name,
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	cmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheBlockchainEventLimit,
+		coreconfig.CacheBlockchainEventTTL,
+		ns.Name,
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, ns.Name, mdi, mdm, cmi)
+	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
+	mev.On("SetHandler", "ns1", mock.Anything).Return(nil).Maybe()
+	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
+	_, err := NewEventManager(context.Background(), ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, mom, txHelper, events, mmp, cmi)
+	assert.Equal(t, cacheInitError, err)
 }
 
 func TestStartStopEventListenerFail(t *testing.T) {

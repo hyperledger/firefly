@@ -18,6 +18,7 @@ package data
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -34,6 +35,47 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	coreconfig.Reset()
+	config.Set(coreconfig.MessageWriterCount, 1)
+	ctx := context.Background()
+	mdi := &databasemocks.Plugin{}
+	mdi.On("Capabilities").Return(&database.Capabilities{
+		Concurrency: true,
+	})
+	mdx := &dataexchangemocks.Plugin{}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+
+	vErrcmi := &cachemocks.Manager{}
+	vErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheValidatorSize,
+		coreconfig.CacheValidatorTTL,
+		ns.Name,
+	)).Return(nil, cacheInitError)
+	_, err := NewDataManager(ctx, ns, mdi, mdx, vErrcmi)
+	assert.Equal(t, cacheInitError, err)
+	vErrcmi.AssertNumberOfCalls(t, "GetCache", 1)
+
+	mErrcmi := &cachemocks.Manager{}
+	mErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheValidatorSize,
+		coreconfig.CacheValidatorTTL,
+		ns.Name,
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	mErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheMessageSize,
+		coreconfig.CacheMessageTTL,
+		ns.Name,
+	)).Return(nil, cacheInitError)
+	_, err = NewDataManager(ctx, ns, mdi, mdx, mErrcmi)
+	assert.Equal(t, cacheInitError, err)
+	mErrcmi.AssertNumberOfCalls(t, "GetCache", 2)
+}
 
 func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	coreconfig.Reset()

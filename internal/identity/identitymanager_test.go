@@ -18,6 +18,7 @@ package identity
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -67,6 +68,47 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 func TestNewIdentityManagerMissingDeps(t *testing.T) {
 	_, err := NewIdentityManager(context.Background(), "", "", nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	coreconfig.Reset()
+
+	mdi := &databasemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
+	mmp := &multipartymocks.Manager{}
+	ctx := context.Background()
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
+	ns := "ns1"
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	iErrcmi := &cachemocks.Manager{}
+	iErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheIdentityLimit,
+		coreconfig.CacheIdentityTTL,
+		ns,
+	)).Return(nil, cacheInitError)
+	_, err := NewIdentityManager(ctx, ns, "", mdi, mbi, mmp, iErrcmi)
+	assert.Equal(t, cacheInitError, err)
+	iErrcmi.AssertNumberOfCalls(t, "GetCache", 1)
+
+	sErrcmi := &cachemocks.Manager{}
+	sErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheIdentityLimit,
+		coreconfig.CacheIdentityTTL,
+		ns,
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	sErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheSigningKeyLimit,
+		coreconfig.CacheSigningKeyTTL,
+		ns,
+	)).Return(nil, cacheInitError)
+	_, err = NewIdentityManager(ctx, ns, "", mdi, mbi, mmp, sErrcmi)
+	assert.Equal(t, cacheInitError, err)
+	sErrcmi.AssertNumberOfCalls(t, "GetCache", 2)
 }
 
 func TestResolveInputSigningKeyMissingBlockchain(t *testing.T) {

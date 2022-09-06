@@ -17,6 +17,7 @@ package operations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -62,13 +63,12 @@ func (m *mockHandler) OnOperationUpdate(ctx context.Context, op *core.Operation,
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	coreconfig.Reset()
 	config.Set(coreconfig.OpUpdateWorkerCount, 1)
+	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(&database.Capabilities{
 		Concurrency: true,
 	})
 	mdm := &datamocks.Manager{}
-
-	ctx := context.Background()
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
@@ -80,7 +80,6 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 		}
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
 	ns := "ns1"
 	om, err := NewOperationsManager(ctx, ns, mdi, txHelper, cmi)
 	assert.NoError(t, err)
@@ -96,6 +95,26 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 func TestInitFail(t *testing.T) {
 	_, err := NewOperationsManager(context.Background(), "ns1", nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	coreconfig.Reset()
+	config.Set(coreconfig.OpUpdateWorkerCount, 1)
+	mdi := &databasemocks.Plugin{}
+	mdi.On("Capabilities").Return(&database.Capabilities{
+		Concurrency: true,
+	})
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+	ns := "ns1"
+	ecmi := &cachemocks.Manager{}
+	ecmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+	_, err := NewOperationsManager(ctx, ns, mdi, txHelper, ecmi)
+	assert.Equal(t, cacheInitError, err)
 }
 
 func TestPrepareOperationNotSupported(t *testing.T) {
