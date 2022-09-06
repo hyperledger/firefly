@@ -18,6 +18,7 @@ package txcommon
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -112,6 +113,41 @@ func TestSubmitNewTransactionEventFail(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 
+}
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitErr := errors.New("Initialization error.")
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	ns := "ns1"
+	tErrcmi := &cachemocks.Manager{}
+	tErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheTransactionSize,
+		coreconfig.CacheTransactionTTL,
+		ns,
+	)).Return(nil, cacheInitErr)
+	_, err := NewTransactionHelper(ctx, ns, mdi, mdm, tErrcmi)
+	assert.Equal(t, cacheInitErr, err)
+	tErrcmi.AssertNumberOfCalls(t, "GetCache", 1)
+
+	bErrcmi := &cachemocks.Manager{}
+	bErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheTransactionSize,
+		coreconfig.CacheTransactionTTL,
+		ns,
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	bErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheBlockchainEventLimit,
+		coreconfig.CacheBlockchainEventTTL,
+		ns,
+	)).Return(nil, cacheInitErr)
+	_, err = NewTransactionHelper(ctx, ns, mdi, mdm, bErrcmi)
+	assert.Equal(t, cacheInitErr, err)
+	bErrcmi.AssertNumberOfCalls(t, "GetCache", 2)
 }
 
 func TestPersistTransactionNew(t *testing.T) {
