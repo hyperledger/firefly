@@ -51,7 +51,7 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 		},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, "ns", event.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, "ns", event.ID).Return().Once()
 
 	_, err := s.InsertOrGetBlockchainEvent(ctx, event)
 	assert.NotNil(t, event.Timestamp)
@@ -83,7 +83,7 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 	eventReadJson, _ = json.Marshal(eventRead)
 	assert.Equal(t, string(eventJson), string(eventReadJson))
 
-	// Try to insert again with a new ID (should return existing row)
+	// Try to insert again with a new ID - should return existing row
 	event2 := &core.BlockchainEvent{
 		ID:         fftypes.NewUUID(),
 		Namespace:  event.Namespace,
@@ -94,6 +94,27 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 	existing, err := s.InsertOrGetBlockchainEvent(ctx, event2)
 	assert.NoError(t, err)
 	assert.Equal(t, event.ID, existing.ID)
+
+	// Try to insert an event twice (with nil listener) - should return existing row
+	event3 := &core.BlockchainEvent{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns",
+		ProtocolID: "tx2",
+		Timestamp:  fftypes.Now(),
+	}
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, "ns", event3.ID).Return().Once()
+	existing, err = s.InsertOrGetBlockchainEvent(ctx, event3)
+	assert.NoError(t, err)
+	assert.Nil(t, existing)
+	event4 := &core.BlockchainEvent{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns",
+		ProtocolID: "tx2",
+		Timestamp:  fftypes.Now(),
+	}
+	existing, err = s.InsertOrGetBlockchainEvent(ctx, event4)
+	assert.NoError(t, err)
+	assert.Equal(t, event3.ID, existing.ID)
 }
 
 func TestInsertBlockchainEventFailBegin(t *testing.T) {
