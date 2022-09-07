@@ -75,6 +75,10 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 		},
 	}
 	data := &core.DataRefOrValue{Value: fftypes.JSONAnyPtr(`"test"`)}
+	members := []core.MemberInput{
+		{Identity: suite.testState.org1.Name},
+		{Identity: suite.testState.org2.Name},
+	}
 
 	// Add the new namespace to both config files
 	data1 := e2e.ReadConfig(suite.T(), suite.testState.configFile1)
@@ -122,12 +126,18 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 			systemClient2.RegisterSelfNode(suite.T(), true)
 		}
 
-		// Verify that a broadcast on the new namespace succeeds under the first contract
+		// Verify that a broadcast and private message on the new namespace succeed under the first contract
 		resp, err := client1.BroadcastMessage(suite.T(), "topic", data, false)
 		require.NoError(suite.T(), err)
 		assert.Equal(suite.T(), 202, resp.StatusCode())
 		e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
 		e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
+
+		resp, err = client1.PrivateMessage("topic1", data, members, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+		require.NoError(suite.T(), err)
+		assert.Equal(suite.T(), 202, resp.StatusCode())
+		e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
+		e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
 	}
 
 	// Register org/node identities on the new namespace
@@ -160,4 +170,11 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	events := client1.GetBlockchainEvents(suite.T(), suite.testState.startTime)
 	assert.Equal(suite.T(), address2, strings.ToLower(events[0].Info["address"].(string)))
 	assert.Equal(suite.T(), address1, strings.ToLower(events[1].Info["address"].(string)))
+
+	// Verify that a private message on the new namespace succeeds under the second contract
+	resp, err = client1.PrivateMessage("topic1", data, members, "", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 202, resp.StatusCode())
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
+	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
 }
