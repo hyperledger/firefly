@@ -54,10 +54,10 @@ func TestCacheInitFail(t *testing.T) {
 		coreconfig.CacheValidatorSize,
 		coreconfig.CacheValidatorTTL,
 		ns.Name,
-	)).Return(nil, cacheInitError)
+	)).Return(nil, cacheInitError).Once()
+	defer vErrcmi.AssertExpectations(t)
 	_, err := NewDataManager(ctx, ns, mdi, mdx, vErrcmi)
 	assert.Equal(t, cacheInitError, err)
-	vErrcmi.AssertNumberOfCalls(t, "GetCache", 1)
 
 	mErrcmi := &cachemocks.Manager{}
 	mErrcmi.On("GetCache", cache.NewCacheConfig(
@@ -65,16 +65,16 @@ func TestCacheInitFail(t *testing.T) {
 		coreconfig.CacheValidatorSize,
 		coreconfig.CacheValidatorTTL,
 		ns.Name,
-	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil).Once()
 	mErrcmi.On("GetCache", cache.NewCacheConfig(
 		ctx,
 		coreconfig.CacheMessageSize,
 		coreconfig.CacheMessageTTL,
 		ns.Name,
-	)).Return(nil, cacheInitError)
+	)).Return(nil, cacheInitError).Once()
+	defer mErrcmi.AssertExpectations(t)
 	_, err = NewDataManager(ctx, ns, mdi, mdx, mErrcmi)
 	assert.Equal(t, cacheInitError, err)
-	mErrcmi.AssertNumberOfCalls(t, "GetCache", 2)
 }
 
 func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {

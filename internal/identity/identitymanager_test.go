@@ -88,10 +88,10 @@ func TestCacheInitFail(t *testing.T) {
 		coreconfig.CacheIdentityLimit,
 		coreconfig.CacheIdentityTTL,
 		ns,
-	)).Return(nil, cacheInitError)
+	)).Return(nil, cacheInitError).Once()
+	defer iErrcmi.AssertExpectations(t)
 	_, err := NewIdentityManager(ctx, ns, "", mdi, mbi, mmp, iErrcmi)
 	assert.Equal(t, cacheInitError, err)
-	iErrcmi.AssertNumberOfCalls(t, "GetCache", 1)
 
 	sErrcmi := &cachemocks.Manager{}
 	sErrcmi.On("GetCache", cache.NewCacheConfig(
@@ -99,16 +99,16 @@ func TestCacheInitFail(t *testing.T) {
 		coreconfig.CacheIdentityLimit,
 		coreconfig.CacheIdentityTTL,
 		ns,
-	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil).Once()
 	sErrcmi.On("GetCache", cache.NewCacheConfig(
 		ctx,
 		coreconfig.CacheSigningKeyLimit,
 		coreconfig.CacheSigningKeyTTL,
 		ns,
-	)).Return(nil, cacheInitError)
+	)).Return(nil, cacheInitError).Once()
+	defer sErrcmi.AssertExpectations(t)
 	_, err = NewIdentityManager(ctx, ns, "", mdi, mbi, mmp, sErrcmi)
 	assert.Equal(t, cacheInitError, err)
-	sErrcmi.AssertNumberOfCalls(t, "GetCache", 2)
 }
 
 func TestResolveInputSigningKeyMissingBlockchain(t *testing.T) {

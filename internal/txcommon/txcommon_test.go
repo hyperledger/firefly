@@ -127,10 +127,10 @@ func TestCacheInitFail(t *testing.T) {
 		coreconfig.CacheTransactionSize,
 		coreconfig.CacheTransactionTTL,
 		ns,
-	)).Return(nil, cacheInitErr)
+	)).Return(nil, cacheInitErr).Once()
+	defer tErrcmi.AssertExpectations(t)
 	_, err := NewTransactionHelper(ctx, ns, mdi, mdm, tErrcmi)
 	assert.Equal(t, cacheInitErr, err)
-	tErrcmi.AssertNumberOfCalls(t, "GetCache", 1)
 
 	bErrcmi := &cachemocks.Manager{}
 	bErrcmi.On("GetCache", cache.NewCacheConfig(
@@ -138,16 +138,16 @@ func TestCacheInitFail(t *testing.T) {
 		coreconfig.CacheTransactionSize,
 		coreconfig.CacheTransactionTTL,
 		ns,
-	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil).Once()
 	bErrcmi.On("GetCache", cache.NewCacheConfig(
 		ctx,
 		coreconfig.CacheBlockchainEventLimit,
 		coreconfig.CacheBlockchainEventTTL,
 		ns,
-	)).Return(nil, cacheInitErr)
+	)).Return(nil, cacheInitErr).Once()
+	defer bErrcmi.AssertExpectations(t)
 	_, err = NewTransactionHelper(ctx, ns, mdi, mdm, bErrcmi)
 	assert.Equal(t, cacheInitErr, err)
-	bErrcmi.AssertNumberOfCalls(t, "GetCache", 2)
 }
 
 func TestPersistTransactionNew(t *testing.T) {
