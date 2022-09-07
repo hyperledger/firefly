@@ -18,7 +18,6 @@ package orchestrator
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -113,7 +112,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 				status.Org.Verifiers[i] = &v.VerifierRef
 			}
 
-			node, _, err := or.identity.CachedIdentityLookupNilOK(ctx, fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, status.Node.Name))
+			node, err := or.identity.GetLocalNode(ctx)
 			if err != nil {
 				return nil, err
 			}

@@ -73,7 +73,7 @@ type privateMessaging struct {
 	maxBatchPayloadLength int64
 	metrics               metrics.Manager
 	operations            operations.Manager
-	orgFirstNodes         map[fftypes.UUID]*core.Identity
+	orgFirstNodes         map[string]*core.Identity
 }
 
 type blobTransferTracker struct {
@@ -111,7 +111,7 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 		maxBatchPayloadLength: config.GetByteSize(coreconfig.PrivateMessagingBatchPayloadLimit),
 		metrics:               mm,
 		operations:            om,
-		orgFirstNodes:         make(map[fftypes.UUID]*core.Identity),
+		orgFirstNodes:         make(map[string]*core.Identity),
 	}
 
 	groupCache, err := cacheManager.GetCache(

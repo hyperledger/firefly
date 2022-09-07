@@ -438,6 +438,8 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 		Return(nil, nil)
 	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:ns/ns1/unknown").
 		Return(nil, nil)
+	mdi.On("GetIdentityByDID", ctx, core.LegacySystemNamespace, "did:firefly:ns/ns1/unknown").
+		Return(nil, nil)
 
 	msgIdentity := &core.SignerRef{
 		Key:    "mykey123",
@@ -538,6 +540,9 @@ func TestResolveInputSigningIdentityByOrgLookkupNotFound(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, "ns1", "org1").
 		Return(nil, nil)
+
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("GetNetworkVersion").Return(2)
 
 	msgIdentity := &core.SignerRef{
 		Author: "org1",
@@ -1341,12 +1346,15 @@ func TestVerifyIdentityChainNotFound(t *testing.T) {
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", ctx, "ns1", idID2).Return(nil, nil)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("GetNetworkVersion").Return(2)
 
 	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "FF10214", err)
 	assert.False(t, retryable)
 
 	mdi.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 }
 
 func TestVerifyIdentityChainInvalidParent(t *testing.T) {
@@ -1514,8 +1522,8 @@ func TestGetLocalNode(t *testing.T) {
 		},
 	}
 
-	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"}).Once()
-	mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, "ns1", "node1").Return(node, nil).Once()
+	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"}).Twice()
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:node/node1").Return(node, nil).Once()
 
 	result, err := im.GetLocalNode(ctx)
 	assert.NoError(t, err)
@@ -1613,6 +1621,45 @@ func TestValidateNodeOwnerGrandparent(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestValidateNodeOwnerGrandparentLegacy(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:   fftypes.NewUUID(),
+			Type: core.IdentityTypeOrg,
+		},
+	}
+	child := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeCustom,
+			Parent: org.ID,
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeNode,
+			Parent: org.ID,
+		},
+	}
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentityByID", ctx, "ns1", org.ID).Return(nil, nil)
+	mdi.On("GetIdentityByID", ctx, core.LegacySystemNamespace, org.ID).Return(org, nil)
+
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("GetNetworkVersion").Return(1)
+
+	valid, err := im.ValidateNodeOwner(ctx, node, child)
+	assert.NoError(t, err)
+	assert.True(t, valid)
+
+	mdi.AssertExpectations(t)
+	mmp.AssertExpectations(t)
+}
+
 func TestValidateNodeOwnerUnknownParent(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
@@ -1633,12 +1680,15 @@ func TestValidateNodeOwnerUnknownParent(t *testing.T) {
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", ctx, "ns1", org.Parent).Return(nil, nil)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("GetNetworkVersion").Return(2)
 
 	valid, err := im.ValidateNodeOwner(ctx, node, org)
 	assert.NoError(t, err)
 	assert.False(t, valid)
 
 	mdi.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 }
 
 func TestValidateNodeOwnerGetError(t *testing.T) {
