@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -231,6 +232,37 @@ func TestWSInitFail(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.Regexp(t, "FF00149", err)
 
+}
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	e, cancel := newTestFabric()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{
+			{ID: "sub12345", Stream: "es12345", Name: "ns1_BatchPin"},
+		}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 2))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+
+	defer cancel()
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+	assert.Equal(t, cacheInitError, err)
 }
 
 func TestInitAllExistingStreams(t *testing.T) {

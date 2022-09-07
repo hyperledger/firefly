@@ -19,6 +19,7 @@ package ethereum
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -238,6 +239,51 @@ func TestWSInitFail(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.Regexp(t, "FF00149", err)
 
+}
+
+func TestEthCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "es12345", body["stream"])
+			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
+		})
+	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
+		httpmock.NewJsonResponderOrPanic(200, map[string]string{
+			"created":      "2022-02-08T22:10:10Z",
+			"address":      "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+			"path":         "/contracts/firefly",
+			"abi":          "fc49dec3-0660-4dc7-61af-65af4c3ac456",
+			"openapi":      "/contracts/firefly?swagger",
+			"registeredAs": "firefly",
+		}),
+	)
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
+
+	e, cancel := newTestEthereum()
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+
+	defer cancel()
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.Equal(t, cacheInitError, err)
 }
 
 func TestInitOldInstancePathContracts(t *testing.T) {

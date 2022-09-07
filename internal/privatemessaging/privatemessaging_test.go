@@ -18,6 +18,7 @@ package privatemessaging
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -95,6 +96,31 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	mbi.On("Name").Return("utblk").Maybe()
 
 	return pm.(*privateMessaging), cancel
+}
+
+func TestCacheInitFail(t *testing.T) {
+	coreconfig.Reset()
+	config.Set(coreconfig.CacheGroupLimit, "1m")
+	config.Set(coreconfig.CacheGroupTTL, 10)
+
+	cacheInitError := errors.New("Initialization error.")
+	ctx := context.Background()
+	mdi := &databasemocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
+	mdx := &dataexchangemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
+	mba := &batchmocks.Manager{}
+	mdm := &datamocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
+	mmp := &multipartymocks.Manager{}
+	mmi := &metricsmocks.Manager{}
+	mom := &operationmocks.Manager{}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	_, err := NewPrivateMessaging(ctx, ns, mdi, mdx, mbi, mim, mba, mdm, msa, mmp, mmi, mom, cmi)
+	assert.Equal(t, cacheInitError, err)
 }
 
 func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
