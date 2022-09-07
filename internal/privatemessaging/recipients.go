@@ -59,19 +59,20 @@ func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *core.M
 }
 
 func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *core.Identity) (*core.Identity, error) {
-	node := pm.orgFirstNodes[*identity.ID]
+	key := fmt.Sprintf("ns=%s,did=%s", identity.Namespace, identity.DID)
+	node := pm.orgFirstNodes[key]
 	if node == nil && identity.Type == core.IdentityTypeOrg {
 		fb := database.IdentityQueryFactory.NewFilterLimit(ctx, 1)
 		filter := fb.And(
 			fb.Eq("parent", identity.ID),
 			fb.Eq("type", core.IdentityTypeNode),
 		)
-		nodes, _, err := pm.database.GetIdentities(ctx, pm.namespace.Name, filter)
+		nodes, _, err := pm.database.GetIdentities(ctx, identity.Namespace, filter)
 		if err != nil || len(nodes) == 0 {
 			return nil, err
 		}
 		node = nodes[0]
-		pm.orgFirstNodes[*identity.ID] = node
+		pm.orgFirstNodes[key] = node
 	}
 	return node, nil
 }
