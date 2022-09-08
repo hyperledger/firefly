@@ -77,8 +77,9 @@ type queryOutput struct {
 }
 
 type ethWSCommandPayload struct {
-	Type  string `json:"type"`
-	Topic string `json:"topic,omitempty"`
+	Type        string `json:"type"`
+	Topic       string `json:"topic,omitempty"`
+	BatchNumber int64  `json:"batchNumber,omitempty"`
 }
 
 type ethError struct {
@@ -438,7 +439,6 @@ func (e *Ethereum) eventLoop() {
 	defer close(e.closed)
 	l := log.L(e.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(e.ctx, l)
-	ack, _ := json.Marshal(map[string]string{"type": "ack", "topic": e.topic})
 	for {
 		select {
 		case <-ctx.Done():
@@ -461,10 +461,32 @@ func (e *Ethereum) eventLoop() {
 			case []interface{}:
 				err = e.handleMessageBatch(ctx, msgTyped)
 				if err == nil {
+					ack, _ := json.Marshal(&ethWSCommandPayload{
+						Type:  "ack",
+						Topic: e.topic,
+					})
 					err = e.wsconn.Send(ctx, ack)
 				}
 			case map[string]interface{}:
-				e.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
+				isBatch := false
+				if batchNumber, ok := msgTyped["batchNumber"].(float64); ok {
+					if events, ok := msgTyped["events"].([]interface{}); ok {
+						// FFTM delivery with a batch number to use in the ack
+						isBatch = true
+						err = e.handleMessageBatch(ctx, events)
+						if err == nil {
+							ack, _ := json.Marshal(&ethWSCommandPayload{
+								Type:        "ack",
+								Topic:       e.topic,
+								BatchNumber: int64(batchNumber),
+							})
+							err = e.wsconn.Send(ctx, ack)
+						}
+					}
+				}
+				if !isBatch {
+					e.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
+				}
 			default:
 				l.Errorf("Message unexpected: %+v", msgTyped)
 				continue
