@@ -324,7 +324,7 @@
   <li>Connect to an ethereum network</li>
   <li>Use the <code class="language-plaintext highlighter-rouge">evmconnect</code> blockchain connector</li>
   <li>Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.</li>
-  <li>Set the remote RPC node URL to <code class="language-plaintext highlighter-rouge">https://api.avax-test.network/ext/bc/C/rpc</code> (for a full list of testnet RPC node urls visit https://docs.bscscan.com/misc-tools-and-utilities/public-rpc-nodes)</li>
+  <li>See the Avalance <a href="https://docs.avax.network/quickstart/fuji-workflow">docs</a> and select and HTTPS RPC endpoint.</li>
   <li>Set the chain ID to <code class="language-plaintext highlighter-rouge">43113</code> (the correct ID for the Avalanche Fuji testnet)</li>
   <li>Merge the custom config created above with the generated <code class="language-plaintext highlighter-rouge">evmconnect</code> config file</li>
 </ul>
@@ -335,7 +335,7 @@
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://api.avax-test.network/ext/bc/C/rpc \
+    --remote-node-url &lt;selected RPC endpoint&gt; \
     --chain-id 43113 \
     --connector-config ~/Desktop/evmconnect.yml 
 </code></pre></div></div>

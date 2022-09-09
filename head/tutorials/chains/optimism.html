@@ -324,7 +324,7 @@
   <li>Connect to an ethereum network</li>
   <li>Use the <code class="language-plaintext highlighter-rouge">evmconnect</code> blockchain connector</li>
   <li>Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.</li>
-  <li>Set the remote RPC node URL to <code class="language-plaintext highlighter-rouge">https://goerli.optimism.io</code></li>
+  <li>See the optimism <a href="https://community.optimism.io/docs/useful-tools/networks/">docs</a> and select an HTTPS RPC endpoint.</li>
   <li>Set the chain ID to <code class="language-plaintext highlighter-rouge">420</code> (the correct ID for the Optimism testnet)</li>
   <li>Merge the custom config created above with the generated <code class="language-plaintext highlighter-rouge">evmconnect</code> config file</li>
 </ul>
@@ -335,7 +335,7 @@
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://goerli.optimism.io \
+    --remote-node-url &lt;selected RPC endpoint&gt; \
     --chain-id 420 \
     --connector-config ~/Desktop/evmconnect.yml 
 </code></pre></div></div>

@@ -324,7 +324,7 @@
   <li>Connect to an ethereum network</li>
   <li>Use the <code class="language-plaintext highlighter-rouge">evmconnect</code> blockchain connector</li>
   <li>Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.</li>
-  <li>Set the remote RPC node URL to <code class="language-plaintext highlighter-rouge">https://rpc-mumbai.maticvigil.com</code></li>
+  <li>See the polygon <a href="https://docs.polygon.technology/docs/develop/network-details/network/">docs</a> and select an HTTPS RPC endpoint.</li>
   <li>Set the chain ID to <code class="language-plaintext highlighter-rouge">80001</code> (the correct ID for the Polygon Mumbai testnet)</li>
   <li>Merge the custom config created above with the generated <code class="language-plaintext highlighter-rouge">evmconnect</code> config file</li>
 </ul>
@@ -335,7 +335,7 @@
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://rpc-mumbai.maticvigil.com \
+    --remote-node-url &lt;selected RPC endpoint&gt; \
     --chain-id 80001 \
     --connector-config ~/Desktop/evmconnect.yml 
 </code></pre></div></div>

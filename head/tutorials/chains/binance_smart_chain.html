@@ -324,7 +324,7 @@
   <li>Connect to an ethereum network</li>
   <li>Use the <code class="language-plaintext highlighter-rouge">evmconnect</code> blockchain connector</li>
   <li>Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.</li>
-  <li>Set the remote RPC node URL to <code class="language-plaintext highlighter-rouge">https://data-seed-prebsc-1-s1.binance.org:8545</code> (for a full list of testnet RPC node urls visit <a href="https://docs.bscscan.com/misc-tools-and-utilities/public-rpc-nodes">https://docs.bscscan.com/misc-tools-and-utilities/public-rpc-nodes</a>)</li>
+  <li>See the Binance BscScan <a href="https://docs.bscscan.com/misc-tools-and-utilities/public-rpc-nodes">docs</a> and select an HTTPS RPC endpoint.</li>
   <li>Set the chain ID to <code class="language-plaintext highlighter-rouge">97</code> (the correct ID for the Binance Smart Chain testnet)</li>
   <li>Merge the custom config created above with the generated <code class="language-plaintext highlighter-rouge">evmconnect</code> config file</li>
 </ul>
@@ -335,7 +335,7 @@
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://data-seed-prebsc-1-s1.binance.org:8545 \
+    --remote-node-url &lt;selected RPC endpoint&gt; \
     --chain-id 97 \
     --connector-config ~/Desktop/evmconnect.yml 
 </code></pre></div></div>
