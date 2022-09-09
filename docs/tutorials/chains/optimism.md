@@ -48,7 +48,7 @@ To create a local FireFly development stack and connect it to the Optimism testn
  - Connect to an ethereum network
  - Use the `evmconnect` blockchain connector
  - Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.
- - Set the remote RPC node URL to `https://goerli.optimism.io`
+ - See the optimism [docs](https://community.optimism.io/docs/useful-tools/networks/) and select an HTTPS RPC endpoint.
  - Set the chain ID to `420` (the correct ID for the Optimism testnet)
  - Merge the custom config created above with the generated `evmconnect` config file
 
@@ -59,7 +59,7 @@ ff init optimism 1 \
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://goerli.optimism.io \
+    --remote-node-url <selected RPC endpoint> \
     --chain-id 420 \
     --connector-config ~/Desktop/evmconnect.yml 
 ```

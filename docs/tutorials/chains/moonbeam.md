@@ -59,7 +59,7 @@ ff init moonbeam 1 \
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url <selected rpc endpoint> \
+    --remote-node-url <selected RPC endpoint> \
     --chain-id 1287 \
     --connector-config ~/Desktop/evmconnect.yml 
 ```

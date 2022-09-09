@@ -48,7 +48,7 @@ To create a local FireFly development stack and connect it to the Arbitrum testn
  - Connect to an ethereum network
  - Use the `evmconnect` blockchain connector
  - Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.
- - Set the remote RPC node URL to `https://goerli-rollup.arbitrum.io/rpc` (for a full list of testnet RPC node urls visit https://developer.offchainlabs.com/docs/Public_Chains)
+ - See the Arbitrum [docs](https://developer.offchainlabs.com/node-running/node-providers) and select an HTTPS RPC endpoint.
  - Set the chain ID to `421613` (the correct ID for the Binance Smart Chain testnet)
  - Merge the custom config created above with the generated `evmconnect` config file
 
@@ -59,7 +59,7 @@ ff init arbitrum 1 \
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://goerli-rollup.arbitrum.io/rpc \
+    --remote-node-url <selected RPC endpoint> \
     --chain-id 421613 \
     --connector-config ~/Desktop/evmconnect.yml
 ```

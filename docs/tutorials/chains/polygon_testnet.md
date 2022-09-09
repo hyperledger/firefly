@@ -48,7 +48,7 @@ To create a local FireFly development stack and connect it to the Polygon Mumbai
  - Connect to an ethereum network
  - Use the `evmconnect` blockchain connector
  - Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.
- - Set the remote RPC node URL to `https://rpc-mumbai.maticvigil.com`
+ - See the polygon [docs](https://docs.polygon.technology/docs/develop/network-details/network/) and select an HTTPS RPC endpoint.
  - Set the chain ID to `80001` (the correct ID for the Polygon Mumbai testnet)
  - Merge the custom config created above with the generated `evmconnect` config file
 
@@ -59,7 +59,7 @@ ff init polygon 1 \
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://rpc-mumbai.maticvigil.com \
+    --remote-node-url <selected RPC endpoint> \
     --chain-id 80001 \
     --connector-config ~/Desktop/evmconnect.yml 
 ```
