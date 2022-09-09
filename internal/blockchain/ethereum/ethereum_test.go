@@ -162,6 +162,68 @@ func TestInitMissingTopic(t *testing.T) {
 	assert.Regexp(t, "FF10138.*topic", err)
 }
 
+func TestInitAndStartWithEthConnect(t *testing.T) {
+
+	log.SetLevel("trace")
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	toServer, fromServer, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://ethc.example.com:12345")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+	assert.NotNil(t, e.fftmClient)
+
+	assert.Equal(t, "ethereum", e.Name())
+	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
+
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.Equal(t, "es12345", e.streamID)
+	assert.NotNil(t, e.Capabilities())
+
+	err = e.Start()
+	assert.NoError(t, err)
+
+	startupMessage := <-toServer
+	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	startupMessage = <-toServer
+	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
+	fromServer <- `[]` // empty batch, will be ignored, but acked
+	reply := <-toServer
+	assert.Equal(t, `{"type":"ack","topic":"topic1"}`, reply)
+
+	// Bad data will be ignored
+	fromServer <- `!json`
+	fromServer <- `{"not": "a reply"}`
+	fromServer <- `42`
+
+}
+
 func TestInitAndStartWithFFTM(t *testing.T) {
 
 	log.SetLevel("trace")
@@ -213,9 +275,9 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
 	startupMessage = <-toServer
 	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
-	fromServer <- `[]` // empty batch, will be ignored, but acked
+	fromServer <- `{"batchNumber":12345,"events":[]}` // empty batch, will be ignored, but acked
 	reply := <-toServer
-	assert.Equal(t, `{"topic":"topic1","type":"ack"}`, reply)
+	assert.Equal(t, `{"type":"ack","topic":"topic1","batchNumber":12345}`, reply)
 
 	// Bad data will be ignored
 	fromServer <- `!json`
