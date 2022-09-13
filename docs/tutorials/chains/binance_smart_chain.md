@@ -48,7 +48,7 @@ To create a local FireFly development stack and connect it to the Binance Smart 
  - Connect to an ethereum network
  - Use the `evmconnect` blockchain connector
  - Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.
- - Set the remote RPC node URL to `https://data-seed-prebsc-1-s1.binance.org:8545` (for a full list of testnet RPC node urls visit [https://docs.bscscan.com/misc-tools-and-utilities/public-rpc-nodes](https://docs.bscscan.com/misc-tools-and-utilities/public-rpc-nodes))
+ - See the Binance BscScan [docs](https://docs.bscscan.com/misc-tools-and-utilities/public-rpc-nodes) and select an HTTPS RPC endpoint.
  - Set the chain ID to `97` (the correct ID for the Binance Smart Chain testnet)
  - Merge the custom config created above with the generated `evmconnect` config file
 
@@ -59,7 +59,7 @@ ff init bsc 1 \
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://data-seed-prebsc-1-s1.binance.org:8545 \
+    --remote-node-url <selected RPC endpoint> \
     --chain-id 97 \
     --connector-config ~/Desktop/evmconnect.yml 
 ```

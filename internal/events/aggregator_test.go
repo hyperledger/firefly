@@ -19,6 +19,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -195,7 +196,25 @@ func TestNewAggregator(t *testing.T) {
 		ns,
 	))
 }
-
+func TestCacheInitFail(t *testing.T) {
+	coreconfig.Reset()
+	ctx := context.Background()
+	cacheInitError := errors.New("Initialization error.")
+	logrus.SetLevel(logrus.DebugLevel)
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mdh := &definitionsmocks.Handler{}
+	mim := &identitymanagermocks.Manager{}
+	mmi := &metricsmocks.Manager{}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+	mbi := &blockchainmocks.Plugin{}
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
+	ns := "ns1"
+	_, err := newAggregator(ctx, ns, mdi, mbi, mpm, mdh, mim, mdm, newEventNotifier(ctx, "ut"), mmi, cmi)
+	assert.Equal(t, cacheInitError, err)
+}
 func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	ag := newTestAggregatorWithMetrics()

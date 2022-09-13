@@ -93,13 +93,13 @@ func TestGetStatusRegistered(t *testing.T) {
 			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	or.mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&core.Identity{
+	or.mim.On("GetLocalNode", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:     nodeID,
 			Name:   "node1",
 			Parent: orgID,
 		},
-	}, false, nil)
+	}, nil)
 	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
@@ -181,13 +181,13 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	or.mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&core.Identity{
+	or.mim.On("GetLocalNode", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:     nodeID,
 			Name:   "node1",
 			Parent: fftypes.NewUUID(),
 		},
-	}, false, nil)
+	}, nil)
 	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
@@ -260,7 +260,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	or.mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, nil)
+	or.mim.On("GetLocalNode", or.ctx).Return(nil, nil)
 	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
@@ -312,7 +312,7 @@ func TestGetStatusNodeError(t *testing.T) {
 			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	or.mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))
+	or.mim.On("GetLocalNode", or.ctx).Return(nil, fmt.Errorf("pop"))
 	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,

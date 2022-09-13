@@ -48,7 +48,7 @@ To create a local FireFly development stack and connect it to the Avalanche Fuji
  - Connect to an ethereum network
  - Use the `evmconnect` blockchain connector
  - Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.
- - Set the remote RPC node URL to `https://api.avax-test.network/ext/bc/C/rpc` (for a full list of testnet RPC node urls visit https://docs.bscscan.com/misc-tools-and-utilities/public-rpc-nodes)
+ - See the Avalance [docs](https://docs.avax.network/quickstart/fuji-workflow) and select and HTTPS RPC endpoint.
  - Set the chain ID to `43113` (the correct ID for the Avalanche Fuji testnet)
  - Merge the custom config created above with the generated `evmconnect` config file
 
@@ -59,7 +59,7 @@ ff init avalanche 1 \
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://api.avax-test.network/ext/bc/C/rpc \
+    --remote-node-url <selected RPC endpoint> \
     --chain-id 43113 \
     --connector-config ~/Desktop/evmconnect.yml 
 ```

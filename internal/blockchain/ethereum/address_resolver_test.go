@@ -18,6 +18,7 @@ package ethereum
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -40,6 +41,17 @@ func utAddresResolverConfig() config.Section {
 	config := config.RootSection("utaddressresovler")
 	(&Ethereum{}).InitConfig(config)
 	return config.SubSection(AddressResolverConfigKey)
+}
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	ctx := context.Background()
+	config := utAddresResolverConfig()
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+	_, err := newAddressResolver(ctx, config, cmi)
+	assert.Equal(t, cacheInitError, err)
 }
 
 func TestAddressResolverInEthereumOKCached(t *testing.T) {
