@@ -1,9 +1,9 @@
 ---
 layout: default
 title: Apps
-parent: The Key Components
+parent: pages.key_features
 grand_parent: pages.understanding_firefly
-nav_order: 2
+nav_order: 1
 ---
 
 # Apps
@@ -11,16 +11,20 @@ nav_order: 2
 
 ---
 
-## Application features
+![Hyperledger FireFly App Features](../../images/firefly_functionality_overview_apps.png)
 
-Rapidly accelerating development is a key requirement of any Supernode.
+## Apps
 
-The business logic APIs, web and mobile user experiences for Web3 applications need to be just as rich
-and feature-full as the Web 2.0 / centralized applications.
+Rapidly accelerating development of applications is a key feature of Hyperledger FireFly.
 
-That means developers skilled in these application layers, must have the tools they need.
+This means the full-stack of the applications that are part of the enterprise Web3 ecosystem,
+not just the Smart Contract layer.
 
-Capabilities fitting their application development toolchain, and optimized to their skillset.
+Business logic APIs, back-office system integrations, and web/mobile user experiences are just
+as important to the overall Web3 use case.
+
+These layers require a different developer skillset to the on-chain Smart Contracts, and those
+developers must have the tools they need to work efficiently.
 
 ### API Gateway
 
@@ -34,6 +38,8 @@ Modern APIs that:
 - Come with code SDKs, with rich type information
 - Conform as closely as possible to the principles of REST
 - Do not pretend to be RESTful in cases when it is impossible to be
+
+> Learn more about **deploying APIs for custom smart contracts** in [this tutorial](../../tutorials/custom_contracts/)
 
 ### Event Streams
 
@@ -51,6 +57,9 @@ This means great event support is a must:
 - Support for Webhooks to integrated serverless functions
 - Integration with your core enterprise message queue (MQ) or enterprise service bus (ESB)
 - At-least-once delivery assurance, with simple instructions at the application layer
+
+> Learn all about the Hyperledger FireFly **Event Bus**, and **event-driven application architecture**,
+> in [this reference section](../../reference/events.html)
 
 ### API Generation
 

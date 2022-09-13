@@ -16,7 +16,7 @@ Hyperledger FireFly maintains this index automatically for all Token Pools that 
 There is no requirement at all to use FireFly to initiate transfers in Token Pools that
 Hyperledger FireFly is aware of. FireFly will listen to and update its audit history
 and balances for all transfers, regardless of whether they were initiated using a FireFly
-SuperNode or not.
+Supernode or not.
 
 So you could for example use Metamask to initiate a transfer directly against an ERC-20/ERC-721
 contract directly on your blockchain, and you will see it appear as a transfer. Or initiate

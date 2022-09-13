@@ -1,11 +1,11 @@
 ---
-layout: default
-title: Introduction to Supernodes
+layout: i18n_page
+title: pages.introduction
 parent: pages.understanding_firefly
 nav_order: 1
 ---
 
-# Introduction to SuperNodes
+# Introduction to Hyperledger FireFly
 {: .no_toc }
 
 ## Table of contents
@@ -16,44 +16,44 @@ nav_order: 1
 
 ---
 
-## What is a Supernode
+## Your Gateway to Web3 Technologies
 
-A FireFly Supernode is designed to be an organization's connection to Web 3 and to all the blockchain ecosystems that they participate in - multiple blockchains, multiple token economis, or multiple business networks. What makes a SuperNode "super" compared to a regular node is that it includes a blockchain developers toolkit under the hood. This includes a security layer, orchestration engine, token connectors, API identity management, and much more.
+![Hyperledger FireFly features](../images/firefly_intro_overview.png)
 
-Over the last decade of enterprise blockchain projects, architects, and developers have realized
-that they need much more than a blockchain node for their projects to be successful.
+Hyperledger FireFly is an organization's gateway to Web3, including all the blockchain ecosystems that they participate in.
 
-The development stack needed for an enterprise grade Web3 application is just as sophisticated as the stack required for the Web 2.0 applications that came before.
+Multiple blockchains, multiple token economies, and multiple business networks.
 
-A raw blockchain node is simply not enough.
+FireFly is not another blockchain implementation, rather it is a pluggable API Orchestration and Data layer,
+integrating into all of the different types of decentralized technologies that exist in Web3:
 
-## Your project with or without a Supernode
+- Public Blockchains, Layer 2 scaling solutions, Side chains & App chains
+- Permissioned Blockchains and Distributed Ledger Technologies (DLTs)
+- Decentralized storage solutions
+- Token ecosystems and standards
+- Smart Contracts, DeFi solutions and DAOs
+- Private off-chain encrypted communication rails
+- Advanced cryptography solutions
+- Identity frameworks
+
+## An Open Source Supernode for Web3 Apps
+
+Hyperledger FireFly is a toolkit for building and connecting new full-stack decentralized applications (dapps),
+as well as integrating your existing core systems to the world of Web3.
+
+It has a runtime engine, and it provides a data layer that synchronizes state from the blockchain and other Web3 technologies.
+It exposes an API and Event Bus to your business logic, that is reliable, developer friendly and ready for enterprise use.
+
+We call this a _Supernode_ - it sits between the application and the underlying infrastructure nodes,
+providing layers of additional function.
 
 ![Without FireFly / with FireFly](../images/without_firefly_with_firefly1.png)
 
-So your choice as a development team for a blockchain project becomes whether you build
-and update all of the "plumbing" / "middleware" components needed underneath your business
-logic yourself, or whether you look for pre-built solutions.
+The concept of a Supernode has evolved over the last decade of enterprise blockchain projects, as developers realized
+that they need much more than a blockchain node for their projects to be successful.
 
-The Hyperledger FireFly approach is to allow the community to collaborate on the development and hardening of
-these components, across industries and projects. Then fit them into an open source, enterprise grade,
-pluggable development and runtime stack... the _Supernode_.
-
-The application developers then code against these APIs, and can be confident that the business logic that works
-on their local laptop against a sandbox, is being written in a way that scales to an enterprise
-decentralized application and can be deployed against one or more public/private blockchains in production.
-
-Thus allowing development teams to focus on differentiation where it matters - at the solution layer.
-
-## Web3 Gateway and Multiparty Mode
-
-There are two main modes that a Supernode can operate in which are Web3 Gateway and Multiparty mode.
-
-Web3 Gateway mode may be used to simplify the processes of invoking smart contracts, interacting with digital assets, and exchanging value in existing blockchain ecosystems. Existing ecosystems may be public chains (i.e. Ethereum, Polygon, etc.) or private chains that have been created.
-
-Multiparty mode is used with multi-party systems. The key difference compared to Gateway mode is that not only can your Supernode interact with a blockchain, but it can also share data, send messages, and transact with other members in the multi-party system. A multi-party system is a blockchain where a decentralized application is running across a set of participants. Every member in the ecosystem runs their own FireFly Supernode with a copy of the same application stack on top.
-
-![Gateway & Multiparty Mode](../images/gateway_multiparty_mode.png "Gateway & Multiparty Mode")
-
-To learn more about each mode, check out the [Web3 Gateway Mode](./firefly_modes/gateway_mode.html) and [Multiparty Mode](./firefly_modes/multiparty_mode.html) sections.
+Without a technology like Hyperledger FireFly, the application layer becomes extremely complex and fragile.
+Tens of thousands of lines of complex low-level "plumbing" / "middleware" code is required to integrate the
+web3 infrastructure into the application. This code provides zero unique business value to the solution, but can
+consume a huge proportion of the engineering budget and maintenance cost if built bespoke within a solution.
 

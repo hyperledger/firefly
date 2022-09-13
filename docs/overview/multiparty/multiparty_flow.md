@@ -1,7 +1,7 @@
 ---
 layout: i18n_page
 title: pages.multiparty_flow
-parent: Multiparty Mode
+parent: pages.multiparty_mode
 grand_parent: pages.understanding_firefly
 nav_order: 5
 ---

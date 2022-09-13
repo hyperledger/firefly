@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Broadcast shared data
-parent: Multiparty Mode
+parent: pages.multiparty_mode
 grand_parent: pages.understanding_firefly
 nav_order: 2
 ---

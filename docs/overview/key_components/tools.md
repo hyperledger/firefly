@@ -1,9 +1,9 @@
 ---
 layout: default
 title: Tools
-parent: The Key Components
+parent: pages.key_features
 grand_parent: pages.understanding_firefly
-nav_order: 4
+nav_order: 7
 ---
 
 # Tools
@@ -12,9 +12,13 @@ nav_order: 4
 
 ---
 
+![Hyperledger FireFly Tools](../../images/firefly_functionality_overview_tools.png)
+
 ## Tools Overview
 
 There are three main tools within FireFly which are the command line interface (CLI), FireFly Explorer, and FireFly Sandbox.
+
+![FireFly Core](../../images/firefly_core.png "FireFly Core")
 
 ## FireFly CLI
 

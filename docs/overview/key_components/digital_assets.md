@@ -1,15 +1,17 @@
 ---
-layout: default
-title: Digital Assets
-parent: The Key Components
+layout: i18n_page
+title: pages.digital_assets
+parent: pages.key_features
 grand_parent: pages.understanding_firefly
-nav_order: 3
+nav_order: 2
 ---
 
 # Digital Assets
 {: .no_toc }
 
 ---
+
+![Hyperledger FireFly Digital Asset Features](../../images/firefly_functionality_overview_digital_assets.png)
 
 ## Digital asset features
 

@@ -4,33 +4,44 @@ langs:
 site:
   title: Hyperledger FireFly Docs
 pages:
-  home: Home
   advanced_cli_usage: Advanced CLI Usage
-  api_spec: API Spec
-  architecture: Architecture
   api_post_syntax: API Post Syntax
   api_query_syntax: API Query Syntax
+  api_spec: API Spec
+  arbitrum: Arbitrum Testnet
+  architecture: Architecture
+  avalanche: Avalanche Testnet
+  binance_smart_chain: Binance Smartchain Testnet
   blockchain_protocols: Blockchain Protocols
-  broadcast_shared_data: Broadcast / Shared Data
   broadcast_data: Broadcast data
+  broadcast_shared_data: Broadcast / Shared Data
+  chains:  Connecting to remote blockchains
   code_hierarchy: FireFly Code Hierarchy
   code_overview: FireFly Code Overview
   code_repositories: Code Repositories
   configuration_reference: Configuration Reference
   contributors: Contributors
   custom_smart_contracts: Work with custom smart contracts
-  faqs: FAQs
-  getting_started: Getting Started
   data_exchange: Data Exchange
-  reference: Reference
-  tutorials: Tutorials
-  understanding_firefly: Understanding FireFly
-  chains:  Connecting to remote blockchains
-  remote_fabric_network: Remote Fabric Network
-  polygon_testnet: Polygon Testnet
-  arbitrum: Arbitrum Testnet
-  avalanche: Avalanche Testnet
-  binance_smart_chain: Binance Smartchain Testnet
+  deterministic: Deterministic Compute
+  data_security: Data Security
+  digital_assets: Digital Assets
+  faqs: FAQs
+  flows: Flows
+  firefly_core: Firefly Core
+  getting_started: Getting Started
+  home: Home
+  introduction: Introduction
+  key_features: Key Features
+  moonbeam_testnet: Moonbeam Testnet
+  multiparty_flow: Multiparty Process Flow
+  multiparty_mode: Multiparty Mode
   near: NEAR Testnet
   optimism: Optimism Testnet
-  moonbeam_testnet: Moonbeam Testnet
+  polygon_testnet: Polygon Testnet
+  reference: Reference
+  remote_fabric_network: Remote Fabric Network
+  tutorials: Tutorials
+  understanding_firefly: Understanding FireFly
+  usage_patterns: Usage Patterns
+  web3_gateway_features: Web3 Gateway Features

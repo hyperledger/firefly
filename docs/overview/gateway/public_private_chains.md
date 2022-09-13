@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Public vs. Private chains
-parent: Web3 Gateway Mode
+parent: pages.web3_gateway_features
 grand_parent: pages.understanding_firefly
 nav_order: 1
 ---

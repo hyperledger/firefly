@@ -1,8 +1,8 @@
 ---
-layout: default
-title: Web3 Gateway Mode
+layout: i18n_page
+title: pages.web3_gateway_features
 parent: pages.understanding_firefly
-nav_order: 3
+nav_order: 4
 has_children: true
 ---
 
@@ -21,7 +21,7 @@ has_children: true
 
 ## Introduction
 
-Web3 Gateway Mode allows your FireFly Supernode to connect to any blockchain ecosystem, public or private. When a chain is connected, the FireFly Supernode may invoke custom smart contracts, interact with tokens, and monitor transactions. A single FireFly Supernode is able to have multiple namespaces, or isolated environments, where each namespace is a connection to a different chain.
+pages.web3_gateway_features allows your FireFly Supernode to connect to any blockchain ecosystem, public or private. When a chain is connected, the FireFly Supernode may invoke custom smart contracts, interact with tokens, and monitor transactions. A single FireFly Supernode is able to have multiple namespaces, or isolated environments, where each namespace is a connection to a different chain.
 
 ![Gateway Mode](../../images/gateway_mode.png "Gateway Mode")
 
