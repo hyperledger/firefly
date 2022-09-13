@@ -20,15 +20,15 @@ import (
 	"context"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/cache"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/karlseguin/ccache"
 )
 
 // addressResolver is a REST-pluggable interface to allow arbitrary strings that reference
@@ -45,32 +45,40 @@ type addressResolver struct {
 	bodyTemplate   *template.Template
 	responseField  string
 	client         *resty.Client
-	cache          *ccache.Cache
-	cacheTTL       time.Duration
+	cache          cache.CInterface
 }
 
 type addressResolverInserts struct {
 	Key string
 }
 
-func newAddressResolver(ctx context.Context, config config.Section) (ar *addressResolver, err error) {
-
+func newAddressResolver(ctx context.Context, localConfig config.Section, cacheManager cache.Manager) (ar *addressResolver, err error) {
+	cache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheAddressResolverLimit,
+			coreconfig.CacheAddressResolverTTL,
+			"",
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
 	ar = &addressResolver{
-		retainOriginal: config.GetBool(AddressResolverRetainOriginal),
-		method:         config.GetString(AddressResolverMethod),
-		responseField:  config.GetString(AddressResolverResponseField),
-		client:         ffresty.New(ctx, config),
-		cache:          ccache.New(ccache.Configure().MaxSize(config.GetInt64(AddressResolverCacheSize))),
-		cacheTTL:       config.GetDuration(AddressResolverCacheTTL),
+		retainOriginal: localConfig.GetBool(AddressResolverRetainOriginal),
+		method:         localConfig.GetString(AddressResolverMethod),
+		responseField:  localConfig.GetString(AddressResolverResponseField),
+		client:         ffresty.New(ctx, localConfig),
+		cache:          cache,
 	}
 
-	urlTemplateString := config.GetString(AddressResolverURLTemplate)
+	urlTemplateString := localConfig.GetString(AddressResolverURLTemplate)
 	ar.urlTemplate, err = template.New(AddressResolverURLTemplate).Option("missingkey=error").Parse(urlTemplateString)
 	if err != nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgGoTemplateCompileFailed, AddressResolverURLTemplate, err)
 	}
 
-	bodyTemplateString := config.GetString(AddressResolverBodyTemplate)
+	bodyTemplateString := localConfig.GetString(AddressResolverBodyTemplate)
 	if bodyTemplateString != "" {
 		ar.bodyTemplate, err = template.New(AddressResolverBodyTemplate).Option("missingkey=error").Parse(bodyTemplateString)
 		if err != nil {
@@ -83,9 +91,8 @@ func newAddressResolver(ctx context.Context, config config.Section) (ar *address
 
 func (ar *addressResolver) NormalizeSigningKey(ctx context.Context, keyDescriptor string) (string, error) {
 
-	if cached := ar.cache.Get(keyDescriptor); cached != nil {
-		cached.Extend(ar.cacheTTL)
-		return cached.Value().(string), nil
+	if cached := ar.cache.GetString(keyDescriptor); cached != "" {
+		return cached, nil
 	}
 
 	inserts := &addressResolverInserts{
@@ -124,6 +131,6 @@ func (ar *addressResolver) NormalizeSigningKey(ctx context.Context, keyDescripto
 		return "", i18n.NewError(ctx, coremsgs.MsgAddressResolveBadResData, keyDescriptor, jsonRes.String(), err)
 	}
 
-	ar.cache.Set(keyDescriptor, address, ar.cacheTTL)
+	ar.cache.SetString(keyDescriptor, address)
 	return address, nil
 }

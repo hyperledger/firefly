@@ -20,20 +20,20 @@ type Manager struct {
 	mock.Mock
 }
 
-// EnsureLocalGroup provides a mock function with given fields: ctx, group
-func (_m *Manager) EnsureLocalGroup(ctx context.Context, group *core.Group) (bool, error) {
-	ret := _m.Called(ctx, group)
+// EnsureLocalGroup provides a mock function with given fields: ctx, group, creator
+func (_m *Manager) EnsureLocalGroup(ctx context.Context, group *core.Group, creator *core.Member) (bool, error) {
+	ret := _m.Called(ctx, group, creator)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Group) bool); ok {
-		r0 = rf(ctx, group)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Group, *core.Member) bool); ok {
+		r0 = rf(ctx, group, creator)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.Group) error); ok {
-		r1 = rf(ctx, group)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Group, *core.Member) error); ok {
+		r1 = rf(ctx, group, creator)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -172,13 +172,13 @@ func (_m *Manager) RequestReply(ctx context.Context, request *core.MessageInOut)
 	return r0, r1
 }
 
-// ResolveInitGroup provides a mock function with given fields: ctx, msg
-func (_m *Manager) ResolveInitGroup(ctx context.Context, msg *core.Message) (*core.Group, error) {
-	ret := _m.Called(ctx, msg)
+// ResolveInitGroup provides a mock function with given fields: ctx, msg, creator
+func (_m *Manager) ResolveInitGroup(ctx context.Context, msg *core.Message, creator *core.Member) (*core.Group, error) {
+	ret := _m.Called(ctx, msg, creator)
 
 	var r0 *core.Group
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Message) *core.Group); ok {
-		r0 = rf(ctx, msg)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Message, *core.Member) *core.Group); ok {
+		r0 = rf(ctx, msg, creator)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Group)
@@ -186,8 +186,8 @@ func (_m *Manager) ResolveInitGroup(ctx context.Context, msg *core.Message) (*co
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.Message) error); ok {
-		r1 = rf(ctx, msg)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Message, *core.Member) error); ok {
+		r1 = rf(ctx, msg, creator)
 	} else {
 		r1 = ret.Error(1)
 	}

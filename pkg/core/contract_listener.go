@@ -39,8 +39,16 @@ type ContractListener struct {
 	Options   *ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
 }
 
+type ContractListenerWithStatus struct {
+	ContractListener
+	Status interface{} `ffstruct:"ContractListenerWithStatus" json:"status,omitempty" ffexcludeinput:"true"`
+}
 type ContractListenerOptions struct {
 	FirstEvent string `ffstruct:"ContractListenerOptions" json:"firstEvent,omitempty"`
+}
+
+type ListenerStatusError struct {
+	StatusError string `ffstruct:"ListenerStatusError" json:"error,omitempty"`
 }
 
 type ContractListenerInput struct {

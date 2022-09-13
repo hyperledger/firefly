@@ -18,13 +18,17 @@ package identity
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -38,18 +42,160 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mmp := &multipartymocks.Manager{}
-
-	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
-
 	ctx := context.Background()
-	im, err := NewIdentityManager(ctx, "ns1", "", mdi, mbi, mmp)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
+	ns := "ns1"
+	im, err := NewIdentityManager(ctx, ns, "", mdi, mbi, mmp, cmi)
 	assert.NoError(t, err)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheIdentityLimit,
+		coreconfig.CacheIdentityTTL,
+		ns,
+	))
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheSigningKeyLimit,
+		coreconfig.CacheSigningKeyTTL,
+		ns,
+	))
+
 	return ctx, im.(*identityManager)
 }
 
 func TestNewIdentityManagerMissingDeps(t *testing.T) {
-	_, err := NewIdentityManager(context.Background(), "", "", nil, nil, nil)
+	_, err := NewIdentityManager(context.Background(), "", "", nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	coreconfig.Reset()
+
+	mdi := &databasemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
+	mmp := &multipartymocks.Manager{}
+	ctx := context.Background()
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
+	ns := "ns1"
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	iErrcmi := &cachemocks.Manager{}
+	iErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheIdentityLimit,
+		coreconfig.CacheIdentityTTL,
+		ns,
+	)).Return(nil, cacheInitError).Once()
+	defer iErrcmi.AssertExpectations(t)
+	_, err := NewIdentityManager(ctx, ns, "", mdi, mbi, mmp, iErrcmi)
+	assert.Equal(t, cacheInitError, err)
+
+	sErrcmi := &cachemocks.Manager{}
+	sErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheIdentityLimit,
+		coreconfig.CacheIdentityTTL,
+		ns,
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil).Once()
+	sErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheSigningKeyLimit,
+		coreconfig.CacheSigningKeyTTL,
+		ns,
+	)).Return(nil, cacheInitError).Once()
+	defer sErrcmi.AssertExpectations(t)
+	_, err = NewIdentityManager(ctx, ns, "", mdi, mbi, mmp, sErrcmi)
+	assert.Equal(t, cacheInitError, err)
+}
+
+func TestResolveInputSigningKeyMissingBlockchain(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
+
+	inputKey := &core.VerifierRef{
+		Type:  "testType",
+		Value: "testValue",
+	}
+
+	_, err := im.ResolveInputSigningKey(ctx, inputKey)
+	assert.Regexp(t, "FF10417", err)
+}
+
+func TestResolveInputSigningKeyUnknownVerifier(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress, nil)
+
+	inputKey := &core.VerifierRef{
+		Type:  "unknownVerifier",
+		Value: "testValue",
+	}
+
+	_, err := im.ResolveInputSigningKey(ctx, inputKey)
+
+	assert.Regexp(t, "FF10428", err)
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveInputSigningKeyNoVerifierOK(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress, nil)
+	mbi.On("NormalizeSigningKey", ctx, "testValue").Return("fullkey123", nil)
+
+	inputKey := &core.VerifierRef{
+		Value: "testValue",
+	}
+
+	res, err := im.ResolveInputSigningKey(ctx, inputKey)
+
+	assert.NoError(t, err)
+	assert.Equal(t, core.VerifierTypeEthAddress, res.Type)
+	assert.Equal(t, "fullkey123", res.Value)
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveInputSigningKeyErrorNormalizingKey(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress, nil)
+	mbi.On("NormalizeSigningKey", ctx, "testValue").Return("", fmt.Errorf("pop"))
+
+	inputKey := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "testValue",
+	}
+
+	_, err := im.ResolveInputSigningKey(ctx, inputKey)
+
+	assert.Regexp(t, "pop", err)
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveInputSigningKeySuccess(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress, nil)
+	mbi.On("NormalizeSigningKey", ctx, "testValue").Return("fullkey123", nil)
+
+	inputKey := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "testValue",
+	}
+
+	res, err := im.ResolveInputSigningKey(ctx, inputKey)
+
+	assert.NoError(t, err)
+	assert.Equal(t, core.VerifierTypeEthAddress, res.Type)
+	assert.Equal(t, "fullkey123", res.Value)
+	mbi.AssertExpectations(t)
 }
 
 func TestResolveInputSigningIdentityNoKey(t *testing.T) {
@@ -292,6 +438,8 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 		Return(nil, nil)
 	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:ns/ns1/unknown").
 		Return(nil, nil)
+	mdi.On("GetIdentityByDID", ctx, core.LegacySystemNamespace, "did:firefly:ns/ns1/unknown").
+		Return(nil, nil)
 
 	msgIdentity := &core.SignerRef{
 		Key:    "mykey123",
@@ -392,6 +540,9 @@ func TestResolveInputSigningIdentityByOrgLookkupNotFound(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, "ns1", "org1").
 		Return(nil, nil)
+
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("GetNetworkVersion").Return(2)
 
 	msgIdentity := &core.SignerRef{
 		Author: "org1",
@@ -1195,12 +1346,15 @@ func TestVerifyIdentityChainNotFound(t *testing.T) {
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", ctx, "ns1", idID2).Return(nil, nil)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("GetNetworkVersion").Return(2)
 
 	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "FF10214", err)
 	assert.False(t, retryable)
 
 	mdi.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 }
 
 func TestVerifyIdentityChainInvalidParent(t *testing.T) {
@@ -1368,8 +1522,8 @@ func TestGetLocalNode(t *testing.T) {
 		},
 	}
 
-	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"}).Once()
-	mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, "ns1", "node1").Return(node, nil).Once()
+	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"}).Twice()
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:node/node1").Return(node, nil).Once()
 
 	result, err := im.GetLocalNode(ctx)
 	assert.NoError(t, err)
@@ -1388,4 +1542,179 @@ func TestParseKeyNormalizationConfig(t *testing.T) {
 	assert.Equal(t, KeyNormalizationBlockchainPlugin, ParseKeyNormalizationConfig("blockchain_Plugin"))
 	assert.Equal(t, KeyNormalizationNone, ParseKeyNormalizationConfig("none"))
 	assert.Equal(t, KeyNormalizationNone, ParseKeyNormalizationConfig(""))
+}
+
+func TestValidateNodeOwner(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:   fftypes.NewUUID(),
+			Type: core.IdentityTypeOrg,
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeNode,
+			Parent: org.ID,
+		},
+	}
+
+	valid, err := im.ValidateNodeOwner(ctx, node, org)
+	assert.NoError(t, err)
+	assert.True(t, valid)
+}
+
+func TestValidateNodeOwnerInvalid(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:   fftypes.NewUUID(),
+			Type: core.IdentityTypeOrg,
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:   fftypes.NewUUID(),
+			Type: core.IdentityTypeNode,
+		},
+	}
+
+	valid, err := im.ValidateNodeOwner(ctx, node, org)
+	assert.NoError(t, err)
+	assert.False(t, valid)
+}
+
+func TestValidateNodeOwnerGrandparent(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:   fftypes.NewUUID(),
+			Type: core.IdentityTypeOrg,
+		},
+	}
+	child := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeCustom,
+			Parent: org.ID,
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeNode,
+			Parent: org.ID,
+		},
+	}
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentityByID", ctx, "ns1", org.ID).Return(org, nil)
+
+	valid, err := im.ValidateNodeOwner(ctx, node, child)
+	assert.NoError(t, err)
+	assert.True(t, valid)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestValidateNodeOwnerGrandparentLegacy(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:   fftypes.NewUUID(),
+			Type: core.IdentityTypeOrg,
+		},
+	}
+	child := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeCustom,
+			Parent: org.ID,
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeNode,
+			Parent: org.ID,
+		},
+	}
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentityByID", ctx, "ns1", org.ID).Return(nil, nil)
+	mdi.On("GetIdentityByID", ctx, core.LegacySystemNamespace, org.ID).Return(org, nil)
+
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("GetNetworkVersion").Return(1)
+
+	valid, err := im.ValidateNodeOwner(ctx, node, child)
+	assert.NoError(t, err)
+	assert.True(t, valid)
+
+	mdi.AssertExpectations(t)
+	mmp.AssertExpectations(t)
+}
+
+func TestValidateNodeOwnerUnknownParent(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeOrg,
+			Parent: fftypes.NewUUID(),
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeNode,
+			Parent: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentityByID", ctx, "ns1", org.Parent).Return(nil, nil)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	valid, err := im.ValidateNodeOwner(ctx, node, org)
+	assert.NoError(t, err)
+	assert.False(t, valid)
+
+	mdi.AssertExpectations(t)
+	mmp.AssertExpectations(t)
+}
+
+func TestValidateNodeOwnerGetError(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeOrg,
+			Parent: fftypes.NewUUID(),
+		},
+	}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:     fftypes.NewUUID(),
+			Type:   core.IdentityTypeNode,
+			Parent: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentityByID", ctx, "ns1", org.Parent).Return(nil, fmt.Errorf("pop"))
+
+	valid, err := im.ValidateNodeOwner(ctx, node, org)
+	assert.EqualError(t, err, "pop")
+	assert.False(t, valid)
+
+	mdi.AssertExpectations(t)
 }

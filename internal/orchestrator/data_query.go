@@ -135,6 +135,18 @@ func (or *orchestrator) GetEventByID(ctx context.Context, id string) (*core.Even
 	return or.database().GetEventByID(ctx, or.namespace.Name, u)
 }
 
+func (or *orchestrator) GetEventByIDWithReference(ctx context.Context, id string) (*core.EnrichedEvent, error) {
+	u, err := fftypes.ParseUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	event, err := or.database().GetEventByID(ctx, or.namespace.Name, u)
+	if err != nil {
+		return nil, err
+	}
+	return or.events.EnrichEvent(ctx, event)
+}
+
 func (or *orchestrator) GetTransactions(ctx context.Context, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error) {
 	return or.database().GetTransactions(ctx, or.namespace.Name, filter)
 }

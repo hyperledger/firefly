@@ -18,17 +18,21 @@ package orchestrator
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/mocks/authmocks"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
@@ -73,6 +77,7 @@ type testOrchestrator struct {
 	mti *tokenmocks.Plugin
 	mcm *contractmocks.Manager
 	mmi *metricsmocks.Manager
+	cmi *cachemocks.Manager
 	mom *operationmocks.Manager
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
@@ -99,6 +104,7 @@ func (tor *testOrchestrator) cleanup(t *testing.T) {
 	tor.mti.AssertExpectations(t)
 	tor.mcm.AssertExpectations(t)
 	tor.mmi.AssertExpectations(t)
+	tor.cmi.AssertExpectations(t)
 	tor.mom.AssertExpectations(t)
 	tor.mth.AssertExpectations(t)
 	tor.msd.AssertExpectations(t)
@@ -132,6 +138,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mti: &tokenmocks.Plugin{},
 		mcm: &contractmocks.Manager{},
 		mmi: &metricsmocks.Manager{},
+		cmi: &cachemocks.Manager{},
 		mom: &operationmocks.Manager{},
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
@@ -151,6 +158,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.metrics = tor.mmi
+	tor.orchestrator.cacheManager = tor.cmi
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.txHelper = tor.mth
@@ -187,6 +195,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mmi.On("Name").Return("mock-mm").Maybe()
 	tor.mmp.On("Name").Return("mock-mp").Maybe()
 	tor.mds.On("Init", mock.Anything).Maybe()
+	tor.cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tor.ctx, 100, 5*time.Minute), nil).Maybe()
 	return tor
 }
 
@@ -196,6 +205,7 @@ func TestNewOrchestrator(t *testing.T) {
 		Config{},
 		&Plugins{},
 		&metricsmocks.Manager{},
+		&cachemocks.Manager{},
 	)
 	assert.NotNil(t, or)
 }
@@ -235,6 +245,19 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mnm, or.NetworkMap())
 	assert.Equal(t, or.mmp, or.MultiParty())
+	assert.Equal(t, or.identity, or.Identity())
+}
+
+func TestCacheInitFail(t *testing.T) {
+	or := newTestOrchestrator()
+	cacheInitError := errors.New("Initialization error.")
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+	or.txHelper = nil
+	or.cacheManager = cmi
+	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
+	err := or.initManagers(context.Background())
+	assert.Equal(t, cacheInitError, err)
 }
 
 func TestInitDataexchangeLookupNodesFail(t *testing.T) {

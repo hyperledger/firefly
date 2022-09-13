@@ -73,6 +73,7 @@ $(eval $(call makemock, internal/spievents,        Manager,            spievents
 $(eval $(call makemock, internal/orchestrator,     Orchestrator,       orchestratormocks))
 $(eval $(call makemock, internal/apiserver,        FFISwaggerGen,      apiservermocks))
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))
+$(eval $(call makemock, internal/cache,            Manager,            cachemocks))
 $(eval $(call makemock, internal/metrics,          Manager,            metricsmocks))
 $(eval $(call makemock, internal/operations,       Manager,            operationmocks))
 $(eval $(call makemock, internal/multiparty,       Manager,            multipartymocks))
@@ -101,4 +102,4 @@ manifest:
 docker:
 		./docker_build.sh $(DOCKER_ARGS)
 docs: .ALWAYS
-		cd docs && bundle install && bundle exec jekyll build && bundle exec htmlproofer --disable-external --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/:/' --url-ignore /127.0.0.1/,/localhost/
+		cd docs && bundle install && bundle exec jekyll build && bundle exec htmlproofer --disable-external --allow-hash-href --allow_missing_href true --swap-urls '^/firefly/:/' --ignore-urls /127.0.0.1/,/localhost/ ./_site

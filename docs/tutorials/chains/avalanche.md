@@ -30,12 +30,13 @@ In order to connect to the Avalanche testnet, you will need to set a few configu
 
 ```yml
 confirmations:
-    required: 4
+    required: 4 # choose the number of confirmations you require
 policyengine.simple:
     fixedGasPrice: null
     gasOracle:
         mode: connector
 ```
+For more info about `confirmations`, see [Public vs. Permissioned](../../overview/public_vs_permissioned.md)
 
 For this tutorial, we will assume this file is saved at `~/Desktop/evmconnect.yml`. If your path is different, you will need to adjust the path in the next command below.
 
@@ -47,7 +48,7 @@ To create a local FireFly development stack and connect it to the Avalanche Fuji
  - Connect to an ethereum network
  - Use the `evmconnect` blockchain connector
  - Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.
- - Set the remote RPC node URL to `https://api.avax-test.network/ext/bc/C/rpc` (for a full list of testnet RPC node urls visit https://docs.bscscan.com/misc-tools-and-utilities/public-rpc-nodes)
+ - See the Avalance [docs](https://docs.avax.network/quickstart/fuji-workflow) and select and HTTPS RPC endpoint.
  - Set the chain ID to `43113` (the correct ID for the Avalanche Fuji testnet)
  - Merge the custom config created above with the generated `evmconnect` config file
 
@@ -58,7 +59,7 @@ ff init avalanche 1 \
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://api.avax-test.network/ext/bc/C/rpc \
+    --remote-node-url <selected RPC endpoint> \
     --chain-id 43113 \
     --connector-config ~/Desktop/evmconnect.yml 
 ```
@@ -99,7 +100,7 @@ ff accounts list avalanche
 
 Copy the address listed in the output from this command. Go to [https://faucet.avax.network/](https://faucet.avax.network/) and paste the address in the form. Make sure that the network you select is Fuji (C-Chain). Click the **Request 2 AVAX** button.
 
-<img alt="Avalanche Faucet" href="images/avalanche_faucet.png" style="max-width: 736px" />
+<img alt="Avalanche Faucet" src="images/avalanche_faucet.png" style="max-width: 736px" />
 
 ### Confirm the transaction on Snowtrace
 You should be able to go lookup your account on [Snowtrace for the Fuji testnet](https://testnet.snowtrace.io/) and see that you now have a balance of 2 AVAX. Simply paste in your account address or transaction ID to search for it.

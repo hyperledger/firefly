@@ -18,16 +18,21 @@ package ethereum
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"golang.org/x/net/context"
 )
 
@@ -36,6 +41,17 @@ func utAddresResolverConfig() config.Section {
 	config := config.RootSection("utaddressresovler")
 	(&Ethereum{}).InitConfig(config)
 	return config.SubSection(AddressResolverConfigKey)
+}
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	ctx := context.Background()
+	config := utAddresResolverConfig()
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+	_, err := newAddressResolver(ctx, config, cmi)
+	assert.Equal(t, cacheInitError, err)
 }
 
 func TestAddressResolverInEthereumOKCached(t *testing.T) {
@@ -57,9 +73,11 @@ func TestAddressResolverInEthereumOKCached(t *testing.T) {
 	config.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve/{{.Key}}", server.URL))
 
 	ctx, cancel := context.WithCancel(context.Background())
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, config)
+	ar, err := newAddressResolver(ctx, config, cmi)
 	assert.NoError(t, err)
 
 	e := &Ethereum{
@@ -98,8 +116,9 @@ func TestAddressResolverPOSTOk(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	ar, err := newAddressResolver(ctx, config)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	ar, err := newAddressResolver(ctx, config, cmi)
 	assert.NoError(t, err)
 
 	resolved, err := ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -125,8 +144,9 @@ func TestAddressResolverPOSTBadKey(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	ar, err := newAddressResolver(ctx, config)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	ar, err := newAddressResolver(ctx, config, cmi)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -148,8 +168,9 @@ func TestAddressResolverPOSTResponse(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	ar, err := newAddressResolver(ctx, config)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	ar, err := newAddressResolver(ctx, config, cmi)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -169,8 +190,9 @@ func TestAddressResolverFailureResponse(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	ar, err := newAddressResolver(ctx, config)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	ar, err := newAddressResolver(ctx, config, cmi)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -190,8 +212,9 @@ func TestAddressResolverErrorResponse(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	ar, err := newAddressResolver(ctx, config)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	ar, err := newAddressResolver(ctx, config, cmi)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -207,8 +230,9 @@ func TestAddressResolverBadBodyTemplate(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	_, err := newAddressResolver(ctx, config)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	_, err := newAddressResolver(ctx, config, cmi)
 	assert.Regexp(t, "FF10337.*bodyTemplate", err)
 
 }
@@ -220,8 +244,9 @@ func TestAddressResolverErrorURLTemplate(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	ar, err := newAddressResolver(ctx, config)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	ar, err := newAddressResolver(ctx, config, cmi)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -237,8 +262,15 @@ func TestAddressResolverErrorBodyTemplate(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	ar, err := newAddressResolver(ctx, config)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	ar, err := newAddressResolver(ctx, config, cmi)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheAddressResolverLimit,
+		coreconfig.CacheAddressResolverTTL,
+		"",
+	))
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")

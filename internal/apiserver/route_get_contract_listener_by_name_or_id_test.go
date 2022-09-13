@@ -43,3 +43,20 @@ func TestGetContractListenerByNameOrID(t *testing.T) {
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 }
+
+func TestGetContractListenerByNameOrIDWithStatus(t *testing.T) {
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
+	id := fftypes.NewUUID()
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/contracts/listeners/"+id.String()+"?fetchstatus", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	mcm.On("GetContractListenerByNameOrIDWithStatus", mock.Anything, id.String()).
+		Return(&core.ContractListenerWithStatus{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
+}

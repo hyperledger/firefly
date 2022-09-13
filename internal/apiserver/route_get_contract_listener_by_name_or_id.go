@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -32,7 +33,9 @@ var getContractListenerByNameOrID = &ffapi.Route{
 	PathParams: []*ffapi.PathParam{
 		{Name: "nameOrId", Description: coremsgs.APIParamsContractListenerNameOrID},
 	},
-	QueryParams:     nil,
+	QueryParams: []*ffapi.QueryParam{
+		{Name: "fetchstatus", Example: "true", Description: coremsgs.APIParamsFetchStatus, IsBool: true},
+	},
 	Description:     coremsgs.APIEndpointsGetContractListenerByNameOrID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.ContractListener{} },
@@ -42,6 +45,9 @@ var getContractListenerByNameOrID = &ffapi.Route{
 			return or.Contracts() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			if strings.EqualFold(r.QP["fetchstatus"], "true") {
+				return cr.or.Contracts().GetContractListenerByNameOrIDWithStatus(cr.ctx, r.PP["nameOrId"])
+			}
 			return cr.or.Contracts().GetContractListenerByNameOrID(cr.ctx, r.PP["nameOrId"])
 		},
 	},

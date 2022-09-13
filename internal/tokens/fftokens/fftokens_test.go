@@ -61,7 +61,8 @@ func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan strin
 	ffTokensConfig.AddKnownKey(ffresty.HTTPCustomClient, mockedClient)
 	config.Set("tokens", []fftypes.JSONObject{{}})
 
-	err := h.Init(context.Background(), "testtokens", ffTokensConfig)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, "fftokens", h.Name())
 	assert.Equal(t, "testtokens", h.configuredName)
@@ -78,7 +79,9 @@ func TestInitBadURL(t *testing.T) {
 	h.InitConfig(ffTokensConfig)
 
 	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), "testtokens", ffTokensConfig)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
 	assert.Regexp(t, "FF00149", err)
 }
 
@@ -87,7 +90,8 @@ func TestInitMissingURL(t *testing.T) {
 	h := &FFTokens{}
 	h.InitConfig(ffTokensConfig)
 
-	err := h.Init(context.Background(), "testtokens", ffTokensConfig)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -1334,29 +1338,35 @@ func TestApprovalEvents(t *testing.T) {
 
 func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
+	called := false
 	h := &FFTokens{
-		ctx:    context.Background(),
-		wsconn: wsm,
+		ctx:       context.Background(),
+		cancelCtx: func() { called = true },
+		wsconn:    wsm,
 	}
 	r := make(chan []byte)
 	close(r)
 	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
-	h.eventLoop() // we're simply looking for it exiting
+	h.eventLoop()
+	assert.True(t, called)
 }
 
 func TestEventLoopSendClosed(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
+	called := false
 	h := &FFTokens{
-		ctx:    context.Background(),
-		wsconn: wsm,
+		ctx:       context.Background(),
+		cancelCtx: func() { called = true },
+		wsconn:    wsm,
 	}
 	r := make(chan []byte, 1)
 	r <- []byte(`{"id":"1"}`) // ignored but acked
 	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	h.eventLoop() // we're simply looking for it exiting
+	h.eventLoop()
+	assert.True(t, called)
 }
 
 func TestEventLoopClosedContext(t *testing.T) {

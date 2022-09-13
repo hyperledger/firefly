@@ -105,55 +105,61 @@ func run() error {
 	err := config.ReadConfig(configSuffix, cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	ctx = log.WithLogger(ctx, logrus.WithField("pid", fmt.Sprintf("%d", os.Getpid())))
+	rootCtx, cancelRootCtx := context.WithCancel(context.Background())
+	rootCtx = log.WithLogger(rootCtx, logrus.WithField("pid", fmt.Sprintf("%d", os.Getpid())))
 
-	config.SetupLogging(ctx)
-	log.L(ctx).Infof("Hyperledger FireFly")
-	log.L(ctx).Infof("© Copyright 2022 Kaleido, Inc.")
+	config.SetupLogging(rootCtx)
+	log.L(rootCtx).Infof("Hyperledger FireFly")
+	log.L(rootCtx).Infof("© Copyright 2022 Kaleido, Inc.")
 
 	// Deferred error return from reading config
 	if err != nil {
-		cancelCtx()
-		return i18n.WrapError(ctx, err, i18n.MsgConfigFailed)
+		cancelRootCtx()
+		return i18n.WrapError(rootCtx, err, i18n.MsgConfigFailed)
 	}
 
 	// Setup signal handling to cancel the context, which shuts down the API Server
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
-		log.L(ctx).Infof("Starting up")
-		rootCtx, rootCancelCtx := context.WithCancel(ctx)
+		log.L(rootCtx).Infof("Starting up")
+		runCtx, cancelRunCtx := context.WithCancel(rootCtx)
 		mgr := getRootManager()
 		as := apiserver.NewAPIServer()
 		errChan := make(chan error, 1)
+		resetChan := make(chan bool, 1)
 		ffDone := make(chan struct{})
-		go startFirefly(rootCtx, rootCancelCtx, mgr, as, errChan, ffDone)
+		go startFirefly(runCtx, cancelRootCtx, mgr, as, errChan, resetChan, ffDone)
 		select {
 		case sig := <-sigs:
-			log.L(ctx).Infof("Shutting down due to %s", sig.String())
-			cancelCtx()
+			log.L(rootCtx).Infof("Shutting down due to %s", sig.String())
+			cancelRunCtx()
 			mgr.WaitStop()
 			return nil
 		case <-rootCtx.Done():
-			log.L(ctx).Infof("Restarting due to configuration change")
+			log.L(rootCtx).Infof("Shutting down due to cancelled context")
+			cancelRunCtx()
+			mgr.WaitStop()
+			return nil
+		case <-resetChan:
+			log.L(rootCtx).Infof("Restarting due to configuration change")
+			cancelRunCtx()
 			mgr.WaitStop()
 			// Must wait for the server to close before we restart
 			<-ffDone
 			// Re-read the configuration
 			resetConfig()
 			if err := config.ReadConfig(configSuffix, cfgFile); err != nil {
-				cancelCtx()
 				return err
 			}
 		case err := <-errChan:
-			cancelCtx()
+			cancelRunCtx()
 			return err
 		}
 	}
 }
 
-func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespace.Manager, as apiserver.Server, errChan chan error, ffDone chan struct{}) {
+func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespace.Manager, as apiserver.Server, errChan chan error, resetChan chan bool, ffDone chan struct{}) {
 	var err error
 	// Start debug listener
 	var debugServer *http.Server
@@ -179,7 +185,7 @@ func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespa
 		close(ffDone)
 	}()
 
-	if err = mgr.Init(ctx, cancelCtx); err != nil {
+	if err = mgr.Init(ctx, cancelCtx, resetChan); err != nil {
 		errChan <- err
 		return
 	}

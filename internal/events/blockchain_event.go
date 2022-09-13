@@ -51,16 +51,15 @@ func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, 
 }
 
 func (em *eventManager) getChainListenerCached(cacheKey string, getter func() (*core.ContractListener, error)) (*core.ContractListener, error) {
-	cached := em.chainListenerCache.Get(cacheKey)
-	if cached != nil {
-		cached.Extend(em.chainListenerCacheTTL)
-		return cached.Value().(*core.ContractListener), nil
+
+	if cachedValue := em.chainListenerCache.Get(cacheKey); cachedValue != nil {
+		return cachedValue.(*core.ContractListener), nil
 	}
 	listener, err := getter()
 	if listener == nil || err != nil {
 		return nil, err
 	}
-	em.chainListenerCache.Set(cacheKey, listener, em.chainListenerCacheTTL)
+	em.chainListenerCache.Set(cacheKey, listener)
 	return listener, err
 }
 

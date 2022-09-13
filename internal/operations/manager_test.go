@@ -17,19 +17,21 @@ package operations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/karlseguin/ccache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -61,12 +63,15 @@ func (m *mockHandler) OnOperationUpdate(ctx context.Context, op *core.Operation,
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	coreconfig.Reset()
 	config.Set(coreconfig.OpUpdateWorkerCount, 1)
+	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(&database.Capabilities{
 		Concurrency: true,
 	})
 	mdm := &datamocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -75,15 +80,41 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 		}
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	om, err := NewOperationsManager(ctx, "ns1", mdi, txHelper)
+	ns := "ns1"
+	om, err := NewOperationsManager(ctx, ns, mdi, txHelper, cmi)
 	assert.NoError(t, err)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheOperationsLimit,
+		coreconfig.CacheOperationsTTL,
+		ns,
+	))
 	return om.(*operationsManager), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewOperationsManager(context.Background(), "ns1", nil, nil)
+	_, err := NewOperationsManager(context.Background(), "ns1", nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	coreconfig.Reset()
+	config.Set(coreconfig.OpUpdateWorkerCount, 1)
+	mdi := &databasemocks.Plugin{}
+	mdi.On("Capabilities").Return(&database.Capabilities{
+		Concurrency: true,
+	})
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+	ns := "ns1"
+	ecmi := &cachemocks.Manager{}
+	ecmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+	_, err := NewOperationsManager(ctx, ns, mdi, txHelper, ecmi)
+	assert.Equal(t, cacheInitError, err)
 }
 
 func TestPrepareOperationNotSupported(t *testing.T) {
@@ -221,8 +252,7 @@ func TestRetryOperationSuccess(t *testing.T) {
 		Type: op.Type,
 	}
 
-	om.cache = ccache.New(ccache.Configure().MaxSize(100))
-	om.cacheTTL = time.Minute * 10
+	om.cache = cache.NewUmanagedCache(ctx, 100, 10*time.Minute)
 	om.cacheOperation(op)
 
 	mdi := om.database.(*databasemocks.Plugin)

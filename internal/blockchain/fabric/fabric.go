@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -34,12 +33,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -48,6 +47,7 @@ const (
 
 type Fabric struct {
 	ctx            context.Context
+	cancelCtx      context.CancelFunc
 	topic          string
 	defaultChannel string
 	signer         string
@@ -64,8 +64,7 @@ type Fabric struct {
 	metrics        metrics.Manager
 	fabconnectConf config.Section
 	subs           common.FireflySubscriptions
-	cache          *ccache.Cache
-	cacheTTL       time.Duration
+	cache          cache.CInterface
 }
 
 type eventStreamWebsocket struct {
@@ -187,11 +186,12 @@ func (f *Fabric) VerifierType() core.VerifierType {
 	return core.VerifierTypeMSPIdentity
 }
 
-func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.Manager) (err error) {
+func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf config.Section, metrics metrics.Manager, cacheManager cache.Manager) (err error) {
 	f.InitConfig(conf)
 	fabconnectConf := f.fabconnectConf
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
+	f.cancelCtx = cancelCtx
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
@@ -221,11 +221,20 @@ func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.
 	if err != nil {
 		return err
 	}
+	cache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheBlockchainLimit,
+			coreconfig.CacheBlockchainTTL,
+			"",
+		),
+	)
+	if err != nil {
+		return err
+	}
+	f.cache = cache
 
-	f.cacheTTL = config.GetDuration(coreconfig.CacheBlockchainTTL)
-	f.cache = ccache.New(ccache.Configure().MaxSize(config.GetInt64(coreconfig.CacheBlockchainLimit)))
-
-	f.streams = newStreamManager(f.client, f.signer, f.cache, f.cacheTTL)
+	f.streams = newStreamManager(f.client, f.signer, f.cache)
 	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
 	batchTimeout := uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
 	stream, err := f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout)
@@ -471,7 +480,8 @@ func (f *Fabric) eventLoop() {
 			return
 		case msgBytes, ok := <-f.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
+				f.cancelCtx()
 				return
 			}
 
@@ -494,9 +504,9 @@ func (f *Fabric) eventLoop() {
 				continue
 			}
 
-			// Send the ack - only fails if shutting down
 			if err != nil {
-				l.Errorf("Event loop exiting: %s", err)
+				l.Errorf("Event loop exiting (%s). Terminating server!", err)
+				f.cancelCtx()
 				return
 			}
 		}
@@ -830,6 +840,11 @@ func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.
 	return f.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
+func (f *Fabric) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {
+	// Fabconnect does not currently provide any additional status info for listener subscriptions
+	return nil, nil
+}
+
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	// Fabconnect does not require any additional validation beyond "JSON Schema correctness" at this time
 	return nil, nil
@@ -850,14 +865,13 @@ func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAn
 	}
 
 	cacheKey := "version:" + fabricOnChainLocation.Channel + ":" + fabricOnChainLocation.Chaincode
-	if cached := f.cache.Get(cacheKey); cached != nil {
-		cached.Extend(f.cacheTTL)
-		return cached.Value().(int), nil
+	if cachedValue := f.cache.GetInt(cacheKey); cachedValue != 0 {
+		return cachedValue, nil
 	}
 
 	version, err = f.queryNetworkVersion(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode)
 	if err == nil {
-		f.cache.Set(cacheKey, version, f.cacheTTL)
+		f.cache.SetInt(cacheKey, version)
 	}
 	return version, err
 }

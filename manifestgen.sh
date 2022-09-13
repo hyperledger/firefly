@@ -48,6 +48,7 @@ SERVICES=(
     "dataexchange-https"
     "tokens-erc1155"
     "tokens-erc20-erc721"
+    "signer"
 )
 SERVICE_COUNT=${#SERVICES[@]}
 

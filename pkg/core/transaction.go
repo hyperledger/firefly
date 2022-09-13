@@ -39,6 +39,8 @@ var (
 	TransactionTypeContractInvoke = fftypes.FFEnumValue("txtype", "contract_invoke")
 	// TransactionTypeTokenTransfer represents a token approval
 	TransactionTypeTokenApproval = fftypes.FFEnumValue("txtype", "token_approval")
+	// TransactionTypeDataPublish represents a publish to shared storage
+	TransactionTypeDataPublish = fftypes.FFEnumValue("txtype", "data_publish")
 )
 
 // TransactionRef refers to a transaction, in other types

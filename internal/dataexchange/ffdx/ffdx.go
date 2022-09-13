@@ -40,6 +40,7 @@ const DXIDSeparator = "/"
 
 type FFDX struct {
 	ctx          context.Context
+	cancelCtx    context.CancelFunc
 	capabilities *dataexchange.Capabilities
 	callbacks    callbacks
 	client       *resty.Client
@@ -73,12 +74,8 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.Operation
 }
 
 func (cb *callbacks) DXEvent(ctx context.Context, namespace, recipient string, event dataexchange.DXEvent) {
-	cb.plugin.initMutex.Lock()
-	nodeKey := namespace + ":" + recipient
-	node, ok := cb.plugin.nodes[nodeKey]
-	cb.plugin.initMutex.Unlock()
-
-	if ok {
+	node := cb.plugin.findNode(namespace, recipient)
+	if node != nil {
 		key := namespace + ":" + node.Name
 		if handler, ok := cb.handlers[key]; ok {
 			handler.DXEvent(cb.plugin, event)
@@ -166,8 +163,9 @@ func (h *FFDX) Name() string {
 	return "ffdx"
 }
 
-func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
+func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
+	h.cancelCtx = cancelCtx
 	h.ackChannel = make(chan *ack)
 	h.callbacks = callbacks{
 		plugin:     h,
@@ -292,6 +290,18 @@ func (h *FFDX) AddNode(ctx context.Context, networkNamespace, nodeName string, p
 	return nil
 }
 
+func (h *FFDX) findNode(namespace, recipient string) *dxNode {
+	h.initMutex.Lock()
+	defer h.initMutex.Unlock()
+	node := h.nodes[namespace+":"+recipient]
+	if node == nil {
+		// Fall back to nodes registered on the legacy system namespace
+		// (further verification of the off-chain identity will be performed by the event handler)
+		node = h.nodes[core.LegacySystemNamespace+":"+recipient]
+	}
+	return node
+}
+
 func (h *FFDX) UploadBlob(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error) {
 	payloadRef = joinBlobPath(ns, id.String())
 	var upload uploadBlob
@@ -397,7 +407,8 @@ func (h *FFDX) eventLoop() {
 			return
 		case msgBytes, ok := <-h.wsconn.Receive():
 			if !ok {
-				l.Debugf("Event loop exiting (receive channel closed)")
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
+				h.cancelCtx()
 				return
 			}
 

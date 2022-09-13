@@ -18,12 +18,16 @@ package data
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -31,6 +35,47 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	coreconfig.Reset()
+	config.Set(coreconfig.MessageWriterCount, 1)
+	ctx := context.Background()
+	mdi := &databasemocks.Plugin{}
+	mdi.On("Capabilities").Return(&database.Capabilities{
+		Concurrency: true,
+	})
+	mdx := &dataexchangemocks.Plugin{}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+
+	vErrcmi := &cachemocks.Manager{}
+	vErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheValidatorSize,
+		coreconfig.CacheValidatorTTL,
+		ns.Name,
+	)).Return(nil, cacheInitError).Once()
+	defer vErrcmi.AssertExpectations(t)
+	_, err := NewDataManager(ctx, ns, mdi, mdx, vErrcmi)
+	assert.Equal(t, cacheInitError, err)
+
+	mErrcmi := &cachemocks.Manager{}
+	mErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheValidatorSize,
+		coreconfig.CacheValidatorTTL,
+		ns.Name,
+	)).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil).Once()
+	mErrcmi.On("GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheMessageSize,
+		coreconfig.CacheMessageTTL,
+		ns.Name,
+	)).Return(nil, cacheInitError).Once()
+	defer mErrcmi.AssertExpectations(t)
+	_, err = NewDataManager(ctx, ns, mdi, mdx, mErrcmi)
+	assert.Equal(t, cacheInitError, err)
+}
 
 func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	coreconfig.Reset()
@@ -42,8 +87,24 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	})
 	mdx := &dataexchangemocks.Plugin{}
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	dm, err := NewDataManager(ctx, ns, mdi, mdx)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	dm, err := NewDataManager(ctx, ns, mdi, mdx, cmi)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheMessageSize,
+		coreconfig.CacheMessageTTL,
+		ns.Name,
+	))
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		ctx,
+		coreconfig.CacheValidatorSize,
+		coreconfig.CacheValidatorTTL,
+		ns.Name,
+	))
 	assert.NoError(t, err)
+	assert.True(t, dm.BlobsEnabled())
 	dm.Start()
 	return dm.(*dataManager), ctx, func() {
 		cancel()
@@ -213,12 +274,11 @@ func TestWriteNewMessageE2E(t *testing.T) {
 }
 
 func TestInitBadDeps(t *testing.T) {
-	_, err := NewDataManager(context.Background(), &core.Namespace{}, nil, nil)
+	_, err := NewDataManager(context.Background(), &core.Namespace{}, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
 func TestValidatorLookupCached(t *testing.T) {
-
 	coreconfig.Reset()
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()

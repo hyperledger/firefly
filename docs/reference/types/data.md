@@ -59,6 +59,7 @@ nav_order: 16
 | `created` | The creation time of the data resource | [`FFTime`](simpletypes#fftime) |
 | `datatype` | The optional datatype to use of validation of this data | [`DatatypeRef`](#datatyperef) |
 | `value` | The value for the data, stored in the FireFly core database. Can be any JSON type - object, array, string, number or boolean. Can be combined with a binary blob attachment | [`JSONAny`](simpletypes#jsonany) |
+| `public` | If the JSON value has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.) | `string` |
 | `blob` | An optional hash reference to a binary blob attachment | [`BlobRef`](#blobref) |
 
 ## DatatypeRef
@@ -76,6 +77,6 @@ nav_order: 16
 | `hash` | The hash of the binary blob data | `Bytes32` |
 | `size` | The size of the binary data | `int64` |
 | `name` | The name field from the metadata attached to the blob, commonly used as a path/filename, and indexed for search | `string` |
-| `public` | If this data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.) | `string` |
+| `public` | If the blob data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.) | `string` |
 
 

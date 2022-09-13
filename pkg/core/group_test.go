@@ -25,6 +25,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMemberEquals(t *testing.T) {
+	member1 := &Member{
+		Identity: "id1",
+		Node:     fftypes.NewUUID(),
+	}
+	member2 := &Member{
+		Identity: "id1",
+		Node:     fftypes.NewUUID(),
+	}
+	assert.False(t, member1.Equals(member2))
+
+	*member2.Node = *member1.Node
+	assert.True(t, member1.Equals(member2))
+
+	member2 = nil
+	assert.False(t, member1.Equals(member2))
+	assert.True(t, member2.Equals(nil))
+}
+
 func TestGroupValidation(t *testing.T) {
 
 	group := &Group{

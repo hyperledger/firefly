@@ -25,7 +25,7 @@ pages:
   reference: Reference
   tutorials: Tutorials
   understanding_firefly: Understanding FireFly
-  chains: Connecting to other chains
+  chains:  Connecting to remote blockchains
   remote_fabric_network: Remote Fabric Network
   polygon_testnet: Polygon Testnet
   arbitrum: Arbitrum Testnet
@@ -33,7 +33,4 @@ pages:
   binance_smart_chain: Binance Smartchain Testnet
   near: NEAR Testnet
   optimism: Optimism Testnet
-  multiparty_mode: Multiparty Mode
-  deterministic: Deterministic Compute
-  multiparty_flow: Multiparty Process Flow
-  firefly_core: Firefly Core
+  moonbeam_testnet: Moonbeam Testnet
