@@ -100,7 +100,7 @@ ff accounts list avalanche
 
 Copy the address listed in the output from this command. Go to [https://faucet.avax.network/](https://faucet.avax.network/) and paste the address in the form. Make sure that the network you select is Fuji (C-Chain). Click the **Request 2 AVAX** button.
 
-<img alt="Avalanche Faucet" href="images/avalanche_faucet.png" style="max-width: 736px" />
+<img alt="Avalanche Faucet" src="images/avalanche_faucet.png" style="max-width: 736px" />
 
 ### Confirm the transaction on Snowtrace
 You should be able to go lookup your account on [Snowtrace for the Fuji testnet](https://testnet.snowtrace.io/) and see that you now have a balance of 2 AVAX. Simply paste in your account address or transaction ID to search for it.
