@@ -140,7 +140,7 @@ var (
 	MsgUnknownTokensPlugin                = ffe("FF10272", "Unknown tokens plugin '%s'", 400)
 	MsgMissingTokensPluginConfig          = ffe("FF10273", "Invalid tokens configuration - name and plugin are required", 400)
 	MsgTokensRESTErr                      = ffe("FF10274", "Error from tokens service: %s")
-	MsgTokenPoolDuplicate                 = ffe("FF10275", "Duplicate token pool: %s")
+	MsgTokenPoolDuplicate                 = ffe("FF10275", "Duplicate token pool: %s", 409)
 	MsgTokenPoolRejected                  = ffe("FF10276", "Token pool with ID '%s' was rejected. Please check the FireFly logs for more information")
 	MsgIdentityNotFoundByString           = ffe("FF10277", "Identity could not be resolved via lookup string '%s'")
 	MsgAuthorOrgSigningKeyMismatch        = ffe("FF10279", "Author organization '%s' is not associated with signing key '%s'")
