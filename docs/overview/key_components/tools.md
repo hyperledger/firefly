@@ -1,6 +1,6 @@
 ---
-layout: default
-title: Tools
+layout: i18n_page
+title: pages.tools
 parent: pages.key_features
 grand_parent: pages.understanding_firefly
 nav_order: 7

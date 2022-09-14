@@ -8,6 +8,7 @@ pages:
   api_post_syntax: API Post Syntax
   api_query_syntax: API Query Syntax
   api_spec: API Spec
+  apps: Apps
   arbitrum: Arbitrum Testnet
   architecture: Architecture
   avalanche: Avalanche Testnet
@@ -15,7 +16,8 @@ pages:
   blockchain_protocols: Blockchain Protocols
   broadcast_data: Broadcast data
   broadcast_shared_data: Broadcast / Shared Data
-  chains:  Connecting to remote blockchains
+  chains: Connecting to remote blockchains
+  connector_framework: Connector Framework
   code_hierarchy: FireFly Code Hierarchy
   code_overview: FireFly Code Overview
   code_repositories: Code Repositories
@@ -35,12 +37,15 @@ pages:
   key_features: Key Features
   moonbeam_testnet: Moonbeam Testnet
   multiparty_flow: Multiparty Process Flow
-  multiparty_mode: Multiparty Mode
+  multiparty_features: Multiparty Features
   near: NEAR Testnet
   optimism: Optimism Testnet
+  orchestration_engine: Orchestration Engine
   polygon_testnet: Polygon Testnet
   reference: Reference
   remote_fabric_network: Remote Fabric Network
+  security: Security
+  tools: Tools
   tutorials: Tutorials
   understanding_firefly: Understanding FireFly
   usage_patterns: Usage Patterns

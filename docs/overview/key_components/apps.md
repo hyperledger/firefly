@@ -1,6 +1,6 @@
 ---
-layout: default
-title: Apps
+layout: i18n_page
+title: pages.apps
 parent: pages.key_features
 grand_parent: pages.understanding_firefly
 nav_order: 1
@@ -17,22 +17,22 @@ nav_order: 1
 
 Rapidly accelerating development of applications is a key feature of Hyperledger FireFly.
 
-This means the full-stack of the applications that are part of the enterprise Web3 ecosystem,
-not just the Smart Contract layer.
+The toolkit is designed to support the full-stack of applications in the enterprise Web3
+ecosystem, not just the Smart Contract layer.
 
 Business logic APIs, back-office system integrations, and web/mobile user experiences are just
 as important to the overall Web3 use case.
 
-These layers require a different developer skillset to the on-chain Smart Contracts, and those
+These layers require a different developer skill-set to the on-chain Smart Contracts, and those
 developers must have the tools they need to work efficiently.
 
 ### API Gateway
 
-Modern APIs that:
+FireFly provides APIs that:
 
 - Are fast and efficient
 - Have rich query support
-- Give deterministic outcomes and clear instruction for safe use
+- Give deterministic outcomes and clear instructions for safe use
 - Integrate with your security frameworks like OAuth 2.0 / OpenID Connect single sign-on
 - Provide Open API 3 / Swagger definitions
 - Come with code SDKs, with rich type information

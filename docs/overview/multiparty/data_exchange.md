@@ -1,7 +1,7 @@
 ---
 layout: i18n_page
 title: pages.data_exchange
-parent: pages.multiparty_mode
+parent: pages.multiparty_features
 grand_parent: pages.understanding_firefly
 nav_order: 3
 ---

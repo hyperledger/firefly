@@ -1,6 +1,6 @@
 ---
 layout: i18n_page
-title: pages.multiparty_mode
+title: pages.multiparty_features
 parent: pages.understanding_firefly
 nav_order: 4
 has_children: true

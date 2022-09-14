@@ -23,13 +23,12 @@ in large ecosystems, do not come with all the building blocks needed by applicat
 
 ### Token API
 
-Tokens are such a fundamental construct, that they justify a standard API.
-This has been evolving in the industry through standards like ERC-20/ERC-721,
-and Web3 signing wallets and that support these.
+Token standards have been evolving in the industry through standards
+like ERC-20/ERC-721, and the Web3 signing wallets and that support these.
 
-Supernodes bring this same standardization to applications. Providing APIs
-that work across token standards, and blockchain implementations, providing
-consistent and interoperable support.
+Hyperledger FireFly bring this same standardization to the application tier.
+Providing APIs that work across token standards, and blockchain implementations,
+providing consistent and interoperable support.
 
 This means one application or set of back-end systems, can integrate with multiple
 blockchains, and different token implementations.
@@ -38,16 +37,22 @@ Pluggability here is key, so that the rules of governance of each digital
 asset ecosystem can be exposed and enforced. Whether tokens are fungible,
 non-fungible, or some hybrid in between.
 
+> Learn more about token standards for fungible tokens, and non-fungible
+> tokens (NFTs) in [this set of tutorials](../../tutorials/tokens/)
+
 ### Transfer history / audit trail
 
-For efficiency blockchains seldom provide in their core the ability to
-query historical transaction information. Sometimes even the ability
-to query balances is unavailable, for blockchains based on a UTXO model.
+For efficiency blockchains do not provide in a direct ability to
+query historical transaction information.
+
+Depending on the blockchain technology, event the current balance of your
+wallet can be complex to calculate - particularly for blockchain
+technologies based on an Unspent Transaction Output (UTXO) model.
 
 So off-chain indexing of transaction history is an absolute must-have
-for any digital asset solution, or even a simple wallet application.
+for any digital asset solution.
 
-A platform like Hyperledger FireFly provides:
+Hyperledger FireFly provides:
 
 - Automatic indexing of tokens, whether existing or newly deployed
 - Off-chain indexing of fungible and non-fungible asset transfers & balances
@@ -61,7 +66,7 @@ Wallet and signing-key management is a critical requirement for any
 blockchain solution, particularly those involving the transfer
 of digital assets between wallets.
 
-A platform like Hyperledger FireFly provides you the ability to:
+Hyperledger FireFly provides you the ability to:
 
 - Integrate multiple different signing/custody solutions in a proven way
 - Manage the mapping of off-chain identities to on-chain signing identities

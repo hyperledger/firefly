@@ -1,6 +1,6 @@
 ---
-layout: default
-title: Security
+layout: i18n_page
+title: pages.security
 parent: pages.key_features
 grand_parent: pages.understanding_firefly
 nav_order: 6

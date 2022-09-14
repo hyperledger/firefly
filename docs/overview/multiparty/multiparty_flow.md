@@ -1,7 +1,7 @@
 ---
 layout: i18n_page
 title: pages.multiparty_flow
-parent: pages.multiparty_mode
+parent: pages.multiparty_features
 grand_parent: pages.understanding_firefly
 nav_order: 5
 ---
@@ -67,7 +67,7 @@ The ability to globally sequence events _across parties_ is a game changing capa
 systems. FireFly is designed to allow developers to harnesses that power in the application layer, to build
 sophisticated multi-party APIs and user experiences.
 
-[![Multi-party business process flow](../../../images/multiparty_business_process_flow.svg "Multi-party business process flow")](../../../images/multiparty_business_process_flow.svg)
+[![Multi-party business process flow](../../images/multiparty_business_process_flow.jpg "Multi-party business process flow")](../../images/multiparty_business_process_flow.jpg)
 
 - Build multi-party business processes where there is one agreed outcome:
   - Agree the trigger, inputs, outputs of each step in the process
