@@ -3,7 +3,7 @@ layout: i18n_page
 title: pages.multiparty_flow
 parent: pages.multiparty_features
 grand_parent: pages.understanding_firefly
-nav_order: 5
+nav_order: 1
 ---
 
 # Multiparty Process Flows

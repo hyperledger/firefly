@@ -16,8 +16,6 @@ nav_order: 2
 
 ---
 
-## Web3 Gateway and Multiparty Mode
-
 There are usages mode for Hyperledger FireFly: **Web3 Gateway** and **Multiparty**
 
 > A single runtime can operate in both of these modes, using different [namespaces](../reference/namespaces.md).
@@ -31,12 +29,14 @@ is being used by other members of your business network.
 
 In this mode you can:
 - Transfer tokenized value
-- Invoke any other type of smart contracts
+- Invoke any other type of smart contract
 - Index data from the blockchain
-- Store data in decentralized storage - such as metadata/payloads for NFTs
 - Reliably trigger events in your applications and back-office core systems
+- Manage decentralized data (NFTs etc.)
 - Use a _private_ address book to manage signing identities and relationships
 - ... and much more
+
+Learn more about [Web3 Gateway Mode](./gateway_features.html).
 
 ## Multiparty Mode
 
@@ -59,3 +59,4 @@ In this mode you can everything you could do in Web3 Gateway mode, plus:
 - Use a _shared_ address book to manage signing identities and relationships
 - ... and much more
 
+Learn more about [Multiparty Mode](./multiparty_features.html).

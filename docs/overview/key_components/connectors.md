@@ -6,7 +6,7 @@ grand_parent: pages.understanding_firefly
 nav_order: 3
 ---
 
-# Orchestration Engine
+# Connector Framework
 
 {: .no_toc }
 
@@ -23,7 +23,7 @@ to remote runtimes implemented in a variety of programming languages.
 
 [![Hyperledger FireFly Architecture Overview](../../images/firefly_architecture_overview.jpg)](../../images/firefly_architecture_overview.jpg)
 
-## Examples of extension points
+## Extension points
 
 - Blockchain - a rich framework for extensibility to any blockchain / digital ledger technology (DLT)
 - Tokens - mapping token standards and governance models to a common data model
@@ -46,4 +46,4 @@ solutions like Polygon, all the way to permissioned Hyperledger Fabric networks.
 
 ![FireFly Blockchain Connector Framework](../../images/firefly_blockchain_connector_framework.png)
 
-Find out more about the Blockchain Connector Framework [here](../gateway/public_connector.md).
+Find out more about the Blockchain Connector Framework [here](../../architecture/blockchain_connector_framework.html).

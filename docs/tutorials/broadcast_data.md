@@ -33,7 +33,7 @@ nav_order: 1
 
 ## Additional info
 
-- Key Concepts: [Broadcast / shared data](../overview/firefly_modes/multiparty/broadcast.md)
+- Key Concepts: [Broadcast / shared data](../overview/multiparty/broadcast.html)
 - Swagger Reference: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessageBroadcast" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/broadcast</a>
 
 ## Example 1: Inline string data

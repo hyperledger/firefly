@@ -14,12 +14,6 @@ nav_order: 7
 
 ![Hyperledger FireFly Tools](../../images/firefly_functionality_overview_tools.png)
 
-## Tools Overview
-
-There are three main tools within FireFly which are the command line interface (CLI), FireFly Explorer, and FireFly Sandbox.
-
-![FireFly Core](../../images/firefly_core.png "FireFly Core")
-
 ## FireFly CLI
 
 ![FireFly CLI](../../images/firefly_cli.png)

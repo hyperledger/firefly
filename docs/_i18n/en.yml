@@ -15,33 +15,34 @@ pages:
   binance_smart_chain: Binance Smartchain Testnet
   blockchain_protocols: Blockchain Protocols
   broadcast_data: Broadcast data
+  broadcast_data: Broadcast Data
   broadcast_shared_data: Broadcast / Shared Data
   chains: Connecting to remote blockchains
-  connector_framework: Connector Framework
   code_hierarchy: FireFly Code Hierarchy
   code_overview: FireFly Code Overview
   code_repositories: Code Repositories
   configuration_reference: Configuration Reference
+  connector_framework: Connector Framework
   contributors: Contributors
   custom_smart_contracts: Work with custom smart contracts
-  data_exchange: Data Exchange
-  deterministic: Deterministic Compute
   data_security: Data Security
+  deterministic: Deterministic Compute
   digital_assets: Digital Assets
   faqs: FAQs
-  flows: Flows
   firefly_core: Firefly Core
+  flows: Flows
   getting_started: Getting Started
   home: Home
   introduction: Introduction
   key_features: Key Features
   moonbeam_testnet: Moonbeam Testnet
-  multiparty_flow: Multiparty Process Flow
   multiparty_features: Multiparty Features
+  multiparty_flow: Multiparty Process Flow
   near: NEAR Testnet
   optimism: Optimism Testnet
   orchestration_engine: Orchestration Engine
   polygon_testnet: Polygon Testnet
+  private_data_exchange: Private Data Exchange
   reference: Reference
   remote_fabric_network: Remote Fabric Network
   security: Security

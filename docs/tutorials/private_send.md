@@ -48,7 +48,7 @@ nav_order: 2
 
 ## Additional info
 
-- Key Concepts: [Private data exchange](../overview/firefly_modes/multiparty/data_exchange.md)
+- Key Concepts: [Private data exchange](../overview/multiparty/data_exchange.html)
 - Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessagePrivate" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/private</a>
 
 ## Example 1: Pinned private send of in-line string data

@@ -2,7 +2,7 @@
 layout: i18n_page
 title: pages.multiparty_features
 parent: pages.understanding_firefly
-nav_order: 4
+nav_order: 5
 has_children: true
 ---
 
@@ -31,7 +31,7 @@ By combining these technologies with existing best practice technologies for
 data security in regulated industries, multi-party systems allow businesses to
 collaborate in ways previously impossible.
 
-![Multiparty Mode](../../images/multiparty_mode.png "Multiparty Mode")
+![Multiparty Mode](../images/multiparty_mode.png "Multiparty Mode")
 
 Through agreement on a common source of truth, such as the completion of a step in a
 business process to proceed, or the existence and ownership of a unique asset, businesses

@@ -1,9 +1,9 @@
 ---
-layout: default
-title: Broadcast shared data
+layout: i18n_page
+title: pages.broadcast_data
 parent: pages.multiparty_features
 grand_parent: pages.understanding_firefly
-nav_order: 2
+nav_order: 3
 ---
 
 # Broadcast / shared data
@@ -18,7 +18,7 @@ often that needs to include certain reference data that is available
 to all parties in the network. The data needs to be "broadcast" to all
 members, and also need to be available to new members that join the network
 
-![Multi-party Systems](../../../images/multiparty_system1.png "Multi-Party System")
+![Multi-party Systems](../../images/multiparty_system1.png "Multi-Party System")
 
 ## Blockchain backed broadcast
 
@@ -72,15 +72,3 @@ broadcast that FireFly applications do.
 - Deterministic assignment of a namespace+name to an unique item of data
   - If two parties in the network broadcast the same data at similar times, the
     same one "wins" for all parties in the network (including the broadcaster)
-
-## Network Registry
-
-> _Work in progress_
-
-Using a permissioned blockchain and shared data network provides a security mechanism
-to protect against broadcast data being published from outside of the network.
-
-However, some networks might have additional permissioning and security requirements
-on joining the network. As such FireFly defines a plug-point for a Network Registry
-that defines a way to establish authorization to perform a broadcast (that is decoupled
-from the blockchain and shared data tiers themselves).

@@ -3,7 +3,7 @@ layout: i18n_page
 title: pages.deterministic
 parent: pages.multiparty_features
 grand_parent: pages.understanding_firefly
-nav_order: 3
+nav_order: 4
 ---
 
 # Deterministic Compute
