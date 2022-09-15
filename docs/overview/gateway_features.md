@@ -50,7 +50,7 @@ and you can use Hyperledger FireFly as a high volume staging post for those tran
 - Idempotent APIs assuring that business transactions are submitted exactly once
 
 > For EVM based chains, these features were significantly enhanced in the new EVMConnect
-> connector introduced in v1.1 of FireFly (superseding EthConnect).
+> connector introduced in v1.1 of FireFly (superseding [EthConnect](https://github.com/hyperledger/firefly-ethconnect)).
 
 ## Index data from the blockchain
 
@@ -84,7 +84,7 @@ One of the most important universal rules about Web3 applications, is that they 
 
 No one party in the system can chose to change the state, instead they must submit transactions
 that get ordered against everyone else's transactions, and only once confirmed through the
-consensus algorithm are they action.
+consensus algorithm are they actioned.
 
 This means the integration into your application and core systems needs to be event-driven too.
 
@@ -95,7 +95,7 @@ of application code, business workflows, and core system integrations.
 
 ## Manage decentralized data (NFTs etc.)
 
-Your blockchain transactions are likely to need to refer to data that is stored off-chain.
+Your blockchain transactions are likely to refer to data that is stored off-chain.
 
 One common example is non-fungible-token (NFT) metadata, images and documents. These are not
 a good fit for storing directly in any blockchain ledger, so complimentary decentralized
@@ -117,7 +117,7 @@ from your applications via a single Web3 Gateway.
 
 ## Maintain a private address book
 
-You need to manage your signing keys, and known the signing keys of others you are
+You need to manage your signing keys, and know the signing keys of others you are
 transacting with. A blockchain address like `0x0742e81393ee79C768e84cF57F1bF314F0f31ECe`
 is not very helpful for this.
 

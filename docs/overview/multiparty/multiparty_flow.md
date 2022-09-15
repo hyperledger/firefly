@@ -63,8 +63,8 @@ The platform needs to handle all of them:
 
 ## Building multi-party flows
 
-The ability to globally sequence events _across parties_ is a game changing capability of multi-party
-systems. FireFly is designed to allow developers to harnesses that power in the application layer, to build
+The ability to globally sequence events _across parties_ is a game changing capability of a multiparty
+system. FireFly is designed to allow developers to harnesses that power in the application layer, to build
 sophisticated multi-party APIs and user experiences.
 
 [![Multi-party business process flow](../../images/multiparty_business_process_flow.jpg "Multi-party business process flow")](../../images/multiparty_business_process_flow.jpg)
@@ -114,17 +114,32 @@ that are establish within each party.
 
 ## Consider the on-chain toolbox too
 
-In the _deterministic compute_ section we talked about the value that deterministic execution
-of multi-party logic can have. Either through on-chain execution, or advanced privacy preserving
-techniques.
+There is a huge amount of value that deterministic execution of multi-party logic within the blockchain can add.
+However, the more compute is made fully deterministic via a blockchain consensus algorithm validated
+by multiple parties beyond those with a business need for access to the data, the more sensitivity
+needs to be taken to data privacy. Also bear in mind any data that is used in this processing
+becomes immutable - it can never be deleted.
 
-It's important to state that almost every process can be enhanced with more sophisticated
-on-chain constructs like tokens. Maybe it's to build a token economy that enhances the value
-parties get from the system, or encourages healthy participation (and discourages leaching value).
+The core constructs of blockchain are a great place to start.
+Almost every process can be enhanced with pre-built fungible and non-fungible tokens, for example.
+Maybe it's to build a token economy that enhances the value parties get from the system,
+or to encourage healthy participation (and discourage bad behavior).
 Or maybe it's to track exactly which party owns a document, asset, or action within a process using NFTs.
 
-There are also cases where the foundation constructs are insufficient to implement the level of
-automation or efficiency you need in your multi-party process. Here making the investment in building
-bespoke on-chain logic, or apply advanced cryptographic techniques, is the linchpin to a successful
-multi-party ecosystem.
+On top of this you can add advanced tools like digital escrow, signature / threshold based voting
+on outcomes, and atomic swaps of value/ownership.
 
+The investment in building this bespoke on-chain logic is higher than building the off-chain pieces
+(and there are always some off-chain pieces as we've discussed), so it's about finding the kernel
+of value the blockchain can provide to differentiate your solution from a centralized database solution.
+
+The power provided by deterministic sequencing of events, attested by signatures, and pinned
+to private data might be sufficient for some cases. In others the token constructs are the key value
+that differentiates the decentralized ecosystem. Whatever it is, it's important it is identified and
+crafted carefully. 
+
+> Note that advanced privacy preserving techniques such as zero-knowledge proofs (ZKP) are gaining traction
+> and hardening in their production readiness and efficiency. Expect these to play an increasing
+> role in the technology stack of multiparty systems (and Hyperledger FireFly) in the future.
+
+Learn more in the [Deterministic Compute](./deterministic.md) section.

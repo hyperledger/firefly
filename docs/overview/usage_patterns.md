@@ -16,7 +16,7 @@ nav_order: 2
 
 ---
 
-There are usages mode for Hyperledger FireFly: **Web3 Gateway** and **Multiparty**
+There are two modes of usage for Hyperledger Firefly: **Web3 Gateway** and **Multiparty**
 
 > A single runtime can operate in both of these modes, using different [namespaces](../reference/namespaces.md).
 
@@ -47,7 +47,7 @@ Multiparty mode is used to build multi-party systems, with a common application 
 This allows sophisticated applications to be built, that all use the pluggable APIs of Hyperledger FireFly to achieve
 end-to-end business value in an enterprise context.
 
-In this mode you can everything you could do in Web3 Gateway mode, plus:
+In this mode you can do everything you could do in Web3 Gateway mode, plus:
 - Share and enforce common data formats
 - Exchange data privately, via an encrypted data bus
   - Structured JSON data payloads

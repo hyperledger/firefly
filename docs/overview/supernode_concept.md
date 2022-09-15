@@ -27,7 +27,7 @@ Multiple blockchains, multiple token economies, and multiple business networks.
 FireFly is not another blockchain implementation, rather it is a pluggable API Orchestration and Data layer,
 integrating into all of the different types of decentralized technologies that exist in Web3:
 
-- Public Blockchains, Layer 2 scaling solutions, Side chains & App chains
+- Public Blockchains, Layer 2 scaling solutions, Side chains, and App chains
 - Permissioned Blockchains and Distributed Ledger Technologies (DLTs)
 - Decentralized storage solutions
 - Token ecosystems and standards
@@ -47,7 +47,7 @@ It exposes an API and Event Bus to your business logic, that is reliable, develo
 We call this a _Supernode_ - it sits between the application and the underlying infrastructure nodes,
 providing layers of additional function.
 
-![Without FireFly / with FireFly](../images/without_firefly_with_firefly1.png)
+![Without FireFly / with FireFly](../images/firefly-getting-started-steps.png)
 
 The concept of a Supernode has evolved over the last decade of enterprise blockchain projects, as developers realized
 that they need much more than a blockchain node for their projects to be successful.

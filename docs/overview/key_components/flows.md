@@ -15,7 +15,7 @@ nav_order: 5
 
 ## Data flow
 
-The reality of most web3 scenarios is that only a small part of the overall use-case
+The reality of most Web3 scenarios is that only a small part of the overall use-case
 can be represented _inside_ the blockchain or distributed ledger technology.
 
 Some additional data flow is always required. This does not diminish the value of
@@ -48,7 +48,7 @@ and protect each party while the steps are being completed.
 
 ### Non-fungible Tokens (NFTs) and hash-pinning
 
-The data associated an NFT might be as simple as a JSON document pointing at an interesting
+The data associated with an NFT might be as simple as a JSON document pointing at an interesting
 piece of artwork, or as complex a set of high resolution scans / authenticity documents
 representing a _digital twin_ of a real world object.
 

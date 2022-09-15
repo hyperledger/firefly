@@ -55,7 +55,7 @@ mature blockchain technology, and all multi-party systems should consider exploi
   - Gives you an anchor to attach to something in the real world
   - This is the magic behind non-fungible tokens (NTFs)
   - The proven technology for this is a shared ledger of its creation, and ownership changes
-  - _Learn more in the Tokens section_
+  - Learn more in the [Tokens](../../tutorials/tokens/index.html) section
 - An agreed sequence of events
   - The foundation tool that allows the building of higher level constructs (including tokens)
   - Not previously available when business ecosystems used HTTP/Messaging transports alone
@@ -66,7 +66,7 @@ mature blockchain technology, and all multi-party systems should consider exploi
   - The glue that binds a piece of private data, to a proof that you have a copy of that data
   - This is the basis of "pinning" data to the blockchain, without sharing its contents
   - Care needs to be taken to make sure the data is unique enough to make the hash secure
-  - _Learn more in the On-chain/off-chain coordination section_
+  - Learn more in the [Gateway Features](../gateway_features.html#manage-decentralized-data-nfts-etc) section
 
 ## Advanced Cryptography and Privacy Preserving Trusted Compute
 
@@ -101,7 +101,7 @@ in the network. Those businesses then bring on-board an ecosystem of employees a
 are end-users to the system.
 
 So the shared source of truth empowered by the blockchain and other cryptography are not the only
-tools that can be used in the toolbox to ensure correct behavior. Regognizing that there are real
+tools that can be used in the toolbox to ensure correct behavior. Recognizing that there are real
 legal entities involved, that are mature and regulated, does not undermine the value of the blockchain
 components. In fact it enhances it.
 
@@ -116,4 +116,5 @@ Not to be overlooked is the sometimes astonishing efficiency increase that can b
 business relationships, by being able to agree the order and sequence of a set of events. Having the
 tools to digitize processes that previously took physical documents flying round the world, into
 near-immediate digital agreement where the arbitration of a dispute can be resolved at a tiny fraction
-of what would have been possible without a shared and immutable audit trail of who said what when. -->
+of what would have been possible without a shared and immutable audit trail of who said what when.
+

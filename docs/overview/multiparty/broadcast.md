@@ -30,7 +30,8 @@ Using the blockchain also gives a global order of events for these broadcasts,
 which allows them to be processed by each member in a way that allows them
 to derive the same result - even though the processing logic on the events
 themselves is being performed independently by each member.
-For more information see _Global sequencing_.
+
+For more information see [Multiparty Event Sequencing](../../architecture/multiparty_event_sequencing.html).
 
 ## Shared data
 
@@ -59,11 +60,11 @@ all parties in the network:
 - Network map
   - Organizational identities
   - Nodes
-  - See _Identity_ for more information
+  - See [Identities](../../reference/identities.html) in the reference section for more information
 - Datatype definitions
-  - See _Agreed datatypes_ for more information
+  - See [Datatype](../../reference/types/datatype.html) in the reference section for more information
 - Namespaces
-  - See _Namespaces_ for more information
+  - See [Namespaces](../../reference/namespaces.html) for more information
 
 These definitions rely on the same assurances provided by blockchain backed
 broadcast that FireFly applications do.

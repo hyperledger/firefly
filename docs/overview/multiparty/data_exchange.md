@@ -14,7 +14,7 @@ nav_order: 2
 ## Introduction
 
 Private data exchange is the way most enterprise business-to-business communication
-happens today. One party private sends data to another, over a pipe that has been
+happens today. One party privately sends data to another, over a pipe that has been
 agreed as sufficiently secure between the two parties. That might be a REST API,
 SOAP Web Service, FTP / EDI, Message Queue (MQ), or other B2B Gateway technology.
 

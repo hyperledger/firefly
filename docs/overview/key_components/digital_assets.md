@@ -24,7 +24,7 @@ in large ecosystems, do not come with all the building blocks needed by applicat
 ### Token API
 
 Token standards have been evolving in the industry through standards
-like ERC-20/ERC-721, and the Web3 signing wallets and that support these.
+like ERC-20/ERC-721, and the Web3 signing wallets that support these.
 
 Hyperledger FireFly bring this same standardization to the application tier.
 Providing APIs that work across token standards, and blockchain implementations,
@@ -42,10 +42,10 @@ non-fungible, or some hybrid in between.
 
 ### Transfer history / audit trail
 
-For efficiency blockchains do not provide in a direct ability to
+For efficiency blockchains do not provide a direct ability to
 query historical transaction information.
 
-Depending on the blockchain technology, event the current balance of your
+Depending on the blockchain technology, even the current balance of your
 wallet can be complex to calculate - particularly for blockchain
 technologies based on an Unspent Transaction Output (UTXO) model.
 

@@ -68,7 +68,7 @@ There are many multiparty use cases. An example for healthcare is detailed below
 
 Patient care requires multiple entities to work together including healthcare providers, insurance companies, and medical systems. Sharing data between these parties is inefficient and prone to errors and patient information must be kept secure and up to date. Blockchain's shared ledger makes it possible to automate data sharing while ensuring accuracy and privacy.
 
-In a Multi-party FireFly system, entities are able to share data privately as detailed in the "Data Exchange" section. For example, imagine a scenario where there is 1 healthcare provide and 2 insurance companies operating in a multi-party system. Insurance company A may send private data to the healthcare provider that insurance company B is not privy to. While insurance company B may not know the contents of data transferred, it may verify that a transfer of data did occur. This validation is all thats needed to maintain an up to date state of the blockchain.
+In a Multi-party FireFly system, entities are able to share data privately as detailed in the "Data Exchange" section. For example, imagine a scenario where there is one healthcare provide and two insurance companies operating in a multi-party system. Insurance company A may send private data to the healthcare provider that insurance company B is not privy to. While insurance company B may not know the contents of data transferred, it may verify that a transfer of data did occur. This validation is all thats needed to maintain an up to date state of the blockchain.
 
 In a larger healthcare ecosystem with many members, a similar concept may emerge with multiple variations of members.
 
