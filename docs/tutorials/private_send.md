@@ -48,7 +48,7 @@ nav_order: 2
 
 ## Additional info
 
-- Key Concepts: [Private data exchange](../overview/data_exchange.md)
+- Key Concepts: [Private data exchange](../overview/multiparty/data_exchange.html)
 - Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessagePrivate" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/private</a>
 
 ## Example 1: Pinned private send of in-line string data
@@ -283,10 +283,10 @@ Make sure to expand the "Send a Private Message" section. Enter your message int
 
 Notice how the `data` field in the center panel updates in real time as you update the message you wish to send.
 
-Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds. 
+Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds.
 
 ![Private Message result](../images/message_broadcast_sample_result.png)
 
-Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you'll see your successful blockchain transaction. Compare the "Recent Network Changes" widget With private messages, your 
+Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you'll see your successful blockchain transaction. Compare the "Recent Network Changes" widget With private messages, your
 
 ![Successful Transaction](../images/firefly_first_successful_transaction.png)

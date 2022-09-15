@@ -4,33 +4,50 @@ langs:
 site:
   title: Hyperledger FireFly Docs
 pages:
-  home: Home
   advanced_cli_usage: Advanced CLI Usage
-  api_spec: API Spec
-  architecture: Architecture
   api_post_syntax: API Post Syntax
   api_query_syntax: API Query Syntax
-  blockchain_protocols: Blockchain protocols
-  broadcast_shared_data: Broadcast / shared data
+  api_spec: API Spec
+  apps: Apps
+  arbitrum: Arbitrum Testnet
+  architecture: Architecture
+  avalanche: Avalanche Testnet
+  binance_smart_chain: Binance Smartchain Testnet
+  blockchain_protocols: Blockchain Protocols
   broadcast_data: Broadcast data
+  broadcast_data: Broadcast Data
+  broadcast_shared_data: Broadcast / Shared Data
+  chains: Connecting to remote blockchains
   code_hierarchy: FireFly Code Hierarchy
   code_overview: FireFly Code Overview
   code_repositories: Code Repositories
   configuration_reference: Configuration Reference
+  connector_framework: Connector Framework
   contributors: Contributors
   custom_smart_contracts: Work with custom smart contracts
+  data_security: Data Security
+  deterministic: Deterministic Compute
+  digital_assets: Digital Assets
   faqs: FAQs
+  firefly_core: Firefly Core
+  flows: Flows
   getting_started: Getting Started
-  private_data_exchange: Private data exchange
-  reference: Reference
-  tutorials: Tutorials
-  understanding_firefly: Understanding FireFly
-  chains:  Connecting to remote blockchains
-  remote_fabric_network: Remote Fabric Network
-  polygon_testnet: Polygon Testnet
-  arbitrum: Arbitrum Testnet
-  avalanche: Avalanche Testnet
-  binance_smart_chain: Binance Smartchain Testnet
+  home: Home
+  introduction: Introduction
+  key_features: Key Features
+  moonbeam_testnet: Moonbeam Testnet
+  multiparty_features: Multiparty Features
+  multiparty_flow: Multiparty Process Flow
   near: NEAR Testnet
   optimism: Optimism Testnet
-  moonbeam_testnet: Moonbeam Testnet
+  orchestration_engine: Orchestration Engine
+  polygon_testnet: Polygon Testnet
+  private_data_exchange: Private Data Exchange
+  reference: Reference
+  remote_fabric_network: Remote Fabric Network
+  security: Security
+  tools: Tools
+  tutorials: Tutorials
+  understanding_firefly: Understanding FireFly
+  usage_patterns: Usage Patterns
+  web3_gateway_features: Web3 Gateway Features

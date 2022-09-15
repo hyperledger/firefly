@@ -1,18 +1,13 @@
 ---
 layout: i18n_page
-title: pages.broadcast_shared_data
-parent: pages.understanding_firefly
-nav_order: 8
+title: pages.broadcast_data
+parent: pages.multiparty_features
+grand_parent: pages.understanding_firefly
+nav_order: 3
 ---
 
 # Broadcast / shared data
 {: .no_toc }
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
 
 ---
 
@@ -23,7 +18,7 @@ often that needs to include certain reference data that is available
 to all parties in the network. The data needs to be "broadcast" to all
 members, and also need to be available to new members that join the network
 
-![Multi-party Systems](../images/multiparty_system.png "Multi-Party System")
+![Multi-party Systems](../../images/multiparty_system1.png "Multi-Party System")
 
 ## Blockchain backed broadcast
 
@@ -35,7 +30,8 @@ Using the blockchain also gives a global order of events for these broadcasts,
 which allows them to be processed by each member in a way that allows them
 to derive the same result - even though the processing logic on the events
 themselves is being performed independently by each member.
-For more information see _Global sequencing_.
+
+For more information see [Multiparty Event Sequencing](../../architecture/multiparty_event_sequencing.html).
 
 ## Shared data
 
@@ -64,11 +60,11 @@ all parties in the network:
 - Network map
   - Organizational identities
   - Nodes
-  - See _Identity_ for more information
+  - See [Identities](../../reference/identities.html) in the reference section for more information
 - Datatype definitions
-  - See _Agreed datatypes_ for more information
+  - See [Datatype](../../reference/types/datatype.html) in the reference section for more information
 - Namespaces
-  - See _Namespaces_ for more information
+  - See [Namespaces](../../reference/namespaces.html) for more information
 
 These definitions rely on the same assurances provided by blockchain backed
 broadcast that FireFly applications do.
@@ -77,15 +73,3 @@ broadcast that FireFly applications do.
 - Deterministic assignment of a namespace+name to an unique item of data
   - If two parties in the network broadcast the same data at similar times, the
     same one "wins" for all parties in the network (including the broadcaster)
-
-## Network Registry
-
-> _Work in progress_
-
-Using a permissioned blockchain and shared data network provides a security mechanism
-to protect against broadcast data being published from outside of the network.
-
-However, some networks might have additional permissioning and security requirements
-on joining the network. As such FireFly defines a plug-point for a Network Registry
-that defines a way to establish authorization to perform a broadcast (that is decoupled
-from the blockchain and shared data tiers themselves).

@@ -2,7 +2,7 @@
 layout: default
 title: Example Transaction Flow
 parent: pages.architecture
-nav_order: 3
+nav_order: 5
 ---
 
 # Example Transaction Flow (Ping Pong)

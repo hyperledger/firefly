@@ -33,7 +33,7 @@ They can be thought of in two basic modes:
 ### Multi-party Namespaces
 This namespace is shared with one or more other FireFly nodes. It requires three types of communication plugins - blockchain, data exchange, and shared storage. Organization and node identities must be claimed with an identity broadcast when joining the namespace, which establishes credentials for blockchain and off-chain communication. Shared objects can be defined in the namespace (such as datatypes and token pools), and details of them will be implicitly broadcast to other members.
 
-This type of namespace is used when multiple parties need to share on- and off-chain data and agree upon the ordering and authenticity of that data. For more information, see the [multi-party system](../overview/multiparty.md) overview.
+This type of namespace is used when multiple parties need to share on- and off-chain data and agree upon the ordering and authenticity of that data. For more information, see the [multi-party system](../overview/multiparty_features.md) overview.
 
 ### Gateway Namespaces
 

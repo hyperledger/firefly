@@ -102,4 +102,4 @@ manifest:
 docker:
 		./docker_build.sh $(DOCKER_ARGS)
 docs: .ALWAYS
-		cd docs && bundle install && bundle exec jekyll build && bundle exec htmlproofer --disable-external --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/:/' --url-ignore /127.0.0.1/,/localhost/
+		cd docs && bundle install && bundle exec jekyll build && bundle exec htmlproofer --disable-external --allow-hash-href --allow_missing_href true --swap-urls '^/firefly/:/' --ignore-urls /127.0.0.1/,/localhost/ ./_site

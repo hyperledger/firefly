@@ -4,7 +4,7 @@ title: Hyperledger FireFly Docs
 baseurl: /firefly
 aux_links:
   "GitHub":
-    - "//github.com/hyperledger/firefly"
+    - "https://github.com/hyperledger/firefly"
   "Wiki":
     - "https://wiki.hyperledger.org/display/FIR"
   "Discord":

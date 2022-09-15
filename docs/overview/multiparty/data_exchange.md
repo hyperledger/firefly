@@ -1,29 +1,24 @@
 ---
 layout: i18n_page
 title: pages.private_data_exchange
-parent: pages.understanding_firefly
-nav_order: 7
+parent: pages.multiparty_features
+grand_parent: pages.understanding_firefly
+nav_order: 2
 ---
 
 # Private data exchange
 {: .no_toc }
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
 
 ---
 
 ## Introduction
 
 Private data exchange is the way most enterprise business-to-business communication
-happens today. One party private sends data to another, over a pipe that has been
+happens today. One party privately sends data to another, over a pipe that has been
 agreed as sufficiently secure between the two parties. That might be a REST API,
 SOAP Web Service, FTP / EDI, Message Queue (MQ), or other B2B Gateway technology.
 
-![Multi-party Systems](../images/multiparty_system.png "Multi-Party System")
+![Multi-party Systems](../../images/multiparty_system1.png "Multi-Party System")
 
 The ability to perform these same private data exchanges within
 a multi-party system is critical. In fact it's common for the majority of business
