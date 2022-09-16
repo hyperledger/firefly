@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=Edge">
 
   
-    <title>Arbitrum Testnet - Hyperledger FireFly Docs</title>
+    <title>NEAR Testnet - Hyperledger FireFly Docs</title>
 
     
   
@@ -27,18 +27,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>pages.arbitrum | Hyperledger FireFly Docs</title>
+<title>pages.near | Hyperledger FireFly Docs</title>
 <meta name="generator" content="Jekyll v3.9.2" />
-<meta property="og:title" content="pages.arbitrum" />
+<meta property="og:title" content="pages.near" />
 <meta property="og:locale" content="en" />
 <meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
 <meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
 <meta property="og:site_name" content="Hyperledger FireFly Docs" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="pages.arbitrum" />
+<meta property="twitter:title" content="pages.near" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"pages.arbitrum","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/tutorials/chains/Arbitrum.html"}</script>
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"pages.near","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/tutorials/chains/near.html"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -130,16 +130,12 @@
                     <a href="/firefly/head/tutorials/chains/binance_smart_chain.html" class="nav-list-link">Binance Smartchain Testnet</a>
                   </li><li class="nav-list-item ">
                     <a href="/firefly/head/tutorials/chains/avalanche.html" class="nav-list-link">Avalanche Testnet</a>
-                  </li><li class="nav-list-item  active">
-                    <a href="/firefly/head/tutorials/chains/Arbitrum.html" class="nav-list-link active">Arbitrum Testnet</a>
                   </li><li class="nav-list-item ">
                     <a href="/firefly/head/tutorials/chains/arbitrum.html" class="nav-list-link">Arbitrum Testnet</a>
                   </li><li class="nav-list-item ">
-                    <a href="/firefly/head/tutorials/chains/Optimism.html" class="nav-list-link">Optimism Testnet</a>
-                  </li><li class="nav-list-item ">
                     <a href="/firefly/head/tutorials/chains/optimism.html" class="nav-list-link">Optimism Testnet</a>
-                  </li><li class="nav-list-item ">
-                    <a href="/firefly/head/tutorials/chains/NEAR.html" class="nav-list-link">NEAR Testnet</a>
+                  </li><li class="nav-list-item  active">
+                    <a href="/firefly/head/tutorials/chains/near.html" class="nav-list-link active">NEAR Testnet</a>
                   </li><li class="nav-list-item ">
                     <a href="/firefly/head/tutorials/chains/fabric_remote.html" class="nav-list-link">Remote Fabric Network</a>
                   </li><li class="nav-list-item ">
@@ -268,17 +264,17 @@
                 <li class="breadcrumb-nav-list-item"><a href="/firefly/head/tutorials/">Tutorials</a></li>
                 <li class="breadcrumb-nav-list-item"><a href="/firefly/head/tutorials/chains/">Connecting to remote blockchains</a></li>
               
-              <li class="breadcrumb-nav-list-item"><span>Arbitrum Testnet</span></li>
+              <li class="breadcrumb-nav-list-item"><span>NEAR Testnet</span></li>
             </ol>
           </nav>
         
       
       <div id="main-content" class="main-content" role="main">
         
-          <h1 class="no_toc" id="arbitrum-testnet">
+          <h1 class="no_toc" id="near-testnet">
         
         
-          <a href="#arbitrum-testnet" class="anchor-heading" aria-labelledby="arbitrum-testnet"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Arbitrum Testnet
+          <a href="#near-testnet" class="anchor-heading" aria-labelledby="near-testnet"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> NEAR Testnet
         
         
       </h1>
@@ -297,14 +293,14 @@
   <li><a href="#create-an-evmconnectyml-config-file" id="markdown-toc-create-an-evmconnectyml-config-file">Create an <code class="language-plaintext highlighter-rouge">evmconnect.yml</code> config file</a></li>
   <li><a href="#creating-a-new-stack" id="markdown-toc-creating-a-new-stack">Creating a new stack</a></li>
   <li><a href="#start-the-stack" id="markdown-toc-start-the-stack">Start the stack</a></li>
-  <li><a href="#get-some-aribitrum" id="markdown-toc-get-some-aribitrum">Get some Aribitrum</a>    <ol>
-      <li><a href="#confirm-the-transaction-on-bscscan" id="markdown-toc-confirm-the-transaction-on-bscscan">Confirm the transaction on Bscscan</a></li>
+  <li><a href="#get-some-near" id="markdown-toc-get-some-near">Get some NEAR</a>    <ol>
+      <li><a href="#confirm-the-transaction-on-near-testnet-explorer" id="markdown-toc-confirm-the-transaction-on-near-testnet-explorer">Confirm the transaction on NEAR Testnet Explorer</a></li>
     </ol>
   </li>
   <li><a href="#use-the-public-testnet" id="markdown-toc-use-the-public-testnet">Use the public testnet</a></li>
 </ol><hr />
 
-<p>Starting with FireFly v1.1, it’s easy to connect to public Ethereum chains. This guide will walk you through the steps to create a local FireFly development environment and connect it to the Arbitrum Nitro Goerli Rollup Testnet.</p>
+<p>Starting with FireFly v1.1, it’s easy to connect to public Ethereum chains. This guide will walk you through the steps to create a local FireFly development environment and connect it to the NEAR testnet.</p>
       <h2 id="previous-steps-install-the-firefly-cli">
         
         
@@ -324,7 +320,7 @@
         
       </h2>
     
-<p>In order to connect to the Binance Smart Chain testnet, you will need to set a few configuration options for the evmconnect blockchain connector. Create a text file called <code class="language-plaintext highlighter-rouge">evmconnect.yml</code> with the following contents:</p>
+<p>In order to connect to the NEAR testnet, you will need to set a few configuration options for the evmconnect blockchain connector. Create a text file called <code class="language-plaintext highlighter-rouge">evmconnect.yml</code> with the following contents:</p>
 
 <div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">confirmations</span><span class="pi">:</span>
     <span class="na">required</span><span class="pi">:</span> <span class="m">4</span>
@@ -343,27 +339,27 @@
         
       </h2>
     
-<p>To create a local FireFly development stack and connect it to the Arbitrum testnet, we will use command line flags to customize the following settings:</p>
+<p>To create a local FireFly development stack and connect it to the NEAR testnet, we will use command line flags to customize the following settings:</p>
 
 <ul>
-  <li>Create a new stack named <code class="language-plaintext highlighter-rouge">arbitrum</code> with <code class="language-plaintext highlighter-rouge">1</code> member</li>
+  <li>Create a new stack named <code class="language-plaintext highlighter-rouge">near</code> with <code class="language-plaintext highlighter-rouge">1</code> member</li>
   <li>Disable <code class="language-plaintext highlighter-rouge">multiparty</code> mode. We are going to be using this FireFly node as a Web3 gateway, and we don’t need to communicate with a consortium here</li>
   <li>Connect to an ethereum network</li>
   <li>Use the <code class="language-plaintext highlighter-rouge">evmconnect</code> blockchain connector</li>
   <li>Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.</li>
-  <li>Set the remote RPC node URL to <code class="language-plaintext highlighter-rouge">https://goerli-rollup.arbitrum.io/rpc</code> (for a full list of testnet RPC node urls visit https://developer.offchainlabs.com/docs/Public_Chains)</li>
-  <li>Set the chain ID to <code class="language-plaintext highlighter-rouge">421613</code> (the correct ID for the Binance Smart Chain testnet)</li>
+  <li>Set the remote RPC node URL to <code class="language-plaintext highlighter-rouge">https://rpc.testnet.near.org</code> (RPC nodes for other NEAR networks may be found here https://docs.near.org/api/rpc/setup)</li>
+  <li>Set the chain ID to any number (NEAR works with any chain ID)</li>
   <li>Merge the custom config created above with the generated <code class="language-plaintext highlighter-rouge">evmconnect</code> config file</li>
 </ul>
 
 <p>To do this, run the following command:</p>
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff init arbitrum 1 \
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff init near 1 \
     --multiparty=false \
     -b ethereum \
     -c evmconnect \
     -n remote-rpc \
-    --remote-node-url https://goerli-rollup.arbitrum.io/rpc \
-    --chain-id 421613 \
+    --remote-node-url https://rpc.testnet.near.org \
+    --chain-id 1 \
     --connector-config ~/Desktop/evmconnect.yml
 </code></pre></div></div>
       <h2 id="start-the-stack">
@@ -376,7 +372,7 @@
     
 <p>Now you should be able to start your stack by running:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff start arbitrum
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff start near
 </code></pre></div></div>
 
 <p>After some time it should print out the following:</p>
@@ -387,43 +383,49 @@ Sandbox UI for member '0': http://127.0.0.1:5109
 
 To see logs for your stack run:
 
-ff logs arbitrum
+ff logs near
 </code></pre></div></div>
-      <h2 id="get-some-aribitrum">
+      <h2 id="get-some-near">
         
         
-          <a href="#get-some-aribitrum" class="anchor-heading" aria-labelledby="get-some-aribitrum"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Get some Aribitrum
+          <a href="#get-some-near" class="anchor-heading" aria-labelledby="get-some-near"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Get some NEAR
         
         
       </h2>
     
-<p>At this point you should have a working FireFly stack, talking to a public chain. However, you won’t be able to run any transactions just yet, because you don’t have any way to pay for gas.</p>
+<p>At this point you should have a working FireFly stack, talking to a public chain. However, you won’t be able to run any transactions just yet, because you don’t have any way to pay for gas. A testnet faucet can give us some NEAR, the native token for the NEAR protocol.</p>
 
 <p>First, you will need to know what signing address your FireFly node is using. To check that, you can run:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff accounts list arbitrum
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff accounts list near
 [
   {
-    "address": "0x225764d1be1f137be23ddfc426b819512b5d0f3e",
+    "address": "0xa4ed2a9a99dfdf46f1812c38a1656ff2ad1f61da",
     "privateKey": "..."
   }
 ]
 </code></pre></div></div>
+<p>Note, for the NEAR protocol, the line labeled privateKey is the address you will use.</p>
 
-<p>Copy the address listed in the output from this command. Next, check out this article <a href="https://medium.com/offchainlabs/new-g%C3%B6rli-testnet-and-getting-rinkeby-ready-for-nitro-3ff590448053">https://medium.com/offchainlabs/new-g%C3%B6rli-testnet-and-getting-rinkeby-ready-for-nitro-3ff590448053</a> and follow the instructions to send a tweet to the developers. Make sure to change the address to the one in the CLI.</p>
+<p>Go to <a href="https://near-faucet.io/">https://near-faucet.io/</a> and click <strong>Connect with Near Testnet</strong>. Next click <strong>Create Accounte</strong>, make an account ID, and choose a security method. Follow the steps for either the Seedphrase or Ledger Hardware Wallet until your NEAR account is created. Once complete you will be redirected to the original https://near-faucet.io/ page and are now able to request 20 NEAR tokens.</p>
 
-<p><img src="/firefly/head/tutorials/chains/images/arbitrum_faucet.png" alt="Arbitrum Faucet" /></p>
-      <h3 id="confirm-the-transaction-on-bscscan">
+<p><img src="/firefly/head/tutorials/chains/images/near_faucet.png" alt="NEAR Faucet" /> 
+<img src="/firefly/head/tutorials/chains/images/near_account.png" alt="NEAR Account" />
+<img src="/firefly/head/tutorials/chains/images/near_account_name.png" alt="NEAR Account Name" />
+<img src="/firefly/head/tutorials/chains/images/near_fund_account.png" alt="Fund Account" /></p>
+      <h3 id="confirm-the-transaction-on-near-testnet-explorer">
         
         
-          <a href="#confirm-the-transaction-on-bscscan" class="anchor-heading" aria-labelledby="confirm-the-transaction-on-bscscan"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Confirm the transaction on Bscscan
+          <a href="#confirm-the-transaction-on-near-testnet-explorer" class="anchor-heading" aria-labelledby="confirm-the-transaction-on-near-testnet-explorer"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Confirm the transaction on NEAR Testnet Explorer
         
         
       </h3>
     
-<p>You should be able to go lookup your account on <a href="https://goerli-rollup-explorer.arbitrum.io/">https://goerli-rollup-explorer.arbitrum.io/</a> and see that you now have a balance of 0.001 ether. Simply paste in your account address to search for it.</p>
+<p>Once the request for 20 NEAR tokens is completed, go to <a href="https://explorer.testnet.near.org/">https://explorer.testnet.near.org/</a> and search via your account name. Once it is found click on the link under <strong>Balance Profile</strong> to access your NEAR wallet. From here, click the <strong>Wallet</strong> button in the top left and then <strong>Send</strong>. Choose a denomination of NEAR to send, enter your 64 character string denominated as privateKey from the FireFly CLI, and you will now have funded tokens in your account.</p>
 
-<p><img src="/firefly/head/tutorials/chains/images/arbitrum_scan.png" alt="Blockscout Scan" /></p>
+<p><img src="/firefly/head/tutorials/chains/images/near_scan.png" alt="NEAR Scan" />
+<img src="/firefly/head/tutorials/chains/images/near_account_lookup.png" alt="Account Lookup" />
+<img src="/firefly/head/tutorials/chains/images/near_wallet_send_funds.png" alt="NEAR Wallet Send Funds" /></p>
       <h2 id="use-the-public-testnet">
         
         
@@ -432,7 +434,7 @@ ff logs arbitrum
         
       </h2>
     
-<p>Now that you have everything set up, you can follow one of the other FireFly guides such as <a href="/firefly/head/tutorials/tokens/">Using Tokens</a> or <a href="/firefly/head/tutorials/custom_contracts/ethereum.html">Custom Smart Contracts</a>. For detailed instructions on deploying a custom smart contract to Binance Smart Chain, please see the <a href="https://developer.offchainlabs.com/docs/Contract_Deployment">Arbitrum docs</a> for instructions using various tools.</p>
+<p>Now that you have everything set up, you can follow one of the other FireFly guides such as <a href="/firefly/head/tutorials/tokens/">Using Tokens</a> or <a href="/firefly/head/tutorials/custom_contracts/ethereum.html">Custom Smart Contracts</a>. For detailed instructions on deploying a custom smart contract to NEAR, please see the <a href="https://docs.near.org/develop/contracts/introduction">NEAR docs</a> for instructions using various tools.</p>
 
         
 
