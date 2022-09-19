@@ -6,13 +6,15 @@ nav_order: 8
 ---
 
 # Create a Custom Identity
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -26,6 +28,7 @@ Out of the box, a FireFly Supernode contains both an `org` and a `node` identity
 - Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewIdentity" data-proofer-ignore>POST /api/v1/identities</a>
 
 ## Previous steps: Start your environment
+
 If you haven't started a FireFly stack already, please go to the Getting Started guide on how to [Start your environment](../../gettingstarted/setup_env.md)
 
 [← ② Start your environment](../../gettingstarted/setup_env.md){: .btn .btn-purple .mb-5}
@@ -61,7 +64,7 @@ If we want to create a new custom identity under the organizational identity tha
 
 ### Response
 
-```json
+```js
 {
     "namespace": {...},
     "node": {...},
@@ -82,7 +85,6 @@ If we want to create a new custom identity under the organizational identity tha
 }
 ```
 
-
 ## Step 3: Register the new custom identity with FireFly
 
 Now we can `POST` to the identities endpoint to create a new custom identity. We will include the UUID of the organizational identity from the previous step in the `"parent"` field in the request.
@@ -91,7 +93,7 @@ Now we can `POST` to the identities endpoint to create a new custom identity. We
 
 `POST` `http://localhost:5000/api/v1/identities`
 
-```json
+```js
 {
     "name": "myCustomIdentity",
     "key": "0xc00109e112e21165c7065da776c75cfbc9cdc5e7", // Signing Key from Step 1
@@ -101,7 +103,7 @@ Now we can `POST` to the identities endpoint to create a new custom identity. We
 
 ### Response
 
-```json
+```js
 {
     "id": "5ea8f770-e004-48b5-af60-01994230ed05",
     "did": "did:firefly:myCustomIdentity",
@@ -123,11 +125,13 @@ Lastly, if we want to confirm that the new identity has been created, we can que
 
 ### Request
 
-`GET` `http://localhost:5000/api/v1/identities`
+`GET` `http://localhost:5000/api/v1/identities?fetchverifiers=true`
+
+> **NOTE**: Using `fetchverifiers=true` will return the cryptographic verification mechanism for the FireFly identity.
 
 ### Response
 
-```json
+```js
 [
     {
         "id": "5ea8f770-e004-48b5-af60-01994230ed05",
@@ -142,7 +146,13 @@ Lastly, if we want to confirm that the new identity has been created, we can que
             "update": null
         },
         "created": "2022-09-19T18:10:47.365068013Z",
-        "updated": "2022-09-19T18:10:47.365068013Z"
+        "updated": "2022-09-19T18:10:47.365068013Z",
+        "verifiers": [
+            {
+                "type": "ethereum_address",
+                "value": "0xfe1ea8c8a065a0cda424e2351707c7e8eb4d2b6f"
+            }
+        ]
     },
     { ... },
     { ... }
