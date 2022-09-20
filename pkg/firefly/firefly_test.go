@@ -14,12 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package firefly
 
 import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"syscall"
 	"testing"
 
@@ -30,17 +31,17 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-const configDir = "../test/data/config"
+const configDir = "../../test/data/config"
 
 func TestGetEngine(t *testing.T) {
-	assert.NotNil(t, getRootManager())
+	assert.NotNil(t, GetRootManager())
 }
 
 func TestExecMissingConfig(t *testing.T) {
 	_utManager = &namespacemocks.Manager{}
 	defer func() { _utManager = nil }()
 	viper.Reset()
-	err := Execute()
+	err := Run("")
 	assert.Regexp(t, "Not Found", err)
 }
 
@@ -48,10 +49,9 @@ func TestShowConfig(t *testing.T) {
 	_utManager = &namespacemocks.Manager{}
 	defer func() { _utManager = nil }()
 	viper.Reset()
-	rootCmd.SetArgs([]string{"showconf"})
-	defer rootCmd.SetArgs([]string{})
-	err := rootCmd.Execute()
-	assert.NoError(t, err)
+	output := ShowConfig("")
+	assert.Regexp(t, "^Key\\s*Value\n", output)
+	assert.Greater(t, len(strings.Split(output, "\n")), 3)
 }
 
 func TestExecEngineInitFail(t *testing.T) {
@@ -60,7 +60,7 @@ func TestExecEngineInitFail(t *testing.T) {
 	_utManager = o
 	defer func() { _utManager = nil }()
 	os.Chdir(configDir)
-	err := Execute()
+	err := Run("")
 	assert.Regexp(t, "splutter", err)
 }
 
@@ -71,7 +71,7 @@ func TestExecEngineStartFail(t *testing.T) {
 	_utManager = o
 	defer func() { _utManager = nil }()
 	os.Chdir(configDir)
-	err := Execute()
+	err := Run("")
 	assert.Regexp(t, "bang", err)
 }
 
@@ -87,7 +87,7 @@ func TestExecOkExitSIGINT(t *testing.T) {
 	go func() {
 		sigs <- syscall.SIGINT
 	}()
-	err := Execute()
+	err := Run("")
 	assert.NoError(t, err)
 }
 
@@ -104,7 +104,7 @@ func TestExecOkCancel(t *testing.T) {
 	defer func() { _utManager = nil }()
 
 	os.Chdir(configDir)
-	err := run()
+	err := Run("")
 	assert.NoError(t, err)
 }
 
@@ -127,7 +127,7 @@ func TestExecOkRestartThenExit(t *testing.T) {
 	defer func() { _utManager = nil }()
 
 	os.Chdir(configDir)
-	err := run()
+	err := Run("")
 	assert.EqualError(t, err, "second run")
 }
 
@@ -152,7 +152,7 @@ func TestExecOkRestartConfigProblem(t *testing.T) {
 	defer func() { _utManager = nil }()
 
 	os.Chdir(configDir)
-	err = run()
+	err = Run("")
 	assert.Regexp(t, "Config File.*Not Found", err)
 }
 
