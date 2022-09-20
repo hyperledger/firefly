@@ -75,7 +75,7 @@ fi
 cd $CWD
 
 if [ "$BUILD_FIREFLY" == "true" ]; then
-  make -C ../.. docker
+  make -C ../.. DOCKER_ARGS="--load" docker
   checkOk $?
 fi
 
