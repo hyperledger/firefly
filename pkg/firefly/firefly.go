@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package firefly
 
 import (
 	"context"
@@ -34,74 +34,45 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 )
 
 const configSuffix = "core"
 
 var sigs = make(chan os.Signal, 1)
 
-var rootCmd = &cobra.Command{
-	Use:   "firefly",
-	Short: "FireFly is a complete stack for enterprises to build and scale secure Web3 applications",
-	Long: `Hyperledger FireFly is the first open source Supernode: a complete stack for
-enterprises to build and scale secure Web3 applications. The FireFly API for digital
-assets, data flows, and blockchain transactions makes it radically faster to build
-production-ready apps on popular chains and protocols.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return run()
-	},
-}
-
-var showConfigCommand = &cobra.Command{
-	Use:     "showconfig",
-	Aliases: []string{"showconf"},
-	Short:   "List out the configuration options",
-	Run: func(cmd *cobra.Command, args []string) {
-		// Initialize config of all plugins
-		resetConfig()
-		getRootManager()
-		_ = config.ReadConfig(configSuffix, cfgFile)
-
-		// Print it all out
-		fmt.Printf("%-64s %v\n", "Key", "Value")
-		fmt.Print("-----------------------------------------------------------------------------------\n")
-		for _, k := range config.GetKnownKeys() {
-			fmt.Printf("%-64s %v\n", k, config.Get(config.RootKey(k)))
-		}
-	},
-}
-
-var cfgFile string
-
 var _utManager namespace.Manager
 
-func init() {
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "", "config file")
-	rootCmd.AddCommand(showConfigCommand)
-}
-
-func resetConfig() {
+func ResetConfig() {
 	coreconfig.Reset()
 	apiserver.InitConfig()
 }
 
-func getRootManager() namespace.Manager {
+func ShowConfig(cfgFile string) string {
+	// Initialize config of all plugins
+	ResetConfig()
+	GetRootManager()
+	_ = config.ReadConfig(configSuffix, cfgFile)
+
+	// Print it all out
+	result := fmt.Sprintf("%-64s %v\n", "Key", "Value")
+	result = fmt.Sprintf("%s-----------------------------------------------------------------------------------\n", result)
+	for _, k := range config.GetKnownKeys() {
+		result = fmt.Sprintf("%s%-64s %v\n", result, k, config.Get(config.RootKey(k)))
+	}
+	return result
+}
+
+func GetRootManager() namespace.Manager {
 	if _utManager != nil {
 		return _utManager
 	}
 	return namespace.NewNamespaceManager(true)
 }
 
-// Execute is called by the main method of the package
-func Execute() error {
-	return rootCmd.Execute()
-}
-
-func run() error {
+func Run(cfgFile string) error {
 
 	// Read the configuration
-	resetConfig()
+	ResetConfig()
 	err := config.ReadConfig(configSuffix, cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly
@@ -124,7 +95,7 @@ func run() error {
 	for {
 		log.L(rootCtx).Infof("Starting up")
 		runCtx, cancelRunCtx := context.WithCancel(rootCtx)
-		mgr := getRootManager()
+		mgr := GetRootManager()
 		as := apiserver.NewAPIServer()
 		errChan := make(chan error, 1)
 		resetChan := make(chan bool, 1)
@@ -148,7 +119,7 @@ func run() error {
 			// Must wait for the server to close before we restart
 			<-ffDone
 			// Re-read the configuration
-			resetConfig()
+			ResetConfig()
 			if err := config.ReadConfig(configSuffix, cfgFile); err != nil {
 				return err
 			}
