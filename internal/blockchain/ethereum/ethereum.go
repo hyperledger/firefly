@@ -742,10 +742,13 @@ func encodeContractLocation(ctx context.Context, location *Location) (result *ff
 	return result, err
 }
 
-func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) error {
-	location, err := parseContractLocation(ctx, listener.Location)
-	if err != nil {
-		return err
+func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (err error) {
+	var location *Location
+	if listener.Location != nil {
+		location, err = parseContractLocation(ctx, listener.Location)
+		if err != nil {
+			return err
+		}
 	}
 	abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
 	if err != nil {
