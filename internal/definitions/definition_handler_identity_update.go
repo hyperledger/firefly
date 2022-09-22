@@ -48,8 +48,17 @@ func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context,
 		return HandlerResult{Action: ActionReject}, nil
 	}
 
+	parent, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
+	if err != nil && retryable {
+		return HandlerResult{Action: ActionRetry}, err
+	} else if err != nil {
+		log.L(ctx).Infof("Unable to process identity update (parked) %s: %s", msg.Header.ID, err)
+		return HandlerResult{Action: ActionWait}, nil
+	}
+
 	// Check the author matches
-	if identity.DID != msg.Header.Author {
+	expectedSigner := dh.getExpectedSigner(identity, parent)
+	if expectedSigner.DID != msg.Header.Author {
 		log.L(ctx).Warnf("Invalid identity update message %s - wrong author: %s", msg.Header.ID, msg.Header.Author)
 		return HandlerResult{Action: ActionReject}, nil
 	}

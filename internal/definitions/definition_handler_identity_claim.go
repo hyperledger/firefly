@@ -36,6 +36,16 @@ func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, 
 
 }
 
+func (dh *definitionHandlers) getExpectedSigner(identity *fftypes.Identity, parent *fftypes.Identity) *fftypes.Identity {
+	switch {
+	case identity.Type == fftypes.IdentityTypeNode && parent != nil:
+		// In the special case of a node, the parent signs it directly
+		return parent
+	default:
+		return identity
+	}
+}
+
 func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *fftypes.Message, identity *fftypes.Identity, parent *fftypes.Identity) (valid bool) {
 
 	author := msg.Header.Author
@@ -43,14 +53,7 @@ func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *fft
 		return false
 	}
 
-	var expectedSigner *fftypes.Identity
-	switch {
-	case identity.Type == fftypes.IdentityTypeNode:
-		// In the special case of a node, the parent signs it directly
-		expectedSigner = parent
-	default:
-		expectedSigner = identity
-	}
+	expectedSigner := dh.getExpectedSigner(identity, parent)
 
 	valid = author == expectedSigner.DID ||
 		(expectedSigner.Type == fftypes.IdentityTypeOrg && author == fmt.Sprintf("%s%s", fftypes.FireFlyOrgDIDPrefix, expectedSigner.ID))
