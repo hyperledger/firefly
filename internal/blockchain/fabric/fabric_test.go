@@ -1442,6 +1442,67 @@ func TestAddSubscription(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestAddSubscriptionNoChannel(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.streamID = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"chaincode": "mycode",
+			}.String()),
+			Event: &core.FFISerializedEvent{},
+			Options: &core.ContractListenerOptions{
+				FirstEvent: string(core.SubOptsFirstEventOldest),
+			},
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "0", body["fromBlock"])
+			return httpmock.NewJsonResponderOrPanic(200, &subscription{})(req)
+		})
+
+	err := e.AddContractListener(context.Background(), sub)
+
+	assert.Regexp(t, "FF10310.*channel", err)
+}
+
+func TestAddSubscriptionNoLocation(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.streamID = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Event: &core.FFISerializedEvent{},
+			Options: &core.ContractListenerOptions{
+				FirstEvent: string(core.SubOptsFirstEventOldest),
+			},
+		},
+	}
+
+	err := e.AddContractListener(context.Background(), sub)
+
+	assert.Regexp(t, "FF10310.*channel", err)
+}
+
 func TestAddSubscriptionBadLocation(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
@@ -2171,6 +2232,18 @@ func TestNormalizeContractLocation(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
+}
+
+func TestNormalizeContractLocationNoChannel(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	location := &Location{
+		Chaincode: "simplestorage",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Regexp(t, "FF10310.*channel", err)
 }
 
 func TestValidateNoContractLocationChaincode(t *testing.T) {
