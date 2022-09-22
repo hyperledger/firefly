@@ -271,7 +271,7 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 	return req, res, nil
 }
 
-func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
+func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray, fastAck bool) error {
 	req, res, gwErr := wh.attemptRequest(sub, event, data)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
@@ -298,7 +298,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 			txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
 		}
 		if cb, ok := wh.callbacks[sub.Namespace]; ok {
-			log.L(wh.ctx).Tracef("Sending reply message in response to webhook message %s", event.Message.Header.ID)
+			log.L(wh.ctx).Debugf("Sending reply message for %s CID=%s", event.ID, event.Message.Header.ID)
 			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 				ID:           event.ID,
 				Rejected:     false,
@@ -318,6 +318,14 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 						{Value: fftypes.JSONAnyPtrBytes(b)},
 					},
 				},
+			})
+		}
+	} else if !fastAck {
+		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+				ID:           event.ID,
+				Rejected:     false,
+				Subscription: event.Subscription,
 			})
 		}
 	}
@@ -347,13 +355,22 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event
 	}
 
 	// In fastack mode we drive calls in parallel to the backend, immediately acknowledging the event
-	if sub.Options.TransportOptions().GetBool("fastack") {
+	// NOTE: We cannot use this with reply mode, as when we're sending a reply the `DeliveryResponse`
+	//       callback must include the reply in-line.
+	if !reply && sub.Options.TransportOptions().GetBool("fastack") {
+		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+				ID:           event.ID,
+				Rejected:     false,
+				Subscription: event.Subscription,
+			})
+		}
 		go func() {
-			err := wh.doDelivery(connID, reply, sub, event, data)
+			err := wh.doDelivery(connID, reply, sub, event, data, true)
 			log.L(wh.ctx).Warnf("Webhook delivery failed in fastack mode for event '%s': %s", event.ID, err)
 		}()
 		return nil
 	}
 
-	return wh.doDelivery(connID, reply, sub, event, data)
+	return wh.doDelivery(connID, reply, sub, event, data, false)
 }
