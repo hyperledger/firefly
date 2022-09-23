@@ -1651,7 +1651,7 @@
   },"275": {
     "doc": "Create a Custom Identity",
     "title": "Table of contents",
-    "content": ". | TOC | . ",
+    "content": ". | Quick reference | Additional info | Previous steps: Start your environment | Step 1: Create a new account | Step 2: Query the parent org for its UUID . | Request | Response | . | Step 3: Register the new custom identity with FireFly . | Request | Response | . | Step 4: Query the New Custom Identity . | Request | Response | . | . ",
     "url": "/firefly/head/tutorials/create_custom_identity.html#table-of-contents",
     "relUrl": "/tutorials/create_custom_identity.html#table-of-contents"
   },"276": {
