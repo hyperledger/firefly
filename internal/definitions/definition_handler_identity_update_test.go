@@ -74,6 +74,7 @@ func TestHandleDefinitionIdentityUpdateOk(t *testing.T) {
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
+	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
@@ -105,6 +106,7 @@ func TestHandleDefinitionIdentityUpdateUpsertFail(t *testing.T) {
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
+	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("UpsertIdentity", ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
@@ -127,9 +129,48 @@ func TestHandleDefinitionIdentityInvalidIdentity(t *testing.T) {
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
+	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, false, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, fftypes.DataArray{updateData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.NoError(t, err)
+
+	mim.AssertExpectations(t)
+	bs.assertNoFinalizers()
+}
+
+func TestHandleDefinitionVerifyFail(t *testing.T) {
+	dh, bs := newTestDefinitionHandlers(t)
+	ctx := context.Background()
+
+	org1, updateMsg, updateData, _ := testIdentityUpdate(t)
+	updateMsg.Header.Author = "wrong"
+
+	mim := dh.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
+	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, true, fmt.Errorf("pop"))
+
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, fftypes.DataArray{updateData}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Regexp(t, "pop", err)
+
+	mim.AssertExpectations(t)
+	bs.assertNoFinalizers()
+}
+
+func TestHandleDefinitionVerifyWait(t *testing.T) {
+	dh, bs := newTestDefinitionHandlers(t)
+	ctx := context.Background()
+
+	org1, updateMsg, updateData, _ := testIdentityUpdate(t)
+	updateMsg.Header.Author = "wrong"
+
+	mim := dh.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
+	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
+
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, fftypes.DataArray{updateData}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionWait}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
