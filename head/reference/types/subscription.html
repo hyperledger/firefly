@@ -569,8 +569,15 @@ allowing you to customize your HTTP requests as follows:</p>
       <li>Method, URL, query, headers and input body</li>
     </ul>
   </li>
-  <li>Wait for a successful <code class="language-plaintext highlighter-rouge">2xx</code> HTTP code from the back-end service, before
-acknowledging (default).</li>
+  <li>Wait for a invocation of the back-end service, before acknowledging
+    <ul>
+      <li>To retry requests to your Webhook on a non-<code class="language-plaintext highlighter-rouge">2xx</code> HTTP status code
+or other error, then you should enable and configure
+<a href="../../config.html#eventswebhooksretry">events.webhooks.retry</a></li>
+      <li>The event is acknowledged once the request (with any retries), is
+completed - regardless of whether the outcome was a success or failure.</li>
+    </ul>
+  </li>
   <li>Use <code class="language-plaintext highlighter-rouge">fastack</code> to acknowledge against FireFly immediately and make multiple
 parallel calls to the HTTP API in a fire-and-forget fashion.</li>
   <li>Set the HTTP request details dynamically from <code class="language-plaintext highlighter-rouge">message_confirmed</code> events:

@@ -2819,6 +2819,207 @@
     </tr>
   </tbody>
 </table>
+      <h2 id="eventswebhooks">
+        
+        
+          <a href="#eventswebhooks" class="anchor-heading" aria-labelledby="eventswebhooks"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> events.webhooks
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>connectionTimeout</td>
+      <td>The maximum amount of time that a connection is allowed to remain with no data transmitted</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
+    </tr>
+    <tr>
+      <td>expectContinueTimeout</td>
+      <td>See <a href="https://pkg.go.dev/net/http#Transport">ExpectContinueTimeout in the Go docs</a></td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">1s</code></td>
+    </tr>
+    <tr>
+      <td>headers</td>
+      <td>Adds custom headers to HTTP requests</td>
+      <td><code class="language-plaintext highlighter-rouge">map[string]string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>idleTimeout</td>
+      <td>The max duration to hold a HTTP keepalive connection between calls</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">475ms</code></td>
+    </tr>
+    <tr>
+      <td>maxIdleConns</td>
+      <td>The max number of idle connections to hold pooled</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
+    </tr>
+    <tr>
+      <td>requestTimeout</td>
+      <td>The maximum amount of time that a request is allowed to remain open</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
+    </tr>
+    <tr>
+      <td>tlsHandshakeTimeout</td>
+      <td>The maximum amount of time to wait for a successful TLS handshake</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">10s</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="eventswebhooksauth">
+        
+        
+          <a href="#eventswebhooksauth" class="anchor-heading" aria-labelledby="eventswebhooksauth"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> events.webhooks.auth
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>password</td>
+      <td>Password</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>username</td>
+      <td>Username</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="eventswebhooksproxy">
+        
+        
+          <a href="#eventswebhooksproxy" class="anchor-heading" aria-labelledby="eventswebhooksproxy"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> events.webhooks.proxy
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>url</td>
+      <td>Optional HTTP proxy server to connect through</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="eventswebhooksretry">
+        
+        
+          <a href="#eventswebhooksretry" class="anchor-heading" aria-labelledby="eventswebhooksretry"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> events.webhooks.retry
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>count</td>
+      <td>The maximum number of times to retry</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5</code></td>
+    </tr>
+    <tr>
+      <td>enabled</td>
+      <td>Enables retries</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>initWaitTime</td>
+      <td>The initial retry delay</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">250ms</code></td>
+    </tr>
+    <tr>
+      <td>maxWaitTime</td>
+      <td>The maximum retry delay</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="eventswebsockets">
+        
+        
+          <a href="#eventswebsockets" class="anchor-heading" aria-labelledby="eventswebsockets"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> events.websockets
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>readBufferSize</td>
+      <td>WebSocket read buffer size</td>
+      <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
+    </tr>
+    <tr>
+      <td>writeBufferSize</td>
+      <td>WebSocket write buffer size</td>
+      <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
+    </tr>
+  </tbody>
+</table>
       <h2 id="histograms">
         
         
