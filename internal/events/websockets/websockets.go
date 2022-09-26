@@ -40,7 +40,8 @@ type WebSockets struct {
 	auth         core.Authorizer
 }
 
-func (ws *WebSockets) Name() string { return "websockets" }
+func Name() string                  { return "websockets" }
+func (ws *WebSockets) Name() string { return Name() }
 
 func (ws *WebSockets) Init(ctx context.Context, config config.Section) error {
 	*ws = WebSockets{

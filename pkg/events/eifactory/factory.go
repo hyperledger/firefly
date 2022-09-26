@@ -18,8 +18,10 @@ package eifactory
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/events/webhooks"
@@ -27,24 +29,31 @@ import (
 	"github.com/hyperledger/firefly/pkg/events"
 )
 
-var plugins = []events.Plugin{
-	&websockets.WebSockets{},
-	&webhooks.WebHooks{},
-	&system.Events{},
+var websocketsPlugin = websockets.WebSockets{}
+var webhooksPlugin = webhooks.WebHooks{}
+var systemEventsPlugin = system.Events{}
+var pluginsByName = map[string]func() events.Plugin{
+	websockets.Name(): func() events.Plugin { return &websocketsPlugin },
+	webhooks.Name():   func() events.Plugin { return &webhooksPlugin },
+	system.Name():     func() events.Plugin { return &systemEventsPlugin },
 }
 
-var pluginsByName = make(map[string]events.Plugin)
+// Allows other code to register additional implementations of Event plugins
+// that can also be initialized with this factory
+func RegisterPlugins(plugins map[string]func() events.Plugin) {
+	fmt.Println("registering plugins")
 
-func init() {
-	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
+	for k, plugin := range plugins {
+		fmt.Printf("registering '%s'\n", k)
+		pluginsByName[k] = plugin
 	}
 }
 
-func GetPlugin(ctx context.Context, pluginType string) (events.Plugin, error) {
-	plugin, ok := pluginsByName[pluginType]
+func GetPlugin(ctx context.Context, pluginName string) (events.Plugin, error) {
+	plugin, ok := pluginsByName[pluginName]
 	if !ok {
-		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownEventTransportPlugin, pluginType)
+		log.L(ctx).Infof("plugin not found '%s'", pluginName)
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownEventTransportPlugin, pluginName)
 	}
-	return plugin, nil
+	return plugin(), nil
 }

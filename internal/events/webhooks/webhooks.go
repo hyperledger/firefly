@@ -60,7 +60,8 @@ type whResponse struct {
 	Body    *fftypes.JSONAny   `json:"body"`
 }
 
-func (wh *WebHooks) Name() string { return "webhooks" }
+func Name() string                { return "webhooks" }
+func (wh *WebHooks) Name() string { return Name() }
 
 func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error) {
 	*wh = WebHooks{
