@@ -63,12 +63,13 @@ type whResponse struct {
 func (wh *WebHooks) Name() string { return "webhooks" }
 
 func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error) {
+	connID := fftypes.ShortID()
 	*wh = WebHooks{
-		ctx:          ctx,
+		ctx:          log.WithLogField(ctx, "webhook", wh.connID),
 		capabilities: &events.Capabilities{},
 		callbacks:    make(map[string]events.Callbacks),
 		client:       ffresty.New(ctx, config),
-		connID:       fftypes.ShortID(),
+		connID:       connID,
 	}
 	return nil
 }
@@ -85,7 +86,9 @@ func (wh *WebHooks) Capabilities() *events.Capabilities {
 
 func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.JSONObject) (req *whRequest, err error) {
 	req = &whRequest{
-		r:         wh.client.R().SetDoNotParseResponse(true),
+		r: wh.client.R().
+			SetDoNotParseResponse(true).
+			SetContext(wh.ctx),
 		url:       options.GetString("url"),
 		method:    options.GetString("method"),
 		forceJSON: options.GetBool("json"),
@@ -223,8 +226,10 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 		}
 	}
 
+	log.L(wh.ctx).Debugf("Webhook-> %s %s event %s on subscription %s", req.method, req.url, event.ID, sub.ID)
 	resp, err := req.r.Execute(req.method, req.url)
 	if err != nil {
+		log.L(wh.ctx).Errorf("Webhook<- %s %s event %s on subscription %s failed: %s", req.method, req.url, event.ID, sub.ID, err)
 		return nil, nil, err
 	}
 	defer func() { _ = resp.RawBody().Close() }()
@@ -233,6 +238,7 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 		Status:  resp.StatusCode(),
 		Headers: fftypes.JSONObject{},
 	}
+	log.L(wh.ctx).Infof("Webhook<- %s %s event %s on subscription %s returned %d", req.method, req.url, event.ID, sub.ID, res.Status)
 	header := resp.Header()
 	for h := range header {
 		res.Headers[h] = header.Get(h)
@@ -265,7 +271,7 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 	return req, res, nil
 }
 
-func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
+func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray, fastAck bool) error {
 	req, res, gwErr := wh.attemptRequest(sub, event, data)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
@@ -292,6 +298,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 			txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
 		}
 		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+			log.L(wh.ctx).Debugf("Sending reply message for %s CID=%s", event.ID, event.Message.Header.ID)
 			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 				ID:           event.ID,
 				Rejected:     false,
@@ -311,6 +318,14 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 						{Value: fftypes.JSONAnyPtrBytes(b)},
 					},
 				},
+			})
+		}
+	} else if !fastAck {
+		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+				ID:           event.ID,
+				Rejected:     false,
+				Subscription: event.Subscription,
 			})
 		}
 	}
@@ -340,13 +355,22 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event
 	}
 
 	// In fastack mode we drive calls in parallel to the backend, immediately acknowledging the event
-	if sub.Options.TransportOptions().GetBool("fastack") {
+	// NOTE: We cannot use this with reply mode, as when we're sending a reply the `DeliveryResponse`
+	//       callback must include the reply in-line.
+	if !reply && sub.Options.TransportOptions().GetBool("fastack") {
+		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+				ID:           event.ID,
+				Rejected:     false,
+				Subscription: event.Subscription,
+			})
+		}
 		go func() {
-			err := wh.doDelivery(connID, reply, sub, event, data)
+			err := wh.doDelivery(connID, reply, sub, event, data, true)
 			log.L(wh.ctx).Warnf("Webhook delivery failed in fastack mode for event '%s': %s", event.ID, err)
 		}()
 		return nil
 	}
 
-	return wh.doDelivery(connID, reply, sub, event, data)
+	return wh.doDelivery(connID, reply, sub, event, data, false)
 }

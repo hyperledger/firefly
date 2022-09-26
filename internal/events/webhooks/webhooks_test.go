@@ -360,7 +360,11 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	groupHash := fftypes.NewRandB32()
-	sub := &core.Subscription{}
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
 	to := sub.Options.TransportOptions()
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	event := &core.EventDelivery{
@@ -380,7 +384,8 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 			},
 		},
 		Subscription: core.SubscriptionRef{
-			ID: sub.ID,
+			ID:        sub.ID,
+			Namespace: "ns1",
 		},
 	}
 	data := &core.Data{
@@ -390,9 +395,16 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 		}`),
 	}
 
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
+		return !response.Rejected
+	})).Return(nil)
+
 	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{data})
 	assert.NoError(t, err)
 	assert.True(t, called)
+
+	mcb.AssertExpectations(t)
 }
 
 func TestRequestReplyEmptyData(t *testing.T) {
@@ -638,7 +650,7 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 	mcb.AssertExpectations(t)
 }
 
-func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
+func TestWebhookFailFastAsk(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
 
@@ -652,7 +664,6 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 			Namespace: "ns1",
 		},
 	}
-	sub.Options.TransportOptions()["reply"] = true
 	sub.Options.TransportOptions()["fastack"] = true
 	event := &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -673,17 +684,11 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 
 	waiter := make(chan struct{})
 	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
-	dr := mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
-		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
-		assert.Nil(t, response.Reply.Message.Header.Group)
-		assert.Equal(t, core.MessageTypeBroadcast, response.Reply.Message.Header.Type)
-		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
-		assert.Regexp(t, "FF10242", response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
-		return true
-	})).Return(nil)
-	dr.RunFn = func(a mock.Arguments) {
-		close(waiter)
-	}
+	mcb.On("DeliveryResponse", mock.Anything, mock.Anything).
+		Return(nil).
+		Run(func(a mock.Arguments) {
+			close(waiter)
+		})
 
 	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},

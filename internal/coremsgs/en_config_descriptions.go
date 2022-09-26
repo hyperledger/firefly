@@ -351,4 +351,9 @@ var (
 	ConfigPluginsAuth     = ffc("config.plugins.auth", "Authorization plugin configuration", i18n.MapStringStringType)
 	ConfigPluginsAuthName = ffc("config.plugins.auth[].name", "The name of the auth plugin to use", i18n.StringType)
 	ConfigPluginsAuthType = ffc("config.plugins.auth[].type", "The type of the auth plugin to use", i18n.StringType)
+
+	ConfigPluginsEventSystemReadAhead           = ffc("config.events.system.readAhead", "", i18n.IgnoredType)
+	ConfigPluginsEventWebhooksURL               = ffc("config.events.webhooks.url", "", i18n.IgnoredType)
+	ConfigPluginsEventWebSocketsReadBufferSize  = ffc("config.events.websockets.readBufferSize", "WebSocket read buffer size", i18n.ByteSizeType)
+	ConfigPluginsEventWebSocketsWriteBufferSize = ffc("config.events.websockets.writeBufferSize", "WebSocket write buffer size", i18n.ByteSizeType)
 )
