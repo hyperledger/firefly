@@ -45,6 +45,7 @@ pages:
   private_data_exchange: Private Data Exchange
   reference: Reference
   remote_fabric_network: Remote Fabric Network
+  release_notes: Release Notes
   security: Security
   tools: Tools
   tutorials: Tutorials
