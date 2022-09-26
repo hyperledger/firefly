@@ -15,7 +15,7 @@ has_children: false
 
 What's New:
 - Gateway Mode: Connect to many chains with auto-indexing of activities
-- Public EVM Chain Support: Manage public chain connections including Ethereum, Polygon, Arbitrum, Binance Smart Chain, Moonbeam, and more. \
+- Public EVM Chain Support: Manage public chain connections including Ethereum, Polygon, Arbitrum, Binance Smart Chain, Moonbeam, and more.
 - Namespaces: Isolated environments within a FireFly runtime allowing independent configuration of plugin and infrastructure components and more
 - Connector Toolkit: Quickly build custom connectors
 - Pluggable API Security: Plug in your own API security
