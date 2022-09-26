@@ -229,7 +229,7 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 	log.L(wh.ctx).Debugf("Webhook-> %s %s event %s on subscription %s", req.method, req.url, event.ID, sub.ID)
 	resp, err := req.r.Execute(req.method, req.url)
 	if err != nil {
-		log.L(wh.ctx).Errorf("Webhook<-! %s %s event %s on subscription %s failed: %s", req.method, req.url, event.ID, sub.ID, err)
+		log.L(wh.ctx).Errorf("Webhook<- %s %s event %s on subscription %s failed: %s", req.method, req.url, event.ID, sub.ID, err)
 		return nil, nil, err
 	}
 	defer func() { _ = resp.RawBody().Close() }()
