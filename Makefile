@@ -101,5 +101,7 @@ manifest:
 		./manifestgen.sh
 docker:
 		./docker_build.sh $(DOCKER_ARGS)
+docker-multiarch:
+		./docker_build.sh --platform linux/amd64,linux/arm64 $(DOCKER_ARGS) 
 docs: .ALWAYS
 		cd docs && bundle install && bundle exec jekyll build && bundle exec htmlproofer --disable-external --allow-hash-href --allow_missing_href true --swap-urls '^/firefly/:/' --ignore-urls /127.0.0.1/,/localhost/ ./_site

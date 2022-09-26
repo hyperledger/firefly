@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -46,6 +47,12 @@ func RegisterPlugins(plugins map[string]func() events.Plugin) {
 	for k, plugin := range plugins {
 		fmt.Printf("registering '%s'\n", k)
 		pluginsByName[k] = plugin
+	}
+}
+
+func InitConfig(config config.Section) {
+	for name, plugin := range pluginsByName {
+		plugin().InitConfig(config.SubSection(name))
 	}
 }
 

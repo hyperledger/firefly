@@ -257,7 +257,7 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req
 func (cm *contractManager) addContractURLs(httpServerURL string, api *core.ContractAPI) {
 	if api != nil {
 		// These URLs must match the actual routes in apiserver.createMuxRouter()!
-		baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, api.Namespace, api.Name)
+		baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, cm.namespace, api.Name)
 		api.URLs.OpenAPI = baseURL + "/api/swagger.json"
 		api.URLs.UI = baseURL + "/api"
 	}
@@ -471,8 +471,11 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 	if err := fftypes.ValidateFFNameField(ctx, listener.Topic, "topic"); err != nil {
 		return nil, err
 	}
-	if listener.Location, err = cm.blockchain.NormalizeContractLocation(ctx, listener.Location); err != nil {
-		return nil, err
+
+	if listener.Location != nil {
+		if listener.Location, err = cm.blockchain.NormalizeContractLocation(ctx, listener.Location); err != nil {
+			return nil, err
+		}
 	}
 
 	if listener.Options == nil {

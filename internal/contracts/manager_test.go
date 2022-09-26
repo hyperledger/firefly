@@ -632,6 +632,43 @@ func TestAddContractListenerInline(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestAddContractListenerNoLocationOK(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+						},
+					},
+				},
+			},
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
+	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
+	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
+
+	result, err := cm.AddContractListener(context.Background(), sub)
+	assert.NoError(t, err)
+	assert.NotNil(t, result.ID)
+	assert.NotNil(t, result.Event)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestAddContractListenerByEventPath(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)

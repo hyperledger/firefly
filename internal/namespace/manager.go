@@ -190,6 +190,9 @@ func NewNamespaceManager(withDefaults bool) Manager {
 	tifactory.InitConfig(tokensConfig)
 	authfactory.InitConfigArray(authConfig)
 
+	// Events still live at the root of the config
+	eifactory.InitConfig(config.RootSection("events"))
+
 	return nm
 }
 
