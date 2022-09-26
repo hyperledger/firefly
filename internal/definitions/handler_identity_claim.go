@@ -57,20 +57,23 @@ func (dh *definitionHandler) handleIdentityClaimBroadcast(ctx context.Context, s
 	return dh.handleIdentityClaim(ctx, state, buildIdentityMsgInfo(msg, verifyMsgID), &claim)
 }
 
+func (dh *definitionHandler) getExpectedSigner(identity *core.Identity, parent *core.Identity) *core.Identity {
+	switch {
+	case identity.Type == core.IdentityTypeNode && parent != nil:
+		// In the special case of a node, the parent signs it directly
+		return parent
+	default:
+		return identity
+	}
+}
+
 func (dh *definitionHandler) verifyClaimSignature(ctx context.Context, msg *identityMsgInfo, identity *core.Identity, parent *core.Identity) error {
 	author := msg.Author
 	if author == "" {
 		return i18n.NewError(ctx, coremsgs.MsgDefRejectedAuthorBlank, "identity claim", msg.claimMsg.ID)
 	}
 
-	var expectedSigner *core.Identity
-	switch {
-	case identity.Type == core.IdentityTypeNode:
-		// In the special case of a node, the parent signs it directly
-		expectedSigner = parent
-	default:
-		expectedSigner = identity
-	}
+	expectedSigner := dh.getExpectedSigner(identity, parent)
 
 	valid := author == expectedSigner.DID ||
 		(expectedSigner.Type == core.IdentityTypeOrg && author == fmt.Sprintf("%s%s", core.FireFlyOrgDIDPrefix, expectedSigner.ID))
