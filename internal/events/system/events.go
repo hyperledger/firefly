@@ -48,6 +48,7 @@ type EventInterface interface {
 
 type EventListener func(event *core.EventDelivery) error
 
+func Name() string              { return SystemEventsTransport }
 func (se *Events) Name() string { return SystemEventsTransport }
 
 func (se *Events) Init(ctx context.Context, config config.Section) (err error) {
