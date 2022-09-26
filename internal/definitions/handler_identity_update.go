@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -56,9 +57,22 @@ func (dh *definitionHandler) handleIdentityUpdate(ctx context.Context, state *co
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIdentityNotFound, "identity update", update.Identity.ID, update.Identity.ID)
 	}
 
-	// Check the author matches
-	if dh.multiparty && identity.DID != msg.Author {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedWrongAuthor, "identity update", update.Identity.ID, msg.Author)
+	if dh.multiparty {
+
+		parent, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
+		if err != nil && retryable {
+			return HandlerResult{Action: ActionRetry}, err
+		} else if err != nil {
+			log.L(ctx).Infof("Unable to process identity update (parked) %s: %s", msg.ID, err)
+			return HandlerResult{Action: ActionWait}, nil
+		}
+
+		// Check the author matches
+		expectedSigner := dh.getExpectedSigner(identity, parent)
+		if expectedSigner.DID != msg.Author {
+			return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedWrongAuthor, "identity update", update.Identity.ID, msg.Author)
+		}
+
 	}
 
 	// Update the profile

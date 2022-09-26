@@ -1689,6 +1689,43 @@ func TestAddSubscription(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestAddSubscriptionWithoutLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.streamID = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "Changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+						},
+					},
+				},
+			},
+			Options: &core.ContractListenerOptions{
+				FirstEvent: string(core.SubOptsFirstEventOldest),
+			},
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddContractListener(context.Background(), sub)
+
+	assert.NoError(t, err)
+}
+
 func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()

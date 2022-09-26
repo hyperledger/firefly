@@ -794,15 +794,15 @@ func (f *Fabric) NormalizeContractLocation(ctx context.Context, location *fftype
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
+	if location == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'channel' not set")
+	}
 	fabricLocation := Location{}
 	if err := json.Unmarshal(location.Bytes(), &fabricLocation); err != nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, err)
 	}
 	if fabricLocation.Channel == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'channel' not set")
-	}
-	if fabricLocation.Chaincode == "" {
-		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'chaincode' not set")
 	}
 	return &fabricLocation, nil
 }

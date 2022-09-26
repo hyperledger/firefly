@@ -165,11 +165,15 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		Signer:  s.signer,
 		Stream:  stream,
 		Filter: eventFilter{
-			ChaincodeID: location.Chaincode,
 			EventFilter: event,
 		},
 		FromBlock: fromBlock,
 	}
+
+	if location.Chaincode != "" {
+		sub.Filter.ChaincodeID = location.Chaincode
+	}
+
 	res, err := s.client.R().
 		SetContext(ctx).
 		SetBody(&sub).

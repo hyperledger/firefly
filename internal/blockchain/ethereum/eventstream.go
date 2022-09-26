@@ -184,12 +184,16 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		fromBlock = "latest"
 	}
 	sub := subscription{
-		Name:             subName,
-		Stream:           stream,
-		FromBlock:        fromBlock,
-		EthCompatAddress: location.Address,
-		EthCompatEvent:   abi,
+		Name:           subName,
+		Stream:         stream,
+		FromBlock:      fromBlock,
+		EthCompatEvent: abi,
 	}
+
+	if location != nil {
+		sub.EthCompatAddress = location.Address
+	}
+
 	res, err := s.client.R().
 		SetContext(ctx).
 		SetBody(&sub).
