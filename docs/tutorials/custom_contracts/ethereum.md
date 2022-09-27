@@ -85,14 +85,13 @@ If you take the smart contract source code in the example above, and save that t
 $ solc --combined-json abi,bin simple_storage.sol > simple_storage.json
 ```
 
-Next, we'll tell the FireFly to deploy the compiled contract to a running stack named `dev`. If your stack name is different, update the command accordingly:
+Next, we'll tell the FireFly to deploy the compiled contract to a running stack named `dev` that is using an `ethereum` blockchain. If your stack name is different, update the command accordingly:
 
 ```
 $ ff deploy dev simple_storage.json
-reading stack config... done
-deploying simple_storage.sol:SimpleStorage... done
-
-contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
+{
+  "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+}
 ```
 
 The FireFly CLI tells us that it has successfully deployed the contract with an address of `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1`. We will use this contract address for the rest of this guide.
