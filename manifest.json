@@ -21,18 +21,18 @@
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v1.1.4",
-    "sha": "4c337019efac49f2b9d33efa20aef5b760c50f80e3929b0da70c33a480ad32d5"
+    "tag": "v1.1.5",
+    "sha": "fb42ae2e1f6d4853d0cb19fee1e56175dcb3b34c2114fd890d1e0439b3e615fd"
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
-    "tag": "v1.1.3",
-    "sha": "9d9d2f657bd09dd277dbfa13825b12123b93d8f77f6496434a7357866d97122d"
+    "tag": "v1.1.4",
+    "sha": "6b2ce04bfa73c38639a2cdaeec9cb01564c839b4dee5b837d73dfbd56282e19a"
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",
-    "tag": "v0.9.19",
-    "sha": "359247e503d6a0ae17d8e01210abd35d7ade7787f7dae104594f603f57b140a2"
+    "tag": "v0.9.21",
+    "sha": "624c623de8324f42d9f16b779fb183e6d8d73037067bc2d1e8c65fa583d6e0f8"
   },
   "build": {
     "firefly-builder": {
@@ -54,6 +54,6 @@
     "release": "v1.1.1"
   },
   "cli": {
-    "tag": "v1.1.0"
+    "tag": "v1.1.1"
   }
 }
