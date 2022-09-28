@@ -50,6 +50,6 @@ jobs:
             --label tag=${GITHUB_REF##*/} \
             --tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} \
             --tag ghcr.io/hyperledger/firefly:head \
-            ${{ env.DOCKER_TAGS }}" \
-            --push
+            ${{ env.DOCKER_TAGS }} \
+            --push" \
            docker-multiarch
