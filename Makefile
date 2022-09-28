@@ -100,7 +100,7 @@ reference:
 manifest:
 		./manifestgen.sh
 docker:
-		./docker_build.sh $(DOCKER_ARGS)
+		./docker_build.sh --load $(DOCKER_ARGS)
 docker-multiarch:
 		./docker_build.sh --platform linux/amd64,linux/arm64 $(DOCKER_ARGS) 
 docs: .ALWAYS
