@@ -1,0 +1,19 @@
+
+on:
+  workflow_call
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: nguyer/firefly/.github/workflows/manifest.yml@docker
+        id: manifest
+      
+      - run: |
+          echo ${{ steps.manifest.outputs.firefly_builder_tag }}
+    
+
