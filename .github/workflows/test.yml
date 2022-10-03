@@ -10,7 +10,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: nguyer/firefly/.github/workflows/manifest.yml@docker
+      - uses: nguyer/firefly/.github/workflows/manifest@docker
         id: manifest
       
       - run: |
