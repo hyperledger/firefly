@@ -88,3 +88,11 @@ When you're ready to submit your changes for review, [open a Pull Request back t
 Maintainers may have suggestions on things to improve in your pull request. It is our goal to get code that is beneficial to the project merged as quickly as possible, so we don't like to leave pull requests hanging around for a long time. If the project maintainers are satisfied with the changes, they will approve and merge the pull request.
 
 Thanks for your interest in collaborating on this project!
+
+## Inclusivity
+The Hyperledger Foundation and the FireFly project are committed to fostering a community that is welcoming to all people. When participating in community discussions, contributing code, or documentaiton, please abide by the following guidelines:
+
+- Consider that users who will read the docs are from different background and cultures and that they have different preferences.
+- Avoid potential offensive terms and, for instance, prefer "allow list and deny list" to "white list and black list".
+- We believe that we all have a role to play to improve our world, and even if writing inclusive doc might not look like a huge improvement, it's a first step in the right direction.
+- We suggest to refer to Microsoft bias free writing guidelines and Google inclusive doc writing guide as starting points.
