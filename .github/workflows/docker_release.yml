@@ -46,6 +46,15 @@ jobs:
         run: |
             echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},ghcr.io/${{ github.repository_owner }}/firefly:rc" >> $GITHUB_ENV
 
+      - name: Set build tag
+        id: build_tag_generator
+        run: |
+          RELEASE_TAG=$(curl https://api.github.com/repos/${{ github.repository_owner }}/firefly/releases/latest -s | jq .tag_name -r)
+          BUILD_TAG=$RELEASE_TAG-$(date +"%Y%m%d")-$GITHUB_RUN_NUMBER
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo ::set-output name=BUILD_TAG::$BUILD_TAG
+          echo ::set-output name=BUILD_DATE::$BUILD_DATE
+
       - name: Read manifest.json
         id: manifest
         run: |
@@ -64,8 +73,12 @@ jobs:
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
+          platforms: linux/amd64
           tags: ghcr.io/${{ github.repository_owner }}/firefly:${{ github.ref_name }},ghcr.io/${{ github.repository_owner }}/firefly:head,${{ env.DOCKER_TAGS }}
-          labels: commit=$GITHUB_SHA, build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ"), tag=${{ steps.build_tag_generator.outputs.BUILD_TAG }}
+          labels: |
+            commit=${{ github.sha }}
+            build_date=${{ steps.build_tag_generator.outputs.BUILD_DATE }}
+            tag=${{ steps.build_tag_generator.outputs.BUILD_TAG }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/firefly:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/firefly:buildcache,mode=max
           build-args: |
