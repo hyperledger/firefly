@@ -34,6 +34,9 @@ jobs:
           BUILD_TAG=$RELEASE_TAG-$(date +"%Y%m%d")-$GITHUB_RUN_NUMBER
           echo ::set-output name=BUILD_TAG::$BUILD_TAG
 
+      - name: Read manifest
+        run: source ./manifest.sh
+
       - name: Build and push
         uses: docker/build-push-action@v2
         with:

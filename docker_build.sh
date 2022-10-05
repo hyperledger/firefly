@@ -20,21 +20,7 @@ echo $@
 
  if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
 
-FIREFLY_BUILDER_TAG=$(cat manifest.json | jq -r '.build."firefly-builder".image')
-FABRIC_BUILDER_TAG=$(cat manifest.json | jq -r '.build."fabric-builder".image')
-FABRIC_BUILDER_PLATFORM=$(cat manifest.json | jq -r '.build."fabric-builder".platform')
-SOLIDITY_BUILDER_TAG=$(cat manifest.json | jq -r '.build."solidity-builder".image')
-BASE_TAG=$(cat manifest.json | jq -r '.build.base.image')
-UI_TAG=$(cat manifest.json | jq -r '.ui.tag')
-UI_RELEASE=$(cat manifest.json | jq -r '.ui.release')
-
-echo FIREFLY_BUILDER_TAG=$FIREFLY_BUILDER_TAG
-echo FABRIC_BUILDER_TAG=$FABRIC_BUILDER_TAG
-echo FABRIC_BUILDER_PLATFORM=$FABRIC_BUILDER_PLATFORM
-echo SOLIDITY_BUILDER_TAG=$SOLIDITY_BUILDER_TAG
-echo BASE_TAG=$BASE_TAG
-echo UI_TAG=$UI_TAG
-echo UI_RELEASE=$UI_RELEASE
+source ./read_manifest.sh
 
 docker buildx create --name firefly --use
 docker buildx build \
