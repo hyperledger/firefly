@@ -36,6 +36,7 @@ import (
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/internal/events/websockets"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/multiparty"
@@ -83,6 +84,7 @@ type Manager interface {
 	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
 	ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error
 	Authorize(ctx context.Context, authReq *fftypes.AuthReq) error
+	GetWebSocketsPlugin(ctx context.Context) (*websockets.WebSockets, error)
 }
 
 type namespace struct {
@@ -445,6 +447,16 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 	}
 
 	return nil
+}
+
+func (nm *namespaceManager) GetWebSocketsPlugin(ctx context.Context) (*websockets.WebSockets, error) {
+	plugin, ok := nm.plugins.events[websockets.PluginType]
+	if ok {
+		websocketPlugin := plugin.plugin.(*websockets.WebSockets)
+		return websocketPlugin, nil
+	} else {
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownEventTransportPlugin, websockets.PluginType)
+	}
 }
 
 func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[string]tokensPlugin, err error) {
@@ -1092,14 +1104,13 @@ func (nm *namespaceManager) getEventPlugins(ctx context.Context) (plugins map[st
 	// Cannot disable the internal listener
 	uniqueTransports[system.SystemEventsTransport] = true
 	for transport := range uniqueTransports {
-		plugin, err := eifactory.GetPlugin(ctx, transport)
+		plugin, err := eifactory.NewInstance(ctx, transport)
 		if err != nil {
 			return nil, err
 		}
 
 		name := plugin.Name()
 		section := config.RootSection("events").SubSection(name)
-		plugin.InitConfig(section)
 		plugins[name] = eventsPlugin{
 			config: section,
 			plugin: plugin,

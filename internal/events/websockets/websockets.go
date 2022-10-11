@@ -40,8 +40,22 @@ type WebSockets struct {
 	auth         core.Authorizer
 }
 
-func Name() string                  { return "websockets" }
-func (ws *WebSockets) Name() string { return Name() }
+const (
+	PluginType = "websockets"
+)
+
+func (ws *WebSockets) Name() string { return PluginType }
+
+type Factory struct {
+}
+
+func (f *Factory) Type() string {
+	return PluginType
+}
+
+func (f *Factory) NewInstance() events.Plugin {
+	return &WebSockets{}
+}
 
 func (ws *WebSockets) Init(ctx context.Context, config config.Section) error {
 	*ws = WebSockets{

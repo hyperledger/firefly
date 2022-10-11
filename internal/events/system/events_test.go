@@ -38,10 +38,12 @@ func newTestEvents(t *testing.T) (se *Events, cancel func()) {
 	rc.RunFn = func(a mock.Arguments) {
 		assert.Equal(t, true, a[1].(events.SubscriptionMatcher)(core.SubscriptionRef{}))
 	}
-	se = &Events{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	config := config.RootSection("ut.events")
-	se.InitConfig(config)
+	var factory = Factory{}
+	factory.InitConfig(config)
+
+	se = &Events{}
 	se.Init(ctx, config)
 	se.SetHandler("ns1", cbs)
 	assert.Equal(t, "system", se.Name())

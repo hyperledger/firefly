@@ -29,7 +29,7 @@ const (
 	WriteBufferSize = "writeBufferSize"
 )
 
-func (ws *WebSockets) InitConfig(config config.Section) {
+func (f *Factory) InitConfig(config config.Section) {
 	config.AddKnownKey(ReadBufferSize, bufferSizeDefault)
 	config.AddKnownKey(WriteBufferSize, bufferSizeDefault)
 
