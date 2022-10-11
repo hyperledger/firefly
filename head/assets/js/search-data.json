@@ -895,7 +895,7 @@
   },"149": {
     "doc": "Configuration Reference",
     "title": "debug",
-    "content": "| Key | Description | Type | Default Value | . | port | An HTTP port on which to enable the go debugger | int | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | address | The HTTP interface the go debugger binds to | string | &lt;nil&gt; | . | port | An HTTP port on which to enable the go debugger | int | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#debug",
     "relUrl": "/reference/config.html#debug"
   },"150": {
