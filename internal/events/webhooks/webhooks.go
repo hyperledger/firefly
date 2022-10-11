@@ -60,8 +60,18 @@ type whResponse struct {
 	Body    *fftypes.JSONAny   `json:"body"`
 }
 
-func Name() string                { return "webhooks" }
-func (wh *WebHooks) Name() string { return Name() }
+type Factory struct {
+}
+
+func (f *Factory) Type() string {
+	return "webhooks"
+}
+
+func (f *Factory) NewInstance() events.Plugin {
+	return &WebHooks{}
+}
+
+func (wh *WebHooks) Name() string { return "webhooks" }
 
 func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error) {
 	connID := fftypes.ShortID()

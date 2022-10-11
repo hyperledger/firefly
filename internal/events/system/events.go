@@ -42,6 +42,17 @@ type Events struct {
 	readAhead    uint16
 }
 
+type Factory struct {
+}
+
+func (f *Factory) Type() string {
+	return SystemEventsTransport
+}
+
+func (f *Factory) NewInstance() events.Plugin {
+	return &Events{}
+}
+
 type EventInterface interface {
 	AddSystemEventListener(ns string, el EventListener) error
 }

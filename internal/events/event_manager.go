@@ -47,7 +47,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/events"
-	"github.com/hyperledger/firefly/pkg/events/eifactory"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
@@ -159,7 +158,7 @@ func NewEventManager(ctx context.Context, ns *core.Namespace, di database.Plugin
 		metrics:            mm,
 		chainListenerCache: eventListenerCache,
 	}
-	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
+	ie := transports[system.SystemEventsTransport]
 	em.internalEvents = ie.(*system.Events)
 	if bi != nil {
 		aggregator, err := newAggregator(ctx, ns.Name, di, bi, pm, dh, im, dm, newPinNotifier, mm, cacheManager)

@@ -37,12 +37,10 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/events/websockets"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/events/eifactory"
 )
 
 var (
@@ -352,9 +350,9 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 	r.HandleFunc(`/api`, hf.APIWrapper(hf.SwaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
-	ws, _ := eifactory.GetPlugin(ctx, "websockets")
-	ws.(*websockets.WebSockets).SetAuthorizer(mgr)
-	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
+	ws, _ := mgr.GetWebSocketsPlugin(ctx)
+	ws.SetAuthorizer(mgr)
+	r.HandleFunc(`/ws`, ws.ServeHTTP)
 
 	uiPath := config.GetString(coreconfig.UIPath)
 	if uiPath != "" && config.GetBool(coreconfig.UIEnabled) {

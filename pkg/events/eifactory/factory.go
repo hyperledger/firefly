@@ -18,7 +18,6 @@ package eifactory
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -30,37 +29,35 @@ import (
 	"github.com/hyperledger/firefly/pkg/events"
 )
 
-var websocketsPlugin = websockets.WebSockets{}
-var webhooksPlugin = webhooks.WebHooks{}
-var systemEventsPlugin = system.Events{}
-var pluginsByName = map[string]func() events.Plugin{
-	websockets.Name(): func() events.Plugin { return &websocketsPlugin },
-	webhooks.Name():   func() events.Plugin { return &webhooksPlugin },
-	system.Name():     func() events.Plugin { return &systemEventsPlugin },
+var websocketsFactory = websockets.Factory{}
+var webhooksFactory = webhooks.Factory{}
+var systemEventsFactory = system.Factory{}
+var pluginFactoriesByType = map[string]events.Factory{}
+
+func init() {
+	RegisterFactory(&websocketsFactory)
+	RegisterFactory(&webhooksFactory)
+	RegisterFactory(&systemEventsFactory)
 }
 
-// Allows other code to register additional implementations of Event plugins
-// that can also be initialized with this factory
-func RegisterPlugins(plugins map[string]func() events.Plugin) {
-	fmt.Println("registering plugins")
+func RegisterFactory(factory events.Factory) {
+	pluginFactoriesByType[factory.Type()] = factory
 
-	for k, plugin := range plugins {
-		fmt.Printf("registering '%s'\n", k)
-		pluginsByName[k] = plugin
-	}
 }
 
 func InitConfig(config config.Section) {
-	for name, plugin := range pluginsByName {
-		plugin().InitConfig(config.SubSection(name))
+	for pluginType, factory := range pluginFactoriesByType {
+		factory.InitConfig(config.SubSection(pluginType))
 	}
 }
 
-func GetPlugin(ctx context.Context, pluginName string) (events.Plugin, error) {
-	plugin, ok := pluginsByName[pluginName]
+func NewInstance(ctx context.Context, pluginType string) (events.Plugin, error) {
+	log.L(ctx).Infof("eifactory: creating instance of '%s'", pluginType)
+
+	factory, ok := pluginFactoriesByType[pluginType]
 	if !ok {
-		log.L(ctx).Infof("plugin not found '%s'", pluginName)
-		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownEventTransportPlugin, pluginName)
+		log.L(ctx).Warnf("eifactory: plugin not found '%s'", pluginType)
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownEventTransportPlugin, pluginType)
 	}
-	return plugin(), nil
+	return factory.NewInstance(), nil
 }

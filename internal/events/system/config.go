@@ -29,6 +29,6 @@ const (
 	SystemEventsConfReadAhead = "readAhead"
 )
 
-func (se *Events) InitConfig(config config.Section) {
+func (f *Factory) InitConfig(config config.Section) {
 	config.AddKnownKey(SystemEventsConfReadAhead, readAhead)
 }
