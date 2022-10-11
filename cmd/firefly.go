@@ -164,6 +164,7 @@ func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespa
 	// Start debug listener
 	var debugServer *http.Server
 	debugPort := config.GetInt(coreconfig.DebugPort)
+	debugAddress := config.GetString(coreconfig.DebugAddress)
 	if debugPort >= 0 {
 		r := mux.NewRouter()
 		r.PathPrefix("/debug/pprof/cmdline").HandlerFunc(pprof.Cmdline)
@@ -171,11 +172,11 @@ func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespa
 		r.PathPrefix("/debug/pprof/symbol").HandlerFunc(pprof.Symbol)
 		r.PathPrefix("/debug/pprof/trace").HandlerFunc(pprof.Trace)
 		r.PathPrefix("/debug/pprof/").HandlerFunc(pprof.Index)
-		debugServer = &http.Server{Addr: fmt.Sprintf("localhost:%d", debugPort), Handler: r, ReadHeaderTimeout: 30 * time.Second}
+		debugServer = &http.Server{Addr: fmt.Sprintf("%s:%d", debugAddress, debugPort), Handler: r, ReadHeaderTimeout: 30 * time.Second}
 		go func() {
 			_ = debugServer.ListenAndServe()
 		}()
-		log.L(ctx).Debugf("Debug HTTP endpoint listening on localhost:%d", debugPort)
+		log.L(ctx).Debugf("Debug HTTP endpoint listening on %s:%d", debugAddress, debugPort)
 	}
 
 	defer func() {

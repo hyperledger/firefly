@@ -209,6 +209,8 @@ var (
 	PluginsIdentityList = ffc("plugins.identity")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = ffc("debug.port")
+	// DebugAddress the HTTP interface for the debugger to listen on
+	DebugAddress = ffc("debug.address")
 	// EventTransportsDefault the default event transport for new subscriptions
 	EventTransportsDefault = ffc("event.transports.default")
 	// EventTransportsEnabled which event interface plugins are enabled
@@ -359,6 +361,7 @@ func setDefaults() {
 	viper.SetDefault(string(CacheOperationsTTL), "5m")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
+	viper.SetDefault(string(DebugAddress), "localhost")
 	viper.SetDefault(string(DownloadWorkerCount), 10)
 	viper.SetDefault(string(DownloadRetryMaxAttempts), 100)
 	viper.SetDefault(string(DownloadRetryInitDelay), "100ms")

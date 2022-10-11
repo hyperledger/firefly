@@ -464,6 +464,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|address|The HTTP interface the go debugger binds to|`string`|`<nil>`
 |port|An HTTP port on which to enable the go debugger|`int`|`<nil>`
 
 ## download.retry
