@@ -216,7 +216,8 @@ var (
 
 	ConfigPluginDataexchangeFfdxProxyURL = ffc("config.plugins.dataexchange[].ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", "URL "+i18n.StringType)
 
-	ConfigDebugPort = ffc("config.debug.port", "An HTTP port on which to enable the go debugger", i18n.IntType)
+	ConfigDebugPort    = ffc("config.debug.port", "An HTTP port on which to enable the go debugger", i18n.IntType)
+	ConfigDebugAddress = ffc("config.debug.address", "The HTTP interface the go debugger binds to", i18n.StringType)
 
 	ConfigDownloadWorkerCount       = ffc("config.download.worker.count", "The number of download workers", i18n.IntType)
 	ConfigDownloadWorkerQueueLength = ffc("config.download.worker.queueLength", "The length of the work queue in the channel to the workers - defaults to 2x the worker count", i18n.IntType)

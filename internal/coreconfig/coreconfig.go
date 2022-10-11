@@ -361,7 +361,7 @@ func setDefaults() {
 	viper.SetDefault(string(CacheOperationsTTL), "5m")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
-	viper.SetDefault(string(DebugAddress), "")
+	viper.SetDefault(string(DebugAddress), "localhost")
 	viper.SetDefault(string(DownloadWorkerCount), 10)
 	viper.SetDefault(string(DownloadRetryMaxAttempts), 100)
 	viper.SetDefault(string(DownloadRetryInitDelay), "100ms")
