@@ -88,7 +88,7 @@ $ solc --combined-json abi,bin simple_storage.sol > simple_storage.json
 Next, we'll tell the FireFly to deploy the compiled contract to a running stack named `dev` that is using an `ethereum` blockchain. If your stack name is different, update the command accordingly:
 
 ```
-$ ff deploy dev simple_storage.json
+$ ff deploy ethereum dev simple_storage.json
 {
   "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
 }
