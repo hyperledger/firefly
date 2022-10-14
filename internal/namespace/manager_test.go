@@ -1296,6 +1296,10 @@ func TestLoadNamespacesUseDefaults(t *testing.T) {
     default: ns1
     predefined:
     - name: ns1
+      multiparty:
+        contract:
+        - location:
+          address: 0x1234
   org:
     name: org1
   node:
@@ -1306,6 +1310,7 @@ func TestLoadNamespacesUseDefaults(t *testing.T) {
 	err = nm.loadNamespaces(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, nm.namespaces, 1)
+	assert.Equal(t, "oldest", nm.namespaces["ns1"].config.Multiparty.Contracts[0].FirstEvent)
 }
 
 func TestLoadNamespacesNonMultipartyNoDatabase(t *testing.T) {
