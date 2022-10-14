@@ -50,7 +50,7 @@ func InitConfig(withDefaults bool) {
 	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyNodeDescription)
 
 	contractConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
-	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractFirstEvent, core.SubOptsFirstEventOldest)
+	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractFirstEvent, string(core.SubOptsFirstEventOldest))
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractLocation)
 
 	if withDefaults {
