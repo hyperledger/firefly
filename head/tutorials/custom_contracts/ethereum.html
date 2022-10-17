@@ -450,13 +450,12 @@
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ solc --combined-json abi,bin simple_storage.sol &gt; simple_storage.json
 </code></pre></div></div>
 
-<p>Next, we’ll tell the FireFly to deploy the compiled contract to a running stack named <code class="language-plaintext highlighter-rouge">dev</code>. If your stack name is different, update the command accordingly:</p>
+<p>Next, we’ll tell the FireFly to deploy the compiled contract to a running stack named <code class="language-plaintext highlighter-rouge">dev</code> that is using an <code class="language-plaintext highlighter-rouge">ethereum</code> blockchain. If your stack name is different, update the command accordingly:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ ff deploy dev simple_storage.json
-reading stack config... done
-deploying simple_storage.sol:SimpleStorage... done
-
-contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ ff deploy ethereum dev simple_storage.json
+{
+  "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+}
 </code></pre></div></div>
 
 <p>The FireFly CLI tells us that it has successfully deployed the contract with an address of <code class="language-plaintext highlighter-rouge">0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1</code>. We will use this contract address for the rest of this guide.</p>
