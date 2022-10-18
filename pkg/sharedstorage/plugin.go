@@ -28,9 +28,6 @@ import (
 type Plugin interface {
 	core.Named
 
-	// InitConfig initializes the set of configuration options that are valid, with defaults. Called on all plugins.
-	InitConfig(config config.Section)
-
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, config config.Section) error
 
@@ -46,6 +43,16 @@ type Plugin interface {
 
 	// DownloadData reads data back from IPFS using the payload reference format returned from UploadData
 	DownloadData(ctx context.Context, payloadRef string) (data io.ReadCloser, err error)
+}
+
+// Allows other code to register additional implementations of Shared Storage plugins
+// that can also be initialized with this factory
+type Factory interface {
+	Type() string
+	NewInstance() Plugin
+
+	// InitConfig initializes the set of configuration options that are valid, with defaults. Called on all plugins.
+	InitConfig(config config.Section)
 }
 
 type Callbacks interface {
