@@ -28,7 +28,7 @@ const (
 	IPFSConfGatewaySubconf = "gateway"
 )
 
-func (i *IPFS) InitConfig(config config.Section) {
+func (f *Factory) InitConfig(config config.Section) {
 	ffresty.InitConfig(config.SubSection(IPFSConfAPISubconf))
 	ffresty.InitConfig(config.SubSection(IPFSConfGatewaySubconf))
 }

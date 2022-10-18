@@ -31,7 +31,6 @@ import (
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
-	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/cachemocks"
@@ -47,6 +46,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -1296,6 +1296,10 @@ func TestLoadNamespacesUseDefaults(t *testing.T) {
     default: ns1
     predefined:
     - name: ns1
+      multiparty:
+        contract:
+        - location:
+          address: 0x1234
   org:
     name: org1
   node:
@@ -1306,6 +1310,7 @@ func TestLoadNamespacesUseDefaults(t *testing.T) {
 	err = nm.loadNamespaces(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, nm.namespaces, 1)
+	assert.Equal(t, "oldest", nm.namespaces["ns1"].config.Multiparty.Contracts[0].FirstEvent)
 }
 
 func TestLoadNamespacesNonMultipartyNoDatabase(t *testing.T) {

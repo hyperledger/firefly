@@ -39,6 +39,17 @@ type IPFS struct {
 	gwClient     *resty.Client
 }
 
+type Factory struct {
+}
+
+func (f *Factory) Type() string {
+	return "ipfs"
+}
+
+func (f *Factory) NewInstance() sharedstorage.Plugin {
+	return &IPFS{}
+}
+
 type ipfsUploadResponse struct {
 	Name string      `json:"Name"`
 	Hash string      `json:"Hash"`

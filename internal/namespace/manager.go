@@ -41,7 +41,6 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/orchestrator"
-	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/spievents"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -52,6 +51,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/events/eifactory"
 	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
+	"github.com/hyperledger/firefly/pkg/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -704,7 +704,7 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 			return nil, err
 		}
 
-		plugin, err := ssfactory.GetPlugin(ctx, pluginType)
+		plugin, err := ssfactory.NewInstance(ctx, pluginType)
 		if err != nil {
 			return nil, err
 		}
@@ -719,7 +719,7 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 	if len(plugins) == 0 {
 		pluginType := deprecatedSharedStorageConfig.GetString(coreconfig.PluginConfigType)
 		if pluginType != "" {
-			plugin, err := ssfactory.GetPlugin(ctx, pluginType)
+			plugin, err := ssfactory.NewInstance(ctx, pluginType)
 			if err != nil {
 				return nil, err
 			}
