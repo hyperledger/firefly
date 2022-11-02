@@ -52,3 +52,5 @@ pages:
   understanding_firefly: Understanding FireFly
   usage_patterns: Usage Patterns
   web3_gateway_features: Web3 Gateway Features
+  basic_auth: Enable Basic Auth
+  fabric_test_network: Fabric Test Network
