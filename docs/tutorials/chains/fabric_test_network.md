@@ -231,7 +231,9 @@ version: 1.1.0%
 
 ## Create the FireFly stack
 
-Now we can create a FireFly stack and pass in these files as command line flags:
+Now we can create a FireFly stack and pass in these files as command line flags.
+
+> **NOTE**: The following command should be run in the `test-network` directory as it includes a relative path to the `organizations` directory containing each org's MSP.
 
 ```
 ff init fabric dev \
