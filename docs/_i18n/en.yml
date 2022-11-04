@@ -53,3 +53,4 @@ pages:
   usage_patterns: Usage Patterns
   web3_gateway_features: Web3 Gateway Features
   basic_auth: Enable Basic Auth
+  fabric_test_network: Fabric-Samples Test Network

@@ -33,6 +33,8 @@ FireFly has a basic auth plugin built in, which we will be configuring in this t
 ## Additional info
 
 - Config Reference: [HTTP Auth](../reference/config.html#httpauth)
+- [Auth plugin interface](https://github.com/hyperledger/firefly-common/blob/main/pkg/auth/plugin.go)
+- [Basic auth plugin implementation](https://github.com/hyperledger/firefly-common/blob/main/pkg/auth/basic/basic_auth.go)
 
 ## Create a password file
 
