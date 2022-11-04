@@ -6,7 +6,7 @@ grand_parent: pages.tutorials
 nav_order: 7
 ---
 
-# Work with Fabric Test Network
+# Work with Fabric-Samples Test Network
 {: .no_toc }
 
 ## Table of contents
