@@ -1,4 +1,4 @@
-FROM golang:1.17
+FROM golang:1.18
 
 WORKDIR /app
 COPY  firefly.go go.mod go.sum ./
