@@ -85,6 +85,7 @@ func newTestEthereum() (*Ethereum, func()) {
 	mm := &metricsmocks.Manager{}
 	mm.On("IsMetricsEnabled").Return(true)
 	mm.On("BlockchainTransaction", mock.Anything, mock.Anything).Return(nil)
+	mm.On("BlockchainContractDeployment", mock.Anything, mock.Anything).Return(nil)
 	mm.On("BlockchainQuery", mock.Anything, mock.Anything).Return(nil)
 	e := &Ethereum{
 		ctx:         ctx,
@@ -2223,6 +2224,102 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	em.AssertExpectations(t)
+}
+
+func TestDeployContractOK(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	input := []interface{}{
+		float64(1),
+		"1000000000000000000000000",
+	}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+	definitionBytes, err := json.Marshal([]interface{}{})
+	contractBytes, err := json.Marshal("0x123456")
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "DeployContract", headers["type"])
+			assert.Equal(t, float64(1), params[0])
+			assert.Equal(t, "1000000000000000000000000", params[1])
+			assert.Equal(t, body["customOption"].(string), "customValue")
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+	err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	assert.NoError(t, err)
+}
+
+func TestDeployContractInvalidOption(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	input := []interface{}{
+		float64(1),
+		"1000000000000000000000000",
+	}
+	options := map[string]interface{}{
+		"contract": "not really a contract",
+	}
+	definitionBytes, err := json.Marshal([]interface{}{})
+	contractBytes, err := json.Marshal("0x123456")
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "DeployContract", headers["type"])
+			assert.Equal(t, float64(1), params[0])
+			assert.Equal(t, "1000000000000000000000000", params[1])
+			assert.Equal(t, body["customOption"].(string), "customValue")
+			return httpmock.NewJsonResponderOrPanic(400, "pop")(req)
+		})
+	err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	assert.Regexp(t, "FF10398", err)
+}
+
+func TestDeployContractError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	input := []interface{}{
+		float64(1),
+		"1000000000000000000000000",
+	}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+	definitionBytes, err := json.Marshal([]interface{}{})
+	contractBytes, err := json.Marshal("0x123456")
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "DeployContract", headers["type"])
+			assert.Equal(t, float64(1), params[0])
+			assert.Equal(t, "1000000000000000000000000", params[1])
+			assert.Equal(t, body["customOption"].(string), "customValue")
+			return httpmock.NewJsonResponderOrPanic(400, "pop")(req)
+		})
+	err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	assert.Regexp(t, "FF10111", err)
 }
 
 func TestInvokeContractOK(t *testing.T) {

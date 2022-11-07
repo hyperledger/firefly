@@ -673,6 +673,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -746,6 +747,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -1973,6 +1975,207 @@ paths:
                       type: array
                   type: object
                 type: array
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /contracts/deploy:
+    post:
+      description: Deploy a new smart contract
+      operationId: postContractDeploy
+      parameters:
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contract:
+                  description: The smart contract to deploy. This should be pre-compiled
+                    if required by the blockchain connector
+                definition:
+                  description: The definition of the smart contract
+                input:
+                  description: An optional array of inputs passed to the smart contract's
+                    constructor, if applicable
+                  items:
+                    description: An optional array of inputs passed to the smart contract's
+                      constructor, if applicable
+                  type: array
+                key:
+                  description: The blockchain signing key that will be used to deploy
+                    the contract. Defaults to the first signing key of the organization
+                    that operates the node
+                  type: string
+                options:
+                  additionalProperties:
+                    description: A map of named inputs that will be passed through
+                      to the blockchain connector
+                  description: A map of named inputs that will be passed through to
+                    the blockchain connector
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The time the operation was created
+                    format: date-time
+                    type: string
+                  error:
+                    description: Any error reported back from the plugin for this
+                      operation
+                    type: string
+                  id:
+                    description: The UUID of the operation
+                    format: uuid
+                    type: string
+                  input:
+                    additionalProperties:
+                      description: The input to this operation
+                    description: The input to this operation
+                    type: object
+                  namespace:
+                    description: The namespace of the operation
+                    type: string
+                  output:
+                    additionalProperties:
+                      description: Any output reported back from the plugin for this
+                        operation
+                    description: Any output reported back from the plugin for this
+                      operation
+                    type: object
+                  plugin:
+                    description: The plugin responsible for performing the operation
+                    type: string
+                  retry:
+                    description: If this operation was initiated as a retry to a previous
+                      operation, this field points to the UUID of the operation being
+                      retried
+                    format: uuid
+                    type: string
+                  status:
+                    description: The current status of the operation
+                    type: string
+                  tx:
+                    description: The UUID of the FireFly transaction the operation
+                      is part of
+                    format: uuid
+                    type: string
+                  type:
+                    description: The type of the operation
+                    enum:
+                    - blockchain_pin_batch
+                    - blockchain_network_action
+                    - blockchain_deploy
+                    - blockchain_invoke
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
+                    type: string
+                  updated:
+                    description: The last update time of the operation
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The time the operation was created
+                    format: date-time
+                    type: string
+                  error:
+                    description: Any error reported back from the plugin for this
+                      operation
+                    type: string
+                  id:
+                    description: The UUID of the operation
+                    format: uuid
+                    type: string
+                  input:
+                    additionalProperties:
+                      description: The input to this operation
+                    description: The input to this operation
+                    type: object
+                  namespace:
+                    description: The namespace of the operation
+                    type: string
+                  output:
+                    additionalProperties:
+                      description: Any output reported back from the plugin for this
+                        operation
+                    description: Any output reported back from the plugin for this
+                      operation
+                    type: object
+                  plugin:
+                    description: The plugin responsible for performing the operation
+                    type: string
+                  retry:
+                    description: If this operation was initiated as a retry to a previous
+                      operation, this field points to the UUID of the operation being
+                      retried
+                    format: uuid
+                    type: string
+                  status:
+                    description: The current status of the operation
+                    type: string
+                  tx:
+                    description: The UUID of the FireFly transaction the operation
+                      is part of
+                    format: uuid
+                    type: string
+                  type:
+                    description: The type of the operation
+                    enum:
+                    - blockchain_pin_batch
+                    - blockchain_network_action
+                    - blockchain_deploy
+                    - blockchain_invoke
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
+                    type: string
+                  updated:
+                    description: The last update time of the operation
+                    format: date-time
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -3305,6 +3508,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -3378,6 +3582,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -4978,6 +5183,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -5796,6 +6002,8 @@ paths:
                       - blockchain_event_received
                       - blockchain_invoke_op_succeeded
                       - blockchain_invoke_op_failed
+                      - blockchain_contract_deploy_op_succeeded
+                      - blockchain_contract_deploy_op_failed
                       type: string
                   type: object
                 type: array
@@ -5906,6 +6114,8 @@ paths:
                     - blockchain_event_received
                     - blockchain_invoke_op_succeeded
                     - blockchain_invoke_op_failed
+                    - blockchain_contract_deploy_op_succeeded
+                    - blockchain_contract_deploy_op_failed
                     type: string
                 type: object
           description: Success
@@ -7380,6 +7590,7 @@ paths:
                           - network_action
                           - token_pool
                           - token_transfer
+                          - contract_deploy
                           - contract_invoke
                           - token_approval
                           - data_publish
@@ -7623,6 +7834,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -7929,6 +8141,8 @@ paths:
                       - blockchain_event_received
                       - blockchain_invoke_op_succeeded
                       - blockchain_invoke_op_failed
+                      - blockchain_contract_deploy_op_succeeded
+                      - blockchain_contract_deploy_op_failed
                       type: string
                   type: object
                 type: array
@@ -7995,6 +8209,7 @@ paths:
                     - network_action
                     - token_pool
                     - token_transfer
+                    - contract_deploy
                     - contract_invoke
                     - token_approval
                     - data_publish
@@ -8101,6 +8316,7 @@ paths:
                       - network_action
                       - token_pool
                       - token_transfer
+                      - contract_deploy
                       - contract_invoke
                       - token_approval
                       - data_publish
@@ -8208,6 +8424,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -8336,6 +8553,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -8512,6 +8730,7 @@ paths:
                       - network_action
                       - token_pool
                       - token_transfer
+                      - contract_deploy
                       - contract_invoke
                       - token_approval
                       - data_publish
@@ -8625,6 +8844,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -8759,6 +8979,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -8931,6 +9152,7 @@ paths:
                       - network_action
                       - token_pool
                       - token_transfer
+                      - contract_deploy
                       - contract_invoke
                       - token_approval
                       - data_publish
@@ -9124,6 +9346,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -10021,6 +10244,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -10094,6 +10318,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -11509,6 +11734,214 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /namespaces/{ns}/contracts/deploy:
+    post:
+      description: Deploy a new smart contract
+      operationId: postContractDeployNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contract:
+                  description: The smart contract to deploy. This should be pre-compiled
+                    if required by the blockchain connector
+                definition:
+                  description: The definition of the smart contract
+                input:
+                  description: An optional array of inputs passed to the smart contract's
+                    constructor, if applicable
+                  items:
+                    description: An optional array of inputs passed to the smart contract's
+                      constructor, if applicable
+                  type: array
+                key:
+                  description: The blockchain signing key that will be used to deploy
+                    the contract. Defaults to the first signing key of the organization
+                    that operates the node
+                  type: string
+                options:
+                  additionalProperties:
+                    description: A map of named inputs that will be passed through
+                      to the blockchain connector
+                  description: A map of named inputs that will be passed through to
+                    the blockchain connector
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The time the operation was created
+                    format: date-time
+                    type: string
+                  error:
+                    description: Any error reported back from the plugin for this
+                      operation
+                    type: string
+                  id:
+                    description: The UUID of the operation
+                    format: uuid
+                    type: string
+                  input:
+                    additionalProperties:
+                      description: The input to this operation
+                    description: The input to this operation
+                    type: object
+                  namespace:
+                    description: The namespace of the operation
+                    type: string
+                  output:
+                    additionalProperties:
+                      description: Any output reported back from the plugin for this
+                        operation
+                    description: Any output reported back from the plugin for this
+                      operation
+                    type: object
+                  plugin:
+                    description: The plugin responsible for performing the operation
+                    type: string
+                  retry:
+                    description: If this operation was initiated as a retry to a previous
+                      operation, this field points to the UUID of the operation being
+                      retried
+                    format: uuid
+                    type: string
+                  status:
+                    description: The current status of the operation
+                    type: string
+                  tx:
+                    description: The UUID of the FireFly transaction the operation
+                      is part of
+                    format: uuid
+                    type: string
+                  type:
+                    description: The type of the operation
+                    enum:
+                    - blockchain_pin_batch
+                    - blockchain_network_action
+                    - blockchain_deploy
+                    - blockchain_invoke
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
+                    type: string
+                  updated:
+                    description: The last update time of the operation
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The time the operation was created
+                    format: date-time
+                    type: string
+                  error:
+                    description: Any error reported back from the plugin for this
+                      operation
+                    type: string
+                  id:
+                    description: The UUID of the operation
+                    format: uuid
+                    type: string
+                  input:
+                    additionalProperties:
+                      description: The input to this operation
+                    description: The input to this operation
+                    type: object
+                  namespace:
+                    description: The namespace of the operation
+                    type: string
+                  output:
+                    additionalProperties:
+                      description: Any output reported back from the plugin for this
+                        operation
+                    description: Any output reported back from the plugin for this
+                      operation
+                    type: object
+                  plugin:
+                    description: The plugin responsible for performing the operation
+                    type: string
+                  retry:
+                    description: If this operation was initiated as a retry to a previous
+                      operation, this field points to the UUID of the operation being
+                      retried
+                    format: uuid
+                    type: string
+                  status:
+                    description: The current status of the operation
+                    type: string
+                  tx:
+                    description: The UUID of the FireFly transaction the operation
+                      is part of
+                    format: uuid
+                    type: string
+                  type:
+                    description: The type of the operation
+                    enum:
+                    - blockchain_pin_batch
+                    - blockchain_network_action
+                    - blockchain_deploy
+                    - blockchain_invoke
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_upload_value
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
+                    type: string
+                  updated:
+                    description: The last update time of the operation
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
   /namespaces/{ns}/contracts/interfaces:
     get:
       description: Gets a list of contract interfaces that have been published
@@ -12878,6 +13311,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -12951,6 +13385,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -14628,6 +15063,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -15488,6 +15924,8 @@ paths:
                       - blockchain_event_received
                       - blockchain_invoke_op_succeeded
                       - blockchain_invoke_op_failed
+                      - blockchain_contract_deploy_op_succeeded
+                      - blockchain_contract_deploy_op_failed
                       type: string
                   type: object
                 type: array
@@ -15605,6 +16043,8 @@ paths:
                     - blockchain_event_received
                     - blockchain_invoke_op_succeeded
                     - blockchain_invoke_op_failed
+                    - blockchain_contract_deploy_op_succeeded
+                    - blockchain_contract_deploy_op_failed
                     type: string
                 type: object
           description: Success
@@ -17149,6 +17589,7 @@ paths:
                           - network_action
                           - token_pool
                           - token_transfer
+                          - contract_deploy
                           - contract_invoke
                           - token_approval
                           - data_publish
@@ -17399,6 +17840,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -17719,6 +18161,8 @@ paths:
                       - blockchain_event_received
                       - blockchain_invoke_op_succeeded
                       - blockchain_invoke_op_failed
+                      - blockchain_contract_deploy_op_succeeded
+                      - blockchain_contract_deploy_op_failed
                       type: string
                   type: object
                 type: array
@@ -17792,6 +18236,7 @@ paths:
                     - network_action
                     - token_pool
                     - token_transfer
+                    - contract_deploy
                     - contract_invoke
                     - token_approval
                     - data_publish
@@ -17943,6 +18388,7 @@ paths:
                       - network_action
                       - token_pool
                       - token_transfer
+                      - contract_deploy
                       - contract_invoke
                       - token_approval
                       - data_publish
@@ -18056,6 +18502,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -18190,6 +18637,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -18373,6 +18821,7 @@ paths:
                       - network_action
                       - token_pool
                       - token_transfer
+                      - contract_deploy
                       - contract_invoke
                       - token_approval
                       - data_publish
@@ -18486,6 +18935,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -18620,6 +19070,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -18799,6 +19250,7 @@ paths:
                       - network_action
                       - token_pool
                       - token_transfer
+                      - contract_deploy
                       - contract_invoke
                       - token_approval
                       - data_publish
@@ -18992,6 +19444,7 @@ paths:
                         - network_action
                         - token_pool
                         - token_transfer
+                        - contract_deploy
                         - contract_invoke
                         - token_approval
                         - data_publish
@@ -20862,6 +21315,7 @@ paths:
                       enum:
                       - blockchain_pin_batch
                       - blockchain_network_action
+                      - blockchain_deploy
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
@@ -20966,6 +21420,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -21075,6 +21530,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -24045,6 +24501,7 @@ paths:
                           - network_action
                           - token_pool
                           - token_transfer
+                          - contract_deploy
                           - contract_invoke
                           - token_approval
                           - data_publish
@@ -24484,6 +24941,7 @@ paths:
                           - network_action
                           - token_pool
                           - token_transfer
+                          - contract_deploy
                           - contract_invoke
                           - token_approval
                           - data_publish
@@ -25701,6 +26159,7 @@ paths:
                           - network_action
                           - token_pool
                           - token_transfer
+                          - contract_deploy
                           - contract_invoke
                           - token_approval
                           - data_publish
@@ -26170,6 +26629,7 @@ paths:
                       - network_action
                       - token_pool
                       - token_transfer
+                      - contract_deploy
                       - contract_invoke
                       - token_approval
                       - data_publish
@@ -26300,6 +26760,7 @@ paths:
                     - network_action
                     - token_pool
                     - token_transfer
+                    - contract_deploy
                     - contract_invoke
                     - token_approval
                     - data_publish
@@ -26492,6 +26953,7 @@ paths:
                       enum:
                       - blockchain_pin_batch
                       - blockchain_network_action
+                      - blockchain_deploy
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
@@ -28590,6 +29052,7 @@ paths:
                       enum:
                       - blockchain_pin_batch
                       - blockchain_network_action
+                      - blockchain_deploy
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
@@ -28687,6 +29150,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -28789,6 +29253,7 @@ paths:
                     enum:
                     - blockchain_pin_batch
                     - blockchain_network_action
+                    - blockchain_deploy
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -31654,6 +32119,7 @@ paths:
                           - network_action
                           - token_pool
                           - token_transfer
+                          - contract_deploy
                           - contract_invoke
                           - token_approval
                           - data_publish
@@ -32071,6 +32537,7 @@ paths:
                           - network_action
                           - token_pool
                           - token_transfer
+                          - contract_deploy
                           - contract_invoke
                           - token_approval
                           - data_publish
@@ -33253,6 +33720,7 @@ paths:
                           - network_action
                           - token_pool
                           - token_transfer
+                          - contract_deploy
                           - contract_invoke
                           - token_approval
                           - data_publish
@@ -33708,6 +34176,7 @@ paths:
                       - network_action
                       - token_pool
                       - token_transfer
+                      - contract_deploy
                       - contract_invoke
                       - token_approval
                       - data_publish
@@ -33831,6 +34300,7 @@ paths:
                     - network_action
                     - token_pool
                     - token_transfer
+                    - contract_deploy
                     - contract_invoke
                     - token_approval
                     - data_publish
@@ -34009,6 +34479,7 @@ paths:
                       enum:
                       - blockchain_pin_batch
                       - blockchain_network_action
+                      - blockchain_deploy
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob

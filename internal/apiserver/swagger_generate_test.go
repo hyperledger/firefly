@@ -44,7 +44,7 @@ func TestDownloadSwaggerYAML(t *testing.T) {
 	defer s.Close()
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/swagger.yaml", s.Listener.Addr()))
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 	b, _ := ioutil.ReadAll(res.Body)
 	assert.Equal(t, 200, res.StatusCode, string(b))
 	doc, err := openapi3.NewLoader().LoadFromData(b)

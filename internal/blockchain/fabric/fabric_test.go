@@ -1992,6 +1992,38 @@ func TestInvokeContractOK(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestDeployContractOK(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := fftypes.NewRandB32().String()
+	input := []interface{}{
+		float64(1),
+		"1000000000000000000000000",
+	}
+	options := map[string]interface{}{
+		"contract": "not really a contract",
+	}
+	definitionBytes, err := json.Marshal([]interface{}{})
+	contractBytes, err := json.Marshal("0x123456")
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "DeployContract", headers["type"])
+			assert.Equal(t, float64(1), params[0])
+			assert.Equal(t, "1000000000000000000000000", params[1])
+			assert.Equal(t, body["customOption"].(string), "customValue")
+			return httpmock.NewJsonResponderOrPanic(400, "pop")(req)
+		})
+	err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	assert.Regexp(t, "FF10429", err)
+}
+
 func TestInvokeContractBadSchema(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()

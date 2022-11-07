@@ -267,4 +267,5 @@ var (
 	MsgCacheConfigKeyMismatchInternal     = ffe("FF10426", "could not initialize cache - '%s' and '%s' do not have identical prefix, mismatching prefixes are: '%s','%s'")
 	MsgCacheUnexpectedSizeKeyNameInternal = ffe("FF10427", "could not initialize cache - '%s' is not an expected size configuration key suffix. Expected values are: 'size', 'limit'")
 	MsgUnknownVerifierType                = ffe("FF10428", "Unknown verifier type", 400)
+	MsgNotSupportedByBlockchainPlugin     = ffe("FF10429", "Not supported by blockchain plugin", 400)
 )

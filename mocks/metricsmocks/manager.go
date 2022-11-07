@@ -21,6 +21,11 @@ func (_m *Manager) AddTime(id string) {
 	_m.Called(id)
 }
 
+// BlockchainContractDeployment provides a mock function with given fields:
+func (_m *Manager) BlockchainContractDeployment() {
+	_m.Called()
+}
+
 // BlockchainEvent provides a mock function with given fields: location, signature
 func (_m *Manager) BlockchainEvent(location string, signature string) {
 	_m.Called(location, signature)

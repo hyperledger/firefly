@@ -35,6 +35,8 @@ var (
 	TransactionTypeTokenPool = fftypes.FFEnumValue("txtype", "token_pool")
 	// TransactionTypeTokenTransfer represents a token transfer
 	TransactionTypeTokenTransfer = fftypes.FFEnumValue("txtype", "token_transfer")
+	// TransactionTypeContractDeploy is a smart contract deployment
+	TransactionTypeContractDeploy = fftypes.FFEnumValue("txtype", "contract_deploy")
 	// TransactionTypeContractInvoke is a smart contract invoke
 	TransactionTypeContractInvoke = fftypes.FFEnumValue("txtype", "contract_invoke")
 	// TransactionTypeTokenTransfer represents a token approval

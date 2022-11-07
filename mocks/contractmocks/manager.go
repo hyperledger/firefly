@@ -79,6 +79,29 @@ func (_m *Manager) DeleteContractListenerByNameOrID(ctx context.Context, nameOrI
 	return r0
 }
 
+// DeployContract provides a mock function with given fields: ctx, req, waitConfirm
+func (_m *Manager) DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (interface{}, error) {
+	ret := _m.Called(ctx, req, waitConfirm)
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractDeployRequest, bool) interface{}); ok {
+		r0 = rf(ctx, req, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *core.ContractDeployRequest, bool) error); ok {
+		r1 = rf(ctx, req, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GenerateFFI provides a mock function with given fields: ctx, generationRequest
 func (_m *Manager) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, generationRequest)

@@ -44,6 +44,7 @@ type Manager interface {
 	GetFFIs(ctx context.Context, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
 	ResolveFFI(ctx context.Context, ffi *fftypes.FFI) error
 
+	DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (interface{}, error)
 	InvokeContract(ctx context.Context, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
 	InvokeContractAPI(ctx context.Context, apiName, methodPath string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
 	GetContractAPI(ctx context.Context, httpServerURL, apiName string) (*core.ContractAPI, error)
@@ -98,6 +99,7 @@ func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi b
 
 	om.RegisterHandler(ctx, cm, []core.OpType{
 		core.OpTypeBlockchainInvoke,
+		core.OpTypeBlockchainContractDeploy,
 	})
 
 	return cm, nil
@@ -176,9 +178,55 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 		cm.namespace,
 		txid,
 		core.OpTypeBlockchainInvoke)
-	if err = addBlockchainInvokeInputs(op, req); err == nil {
+	if err = addBlockchainReqInputs(op, req); err == nil {
 		err = cm.operations.AddOrReuseOperation(ctx, op)
 	}
+	return op, err
+}
+
+func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core.ContractDeployRequest) (*core.Operation, error) {
+	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractDeploy)
+	if err != nil {
+		return nil, err
+	}
+
+	op := core.NewOperation(
+		cm.blockchain,
+		cm.namespace,
+		txid,
+		core.OpTypeBlockchainContractDeploy)
+	if err = addBlockchainReqInputs(op, req); err == nil {
+		err = cm.operations.AddOrReuseOperation(ctx, op)
+	}
+	return op, err
+}
+
+func (cm *contractManager) DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (res interface{}, err error) {
+	req.Key, err = cm.identity.NormalizeSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
+	if err != nil {
+		return nil, err
+	}
+
+	var op *core.Operation
+	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+		op, err = cm.writeDeployTransaction(ctx, req)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	send := func(ctx context.Context) error {
+		_, err := cm.operations.RunOperation(ctx, opBlockchainContractDeploy(op, req))
+		return err
+	}
+	if waitConfirm {
+		return cm.syncasync.WaitForDeployOperation(ctx, op.ID, send)
+	}
+	err = send(ctx)
 	return op, err
 }
 

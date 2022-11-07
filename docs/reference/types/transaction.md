@@ -40,7 +40,7 @@ nav_order: 6
 |------------|-------------|------|
 | `id` | The UUID of the FireFly transaction | [`UUID`](simpletypes#uuid) |
 | `namespace` | The namespace of the FireFly transaction | `string` |
-| `type` | The type of the FireFly transaction | `FFEnum`:<br/>`"none"`<br/>`"unpinned"`<br/>`"batch_pin"`<br/>`"network_action"`<br/>`"token_pool"`<br/>`"token_transfer"`<br/>`"contract_invoke"`<br/>`"token_approval"`<br/>`"data_publish"` |
+| `type` | The type of the FireFly transaction | `FFEnum`:<br/>`"none"`<br/>`"unpinned"`<br/>`"batch_pin"`<br/>`"network_action"`<br/>`"token_pool"`<br/>`"token_transfer"`<br/>`"contract_deploy"`<br/>`"contract_invoke"`<br/>`"token_approval"`<br/>`"data_publish"` |
 | `created` | The time the transaction was created on this node. Note the transaction is individually created with the same UUID on each participant in the FireFly transaction | [`FFTime`](simpletypes#fftime) |
 | `blockchainIds` | The blockchain transaction ID, in the format specific to the blockchain involved in the transaction. Not all FireFly transactions include a blockchain. FireFly transactions are extensible to support multiple blockchain transactions | `string[]` |
 

@@ -593,6 +593,13 @@ var (
 	TransactionStatusDetailsError     = ffm("TransactionStatusDetails.error", "If an error occurred related to the detail entry, it is included here")
 	TransactionStatusDetailsInfo      = ffm("TransactionStatusDetails.info", "Output details for this entry")
 
+	// ContractDeployRequest field descriptions
+	ContractDeployRequestKey        = ffm("ContractDeployRequest.key", "The blockchain signing key that will be used to deploy the contract. Defaults to the first signing key of the organization that operates the node")
+	ContractDeployRequestInput      = ffm("ContractDeployRequest.input", "An optional array of inputs passed to the smart contract's constructor, if applicable")
+	ContractDeployRequestDefinition = ffm("ContractDeployRequest.definition", "The definition of the smart contract")
+	ContractDeployRequestContract   = ffm("ContractDeployRequest.contract", "The smart contract to deploy. This should be pre-compiled if required by the blockchain connector")
+	ContractDeployRequestOptions    = ffm("ContractDeployRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
+
 	// ContractCallRequest field descriptions
 	ContractCallRequestType       = ffm("ContractCallRequest.type", "Invocations cause transactions on the blockchain. Whereas queries simply execute logic in your local node to query data at a given current/historical block")
 	ContractCallRequestInterface  = ffm("ContractCallRequest.interface", "The UUID of a method within a pre-configured FireFly interface (FFI) definition for a smart contract. Required if the 'method' is omitted. Also see Contract APIs as a way to configure a dedicated API for your FFI, including all methods and an OpenAPI/Swagger interface")

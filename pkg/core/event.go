@@ -57,6 +57,10 @@ var (
 	EventTypeBlockchainInvokeOpSucceeded = fftypes.FFEnumValue("eventtype", "blockchain_invoke_op_succeeded")
 	// EventTypeBlockchainInvokeOpFailed occurs when a blockchain "invoke" request has failed
 	EventTypeBlockchainInvokeOpFailed = fftypes.FFEnumValue("eventtype", "blockchain_invoke_op_failed")
+	// EventTypeBlockchainContractDeployOpSucceeded occurs when a contract deployment request has succeeded
+	EventTypeBlockchainContractDeployOpSucceeded = fftypes.FFEnumValue("eventtype", "blockchain_contract_deploy_op_succeeded")
+	// EventTypeBlockchainContractDeployOpFailed occurs when a contract deployment request has failed
+	EventTypeBlockchainContractDeployOpFailed = fftypes.FFEnumValue("eventtype", "blockchain_contract_deploy_op_failed")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network
