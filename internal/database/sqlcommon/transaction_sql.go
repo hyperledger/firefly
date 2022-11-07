@@ -35,11 +35,13 @@ var (
 		"ttype",
 		"namespace",
 		"created",
+		"idempotency_key",
 		"blockchain_ids",
 	}
 	transactionFilterFieldMap = map[string]string{
-		"type":          "ttype",
-		"blockchainids": "blockchain_ids",
+		"type":           "ttype",
+		"idempotencykey": "idempotency_key",
+		"blockchainids":  "blockchain_ids",
 	}
 )
 
@@ -61,6 +63,7 @@ func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *core.Tra
 				string(transaction.Type),
 				transaction.Namespace,
 				transaction.Created,
+				transaction.IdempotencyKey,
 				transaction.BlockchainIDs,
 			),
 		func() {
@@ -80,6 +83,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*core
 		&transaction.Type,
 		&transaction.Namespace,
 		&transaction.Created,
+		&transaction.IdempotencyKey,
 		&transaction.BlockchainIDs,
 	)
 	if err != nil {

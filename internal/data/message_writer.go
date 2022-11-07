@@ -20,6 +20,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -36,6 +37,7 @@ type NewMessage struct {
 // writeRequest is a combination of a message and a list of data that is new and needs to be
 // inserted into the database.
 type writeRequest struct {
+	id         *fftypes.UUID
 	newMessage *core.Message
 	newData    core.DataArray
 	result     chan error
@@ -44,7 +46,7 @@ type writeRequest struct {
 type messageWriterBatch struct {
 	messages       []*core.Message
 	data           core.DataArray
-	listeners      []chan error
+	listeners      map[fftypes.UUID]chan error
 	timeoutContext context.Context
 	timeoutCancel  func()
 }
@@ -92,6 +94,7 @@ func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage
 	if mw.conf.workerCount > 0 {
 		// Dispatch to background worker
 		nmi := &writeRequest{
+			id:         newMsg.Message.Message.Header.ID,
 			newMessage: &newMsg.Message.Message,
 			newData:    newMsg.NewData,
 			result:     make(chan error),
@@ -114,6 +117,7 @@ func (mw *messageWriter) WriteData(ctx context.Context, data *core.Data) error {
 	if mw.conf.workerCount > 0 {
 		// Dispatch to background worker
 		nmi := &writeRequest{
+			id:      data.ID,
 			newData: core.DataArray{data},
 			result:  make(chan error),
 		}
@@ -154,29 +158,96 @@ func (mw *messageWriter) writerLoop(index int) {
 		select {
 		case work := <-mw.workQueue:
 			if batch == nil {
-				batch = &messageWriterBatch{}
+				batch = &messageWriterBatch{
+					listeners: make(map[fftypes.UUID]chan error),
+				}
 				batch.timeoutContext, batch.timeoutCancel = context.WithTimeout(mw.ctx, mw.conf.batchTimeout)
 			}
 			if work.newMessage != nil {
 				batch.messages = append(batch.messages, work.newMessage)
 			}
 			batch.data = append(batch.data, work.newData...)
-			batch.listeners = append(batch.listeners, work.result)
+			batch.listeners[*work.id] = work.result
 		case <-timeoutContext.Done():
 			timedOut = true
 		}
 
 		if batch != nil && (timedOut || (len(batch.messages)+len(batch.data) >= mw.conf.maxInserts)) {
 			batch.timeoutCancel()
-			err := mw.database.RunAsGroup(mw.ctx, func(ctx context.Context) error {
-				return mw.writeMessages(ctx, batch.messages, batch.data)
-			})
-			for _, l := range batch.listeners {
-				l <- err
-			}
+			mw.persistMWBatch(batch)
 			batch = nil
 		}
 	}
+}
+
+func (mw *messageWriter) persistMWBatch(batch *messageWriterBatch) {
+	err := mw.database.RunAsGroup(mw.ctx, func(ctx context.Context) error {
+		return mw.writeMessages(ctx, batch.messages, batch.data)
+	})
+	if err != nil {
+		log.L(mw.ctx).Errorf("Failed batch message insert (pre-idempotency check): %s", err)
+		duplicatesRemoved := mw.removeIdempotencyDuplicates(mw.ctx, batch)
+		if duplicatesRemoved > 0 && (len(batch.messages) > 0 || len(batch.data) > 0) {
+			// We have a reduced scope batch to retry, with some duplicates removed
+			log.L(mw.ctx).Infof("Retrying batch insert after removing %d idempotency duplicates", duplicatesRemoved)
+			err = mw.database.RunAsGroup(mw.ctx, func(ctx context.Context) error {
+				return mw.writeMessages(ctx, batch.messages, batch.data)
+			})
+		}
+	}
+	for _, l := range batch.listeners {
+		l <- err
+	}
+}
+
+func (mw *messageWriter) removeIdempotencyDuplicates(ctx context.Context, batch *messageWriterBatch) int {
+	duplicatesRemoved := 0
+	newMessageList := make([]*core.Message, 0, len(batch.messages))
+
+	// Spin through the messages in the batch, looking for existing messages that
+	for _, m := range batch.messages {
+		dupRemoved := false
+		if m.IdempotencyKey != "" {
+			fb := database.MessageQueryFactory.NewFilter(ctx)
+			existing, _, err := mw.database.GetMessages(ctx, m.Header.Namespace, fb.Eq("idempotencykey", (string)(m.IdempotencyKey)))
+			if err != nil {
+				// Don't overwrite the original error for this - return -1 to the caller, who will return the previous error
+				log.L(mw.ctx).Errorf("Failed checking for idempotency errors: %s", err)
+				return -1
+			}
+			if len(existing) > 0 {
+				// We have an idempotency duplicate - we need to remove it from the batch so we can retry the rest
+				dupRemoved = true
+				if listener := batch.listeners[*m.Header.ID]; listener != nil {
+					// Notify the listener for this message,
+					listener <- i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateMessage, m.IdempotencyKey, existing[0].Header.ID)
+				}
+				delete(batch.listeners, *m.Header.ID)
+				// Remove all the data associated with this message from the batch
+				newData := make([]*core.Data, 0, len(batch.data))
+				for _, d := range batch.data {
+					isRef := false
+					for _, dr := range m.Data {
+						if dr.ID.Equals(d.ID) {
+							isRef = true
+							break
+						}
+					}
+					if !isRef {
+						newData = append(newData, d)
+					}
+				}
+				batch.data = newData
+			}
+		}
+		if dupRemoved {
+			duplicatesRemoved++
+		} else {
+			newMessageList = append(newMessageList, m)
+		}
+	}
+	batch.messages = newMessageList
+	return duplicatesRemoved
 }
 
 func (mw *messageWriter) writeMessages(ctx context.Context, msgs []*core.Message, data core.DataArray) error {

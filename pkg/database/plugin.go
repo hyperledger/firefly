@@ -671,22 +671,24 @@ type Capabilities struct {
 
 // MessageQueryFactory filter fields for messages
 var MessageQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"cid":       &UUIDField{},
-	"type":      &StringField{},
-	"author":    &StringField{},
-	"key":       &StringField{},
-	"topics":    &FFStringArrayField{},
-	"tag":       &StringField{},
-	"group":     &Bytes32Field{},
-	"created":   &TimeField{},
-	"hash":      &Bytes32Field{},
-	"pins":      &FFStringArrayField{},
-	"state":     &StringField{},
-	"confirmed": &TimeField{},
-	"sequence":  &Int64Field{},
-	"txtype":    &StringField{},
-	"batch":     &UUIDField{},
+	"id":             &UUIDField{},
+	"cid":            &UUIDField{},
+	"type":           &StringField{},
+	"author":         &StringField{},
+	"key":            &StringField{},
+	"topics":         &FFStringArrayField{},
+	"tag":            &StringField{},
+	"group":          &Bytes32Field{},
+	"created":        &TimeField{},
+	"datahash":       &Bytes32Field{},
+	"idempotencykey": &StringField{},
+	"hash":           &Bytes32Field{},
+	"pins":           &FFStringArrayField{},
+	"state":          &StringField{},
+	"confirmed":      &TimeField{},
+	"sequence":       &Int64Field{},
+	"txtype":         &StringField{},
+	"batch":          &UUIDField{},
 }
 
 // BatchQueryFactory filter fields for batches
@@ -707,10 +709,11 @@ var BatchQueryFactory = &queryFields{
 
 // TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
-	"id":            &UUIDField{},
-	"type":          &StringField{},
-	"created":       &TimeField{},
-	"blockchainids": &FFStringArrayField{},
+	"id":             &UUIDField{},
+	"type":           &StringField{},
+	"created":        &TimeField{},
+	"idempotencykey": &StringField{},
+	"blockchainids":  &FFStringArrayField{},
 }
 
 // DataQueryFactory filter fields for data

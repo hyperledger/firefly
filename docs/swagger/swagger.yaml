@@ -4756,6 +4756,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: datahash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: group
         schema:
           type: string
@@ -4767,6 +4772,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4999,6 +5009,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: datahash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: group
         schema:
           type: string
@@ -5010,6 +5025,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5199,6 +5219,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -5272,6 +5298,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: datahash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: group
         schema:
           type: string
@@ -5283,6 +5314,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -7404,6 +7440,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: datahash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: group
         schema:
           type: string
@@ -7415,6 +7456,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -7606,6 +7652,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
                     localNamespace:
                       description: The local namespace of the message
                       type: string
@@ -7850,6 +7902,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -8197,6 +8255,11 @@ paths:
                     description: The UUID of the FireFly transaction
                     format: uuid
                     type: string
+                  idempotencyKey:
+                    description: An optional unique identifier for a transaction.
+                      Cannot be duplicated within a namespace, thus allowing idempotent
+                      submission of transactions to the API
+                    type: string
                   namespace:
                     description: The namespace of the FireFly transaction
                     type: string
@@ -8332,6 +8395,12 @@ paths:
                       - transfer_private
                       type: string
                   type: object
+                idempotencyKey:
+                  description: An optional unique identifier for a message. Cannot
+                    be duplicated within a namespace, thus allowing idempotent submission
+                    of messages to the API. Local only - not transferred when the
+                    message is sent to other members of the network
+                  type: string
               type: object
       responses:
         "200":
@@ -8440,6 +8509,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -8569,6 +8644,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -8746,6 +8827,12 @@ paths:
                       - transfer_private
                       type: string
                   type: object
+                idempotencyKey:
+                  description: An optional unique identifier for a message. Cannot
+                    be duplicated within a namespace, thus allowing idempotent submission
+                    of messages to the API. Local only - not transferred when the
+                    message is sent to other members of the network
+                  type: string
               type: object
       responses:
         "200":
@@ -8860,6 +8947,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -8995,6 +9088,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -9168,6 +9267,12 @@ paths:
                       - transfer_private
                       type: string
                   type: object
+                idempotencyKey:
+                  description: An optional unique identifier for a message. Cannot
+                    be duplicated within a namespace, thus allowing idempotent submission
+                    of messages to the API. Local only - not transferred when the
+                    message is sent to other members of the network
+                  type: string
               type: object
       responses:
         "200":
@@ -9362,6 +9467,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -14622,6 +14733,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: datahash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: group
         schema:
           type: string
@@ -14633,6 +14749,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -14879,6 +15000,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: datahash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: group
         schema:
           type: string
@@ -14890,6 +15016,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -15079,6 +15210,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -15159,6 +15296,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: datahash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: group
         schema:
           type: string
@@ -15170,6 +15312,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -17403,6 +17550,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: datahash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: group
         schema:
           type: string
@@ -17414,6 +17566,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -17605,6 +17762,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
                     localNamespace:
                       description: The local namespace of the message
                       type: string
@@ -17856,6 +18019,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -18224,6 +18393,11 @@ paths:
                     description: The UUID of the FireFly transaction
                     format: uuid
                     type: string
+                  idempotencyKey:
+                    description: An optional unique identifier for a transaction.
+                      Cannot be duplicated within a namespace, thus allowing idempotent
+                      submission of transactions to the API
+                    type: string
                   namespace:
                     description: The namespace of the FireFly transaction
                     type: string
@@ -18404,6 +18578,12 @@ paths:
                       - transfer_private
                       type: string
                   type: object
+                idempotencyKey:
+                  description: An optional unique identifier for a message. Cannot
+                    be duplicated within a namespace, thus allowing idempotent submission
+                    of messages to the API. Local only - not transferred when the
+                    message is sent to other members of the network
+                  type: string
               type: object
       responses:
         "200":
@@ -18518,6 +18698,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -18653,6 +18839,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -18837,6 +19029,12 @@ paths:
                       - transfer_private
                       type: string
                   type: object
+                idempotencyKey:
+                  description: An optional unique identifier for a message. Cannot
+                    be duplicated within a namespace, thus allowing idempotent submission
+                    of messages to the API. Local only - not transferred when the
+                    message is sent to other members of the network
+                  type: string
               type: object
       responses:
         "200":
@@ -18951,6 +19149,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -19086,6 +19290,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -19266,6 +19476,12 @@ paths:
                       - transfer_private
                       type: string
                   type: object
+                idempotencyKey:
+                  description: An optional unique identifier for a message. Cannot
+                    be duplicated within a namespace, thus allowing idempotent submission
+                    of messages to the API. Local only - not transferred when the
+                    message is sent to other members of the network
+                  type: string
               type: object
       responses:
         "200":
@@ -19460,6 +19676,12 @@ paths:
                         - transfer_private
                         type: string
                     type: object
+                  idempotencyKey:
+                    description: An optional unique identifier for a message. Cannot
+                      be duplicated within a namespace, thus allowing idempotent submission
+                      of messages to the API. Local only - not transferred when the
+                      message is sent to other members of the network
+                    type: string
                   localNamespace:
                     description: The local namespace of the message
                     type: string
@@ -24517,6 +24739,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -24957,6 +25185,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -26175,6 +26409,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -26550,6 +26790,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: idempotencykey
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: type
         schema:
           type: string
@@ -26617,6 +26862,11 @@ paths:
                       description: The UUID of the FireFly transaction
                       format: uuid
                       type: string
+                    idempotencyKey:
+                      description: An optional unique identifier for a transaction.
+                        Cannot be duplicated within a namespace, thus allowing idempotent
+                        submission of transactions to the API
+                      type: string
                     namespace:
                       description: The namespace of the FireFly transaction
                       type: string
@@ -26679,6 +26929,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -26747,6 +27002,11 @@ paths:
                   id:
                     description: The UUID of the FireFly transaction
                     format: uuid
+                    type: string
+                  idempotencyKey:
+                    description: An optional unique identifier for a transaction.
+                      Cannot be duplicated within a namespace, thus allowing idempotent
+                      submission of transactions to the API
                     type: string
                   namespace:
                     description: The namespace of the FireFly transaction
@@ -32135,6 +32395,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -32553,6 +32819,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -33736,6 +34008,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -34097,6 +34375,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: idempotencykey
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: type
         schema:
           type: string
@@ -34164,6 +34447,11 @@ paths:
                       description: The UUID of the FireFly transaction
                       format: uuid
                       type: string
+                    idempotencyKey:
+                      description: An optional unique identifier for a transaction.
+                        Cannot be duplicated within a namespace, thus allowing idempotent
+                        submission of transactions to the API
+                      type: string
                     namespace:
                       description: The namespace of the FireFly transaction
                       type: string
@@ -34219,6 +34507,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -34287,6 +34580,11 @@ paths:
                   id:
                     description: The UUID of the FireFly transaction
                     format: uuid
+                    type: string
+                  idempotencyKey:
+                    description: An optional unique identifier for a transaction.
+                      Cannot be duplicated within a namespace, thus allowing idempotent
+                      submission of transactions to the API
                     type: string
                   namespace:
                     description: The namespace of the FireFly transaction

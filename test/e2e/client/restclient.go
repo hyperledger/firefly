@@ -306,11 +306,11 @@ func (client *FireFlyClient) DeleteSubscription(t *testing.T, id *fftypes.UUID) 
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func (client *FireFlyClient) BroadcastMessage(t *testing.T, topic string, data *core.DataRefOrValue, confirm bool) (*resty.Response, error) {
-	return client.BroadcastMessageAsIdentity(t, "", topic, data, confirm)
+func (client *FireFlyClient) BroadcastMessage(t *testing.T, topic, idempotencyKey string, data *core.DataRefOrValue, confirm bool) (*resty.Response, error) {
+	return client.BroadcastMessageAsIdentity(t, "", topic, idempotencyKey, data, confirm)
 }
 
-func (client *FireFlyClient) BroadcastMessageAsIdentity(t *testing.T, did, topic string, data *core.DataRefOrValue, confirm bool) (*resty.Response, error) {
+func (client *FireFlyClient) BroadcastMessageAsIdentity(t *testing.T, did, topic, idempotencyKey string, data *core.DataRefOrValue, confirm bool) (*resty.Response, error) {
 	var msg core.Message
 	res, err := client.Client.R().
 		SetBody(core.MessageInOut{
@@ -321,6 +321,7 @@ func (client *FireFlyClient) BroadcastMessageAsIdentity(t *testing.T, did, topic
 						Author: did,
 					},
 				},
+				IdempotencyKey: core.IdempotencyKey(idempotencyKey),
 			},
 			InlineData: core.InlineData{data},
 		}).
@@ -467,11 +468,11 @@ func (client *FireFlyClient) PrivateBlobMessageDatatypeTagged(t *testing.T, topi
 	return data, res, err
 }
 
-func (client *FireFlyClient) PrivateMessage(topic string, data *core.DataRefOrValue, members []core.MemberInput, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
-	return client.PrivateMessageWithKey("", topic, data, members, tag, txType, confirm, startTime)
+func (client *FireFlyClient) PrivateMessage(topic, idempotencyKey string, data *core.DataRefOrValue, members []core.MemberInput, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
+	return client.PrivateMessageWithKey("", topic, idempotencyKey, data, members, tag, txType, confirm, startTime)
 }
 
-func (client *FireFlyClient) PrivateMessageWithKey(key, topic string, data *core.DataRefOrValue, members []core.MemberInput, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
+func (client *FireFlyClient) PrivateMessageWithKey(key, topic, idempotencyKey string, data *core.DataRefOrValue, members []core.MemberInput, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
 	msg := core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
@@ -482,6 +483,7 @@ func (client *FireFlyClient) PrivateMessageWithKey(key, topic string, data *core
 					Key: key,
 				},
 			},
+			IdempotencyKey: core.IdempotencyKey(idempotencyKey),
 		},
 		InlineData: core.InlineData{data},
 		Group: &core.InputGroup{

@@ -68,6 +68,7 @@ var (
 	MessageConfirmed      = ffm("Message.confirmed", "The timestamp of when the message was confirmed/rejected")
 	MessageData           = ffm("Message.data", "The list of data elements attached to the message")
 	MessagePins           = ffm("Message.pins", "For private messages, a unique pin hash:nonce is assigned for each topic")
+	MessageIdempotencyKey = ffm("Message.idempotencyKey", "An optional unique identifier for a message. Cannot be duplicated within a namespace, thus allowing idempotent submission of messages to the API. Local only - not transferred when the message is sent to other members of the network")
 
 	// MessageInOut field descriptions
 	MessageInOutData  = ffm("MessageInOut.data", "For input allows you to specify data in-line in the message, that will be turned into data attachments. For output when fetchdata is used on API calls, includes the in-line data payloads of all data attachments")
@@ -170,12 +171,13 @@ var (
 	BatchPersistedConfirmed  = ffm("Batch.confirmed", "The time when the batch was confirmed")
 
 	// Transaction field descriptions
-	TransactionID            = ffm("Transaction.id", "The UUID of the FireFly transaction")
-	TransactionType          = ffm("Transaction.type", "The type of the FireFly transaction")
-	TransactionNamespace     = ffm("Transaction.namespace", "The namespace of the FireFly transaction")
-	TransactionCreated       = ffm("Transaction.created", "The time the transaction was created on this node. Note the transaction is individually created with the same UUID on each participant in the FireFly transaction")
-	TransactionBlockchainID  = ffm("Transaction.blockchainId", "The blockchain transaction ID, in the format specific to the blockchain involved in the transaction. Not all FireFly transactions include a blockchain")
-	TransactionBlockchainIDs = ffm("Transaction.blockchainIds", "The blockchain transaction ID, in the format specific to the blockchain involved in the transaction. Not all FireFly transactions include a blockchain. FireFly transactions are extensible to support multiple blockchain transactions")
+	TransactionID             = ffm("Transaction.id", "The UUID of the FireFly transaction")
+	TransactionType           = ffm("Transaction.type", "The type of the FireFly transaction")
+	TransactionNamespace      = ffm("Transaction.namespace", "The namespace of the FireFly transaction")
+	TransactionCreated        = ffm("Transaction.created", "The time the transaction was created on this node. Note the transaction is individually created with the same UUID on each participant in the FireFly transaction")
+	TransactionIdempotencyKey = ffm("Transaction.idempotencyKey", "An optional unique identifier for a transaction. Cannot be duplicated within a namespace, thus allowing idempotent submission of transactions to the API")
+	TransactionBlockchainID   = ffm("Transaction.blockchainId", "The blockchain transaction ID, in the format specific to the blockchain involved in the transaction. Not all FireFly transactions include a blockchain")
+	TransactionBlockchainIDs  = ffm("Transaction.blockchainIds", "The blockchain transaction ID, in the format specific to the blockchain involved in the transaction. Not all FireFly transactions include a blockchain. FireFly transactions are extensible to support multiple blockchain transactions")
 
 	// Operation field description
 	OperationID          = ffm("Operation.id", "The UUID of the operation")

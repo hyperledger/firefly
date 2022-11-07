@@ -83,7 +83,8 @@ func TestTransactionE2EWithDB(t *testing.T) {
 
 	// Update
 	up := database.TransactionQueryFactory.NewUpdate(ctx).
-		Set("blockchainids", core.FFStringArray{"0x12345", "0x23456"})
+		Set("blockchainids", core.FFStringArray{"0x12345", "0x23456"}).
+		Set("idempotencykey", "testKey")
 	err = s.UpdateTransaction(ctx, "ns1", transaction.ID, up)
 	assert.NoError(t, err)
 
@@ -91,10 +92,12 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	filter = fb.And(
 		fb.Eq("id", transaction.ID.String()),
 		fb.Eq("blockchainids", "0x12345,0x23456"),
+		fb.Eq("idempotencykey", "testKey"),
 	)
 	transactions, _, err = s.GetTransactions(ctx, "ns1", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(transactions))
+	assert.Equal(t, (core.IdempotencyKey)("testKey"), transactions[0].IdempotencyKey)
 }
 
 func TestInsertTransactionFailBegin(t *testing.T) {

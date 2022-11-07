@@ -85,7 +85,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 
 	// Send a broadcast from each custom identity
 	for did := range identities {
-		resp, err := suite.testState.client1.BroadcastMessageAsIdentity(suite.T(), did, "identitytest", &core.DataRefOrValue{
+		resp, err := suite.testState.client1.BroadcastMessageAsIdentity(suite.T(), did, "identitytest", "", &core.DataRefOrValue{
 			Value: fftypes.JSONAnyPtr(`{"some": "data"}`),
 		}, false)
 		require.NoError(suite.T(), err)
@@ -132,7 +132,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 		{Identity: custom2.DID},
 	}
 
-	resp, err := suite.testState.client1.PrivateMessageWithKey(org1key, "topic1", &core.DataRefOrValue{
+	resp, err := suite.testState.client1.PrivateMessageWithKey(org1key, "topic1", "", &core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`"test private custom identity"`),
 	}, members, "tag1", core.TransactionTypeBatchPin, true, suite.testState.startTime)
 	require.NoError(suite.T(), err)
