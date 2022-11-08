@@ -19,7 +19,6 @@ package shareddownload
 import (
 	"context"
 	"io"
-	"io/ioutil"
 
 	"github.com/docker/go-units"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -122,7 +121,7 @@ func (dm *downloadManager) downloadBatch(ctx context.Context, data downloadBatch
 	// Read from the stream up to the limit
 	maxReadLimit := dm.broadcastBatchPayloadLimit + 1024
 	limitedReader := io.LimitReader(reader, maxReadLimit)
-	batchBytes, err := ioutil.ReadAll(limitedReader)
+	batchBytes, err := io.ReadAll(limitedReader)
 	if err != nil {
 		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
 	}

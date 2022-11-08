@@ -47,13 +47,12 @@ import (
 // - Can be stored and retrieved separately from their transfer
 // - Transfers are initiated via reference (not in-line data)
 // - Are hashed by the DX plugin using the same hashing algorithm as FireFly (SHA256)
-// - DX plugins can mainain their own internal IDs for Blobs within the following requirements:
+// - DX plugins can maintain their own internal IDs for Blobs within the following requirements:
 //   - Given a namespace and ID, map to a "payloadRef" string (<1024chars) that allows that same payload to be retrieved using only that payloadRef
-//     - Example would be a logical filesystem path like "local/namespace/ID"
-//   - When data is recevied from other members in the network, be able to return the hash when provided with the remote peerID string, namespace and ID
-//     - Could be done by having a data store to resolve the transfers, or simply a deterministic path to metadata like "receive/peerID/namespace/ID"
+//   - Example would be a logical filesystem path like "local/namespace/ID"
+//   - When data is received from other members in the network, be able to return the hash when provided with the remote peerID string, namespace and ID
+//   - Could be done by having a data store to resolve the transfers, or simply a deterministic path to metadata like "receive/peerID/namespace/ID"
 //   - Events triggered for arrival of blobs must contain the payloadRef, and the hash
-//
 type Plugin interface {
 	core.Named
 

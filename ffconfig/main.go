@@ -18,7 +18,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/hyperledger/firefly/ffconfig/migrate"
@@ -38,7 +37,7 @@ var migrateCommand = &cobra.Command{
 	Use:   "migrate",
 	Short: "Migrate a config file to the current version",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := ioutil.ReadFile(cfgFile)
+		cfg, err := os.ReadFile(cfgFile)
 		if err != nil {
 			return err
 		}
@@ -50,7 +49,7 @@ var migrateCommand = &cobra.Command{
 			fmt.Print(string(out))
 			return nil
 		}
-		return ioutil.WriteFile(outFile, out, 0600)
+		return os.WriteFile(outFile, out, 0600)
 	},
 }
 

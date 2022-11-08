@@ -560,9 +560,10 @@ func (ft *FFTokens) eventLoop() {
 }
 
 // Parse a JSON error of the form:
-//   {"error": "Bad Request", "message": "Field 'x' is required"}
+// {"error": "Bad Request", "message": "Field 'x' is required"}
 // into a message of the form:
-//   "Bad Request: Field 'x' is required"
+//
+//	"Bad Request: Field 'x' is required"
 func wrapError(ctx context.Context, errRes *tokenError, res *resty.Response, err error) error {
 	if errRes != nil && errRes.Message != "" {
 		if errRes.Error != "" {
