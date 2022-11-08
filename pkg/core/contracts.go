@@ -42,6 +42,14 @@ type ContractCallRequest struct {
 	Options    map[string]interface{} `ffstruct:"ContractCallRequest" json:"options"`
 }
 
+type ContractDeployRequest struct {
+	Key        string                 `ffstruct:"ContractDeployRequest" json:"key,omitempty"`
+	Input      []interface{}          `ffstruct:"ContractDeployRequest" json:"input"`
+	Definition *fftypes.JSONAny       `ffstruct:"ContractDeployRequest" json:"definition"`
+	Contract   *fftypes.JSONAny       `ffstruct:"ContractDeployRequest" json:"contract"`
+	Options    map[string]interface{} `ffstruct:"ContractDeployRequest" json:"options"`
+}
+
 type ContractURLs struct {
 	OpenAPI string `ffstruct:"ContractURLs" json:"openapi"`
 	UI      string `ffstruct:"ContractURLs" json:"ui"`

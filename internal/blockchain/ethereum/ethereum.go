@@ -545,6 +545,10 @@ func (e *Ethereum) buildEthconnectRequestBody(ctx context.Context, messageType, 
 	if signingKey != "" {
 		body["from"] = signingKey
 	}
+	return e.applyOptions(ctx, body, options)
+}
+
+func (e *Ethereum) applyOptions(ctx context.Context, body, options map[string]interface{}) (map[string]interface{}, error) {
 	for k, v := range options {
 		// Set the new field if it's not already set. Do not allow overriding of existing fields
 		if _, ok := body[k]; !ok {
@@ -677,6 +681,45 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signi
 	}
 
 	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, nil)
+}
+
+func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error {
+	if e.metrics.IsMetricsEnabled() {
+		e.metrics.BlockchainContractDeployment()
+	}
+	headers := EthconnectMessageHeaders{
+		Type: "DeployContract",
+		ID:   nsOpID,
+	}
+	body := map[string]interface{}{
+		"headers":    headers,
+		"from":       signingKey,
+		"params":     input,
+		"definition": definition,
+		"contract":   contract,
+	}
+	if signingKey != "" {
+		body["from"] = signingKey
+	}
+	body, err := e.applyOptions(ctx, body, options)
+	if err != nil {
+		return err
+	}
+
+	client := e.fftmClient
+	if client == nil {
+		client = e.client
+	}
+	var resErr ethError
+	res, err := client.R().
+		SetContext(ctx).
+		SetBody(body).
+		SetError(&resErr).
+		Post("/")
+	if err != nil || !res.IsSuccess() {
+		return wrapError(ctx, &resErr, res, err)
+	}
+	return nil
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {

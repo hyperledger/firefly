@@ -30,12 +30,25 @@ type blockchainInvokeData struct {
 	Request *core.ContractCallRequest `json:"request"`
 }
 
-func addBlockchainInvokeInputs(op *core.Operation, req *core.ContractCallRequest) (err error) {
+type blockchainContractDeployData struct {
+	Request *core.ContractDeployRequest `json:"request"`
+}
+
+func addBlockchainReqInputs(op *core.Operation, req interface{}) (err error) {
 	var reqJSON []byte
 	if reqJSON, err = json.Marshal(req); err == nil {
 		err = json.Unmarshal(reqJSON, &op.Input)
 	}
 	return err
+}
+
+func retrieveBlockchainDeployInputs(ctx context.Context, op *core.Operation) (*core.ContractDeployRequest, error) {
+	var req core.ContractDeployRequest
+	s := op.Input.String()
+	if err := json.Unmarshal([]byte(s), &req); err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
+	}
+	return &req, nil
 }
 
 func retrieveBlockchainInvokeInputs(ctx context.Context, op *core.Operation) (*core.ContractCallRequest, error) {
@@ -55,7 +68,12 @@ func (cm *contractManager) PrepareOperation(ctx context.Context, op *core.Operat
 			return nil, err
 		}
 		return opBlockchainInvoke(op, req), nil
-
+	case core.OpTypeBlockchainContractDeploy:
+		req, err := retrieveBlockchainDeployInputs(ctx, op)
+		if err != nil {
+			return nil, err
+		}
+		return opBlockchainContractDeploy(op, req), nil
 	default:
 		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
@@ -67,14 +85,18 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOp
 		req := data.Request
 		return nil, false, cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, req.Method, req.Input, req.Options)
 
+	case blockchainContractDeployData:
+		req := data.Request
+		return nil, false, cm.blockchain.DeployContract(ctx, op.NamespacedIDString(), req.Key, req.Definition, req.Contract, req.Input, req.Options)
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 
 func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {
-	// Special handling for OpTypeBlockchainInvoke, which writes an event when it succeeds or fails
-	if op.Type == core.OpTypeBlockchainInvoke {
+	// Special handling for blockchain operations, which writes an event when it succeeds or fails
+	switch op.Type {
+	case core.OpTypeBlockchainInvoke:
 		if update.Status == core.OpStatusSucceeded {
 			event := core.NewEvent(core.EventTypeBlockchainInvokeOpSucceeded, op.Namespace, op.ID, op.Transaction, "")
 			if err := cm.database.InsertEvent(ctx, event); err != nil {
@@ -83,6 +105,19 @@ func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *core.Opera
 		}
 		if update.Status == core.OpStatusFailed {
 			event := core.NewEvent(core.EventTypeBlockchainInvokeOpFailed, op.Namespace, op.ID, op.Transaction, "")
+			if err := cm.database.InsertEvent(ctx, event); err != nil {
+				return err
+			}
+		}
+	case core.OpTypeBlockchainContractDeploy:
+		if update.Status == core.OpStatusSucceeded {
+			event := core.NewEvent(core.EventTypeBlockchainContractDeployOpSucceeded, op.Namespace, op.ID, op.Transaction, "")
+			if err := cm.database.InsertEvent(ctx, event); err != nil {
+				return err
+			}
+		}
+		if update.Status == core.OpStatusFailed {
+			event := core.NewEvent(core.EventTypeBlockchainContractDeployOpFailed, op.Namespace, op.ID, op.Transaction, "")
 			if err := cm.database.InsertEvent(ctx, event); err != nil {
 				return err
 			}
@@ -98,5 +133,15 @@ func opBlockchainInvoke(op *core.Operation, req *core.ContractCallRequest) *core
 		Plugin:    op.Plugin,
 		Type:      op.Type,
 		Data:      blockchainInvokeData{Request: req},
+	}
+}
+
+func opBlockchainContractDeploy(op *core.Operation, req *core.ContractDeployRequest) *core.PreparedOperation {
+	return &core.PreparedOperation{
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Plugin:    op.Plugin,
+		Type:      op.Type,
+		Data:      blockchainContractDeployData{Request: req},
 	}
 }

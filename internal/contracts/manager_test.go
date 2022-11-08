@@ -18,6 +18,7 @@ package contracts
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -1315,6 +1316,125 @@ func TestGetFFIs(t *testing.T) {
 	mdb.On("GetFFIs", mock.Anything, "ns1", filter).Return([]*fftypes.FFI{}, &database.FilterResult{}, nil)
 	_, _, err := cm.GetFFIs(context.Background(), filter)
 	assert.NoError(t, err)
+}
+
+func TestDeployContract(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mom := cm.operations.(*operationmocks.Manager)
+	signingKey := "0x2468"
+	req := &core.ContractDeployRequest{
+		Key:        signingKey,
+		Definition: fftypes.JSONAnyPtr("[]"),
+		Contract:   fftypes.JSONAnyPtr("\"0x123456\""),
+		Input:      []interface{}{"one", "two", "three"},
+	}
+
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractDeploy).Return(fftypes.NewUUID(), nil)
+	mim.On("NormalizeSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainContractDeploy && op.Plugin == "mockblockchain"
+	})).Return(nil)
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(blockchainContractDeployData)
+		return op.Type == core.OpTypeBlockchainContractDeploy && data.Request == req
+	})).Return(nil, nil)
+
+	_, err := cm.DeployContract(context.Background(), req, false)
+
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestDeployContractSync(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mom := cm.operations.(*operationmocks.Manager)
+	sam := cm.syncasync.(*syncasyncmocks.Bridge)
+	signingKey := "0x2468"
+	req := &core.ContractDeployRequest{
+		Key:        signingKey,
+		Definition: fftypes.JSONAnyPtr("[]"),
+		Contract:   fftypes.JSONAnyPtr("\"0x123456\""),
+		Input:      []interface{}{"one", "two", "three"},
+	}
+
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractDeploy).Return(fftypes.NewUUID(), nil)
+	mim.On("NormalizeSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainContractDeploy && op.Plugin == "mockblockchain"
+	})).Return(nil)
+
+	sam.On("WaitForDeployOperation", mock.Anything, mock.Anything, mock.Anything).Return(&core.Operation{Status: core.OpStatusSucceeded}, nil)
+
+	_, err := cm.DeployContract(context.Background(), req, true)
+
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestDeployContractNormalizeSigningKeyFail(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mom := cm.operations.(*operationmocks.Manager)
+	signingKey := "0x2468"
+	req := &core.ContractDeployRequest{
+		Key:        signingKey,
+		Definition: fftypes.JSONAnyPtr("[]"),
+		Contract:   fftypes.JSONAnyPtr("\"0x123456\""),
+		Input:      []interface{}{"one", "two", "three"},
+	}
+
+	mim.On("NormalizeSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("", errors.New("pop"))
+	_, err := cm.DeployContract(context.Background(), req, false)
+
+	assert.Regexp(t, "pop", err)
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestDeployContractSubmitNewTransactionFail(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mom := cm.operations.(*operationmocks.Manager)
+	signingKey := "0x2468"
+	req := &core.ContractDeployRequest{
+		Key:        signingKey,
+		Definition: fftypes.JSONAnyPtr("[]"),
+		Contract:   fftypes.JSONAnyPtr("\"0x123456\""),
+		Input:      []interface{}{"one", "two", "three"},
+	}
+
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractDeploy).Return(nil, errors.New("pop"))
+	mim.On("NormalizeSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+
+	_, err := cm.DeployContract(context.Background(), req, false)
+
+	assert.Regexp(t, "pop", err)
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestInvokeContract(t *testing.T) {

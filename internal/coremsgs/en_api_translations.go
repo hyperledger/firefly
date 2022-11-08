@@ -143,6 +143,7 @@ var (
 	APIEndpointsGetVerifierByHash               = ffm("api.endpoints.getVerifierByHash", "Gets a verifier by its hash")
 	APIEndpointsGetVerifiers                    = ffm("api.endpoints.getVerifiers", "Gets a list of verifiers")
 	APIEndpointsPatchUpdateIdentity             = ffm("api.endpoints.patchUpdateIdentity", "Updates an identity")
+	APIEndpointsPostContractDeploy              = ffm("api.endpoints.postContractDeploy", "Deploy a new smart contract")
 	APIEndpointsPostContractAPIInvoke           = ffm("api.endpoints.postContractAPIInvoke", "Invokes a method on a smart contract API. Performs a blockchain transaction.")
 	APIEndpointsPostContractAPIQuery            = ffm("api.endpoints.postContractAPIQuery", "Queries a method on a smart contract API. Performs a read-only query.")
 	APIEndpointsPostContractInterfaceGenerate   = ffm("api.endpoints.postContractInterfaceGenerate", "A convenience method to convert a blockchain specific smart contract format into a FireFly Interface format. The specific blockchain plugin in use must support this functionality.")

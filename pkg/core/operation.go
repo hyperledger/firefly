@@ -35,6 +35,8 @@ var (
 	OpTypeBlockchainPinBatch = fftypes.FFEnumValue("optype", "blockchain_pin_batch")
 	// OpTypeBlockchainNetworkAction is an administrative action on a multiparty blockchain network
 	OpTypeBlockchainNetworkAction = fftypes.FFEnumValue("optype", "blockchain_network_action")
+	// OpTypeBlockchainContractDeploy is a smart contract deploy
+	OpTypeBlockchainContractDeploy = fftypes.FFEnumValue("optype", "blockchain_deploy")
 	// OpTypeBlockchainInvoke is a smart contract invoke
 	OpTypeBlockchainInvoke = fftypes.FFEnumValue("optype", "blockchain_invoke")
 	// OpTypeSharedStorageUploadBatch is a shared storage operation to upload broadcast data

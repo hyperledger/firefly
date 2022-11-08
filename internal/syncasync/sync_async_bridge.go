@@ -57,6 +57,8 @@ type Bridge interface {
 	WaitForTokenApproval(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.TokenApproval, error)
 	// WaitForInvokeOperation waits for an operation with the supplied ID
 	WaitForInvokeOperation(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.Operation, error)
+	// WaitForDeployOperation waits for an operation with the supplied ID
+	WaitForDeployOperation(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.Operation, error)
 }
 
 // Sender interface may be implemented by other types that wish to provide generic sync/async capabilities
@@ -78,6 +80,7 @@ const (
 	tokenTransferConfirm
 	tokenApproveConfirm
 	invokeOperationConfirm
+	deployOperationConfirm
 )
 
 type inflightRequest struct {
@@ -433,7 +436,7 @@ func (sa *syncAsyncBridge) handleApprovalOpFailedEvent(event *core.EventDelivery
 	return nil
 }
 
-func (sa *syncAsyncBridge) handleOperationSuccededEvent(event *core.EventDelivery) error {
+func (sa *syncAsyncBridge) handleOperationSucceededEvent(event *core.EventDelivery) error {
 	// See if this is a failure of an inflight invoke operation
 	inflight := sa.getInFlight(event.Namespace, invokeOperationConfirm, event.Reference)
 	if inflight == nil {
@@ -446,6 +449,40 @@ func (sa *syncAsyncBridge) handleOperationSuccededEvent(event *core.EventDeliver
 	}
 
 	go sa.resolveSuccessfulOperation(inflight, "invoke", op)
+
+	return nil
+}
+
+func (sa *syncAsyncBridge) handleContractDeployOperationSucceededEvent(event *core.EventDelivery) error {
+	// See if this is a failure of an inflight invoke operation
+	inflight := sa.getInFlight(event.Namespace, deployOperationConfirm, event.Reference)
+	if inflight == nil {
+		return nil
+	}
+
+	op, err := sa.getOperationFromEvent(event)
+	if err != nil || op == nil {
+		return err
+	}
+
+	go sa.resolveSuccessfulOperation(inflight, "deploy", op)
+
+	return nil
+}
+
+func (sa *syncAsyncBridge) handleContractDeployOperationFailedEvent(event *core.EventDelivery) error {
+	// See if this is a failure of an inflight deploy operation
+	inflight := sa.getInFlight(event.Namespace, deployOperationConfirm, event.Reference)
+	if inflight == nil {
+		return nil
+	}
+
+	op, err := sa.getOperationFromEvent(event)
+	if err != nil || op == nil {
+		return err
+	}
+
+	go sa.resolveFailedOperation(inflight, "deploy", op)
 
 	return nil
 }
@@ -506,10 +543,16 @@ func (sa *syncAsyncBridge) eventCallback(event *core.EventDelivery) error {
 		return sa.handleApprovalOpFailedEvent(event)
 
 	case core.EventTypeBlockchainInvokeOpSucceeded:
-		return sa.handleOperationSuccededEvent(event)
+		return sa.handleOperationSucceededEvent(event)
 
 	case core.EventTypeBlockchainInvokeOpFailed:
 		return sa.handleOperationFailedEvent(event)
+
+	case core.EventTypeBlockchainContractDeployOpSucceeded:
+		return sa.handleContractDeployOperationSucceededEvent(event)
+
+	case core.EventTypeBlockchainContractDeployOpFailed:
+		return sa.handleContractDeployOperationFailedEvent(event)
 	}
 
 	return nil
@@ -655,6 +698,14 @@ func (sa *syncAsyncBridge) WaitForTokenApproval(ctx context.Context, id *fftypes
 
 func (sa *syncAsyncBridge) WaitForInvokeOperation(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.Operation, error) {
 	reply, err := sa.sendAndWait(ctx, sa.namespace, id, invokeOperationConfirm, send)
+	if err != nil {
+		return nil, err
+	}
+	return reply.(*core.Operation), err
+}
+
+func (sa *syncAsyncBridge) WaitForDeployOperation(ctx context.Context, id *fftypes.UUID, send SendFunction) (*core.Operation, error) {
+	reply, err := sa.sendAndWait(ctx, sa.namespace, id, deployOperationConfirm, send)
 	if err != nil {
 		return nil, err
 	}

@@ -46,7 +46,7 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 			"value": "1",
 		},
 	}
-	err := addBlockchainInvokeInputs(op, req)
+	err := addBlockchainReqInputs(op, req)
 	assert.NoError(t, err)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
@@ -68,6 +68,39 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
+func TestPrepareAndRunBlockchainContractDeploy(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainContractDeploy,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	signingKey := "0x2468"
+	req := &core.ContractDeployRequest{
+		Key:        signingKey,
+		Definition: fftypes.JSONAnyPtr("[]"),
+		Contract:   fftypes.JSONAnyPtr("\"0x123456\""),
+		Input:      []interface{}{"one", "two", "three"},
+	}
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("DeployContract", context.Background(), "ns1:"+op.ID.String(), signingKey, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	po, err := cm.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, req, po.Data.(blockchainContractDeployData).Request)
+
+	_, complete, err := cm.RunOperation(context.Background(), po)
+
+	assert.False(t, complete)
+	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
+}
+
 func TestPrepareOperationNotSupported(t *testing.T) {
 	cm := newTestContractManager()
 
@@ -75,6 +108,18 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 
 	assert.Nil(t, po)
 	assert.Regexp(t, "FF10371", err)
+}
+
+func TestPrepareOperationBlockchainDeployBadInput(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:  core.OpTypeBlockchainContractDeploy,
+		Input: fftypes.JSONObject{"input": "bad"},
+	}
+
+	_, err := cm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestPrepareOperationBlockchainInvokeBadInput(t *testing.T) {
@@ -105,6 +150,50 @@ func TestOperationUpdate(t *testing.T) {
 
 	err := cm.OnOperationUpdate(context.Background(), op, nil)
 	assert.NoError(t, err)
+}
+
+func TestOperationUpdateDeploySucceed(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: core.OpTypeBlockchainContractDeploy,
+	}
+	update := &core.OperationUpdate{
+		Status: core.OpStatusSucceeded,
+	}
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeBlockchainContractDeployOpSucceeded && *event.Reference == *op.ID
+	})).Return(fmt.Errorf("pop"))
+
+	err := cm.OnOperationUpdate(context.Background(), op, update)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateDeployFail(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: core.OpTypeBlockchainContractDeploy,
+	}
+	update := &core.OperationUpdate{
+		Status: core.OpStatusFailed,
+	}
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeBlockchainContractDeployOpFailed && *event.Reference == *op.ID
+	})).Return(fmt.Errorf("pop"))
+
+	err := cm.OnOperationUpdate(context.Background(), op, update)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
 }
 
 func TestOperationUpdateInvokeSucceed(t *testing.T) {

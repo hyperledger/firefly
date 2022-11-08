@@ -25,6 +25,29 @@ func (_m *Bridge) Init(sysevents system.EventInterface) {
 	_m.Called(sysevents)
 }
 
+// WaitForDeployOperation provides a mock function with given fields: ctx, id, send
+func (_m *Bridge) WaitForDeployOperation(ctx context.Context, id *fftypes.UUID, send syncasync.SendFunction) (*core.Operation, error) {
+	ret := _m.Called(ctx, id, send)
+
+	var r0 *core.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, syncasync.SendFunction) *core.Operation); ok {
+		r0 = rf(ctx, id, send)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, syncasync.SendFunction) error); ok {
+		r1 = rf(ctx, id, send)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // WaitForIdentity provides a mock function with given fields: ctx, id, send
 func (_m *Bridge) WaitForIdentity(ctx context.Context, id *fftypes.UUID, send syncasync.SendFunction) (*core.Identity, error) {
 	ret := _m.Called(ctx, id, send)
