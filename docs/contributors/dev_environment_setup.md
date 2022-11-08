@@ -23,7 +23,7 @@ This guide will walk you through setting up your machine for contributing to Fir
 
 You will need a few prerequisites set up on your machine before you can build FireFly from source. We recommend doing development on macOS, Linux, or WSL 2.0.
 
-- [Go (1.18 or newer)](https://golang.org/dl/)
+- [Go 1.18](https://golang.org/dl/)
 - make
 - GCC
 - openssl
