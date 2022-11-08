@@ -591,6 +591,10 @@ paths:
           application/json:
             schema:
               properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 input:
                   additionalProperties:
                     description: A map of named inputs. The name and type of each
@@ -1182,6 +1186,10 @@ paths:
           application/json:
             schema:
               properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 input:
                   additionalProperties:
                     description: A map of named inputs. The name and type of each
@@ -2008,6 +2016,10 @@ paths:
                     if required by the blockchain connector
                 definition:
                   description: The definition of the smart contract
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 input:
                   description: An optional array of inputs passed to the smart contract's
                     constructor, if applicable
@@ -3359,6 +3371,10 @@ paths:
           application/json:
             schema:
               properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 input:
                   additionalProperties:
                     description: A map of named inputs. The name and type of each
@@ -4196,6 +4212,10 @@ paths:
           application/json:
             schema:
               properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 input:
                   additionalProperties:
                     description: A map of named inputs. The name and type of each
@@ -4877,6 +4897,12 @@ paths:
         required: true
         schema:
           type: string
+      - description: Optional idempotency key. Request will be rejected with 409 if
+          an action has already been initiated with the same key
+        in: query
+        name: idempotencykey
+        schema:
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -5417,6 +5443,12 @@ paths:
         in: path
         name: dataid
         required: true
+        schema:
+          type: string
+      - description: Optional idempotency key. Request will be rejected with 409 if
+          an action has already been initiated with the same key
+        in: query
+        name: idempotencykey
         schema:
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
@@ -10206,6 +10238,10 @@ paths:
           application/json:
             schema:
               properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 input:
                   additionalProperties:
                     description: A map of named inputs. The name and type of each
@@ -10938,6 +10974,10 @@ paths:
           application/json:
             schema:
               properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 input:
                   additionalProperties:
                     description: A map of named inputs. The name and type of each
@@ -11880,6 +11920,10 @@ paths:
                     if required by the blockchain connector
                 definition:
                   description: The definition of the smart contract
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 input:
                   description: An optional array of inputs passed to the smart contract's
                     constructor, if applicable
@@ -13273,6 +13317,10 @@ paths:
           application/json:
             schema:
               properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 input:
                   additionalProperties:
                     description: A map of named inputs. The name and type of each
@@ -14145,6 +14193,10 @@ paths:
           application/json:
             schema:
               properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 input:
                   additionalProperties:
                     description: A map of named inputs. The name and type of each
@@ -14861,6 +14913,12 @@ paths:
         schema:
           example: default
           type: string
+      - description: Optional idempotency key. Request will be rejected with 409 if
+          an action has already been initiated with the same key
+        in: query
+        name: idempotencykey
+        schema:
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -15423,6 +15481,12 @@ paths:
         required: true
         schema:
           example: default
+          type: string
+      - description: Optional idempotency key. Request will be rejected with 409 if
+          an action has already been initiated with the same key
+        in: query
+        name: idempotencykey
+        schema:
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
@@ -24228,6 +24292,10 @@ paths:
                     of the approval.  See your chosen token connector documentation
                     for details
                   type: object
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 key:
                   description: The blockchain signing key for the approval request.
                     On input defaults to the first signing key of the organization
@@ -24237,8 +24305,8 @@ paths:
                   description: The blockchain identity that is granted the approval
                   type: string
                 pool:
-                  description: The UUID the token pool this approval applies to
-                  format: uuid
+                  description: The name or UUID of a token pool. Required if more
+                    than one pool exists.
                   type: string
               type: object
       responses:
@@ -24598,156 +24666,24 @@ paths:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
                   type: string
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 key:
                   description: The blockchain signing key for the transfer. On input
                     defaults to the first signing key of the organization that operates
                     the node
                   type: string
                 message:
-                  description: You can specify a message to correlate with the transfer,
-                    which can be of type broadcast or private. Your chosen token connector
-                    and on-chain smart contract must support on-chain/off-chain correlation
-                    by taking a `data` input on the transfer
-                  properties:
-                    data:
-                      description: For input allows you to specify data in-line in
-                        the message, that will be turned into data attachments. For
-                        output when fetchdata is used on API calls, includes the in-line
-                        data payloads of all data attachments
-                      items:
-                        description: For input allows you to specify data in-line
-                          in the message, that will be turned into data attachments.
-                          For output when fetchdata is used on API calls, includes
-                          the in-line data payloads of all data attachments
-                        properties:
-                          datatype:
-                            description: The optional datatype to use for validation
-                              of the in-line data
-                            properties:
-                              name:
-                                description: The name of the datatype
-                                type: string
-                              version:
-                                description: The version of the datatype. Semantic
-                                  versioning is encouraged, such as v1.0.1
-                                type: string
-                            type: object
-                          id:
-                            description: The UUID of the referenced data resource
-                            format: uuid
-                            type: string
-                          validator:
-                            description: The data validator type to use for in-line
-                              data
-                            type: string
-                          value:
-                            description: The in-line value for the data. Can be any
-                              JSON type - object, array, string, number or boolean
-                        type: object
-                      type: array
-                    group:
-                      description: Allows you to specify details of the private group
-                        of recipients in-line in the message. Alternative to using
-                        the header.group to specify the hash of a group that has been
-                        previously resolved
-                      properties:
-                        members:
-                          description: An array of members of the group. If no identities
-                            local to the sending node are included, then the organization
-                            owner of the local node is added automatically
-                          items:
-                            description: An array of members of the group. If no identities
-                              local to the sending node are included, then the organization
-                              owner of the local node is added automatically
-                            properties:
-                              identity:
-                                description: The DID of the group member. On input
-                                  can be a UUID or org name, and will be resolved
-                                  to a DID
-                                type: string
-                              node:
-                                description: The UUID of the node that will receive
-                                  a copy of the off-chain message for the identity.
-                                  The first applicable node for the identity will
-                                  be picked automatically on input if not specified
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          description: Optional name for the group. Allows you to
-                            have multiple separate groups with the same list of participants
-                          type: string
-                      type: object
-                    header:
-                      description: The message header contains all fields that are
-                        used to build the message hash
-                      properties:
-                        author:
-                          description: The DID of identity of the submitter
-                          type: string
-                        cid:
-                          description: The correlation ID of the message. Set this
-                            when a message is a response to another message
-                          format: uuid
-                          type: string
-                        group:
-                          description: Private messages only - the identifier hash
-                            of the privacy group. Derived from the name and member
-                            list of the group
-                          format: byte
-                          type: string
-                        key:
-                          description: The on-chain signing key used to sign the transaction
-                          type: string
-                        tag:
-                          description: The message tag indicates the purpose of the
-                            message to the applications that process it
-                          type: string
-                        topics:
-                          description: A message topic associates this message with
-                            an ordered stream of data. A custom topic should be assigned
-                            - using the default topic is discouraged
-                          items:
-                            description: A message topic associates this message with
-                              an ordered stream of data. A custom topic should be
-                              assigned - using the default topic is discouraged
-                            type: string
-                          type: array
-                        txtype:
-                          description: The type of transaction used to order/deliver
-                            this message
-                          enum:
-                          - none
-                          - unpinned
-                          - batch_pin
-                          - network_action
-                          - token_pool
-                          - token_transfer
-                          - contract_deploy
-                          - contract_invoke
-                          - token_approval
-                          - data_publish
-                          type: string
-                        type:
-                          description: The type of the message
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    idempotencyKey:
-                      description: An optional unique identifier for a message. Cannot
-                        be duplicated within a namespace, thus allowing idempotent
-                        submission of messages to the API. Local only - not transferred
-                        when the message is sent to other members of the network
-                      type: string
-                  type: object
+                  description: The UUID of a message that has been correlated with
+                    this transfer using the data field of the transfer in a compatible
+                    token connector
+                  format: uuid
+                  type: string
                 pool:
-                  description: The name or UUID of a token pool
+                  description: The UUID the token pool this transfer applies to
+                  format: uuid
                   type: string
                 to:
                   description: The target account for the transfer. On input defaults
@@ -25044,156 +24980,24 @@ paths:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
                   type: string
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 key:
                   description: The blockchain signing key for the transfer. On input
                     defaults to the first signing key of the organization that operates
                     the node
                   type: string
                 message:
-                  description: You can specify a message to correlate with the transfer,
-                    which can be of type broadcast or private. Your chosen token connector
-                    and on-chain smart contract must support on-chain/off-chain correlation
-                    by taking a `data` input on the transfer
-                  properties:
-                    data:
-                      description: For input allows you to specify data in-line in
-                        the message, that will be turned into data attachments. For
-                        output when fetchdata is used on API calls, includes the in-line
-                        data payloads of all data attachments
-                      items:
-                        description: For input allows you to specify data in-line
-                          in the message, that will be turned into data attachments.
-                          For output when fetchdata is used on API calls, includes
-                          the in-line data payloads of all data attachments
-                        properties:
-                          datatype:
-                            description: The optional datatype to use for validation
-                              of the in-line data
-                            properties:
-                              name:
-                                description: The name of the datatype
-                                type: string
-                              version:
-                                description: The version of the datatype. Semantic
-                                  versioning is encouraged, such as v1.0.1
-                                type: string
-                            type: object
-                          id:
-                            description: The UUID of the referenced data resource
-                            format: uuid
-                            type: string
-                          validator:
-                            description: The data validator type to use for in-line
-                              data
-                            type: string
-                          value:
-                            description: The in-line value for the data. Can be any
-                              JSON type - object, array, string, number or boolean
-                        type: object
-                      type: array
-                    group:
-                      description: Allows you to specify details of the private group
-                        of recipients in-line in the message. Alternative to using
-                        the header.group to specify the hash of a group that has been
-                        previously resolved
-                      properties:
-                        members:
-                          description: An array of members of the group. If no identities
-                            local to the sending node are included, then the organization
-                            owner of the local node is added automatically
-                          items:
-                            description: An array of members of the group. If no identities
-                              local to the sending node are included, then the organization
-                              owner of the local node is added automatically
-                            properties:
-                              identity:
-                                description: The DID of the group member. On input
-                                  can be a UUID or org name, and will be resolved
-                                  to a DID
-                                type: string
-                              node:
-                                description: The UUID of the node that will receive
-                                  a copy of the off-chain message for the identity.
-                                  The first applicable node for the identity will
-                                  be picked automatically on input if not specified
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          description: Optional name for the group. Allows you to
-                            have multiple separate groups with the same list of participants
-                          type: string
-                      type: object
-                    header:
-                      description: The message header contains all fields that are
-                        used to build the message hash
-                      properties:
-                        author:
-                          description: The DID of identity of the submitter
-                          type: string
-                        cid:
-                          description: The correlation ID of the message. Set this
-                            when a message is a response to another message
-                          format: uuid
-                          type: string
-                        group:
-                          description: Private messages only - the identifier hash
-                            of the privacy group. Derived from the name and member
-                            list of the group
-                          format: byte
-                          type: string
-                        key:
-                          description: The on-chain signing key used to sign the transaction
-                          type: string
-                        tag:
-                          description: The message tag indicates the purpose of the
-                            message to the applications that process it
-                          type: string
-                        topics:
-                          description: A message topic associates this message with
-                            an ordered stream of data. A custom topic should be assigned
-                            - using the default topic is discouraged
-                          items:
-                            description: A message topic associates this message with
-                              an ordered stream of data. A custom topic should be
-                              assigned - using the default topic is discouraged
-                            type: string
-                          type: array
-                        txtype:
-                          description: The type of transaction used to order/deliver
-                            this message
-                          enum:
-                          - none
-                          - unpinned
-                          - batch_pin
-                          - network_action
-                          - token_pool
-                          - token_transfer
-                          - contract_deploy
-                          - contract_invoke
-                          - token_approval
-                          - data_publish
-                          type: string
-                        type:
-                          description: The type of the message
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    idempotencyKey:
-                      description: An optional unique identifier for a message. Cannot
-                        be duplicated within a namespace, thus allowing idempotent
-                        submission of messages to the API. Local only - not transferred
-                        when the message is sent to other members of the network
-                      type: string
-                  type: object
+                  description: The UUID of a message that has been correlated with
+                    this transfer using the data field of the transfer in a compatible
+                    token connector
+                  format: uuid
+                  type: string
                 pool:
-                  description: The name or UUID of a token pool
+                  description: The UUID the token pool this transfer applies to
+                  format: uuid
                   type: string
                 to:
                   description: The target account for the transfer. On input defaults
@@ -25659,6 +25463,10 @@ paths:
                   description: The name of the token connector, as specified in the
                     FireFly core configuration file that is responsible for the token
                     pool. Required on input when multiple token connectors are configured
+                  type: string
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
                   type: string
                 key:
                   description: The signing key used to create the token pool. On input
@@ -26268,156 +26076,24 @@ paths:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
                   type: string
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 key:
                   description: The blockchain signing key for the transfer. On input
                     defaults to the first signing key of the organization that operates
                     the node
                   type: string
                 message:
-                  description: You can specify a message to correlate with the transfer,
-                    which can be of type broadcast or private. Your chosen token connector
-                    and on-chain smart contract must support on-chain/off-chain correlation
-                    by taking a `data` input on the transfer
-                  properties:
-                    data:
-                      description: For input allows you to specify data in-line in
-                        the message, that will be turned into data attachments. For
-                        output when fetchdata is used on API calls, includes the in-line
-                        data payloads of all data attachments
-                      items:
-                        description: For input allows you to specify data in-line
-                          in the message, that will be turned into data attachments.
-                          For output when fetchdata is used on API calls, includes
-                          the in-line data payloads of all data attachments
-                        properties:
-                          datatype:
-                            description: The optional datatype to use for validation
-                              of the in-line data
-                            properties:
-                              name:
-                                description: The name of the datatype
-                                type: string
-                              version:
-                                description: The version of the datatype. Semantic
-                                  versioning is encouraged, such as v1.0.1
-                                type: string
-                            type: object
-                          id:
-                            description: The UUID of the referenced data resource
-                            format: uuid
-                            type: string
-                          validator:
-                            description: The data validator type to use for in-line
-                              data
-                            type: string
-                          value:
-                            description: The in-line value for the data. Can be any
-                              JSON type - object, array, string, number or boolean
-                        type: object
-                      type: array
-                    group:
-                      description: Allows you to specify details of the private group
-                        of recipients in-line in the message. Alternative to using
-                        the header.group to specify the hash of a group that has been
-                        previously resolved
-                      properties:
-                        members:
-                          description: An array of members of the group. If no identities
-                            local to the sending node are included, then the organization
-                            owner of the local node is added automatically
-                          items:
-                            description: An array of members of the group. If no identities
-                              local to the sending node are included, then the organization
-                              owner of the local node is added automatically
-                            properties:
-                              identity:
-                                description: The DID of the group member. On input
-                                  can be a UUID or org name, and will be resolved
-                                  to a DID
-                                type: string
-                              node:
-                                description: The UUID of the node that will receive
-                                  a copy of the off-chain message for the identity.
-                                  The first applicable node for the identity will
-                                  be picked automatically on input if not specified
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          description: Optional name for the group. Allows you to
-                            have multiple separate groups with the same list of participants
-                          type: string
-                      type: object
-                    header:
-                      description: The message header contains all fields that are
-                        used to build the message hash
-                      properties:
-                        author:
-                          description: The DID of identity of the submitter
-                          type: string
-                        cid:
-                          description: The correlation ID of the message. Set this
-                            when a message is a response to another message
-                          format: uuid
-                          type: string
-                        group:
-                          description: Private messages only - the identifier hash
-                            of the privacy group. Derived from the name and member
-                            list of the group
-                          format: byte
-                          type: string
-                        key:
-                          description: The on-chain signing key used to sign the transaction
-                          type: string
-                        tag:
-                          description: The message tag indicates the purpose of the
-                            message to the applications that process it
-                          type: string
-                        topics:
-                          description: A message topic associates this message with
-                            an ordered stream of data. A custom topic should be assigned
-                            - using the default topic is discouraged
-                          items:
-                            description: A message topic associates this message with
-                              an ordered stream of data. A custom topic should be
-                              assigned - using the default topic is discouraged
-                            type: string
-                          type: array
-                        txtype:
-                          description: The type of transaction used to order/deliver
-                            this message
-                          enum:
-                          - none
-                          - unpinned
-                          - batch_pin
-                          - network_action
-                          - token_pool
-                          - token_transfer
-                          - contract_deploy
-                          - contract_invoke
-                          - token_approval
-                          - data_publish
-                          type: string
-                        type:
-                          description: The type of the message
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    idempotencyKey:
-                      description: An optional unique identifier for a message. Cannot
-                        be duplicated within a namespace, thus allowing idempotent
-                        submission of messages to the API. Local only - not transferred
-                        when the message is sent to other members of the network
-                      type: string
-                  type: object
+                  description: The UUID of a message that has been correlated with
+                    this transfer using the data field of the transfer in a compatible
+                    token connector
+                  format: uuid
+                  type: string
                 pool:
-                  description: The name or UUID of a token pool
+                  description: The UUID the token pool this transfer applies to
+                  format: uuid
                   type: string
                 to:
                   description: The target account for the transfer. On input defaults
@@ -31898,6 +31574,10 @@ paths:
                     of the approval.  See your chosen token connector documentation
                     for details
                   type: object
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 key:
                   description: The blockchain signing key for the approval request.
                     On input defaults to the first signing key of the organization
@@ -31907,8 +31587,8 @@ paths:
                   description: The blockchain identity that is granted the approval
                   type: string
                 pool:
-                  description: The UUID the token pool this approval applies to
-                  format: uuid
+                  description: The name or UUID of a token pool. Required if more
+                    than one pool exists.
                   type: string
               type: object
       responses:
@@ -32254,156 +31934,24 @@ paths:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
                   type: string
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 key:
                   description: The blockchain signing key for the transfer. On input
                     defaults to the first signing key of the organization that operates
                     the node
                   type: string
                 message:
-                  description: You can specify a message to correlate with the transfer,
-                    which can be of type broadcast or private. Your chosen token connector
-                    and on-chain smart contract must support on-chain/off-chain correlation
-                    by taking a `data` input on the transfer
-                  properties:
-                    data:
-                      description: For input allows you to specify data in-line in
-                        the message, that will be turned into data attachments. For
-                        output when fetchdata is used on API calls, includes the in-line
-                        data payloads of all data attachments
-                      items:
-                        description: For input allows you to specify data in-line
-                          in the message, that will be turned into data attachments.
-                          For output when fetchdata is used on API calls, includes
-                          the in-line data payloads of all data attachments
-                        properties:
-                          datatype:
-                            description: The optional datatype to use for validation
-                              of the in-line data
-                            properties:
-                              name:
-                                description: The name of the datatype
-                                type: string
-                              version:
-                                description: The version of the datatype. Semantic
-                                  versioning is encouraged, such as v1.0.1
-                                type: string
-                            type: object
-                          id:
-                            description: The UUID of the referenced data resource
-                            format: uuid
-                            type: string
-                          validator:
-                            description: The data validator type to use for in-line
-                              data
-                            type: string
-                          value:
-                            description: The in-line value for the data. Can be any
-                              JSON type - object, array, string, number or boolean
-                        type: object
-                      type: array
-                    group:
-                      description: Allows you to specify details of the private group
-                        of recipients in-line in the message. Alternative to using
-                        the header.group to specify the hash of a group that has been
-                        previously resolved
-                      properties:
-                        members:
-                          description: An array of members of the group. If no identities
-                            local to the sending node are included, then the organization
-                            owner of the local node is added automatically
-                          items:
-                            description: An array of members of the group. If no identities
-                              local to the sending node are included, then the organization
-                              owner of the local node is added automatically
-                            properties:
-                              identity:
-                                description: The DID of the group member. On input
-                                  can be a UUID or org name, and will be resolved
-                                  to a DID
-                                type: string
-                              node:
-                                description: The UUID of the node that will receive
-                                  a copy of the off-chain message for the identity.
-                                  The first applicable node for the identity will
-                                  be picked automatically on input if not specified
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          description: Optional name for the group. Allows you to
-                            have multiple separate groups with the same list of participants
-                          type: string
-                      type: object
-                    header:
-                      description: The message header contains all fields that are
-                        used to build the message hash
-                      properties:
-                        author:
-                          description: The DID of identity of the submitter
-                          type: string
-                        cid:
-                          description: The correlation ID of the message. Set this
-                            when a message is a response to another message
-                          format: uuid
-                          type: string
-                        group:
-                          description: Private messages only - the identifier hash
-                            of the privacy group. Derived from the name and member
-                            list of the group
-                          format: byte
-                          type: string
-                        key:
-                          description: The on-chain signing key used to sign the transaction
-                          type: string
-                        tag:
-                          description: The message tag indicates the purpose of the
-                            message to the applications that process it
-                          type: string
-                        topics:
-                          description: A message topic associates this message with
-                            an ordered stream of data. A custom topic should be assigned
-                            - using the default topic is discouraged
-                          items:
-                            description: A message topic associates this message with
-                              an ordered stream of data. A custom topic should be
-                              assigned - using the default topic is discouraged
-                            type: string
-                          type: array
-                        txtype:
-                          description: The type of transaction used to order/deliver
-                            this message
-                          enum:
-                          - none
-                          - unpinned
-                          - batch_pin
-                          - network_action
-                          - token_pool
-                          - token_transfer
-                          - contract_deploy
-                          - contract_invoke
-                          - token_approval
-                          - data_publish
-                          type: string
-                        type:
-                          description: The type of the message
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    idempotencyKey:
-                      description: An optional unique identifier for a message. Cannot
-                        be duplicated within a namespace, thus allowing idempotent
-                        submission of messages to the API. Local only - not transferred
-                        when the message is sent to other members of the network
-                      type: string
-                  type: object
+                  description: The UUID of a message that has been correlated with
+                    this transfer using the data field of the transfer in a compatible
+                    token connector
+                  format: uuid
+                  type: string
                 pool:
-                  description: The name or UUID of a token pool
+                  description: The UUID the token pool this transfer applies to
+                  format: uuid
                   type: string
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
@@ -32678,156 +32226,24 @@ paths:
                     of the transfer. See your chosen token connector documentation
                     for details
                   type: object
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 key:
                   description: The blockchain signing key for the transfer. On input
                     defaults to the first signing key of the organization that operates
                     the node
                   type: string
                 message:
-                  description: You can specify a message to correlate with the transfer,
-                    which can be of type broadcast or private. Your chosen token connector
-                    and on-chain smart contract must support on-chain/off-chain correlation
-                    by taking a `data` input on the transfer
-                  properties:
-                    data:
-                      description: For input allows you to specify data in-line in
-                        the message, that will be turned into data attachments. For
-                        output when fetchdata is used on API calls, includes the in-line
-                        data payloads of all data attachments
-                      items:
-                        description: For input allows you to specify data in-line
-                          in the message, that will be turned into data attachments.
-                          For output when fetchdata is used on API calls, includes
-                          the in-line data payloads of all data attachments
-                        properties:
-                          datatype:
-                            description: The optional datatype to use for validation
-                              of the in-line data
-                            properties:
-                              name:
-                                description: The name of the datatype
-                                type: string
-                              version:
-                                description: The version of the datatype. Semantic
-                                  versioning is encouraged, such as v1.0.1
-                                type: string
-                            type: object
-                          id:
-                            description: The UUID of the referenced data resource
-                            format: uuid
-                            type: string
-                          validator:
-                            description: The data validator type to use for in-line
-                              data
-                            type: string
-                          value:
-                            description: The in-line value for the data. Can be any
-                              JSON type - object, array, string, number or boolean
-                        type: object
-                      type: array
-                    group:
-                      description: Allows you to specify details of the private group
-                        of recipients in-line in the message. Alternative to using
-                        the header.group to specify the hash of a group that has been
-                        previously resolved
-                      properties:
-                        members:
-                          description: An array of members of the group. If no identities
-                            local to the sending node are included, then the organization
-                            owner of the local node is added automatically
-                          items:
-                            description: An array of members of the group. If no identities
-                              local to the sending node are included, then the organization
-                              owner of the local node is added automatically
-                            properties:
-                              identity:
-                                description: The DID of the group member. On input
-                                  can be a UUID or org name, and will be resolved
-                                  to a DID
-                                type: string
-                              node:
-                                description: The UUID of the node that will receive
-                                  a copy of the off-chain message for the identity.
-                                  The first applicable node for the identity will
-                                  be picked automatically on input if not specified
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          description: Optional name for the group. Allows you to
-                            have multiple separate groups with the same list of participants
-                          type: string
-                      type: object
-                    header:
-                      description: The message header contains all fields that are
-                        used to build the message hash
-                      properties:
-                        author:
-                          description: The DID of identity of the submitter
-                          type: string
-                        cid:
-                          description: The correlation ID of the message. Set this
-                            when a message is a response to another message
-                          format: uuid
-                          type: string
-                        group:
-                          description: Private messages only - the identifier hash
-                            of the privacy group. Derived from the name and member
-                            list of the group
-                          format: byte
-                          type: string
-                        key:
-                          description: The on-chain signing key used to sign the transaction
-                          type: string
-                        tag:
-                          description: The message tag indicates the purpose of the
-                            message to the applications that process it
-                          type: string
-                        topics:
-                          description: A message topic associates this message with
-                            an ordered stream of data. A custom topic should be assigned
-                            - using the default topic is discouraged
-                          items:
-                            description: A message topic associates this message with
-                              an ordered stream of data. A custom topic should be
-                              assigned - using the default topic is discouraged
-                            type: string
-                          type: array
-                        txtype:
-                          description: The type of transaction used to order/deliver
-                            this message
-                          enum:
-                          - none
-                          - unpinned
-                          - batch_pin
-                          - network_action
-                          - token_pool
-                          - token_transfer
-                          - contract_deploy
-                          - contract_invoke
-                          - token_approval
-                          - data_publish
-                          type: string
-                        type:
-                          description: The type of the message
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    idempotencyKey:
-                      description: An optional unique identifier for a message. Cannot
-                        be duplicated within a namespace, thus allowing idempotent
-                        submission of messages to the API. Local only - not transferred
-                        when the message is sent to other members of the network
-                      type: string
-                  type: object
+                  description: The UUID of a message that has been correlated with
+                    this transfer using the data field of the transfer in a compatible
+                    token connector
+                  format: uuid
+                  type: string
                 pool:
-                  description: The name or UUID of a token pool
+                  description: The UUID the token pool this transfer applies to
+                  format: uuid
                   type: string
                 to:
                   description: The target account for the transfer. On input defaults
@@ -33279,6 +32695,10 @@ paths:
                   description: The name of the token connector, as specified in the
                     FireFly core configuration file that is responsible for the token
                     pool. Required on input when multiple token connectors are configured
+                  type: string
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
                   type: string
                 key:
                   description: The signing key used to create the token pool. On input
@@ -33867,156 +33287,24 @@ paths:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
                   type: string
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
                 key:
                   description: The blockchain signing key for the transfer. On input
                     defaults to the first signing key of the organization that operates
                     the node
                   type: string
                 message:
-                  description: You can specify a message to correlate with the transfer,
-                    which can be of type broadcast or private. Your chosen token connector
-                    and on-chain smart contract must support on-chain/off-chain correlation
-                    by taking a `data` input on the transfer
-                  properties:
-                    data:
-                      description: For input allows you to specify data in-line in
-                        the message, that will be turned into data attachments. For
-                        output when fetchdata is used on API calls, includes the in-line
-                        data payloads of all data attachments
-                      items:
-                        description: For input allows you to specify data in-line
-                          in the message, that will be turned into data attachments.
-                          For output when fetchdata is used on API calls, includes
-                          the in-line data payloads of all data attachments
-                        properties:
-                          datatype:
-                            description: The optional datatype to use for validation
-                              of the in-line data
-                            properties:
-                              name:
-                                description: The name of the datatype
-                                type: string
-                              version:
-                                description: The version of the datatype. Semantic
-                                  versioning is encouraged, such as v1.0.1
-                                type: string
-                            type: object
-                          id:
-                            description: The UUID of the referenced data resource
-                            format: uuid
-                            type: string
-                          validator:
-                            description: The data validator type to use for in-line
-                              data
-                            type: string
-                          value:
-                            description: The in-line value for the data. Can be any
-                              JSON type - object, array, string, number or boolean
-                        type: object
-                      type: array
-                    group:
-                      description: Allows you to specify details of the private group
-                        of recipients in-line in the message. Alternative to using
-                        the header.group to specify the hash of a group that has been
-                        previously resolved
-                      properties:
-                        members:
-                          description: An array of members of the group. If no identities
-                            local to the sending node are included, then the organization
-                            owner of the local node is added automatically
-                          items:
-                            description: An array of members of the group. If no identities
-                              local to the sending node are included, then the organization
-                              owner of the local node is added automatically
-                            properties:
-                              identity:
-                                description: The DID of the group member. On input
-                                  can be a UUID or org name, and will be resolved
-                                  to a DID
-                                type: string
-                              node:
-                                description: The UUID of the node that will receive
-                                  a copy of the off-chain message for the identity.
-                                  The first applicable node for the identity will
-                                  be picked automatically on input if not specified
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          description: Optional name for the group. Allows you to
-                            have multiple separate groups with the same list of participants
-                          type: string
-                      type: object
-                    header:
-                      description: The message header contains all fields that are
-                        used to build the message hash
-                      properties:
-                        author:
-                          description: The DID of identity of the submitter
-                          type: string
-                        cid:
-                          description: The correlation ID of the message. Set this
-                            when a message is a response to another message
-                          format: uuid
-                          type: string
-                        group:
-                          description: Private messages only - the identifier hash
-                            of the privacy group. Derived from the name and member
-                            list of the group
-                          format: byte
-                          type: string
-                        key:
-                          description: The on-chain signing key used to sign the transaction
-                          type: string
-                        tag:
-                          description: The message tag indicates the purpose of the
-                            message to the applications that process it
-                          type: string
-                        topics:
-                          description: A message topic associates this message with
-                            an ordered stream of data. A custom topic should be assigned
-                            - using the default topic is discouraged
-                          items:
-                            description: A message topic associates this message with
-                              an ordered stream of data. A custom topic should be
-                              assigned - using the default topic is discouraged
-                            type: string
-                          type: array
-                        txtype:
-                          description: The type of transaction used to order/deliver
-                            this message
-                          enum:
-                          - none
-                          - unpinned
-                          - batch_pin
-                          - network_action
-                          - token_pool
-                          - token_transfer
-                          - contract_deploy
-                          - contract_invoke
-                          - token_approval
-                          - data_publish
-                          type: string
-                        type:
-                          description: The type of the message
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    idempotencyKey:
-                      description: An optional unique identifier for a message. Cannot
-                        be duplicated within a namespace, thus allowing idempotent
-                        submission of messages to the API. Local only - not transferred
-                        when the message is sent to other members of the network
-                      type: string
-                  type: object
+                  description: The UUID of a message that has been correlated with
+                    this transfer using the data field of the transfer in a compatible
+                    token connector
+                  format: uuid
+                  type: string
                 pool:
-                  description: The name or UUID of a token pool
+                  description: The UUID the token pool this transfer applies to
+                  format: uuid
                   type: string
                 to:
                   description: The target account for the transfer. On input defaults

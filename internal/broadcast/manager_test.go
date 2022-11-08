@@ -324,7 +324,7 @@ func TestUploadBlobPublishFail(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
 	mdi.On("GetBlobMatchingHash", ctx, blob.Hash).Return(blob, nil)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
@@ -333,7 +333,7 @@ func TestUploadBlobPublishFail(t *testing.T) {
 		return op.Type == core.OpTypeSharedStorageUploadBlob && data.Blob == blob
 	})).Return(nil, fmt.Errorf("pop"))
 
-	_, err := bm.PublishDataBlob(ctx, d.ID.String())
+	_, err := bm.PublishDataBlob(ctx, d.ID.String(), "idem1")
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -441,7 +441,7 @@ func TestUploadValueNotFound(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(nil, nil)
 
-	_, err := bm.PublishDataValue(bm.ctx, fftypes.NewUUID().String())
+	_, err := bm.PublishDataValue(bm.ctx, fftypes.NewUUID().String(), "")
 	assert.Regexp(t, "FF10109", err)
 
 	mdi.AssertExpectations(t)
@@ -454,7 +454,7 @@ func TestUploadBlobLookupError(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(nil, fmt.Errorf("pop"))
 
-	_, err := bm.PublishDataBlob(bm.ctx, fftypes.NewUUID().String())
+	_, err := bm.PublishDataBlob(bm.ctx, fftypes.NewUUID().String(), "")
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -464,7 +464,7 @@ func TestUploadValueBadID(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	_, err := bm.PublishDataValue(bm.ctx, "badness")
+	_, err := bm.PublishDataValue(bm.ctx, "badness", "")
 	assert.Regexp(t, "FF00138", err)
 
 }
@@ -485,9 +485,9 @@ func TestUploadValueFailPrepare(t *testing.T) {
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	mtx := bm.txHelper.(*txcommonmocks.Helper)
-	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
-	_, err := bm.PublishDataValue(bm.ctx, d.ID.String())
+	_, err := bm.PublishDataValue(bm.ctx, d.ID.String(), "")
 	assert.EqualError(t, err, "pop")
 
 	mom.AssertExpectations(t)
@@ -514,9 +514,9 @@ func TestUploadValueFail(t *testing.T) {
 	})).Return(nil, fmt.Errorf("pop"))
 
 	mtx := bm.txHelper.(*txcommonmocks.Helper)
-	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
-	_, err := bm.PublishDataValue(bm.ctx, d.ID.String())
+	_, err := bm.PublishDataValue(bm.ctx, d.ID.String(), "")
 	assert.EqualError(t, err, "pop")
 
 	mom.AssertExpectations(t)
@@ -543,9 +543,9 @@ func TestUploadValueOK(t *testing.T) {
 	})).Return(nil, nil)
 
 	mtx := bm.txHelper.(*txcommonmocks.Helper)
-	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
-	d1, err := bm.PublishDataValue(bm.ctx, d.ID.String())
+	d1, err := bm.PublishDataValue(bm.ctx, d.ID.String(), "")
 	assert.NoError(t, err)
 	assert.Equal(t, d.ID, d1.ID)
 
@@ -566,9 +566,9 @@ func TestUploadBlobFailNoBlob(t *testing.T) {
 	mdi.On("GetDataByID", mock.Anything, "ns1", d.ID, true).Return(d, nil)
 
 	mtx := bm.txHelper.(*txcommonmocks.Helper)
-	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
-	_, err := bm.PublishDataBlob(bm.ctx, d.ID.String())
+	_, err := bm.PublishDataBlob(bm.ctx, d.ID.String(), "")
 	assert.Regexp(t, "FF10241", err)
 
 	mdi.AssertExpectations(t)
@@ -603,9 +603,9 @@ func TestUploadBlobOK(t *testing.T) {
 	})).Return(nil, nil)
 
 	mtx := bm.txHelper.(*txcommonmocks.Helper)
-	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(fftypes.NewUUID(), nil)
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
-	d1, err := bm.PublishDataBlob(ctx, d.ID.String())
+	d1, err := bm.PublishDataBlob(ctx, d.ID.String(), "")
 	assert.NoError(t, err)
 	assert.Equal(t, d.ID, d1.ID)
 
@@ -637,9 +637,9 @@ func TestUploadBlobTXFail(t *testing.T) {
 	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
 
 	mtx := bm.txHelper.(*txcommonmocks.Helper)
-	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(nil, fmt.Errorf("pop"))
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(nil, fmt.Errorf("pop"))
 
-	_, err := bm.PublishDataBlob(ctx, d.ID.String())
+	_, err := bm.PublishDataBlob(ctx, d.ID.String(), "")
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -663,9 +663,9 @@ func TestUploadValueTXFail(t *testing.T) {
 	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
 
 	mtx := bm.txHelper.(*txcommonmocks.Helper)
-	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish).Return(nil, fmt.Errorf("pop"))
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(nil, fmt.Errorf("pop"))
 
-	_, err := bm.PublishDataValue(ctx, d.ID.String())
+	_, err := bm.PublishDataValue(ctx, d.ID.String(), "")
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)

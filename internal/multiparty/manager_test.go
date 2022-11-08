@@ -262,7 +262,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction).Return(txid, nil)
+	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction, core.IdempotencyKey("")).Return(txid, nil)
 	mp.mbi.On("Name").Return("ut")
 	mp.mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
 		assert.Equal(t, core.OpTypeBlockchainNetworkAction, op.Type)
@@ -305,7 +305,7 @@ func TestSubmitNetworkActionTXFail(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction).Return(nil, fmt.Errorf("pop"))
+	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction, core.IdempotencyKey("")).Return(nil, fmt.Errorf("pop"))
 
 	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
@@ -336,7 +336,7 @@ func TestSubmitNetworkActionOpFail(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction).Return(txid, nil)
+	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction, core.IdempotencyKey("")).Return(txid, nil)
 	mp.mbi.On("Name").Return("ut")
 	mp.mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 

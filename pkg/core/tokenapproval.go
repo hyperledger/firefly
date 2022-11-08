@@ -20,7 +20,8 @@ import "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 type TokenApprovalInput struct {
 	TokenApproval
-	Pool string `ffstruct:"TokenApprovalInput" json:"pool,omitempty"`
+	Pool           string         `ffstruct:"TokenApprovalInput" json:"pool,omitempty" ffexcludeoutput:"true"`
+	IdempotencyKey IdempotencyKey `ffstruct:"TokenApprovalInput" json:"idempotencyKey,omitempty" ffexcludeoutput:"true"`
 }
 
 type TokenApproval struct {

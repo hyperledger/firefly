@@ -88,6 +88,14 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	err = s.UpdateTransaction(ctx, "ns1", transaction.ID, up)
 	assert.NoError(t, err)
 
+	// Check we cannot insert a duplicate idempotency key
+	err = s.InsertTransaction(ctx, &core.Transaction{
+		Namespace:      "ns1",
+		ID:             fftypes.NewUUID(),
+		IdempotencyKey: "testKey",
+	})
+	assert.Regexp(t, "FF10431", err)
+
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("id", transaction.ID.String()),
@@ -116,6 +124,18 @@ func TestInsertTransactionFailInsert(t *testing.T) {
 	transactionID := fftypes.NewUUID()
 	err := s.InsertTransaction(context.Background(), &core.Transaction{ID: transactionID})
 	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestEmptyResultInsertIdempotencyKey(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(-1, 0))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
+	mock.ExpectRollback()
+	transactionID := fftypes.NewUUID()
+	err := s.InsertTransaction(context.Background(), &core.Transaction{ID: transactionID, IdempotencyKey: "idem1"})
+	assert.Regexp(t, "FF10432", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

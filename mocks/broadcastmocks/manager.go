@@ -94,13 +94,13 @@ func (_m *Manager) PrepareOperation(ctx context.Context, op *core.Operation) (*c
 	return r0, r1
 }
 
-// PublishDataBlob provides a mock function with given fields: ctx, id
-func (_m *Manager) PublishDataBlob(ctx context.Context, id string) (*core.Data, error) {
-	ret := _m.Called(ctx, id)
+// PublishDataBlob provides a mock function with given fields: ctx, id, idempotencyKey
+func (_m *Manager) PublishDataBlob(ctx context.Context, id string, idempotencyKey core.IdempotencyKey) (*core.Data, error) {
+	ret := _m.Called(ctx, id, idempotencyKey)
 
 	var r0 *core.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Data); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, core.IdempotencyKey) *core.Data); ok {
+		r0 = rf(ctx, id, idempotencyKey)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Data)
@@ -108,8 +108,8 @@ func (_m *Manager) PublishDataBlob(ctx context.Context, id string) (*core.Data, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, core.IdempotencyKey) error); ok {
+		r1 = rf(ctx, id, idempotencyKey)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -117,13 +117,13 @@ func (_m *Manager) PublishDataBlob(ctx context.Context, id string) (*core.Data, 
 	return r0, r1
 }
 
-// PublishDataValue provides a mock function with given fields: ctx, id
-func (_m *Manager) PublishDataValue(ctx context.Context, id string) (*core.Data, error) {
-	ret := _m.Called(ctx, id)
+// PublishDataValue provides a mock function with given fields: ctx, id, idempotencyKey
+func (_m *Manager) PublishDataValue(ctx context.Context, id string, idempotencyKey core.IdempotencyKey) (*core.Data, error) {
+	ret := _m.Called(ctx, id, idempotencyKey)
 
 	var r0 *core.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Data); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, core.IdempotencyKey) *core.Data); ok {
+		r0 = rf(ctx, id, idempotencyKey)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Data)
@@ -131,8 +131,8 @@ func (_m *Manager) PublishDataValue(ctx context.Context, id string) (*core.Data,
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, core.IdempotencyKey) error); ok {
+		r1 = rf(ctx, id, idempotencyKey)
 	} else {
 		r1 = ret.Error(1)
 	}

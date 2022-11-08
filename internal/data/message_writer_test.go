@@ -198,8 +198,8 @@ func TestPersistMWBatchIdempotencyAllFail(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 
-	assert.Regexp(t, "FF10429.*idem1", <-c1)
-	assert.Regexp(t, "FF10429.*idem2", <-c2)
+	assert.Regexp(t, "FF10430.*idem1", <-c1)
+	assert.Regexp(t, "FF10430.*idem2", <-c2)
 }
 
 func TestPersistMWBatchHalfFailResubmit(t *testing.T) {
@@ -260,7 +260,7 @@ func TestPersistMWBatchHalfFailResubmit(t *testing.T) {
 	mdi.AssertExpectations(t)
 
 	assert.Nil(t, <-c1)
-	assert.Regexp(t, "FF10429.*idem2", <-c2)
+	assert.Regexp(t, "FF10430.*idem2", <-c2)
 }
 
 func TestPersistMWBatchFailIdemCheck(t *testing.T) {

@@ -269,4 +269,6 @@ var (
 	MsgUnknownVerifierType                = ffe("FF10428", "Unknown verifier type", 400)
 	MsgNotSupportedByBlockchainPlugin     = ffe("FF10429", "Not supported by blockchain plugin", 400)
 	MsgIdempotencyKeyDuplicateMessage     = ffe("FF10430", "Idempotency key '%s' already used for message '%s'", 409)
+	MsgIdempotencyKeyDuplicateTransaction = ffe("FF10431", "Idempotency key '%s' already used for transaction '%s'", 409)
+	MsgNonIdempotencyKeyConflictTxInsert  = ffe("FF10432", "Conflict on insert of transaction '%s'. No existing transaction matching idempotency key '%s' found", 409)
 )

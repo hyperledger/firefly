@@ -42,6 +42,11 @@ var (
 	TokenPoolStateConfirmed = fftypes.FFEnumValue("tokenpoolstate", "confirmed")
 )
 
+type TokenPoolInput struct {
+	TokenPool
+	IdempotencyKey IdempotencyKey `ffstruct:"TokenPoolInput" json:"idempotencyKey,omitempty" ffexcludeoutput:"true"`
+}
+
 type TokenPool struct {
 	ID        *fftypes.UUID      `ffstruct:"TokenPool" json:"id,omitempty" ffexcludeinput:"true"`
 	Type      TokenType          `ffstruct:"TokenPool" json:"type" ffenum:"tokentype"`

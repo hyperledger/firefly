@@ -524,8 +524,9 @@ var (
 	TokenApprovalBlockchainEvent = ffm("TokenApproval.blockchainEvent", "The UUID of the blockchain event")
 	TokenApprovalConfig          = ffm("TokenApproval.config", "Input only field, with token connector specific configuration of the approval.  See your chosen token connector documentation for details")
 
-	// TokenApprovalInputInput field descriptions
-	TokenApprovalInputInputPool = ffm("TokenApprovalInput.pool", "The name or UUID of a token pool. Required if more than one pool exists.")
+	// TokenApprovalInput field descriptions
+	TokenApprovalInputPool           = ffm("TokenApprovalInput.pool", "The name or UUID of a token pool. Required if more than one pool exists.")
+	TokenApprovalInputIdempotencyKey = ffm("TokenApprovalInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
 
 	// TokenBalance field descriptions
 	TokenBalancePool       = ffm("TokenBalance.pool", "The UUID the token pool this balance entry applies to")
@@ -558,6 +559,9 @@ var (
 	TokenPoolInfo      = ffm("TokenPool.info", "Token connector specific information about the pool. See your chosen token connector documentation for details")
 	TokenPoolTX        = ffm("TokenPool.tx", "Reference to the FireFly transaction used to create and broadcast this pool to the network")
 
+	// TokenPoolInput field descriptions
+	TokenPoolInputIdempotencyKey = ffm("TokenPoolInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
+
 	// TokenTransfer field descriptions
 	TokenTransferType            = ffm("TokenTransfer.type", "The type of transfer such as mint/burn/transfer")
 	TokenTransferLocalID         = ffm("TokenTransfer.localId", "The UUID of this token transfer, in the local FireFly node")
@@ -579,8 +583,9 @@ var (
 	TokenTransferConfig          = ffm("TokenTransfer.config", "Input only field, with token connector specific configuration of the transfer. See your chosen token connector documentation for details")
 
 	// TokenTransferInput field descriptions
-	TokenTransferInputMessage = ffm("TokenTransferInput.message", "You can specify a message to correlate with the transfer, which can be of type broadcast or private. Your chosen token connector and on-chain smart contract must support on-chain/off-chain correlation by taking a `data` input on the transfer")
-	TokenTransferInputPool    = ffm("TokenTransferInput.pool", "The name or UUID of a token pool")
+	TokenTransferInputMessage        = ffm("TokenTransferInput.message", "You can specify a message to correlate with the transfer, which can be of type broadcast or private. Your chosen token connector and on-chain smart contract must support on-chain/off-chain correlation by taking a `data` input on the transfer")
+	TokenTransferInputPool           = ffm("TokenTransferInput.pool", "The name or UUID of a token pool")
+	TokenTransferInputIdempotencyKey = ffm("TokenTransferInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
 
 	// TransactionStatus field descriptions
 	TransactionStatusStatus  = ffm("TransactionStatus.status", "The overall computed status of the transaction, after analyzing the details during the API call")
@@ -596,11 +601,12 @@ var (
 	TransactionStatusDetailsInfo      = ffm("TransactionStatusDetails.info", "Output details for this entry")
 
 	// ContractDeployRequest field descriptions
-	ContractDeployRequestKey        = ffm("ContractDeployRequest.key", "The blockchain signing key that will be used to deploy the contract. Defaults to the first signing key of the organization that operates the node")
-	ContractDeployRequestInput      = ffm("ContractDeployRequest.input", "An optional array of inputs passed to the smart contract's constructor, if applicable")
-	ContractDeployRequestDefinition = ffm("ContractDeployRequest.definition", "The definition of the smart contract")
-	ContractDeployRequestContract   = ffm("ContractDeployRequest.contract", "The smart contract to deploy. This should be pre-compiled if required by the blockchain connector")
-	ContractDeployRequestOptions    = ffm("ContractDeployRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
+	ContractDeployRequestKey            = ffm("ContractDeployRequest.key", "The blockchain signing key that will be used to deploy the contract. Defaults to the first signing key of the organization that operates the node")
+	ContractDeployRequestInput          = ffm("ContractDeployRequest.input", "An optional array of inputs passed to the smart contract's constructor, if applicable")
+	ContractDeployRequestDefinition     = ffm("ContractDeployRequest.definition", "The definition of the smart contract")
+	ContractDeployRequestContract       = ffm("ContractDeployRequest.contract", "The smart contract to deploy. This should be pre-compiled if required by the blockchain connector")
+	ContractDeployRequestOptions        = ffm("ContractDeployRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
+	ContractDeployRequestIdempotencyKey = ffm("ContractDeployRequest.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
 
 	// ContractCallRequest field descriptions
 	ContractCallRequestType       = ffm("ContractCallRequest.type", "Invocations cause transactions on the blockchain. Whereas queries simply execute logic in your local node to query data at a given current/historical block")
@@ -611,6 +617,7 @@ var (
 	ContractCallRequestMethodPath = ffm("ContractCallRequest.methodPath", "The pathname of the method on the specified FFI")
 	ContractCallRequestInput      = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
 	ContractCallRequestOptions    = ffm("ContractCallRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
+	ContractCallIdempotencyKey    = ffm("ContractCallRequest.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
 
 	// WebSocketStatus field descriptions
 	WebSocketStatusEnabled     = ffm("WebSocketStatus.enabled", "Indicates whether the websockets plugin is enabled")

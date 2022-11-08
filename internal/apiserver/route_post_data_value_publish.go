@@ -32,7 +32,9 @@ var postDataValuePublish = &ffapi.Route{
 	PathParams: []*ffapi.PathParam{
 		{Name: "dataid", Description: coremsgs.APIParamsBlobID},
 	},
-	QueryParams:     nil,
+	QueryParams: []*ffapi.QueryParam{
+		{Name: "idempotencykey", Description: coremsgs.APIParamsIdempotencyKey},
+	},
 	Description:     coremsgs.APIEndpointsPostDataValuePublish,
 	JSONInputValue:  func() interface{} { return &core.EmptyInput{} },
 	JSONOutputValue: func() interface{} { return &core.Data{} },
@@ -42,7 +44,7 @@ var postDataValuePublish = &ffapi.Route{
 			return or.Broadcast() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.Broadcast().PublishDataValue(cr.ctx, r.PP["dataid"])
+			return cr.or.Broadcast().PublishDataValue(cr.ctx, r.PP["dataid"], core.IdempotencyKey(r.QP["idempotencykey"]))
 		},
 	},
 }

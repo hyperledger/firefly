@@ -45,7 +45,7 @@ func TestPostDataBlobPublish(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("PublishDataBlob", mock.Anything, "id1").
+	mbm.On("PublishDataBlob", mock.Anything, "id1", core.IdempotencyKey("")).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
