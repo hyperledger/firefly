@@ -31,11 +31,14 @@ import (
 )
 
 func TestSQLite3GoProvider(t *testing.T) {
+
+	tmpDir := t.TempDir() // SQLite will fail if we point it at an existing directory (not file)
+
 	sqlite := &SQLite3{}
 	sqlite.SetHandler("ns", &databasemocks.Callbacks{})
 	config := config.RootSection("unittest")
 	sqlite.InitConfig(config)
-	config.Set(sqlcommon.SQLConfDatasourceURL, "!wrong://")
+	config.Set(sqlcommon.SQLConfDatasourceURL, tmpDir)
 	err := sqlite.Init(context.Background(), config)
 	assert.NoError(t, err)
 	_, err = sqlite.GetMigrationDriver(sqlite.DB())

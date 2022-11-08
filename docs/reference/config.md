@@ -50,7 +50,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`boolean`|`<nil>`
+|factor|The retry backoff factor|`float32`|`<nil>`
 |initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
@@ -58,7 +58,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`boolean`|`<nil>`
+|factor|The retry backoff factor|`float32`|`<nil>`
 |initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
@@ -362,10 +362,10 @@ nav_order: 2
 |credentials|CORS setting to control whether a browser allows credentials to be sent to this API|`boolean`|`true`
 |debug|Whether debug is enabled for the CORS implementation|`boolean`|`false`
 |enabled|Whether CORS is enabled|`boolean`|`true`
-|headers|CORS setting to control the allowed headers|`string`|`[*]`
+|headers|CORS setting to control the allowed headers|`[]string`|`[*]`
 |maxAge|The maximum age a browser should rely on CORS checks|[`time.Duration`](https://pkg.go.dev/time#Duration)|`600`
-|methods| CORS setting to control the allowed methods|`string`|`[GET POST PUT PATCH DELETE]`
-|origins|CORS setting to control the allowed origins|`string`|`[*]`
+|methods| CORS setting to control the allowed methods|`[]string`|`[GET POST PUT PATCH DELETE]`
+|origins|CORS setting to control the allowed origins|`[]string`|`[*]`
 
 ## database
 
@@ -471,7 +471,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`boolean`|`<nil>`
+|factor|The retry backoff factor|`float32`|`<nil>`
 |initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxAttempts|The maximum number attempts|`int`|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
@@ -499,7 +499,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`boolean`|`<nil>`
+|factor|The retry backoff factor|`float32`|`<nil>`
 |initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
@@ -521,7 +521,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`boolean`|`<nil>`
+|factor|The retry backoff factor|`float32`|`<nil>`
 |initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
@@ -749,7 +749,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`boolean`|`<nil>`
+|factor|The retry backoff factor|`float32`|`<nil>`
 |initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
@@ -1233,7 +1233,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`boolean`|`<nil>`
+|factor|The retry backoff factor|`float32`|`<nil>`
 |initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
@@ -1372,7 +1372,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`boolean`|`<nil>`
+|factor|The retry backoff factor|`float32`|`<nil>`
 |initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
