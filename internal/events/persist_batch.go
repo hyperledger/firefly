@@ -208,6 +208,8 @@ func (em *eventManager) validateBatchMessage(ctx context.Context, batch *core.Ba
 	}
 	// Set the state to pending, for the insertion stage
 	msg.State = core.MessageStatePending
+	// Remove any idempotency key
+	msg.IdempotencyKey = ""
 
 	return true
 }
@@ -278,16 +280,10 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *core.Bat
 		}
 	}
 
-	// We enforce that even if the batch were assembled with the non-transferrable fields, we only accept the non-transferrable fields
-	batchMessages := make([]*core.Message, len(batch.Payload.Messages))
-	for i, m := range batch.Payload.Messages {
-		batchMessages[i] = m.BatchMessage()
-	}
-
 	// Then the same one-shot insert of all the messages, on the basis they are likely unique (even if
 	// one of the data elements wasn't unique). Likely reasons for exceptions here are idempotent replay,
 	// or a root broadcast where "em.sentByUs" returned false, but we actually sent it.
-	err = em.database.InsertMessages(ctx, batchMessages, func() {
+	err = em.database.InsertMessages(ctx, batch.Payload.Messages, func() {
 		// If all is well, update the cache when the runAsGroup closes out.
 		// It isn't safe to do this before the messages themselves are safely in the database, because the aggregator
 		// might wake up and notice the cache before we're written the messages. Meaning we'll clash and override the
@@ -299,7 +295,7 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *core.Bat
 	if err != nil {
 		log.L(ctx).Debugf("Batch message insert optimization failed for batch '%s': %s", batch.ID, err)
 		// Fall back to individual upserts
-		for i, msg := range batchMessages {
+		for i, msg := range batch.Payload.Messages {
 			postHookUpdateMessageCache := func() {
 				mm := matchedMsgs[i]
 				em.data.UpdateMessageCache(mm.message, mm.data)

@@ -91,6 +91,7 @@ func newMessageWriter(ctx context.Context, di database.Plugin, conf *messageWrit
 // worker count will dispatch the work to the pool and wait for it to complete on a background
 // transaction, or just run it in-line on the context passed ini.
 func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage) error {
+	log.L(ctx).Debugf("Writing message type=%s id=%s hash=%s idempotencyKey=%s concurrency=%d", newMsg.Message.Header.Type, newMsg.Message.Header.ID, newMsg.Message.Hash, newMsg.Message.IdempotencyKey, mw.conf.workerCount)
 	if mw.conf.workerCount > 0 {
 		// Dispatch to background worker
 		nmi := &writeRequest{
