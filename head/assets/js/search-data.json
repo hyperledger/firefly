@@ -607,13 +607,13 @@
   },"101": {
     "doc": "Configuration Reference",
     "title": "batch.retry",
-    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | float32 | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#batchretry",
     "relUrl": "/reference/config.html#batchretry"
   },"102": {
     "doc": "Configuration Reference",
     "title": "blobreceiver.retry",
-    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initialDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | float32 | &lt;nil&gt; | . | initialDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blobreceiverretry",
     "relUrl": "/reference/config.html#blobreceiverretry"
   },"103": {
@@ -823,7 +823,7 @@
   },"137": {
     "doc": "Configuration Reference",
     "title": "cors",
-    "content": "| Key | Description | Type | Default Value | . | credentials | CORS setting to control whether a browser allows credentials to be sent to this API | boolean | true | . | debug | Whether debug is enabled for the CORS implementation | boolean | false | . | enabled | Whether CORS is enabled | boolean | true | . | headers | CORS setting to control the allowed headers | string | [*] | . | maxAge | The maximum age a browser should rely on CORS checks | time.Duration | 600 | . | methods | CORS setting to control the allowed methods | string | [GET POST PUT PATCH DELETE] | . | origins | CORS setting to control the allowed origins | string | [*] | . ",
+    "content": "| Key | Description | Type | Default Value | . | credentials | CORS setting to control whether a browser allows credentials to be sent to this API | boolean | true | . | debug | Whether debug is enabled for the CORS implementation | boolean | false | . | enabled | Whether CORS is enabled | boolean | true | . | headers | CORS setting to control the allowed headers | []string | [*] | . | maxAge | The maximum age a browser should rely on CORS checks | time.Duration | 600 | . | methods | CORS setting to control the allowed methods | []string | [GET POST PUT PATCH DELETE] | . | origins | CORS setting to control the allowed origins | []string | [*] | . ",
     "url": "/firefly/head/reference/config.html#cors",
     "relUrl": "/reference/config.html#cors"
   },"138": {
@@ -901,7 +901,7 @@
   },"150": {
     "doc": "Configuration Reference",
     "title": "download.retry",
-    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initialDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxAttempts | The maximum number attempts | int | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | float32 | &lt;nil&gt; | . | initialDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxAttempts | The maximum number attempts | int | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#downloadretry",
     "relUrl": "/reference/config.html#downloadretry"
   },"151": {
@@ -919,7 +919,7 @@
   },"153": {
     "doc": "Configuration Reference",
     "title": "event.aggregator.retry",
-    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | float32 | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#eventaggregatorretry",
     "relUrl": "/reference/config.html#eventaggregatorretry"
   },"154": {
@@ -937,7 +937,7 @@
   },"156": {
     "doc": "Configuration Reference",
     "title": "event.dispatcher.retry",
-    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | float32 | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#eventdispatcherretry",
     "relUrl": "/reference/config.html#eventdispatcherretry"
   },"157": {
@@ -1105,7 +1105,7 @@
   },"184": {
     "doc": "Configuration Reference",
     "title": "opupdate.retry",
-    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initialDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | float32 | &lt;nil&gt; | . | initialDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#opupdateretry",
     "relUrl": "/reference/config.html#opupdateretry"
   },"185": {
@@ -1429,7 +1429,7 @@
   },"238": {
     "doc": "Configuration Reference",
     "title": "privatemessaging.retry",
-    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | float32 | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#privatemessagingretry",
     "relUrl": "/reference/config.html#privatemessagingretry"
   },"239": {
@@ -1531,7 +1531,7 @@
   },"255": {
     "doc": "Configuration Reference",
     "title": "subscription.retry",
-    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | float32 | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#subscriptionretry",
     "relUrl": "/reference/config.html#subscriptionretry"
   },"256": {
@@ -1921,7 +1921,7 @@
   },"320": {
     "doc": "Setting up a FireFly Core Development Environment",
     "title": "Dependencies",
-    "content": "You will need a few prerequisites set up on your machine before you can build FireFly from source. We recommend doing development on macOS, Linux, or WSL 2.0. | Go (1.17 or newer) | make | GCC | openssl | . Install the FireFly CLI . The first step to setting up a local development environment is to install the FireFly CLI. Please section of the Getting Started Guide to install The FireFly CLI. Installing Go and setting up your GOPATH . We recommend following the instructions on golang.org to install Go, rather than installing Go from another package magager such as brew. Although it is possible to install Go any way you’d like, setting up your GOPATH may differ from the following instructions. After installing Go, you will need to add a few environment variables to your shell run commands file. This is usually a hidden file in your home directory called .bashrc or .zshrc, depending on which shell you’re using. Add the following lines to your .bashrc or .zshrc file: . export GOPATH=$HOME/go export GOROOT=\"/usr/local/go\" export PATH=\"$PATH:${GOPATH}/bin:${GOROOT}/bin\" . ",
+    "content": "You will need a few prerequisites set up on your machine before you can build FireFly from source. We recommend doing development on macOS, Linux, or WSL 2.0. | Go 1.18 | make | GCC | openssl | . Install the FireFly CLI . The first step to setting up a local development environment is to install the FireFly CLI. Please section of the Getting Started Guide to install The FireFly CLI. Installing Go and setting up your GOPATH . We recommend following the instructions on golang.org to install Go, rather than installing Go from another package magager such as brew. Although it is possible to install Go any way you’d like, setting up your GOPATH may differ from the following instructions. After installing Go, you will need to add a few environment variables to your shell run commands file. This is usually a hidden file in your home directory called .bashrc or .zshrc, depending on which shell you’re using. Add the following lines to your .bashrc or .zshrc file: . export GOPATH=$HOME/go export GOROOT=\"/usr/local/go\" export PATH=\"$PATH:${GOPATH}/bin:${GOROOT}/bin\" . ",
     "url": "/firefly/head/contributors/dev_environment_setup.html#dependencies",
     "relUrl": "/contributors/dev_environment_setup.html#dependencies"
   },"321": {
