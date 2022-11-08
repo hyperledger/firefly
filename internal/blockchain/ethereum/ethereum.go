@@ -56,7 +56,6 @@ type Ethereum struct {
 	capabilities    *blockchain.Capabilities
 	callbacks       common.BlockchainCallbacks
 	client          *resty.Client
-	fftmClient      *resty.Client
 	streams         *streamManager
 	streamID        string
 	wsconn          wsclient.WSClient
@@ -132,7 +131,6 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	e.InitConfig(conf)
 	ethconnectConf := e.ethconnectConf
 	addressResolverConf := conf.SubSection(AddressResolverConfigKey)
-	fftmConf := conf.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.cancelCtx = cancelCtx
@@ -151,10 +149,6 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.ethereum.ethconnect")
 	}
 	e.client = ffresty.New(e.ctx, ethconnectConf)
-
-	if fftmConf.GetString(ffresty.HTTPConfigURL) != "" {
-		e.fftmClient = ffresty.New(e.ctx, fftmConf)
-	}
 
 	e.topic = ethconnectConf.GetString(EthconnectConfigTopic)
 	if e.topic == "" {
@@ -569,12 +563,8 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 	if err != nil {
 		return err
 	}
-	client := e.fftmClient
-	if client == nil {
-		client = e.client
-	}
 	var resErr ethError
-	res, err := client.R().
+	res, err := e.client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
@@ -706,17 +696,18 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 		return err
 	}
 
-	client := e.fftmClient
-	if client == nil {
-		client = e.client
-	}
 	var resErr ethError
-	res, err := client.R().
+	res, err := e.client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
 		Post("/")
 	if err != nil || !res.IsSuccess() {
+		if strings.Contains(string(res.Body()), "FFEC100130") {
+			// This error is returned by ethconnect because it does not support deploying contracts with this syntax
+			// Return a more helpful and clear error message
+			return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
+		}
 		return wrapError(ctx, &resErr, res, err)
 	}
 	return nil

@@ -72,8 +72,8 @@ Note that some events cannot be tagged with a Transaction ID:
 
 ### Reference, Topic and Correlator by Event Type
 
-| Types                                       | Reference                            | Topic                       | Correlator              |
-|---------------------------------------------|--------------------------------------|-----------------------------|-------------------------|
+| Types                                       | Reference                                 | Topic                       | Correlator              |
+|---------------------------------------------|-------------------------------------------|-----------------------------|-------------------------|
 | `transaction_submitted`                     | [Transaction](./transaction.html)         | `transaction.type`          |                         |
 | `message_confirmed`<br/>`message_rejected`  | [Message](./message.html)                 | `message.header.topics[i]`* | `message.header.cid`    |
 | `token_pool_confirmed`                      | [TokenPool](./tokenpool.html)             | `tokenPool.id`              |                         |
@@ -90,6 +90,8 @@ Note that some events cannot be tagged with a Transaction ID:
 | `blockchain_event_received`                 | [BlockchainEvent](./blockchainevent.html) | From listener **            |                         |
 | `blockchain_invoke_op_succeeded`            | [Operation](./operation.html)             |                             |                         |
 | `blockchain_invoke_op_failed`               | [Operation](./operation.html)             |                             |                         |
+| `blockchain_contract_deploy_op_succeeded`   | [Operation](./operation.html)             |                             |                         |
+| `blockchain_contract_deploy_op_failed`      | [Operation](./operation.html)             |                             |                         |
 
 > * A separate event is emitted for _each topic_ associated with a [Message](./message.html).
 
