@@ -64,7 +64,6 @@ var (
 	APIParamsAutometa                       = ffm("api.params.autometa", "When set, FireFly will automatically generate JSON metadata with the upload details")
 	APIParamsContractAPIID                  = ffm("api.params.contractAPIID", "The ID of the contract API")
 	APIParamsFetchStatus                    = ffm("api.params.fetchStatus", "When set, the API will return additional status information if available")
-	APIParamsIdempotencyKey                 = ffm("api.params.idempotencykey", "Optional idempotency key. Request will be rejected with 409 if an action has already been initiated with the same key")
 
 	APIEndpointsAdminGetNamespaceByName = ffm("api.endpoints.adminGetNamespaceByName", "Gets a namespace by name")
 	APIEndpointsAdminGetNamespaces      = ffm("api.endpoints.adminGetNamespaces", "List namespaces")

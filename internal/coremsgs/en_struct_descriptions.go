@@ -649,4 +649,7 @@ var (
 	WebhooksOptInputBody    = ffm("WebhookInputOptions.body", "A top-level property of the first data input, to use for the request body. Default is the whole first body")
 	WebhooksOptInputPath    = ffm("WebhookInputOptions.path", "A top-level property of the first data input, to use for a path to append with escaping to the webhook path")
 	WebhooksOptInputReplyTx = ffm("WebhookInputOptions.replytx", "A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose)")
+
+	// PublishInput field descriptions
+	PublishInputIdempotencyKey = ffm("PublishInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
 )

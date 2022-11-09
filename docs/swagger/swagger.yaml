@@ -4897,12 +4897,6 @@ paths:
         required: true
         schema:
           type: string
-      - description: Optional idempotency key. Request will be rejected with 409 if
-          an action has already been initiated with the same key
-        in: query
-        name: idempotencykey
-        schema:
-          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -4914,7 +4908,11 @@ paths:
         content:
           application/json:
             schema:
-              additionalProperties: {}
+              properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
               type: object
       responses:
         "200":
@@ -5445,12 +5443,6 @@ paths:
         required: true
         schema:
           type: string
-      - description: Optional idempotency key. Request will be rejected with 409 if
-          an action has already been initiated with the same key
-        in: query
-        name: idempotencykey
-        schema:
-          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -5462,7 +5454,11 @@ paths:
         content:
           application/json:
             schema:
-              additionalProperties: {}
+              properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
               type: object
       responses:
         "200":
@@ -14913,12 +14909,6 @@ paths:
         schema:
           example: default
           type: string
-      - description: Optional idempotency key. Request will be rejected with 409 if
-          an action has already been initiated with the same key
-        in: query
-        name: idempotencykey
-        schema:
-          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -14930,7 +14920,11 @@ paths:
         content:
           application/json:
             schema:
-              additionalProperties: {}
+              properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
               type: object
       responses:
         "200":
@@ -15482,12 +15476,6 @@ paths:
         schema:
           example: default
           type: string
-      - description: Optional idempotency key. Request will be rejected with 409 if
-          an action has already been initiated with the same key
-        in: query
-        name: idempotencykey
-        schema:
-          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -15499,7 +15487,11 @@ paths:
         content:
           application/json:
             schema:
-              additionalProperties: {}
+              properties:
+                idempotencyKey:
+                  description: An optional identifier to allow idempotent submission
+                    of requests. Stored on the transaction uniquely within a namespace
+                  type: string
               type: object
       responses:
         "200":
