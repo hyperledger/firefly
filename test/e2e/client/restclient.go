@@ -576,7 +576,7 @@ func (client *FireFlyClient) GetTokenPools(t *testing.T, startTime time.Time) (p
 	return pools
 }
 
-func (client *FireFlyClient) MintTokens(t *testing.T, mint *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
+func (client *FireFlyClient) MintTokens(t *testing.T, mint *core.TokenTransferInput, confirm bool, expectedStatus ...int) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
 	path := client.namespaced(urlTokenMint)
 	resp, err := client.Client.R().
@@ -585,15 +585,18 @@ func (client *FireFlyClient) MintTokens(t *testing.T, mint *core.TokenTransferIn
 		SetResult(&transferOut).
 		Post(path)
 	require.NoError(t, err)
-	expected := 202
-	if confirm {
-		expected = 200
+	if len(expectedStatus) == 0 {
+		if confirm {
+			expectedStatus = []int{200}
+		} else {
+			expectedStatus = []int{202}
+		}
 	}
-	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, expectedStatus[0], resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &transferOut
 }
 
-func (client *FireFlyClient) BurnTokens(t *testing.T, burn *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
+func (client *FireFlyClient) BurnTokens(t *testing.T, burn *core.TokenTransferInput, confirm bool, expectedStatus ...int) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
 	path := client.namespaced(urlTokenBurn)
 	resp, err := client.Client.R().
@@ -602,15 +605,18 @@ func (client *FireFlyClient) BurnTokens(t *testing.T, burn *core.TokenTransferIn
 		SetResult(&transferOut).
 		Post(path)
 	require.NoError(t, err)
-	expected := 202
-	if confirm {
-		expected = 200
+	if len(expectedStatus) == 0 {
+		if confirm {
+			expectedStatus = []int{200}
+		} else {
+			expectedStatus = []int{202}
+		}
 	}
-	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, expectedStatus[0], resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &transferOut
 }
 
-func (client *FireFlyClient) TransferTokens(t *testing.T, transfer *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
+func (client *FireFlyClient) TransferTokens(t *testing.T, transfer *core.TokenTransferInput, confirm bool, expectedStatus ...int) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
 	path := client.namespaced(urlTokenTransfers)
 	resp, err := client.Client.R().
@@ -619,11 +625,14 @@ func (client *FireFlyClient) TransferTokens(t *testing.T, transfer *core.TokenTr
 		SetResult(&transferOut).
 		Post(path)
 	require.NoError(t, err)
-	expected := 202
-	if confirm {
-		expected = 200
+	if len(expectedStatus) == 0 {
+		if confirm {
+			expectedStatus = []int{200}
+		} else {
+			expectedStatus = []int{202}
+		}
 	}
-	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, expectedStatus[0], resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &transferOut
 }
 
@@ -638,7 +647,7 @@ func (client *FireFlyClient) GetTokenTransfers(t *testing.T, poolID *fftypes.UUI
 	return transfers
 }
 
-func (client *FireFlyClient) TokenApproval(t *testing.T, approval *core.TokenApprovalInput, confirm bool) *core.TokenApproval {
+func (client *FireFlyClient) TokenApproval(t *testing.T, approval *core.TokenApprovalInput, confirm bool, expectedStatus ...int) *core.TokenApproval {
 	var approvalOut core.TokenApproval
 	path := client.namespaced(urlTokenApprovals)
 	resp, err := client.Client.R().
@@ -647,11 +656,14 @@ func (client *FireFlyClient) TokenApproval(t *testing.T, approval *core.TokenApp
 		SetResult(&approvalOut).
 		Post(path)
 	require.NoError(t, err)
-	expected := 202
-	if confirm {
-		expected = 200
+	if len(expectedStatus) == 0 {
+		if confirm {
+			expectedStatus = []int{200}
+		} else {
+			expectedStatus = []int{202}
+		}
 	}
-	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, expectedStatus[0], resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &approvalOut
 }
 
