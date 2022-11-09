@@ -786,7 +786,7 @@ func (client *FireFlyClient) DeleteContractListener(t *testing.T, id *fftypes.UU
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func (client *FireFlyClient) InvokeContractMethod(t *testing.T, req *core.ContractCallRequest) (interface{}, error) {
+func (client *FireFlyClient) InvokeContractMethod(t *testing.T, req *core.ContractCallRequest, expectedStatus ...int) (interface{}, error) {
 	var res interface{}
 	path := client.namespaced(urlContractInvoke)
 	resp, err := client.Client.R().
@@ -794,7 +794,10 @@ func (client *FireFlyClient) InvokeContractMethod(t *testing.T, req *core.Contra
 		SetResult(&res).
 		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	if len(expectedStatus) == 0 {
+		expectedStatus = []int{202}
+	}
+	require.Equal(t, expectedStatus[0], resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
 
