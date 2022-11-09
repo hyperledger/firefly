@@ -37,7 +37,6 @@ import "github.com/hyperledger/firefly-common/pkg/fftypes"
 // moving separately to the batch. If we get the private message, then the batch,
 // before receiving the blob data - we have to upgrade a batch-park, to a pin-park.
 // This is because the sequence must be in the order the pins arrive.
-//
 type Pin struct {
 	Sequence   int64            `ffstruct:"Pin" json:"sequence"`
 	Namespace  string           `ffstruct:"Pin" json:"namespace"`

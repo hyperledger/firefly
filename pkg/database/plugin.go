@@ -522,7 +522,6 @@ type iChartCollection interface {
 // interface.
 // For SQL databases the process of adding a new database is simplified via the common SQL layer.
 // For NoSQL databases, the code should be straight forward to map the collections, indexes, and operations.
-//
 type PersistenceInterface interface {
 	core.Named
 
@@ -655,7 +654,6 @@ type PostCompletionHook func()
 // Events are emitted locally to the individual FireFly core process. However, a WebSocket interface is
 // available for remote listening to these events. That allows the UI to listen to the events, as well as
 // providing a building block for a cluster of FireFly servers to directly propgate events to each other.
-//
 type Callbacks interface {
 	// OrderedUUIDCollectionNSEvent emits the sequence on insert, but it will be -1 on update
 	OrderedUUIDCollectionNSEvent(resType OrderedUUIDCollectionNS, eventType core.ChangeEventType, namespace string, id *fftypes.UUID, sequence int64)

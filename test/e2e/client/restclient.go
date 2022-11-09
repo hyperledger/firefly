@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/big"
 	"net/http"
 	"net/url"
@@ -222,7 +221,7 @@ func (client *FireFlyClient) GetBlob(t *testing.T, data *core.Data, expectedStat
 		Get(path)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	blob, err := ioutil.ReadAll(resp.RawBody())
+	blob, err := io.ReadAll(resp.RawBody())
 	require.NoError(t, err)
 	return blob
 }

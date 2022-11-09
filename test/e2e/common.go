@@ -19,7 +19,6 @@ package e2e
 import (
 	"crypto/rand"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -30,7 +29,7 @@ import (
 )
 
 func ReadConfig(t *testing.T, configFile string) map[string]interface{} {
-	yfile, err := ioutil.ReadFile(configFile)
+	yfile, err := os.ReadFile(configFile)
 	assert.NoError(t, err)
 	data := make(map[string]interface{})
 	err = yaml.Unmarshal(yfile, &data)

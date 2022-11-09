@@ -186,8 +186,8 @@ func (dm *dataManager) getValidatorForDatatype(ctx context.Context, validator co
 }
 
 // GetMessageWithData performs a cached lookup of a message with all of the associated data.
-// - Use this in performance sensitive code, but note mutable fields like the status of the
-//   message CANNOT be relied upon (due to the caching).
+//   - Use this in performance sensitive code, but note mutable fields like the status of the
+//     message CANNOT be relied upon (due to the caching).
 func (dm *dataManager) GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *core.Message, data core.DataArray, foundAllData bool, err error) {
 	if mce := dm.queryMessageCache(ctx, msgID, options...); mce != nil {
 		return mce.msg, mce.data, true, nil

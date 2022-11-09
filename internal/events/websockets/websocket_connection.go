@@ -19,7 +19,7 @@ package websockets
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sync"
 
@@ -138,7 +138,7 @@ func (wc *websocketConnection) receiveLoop() {
 		var msgHeader core.WSActionBase
 		_, reader, err := wc.wsConn.NextReader()
 		if err == nil {
-			msgData, err = ioutil.ReadAll(reader)
+			msgData, err = io.ReadAll(reader)
 			if err == nil {
 				err = json.Unmarshal(msgData, &msgHeader)
 				if err != nil {
