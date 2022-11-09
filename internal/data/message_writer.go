@@ -108,9 +108,15 @@ func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage
 		return <-nmi.result
 	}
 	// Otherwise do it in-line on this context
-	return mw.database.RunAsGroup(ctx, func(ctx context.Context) error {
+	err := mw.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		return mw.writeMessages(ctx, []*core.Message{&newMsg.Message.Message}, newMsg.NewData)
 	})
+	if err != nil {
+		if idempotencyErr := mw.checkIdempotencyDuplicate(ctx, &newMsg.Message.Message); idempotencyErr != nil {
+			return idempotencyErr
+		}
+	}
+	return err
 }
 
 // WriteData writes a piece of data independently of a message
@@ -201,6 +207,22 @@ func (mw *messageWriter) persistMWBatch(batch *messageWriterBatch) {
 	}
 }
 
+func (mw *messageWriter) checkIdempotencyDuplicate(ctx context.Context, m *core.Message) error {
+	if m.IdempotencyKey != "" {
+		fb := database.MessageQueryFactory.NewFilter(ctx)
+		existing, _, err := mw.database.GetMessages(ctx, m.Header.Namespace, fb.Eq("idempotencykey", (string)(m.IdempotencyKey)))
+		if err != nil {
+			// Don't overwrite the original error for this - return -1 to the caller, who will return the previous error
+			log.L(mw.ctx).Errorf("Failed checking for idempotency errors: %s", err)
+			return nil
+		}
+		if len(existing) > 0 {
+			return i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateMessage, m.IdempotencyKey, existing[0].Header.ID)
+		}
+	}
+	return nil
+}
+
 func (mw *messageWriter) removeIdempotencyDuplicates(ctx context.Context, batch *messageWriterBatch) int {
 	duplicatesRemoved := 0
 	newMessageList := make([]*core.Message, 0, len(batch.messages))
@@ -208,38 +230,30 @@ func (mw *messageWriter) removeIdempotencyDuplicates(ctx context.Context, batch 
 	// Spin through the messages in the batch, looking for existing messages that
 	for _, m := range batch.messages {
 		dupRemoved := false
-		if m.IdempotencyKey != "" {
-			fb := database.MessageQueryFactory.NewFilter(ctx)
-			existing, _, err := mw.database.GetMessages(ctx, m.Header.Namespace, fb.Eq("idempotencykey", (string)(m.IdempotencyKey)))
-			if err != nil {
-				// Don't overwrite the original error for this - return -1 to the caller, who will return the previous error
-				log.L(mw.ctx).Errorf("Failed checking for idempotency errors: %s", err)
-				return -1
+		idempotencyErr := mw.checkIdempotencyDuplicate(ctx, m)
+		if idempotencyErr != nil {
+			// We have an idempotency duplicate - we need to remove it from the batch so we can retry the rest
+			dupRemoved = true
+			if listener := batch.listeners[*m.Header.ID]; listener != nil {
+				// Notify the listener for this message,
+				listener <- idempotencyErr
 			}
-			if len(existing) > 0 {
-				// We have an idempotency duplicate - we need to remove it from the batch so we can retry the rest
-				dupRemoved = true
-				if listener := batch.listeners[*m.Header.ID]; listener != nil {
-					// Notify the listener for this message,
-					listener <- i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateMessage, m.IdempotencyKey, existing[0].Header.ID)
-				}
-				delete(batch.listeners, *m.Header.ID)
-				// Remove all the data associated with this message from the batch
-				newData := make([]*core.Data, 0, len(batch.data))
-				for _, d := range batch.data {
-					isRef := false
-					for _, dr := range m.Data {
-						if dr.ID.Equals(d.ID) {
-							isRef = true
-							break
-						}
-					}
-					if !isRef {
-						newData = append(newData, d)
+			delete(batch.listeners, *m.Header.ID)
+			// Remove all the data associated with this message from the batch
+			newData := make([]*core.Data, 0, len(batch.data))
+			for _, d := range batch.data {
+				isRef := false
+				for _, dr := range m.Data {
+					if dr.ID.Equals(d.ID) {
+						isRef = true
+						break
 					}
 				}
-				batch.data = newData
+				if !isRef {
+					newData = append(newData, d)
+				}
 			}
+			batch.data = newData
 		}
 		if dupRemoved {
 			duplicatesRemoved++

@@ -339,3 +339,36 @@ func TestPersistMWBatchIdempotencySkipNoIdem(t *testing.T) {
 
 	assert.Regexp(t, "not idempotency related", <-c1)
 }
+
+func TestWriteMessageNoWorkersIdempotencyDuplicate(t *testing.T) {
+	mw := newTestMessageWriterNoConcurrency(t)
+	customCtx := context.WithValue(context.Background(), "dbtx", "on this context")
+	mw.conf.workerCount = 0
+
+	m1ID := fftypes.NewUUID()
+	m1 := &core.MessageInOut{
+		Message: core.Message{
+			Header:         core.MessageHeader{Namespace: "ns1", ID: m1ID},
+			IdempotencyKey: "idem1",
+		},
+	}
+
+	mdi := mw.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything)
+	rag.Run(func(args mock.Arguments) {
+		rag.Return(args[1].(func(context.Context) error)(customCtx))
+	}).Return(nil)
+	mdi.On("InsertMessages", customCtx, []*core.Message{&m1.Message}).Return(fmt.Errorf("failure1... which leads to..."))
+	mdi.On("GetMessages", mock.Anything, "ns1", mock.MatchedBy(func(f database.Filter) bool {
+		ff, _ := f.Finalize()
+		return strings.Contains(ff.String(), "idem1")
+	})).Return([]*core.Message{
+		{Header: core.MessageHeader{ID: fftypes.NewUUID()}, IdempotencyKey: "idem1"},
+	}, nil, nil)
+
+	err := mw.WriteNewMessage(mw.ctx, &NewMessage{Message: m1})
+	assert.Regexp(t, "FF10430", err)
+
+	mdi.AssertExpectations(t)
+
+}
