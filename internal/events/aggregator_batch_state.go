@@ -81,17 +81,17 @@ type dispatchedMessage struct {
 // batchState is the object that tracks the in-memory state that builds up while processing a batch of pins,
 // that needs to be reconciled at the point the batch closes.
 // There are three phases:
-// 1. Dispatch: Determines if messages are blocked, or can be dispatched. Calls the appropriate dispatch
-//              actions for that message type. Reads initial `pin` state for contexts from the DB, and then
-//              updates this in-memory throughout the batch, ready for flushing in the Finalize phase.
-//              Runs in a database operation group/tranaction.
-// 2. Pre-finalize: Runs any PreFinalize callbacks registered by the handlers in (1).
-//                  Intended to be used for cross-microservice REST/GRPC etc. calls that have side-effects.
-//                  Runs outside any database operation group/tranaction.
-// 3. Finalize: Flushes the `pin` state calculated in phase (1), and any Finalize actions registered by handlers
-//              during phase (1) or (2).
-//              Runs in a database operation group/tranaction, which will be the same as phase (1) if there
-//              are no pre-finalize handlers registered.
+//  1. Dispatch: Determines if messages are blocked, or can be dispatched. Calls the appropriate dispatch
+//     actions for that message type. Reads initial `pin` state for contexts from the DB, and then
+//     updates this in-memory throughout the batch, ready for flushing in the Finalize phase.
+//     Runs in a database operation group/tranaction.
+//  2. Pre-finalize: Runs any PreFinalize callbacks registered by the handlers in (1).
+//     Intended to be used for cross-microservice REST/GRPC etc. calls that have side-effects.
+//     Runs outside any database operation group/tranaction.
+//  3. Finalize: Flushes the `pin` state calculated in phase (1), and any Finalize actions registered by handlers
+//     during phase (1) or (2).
+//     Runs in a database operation group/tranaction, which will be the same as phase (1) if there
+//     are no pre-finalize handlers registered.
 type batchState struct {
 	core.BatchState
 

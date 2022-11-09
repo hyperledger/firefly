@@ -31,11 +31,11 @@ import (
 // This will ensure that the original LocalID provided to the user can later be used in a lookup, and also causes requests that
 // use "confirm=true" to resolve as expected.
 // Must follow these rules to reuse the LocalID:
-// - The transaction ID on the transfer must match a transaction+operation initiated by this node.
-// - The connector and pool for this event must match the connector and pool targeted by the initial operation. Connectors are
-//   allowed to trigger side-effects in other pools, but only the event from the targeted pool should use the original LocalID.
-// - The LocalID must not have been used yet. Connectors are allowed to emit multiple events in response to a single operation,
-//   but only the first of them can use the original LocalID.
+//   - The transaction ID on the transfer must match a transaction+operation initiated by this node.
+//   - The connector and pool for this event must match the connector and pool targeted by the initial operation. Connectors are
+//     allowed to trigger side-effects in other pools, but only the event from the targeted pool should use the original LocalID.
+//   - The LocalID must not have been used yet. Connectors are allowed to emit multiple events in response to a single operation,
+//     but only the first of them can use the original LocalID.
 func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, transfer *core.TokenTransfer) (*fftypes.UUID, error) {
 	// Find a matching operation within the transaction
 	fb := database.OperationQueryFactory.NewFilter(ctx)

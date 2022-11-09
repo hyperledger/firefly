@@ -19,7 +19,7 @@ package spievents
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"sync"
 	"time"
 
@@ -153,7 +153,7 @@ func (wc *webSocket) receiveLoop() {
 		var cmd core.WSChangeEventCommand
 		_, reader, err := wc.wsConn.NextReader()
 		if err == nil {
-			msgData, err = ioutil.ReadAll(reader)
+			msgData, err = io.ReadAll(reader)
 			if err == nil {
 				err = json.Unmarshal(msgData, &cmd)
 			}
