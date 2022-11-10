@@ -954,6 +954,7 @@ var FFIEventQueryFactory = &queryFields{
 // ContractListenerQueryFactory filter fields for contract listeners
 var ContractListenerQueryFactory = &queryFields{
 	"id":        &UUIDField{},
+	"name":      &StringField{},
 	"interface": &UUIDField{},
 	"location":  &JSONField{},
 	"topic":     &StringField{},
