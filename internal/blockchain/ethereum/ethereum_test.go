@@ -196,7 +196,6 @@ func TestInitAndStartWithEthConnect(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
-	assert.NotNil(t, e.fftmClient)
 
 	assert.Equal(t, "ethereum", e.Name())
 	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
@@ -258,7 +257,6 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
-	assert.NotNil(t, e.fftmClient)
 
 	assert.Equal(t, "ethereum", e.Name())
 	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
