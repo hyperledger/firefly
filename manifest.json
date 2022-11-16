@@ -1,18 +1,18 @@
 {
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
-    "tag": "v3.2.7",
-    "sha": "39ea63586b322de7c33f127f859b1d4c6fc7ff9e377049898e34a0dea30ab2d7"
+    "tag": "v3.2.9",
+    "sha": "a9aed053d57d56532084e8d0229d3a6e8843054006cd82bb48c4800dcccc6449"
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.1.8",
-    "sha": "342bea92d9967756cb06b3f407d2fa3406a0548b81432a032a9c652d6652063a"
+    "tag": "v1.1.9",
+    "sha": "6a81ba67bf2611274cbc1c1597ba0377ec91618d5bff5874f0bc489b1a7b0e10"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.15",
-    "sha": "58f138ffb70bef488575bf9e52d65155108aabc5efd675d2bc41e6c8be6746df"
+    "tag": "v.0.9.16",
+    "sha": "4f4798ee34eee0b67886f1baa37f4d50a33e2932c94312f189fe5f015f6564a4"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
@@ -31,8 +31,8 @@
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",
-    "tag": "v0.9.21",
-    "sha": "624c623de8324f42d9f16b779fb183e6d8d73037067bc2d1e8c65fa583d6e0f8"
+    "tag": "v1.1.2",
+    "sha": "1023af58afadc0e62f423984f4dd863ef13552282a9fe60210b7cda4f9b43518"
   },
   "build": {
     "firefly-builder": {
@@ -54,6 +54,6 @@
     "release": "v1.1.4"
   },
   "cli": {
-    "tag": "v1.1.1"
+    "tag": "52d2f147c1ab7960e828e5ef854a2af26866d155"
   }
 }
