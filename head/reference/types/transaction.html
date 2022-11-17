@@ -398,6 +398,11 @@ the transaction.</p>
       <td><a href="simpletypes#fftime"><code class="language-plaintext highlighter-rouge">FFTime</code></a></td>
     </tr>
     <tr>
+      <td><code class="language-plaintext highlighter-rouge">idempotencyKey</code></td>
+      <td>An optional unique identifier for a transaction. Cannot be duplicated within a namespace, thus allowing idempotent submission of transactions to the API</td>
+      <td><code class="language-plaintext highlighter-rouge">IdempotencyKey</code></td>
+    </tr>
+    <tr>
       <td><code class="language-plaintext highlighter-rouge">blockchainIds</code></td>
       <td>The blockchain transaction ID, in the format specific to the blockchain involved in the transaction. Not all FireFly transactions include a blockchain. FireFly transactions are extensible to support multiple blockchain transactions</td>
       <td><code class="language-plaintext highlighter-rouge">string[]</code></td>
