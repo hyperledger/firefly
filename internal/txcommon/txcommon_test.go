@@ -70,7 +70,7 @@ func TestSubmitNewTransactionOK(t *testing.T) {
 		return e.Type == core.EventTypeTransactionSubmitted && e.Reference.Equals(txidInserted)
 	})).Return(nil)
 
-	txidReturned, err := txHelper.SubmitNewTransaction(ctx, core.TransactionTypeBatchPin)
+	txidReturned, err := txHelper.SubmitNewTransaction(ctx, core.TransactionTypeBatchPin, "idem1")
 	assert.NoError(t, err)
 	assert.Equal(t, *txidInserted, *txidReturned)
 
@@ -89,7 +89,7 @@ func TestSubmitNewTransactionFail(t *testing.T) {
 
 	mdi.On("InsertTransaction", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := txHelper.SubmitNewTransaction(ctx, core.TransactionTypeBatchPin)
+	_, err := txHelper.SubmitNewTransaction(ctx, core.TransactionTypeBatchPin, "idem1")
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -108,7 +108,7 @@ func TestSubmitNewTransactionEventFail(t *testing.T) {
 	mdi.On("InsertTransaction", ctx, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := txHelper.SubmitNewTransaction(ctx, core.TransactionTypeBatchPin)
+	_, err := txHelper.SubmitNewTransaction(ctx, core.TransactionTypeBatchPin, "idem1")
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)

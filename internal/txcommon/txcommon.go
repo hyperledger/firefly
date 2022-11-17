@@ -30,7 +30,7 @@ import (
 )
 
 type Helper interface {
-	SubmitNewTransaction(ctx context.Context, txType core.TransactionType) (*fftypes.UUID, error)
+	SubmitNewTransaction(ctx context.Context, txType core.TransactionType, idempotencyKey core.IdempotencyKey) (*fftypes.UUID, error)
 	PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error
 	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
@@ -102,14 +102,16 @@ func (t *transactionHelper) GetTransactionByIDCached(ctx context.Context, id *ff
 }
 
 // SubmitNewTransaction is called when there is a new transaction being submitted by the local node
-func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType core.TransactionType) (*fftypes.UUID, error) {
+func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType core.TransactionType, idempotencyKey core.IdempotencyKey) (*fftypes.UUID, error) {
 
 	tx := &core.Transaction{
-		ID:        fftypes.NewUUID(),
-		Namespace: t.namespace,
-		Type:      txType,
+		ID:             fftypes.NewUUID(),
+		Namespace:      t.namespace,
+		Type:           txType,
+		IdempotencyKey: idempotencyKey,
 	}
 
+	// Note that InsertTransaction is responsible for idempotency key duplicate detection and helpful error creation
 	if err := t.database.InsertTransaction(ctx, tx); err != nil {
 		return nil, err
 	}

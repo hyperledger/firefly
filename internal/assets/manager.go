@@ -37,7 +37,7 @@ import (
 type Manager interface {
 	core.Named
 
-	CreateTokenPool(ctx context.Context, pool *core.TokenPool, waitConfirm bool) (*core.TokenPool, error)
+	CreateTokenPool(ctx context.Context, pool *core.TokenPoolInput, waitConfirm bool) (*core.TokenPool, error)
 	ActivateTokenPool(ctx context.Context, pool *core.TokenPool) error
 	GetTokenPools(ctx context.Context, filter database.AndFilter) ([]*core.TokenPool, *database.FilterResult, error)
 	GetTokenPool(ctx context.Context, connector, poolName string) (*core.TokenPool, error)

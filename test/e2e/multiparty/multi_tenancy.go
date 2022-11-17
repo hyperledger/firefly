@@ -136,7 +136,7 @@ func (suite *NamespaceAliasSuite) TestMultiTenancy() {
 	clientCharlie.RegisterSelfNode(suite.T(), true)
 
 	// Verify that a broadcast on the new namespace succeeds
-	resp, err := clientAlice.BroadcastMessage(suite.T(), "topic", data, false)
+	resp, err := clientAlice.BroadcastMessage(suite.T(), "topic", "", data, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypeBroadcast)
@@ -160,26 +160,26 @@ func (suite *NamespaceAliasSuite) TestMultiTenancy() {
 
 	// Verify that private messages on the new namespace succeed
 	// Alice -> Charlie
-	resp, err = clientAlice.PrivateMessage("topic", data, toCharlie, "tag1", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	resp, err = clientAlice.PrivateMessage("topic", "", data, toCharlie, "tag1", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypePrivate)
 	e2e.WaitForMessageConfirmed(suite.T(), receivedCharlie, core.MessageTypePrivate)
 	// Charlie -> Alice
-	resp, err = clientCharlie.PrivateMessage("topic", data, toAlice, "tag2", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	resp, err = clientCharlie.PrivateMessage("topic", "", data, toAlice, "tag2", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypePrivate)
 	e2e.WaitForMessageConfirmed(suite.T(), receivedCharlie, core.MessageTypePrivate)
 	// Charlie -> Alice+Bob
-	resp, err = clientCharlie.PrivateMessage("topic", data, toAll, "tag3", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	resp, err = clientCharlie.PrivateMessage("topic", "", data, toAll, "tag3", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypePrivate)
 	e2e.WaitForMessageConfirmed(suite.T(), receivedBob, core.MessageTypePrivate)
 	e2e.WaitForMessageConfirmed(suite.T(), receivedCharlie, core.MessageTypePrivate)
 	// Alice -> Bob
-	resp, err = clientAlice.PrivateMessage("topic", data, toBob, "tag4", core.TransactionTypeBatchPin, false, suite.testState.startTime)
+	resp, err = clientAlice.PrivateMessage("topic", "", data, toBob, "tag4", core.TransactionTypeBatchPin, false, suite.testState.startTime)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 	e2e.WaitForMessageConfirmed(suite.T(), receivedAlice, core.MessageTypePrivate)

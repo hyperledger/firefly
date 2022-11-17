@@ -89,9 +89,11 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			Operator: suite.testState.org2key.Value,
 			Approved: true,
 		},
-		Pool: poolName,
+		Pool:           poolName,
+		IdempotencyKey: core.IdempotencyKey(fftypes.NewUUID().String()),
 	}
 	approvalOut := suite.testState.client1.TokenApproval(suite.T(), approval, false)
+	_ = suite.testState.client1.TokenApproval(suite.T(), approval, false, 409) // check for idempotency key rejection
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeApprovalConfirmed, approvalOut.LocalID)
 	approvals := suite.testState.client1.GetTokenApprovals(suite.T(), poolID)
@@ -100,10 +102,12 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), true, approvals[0].Approved)
 
 	transfer := &core.TokenTransferInput{
-		TokenTransfer: core.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
-		Pool:          poolName,
+		TokenTransfer:  core.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
+		Pool:           poolName,
+		IdempotencyKey: core.IdempotencyKey(fftypes.NewUUID().String()),
 	}
 	transferOut := suite.testState.client1.MintTokens(suite.T(), transfer, false)
+	_ = suite.testState.client1.MintTokens(suite.T(), transfer, false, 409) // check for idempotency key rejection
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeTransferConfirmed, transferOut.LocalID)
 	transfers := suite.testState.client1.GetTokenTransfers(suite.T(), poolID)
@@ -140,8 +144,10 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 				},
 			},
 		},
+		IdempotencyKey: core.IdempotencyKey(fftypes.NewUUID().String()),
 	}
 	transferOut = suite.testState.client2.TransferTokens(suite.T(), transfer, false)
+	_ = suite.testState.client2.TransferTokens(suite.T(), transfer, false, 409) // check for idempotency key rejection
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeMessageConfirmed, transferOut.Message)
 	transfers = suite.testState.client1.GetTokenTransfers(suite.T(), poolID)

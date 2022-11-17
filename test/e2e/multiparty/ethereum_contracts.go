@@ -215,13 +215,18 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		Input: map[string]interface{}{
 			"newValue": float64(42),
 		},
-		Interface:  suite.interfaceID,
-		MethodPath: "set",
+		Interface:      suite.interfaceID,
+		MethodPath:     "set",
+		IdempotencyKey: core.IdempotencyKey(fftypes.NewUUID().String()),
 	}
 
 	res, err := suite.testState.client1.InvokeContractMethod(suite.T(), invokeContractRequest)
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), res)
+
+	// Idempotency check
+	_, err = suite.testState.client1.InvokeContractMethod(suite.T(), invokeContractRequest, 409)
+	assert.NoError(suite.T(), err)
 
 	match := map[string]interface{}{
 		"info": map[string]interface{}{

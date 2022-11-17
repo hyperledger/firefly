@@ -38,7 +38,7 @@ func TestCreateTokenPoolBadName(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{}
+	pool := &core.TokenPoolInput{}
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "FF00140", err)
@@ -48,8 +48,10 @@ func TestCreateTokenPoolGetError(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Name: "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -65,8 +67,10 @@ func TestCreateTokenPoolDuplicateName(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Name: "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -82,8 +86,11 @@ func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Name: "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -92,11 +99,11 @@ func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
-	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
-		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
 	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
@@ -112,8 +119,10 @@ func TestCreateTokenPoolDefaultConnectorNoConnectors(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Name: "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
 	}
 
 	am.tokens = make(map[string]tokens.Plugin)
@@ -131,8 +140,10 @@ func TestCreateTokenPoolDefaultConnectorMultipleConnectors(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Name: "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
 	}
 
 	am.tokens["magic-tokens"] = nil
@@ -152,8 +163,10 @@ func TestCreateTokenPoolNoConnectors(t *testing.T) {
 	defer cancel()
 	am.tokens = nil
 
-	pool := &core.TokenPool{
-		Name: "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -169,8 +182,10 @@ func TestCreateTokenPoolIdentityFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Name: "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -189,9 +204,11 @@ func TestCreateTokenPoolWrongConnector(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Connector: "wrongun",
-		Name:      "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Connector: "wrongun",
+			Name:      "testpool",
+		},
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -210,9 +227,12 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Connector: "magic-tokens",
-		Name:      "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Connector: "magic-tokens",
+			Name:      "testpool",
+		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -221,11 +241,11 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
-		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
 	})).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
@@ -241,9 +261,12 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Connector: "magic-tokens",
-		Name:      "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Connector: "magic-tokens",
+			Name:      "testpool",
+		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -251,7 +274,7 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(nil, fmt.Errorf("pop"))
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "pop", err)
@@ -265,9 +288,12 @@ func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Connector: "magic-tokens",
-		Name:      "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Connector: "magic-tokens",
+			Name:      "testpool",
+		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -276,7 +302,7 @@ func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
@@ -292,9 +318,12 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Connector: "magic-tokens",
-		Name:      "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Connector: "magic-tokens",
+			Name:      "testpool",
+		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -303,11 +332,11 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
-		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
 	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
@@ -323,9 +352,12 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Connector: "magic-tokens",
-		Name:      "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Connector: "magic-tokens",
+			Name:      "testpool",
+		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -334,11 +366,11 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
-		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
 	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
@@ -354,9 +386,12 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &core.TokenPool{
-		Connector: "magic-tokens",
-		Name:      "testpool",
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Connector: "magic-tokens",
+			Name:      "testpool",
+		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -366,7 +401,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenPool", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
@@ -376,7 +411,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 		Return(nil, nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
-		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
 	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, true)

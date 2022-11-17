@@ -214,7 +214,7 @@ func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
 
-	txid, err := mm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeNetworkAction)
+	txid, err := mm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeNetworkAction, "")
 	if err != nil {
 		return err
 	}

@@ -208,6 +208,8 @@ func (em *eventManager) validateBatchMessage(ctx context.Context, batch *core.Ba
 	}
 	// Set the state to pending, for the insertion stage
 	msg.State = core.MessageStatePending
+	// Remove any idempotency key
+	msg.IdempotencyKey = ""
 
 	return true
 }
@@ -278,7 +280,7 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *core.Bat
 		}
 	}
 
-	// Then the same one-shot insert of all the mesages, on the basis they are likely unique (even if
+	// Then the same one-shot insert of all the messages, on the basis they are likely unique (even if
 	// one of the data elements wasn't unique). Likely reasons for exceptions here are idempotent replay,
 	// or a root broadcast where "em.sentByUs" returned false, but we actually sent it.
 	err = em.database.InsertMessages(ctx, batch.Payload.Messages, func() {

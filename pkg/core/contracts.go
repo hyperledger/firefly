@@ -32,22 +32,24 @@ var (
 )
 
 type ContractCallRequest struct {
-	Type       ContractCallType       `ffstruct:"ContractCallRequest" json:"type,omitempty" ffenum:"contractcalltype" ffexcludeinput:"true"`
-	Interface  *fftypes.UUID          `ffstruct:"ContractCallRequest" json:"interface,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
-	Location   *fftypes.JSONAny       `ffstruct:"ContractCallRequest" json:"location,omitempty"`
-	Key        string                 `ffstruct:"ContractCallRequest" json:"key,omitempty"`
-	Method     *fftypes.FFIMethod     `ffstruct:"ContractCallRequest" json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
-	MethodPath string                 `ffstruct:"ContractCallRequest" json:"methodPath,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
-	Input      map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
-	Options    map[string]interface{} `ffstruct:"ContractCallRequest" json:"options"`
+	Type           ContractCallType       `ffstruct:"ContractCallRequest" json:"type,omitempty" ffenum:"contractcalltype" ffexcludeinput:"true"`
+	Interface      *fftypes.UUID          `ffstruct:"ContractCallRequest" json:"interface,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
+	Location       *fftypes.JSONAny       `ffstruct:"ContractCallRequest" json:"location,omitempty"`
+	Key            string                 `ffstruct:"ContractCallRequest" json:"key,omitempty"`
+	Method         *fftypes.FFIMethod     `ffstruct:"ContractCallRequest" json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
+	MethodPath     string                 `ffstruct:"ContractCallRequest" json:"methodPath,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
+	Input          map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
+	Options        map[string]interface{} `ffstruct:"ContractCallRequest" json:"options"`
+	IdempotencyKey IdempotencyKey         `ffstruct:"ContractCallRequest" json:"idempotencyKey,omitempty" ffexcludeoutput:"true"`
 }
 
 type ContractDeployRequest struct {
-	Key        string                 `ffstruct:"ContractDeployRequest" json:"key,omitempty"`
-	Input      []interface{}          `ffstruct:"ContractDeployRequest" json:"input"`
-	Definition *fftypes.JSONAny       `ffstruct:"ContractDeployRequest" json:"definition"`
-	Contract   *fftypes.JSONAny       `ffstruct:"ContractDeployRequest" json:"contract"`
-	Options    map[string]interface{} `ffstruct:"ContractDeployRequest" json:"options"`
+	Key            string                 `ffstruct:"ContractDeployRequest" json:"key,omitempty"`
+	Input          []interface{}          `ffstruct:"ContractDeployRequest" json:"input"`
+	Definition     *fftypes.JSONAny       `ffstruct:"ContractDeployRequest" json:"definition"`
+	Contract       *fftypes.JSONAny       `ffstruct:"ContractDeployRequest" json:"contract"`
+	Options        map[string]interface{} `ffstruct:"ContractDeployRequest" json:"options"`
+	IdempotencyKey IdempotencyKey         `ffstruct:"ContractDeployRequest" json:"idempotencyKey,omitempty" ffexcludeoutput:"true"`
 }
 
 type ContractURLs struct {

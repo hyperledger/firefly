@@ -34,14 +34,14 @@ var postTokenPool = &ffapi.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	Description:     coremsgs.APIEndpointsPostTokenPool,
-	JSONInputValue:  func() interface{} { return &core.TokenPool{} },
+	JSONInputValue:  func() interface{} { return &core.TokenPoolInput{} },
 	JSONOutputValue: func() interface{} { return &core.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			return cr.or.Assets().CreateTokenPool(cr.ctx, r.Input.(*core.TokenPool), waitConfirm)
+			return cr.or.Assets().CreateTokenPool(cr.ctx, r.Input.(*core.TokenPoolInput), waitConfirm)
 		},
 	},
 }

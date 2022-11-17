@@ -168,7 +168,7 @@ func (cm *contractManager) GetFFIs(ctx context.Context, filter database.AndFilte
 }
 
 func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core.ContractCallRequest) (*core.Operation, error) {
-	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractInvoke)
+	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractInvoke, req.IdempotencyKey)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 }
 
 func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core.ContractDeployRequest) (*core.Operation, error) {
-	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractDeploy)
+	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractDeploy, req.IdempotencyKey)
 	if err != nil {
 		return nil, err
 	}

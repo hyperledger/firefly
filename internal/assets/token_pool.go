@@ -28,7 +28,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (am *assetManager) CreateTokenPool(ctx context.Context, pool *core.TokenPool, waitConfirm bool) (*core.TokenPool, error) {
+func (am *assetManager) CreateTokenPool(ctx context.Context, pool *core.TokenPoolInput, waitConfirm bool) (*core.TokenPool, error) {
 	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, pool *core.TokenPoo
 	return am.createTokenPoolInternal(ctx, pool, waitConfirm)
 }
 
-func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.TokenPool, waitConfirm bool) (*core.TokenPool, error) {
+func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.TokenPoolInput, waitConfirm bool) (*core.TokenPool, error) {
 	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 
 	var op *core.Operation
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		txid, err := am.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenPool)
+		txid, err := am.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenPool, pool.IdempotencyKey)
 		if err != nil {
 			return err
 		}
@@ -84,7 +84,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 			am.namespace,
 			txid,
 			core.OpTypeTokenCreatePool)
-		if err = txcommon.AddTokenPoolCreateInputs(op, pool); err == nil {
+		if err = txcommon.AddTokenPoolCreateInputs(op, &pool.TokenPool); err == nil {
 			err = am.operations.AddOrReuseOperation(ctx, op)
 		}
 		return err
@@ -93,8 +93,8 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 		return nil, err
 	}
 
-	_, err = am.operations.RunOperation(ctx, opCreatePool(op, pool))
-	return pool, err
+	_, err = am.operations.RunOperation(ctx, opCreatePool(op, &pool.TokenPool))
+	return &pool.TokenPool, err
 }
 
 func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) error {
