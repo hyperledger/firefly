@@ -88,7 +88,7 @@ func TestUnfilledBatch(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeBatchPin, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
 	mdm := bp.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
@@ -137,7 +137,7 @@ func TestBatchSizeOverflow(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeBatchPin, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
 	mdm := bp.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
@@ -196,7 +196,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 	waitForCall := make(chan bool)
 	mth := bp.txHelper.(*txcommonmocks.Helper)
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeBatchPin).
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeBatchPin, core.IdempotencyKey("")).
 		Run(func(a mock.Arguments) {
 			waitForCall <- true
 			<-waitForCall
@@ -424,7 +424,7 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeUnpinned).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeUnpinned, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
 	mdm := bp.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
@@ -482,7 +482,7 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeBatchPin, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
 	mim := bp.bm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)

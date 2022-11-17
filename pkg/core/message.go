@@ -94,11 +94,16 @@ type Message struct {
 	Confirmed      *fftypes.FFTime  `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
 	Data           DataRefs         `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
 	Pins           FFStringArray    `ffstruct:"Message" json:"pins,omitempty" ffexcludeinput:"true"`
+	IdempotencyKey IdempotencyKey   `ffstruct:"Message" json:"idempotencyKey,omitempty"`
 	Sequence       int64            `ffstruct:"Message" json:"-"` // Local database sequence used internally for batch assembly
 }
 
 // BatchMessage is the fields in a message record that are assured to be consistent on all parties.
 // This is what is transferred and hashed in a batch payload between nodes.
+//
+// Fields such as the idempotencyKey do NOT transfer, as these are meant for local processing of messages before being sent.
+//
+// Fields such as the state/confirmed do NOT transfer, as these are calculated individually by each member.
 func (m *Message) BatchMessage() *Message {
 	return &Message{
 		Header: m.Header,

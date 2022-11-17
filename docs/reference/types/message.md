@@ -64,6 +64,7 @@ nav_order: 15
 | `confirmed` | The timestamp of when the message was confirmed/rejected | [`FFTime`](simpletypes#fftime) |
 | `data` | The list of data elements attached to the message | [`DataRef[]`](#dataref) |
 | `pins` | For private messages, a unique pin hash:nonce is assigned for each topic | `string[]` |
+| `idempotencyKey` | An optional unique identifier for a message. Cannot be duplicated within a namespace, thus allowing idempotent submission of messages to the API. Local only - not transferred when the message is sent to other members of the network | `IdempotencyKey` |
 
 ## MessageHeader
 

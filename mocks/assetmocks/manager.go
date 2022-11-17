@@ -58,11 +58,11 @@ func (_m *Manager) BurnTokens(ctx context.Context, transfer *core.TokenTransferI
 }
 
 // CreateTokenPool provides a mock function with given fields: ctx, pool, waitConfirm
-func (_m *Manager) CreateTokenPool(ctx context.Context, pool *core.TokenPool, waitConfirm bool) (*core.TokenPool, error) {
+func (_m *Manager) CreateTokenPool(ctx context.Context, pool *core.TokenPoolInput, waitConfirm bool) (*core.TokenPool, error) {
 	ret := _m.Called(ctx, pool, waitConfirm)
 
 	var r0 *core.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool, bool) *core.TokenPool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPoolInput, bool) *core.TokenPool); ok {
 		r0 = rf(ctx, pool, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
@@ -71,7 +71,7 @@ func (_m *Manager) CreateTokenPool(ctx context.Context, pool *core.TokenPool, wa
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenPool, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenPoolInput, bool) error); ok {
 		r1 = rf(ctx, pool, waitConfirm)
 	} else {
 		r1 = ret.Error(1)

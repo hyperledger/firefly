@@ -47,8 +47,8 @@ type Manager interface {
 
 	NewBroadcast(in *core.MessageInOut) syncasync.Sender
 	BroadcastMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
-	PublishDataValue(ctx context.Context, id string) (*core.Data, error)
-	PublishDataBlob(ctx context.Context, id string) (*core.Data, error)
+	PublishDataValue(ctx context.Context, id string, idempotencyKey core.IdempotencyKey) (*core.Data, error)
+	PublishDataBlob(ctx context.Context, id string, idempotencyKey core.IdempotencyKey) (*core.Data, error)
 	Start() error
 	WaitStop()
 
@@ -213,14 +213,14 @@ func (bm *broadcastManager) uploadDataBlob(ctx context.Context, tx *fftypes.UUID
 	return err
 }
 
-func (bm *broadcastManager) PublishDataValue(ctx context.Context, id string) (*core.Data, error) {
+func (bm *broadcastManager) PublishDataValue(ctx context.Context, id string, idempotencyKey core.IdempotencyKey) (*core.Data, error) {
 
 	d, err := bm.resolveData(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	txid, err := bm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeDataPublish)
+	txid, err := bm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeDataPublish, idempotencyKey)
 	if err != nil {
 		return nil, err
 	}
@@ -242,14 +242,14 @@ func (bm *broadcastManager) PublishDataValue(ctx context.Context, id string) (*c
 	return d, nil
 }
 
-func (bm *broadcastManager) PublishDataBlob(ctx context.Context, id string) (*core.Data, error) {
+func (bm *broadcastManager) PublishDataBlob(ctx context.Context, id string, idempotencyKey core.IdempotencyKey) (*core.Data, error) {
 
 	d, err := bm.resolveData(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	txid, err := bm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeDataPublish)
+	txid, err := bm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeDataPublish, idempotencyKey)
 	if err != nil {
 		return nil, err
 	}

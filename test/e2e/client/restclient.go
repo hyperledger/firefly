@@ -305,11 +305,11 @@ func (client *FireFlyClient) DeleteSubscription(t *testing.T, id *fftypes.UUID) 
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func (client *FireFlyClient) BroadcastMessage(t *testing.T, topic string, data *core.DataRefOrValue, confirm bool) (*resty.Response, error) {
-	return client.BroadcastMessageAsIdentity(t, "", topic, data, confirm)
+func (client *FireFlyClient) BroadcastMessage(t *testing.T, topic, idempotencyKey string, data *core.DataRefOrValue, confirm bool) (*resty.Response, error) {
+	return client.BroadcastMessageAsIdentity(t, "", topic, idempotencyKey, data, confirm)
 }
 
-func (client *FireFlyClient) BroadcastMessageAsIdentity(t *testing.T, did, topic string, data *core.DataRefOrValue, confirm bool) (*resty.Response, error) {
+func (client *FireFlyClient) BroadcastMessageAsIdentity(t *testing.T, did, topic, idempotencyKey string, data *core.DataRefOrValue, confirm bool) (*resty.Response, error) {
 	var msg core.Message
 	res, err := client.Client.R().
 		SetBody(core.MessageInOut{
@@ -320,6 +320,7 @@ func (client *FireFlyClient) BroadcastMessageAsIdentity(t *testing.T, did, topic
 						Author: did,
 					},
 				},
+				IdempotencyKey: core.IdempotencyKey(idempotencyKey),
 			},
 			InlineData: core.InlineData{data},
 		}).
@@ -466,11 +467,11 @@ func (client *FireFlyClient) PrivateBlobMessageDatatypeTagged(t *testing.T, topi
 	return data, res, err
 }
 
-func (client *FireFlyClient) PrivateMessage(topic string, data *core.DataRefOrValue, members []core.MemberInput, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
-	return client.PrivateMessageWithKey("", topic, data, members, tag, txType, confirm, startTime)
+func (client *FireFlyClient) PrivateMessage(topic, idempotencyKey string, data *core.DataRefOrValue, members []core.MemberInput, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
+	return client.PrivateMessageWithKey("", topic, idempotencyKey, data, members, tag, txType, confirm, startTime)
 }
 
-func (client *FireFlyClient) PrivateMessageWithKey(key, topic string, data *core.DataRefOrValue, members []core.MemberInput, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
+func (client *FireFlyClient) PrivateMessageWithKey(key, topic, idempotencyKey string, data *core.DataRefOrValue, members []core.MemberInput, tag string, txType core.TransactionType, confirm bool, startTime time.Time) (*resty.Response, error) {
 	msg := core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
@@ -481,6 +482,7 @@ func (client *FireFlyClient) PrivateMessageWithKey(key, topic string, data *core
 					Key: key,
 				},
 			},
+			IdempotencyKey: core.IdempotencyKey(idempotencyKey),
 		},
 		InlineData: core.InlineData{data},
 		Group: &core.InputGroup{
@@ -574,7 +576,7 @@ func (client *FireFlyClient) GetTokenPools(t *testing.T, startTime time.Time) (p
 	return pools
 }
 
-func (client *FireFlyClient) MintTokens(t *testing.T, mint *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
+func (client *FireFlyClient) MintTokens(t *testing.T, mint *core.TokenTransferInput, confirm bool, expectedStatus ...int) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
 	path := client.namespaced(urlTokenMint)
 	resp, err := client.Client.R().
@@ -583,15 +585,18 @@ func (client *FireFlyClient) MintTokens(t *testing.T, mint *core.TokenTransferIn
 		SetResult(&transferOut).
 		Post(path)
 	require.NoError(t, err)
-	expected := 202
-	if confirm {
-		expected = 200
+	if len(expectedStatus) == 0 {
+		if confirm {
+			expectedStatus = []int{200}
+		} else {
+			expectedStatus = []int{202}
+		}
 	}
-	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, expectedStatus[0], resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &transferOut
 }
 
-func (client *FireFlyClient) BurnTokens(t *testing.T, burn *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
+func (client *FireFlyClient) BurnTokens(t *testing.T, burn *core.TokenTransferInput, confirm bool, expectedStatus ...int) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
 	path := client.namespaced(urlTokenBurn)
 	resp, err := client.Client.R().
@@ -600,15 +605,18 @@ func (client *FireFlyClient) BurnTokens(t *testing.T, burn *core.TokenTransferIn
 		SetResult(&transferOut).
 		Post(path)
 	require.NoError(t, err)
-	expected := 202
-	if confirm {
-		expected = 200
+	if len(expectedStatus) == 0 {
+		if confirm {
+			expectedStatus = []int{200}
+		} else {
+			expectedStatus = []int{202}
+		}
 	}
-	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, expectedStatus[0], resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &transferOut
 }
 
-func (client *FireFlyClient) TransferTokens(t *testing.T, transfer *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
+func (client *FireFlyClient) TransferTokens(t *testing.T, transfer *core.TokenTransferInput, confirm bool, expectedStatus ...int) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
 	path := client.namespaced(urlTokenTransfers)
 	resp, err := client.Client.R().
@@ -617,11 +625,14 @@ func (client *FireFlyClient) TransferTokens(t *testing.T, transfer *core.TokenTr
 		SetResult(&transferOut).
 		Post(path)
 	require.NoError(t, err)
-	expected := 202
-	if confirm {
-		expected = 200
+	if len(expectedStatus) == 0 {
+		if confirm {
+			expectedStatus = []int{200}
+		} else {
+			expectedStatus = []int{202}
+		}
 	}
-	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, expectedStatus[0], resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &transferOut
 }
 
@@ -636,7 +647,7 @@ func (client *FireFlyClient) GetTokenTransfers(t *testing.T, poolID *fftypes.UUI
 	return transfers
 }
 
-func (client *FireFlyClient) TokenApproval(t *testing.T, approval *core.TokenApprovalInput, confirm bool) *core.TokenApproval {
+func (client *FireFlyClient) TokenApproval(t *testing.T, approval *core.TokenApprovalInput, confirm bool, expectedStatus ...int) *core.TokenApproval {
 	var approvalOut core.TokenApproval
 	path := client.namespaced(urlTokenApprovals)
 	resp, err := client.Client.R().
@@ -645,11 +656,14 @@ func (client *FireFlyClient) TokenApproval(t *testing.T, approval *core.TokenApp
 		SetResult(&approvalOut).
 		Post(path)
 	require.NoError(t, err)
-	expected := 202
-	if confirm {
-		expected = 200
+	if len(expectedStatus) == 0 {
+		if confirm {
+			expectedStatus = []int{200}
+		} else {
+			expectedStatus = []int{202}
+		}
 	}
-	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, expectedStatus[0], resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &approvalOut
 }
 
@@ -772,7 +786,7 @@ func (client *FireFlyClient) DeleteContractListener(t *testing.T, id *fftypes.UU
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func (client *FireFlyClient) InvokeContractMethod(t *testing.T, req *core.ContractCallRequest) (interface{}, error) {
+func (client *FireFlyClient) InvokeContractMethod(t *testing.T, req *core.ContractCallRequest, expectedStatus ...int) (interface{}, error) {
 	var res interface{}
 	path := client.namespaced(urlContractInvoke)
 	resp, err := client.Client.R().
@@ -780,7 +794,10 @@ func (client *FireFlyClient) InvokeContractMethod(t *testing.T, req *core.Contra
 		SetResult(&res).
 		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	if len(expectedStatus) == 0 {
+		expectedStatus = []int{202}
+	}
+	require.Equal(t, expectedStatus[0], resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
 

@@ -49,6 +49,7 @@ type TokenTransfer struct {
 
 type TokenTransferInput struct {
 	TokenTransfer
-	Message *MessageInOut `ffstruct:"TokenTransferInput" json:"message,omitempty"`
-	Pool    string        `ffstruct:"TokenTransferInput" json:"pool,omitempty"`
+	Message        *MessageInOut  `ffstruct:"TokenTransferInput" json:"message,omitempty"`
+	Pool           string         `ffstruct:"TokenTransferInput" json:"pool,omitempty"`
+	IdempotencyKey IdempotencyKey `ffstruct:"TokenTransferInput" json:"idempotencyKey,omitempty" ffexcludeoutput:"true"`
 }

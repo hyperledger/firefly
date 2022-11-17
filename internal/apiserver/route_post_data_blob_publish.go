@@ -34,7 +34,7 @@ var postDataBlobPublish = &ffapi.Route{
 	},
 	QueryParams:     nil,
 	Description:     coremsgs.APIEndpointsPostDataBlobPublish,
-	JSONInputValue:  func() interface{} { return &core.EmptyInput{} },
+	JSONInputValue:  func() interface{} { return &core.PublishInput{} },
 	JSONOutputValue: func() interface{} { return &core.Data{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
@@ -42,7 +42,7 @@ var postDataBlobPublish = &ffapi.Route{
 			return or.Broadcast() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.Broadcast().PublishDataBlob(cr.ctx, r.PP["dataid"])
+			return cr.or.Broadcast().PublishDataBlob(cr.ctx, r.PP["dataid"], r.Input.(*core.PublishInput).IdempotencyKey)
 		},
 	},
 }

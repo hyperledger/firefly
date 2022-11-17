@@ -50,12 +50,14 @@ var (
 		"confirmed",
 		"tx_type",
 		"batch_id",
+		"idempotency_key",
 	}
 	msgFilterFieldMap = map[string]string{
-		"type":   "mtype",
-		"txtype": "tx_type",
-		"batch":  "batch_id",
-		"group":  "group_hash",
+		"type":           "mtype",
+		"txtype":         "tx_type",
+		"batch":          "batch_id",
+		"group":          "group_hash",
+		"idempotencykey": "idempotency_key",
 	}
 )
 
@@ -80,6 +82,7 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, mes
 			Set("confirmed", message.Confirmed).
 			Set("tx_type", message.Header.TxType).
 			Set("batch_id", message.BatchID).
+			Set("idempotency_key", message.IdempotencyKey).
 			Where(sq.Eq{
 				"id":              message.Header.ID,
 				"hash":            message.Hash,
@@ -111,6 +114,7 @@ func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *core
 		message.Confirmed,
 		message.Header.TxType,
 		message.BatchID,
+		message.IdempotencyKey,
 	)
 }
 
@@ -420,6 +424,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message
 		&msg.Confirmed,
 		&msg.Header.TxType,
 		&msg.BatchID,
+		&msg.IdempotencyKey,
 		// Must be added to the list of columns in all selects
 		&msg.Sequence,
 	)

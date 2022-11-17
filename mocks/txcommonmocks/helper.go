@@ -120,13 +120,13 @@ func (_m *Helper) PersistTransaction(ctx context.Context, id *fftypes.UUID, txTy
 	return r0, r1
 }
 
-// SubmitNewTransaction provides a mock function with given fields: ctx, txType
-func (_m *Helper) SubmitNewTransaction(ctx context.Context, txType fftypes.FFEnum) (*fftypes.UUID, error) {
-	ret := _m.Called(ctx, txType)
+// SubmitNewTransaction provides a mock function with given fields: ctx, txType, idempotencyKey
+func (_m *Helper) SubmitNewTransaction(ctx context.Context, txType fftypes.FFEnum, idempotencyKey core.IdempotencyKey) (*fftypes.UUID, error) {
+	ret := _m.Called(ctx, txType, idempotencyKey)
 
 	var r0 *fftypes.UUID
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum) *fftypes.UUID); ok {
-		r0 = rf(ctx, txType)
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, core.IdempotencyKey) *fftypes.UUID); ok {
+		r0 = rf(ctx, txType, idempotencyKey)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.UUID)
@@ -134,8 +134,8 @@ func (_m *Helper) SubmitNewTransaction(ctx context.Context, txType fftypes.FFEnu
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum) error); ok {
-		r1 = rf(ctx, txType)
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, core.IdempotencyKey) error); ok {
+		r1 = rf(ctx, txType, idempotencyKey)
 	} else {
 		r1 = ret.Error(1)
 	}

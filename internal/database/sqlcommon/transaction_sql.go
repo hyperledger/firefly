@@ -35,11 +35,13 @@ var (
 		"ttype",
 		"namespace",
 		"created",
+		"idempotency_key",
 		"blockchain_ids",
 	}
 	transactionFilterFieldMap = map[string]string{
-		"type":          "ttype",
-		"blockchainids": "blockchain_ids",
+		"type":           "ttype",
+		"idempotencykey": "idempotency_key",
+		"blockchainids":  "blockchain_ids",
 	}
 )
 
@@ -53,7 +55,8 @@ func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *core.Tra
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	transaction.Created = fftypes.Now()
-	if _, err = s.insertTx(ctx, transactionsTable, tx,
+	var seq int64
+	if seq, err = s.insertTxExt(ctx, transactionsTable, tx,
 		sq.Insert(transactionsTable).
 			Columns(transactionColumns...).
 			Values(
@@ -61,12 +64,25 @@ func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *core.Tra
 				string(transaction.Type),
 				transaction.Namespace,
 				transaction.Created,
+				transaction.IdempotencyKey,
 				transaction.BlockchainIDs,
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, core.ChangeEventTypeCreated, transaction.Namespace, transaction.ID)
 		},
-	); err != nil {
+		transaction.IdempotencyKey != "", // on conflict we want to check for idempotency key mismatch to return a useful error
+	); err != nil || seq < 0 {
+		// Check for a duplicate idempotency key
+		if transaction.IdempotencyKey != "" {
+			fb := database.TransactionQueryFactory.NewFilter(ctx)
+			existing, _, _ := s.GetTransactions(ctx, transaction.Namespace, fb.Eq("idempotencykey", (string)(transaction.IdempotencyKey)))
+			if len(existing) > 0 {
+				return i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateTransaction, transaction.IdempotencyKey, existing[0].ID)
+			} else if err == nil {
+				// If we don't have an error, and we didn't find an existing idempotency key match, then we don't know the reason for the conflict
+				return i18n.NewError(ctx, coremsgs.MsgNonIdempotencyKeyConflictTxInsert, transaction.ID, transaction.IdempotencyKey)
+			}
+		}
 		return err
 	}
 
@@ -80,6 +96,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*core
 		&transaction.Type,
 		&transaction.Namespace,
 		&transaction.Created,
+		&transaction.IdempotencyKey,
 		&transaction.BlockchainIDs,
 	)
 	if err != nil {
