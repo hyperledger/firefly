@@ -137,10 +137,10 @@
                   </li><li class="nav-list-item ">
                     <a href="/firefly/tutorials/chains/near.html" class="nav-list-link">NEAR Testnet</a>
                   </li><li class="nav-list-item ">
-                    <a href="/firefly/tutorials/chains/fabric_remote.html" class="nav-list-link">Remote Fabric Network</a>
+                    <a href="/firefly/tutorials/chains/fabric_test_network.html" class="nav-list-link">Fabric-Samples Test Network</a>
                   </li><li class="nav-list-item ">
                     <a href="/firefly/tutorials/chains/moonbeam.html" class="nav-list-link">Moonbeam Testnet</a>
-                  </li></ul></li></ul></li><li class="nav-list-item active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item  active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
+                  </li></ul></li><li class="nav-list-item "><a href="/firefly/tutorials/basic_auth.html" class="nav-list-link">Enable Basic Auth</a></li></ul></li><li class="nav-list-item active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item  active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
                     <a href="/firefly/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
                   </li><li class="nav-list-item ">
                     <a href="/firefly/reference/types/event.html" class="nav-list-link">Event</a>
@@ -244,7 +244,7 @@
             <li class="aux-nav-list-item">
               <span class="dropdown">
                 <a class="site-button">
-                  Version: v1.1.1
+                  Version: v1.1.2
                 </a>
                 <div class="dropdown-content" id="versionDropdown">
                 </div>
@@ -590,6 +590,11 @@ both of those topics.</p>
       <td>For private messages, a unique pin hash:nonce is assigned for each topic</td>
       <td><code class="language-plaintext highlighter-rouge">string[]</code></td>
     </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">idempotencyKey</code></td>
+      <td>An optional unique identifier for a message. Cannot be duplicated within a namespace, thus allowing idempotent submission of messages to the API. Local only - not transferred when the message is sent to other members of the network</td>
+      <td><code class="language-plaintext highlighter-rouge">IdempotencyKey</code></td>
+    </tr>
   </tbody>
 </table>
       <h2 id="messageheader">
@@ -628,7 +633,7 @@ both of those topics.</p>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">txtype</code></td>
       <td>The type of transaction used to order/deliver this message</td>
-      <td><code class="language-plaintext highlighter-rouge">FFEnum</code>:<br /><code class="language-plaintext highlighter-rouge">"none"</code><br /><code class="language-plaintext highlighter-rouge">"unpinned"</code><br /><code class="language-plaintext highlighter-rouge">"batch_pin"</code><br /><code class="language-plaintext highlighter-rouge">"network_action"</code><br /><code class="language-plaintext highlighter-rouge">"token_pool"</code><br /><code class="language-plaintext highlighter-rouge">"token_transfer"</code><br /><code class="language-plaintext highlighter-rouge">"contract_invoke"</code><br /><code class="language-plaintext highlighter-rouge">"token_approval"</code><br /><code class="language-plaintext highlighter-rouge">"data_publish"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">FFEnum</code>:<br /><code class="language-plaintext highlighter-rouge">"none"</code><br /><code class="language-plaintext highlighter-rouge">"unpinned"</code><br /><code class="language-plaintext highlighter-rouge">"batch_pin"</code><br /><code class="language-plaintext highlighter-rouge">"network_action"</code><br /><code class="language-plaintext highlighter-rouge">"token_pool"</code><br /><code class="language-plaintext highlighter-rouge">"token_transfer"</code><br /><code class="language-plaintext highlighter-rouge">"contract_deploy"</code><br /><code class="language-plaintext highlighter-rouge">"contract_invoke"</code><br /><code class="language-plaintext highlighter-rouge">"token_approval"</code><br /><code class="language-plaintext highlighter-rouge">"data_publish"</code></td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">author</code></td>
