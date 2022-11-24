@@ -913,3 +913,43 @@ func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (l
 	})
 	return location, fromBlock, err
 }
+
+func mergeObjects(reply interface{}, output fftypes.JSONObject) fftypes.JSONObject {
+
+	var combinedObject map[string]interface{}
+
+	b, _ := json.Marshal(output)
+	c, _ := json.Marshal(reply)
+	_ = json.Unmarshal(b, &combinedObject)
+	_ = json.Unmarshal(c, &combinedObject)
+	detailedStatus := fftypes.JSONObject(combinedObject)
+
+	return detailedStatus
+}
+
+func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
+	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
+	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
+	client := e.fftmClient
+	if client == nil {
+		client = e.client
+	}
+	var resErr ethError
+	var statusResponse interface{}
+	res, err := client.R().
+		SetContext(ctx).
+		SetError(&resErr).
+		SetResult(&statusResponse).
+		Get(transactionRequestPath)
+	if err != nil || !res.IsSuccess() {
+		return nil, wrapError(ctx, &resErr, res, err)
+	}
+
+	if operation.Status == core.OpStatusPending {
+		// handleReceipt expects a single object with the fields from both operation.Output
+		// and the blockchain connector's transaction detail, so we merge the two
+		// before passing to handleReceipt()
+		e.handleReceipt(ctx, mergeObjects(statusResponse, operation.Output))
+	}
+	return statusResponse, nil
+}

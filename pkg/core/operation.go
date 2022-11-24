@@ -61,6 +61,14 @@ var (
 	OpTypeTokenApproval = fftypes.FFEnumValue("optype", "token_approval")
 )
 
+func (op *Operation) IsBlockchainOperation() bool {
+	return op.Type == OpTypeBlockchainInvoke || op.Type == OpTypeBlockchainNetworkAction || op.Type == OpTypeBlockchainPinBatch
+}
+
+func (op *Operation) IsTokenOperation() bool {
+	return op.Type == OpTypeTokenActivatePool || op.Type == OpTypeTokenApproval || op.Type == OpTypeTokenCreatePool || op.Type == OpTypeTokenTransfer
+}
+
 // OpStatus is the current status of an operation
 type OpStatus string
 
@@ -165,4 +173,13 @@ type OperationUpdate struct {
 	DXManifest     string
 	DXHash         string
 	OnComplete     func()
+}
+
+type OperationDetailedStatusError struct {
+	StatusError string `ffstruct:"OperationDetailedStatusError" json:"error,omitempty"`
+}
+
+type OperationWithDetailedStatus struct {
+	Operation
+	DetailedStatus interface{} `ffstruct:"OperationWithDetailedStatus" json:"detailedstatus,omitempty" ffexcludeinput:"true"`
 }

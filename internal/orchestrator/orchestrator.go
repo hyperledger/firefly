@@ -104,6 +104,7 @@ type Orchestrator interface {
 	GetDatatypeByName(ctx context.Context, name, version string) (*core.Datatype, error)
 	GetDatatypes(ctx context.Context, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error)
 	GetOperationByID(ctx context.Context, id string) (*core.Operation, error)
+	GetOperationByIDWithStatus(ctx context.Context, id string) (*core.OperationWithDetailedStatus, error)
 	GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
 	GetEventByID(ctx context.Context, id string) (*core.Event, error)
 	GetEventByIDWithReference(ctx context.Context, id string) (*core.EnrichedEvent, error)

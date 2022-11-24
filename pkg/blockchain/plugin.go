@@ -101,6 +101,11 @@ type Plugin interface {
 
 	// RemoveFireFlySubscription removes the provided FireFly subscription
 	RemoveFireflySubscription(ctx context.Context, subID string)
+
+	// Get the latest status of the given transaction
+	// GetTransactionStatus(ctx context.Context, txnID string, currentStatus core.OpStatus) (interface{}, error)
+
+	GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error)
 }
 
 const FireFlyActionPrefix = "firefly:"
