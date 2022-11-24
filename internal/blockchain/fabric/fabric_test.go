@@ -2705,3 +2705,14 @@ func TestGetContractListenerStatus(t *testing.T) {
 	assert.Nil(t, status)
 	assert.NoError(t, err)
 }
+
+func TestGetTransactionStatus(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	status, err := e.GetTransactionStatus(context.Background(), nil)
+	assert.Nil(t, status)
+	assert.NoError(t, err)
+}

@@ -863,6 +863,29 @@ func (_m *Orchestrator) GetOperationByID(ctx context.Context, id string) (*core.
 	return r0, r1
 }
 
+// GetOperationByIDWithStatus provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetOperationByIDWithStatus(ctx context.Context, id string) (*core.OperationWithDetailedStatus, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *core.OperationWithDetailedStatus
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.OperationWithDetailedStatus); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.OperationWithDetailedStatus)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetOperations provides a mock function with given fields: ctx, filter
 func (_m *Orchestrator) GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)

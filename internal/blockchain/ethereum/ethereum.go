@@ -947,3 +947,66 @@ func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (l
 	})
 	return location, fromBlock, err
 }
+
+func mergeObjects(detail interface{}, output fftypes.JSONObject) (fftypes.JSONObject, error) {
+
+	var mergedObj map[string]interface{}
+
+	outputJSON, err := json.Marshal(output)
+
+	if err != nil {
+		return output, err
+	}
+
+	detailJSON, err := json.Marshal(detail)
+
+	if err != nil {
+		return output, err
+	}
+
+	err = json.Unmarshal(outputJSON, &mergedObj)
+
+	if err != nil {
+		return output, err
+	}
+
+	err = json.Unmarshal(detailJSON, &mergedObj)
+
+	if err != nil {
+		return output, err
+	}
+
+	return fftypes.JSONObject(mergedObj), nil
+}
+
+func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
+	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
+	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
+	client := e.client
+	if client == nil {
+		client = e.client
+	}
+	var resErr ethError
+	var statusResponse interface{}
+	res, err := client.R().
+		SetContext(ctx).
+		SetError(&resErr).
+		SetResult(&statusResponse).
+		Get(transactionRequestPath)
+	if err != nil || !res.IsSuccess() {
+		return nil, wrapError(ctx, &resErr, res, err)
+	}
+
+	if operation.Status == core.OpStatusPending {
+		// handleReceipt() expects a single object with the fields from both operation.Output
+		// and the blockchain connector's transaction detail, so we merge the two
+		// before passing to handleReceipt()
+		mergedObj, err := mergeObjects(statusResponse, operation.Output)
+		if err != nil {
+			// Log a warning and return the output on its own
+			log.L(ctx).Warnf("Failed to add detail to transaction status: %v", err)
+		}
+		e.handleReceipt(ctx, mergedObj)
+	}
+	return statusResponse, nil
+}

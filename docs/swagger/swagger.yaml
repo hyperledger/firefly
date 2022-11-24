@@ -21656,6 +21656,13 @@ paths:
         schema:
           example: default
           type: string
+      - description: When set, the API will return additional status information if
+          available
+        in: query
+        name: fetchstatus
+        schema:
+          example: "true"
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -29035,6 +29042,13 @@ paths:
         name: opid
         required: true
         schema:
+          type: string
+      - description: When set, the API will return additional status information if
+          available
+        in: query
+        name: fetchstatus
+        schema:
+          example: "true"
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)

@@ -127,6 +127,37 @@ func (or *orchestrator) GetOperationByID(ctx context.Context, id string) (*core.
 	return or.operations.GetOperationByIDCached(ctx, u)
 }
 
+func (or *orchestrator) GetOperationByIDWithStatus(ctx context.Context, id string) (*core.OperationWithDetailedStatus, error) {
+	var enrichedOperation *core.OperationWithDetailedStatus
+	u, err := fftypes.ParseUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	op, err := or.operations.GetOperationByIDCached(ctx, u)
+
+	if op == nil || err != nil {
+		return nil, err
+	}
+
+	if op.IsBlockchainOperation() || op.IsTokenOperation() {
+		status, err := or.blockchain().GetTransactionStatus(ctx, op)
+		if err != nil {
+			status = core.OperationDetailedStatusError{
+				StatusError: err.Error(),
+			}
+		}
+		enrichedOperation = &core.OperationWithDetailedStatus{
+			Operation:      *op,
+			DetailedStatus: status,
+		}
+	} else {
+		enrichedOperation = &core.OperationWithDetailedStatus{
+			Operation: *op,
+		}
+	}
+	return enrichedOperation, err
+}
+
 func (or *orchestrator) GetEventByID(ctx context.Context, id string) (*core.Event, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {

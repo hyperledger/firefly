@@ -921,3 +921,8 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 	})
 	return location, fromBlock, err
 }
+
+func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
+	// Fabconnect does not currently provide any additional status info for transactions
+	return nil, nil
+}

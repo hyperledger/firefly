@@ -38,3 +38,17 @@ func TestGetOperationByID(t *testing.T) {
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 }
+
+func TestGetOperationByIDFetchStatus(t *testing.T) {
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/operations/abcd12345?fetchstatus=true", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	o.On("GetOperationByIDWithStatus", mock.Anything, "abcd12345").
+		Return(&core.OperationWithDetailedStatus{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
+}
