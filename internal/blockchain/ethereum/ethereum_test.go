@@ -2256,6 +2256,30 @@ func TestDeployContractOK(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestDeployContractFFEC100130(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	input := []interface{}{
+		float64(1),
+		"1000000000000000000000000",
+	}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+	definitionBytes, err := json.Marshal([]interface{}{})
+	contractBytes, err := json.Marshal("0x123456")
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(500, `{"error":"FFEC100130: failure"}`)(req)
+		})
+	err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	assert.Regexp(t, "FF10429", err)
+}
+
 func TestDeployContractInvalidOption(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
