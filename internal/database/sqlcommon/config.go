@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 )
 
 const (
@@ -43,7 +44,7 @@ const (
 	defaultMigrationsDirectoryTemplate = "./db/migrations/%s"
 )
 
-func (s *SQLCommon) InitConfig(provider Provider, config config.Section) {
+func (s *SQLCommon) InitConfig(provider dbsql.Provider, config config.Section) {
 	config.AddKnownKey(SQLConfMigrationsAuto, false)
 	config.AddKnownKey(SQLConfDatasourceURL)
 	config.AddKnownKey(SQLConfMigrationsDirectory, fmt.Sprintf(defaultMigrationsDirectoryTemplate, provider.MigrationsDir()))

@@ -40,16 +40,16 @@ var (
 const namespacesTable = "namespaces"
 
 func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespace, allowExisting bool) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to determine if the UUID already exists
-		namespaceRows, _, err := s.queryTx(ctx, namespacesTable, tx,
+		namespaceRows, _, err := s.QueryTx(ctx, namespacesTable, tx,
 			sq.Select("seq").
 				From(namespacesTable).
 				Where(sq.Eq{"name": namespace.Name}),
@@ -63,7 +63,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 
 	if existing {
 		// Update the namespace
-		if _, err = s.updateTx(ctx, namespacesTable, tx,
+		if _, err = s.UpdateTx(ctx, namespacesTable, tx,
 			sq.Update(namespacesTable).
 				Set("remote_name", namespace.NetworkName).
 				Set("description", namespace.Description).
@@ -75,7 +75,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, namespacesTable, tx,
+		if _, err = s.InsertTx(ctx, namespacesTable, tx,
 			sq.Insert(namespacesTable).
 				Columns(namespaceColumns...).
 				Values(
@@ -91,7 +91,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) namespaceResult(ctx context.Context, row *sql.Rows) (*core.Namespace, error) {
@@ -110,7 +110,7 @@ func (s *SQLCommon) namespaceResult(ctx context.Context, row *sql.Rows) (*core.N
 }
 
 func (s *SQLCommon) getNamespaceEq(ctx context.Context, eq sq.Eq, textName string) (message *core.Namespace, err error) {
-	rows, _, err := s.query(ctx, namespacesTable,
+	rows, _, err := s.Query(ctx, namespacesTable,
 		sq.Select(namespaceColumns...).
 			From(namespacesTable).
 			Where(eq),

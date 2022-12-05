@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -69,13 +70,13 @@ var (
 const tokentransferTable = "tokentransfer"
 
 func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, tokentransferTable, tx,
+	rows, _, err := s.QueryTx(ctx, tokentransferTable, tx,
 		sq.Select("seq").
 			From(tokentransferTable).
 			Where(sq.Eq{
@@ -90,7 +91,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *core.Toke
 	rows.Close()
 
 	if existing {
-		if _, err = s.updateTx(ctx, tokentransferTable, tx,
+		if _, err = s.UpdateTx(ctx, tokentransferTable, tx,
 			sq.Update(tokentransferTable).
 				Set("type", transfer.Type).
 				Set("local_id", transfer.LocalID).
@@ -116,7 +117,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *core.Toke
 		}
 	} else {
 		transfer.Created = fftypes.Now()
-		if _, err = s.insertTx(ctx, tokentransferTable, tx,
+		if _, err = s.InsertTx(ctx, tokentransferTable, tx,
 			sq.Insert(tokentransferTable).
 				Columns(tokenTransferColumns...).
 				Values(
@@ -147,7 +148,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *core.Toke
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*core.TokenTransfer, error) {
@@ -179,7 +180,7 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*co
 }
 
 func (s *SQLCommon) getTokenTransferPred(ctx context.Context, desc string, pred interface{}) (*core.TokenTransfer, error) {
-	rows, _, err := s.query(ctx, tokentransferTable,
+	rows, _, err := s.Query(ctx, tokentransferTable,
 		sq.Select(tokenTransferColumns...).
 			From(tokentransferTable).
 			Where(pred),
@@ -214,14 +215,14 @@ func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, namespace,
 	})
 }
 
-func (s *SQLCommon) GetTokenTransfers(ctx context.Context, namespace string, filter database.Filter) (message []*core.TokenTransfer, fr *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenTransferColumns...).From(tokentransferTable),
+func (s *SQLCommon) GetTokenTransfers(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.TokenTransfer, fr *ffapi.FilterResult, err error) {
+	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(tokenTransferColumns...).From(tokentransferTable),
 		filter, tokenTransferFilterFieldMap, []interface{}{"seq"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, tokentransferTable, query)
+	rows, tx, err := s.Query(ctx, tokentransferTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -236,5 +237,5 @@ func (s *SQLCommon) GetTokenTransfers(ctx context.Context, namespace string, fil
 		transfers = append(transfers, d)
 	}
 
-	return transfers, s.queryRes(ctx, tokentransferTable, tx, fop, fi), err
+	return transfers, s.QueryRes(ctx, tokentransferTable, tx, fop, fi), err
 }

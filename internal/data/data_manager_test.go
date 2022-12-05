@@ -1083,14 +1083,14 @@ func TestUpdateMessageCacheCRORequirePins(t *testing.T) {
 	msgNoPins := &core.Message{
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Data: data.Refs(),
 	}
 	msgWithPins := &core.Message{
 		Header: msgNoPins.Header,
 		Data:   data.Refs(),
-		Pins:   core.FFStringArray{"pin1"},
+		Pins:   fftypes.FFStringArray{"pin1"},
 	}
 
 	msg, _ := dm.PeekMessageCache(ctx, msgWithPins.Header.ID)
@@ -1127,7 +1127,7 @@ func TestUpdateMessageCacheCRORequireBatchID(t *testing.T) {
 	msgNoPins := &core.Message{
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Data: data.Refs(),
 	}

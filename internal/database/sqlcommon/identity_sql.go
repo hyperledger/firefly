@@ -21,6 +21,8 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -56,9 +58,9 @@ var (
 
 const identitiesTable = "identities"
 
-func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, identity *core.Identity) (int64, error) {
+func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *dbsql.TXWrapper, identity *core.Identity) (int64, error) {
 	identity.Updated = fftypes.Now()
-	return s.updateTx(ctx, identitiesTable, tx,
+	return s.UpdateTx(ctx, identitiesTable, tx,
 		sq.Update(identitiesTable).
 			Set("did", identity.DID).
 			Set("parent", identity.Parent).
@@ -79,10 +81,10 @@ func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, id
 		})
 }
 
-func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, identity *core.Identity, requestConflictEmptyResult bool) (err error) {
+func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *dbsql.TXWrapper, identity *core.Identity, requestConflictEmptyResult bool) (err error) {
 	identity.Created = fftypes.Now()
 	identity.Updated = identity.Created
-	_, err = s.insertTxExt(ctx, identitiesTable, tx,
+	_, err = s.InsertTxExt(ctx, identitiesTable, tx,
 		sq.Insert(identitiesTable).
 			Columns(identityColumns...).
 			Values(
@@ -107,11 +109,11 @@ func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, id
 }
 
 func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *core.Identity, optimization database.UpsertOptimization) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	optimized := false
 	if optimization == database.UpsertOptimizationNew {
@@ -124,7 +126,7 @@ func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *core.Identity,
 
 	if !optimized {
 		// Do a select within the transaction to detemine if the UUID already exists
-		msgRows, _, err := s.queryTx(ctx, identitiesTable, tx,
+		msgRows, _, err := s.QueryTx(ctx, identitiesTable, tx,
 			sq.Select("id").
 				From(identitiesTable).
 				Where(sq.Eq{"id": identity.ID, "namespace": identity.Namespace}),
@@ -147,7 +149,7 @@ func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *core.Identity,
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) identityResult(ctx context.Context, row *sql.Rows) (*core.Identity, error) {
@@ -175,7 +177,7 @@ func (s *SQLCommon) identityResult(ctx context.Context, row *sql.Rows) (*core.Id
 
 func (s *SQLCommon) getIdentityPred(ctx context.Context, desc string, pred interface{}) (identity *core.Identity, err error) {
 
-	rows, _, err := s.query(ctx, identitiesTable,
+	rows, _, err := s.Query(ctx, identitiesTable,
 		sq.Select(identityColumns...).
 			From(identitiesTable).
 			Where(pred),
@@ -205,14 +207,14 @@ func (s *SQLCommon) GetIdentityByID(ctx context.Context, namespace string, id *f
 	return s.getIdentityPred(ctx, id.String(), sq.Eq{"id": id, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetIdentities(ctx context.Context, namespace string, filter database.Filter) (identities []*core.Identity, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetIdentities(ctx context.Context, namespace string, filter ffapi.Filter) (identities []*core.Identity, fr *ffapi.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(identityColumns...).From(identitiesTable), filter, identityFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
+	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(identityColumns...).From(identitiesTable), filter, identityFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, identitiesTable, query)
+	rows, tx, err := s.Query(ctx, identitiesTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -227,6 +229,6 @@ func (s *SQLCommon) GetIdentities(ctx context.Context, namespace string, filter 
 		identities = append(identities, d)
 	}
 
-	return identities, s.queryRes(ctx, identitiesTable, tx, fop, fi), err
+	return identities, s.QueryRes(ctx, identitiesTable, tx, fop, fi), err
 
 }

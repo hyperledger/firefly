@@ -106,7 +106,7 @@ func TestFFIMethodDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertFFIMethod(context.Background(), &fftypes.FFIMethod{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -128,7 +128,7 @@ func TestFFIMethodDBFailInsert(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFIMethod(context.Background(), event)
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

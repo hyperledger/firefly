@@ -21,11 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 var (
@@ -41,13 +41,13 @@ var (
 const nextpinsTable = "nextpins"
 
 func (s *SQLCommon) InsertNextPin(ctx context.Context, nextpin *core.NextPin) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	sequence, err := s.insertTx(ctx, nextpinsTable, tx,
+	sequence, err := s.InsertTx(ctx, nextpinsTable, tx,
 		sq.Insert(nextpinsTable).
 			Columns(nextpinColumns...).
 			Values(
@@ -64,7 +64,7 @@ func (s *SQLCommon) InsertNextPin(ctx context.Context, nextpin *core.NextPin) (e
 	}
 	nextpin.Sequence = sequence
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) nextpinResult(ctx context.Context, row *sql.Rows) (*core.NextPin, error) {
@@ -86,9 +86,9 @@ func (s *SQLCommon) nextpinResult(ctx context.Context, row *sql.Rows) (*core.Nex
 func (s *SQLCommon) GetNextPinsForContext(ctx context.Context, namespace string, context *fftypes.Bytes32) (message []*core.NextPin, err error) {
 
 	cols := append([]string{}, nextpinColumns...)
-	cols = append(cols, sequenceColumn)
+	cols = append(cols, s.SequenceColumn())
 
-	rows, _, err := s.query(ctx, nextpinsTable, sq.Select(cols...).From(nextpinsTable).
+	rows, _, err := s.Query(ctx, nextpinsTable, sq.Select(cols...).From(nextpinsTable).
 		Where(sq.And{
 			sq.Eq{"context": context},
 			sq.Or{sq.Eq{"namespace": namespace}, sq.Eq{"namespace": nil}}, // old entries will have NULL for namespace
@@ -111,25 +111,25 @@ func (s *SQLCommon) GetNextPinsForContext(ctx context.Context, namespace string,
 
 }
 
-func (s *SQLCommon) UpdateNextPin(ctx context.Context, namespace string, sequence int64, update database.Update) (err error) {
+func (s *SQLCommon) UpdateNextPin(ctx context.Context, namespace string, sequence int64, update ffapi.Update) (err error) {
 
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update(nextpinsTable), update, pinFilterFieldMap)
+	query, err := s.BuildUpdate(sq.Update(nextpinsTable), update, pinFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Set("namespace", namespace) // always populate namespace (to migrate the table over time)
-	query = query.Where(sq.Eq{sequenceColumn: sequence})
+	query = query.Where(sq.Eq{s.SequenceColumn(): sequence})
 
-	_, err = s.updateTx(ctx, nextpinsTable, tx, query, nil /* no change events for next pins */)
+	_, err = s.UpdateTx(ctx, nextpinsTable, tx, query, nil /* no change events for next pins */)
 	if err != nil {
 		return err
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }

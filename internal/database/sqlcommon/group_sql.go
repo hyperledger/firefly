@@ -21,6 +21,8 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -46,11 +48,11 @@ var (
 const groupsTable = "groups"
 
 func (s *SQLCommon) UpsertGroup(ctx context.Context, group *core.Group, optimization database.UpsertOptimization) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	// We use an upsert optimization here for performance, but also to account for the situation where two threads
 	// try to perform an insert concurrently and ensure a non-failure outcome.
@@ -66,7 +68,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *core.Group, optimiza
 	existing := false
 	if !optimized {
 		// Do a select within the transaction to determine if the UUID already exists
-		groupRows, _, err := s.queryTx(ctx, groupsTable, tx,
+		groupRows, _, err := s.QueryTx(ctx, groupsTable, tx,
 			sq.Select("hash").
 				From(groupsTable).
 				Where(sq.Eq{"hash": group.Hash, "namespace_local": group.LocalNamespace}),
@@ -97,12 +99,12 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *core.Group, optimiza
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) attemptGroupUpdate(ctx context.Context, tx *txWrapper, group *core.Group) (int64, error) {
+func (s *SQLCommon) attemptGroupUpdate(ctx context.Context, tx *dbsql.TXWrapper, group *core.Group) (int64, error) {
 	// Update the group
-	return s.updateTx(ctx, groupsTable, tx,
+	return s.UpdateTx(ctx, groupsTable, tx,
 		sq.Update(groupsTable).
 			Set("message_id", group.Message).
 			Set("name", group.Name).
@@ -115,8 +117,8 @@ func (s *SQLCommon) attemptGroupUpdate(ctx context.Context, tx *txWrapper, group
 	)
 }
 
-func (s *SQLCommon) attemptGroupInsert(ctx context.Context, tx *txWrapper, group *core.Group, requestConflictEmptyResult bool) error {
-	_, err := s.insertTxExt(ctx, groupsTable, tx,
+func (s *SQLCommon) attemptGroupInsert(ctx context.Context, tx *dbsql.TXWrapper, group *core.Group, requestConflictEmptyResult bool) error {
+	_, err := s.InsertTxExt(ctx, groupsTable, tx,
 		sq.Insert(groupsTable).
 			Columns(groupColumns...).
 			Values(
@@ -135,10 +137,10 @@ func (s *SQLCommon) attemptGroupInsert(ctx context.Context, tx *txWrapper, group
 	return err
 }
 
-func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *core.Group, existing bool) error {
+func (s *SQLCommon) updateMembers(ctx context.Context, tx *dbsql.TXWrapper, group *core.Group, existing bool) error {
 
 	if existing {
-		if err := s.deleteTx(ctx, groupsTable, tx,
+		if err := s.DeleteTx(ctx, groupsTable, tx,
 			sq.Delete("members").
 				Where(sq.And{
 					sq.Eq{"group_hash": group.Hash},
@@ -157,7 +159,7 @@ func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *cor
 		if requiredMember.Node == nil {
 			return i18n.NewError(ctx, i18n.MsgEmptyMemberNode, requiredIdx)
 		}
-		if _, err := s.insertTx(ctx, groupsTable, tx,
+		if _, err := s.InsertTx(ctx, groupsTable, tx,
 			sq.Insert("members").
 				Columns(
 					"group_hash",
@@ -190,7 +192,7 @@ func (s *SQLCommon) loadMembers(ctx context.Context, groups []*core.Group) error
 		}
 	}
 
-	members, _, err := s.query(ctx, groupsTable,
+	members, _, err := s.Query(ctx, groupsTable,
 		sq.Select(
 			"group_hash",
 			"identity",
@@ -247,7 +249,7 @@ func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*core.Group
 
 func (s *SQLCommon) GetGroupByHash(ctx context.Context, namespace string, hash *fftypes.Bytes32) (group *core.Group, err error) {
 
-	rows, _, err := s.query(ctx, groupsTable,
+	rows, _, err := s.Query(ctx, groupsTable,
 		sq.Select(groupColumns...).
 			From(groupsTable).
 			Where(sq.Eq{"hash": hash, "namespace_local": namespace}),
@@ -275,14 +277,14 @@ func (s *SQLCommon) GetGroupByHash(ctx context.Context, namespace string, hash *
 	return group, nil
 }
 
-func (s *SQLCommon) GetGroups(ctx context.Context, namespace string, filter database.Filter) (group []*core.Group, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(groupColumns...).From(groupsTable),
+func (s *SQLCommon) GetGroups(ctx context.Context, namespace string, filter ffapi.Filter) (group []*core.Group, res *ffapi.FilterResult, err error) {
+	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(groupColumns...).From(groupsTable),
 		filter, groupFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace_local": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, groupsTable, query)
+	rows, tx, err := s.Query(ctx, groupsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -304,5 +306,5 @@ func (s *SQLCommon) GetGroups(ctx context.Context, namespace string, filter data
 		}
 	}
 
-	return groups, s.queryRes(ctx, groupsTable, tx, fop, fi), err
+	return groups, s.QueryRes(ctx, groupsTable, tx, fop, fi), err
 }

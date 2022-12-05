@@ -171,7 +171,7 @@ func TestUpsertDataFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertData(context.Background(), &core.Data{}, database.UpsertOptimizationSkip)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -182,7 +182,7 @@ func TestUpsertDataFailSelect(t *testing.T) {
 	mock.ExpectRollback()
 	dataID := fftypes.NewUUID()
 	err := s.UpsertData(context.Background(), &core.Data{ID: dataID}, database.UpsertOptimizationSkip)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -194,7 +194,7 @@ func TestUpsertDataFailInsert(t *testing.T) {
 	mock.ExpectRollback()
 	dataID := fftypes.NewUUID()
 	err := s.UpsertData(context.Background(), &core.Data{ID: dataID}, database.UpsertOptimizationSkip)
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -207,7 +207,7 @@ func TestUpsertDataFailUpdate(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertData(context.Background(), &core.Data{ID: dataID, Hash: dataHash}, database.UpsertOptimizationSkip)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -219,7 +219,7 @@ func TestUpsertDataFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertData(context.Background(), &core.Data{ID: dataID}, database.UpsertOptimizationSkip)
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -227,7 +227,7 @@ func TestInsertDataArrayBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertDataArray(context.Background(), core.DataArray{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
 }
@@ -243,7 +243,7 @@ func TestInsertDataArrayMultiRowOK(t *testing.T) {
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, core.ChangeEventTypeCreated, "ns1", data2.ID)
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{s.SequenceColumn()}).
 		AddRow(int64(1001)).
 		AddRow(int64(1002)),
 	)
@@ -262,7 +262,7 @@ func TestInsertDataArrayMultiRowFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertDataArray(context.Background(), core.DataArray{data1})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
 }
@@ -273,7 +273,7 @@ func TestInsertDataArraySingleRowFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertDataArray(context.Background(), core.DataArray{data1})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
 }
@@ -283,7 +283,7 @@ func TestGetDataByIDSelectFail(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetDataByID(context.Background(), "ns1", dataID, false)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -311,7 +311,7 @@ func TestGetDataQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, _, err := s.GetData(context.Background(), "ns1", f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -336,7 +336,7 @@ func TestGetDataRefsQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, _, err := s.GetDataRefs(context.Background(), "ns1", f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -361,7 +361,7 @@ func TestDataUpdateBeginFail(t *testing.T) {
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.DataQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateData(context.Background(), "ns1", fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 }
 
 func TestDataUpdateBuildQueryFail(t *testing.T) {
@@ -379,5 +379,5 @@ func TestDataUpdateFail(t *testing.T) {
 	mock.ExpectRollback()
 	u := database.DataQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
 	err := s.UpdateData(context.Background(), "ns1", fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 }

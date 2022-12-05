@@ -129,7 +129,7 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals 
 
 	for i, query := range queries {
 		// Query bucket's data
-		rows, _, err := s.query(ctx, tableName, query)
+		rows, _, err := s.Query(ctx, tableName, query)
 		if err != nil {
 			return nil, err
 		}

@@ -82,7 +82,7 @@ func TestContractAPIDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertContractAPI(context.Background(), &core.ContractAPI{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -105,7 +105,7 @@ func TestContractAPIDBFailInsert(t *testing.T) {
 		Interface: &fftypes.FFIReference{},
 	}
 	err := s.UpsertContractAPI(context.Background(), api)
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

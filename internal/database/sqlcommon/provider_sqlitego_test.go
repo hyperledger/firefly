@@ -27,6 +27,7 @@ import (
 	migratedb "github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -81,8 +82,12 @@ func (tp *sqliteGoTestProvider) MigrationsDir() string {
 	return "sqlite"
 }
 
-func (psql *sqliteGoTestProvider) Features() SQLFeatures {
-	features := DefaultSQLProviderFeatures()
+func (mp *sqliteGoTestProvider) SequenceColumn() string {
+	return "seq"
+}
+
+func (psql *sqliteGoTestProvider) Features() dbsql.SQLFeatures {
+	features := dbsql.DefaultSQLProviderFeatures()
 	features.PlaceholderFormat = sq.Dollar
 	features.UseILIKE = false // Not supported
 	return features

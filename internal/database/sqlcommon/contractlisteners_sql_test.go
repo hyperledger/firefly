@@ -119,7 +119,7 @@ func TestUpsertContractListenerFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertContractListener(context.Background(), &core.ContractListener{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -129,7 +129,7 @@ func TestUpsertContractListenerFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.InsertContractListener(context.Background(), &core.ContractListener{})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -139,7 +139,7 @@ func TestUpsertContractListenerFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertContractListener(context.Background(), &core.ContractListener{})
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -147,7 +147,7 @@ func TestGetContractListenerByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetContractListenerByID(context.Background(), "ns", fftypes.NewUUID())
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -173,7 +173,7 @@ func TestGetContractListenersQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("backendid", "")
 	_, _, err := s.GetContractListeners(context.Background(), "ns", f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -197,7 +197,7 @@ func TestContractListenerDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteContractListenerByID(context.Background(), "ns", fftypes.NewUUID())
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 }
 
 func TestContractListenerDeleteFail(t *testing.T) {
@@ -208,7 +208,7 @@ func TestContractListenerDeleteFail(t *testing.T) {
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteContractListenerByID(context.Background(), "ns", fftypes.NewUUID())
-	assert.Regexp(t, "FF10118", err)
+	assert.Regexp(t, "FF00179", err)
 }
 
 func TestContractListenerOptions(t *testing.T) {

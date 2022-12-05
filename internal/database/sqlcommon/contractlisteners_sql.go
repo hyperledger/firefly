@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -53,11 +54,11 @@ var (
 const contractlistenersTable = "contractlisteners"
 
 func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	var interfaceID *fftypes.UUID
 	if listener.Interface != nil {
@@ -65,7 +66,7 @@ func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.C
 	}
 
 	listener.Created = fftypes.Now()
-	if _, err = s.insertTx(ctx, contractlistenersTable, tx,
+	if _, err = s.InsertTx(ctx, contractlistenersTable, tx,
 		sq.Insert(contractlistenersTable).
 			Columns(contractListenerColumns...).
 			Values(
@@ -88,7 +89,7 @@ func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.C
 		return err
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (*core.ContractListener, error) {
@@ -115,7 +116,7 @@ func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (
 }
 
 func (s *SQLCommon) getContractListenerPred(ctx context.Context, desc string, pred interface{}) (*core.ContractListener, error) {
-	rows, _, err := s.query(ctx, contractlistenersTable,
+	rows, _, err := s.Query(ctx, contractlistenersTable,
 		sq.Select(contractListenerColumns...).
 			From(contractlistenersTable).
 			Where(pred),
@@ -150,15 +151,15 @@ func (s *SQLCommon) GetContractListenerByBackendID(ctx context.Context, namespac
 	return s.getContractListenerPred(ctx, id, sq.Eq{"backend_id": id, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetContractListeners(ctx context.Context, namespace string, filter database.Filter) ([]*core.ContractListener, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "",
+func (s *SQLCommon) GetContractListeners(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.ContractListener, *ffapi.FilterResult, error) {
+	query, fop, fi, err := s.FilterSelect(ctx, "",
 		sq.Select(contractListenerColumns...).From(contractlistenersTable),
 		filter, contractListenerFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, contractlistenersTable, query)
+	rows, tx, err := s.Query(ctx, contractlistenersTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -173,19 +174,19 @@ func (s *SQLCommon) GetContractListeners(ctx context.Context, namespace string, 
 		subs = append(subs, sub)
 	}
 
-	return subs, s.queryRes(ctx, contractlistenersTable, tx, fop, fi), err
+	return subs, s.QueryRes(ctx, contractlistenersTable, tx, fop, fi), err
 }
 
 func (s *SQLCommon) DeleteContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	sub, err := s.GetContractListenerByID(ctx, namespace, id)
 	if err == nil && sub != nil {
-		err = s.deleteTx(ctx, contractlistenersTable, tx, sq.Delete(contractlistenersTable).Where(sq.Eq{"id": id}),
+		err = s.DeleteTx(ctx, contractlistenersTable, tx, sq.Delete(contractlistenersTable).Where(sq.Eq{"id": id}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeDeleted, sub.Namespace, sub.ID)
 			},
@@ -195,5 +196,5 @@ func (s *SQLCommon) DeleteContractListenerByID(ctx context.Context, namespace st
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }

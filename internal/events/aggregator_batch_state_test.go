@@ -36,9 +36,9 @@ func TestFlushPinsFailUpdatePins(t *testing.T) {
 	bs.markMessageDispatched(fftypes.NewUUID(), &core.Message{
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
-		Pins: core.FFStringArray{"pin1"},
+		Pins: fftypes.FFStringArray{"pin1"},
 	}, 0, core.MessageStateConfirmed)
 
 	err := bs.flushPins(ag.ctx)
@@ -58,9 +58,9 @@ func TestFlushPinsFailUpdateMessages(t *testing.T) {
 	bs.markMessageDispatched(fftypes.NewUUID(), &core.Message{
 		Header: core.MessageHeader{
 			ID:     msgID,
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
-		Pins: core.FFStringArray{"pin1"},
+		Pins: fftypes.FFStringArray{"pin1"},
 	}, 0, core.MessageStateConfirmed)
 
 	err := bs.flushPins(ag.ctx)

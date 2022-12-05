@@ -125,7 +125,7 @@ func newTestManifest(mType core.MessageType, groupID *fftypes.Bytes32) (*core.Me
 			ID:        fftypes.NewUUID(),
 			Namespace: "any",
 			Group:     groupID,
-			Topics:    core.FFStringArray{"topic1"},
+			Topics:    fftypes.FFStringArray{"topic1"},
 			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
 		Data: core.DataRefs{
@@ -138,7 +138,7 @@ func newTestManifest(mType core.MessageType, groupID *fftypes.Bytes32) (*core.Me
 			ID:        fftypes.NewUUID(),
 			Group:     groupID,
 			Namespace: "any",
-			Topics:    core.FFStringArray{"topic1"},
+			Topics:    fftypes.FFStringArray{"topic1"},
 			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
 		Data: core.DataRefs{
@@ -650,7 +650,7 @@ func TestAggregationMigratedBroadcastNilMessageID(t *testing.T) {
 		Payload: core.BatchPayload{
 			Messages: []*core.Message{{
 				Header: core.MessageHeader{
-					Topics: core.FFStringArray{"topic1"},
+					Topics: fftypes.FFStringArray{"topic1"},
 				},
 			}},
 		},
@@ -704,7 +704,7 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 		Payload: core.BatchPayload{
 			Messages: []*core.Message{{
 				Header: core.MessageHeader{
-					Topics: core.FFStringArray{"topic1"},
+					Topics: fftypes.FFStringArray{"topic1"},
 				},
 			}},
 		},
@@ -848,7 +848,7 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 			Messages: []*core.Message{
 				{Header: core.MessageHeader{
 					ID:     nil, /* missing */
-					Topics: core.FFStringArray{"topic1"},
+					Topics: fftypes.FFStringArray{"topic1"},
 				}},
 			},
 		},
@@ -881,7 +881,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 			Messages: []*core.Message{
 				{Header: core.MessageHeader{
 					ID:     fftypes.NewUUID(),
-					Topics: core.FFStringArray{"topic1", "topic2"},
+					Topics: fftypes.FFStringArray{"topic1", "topic2"},
 				}},
 			},
 		},
@@ -920,7 +920,7 @@ func TestProcessMsgFailGetPins(t *testing.T) {
 			Messages: []*core.Message{
 				{Header: core.MessageHeader{
 					ID:     fftypes.NewUUID(),
-					Topics: core.FFStringArray{"topic1"},
+					Topics: fftypes.FFStringArray{"topic1"},
 				}},
 			},
 		},
@@ -990,10 +990,10 @@ func TestProcessMsgFailBadPin(t *testing.T) {
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Hash: fftypes.NewRandB32(),
-		Pins: core.FFStringArray{"!Wrong"},
+		Pins: fftypes.FFStringArray{"!Wrong"},
 	}
 
 	ag.mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
@@ -1019,9 +1019,9 @@ func TestProcessMsgFailGetNextPins(t *testing.T) {
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
-		Pins: core.FFStringArray{fftypes.NewRandB32().String()},
+		Pins: fftypes.FFStringArray{fftypes.NewRandB32().String()},
 	}
 
 	ag.mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
@@ -1046,12 +1046,12 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 			SignerRef: core.SignerRef{
 				Key: "0x12345",
 			},
 		},
-		Pins: core.FFStringArray{fftypes.NewRandB32().String()},
+		Pins: fftypes.FFStringArray{fftypes.NewRandB32().String()},
 	}
 
 	ag.mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePublicBlobRefs).Return(msg, nil, true, nil)
@@ -1081,14 +1081,14 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Group:     groupID,
-			Topics:    core.FFStringArray{"topic1"},
+			Topics:    fftypes.FFStringArray{"topic1"},
 			Namespace: "ns1",
 			SignerRef: core.SignerRef{
 				Author: org1.DID,
 				Key:    "0x12345",
 			},
 		},
-		Pins: core.FFStringArray{pin.String()},
+		Pins: fftypes.FFStringArray{pin.String()},
 	}
 
 	ag.mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, &core.VerifierRef{
@@ -1133,7 +1133,7 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
 			Tag:    core.SystemTagDefineDatatype,
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
@@ -1605,7 +1605,7 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 			Namespace: "any",
 			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 			Tag:       core.SystemTagDefineDatatype,
-			Topics:    core.FFStringArray{"topic1"},
+			Topics:    fftypes.FFStringArray{"topic1"},
 		},
 		Data: core.DataRefs{
 			{ID: fftypes.NewUUID()},
@@ -1704,8 +1704,8 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 	}, nil).Once()
 	ag.mdi.On("GetBlobMatchingHash", ag.ctx, data2[0].Blob.Hash).Return(nil, nil)
 
-	msg1.Pins = core.FFStringArray{member1NonceOne.String()}
-	msg2.Pins = core.FFStringArray{member1NonceTwo.String()}
+	msg1.Pins = fftypes.FFStringArray{member1NonceOne.String()}
+	msg2.Pins = fftypes.FFStringArray{member1NonceTwo.String()}
 
 	// First message should dispatch
 	pin1 := &core.Pin{Masked: true, Sequence: 12345, Signer: msg1.Header.Key}
@@ -1745,8 +1745,8 @@ func TestDispatchPrivateNextPinIncremented(t *testing.T) {
 		{Context: context, Nonce: 1 /* match member1NonceOne */, Identity: org1.DID, Hash: member1NonceOne},
 	}, nil)
 
-	msg1.Pins = core.FFStringArray{member1NonceOne.String()}
-	msg2.Pins = core.FFStringArray{member1NonceTwo.String()}
+	msg1.Pins = fftypes.FFStringArray{member1NonceOne.String()}
+	msg2.Pins = fftypes.FFStringArray{member1NonceTwo.String()}
 
 	// First message should dispatch
 	err := ag.processMessage(ag.ctx, manifest, &core.Pin{Masked: true, Sequence: 12345, Signer: "0x12345"}, 0, manifest.Messages[0], &core.BatchPersisted{}, bs)

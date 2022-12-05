@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -48,15 +49,15 @@ var (
 const transactionsTable = "transactions"
 
 func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *core.Transaction) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	transaction.Created = fftypes.Now()
 	var seq int64
-	if seq, err = s.insertTxExt(ctx, transactionsTable, tx,
+	if seq, err = s.InsertTxExt(ctx, transactionsTable, tx,
 		sq.Insert(transactionsTable).
 			Columns(transactionColumns...).
 			Values(
@@ -86,7 +87,7 @@ func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *core.Tra
 		return err
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*core.Transaction, error) {
@@ -107,7 +108,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*core
 
 func (s *SQLCommon) GetTransactionByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Transaction, err error) {
 
-	rows, _, err := s.query(ctx, transactionsTable,
+	rows, _, err := s.Query(ctx, transactionsTable,
 		sq.Select(transactionColumns...).
 			From(transactionsTable).
 			Where(sq.Eq{"id": id, "namespace": namespace}),
@@ -130,14 +131,14 @@ func (s *SQLCommon) GetTransactionByID(ctx context.Context, namespace string, id
 	return transaction, nil
 }
 
-func (s *SQLCommon) GetTransactions(ctx context.Context, namespace string, filter database.Filter) (message []*core.Transaction, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetTransactions(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Transaction, fr *ffapi.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(transactionColumns...).From(transactionsTable), filter, transactionFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
+	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(transactionColumns...).From(transactionsTable), filter, transactionFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, transactionsTable, query)
+	rows, tx, err := s.Query(ctx, transactionsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -152,28 +153,28 @@ func (s *SQLCommon) GetTransactions(ctx context.Context, namespace string, filte
 		transactions = append(transactions, transaction)
 	}
 
-	return transactions, s.queryRes(ctx, transactionsTable, tx, fop, fi), err
+	return transactions, s.QueryRes(ctx, transactionsTable, tx, fop, fi), err
 
 }
 
-func (s *SQLCommon) UpdateTransaction(ctx context.Context, namespace string, id *fftypes.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateTransaction(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) (err error) {
 
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update(transactionsTable), update, transactionFilterFieldMap)
+	query, err := s.BuildUpdate(sq.Update(transactionsTable), update, transactionFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id, "namespace": namespace})
 
-	_, err = s.updateTx(ctx, transactionsTable, tx, query, nil /* no change evnents for filter based updates */)
+	_, err = s.UpdateTx(ctx, transactionsTable, tx, query, nil /* no change evnents for filter based updates */)
 	if err != nil {
 		return err
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }

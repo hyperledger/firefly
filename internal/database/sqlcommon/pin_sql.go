@@ -21,6 +21,8 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -50,15 +52,15 @@ var (
 const pinsTable = "pins"
 
 func (s *SQLCommon) UpsertPin(ctx context.Context, pin *core.Pin) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	// Do a select within the transaction to detemine if the UUID already exists
-	pinRows, tx, err := s.queryTx(ctx, pinsTable, tx,
-		sq.Select(sequenceColumn, "masked", "dispatched").
+	pinRows, tx, err := s.QueryTx(ctx, pinsTable, tx,
+		sq.Select(s.SequenceColumn(), "masked", "dispatched").
 			From(pinsTable).
 			Where(sq.Eq{
 				"hash":      pin.Hash,
@@ -87,11 +89,11 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *core.Pin) (err error) {
 
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) attemptPinInsert(ctx context.Context, tx *txWrapper, pin *core.Pin) (err error) {
-	pin.Sequence, err = s.insertTx(ctx, pinsTable, tx,
+func (s *SQLCommon) attemptPinInsert(ctx context.Context, tx *dbsql.TXWrapper, pin *core.Pin) (err error) {
+	pin.Sequence, err = s.InsertTx(ctx, pinsTable, tx,
 		s.setPinInsertValues(sq.Insert(pinsTable).Columns(pinColumns...), pin),
 		func() {
 			log.L(ctx).Debugf("Triggering creation event for pin %d", pin.Sequence)
@@ -116,11 +118,11 @@ func (s *SQLCommon) setPinInsertValues(query sq.InsertBuilder, pin *core.Pin) sq
 }
 
 func (s *SQLCommon) InsertPins(ctx context.Context, pins []*core.Pin) error {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	if s.features.MultiRowInsert {
 		query := sq.Insert(pinsTable).Columns(pinColumns...)
@@ -128,7 +130,7 @@ func (s *SQLCommon) InsertPins(ctx context.Context, pins []*core.Pin) error {
 			query = s.setPinInsertValues(query, pin)
 		}
 		sequences := make([]int64, len(pins))
-		err := s.insertTxRows(ctx, pinsTable, tx, query, func() {
+		err := s.InsertTxRows(ctx, pinsTable, tx, query, func() {
 			for i, pin := range pins {
 				pin.Sequence = sequences[i]
 				s.callbacks.OrderedCollectionNSEvent(database.CollectionPins, core.ChangeEventTypeCreated, pin.Namespace, pin.Sequence)
@@ -146,7 +148,7 @@ func (s *SQLCommon) InsertPins(ctx context.Context, pins []*core.Pin) error {
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*core.Pin, error) {
@@ -169,18 +171,18 @@ func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*core.Pin, er
 	return &pin, nil
 }
 
-func (s *SQLCommon) GetPins(ctx context.Context, namespace string, filter database.Filter) (message []*core.Pin, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetPins(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Pin, fr *ffapi.FilterResult, err error) {
 
 	cols := append([]string{}, pinColumns...)
-	cols = append(cols, sequenceColumn)
-	query, fop, fi, err := s.filterSelect(
+	cols = append(cols, s.SequenceColumn())
+	query, fop, fi, err := s.FilterSelect(
 		ctx, "", sq.Select(cols...).From(pinsTable),
 		filter, pinFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, pinsTable, query)
+	rows, tx, err := s.Query(ctx, pinsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -195,32 +197,32 @@ func (s *SQLCommon) GetPins(ctx context.Context, namespace string, filter databa
 		pin = append(pin, d)
 	}
 
-	return pin, s.queryRes(ctx, pinsTable, tx, fop, fi), err
+	return pin, s.QueryRes(ctx, pinsTable, tx, fop, fi), err
 
 }
 
-func (s *SQLCommon) UpdatePins(ctx context.Context, namespace string, filter database.Filter, update database.Update) (err error) {
+func (s *SQLCommon) UpdatePins(ctx context.Context, namespace string, filter ffapi.Filter, update ffapi.Update) (err error) {
 
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update(pinsTable).Where(sq.Eq{"namespace": namespace}), update, pinFilterFieldMap)
-	if err != nil {
-		return err
-	}
-
-	query, err = s.filterUpdate(ctx, query, filter, pinFilterFieldMap)
+	query, err := s.BuildUpdate(sq.Update(pinsTable).Where(sq.Eq{"namespace": namespace}), update, pinFilterFieldMap)
 	if err != nil {
 		return err
 	}
 
-	_, err = s.updateTx(ctx, pinsTable, tx, query, nil /* no change events filter based update */)
+	query, err = s.FilterUpdate(ctx, query, filter, pinFilterFieldMap)
 	if err != nil {
 		return err
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	_, err = s.UpdateTx(ctx, pinsTable, tx, query, nil /* no change events filter based update */)
+	if err != nil {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
 }

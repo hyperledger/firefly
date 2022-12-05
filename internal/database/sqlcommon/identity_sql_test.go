@@ -122,7 +122,7 @@ func TestUpsertIdentityFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertIdentity(context.Background(), &core.Identity{}, database.UpsertOptimizationSkip)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -136,7 +136,7 @@ func TestUpsertIdentityFailSelect(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}, database.UpsertOptimizationSkip)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -151,7 +151,7 @@ func TestUpsertIdentityFailInsert(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}, database.UpsertOptimizationSkip)
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -167,7 +167,7 @@ func TestUpsertIdentityFailUpdate(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}, database.UpsertOptimizationSkip)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -182,7 +182,7 @@ func TestUpsertIdentityFailCommit(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}, database.UpsertOptimizationSkip)
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -190,7 +190,7 @@ func TestGetIdentityByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetIdentityByID(context.Background(), "ns1", fftypes.NewUUID())
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -198,7 +198,7 @@ func TestGetIdentityByNameSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetIdentityByName(context.Background(), core.IdentityTypeOrg, "ff_system", "org1")
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -206,7 +206,7 @@ func TestGetIdentityByIdentitySelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetIdentityByDID(context.Background(), "ns1", "did:firefly:org/org1")
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -232,7 +232,7 @@ func TestGetIdentityQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.IdentityQueryFactory.NewFilter(context.Background()).Eq("did", "")
 	_, _, err := s.GetIdentities(context.Background(), "ns1", f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

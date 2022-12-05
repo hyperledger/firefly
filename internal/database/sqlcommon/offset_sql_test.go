@@ -121,7 +121,7 @@ func TestUpsertOffsetFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertOffset(context.Background(), &core.Offset{}, true)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -131,7 +131,7 @@ func TestUpsertOffsetFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertOffset(context.Background(), &core.Offset{Name: "name1"}, true)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -152,30 +152,30 @@ func TestUpsertOffsetFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertOffset(context.Background(), &core.Offset{Name: "name1"}, true)
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertOffsetFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{s.SequenceColumn()}).
 		AddRow(int64(12345)))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertOffset(context.Background(), &core.Offset{Name: "name1"}, true)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertOffsetFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{s.SequenceColumn()}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertOffset(context.Background(), &core.Offset{Name: "name1"}, true)
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -183,7 +183,7 @@ func TestGetOffsetByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetOffset(context.Background(), core.OffsetTypeBatch, "name1")
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -209,7 +209,7 @@ func TestGetOffsetQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.OffsetQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, _, err := s.GetOffsets(context.Background(), f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -234,7 +234,7 @@ func TestOffsetUpdateBeginFail(t *testing.T) {
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
 	err := s.UpdateOffset(context.Background(), 12345, u)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 }
 
 func TestOffsetUpdateBuildQueryFail(t *testing.T) {
@@ -252,14 +252,14 @@ func TestOffsetUpdateFail(t *testing.T) {
 	mock.ExpectRollback()
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
 	err := s.UpdateOffset(context.Background(), 12345, u)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 }
 
 func TestOffsetDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteOffset(context.Background(), core.OffsetTypeSubscription, "sub1")
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 }
 
 func TestOffsetDeleteSelectFailFail(t *testing.T) {
@@ -268,18 +268,18 @@ func TestOffsetDeleteSelectFailFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.DeleteOffset(context.Background(), core.OffsetTypeSubscription, "sub1")
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 }
 
 func TestOffsetDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	cols := append(append([]string{}, offsetColumns...), sequenceColumn)
+	cols := append(append([]string{}, offsetColumns...), s.SequenceColumn())
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).AddRow(
 		core.OffsetTypeSubscription, "sub1", int64(12345), int64(12345),
 	))
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.DeleteOffset(context.Background(), core.OffsetTypeSubscription, "sub1")
-	assert.Regexp(t, "FF10118", err)
+	assert.Regexp(t, "FF00179", err)
 }

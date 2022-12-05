@@ -21,12 +21,13 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 var (
@@ -45,18 +46,18 @@ var (
 const blobsTable = "blobs"
 
 func (s *SQLCommon) InsertBlob(ctx context.Context, blob *core.Blob) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	err = s.attemptBlobInsert(ctx, tx, blob)
 	if err != nil {
 		return err
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) setBlobInsertValues(query sq.InsertBuilder, blob *core.Blob) sq.InsertBuilder {
@@ -69,8 +70,8 @@ func (s *SQLCommon) setBlobInsertValues(query sq.InsertBuilder, blob *core.Blob)
 	)
 }
 
-func (s *SQLCommon) attemptBlobInsert(ctx context.Context, tx *txWrapper, blob *core.Blob) (err error) {
-	blob.Sequence, err = s.insertTx(ctx, blobsTable, tx,
+func (s *SQLCommon) attemptBlobInsert(ctx context.Context, tx *dbsql.TXWrapper, blob *core.Blob) (err error) {
+	blob.Sequence, err = s.InsertTx(ctx, blobsTable, tx,
 		s.setBlobInsertValues(sq.Insert(blobsTable).Columns(blobColumns...), blob),
 		nil, // no change events for blobs
 	)
@@ -79,11 +80,11 @@ func (s *SQLCommon) attemptBlobInsert(ctx context.Context, tx *txWrapper, blob *
 
 func (s *SQLCommon) InsertBlobs(ctx context.Context, blobs []*core.Blob) (err error) {
 
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	if s.features.MultiRowInsert {
 		query := sq.Insert(blobsTable).Columns(blobColumns...)
@@ -91,7 +92,7 @@ func (s *SQLCommon) InsertBlobs(ctx context.Context, blobs []*core.Blob) (err er
 			query = s.setBlobInsertValues(query, blob)
 		}
 		sequences := make([]int64, len(blobs))
-		err := s.insertTxRows(ctx, blobsTable, tx, query,
+		err := s.InsertTxRows(ctx, blobsTable, tx, query,
 			nil, /* no change events for blobs */
 			sequences,
 			true /* we want the caller to be able to retry with individual upserts */)
@@ -108,7 +109,7 @@ func (s *SQLCommon) InsertBlobs(ctx context.Context, blobs []*core.Blob) (err er
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 
 }
 
@@ -130,8 +131,8 @@ func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*core.Blob, 
 
 func (s *SQLCommon) getBlobPred(ctx context.Context, desc string, pred interface{}) (message *core.Blob, err error) {
 	cols := append([]string{}, blobColumns...)
-	cols = append(cols, sequenceColumn)
-	rows, _, err := s.query(ctx, blobsTable,
+	cols = append(cols, s.SequenceColumn())
+	rows, _, err := s.Query(ctx, blobsTable,
 		sq.Select(cols...).
 			From(blobsTable).
 			Where(pred).
@@ -161,16 +162,16 @@ func (s *SQLCommon) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes
 	})
 }
 
-func (s *SQLCommon) GetBlobs(ctx context.Context, filter database.Filter) (message []*core.Blob, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetBlobs(ctx context.Context, filter ffapi.Filter) (message []*core.Blob, res *ffapi.FilterResult, err error) {
 
 	cols := append([]string{}, blobColumns...)
-	cols = append(cols, sequenceColumn)
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From(blobsTable), filter, blobFilterFieldMap, []interface{}{"sequence"})
+	cols = append(cols, s.SequenceColumn())
+	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(cols...).From(blobsTable), filter, blobFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, blobsTable, query)
+	rows, tx, err := s.Query(ctx, blobsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -185,24 +186,24 @@ func (s *SQLCommon) GetBlobs(ctx context.Context, filter database.Filter) (messa
 		blob = append(blob, d)
 	}
 
-	return blob, s.queryRes(ctx, blobsTable, tx, fop, fi), err
+	return blob, s.QueryRes(ctx, blobsTable, tx, fop, fi), err
 
 }
 
 func (s *SQLCommon) DeleteBlob(ctx context.Context, sequence int64) (err error) {
 
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, blobsTable, tx, sq.Delete(blobsTable).Where(sq.Eq{
-		sequenceColumn: sequence,
+	err = s.DeleteTx(ctx, blobsTable, tx, sq.Delete(blobsTable).Where(sq.Eq{
+		s.SequenceColumn(): sequence,
 	}), nil /* no change events for blobs */)
 	if err != nil {
 		return err
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }

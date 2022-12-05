@@ -134,7 +134,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 			Type:      core.MessageTypeGroupInit,
 			SignerRef: *signer,
 			Tag:       core.SystemTagDefineGroup,
-			Topics:    core.FFStringArray{group.Topic()},
+			Topics:    fftypes.FFStringArray{group.Topic()},
 			TxType:    core.TransactionTypeBatchPin,
 		},
 		Data: core.DataRefs{

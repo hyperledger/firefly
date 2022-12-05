@@ -79,7 +79,7 @@ func TestUpsertNextPinFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertNextPin(context.Background(), &core.NextPin{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -89,7 +89,7 @@ func TestUpsertNextPinFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.InsertNextPin(context.Background(), &core.NextPin{Context: fftypes.NewRandB32()})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -99,7 +99,7 @@ func TestUpsertNextPinFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertNextPin(context.Background(), &core.NextPin{Context: fftypes.NewRandB32()})
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -107,7 +107,7 @@ func TestGetNextPinQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetNextPinsForContext(context.Background(), "ns", fftypes.NewRandB32())
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -124,7 +124,7 @@ func TestNextPinUpdateBeginFail(t *testing.T) {
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.NextPinQueryFactory.NewUpdate(context.Background()).Set("context", "anything")
 	err := s.UpdateNextPin(context.Background(), "ns", 12345, u)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 }
 
 func TestNextPinUpdateBuildQueryFail(t *testing.T) {
@@ -142,5 +142,5 @@ func TestNextPinUpdateFail(t *testing.T) {
 	mock.ExpectRollback()
 	u := database.NextPinQueryFactory.NewUpdate(context.Background()).Set("context", fftypes.NewRandB32())
 	err := s.UpdateNextPin(context.Background(), "ns", 12345, u)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 }
