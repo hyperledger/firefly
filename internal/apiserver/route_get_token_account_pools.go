@@ -33,14 +33,14 @@ var getTokenAccountPools = &ffapi.Route{
 		{Name: "key", Description: coremsgs.APIParamsTokenAccountKey},
 	},
 	QueryParams:     nil,
+	FilterFactory:   database.TokenAccountPoolQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTokenAccountPools,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenAccountPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.TokenAccountPoolQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.Assets().GetTokenAccountPools(cr.ctx, r.PP["key"], cr.filter))
+			return r.FilterResult(cr.or.Assets().GetTokenAccountPools(cr.ctx, r.PP["key"], r.Filter))
 		},
 	},
 }

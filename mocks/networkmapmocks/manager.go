@@ -5,8 +5,8 @@ package networkmapmocks
 import (
 	context "context"
 
+	ffapi "github.com/hyperledger/firefly-common/pkg/ffapi"
 	core "github.com/hyperledger/firefly/pkg/core"
-	database "github.com/hyperledger/firefly/pkg/database"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -65,11 +65,11 @@ func (_m *Manager) GetDIDDocForIndentityByID(ctx context.Context, id string) (*n
 }
 
 // GetIdentities provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetIdentities(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+func (_m *Manager) GetIdentities(ctx context.Context, filter ffapi.AndFilter) ([]*core.Identity, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Identity); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Identity); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -77,17 +77,17 @@ func (_m *Manager) GetIdentities(ctx context.Context, filter database.AndFilter)
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -97,11 +97,11 @@ func (_m *Manager) GetIdentities(ctx context.Context, filter database.AndFilter)
 }
 
 // GetIdentitiesWithVerifiers provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetIdentitiesWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
+func (_m *Manager) GetIdentitiesWithVerifiers(ctx context.Context, filter ffapi.AndFilter) ([]*core.IdentityWithVerifiers, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.IdentityWithVerifiers
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.IdentityWithVerifiers); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.IdentityWithVerifiers); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -109,17 +109,17 @@ func (_m *Manager) GetIdentitiesWithVerifiers(ctx context.Context, filter databa
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -221,11 +221,11 @@ func (_m *Manager) GetIdentityByIDWithVerifiers(ctx context.Context, id string) 
 }
 
 // GetIdentityVerifiers provides a mock function with given fields: ctx, id, filter
-func (_m *Manager) GetIdentityVerifiers(ctx context.Context, id string, filter database.AndFilter) ([]*core.Verifier, *database.FilterResult, error) {
+func (_m *Manager) GetIdentityVerifiers(ctx context.Context, id string, filter ffapi.AndFilter) ([]*core.Verifier, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, id, filter)
 
 	var r0 []*core.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Verifier); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ffapi.AndFilter) []*core.Verifier); ok {
 		r0 = rf(ctx, id, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -233,17 +233,17 @@ func (_m *Manager) GetIdentityVerifiers(ctx context.Context, id string, filter d
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, id, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, string, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, id, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -276,11 +276,11 @@ func (_m *Manager) GetNodeByNameOrID(ctx context.Context, nameOrID string) (*cor
 }
 
 // GetNodes provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetNodes(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+func (_m *Manager) GetNodes(ctx context.Context, filter ffapi.AndFilter) ([]*core.Identity, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Identity); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Identity); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -288,17 +288,17 @@ func (_m *Manager) GetNodes(ctx context.Context, filter database.AndFilter) ([]*
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -331,11 +331,11 @@ func (_m *Manager) GetOrganizationByNameOrID(ctx context.Context, nameOrID strin
 }
 
 // GetOrganizations provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+func (_m *Manager) GetOrganizations(ctx context.Context, filter ffapi.AndFilter) ([]*core.Identity, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Identity); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Identity); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -343,17 +343,17 @@ func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilt
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -363,11 +363,11 @@ func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilt
 }
 
 // GetOrganizationsWithVerifiers provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetOrganizationsWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
+func (_m *Manager) GetOrganizationsWithVerifiers(ctx context.Context, filter ffapi.AndFilter) ([]*core.IdentityWithVerifiers, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.IdentityWithVerifiers
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.IdentityWithVerifiers); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.IdentityWithVerifiers); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -375,17 +375,17 @@ func (_m *Manager) GetOrganizationsWithVerifiers(ctx context.Context, filter dat
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -418,11 +418,11 @@ func (_m *Manager) GetVerifierByHash(ctx context.Context, hash string) (*core.Ve
 }
 
 // GetVerifiers provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.Verifier, *database.FilterResult, error) {
+func (_m *Manager) GetVerifiers(ctx context.Context, filter ffapi.AndFilter) ([]*core.Verifier, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Verifier); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Verifier); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -430,17 +430,17 @@ func (_m *Manager) GetVerifiers(ctx context.Context, filter database.AndFilter) 
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)

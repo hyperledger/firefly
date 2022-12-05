@@ -31,14 +31,14 @@ var getSubscriptions = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.SubscriptionQueryFactory,
 	Description:     coremsgs.APIEndpointsGetSubscriptions,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.SubscriptionQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetSubscriptions(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.GetSubscriptions(cr.ctx, r.Filter))
 		},
 	},
 }

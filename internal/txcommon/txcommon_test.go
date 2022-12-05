@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -379,7 +380,7 @@ func TestAddBlockchainTX(t *testing.T) {
 		Created:       fftypes.Now(),
 		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}
-	mdi.On("UpdateTransaction", ctx, "ns1", tx.ID, mock.MatchedBy(func(u database.Update) bool {
+	mdi.On("UpdateTransaction", ctx, "ns1", tx.ID, mock.MatchedBy(func(u ffapi.Update) bool {
 		info, _ := u.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
 		assert.Equal(t, "blockchainids", info.SetOperations[0].Field)

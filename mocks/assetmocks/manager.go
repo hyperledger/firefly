@@ -5,8 +5,8 @@ package assetmocks
 import (
 	context "context"
 
+	ffapi "github.com/hyperledger/firefly-common/pkg/ffapi"
 	core "github.com/hyperledger/firefly/pkg/core"
-	database "github.com/hyperledger/firefly/pkg/database"
 
 	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
@@ -81,11 +81,11 @@ func (_m *Manager) CreateTokenPool(ctx context.Context, pool *core.TokenPoolInpu
 }
 
 // GetTokenAccountPools provides a mock function with given fields: ctx, key, filter
-func (_m *Manager) GetTokenAccountPools(ctx context.Context, key string, filter database.AndFilter) ([]*core.TokenAccountPool, *database.FilterResult, error) {
+func (_m *Manager) GetTokenAccountPools(ctx context.Context, key string, filter ffapi.AndFilter) ([]*core.TokenAccountPool, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, key, filter)
 
 	var r0 []*core.TokenAccountPool
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.TokenAccountPool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ffapi.AndFilter) []*core.TokenAccountPool); ok {
 		r0 = rf(ctx, key, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -93,17 +93,17 @@ func (_m *Manager) GetTokenAccountPools(ctx context.Context, key string, filter 
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, key, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, string, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, key, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -113,11 +113,11 @@ func (_m *Manager) GetTokenAccountPools(ctx context.Context, key string, filter 
 }
 
 // GetTokenAccounts provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetTokenAccounts(ctx context.Context, filter database.AndFilter) ([]*core.TokenAccount, *database.FilterResult, error) {
+func (_m *Manager) GetTokenAccounts(ctx context.Context, filter ffapi.AndFilter) ([]*core.TokenAccount, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.TokenAccount
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.TokenAccount); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.TokenAccount); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -125,17 +125,17 @@ func (_m *Manager) GetTokenAccounts(ctx context.Context, filter database.AndFilt
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -145,11 +145,11 @@ func (_m *Manager) GetTokenAccounts(ctx context.Context, filter database.AndFilt
 }
 
 // GetTokenApprovals provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetTokenApprovals(ctx context.Context, filter database.AndFilter) ([]*core.TokenApproval, *database.FilterResult, error) {
+func (_m *Manager) GetTokenApprovals(ctx context.Context, filter ffapi.AndFilter) ([]*core.TokenApproval, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.TokenApproval); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.TokenApproval); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -157,17 +157,17 @@ func (_m *Manager) GetTokenApprovals(ctx context.Context, filter database.AndFil
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -177,11 +177,11 @@ func (_m *Manager) GetTokenApprovals(ctx context.Context, filter database.AndFil
 }
 
 // GetTokenBalances provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetTokenBalances(ctx context.Context, filter database.AndFilter) ([]*core.TokenBalance, *database.FilterResult, error) {
+func (_m *Manager) GetTokenBalances(ctx context.Context, filter ffapi.AndFilter) ([]*core.TokenBalance, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.TokenBalance
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.TokenBalance); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.TokenBalance); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -189,17 +189,17 @@ func (_m *Manager) GetTokenBalances(ctx context.Context, filter database.AndFilt
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -271,11 +271,11 @@ func (_m *Manager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID stri
 }
 
 // GetTokenPools provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetTokenPools(ctx context.Context, filter database.AndFilter) ([]*core.TokenPool, *database.FilterResult, error) {
+func (_m *Manager) GetTokenPools(ctx context.Context, filter ffapi.AndFilter) ([]*core.TokenPool, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.TokenPool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.TokenPool); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -283,17 +283,17 @@ func (_m *Manager) GetTokenPools(ctx context.Context, filter database.AndFilter)
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -326,11 +326,11 @@ func (_m *Manager) GetTokenTransferByID(ctx context.Context, id string) (*core.T
 }
 
 // GetTokenTransfers provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetTokenTransfers(ctx context.Context, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error) {
+func (_m *Manager) GetTokenTransfers(ctx context.Context, filter ffapi.AndFilter) ([]*core.TokenTransfer, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.TokenTransfer); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.TokenTransfer); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -338,17 +338,17 @@ func (_m *Manager) GetTokenTransfers(ctx context.Context, filter database.AndFil
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)

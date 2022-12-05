@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -114,7 +115,7 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 		namespace:        sub.definition.Namespace,
 		offsetType:       core.OffsetTypeSubscription,
 		offsetName:       sub.definition.ID.String(),
-		addCriteria:      func(af database.AndFilter) database.AndFilter { return af },
+		addCriteria:      func(af ffapi.AndFilter) ffapi.AndFilter { return af },
 		queryFactory:     database.EventQueryFactory,
 		getItems:         ed.getEvents,
 		newEventsHandler: ed.bufferedDelivery,
@@ -153,7 +154,7 @@ func (ed *eventDispatcher) electAndStart() {
 	<-ed.eventPoller.closed
 }
 
-func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter, offset int64) ([]core.LocallySequenced, error) {
+func (ed *eventDispatcher) getEvents(ctx context.Context, filter ffapi.Filter, offset int64) ([]core.LocallySequenced, error) {
 	log.L(ctx).Tracef("Reading page of events > %d (first events would be %d)", offset, offset+1)
 	events, _, err := ed.database.GetEvents(ctx, ed.namespace, filter)
 	ls := make([]core.LocallySequenced, len(events))

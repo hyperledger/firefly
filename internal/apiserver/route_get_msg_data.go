@@ -32,12 +32,12 @@ var getMsgData = &ffapi.Route{
 		{Name: "msgid", Description: coremsgs.APIParamsMessageID},
 	},
 	QueryParams:     nil,
+	FilterFactory:   nil, // No filtering on this route - use data
 	Description:     coremsgs.APIEndpointsGetMsgData,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return core.DataArray{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: nil, // No filtering on this route - use data
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			output, err = cr.or.GetMessageData(cr.ctx, r.PP["msgid"])
 			return output, err

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/cache"
@@ -34,7 +35,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -141,7 +141,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		fn := a.Get(1).(func(context.Context) error)
 		fn(ctx)
 	}
-	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.MatchedBy(func(f database.Filter) bool {
+	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.MatchedBy(func(f ffapi.Filter) bool {
 		fi, err := f.Finalize()
 		assert.NoError(t, err)
 		assert.Equal(t, fmt.Sprintf("( id IN ['%s'] ) && ( state == 'ready' )", msg.Header.ID.String()), fi.String())
@@ -263,7 +263,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		fn := a.Get(1).(func(context.Context) error)
 		fn(ctx)
 	}
-	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.MatchedBy(func(f database.Filter) bool {
+	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.MatchedBy(func(f ffapi.Filter) bool {
 		fi, err := f.Finalize()
 		assert.NoError(t, err)
 		assert.Equal(t, fmt.Sprintf("( id IN ['%s'] ) && ( state == 'ready' )", msg.Header.ID.String()), fi.String())
@@ -582,7 +582,7 @@ func TestRewindForNewMessage(t *testing.T) {
 	assert.Equal(t, int64(12344), bm.rewindOffset)
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.MatchedBy(func(f database.Filter) bool {
+	mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.MatchedBy(func(f ffapi.Filter) bool {
 		fi, err := f.Finalize()
 		assert.NoError(t, err)
 		v, err := fi.Children[0].Value.Value()

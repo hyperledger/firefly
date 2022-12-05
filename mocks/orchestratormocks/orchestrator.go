@@ -22,6 +22,8 @@ import (
 
 	events "github.com/hyperledger/firefly/internal/events"
 
+	ffapi "github.com/hyperledger/firefly-common/pkg/ffapi"
+
 	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	identity "github.com/hyperledger/firefly/internal/identity"
@@ -252,11 +254,11 @@ func (_m *Orchestrator) GetBatchByID(ctx context.Context, id string) (*core.Batc
 }
 
 // GetBatches provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetBatches(ctx context.Context, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error) {
+func (_m *Orchestrator) GetBatches(ctx context.Context, filter ffapi.AndFilter) ([]*core.BatchPersisted, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.BatchPersisted
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.BatchPersisted); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.BatchPersisted); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -264,17 +266,17 @@ func (_m *Orchestrator) GetBatches(ctx context.Context, filter database.AndFilte
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -307,11 +309,11 @@ func (_m *Orchestrator) GetBlockchainEventByID(ctx context.Context, id string) (
 }
 
 // GetBlockchainEvents provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetBlockchainEvents(ctx context.Context, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
+func (_m *Orchestrator) GetBlockchainEvents(ctx context.Context, filter ffapi.AndFilter) ([]*core.BlockchainEvent, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.BlockchainEvent
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.BlockchainEvent); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.BlockchainEvent); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -319,17 +321,17 @@ func (_m *Orchestrator) GetBlockchainEvents(ctx context.Context, filter database
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -362,11 +364,11 @@ func (_m *Orchestrator) GetChartHistogram(ctx context.Context, startTime int64, 
 }
 
 // GetData provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetData(ctx context.Context, filter database.AndFilter) (core.DataArray, *database.FilterResult, error) {
+func (_m *Orchestrator) GetData(ctx context.Context, filter ffapi.AndFilter) (core.DataArray, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 core.DataArray
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) core.DataArray); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) core.DataArray); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -374,17 +376,17 @@ func (_m *Orchestrator) GetData(ctx context.Context, filter database.AndFilter) 
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -463,11 +465,11 @@ func (_m *Orchestrator) GetDatatypeByName(ctx context.Context, name string, vers
 }
 
 // GetDatatypes provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetDatatypes(ctx context.Context, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error) {
+func (_m *Orchestrator) GetDatatypes(ctx context.Context, filter ffapi.AndFilter) ([]*core.Datatype, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Datatype
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Datatype); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Datatype); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -475,17 +477,17 @@ func (_m *Orchestrator) GetDatatypes(ctx context.Context, filter database.AndFil
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -541,11 +543,11 @@ func (_m *Orchestrator) GetEventByIDWithReference(ctx context.Context, id string
 }
 
 // GetEvents provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetEvents(ctx context.Context, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
+func (_m *Orchestrator) GetEvents(ctx context.Context, filter ffapi.AndFilter) ([]*core.Event, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Event
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Event); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Event); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -553,17 +555,17 @@ func (_m *Orchestrator) GetEvents(ctx context.Context, filter database.AndFilter
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -573,11 +575,11 @@ func (_m *Orchestrator) GetEvents(ctx context.Context, filter database.AndFilter
 }
 
 // GetEventsWithReferences provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetEventsWithReferences(ctx context.Context, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error) {
+func (_m *Orchestrator) GetEventsWithReferences(ctx context.Context, filter ffapi.AndFilter) ([]*core.EnrichedEvent, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.EnrichedEvent
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.EnrichedEvent); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.EnrichedEvent); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -585,17 +587,17 @@ func (_m *Orchestrator) GetEventsWithReferences(ctx context.Context, filter data
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -674,11 +676,11 @@ func (_m *Orchestrator) GetMessageData(ctx context.Context, id string) (core.Dat
 }
 
 // GetMessageEvents provides a mock function with given fields: ctx, id, filter
-func (_m *Orchestrator) GetMessageEvents(ctx context.Context, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
+func (_m *Orchestrator) GetMessageEvents(ctx context.Context, id string, filter ffapi.AndFilter) ([]*core.Event, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, id, filter)
 
 	var r0 []*core.Event
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Event); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ffapi.AndFilter) []*core.Event); ok {
 		r0 = rf(ctx, id, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -686,17 +688,17 @@ func (_m *Orchestrator) GetMessageEvents(ctx context.Context, id string, filter 
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, id, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, string, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, id, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -729,11 +731,11 @@ func (_m *Orchestrator) GetMessageTransaction(ctx context.Context, id string) (*
 }
 
 // GetMessages provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetMessages(ctx context.Context, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
+func (_m *Orchestrator) GetMessages(ctx context.Context, filter ffapi.AndFilter) ([]*core.Message, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Message); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Message); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -741,17 +743,17 @@ func (_m *Orchestrator) GetMessages(ctx context.Context, filter database.AndFilt
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -761,11 +763,11 @@ func (_m *Orchestrator) GetMessages(ctx context.Context, filter database.AndFilt
 }
 
 // GetMessagesForData provides a mock function with given fields: ctx, dataID, filter
-func (_m *Orchestrator) GetMessagesForData(ctx context.Context, dataID string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
+func (_m *Orchestrator) GetMessagesForData(ctx context.Context, dataID string, filter ffapi.AndFilter) ([]*core.Message, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, dataID, filter)
 
 	var r0 []*core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Message); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ffapi.AndFilter) []*core.Message); ok {
 		r0 = rf(ctx, dataID, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -773,17 +775,17 @@ func (_m *Orchestrator) GetMessagesForData(ctx context.Context, dataID string, f
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, dataID, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, string, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, dataID, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -793,11 +795,11 @@ func (_m *Orchestrator) GetMessagesForData(ctx context.Context, dataID string, f
 }
 
 // GetMessagesWithData provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetMessagesWithData(ctx context.Context, filter database.AndFilter) ([]*core.MessageInOut, *database.FilterResult, error) {
+func (_m *Orchestrator) GetMessagesWithData(ctx context.Context, filter ffapi.AndFilter) ([]*core.MessageInOut, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.MessageInOut
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.MessageInOut); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.MessageInOut); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -805,17 +807,17 @@ func (_m *Orchestrator) GetMessagesWithData(ctx context.Context, filter database
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -864,11 +866,11 @@ func (_m *Orchestrator) GetOperationByID(ctx context.Context, id string) (*core.
 }
 
 // GetOperations provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error) {
+func (_m *Orchestrator) GetOperations(ctx context.Context, filter ffapi.AndFilter) ([]*core.Operation, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Operation); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Operation); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -876,17 +878,17 @@ func (_m *Orchestrator) GetOperations(ctx context.Context, filter database.AndFi
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -896,11 +898,11 @@ func (_m *Orchestrator) GetOperations(ctx context.Context, filter database.AndFi
 }
 
 // GetPins provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error) {
+func (_m *Orchestrator) GetPins(ctx context.Context, filter ffapi.AndFilter) ([]*core.Pin, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Pin
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Pin); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Pin); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -908,17 +910,17 @@ func (_m *Orchestrator) GetPins(ctx context.Context, filter database.AndFilter) 
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -997,11 +999,11 @@ func (_m *Orchestrator) GetSubscriptionByIDWithStatus(ctx context.Context, id st
 }
 
 // GetSubscriptions provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error) {
+func (_m *Orchestrator) GetSubscriptions(ctx context.Context, filter ffapi.AndFilter) ([]*core.Subscription, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Subscription
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Subscription); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Subscription); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -1009,17 +1011,17 @@ func (_m *Orchestrator) GetSubscriptions(ctx context.Context, filter database.An
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -1029,7 +1031,7 @@ func (_m *Orchestrator) GetSubscriptions(ctx context.Context, filter database.An
 }
 
 // GetTransactionBlockchainEvents provides a mock function with given fields: ctx, id
-func (_m *Orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *database.FilterResult, error) {
+func (_m *Orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 []*core.BlockchainEvent
@@ -1041,12 +1043,12 @@ func (_m *Orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id s
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, id)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
@@ -1084,7 +1086,7 @@ func (_m *Orchestrator) GetTransactionByID(ctx context.Context, id string) (*cor
 }
 
 // GetTransactionOperations provides a mock function with given fields: ctx, id
-func (_m *Orchestrator) GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *database.FilterResult, error) {
+func (_m *Orchestrator) GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 []*core.Operation
@@ -1096,12 +1098,12 @@ func (_m *Orchestrator) GetTransactionOperations(ctx context.Context, id string)
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, id)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
@@ -1139,11 +1141,11 @@ func (_m *Orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 }
 
 // GetTransactions provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetTransactions(ctx context.Context, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error) {
+func (_m *Orchestrator) GetTransactions(ctx context.Context, filter ffapi.AndFilter) ([]*core.Transaction, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Transaction
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Transaction); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.Transaction); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -1151,17 +1153,17 @@ func (_m *Orchestrator) GetTransactions(ctx context.Context, filter database.And
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)

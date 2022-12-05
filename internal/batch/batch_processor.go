@@ -26,6 +26,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
@@ -629,7 +630,7 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 				fb.Eq("state", core.MessageStateReady), // In the outside chance the next state transition happens first (which supersedes this)
 			)
 
-			var allMsgsUpdate database.Update
+			var allMsgsUpdate ffapi.Update
 			if bp.conf.txType == core.TransactionTypeBatchPin {
 				// Sent state waiting for confirm
 				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).

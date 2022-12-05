@@ -20,6 +20,7 @@ import (
 	"context"
 	"database/sql/driver"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -39,7 +40,7 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, id string) (*cor
 	return or.txHelper.GetTransactionByIDCached(ctx, u)
 }
 
-func (or *orchestrator) GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *database.FilterResult, error) {
+func (or *orchestrator) GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *ffapi.FilterResult, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, nil, err
@@ -147,15 +148,15 @@ func (or *orchestrator) GetEventByIDWithReference(ctx context.Context, id string
 	return or.events.EnrichEvent(ctx, event)
 }
 
-func (or *orchestrator) GetTransactions(ctx context.Context, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error) {
+func (or *orchestrator) GetTransactions(ctx context.Context, filter ffapi.AndFilter) ([]*core.Transaction, *ffapi.FilterResult, error) {
 	return or.database().GetTransactions(ctx, or.namespace.Name, filter)
 }
 
-func (or *orchestrator) GetMessages(ctx context.Context, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
+func (or *orchestrator) GetMessages(ctx context.Context, filter ffapi.AndFilter) ([]*core.Message, *ffapi.FilterResult, error) {
 	return or.database().GetMessages(ctx, or.namespace.Name, filter)
 }
 
-func (or *orchestrator) GetMessagesWithData(ctx context.Context, filter database.AndFilter) ([]*core.MessageInOut, *database.FilterResult, error) {
+func (or *orchestrator) GetMessagesWithData(ctx context.Context, filter ffapi.AndFilter) ([]*core.MessageInOut, *ffapi.FilterResult, error) {
 	msgs, fr, err := or.database().GetMessages(ctx, or.namespace.Name, filter)
 	if err != nil {
 		return nil, nil, err
@@ -213,7 +214,7 @@ func (or *orchestrator) GetMessageTransaction(ctx context.Context, id string) (*
 	return or.txHelper.GetTransactionByIDCached(ctx, txID)
 }
 
-func (or *orchestrator) GetMessageEvents(ctx context.Context, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
+func (or *orchestrator) GetMessageEvents(ctx context.Context, id string, filter ffapi.AndFilter) ([]*core.Event, *ffapi.FilterResult, error) {
 	msg, err := or.getMessageByID(ctx, id)
 	if err != nil || msg == nil {
 		return nil, nil, err
@@ -230,15 +231,15 @@ func (or *orchestrator) GetMessageEvents(ctx context.Context, id string, filter 
 	return or.database().GetEvents(ctx, or.namespace.Name, filter)
 }
 
-func (or *orchestrator) GetBatches(ctx context.Context, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error) {
+func (or *orchestrator) GetBatches(ctx context.Context, filter ffapi.AndFilter) ([]*core.BatchPersisted, *ffapi.FilterResult, error) {
 	return or.database().GetBatches(ctx, or.namespace.Name, filter)
 }
 
-func (or *orchestrator) GetData(ctx context.Context, filter database.AndFilter) (core.DataArray, *database.FilterResult, error) {
+func (or *orchestrator) GetData(ctx context.Context, filter ffapi.AndFilter) (core.DataArray, *ffapi.FilterResult, error) {
 	return or.database().GetData(ctx, or.namespace.Name, filter)
 }
 
-func (or *orchestrator) GetMessagesForData(ctx context.Context, id string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
+func (or *orchestrator) GetMessagesForData(ctx context.Context, id string, filter ffapi.AndFilter) ([]*core.Message, *ffapi.FilterResult, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, nil, err
@@ -246,15 +247,15 @@ func (or *orchestrator) GetMessagesForData(ctx context.Context, id string, filte
 	return or.database().GetMessagesForData(ctx, or.namespace.Name, u, filter)
 }
 
-func (or *orchestrator) GetDatatypes(ctx context.Context, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error) {
+func (or *orchestrator) GetDatatypes(ctx context.Context, filter ffapi.AndFilter) ([]*core.Datatype, *ffapi.FilterResult, error) {
 	return or.database().GetDatatypes(ctx, or.namespace.Name, filter)
 }
 
-func (or *orchestrator) GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error) {
+func (or *orchestrator) GetOperations(ctx context.Context, filter ffapi.AndFilter) ([]*core.Operation, *ffapi.FilterResult, error) {
 	return or.database().GetOperations(ctx, or.namespace.Name, filter)
 }
 
-func (or *orchestrator) GetEvents(ctx context.Context, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
+func (or *orchestrator) GetEvents(ctx context.Context, filter ffapi.AndFilter) ([]*core.Event, *ffapi.FilterResult, error) {
 	return or.database().GetEvents(ctx, or.namespace.Name, filter)
 }
 
@@ -266,11 +267,11 @@ func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, id string) (
 	return or.txHelper.GetBlockchainEventByIDCached(ctx, u)
 }
 
-func (or *orchestrator) GetBlockchainEvents(ctx context.Context, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
+func (or *orchestrator) GetBlockchainEvents(ctx context.Context, filter ffapi.AndFilter) ([]*core.BlockchainEvent, *ffapi.FilterResult, error) {
 	return or.database().GetBlockchainEvents(ctx, or.namespace.Name, filter)
 }
 
-func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *database.FilterResult, error) {
+func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *ffapi.FilterResult, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, nil, err
@@ -279,11 +280,11 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id s
 	return or.database().GetBlockchainEvents(ctx, or.namespace.Name, fb.And(fb.Eq("tx.id", u)))
 }
 
-func (or *orchestrator) GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error) {
+func (or *orchestrator) GetPins(ctx context.Context, filter ffapi.AndFilter) ([]*core.Pin, *ffapi.FilterResult, error) {
 	return or.database().GetPins(ctx, or.namespace.Name, filter)
 }
 
-func (or *orchestrator) GetEventsWithReferences(ctx context.Context, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error) {
+func (or *orchestrator) GetEventsWithReferences(ctx context.Context, filter ffapi.AndFilter) ([]*core.EnrichedEvent, *ffapi.FilterResult, error) {
 	events, fr, err := or.database().GetEvents(ctx, or.namespace.Name, filter)
 	if err != nil {
 		return nil, nil, err

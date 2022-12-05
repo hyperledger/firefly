@@ -31,14 +31,14 @@ var getTxns = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.TransactionQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTxns,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.TransactionQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetTransactions(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.GetTransactions(cr.ctx, r.Filter))
 		},
 	},
 }

@@ -38,7 +38,7 @@ var getTxnBlockchainEvents = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetTransactionBlockchainEvents(cr.ctx, r.PP["txnid"]))
+			return r.FilterResult(cr.or.GetTransactionBlockchainEvents(cr.ctx, r.PP["txnid"]))
 		},
 	},
 }

@@ -19,6 +19,7 @@ package networkmap
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/definitions"
@@ -38,18 +39,18 @@ type Manager interface {
 	UpdateIdentity(ctx context.Context, id string, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error)
 
 	GetOrganizationByNameOrID(ctx context.Context, nameOrID string) (*core.Identity, error)
-	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error)
-	GetOrganizationsWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error)
+	GetOrganizations(ctx context.Context, filter ffapi.AndFilter) ([]*core.Identity, *ffapi.FilterResult, error)
+	GetOrganizationsWithVerifiers(ctx context.Context, filter ffapi.AndFilter) ([]*core.IdentityWithVerifiers, *ffapi.FilterResult, error)
 	GetNodeByNameOrID(ctx context.Context, nameOrID string) (*core.Identity, error)
-	GetNodes(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error)
+	GetNodes(ctx context.Context, filter ffapi.AndFilter) ([]*core.Identity, *ffapi.FilterResult, error)
 	GetIdentityByID(ctx context.Context, id string) (*core.Identity, error)
 	GetIdentityByIDWithVerifiers(ctx context.Context, id string) (*core.IdentityWithVerifiers, error)
 	GetIdentityByDID(ctx context.Context, did string) (*core.Identity, error)
 	GetIdentityByDIDWithVerifiers(ctx context.Context, did string) (*core.IdentityWithVerifiers, error)
-	GetIdentities(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error)
-	GetIdentitiesWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error)
-	GetIdentityVerifiers(ctx context.Context, id string, filter database.AndFilter) ([]*core.Verifier, *database.FilterResult, error)
-	GetVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.Verifier, *database.FilterResult, error)
+	GetIdentities(ctx context.Context, filter ffapi.AndFilter) ([]*core.Identity, *ffapi.FilterResult, error)
+	GetIdentitiesWithVerifiers(ctx context.Context, filter ffapi.AndFilter) ([]*core.IdentityWithVerifiers, *ffapi.FilterResult, error)
+	GetIdentityVerifiers(ctx context.Context, id string, filter ffapi.AndFilter) ([]*core.Verifier, *ffapi.FilterResult, error)
+	GetVerifiers(ctx context.Context, filter ffapi.AndFilter) ([]*core.Verifier, *ffapi.FilterResult, error)
 	GetVerifierByHash(ctx context.Context, hash string) (*core.Verifier, error)
 	GetDIDDocForIndentityByID(ctx context.Context, id string) (*DIDDocument, error)
 	GetDIDDocForIndentityByDID(ctx context.Context, did string) (*DIDDocument, error)

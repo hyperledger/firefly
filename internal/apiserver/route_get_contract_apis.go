@@ -32,6 +32,7 @@ var getContractAPIs = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.ContractAPIQueryFactory,
 	Description:     coremsgs.APIEndpointsGetContractAPIs,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.ContractAPI{} },
@@ -40,9 +41,8 @@ var getContractAPIs = &ffapi.Route{
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
 			return or.Contracts() != nil
 		},
-		FilterFactory: database.ContractAPIQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.Contracts().GetContractAPIs(cr.ctx, cr.apiBaseURL, cr.filter))
+			return r.FilterResult(cr.or.Contracts().GetContractAPIs(cr.ctx, cr.apiBaseURL, r.Filter))
 		},
 	},
 }

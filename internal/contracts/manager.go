@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -41,7 +42,7 @@ type Manager interface {
 	GetFFIWithChildren(ctx context.Context, name, version string) (*fftypes.FFI, error)
 	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
 	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
-	GetFFIs(ctx context.Context, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
+	GetFFIs(ctx context.Context, filter ffapi.AndFilter) ([]*fftypes.FFI, *ffapi.FilterResult, error)
 	ResolveFFI(ctx context.Context, ffi *fftypes.FFI) error
 
 	DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (interface{}, error)
@@ -49,15 +50,15 @@ type Manager interface {
 	InvokeContractAPI(ctx context.Context, apiName, methodPath string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
 	GetContractAPI(ctx context.Context, httpServerURL, apiName string) (*core.ContractAPI, error)
 	GetContractAPIInterface(ctx context.Context, apiName string) (*fftypes.FFI, error)
-	GetContractAPIs(ctx context.Context, httpServerURL string, filter database.AndFilter) ([]*core.ContractAPI, *database.FilterResult, error)
+	GetContractAPIs(ctx context.Context, httpServerURL string, filter ffapi.AndFilter) ([]*core.ContractAPI, *ffapi.FilterResult, error)
 	ResolveContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) error
 
 	AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error)
 	AddContractAPIListener(ctx context.Context, apiName, eventPath string, listener *core.ContractListener) (output *core.ContractListener, err error)
 	GetContractListenerByNameOrID(ctx context.Context, nameOrID string) (*core.ContractListener, error)
 	GetContractListenerByNameOrIDWithStatus(ctx context.Context, nameOrID string) (*core.ContractListenerWithStatus, error)
-	GetContractListeners(ctx context.Context, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error)
-	GetContractAPIListeners(ctx context.Context, apiName, eventPath string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error)
+	GetContractListeners(ctx context.Context, filter ffapi.AndFilter) ([]*core.ContractListener, *ffapi.FilterResult, error)
+	GetContractAPIListeners(ctx context.Context, apiName, eventPath string, filter ffapi.AndFilter) ([]*core.ContractListener, *ffapi.FilterResult, error)
 	DeleteContractListenerByNameOrID(ctx context.Context, nameOrID string) error
 	GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error)
 
@@ -163,7 +164,7 @@ func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id *fftyp
 	return ffi, err
 }
 
-func (cm *contractManager) GetFFIs(ctx context.Context, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error) {
+func (cm *contractManager) GetFFIs(ctx context.Context, filter ffapi.AndFilter) ([]*fftypes.FFI, *ffapi.FilterResult, error) {
 	return cm.database.GetFFIs(ctx, cm.namespace, filter)
 }
 
@@ -325,7 +326,7 @@ func (cm *contractManager) GetContractAPIInterface(ctx context.Context, apiName 
 	return cm.GetFFIByIDWithChildren(ctx, api.Interface.ID)
 }
 
-func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL string, filter database.AndFilter) ([]*core.ContractAPI, *database.FilterResult, error) {
+func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL string, filter ffapi.AndFilter) ([]*core.ContractAPI, *ffapi.FilterResult, error) {
 	apis, fr, err := cm.database.GetContractAPIs(ctx, cm.namespace, filter)
 	for _, api := range apis {
 		cm.addContractURLs(httpServerURL, api)
@@ -642,11 +643,11 @@ func (cm *contractManager) GetContractListenerByNameOrIDWithStatus(ctx context.C
 	return enrichedListener, nil
 }
 
-func (cm *contractManager) GetContractListeners(ctx context.Context, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
+func (cm *contractManager) GetContractListeners(ctx context.Context, filter ffapi.AndFilter) ([]*core.ContractListener, *ffapi.FilterResult, error) {
 	return cm.database.GetContractListeners(ctx, cm.namespace, filter)
 }
 
-func (cm *contractManager) GetContractAPIListeners(ctx context.Context, apiName, eventPath string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
+func (cm *contractManager) GetContractAPIListeners(ctx context.Context, apiName, eventPath string, filter ffapi.AndFilter) ([]*core.ContractListener, *ffapi.FilterResult, error) {
 	api, err := cm.database.GetContractAPIByName(ctx, cm.namespace, apiName)
 	if err != nil {
 		return nil, nil, err

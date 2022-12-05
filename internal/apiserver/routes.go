@@ -24,19 +24,16 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/orchestrator"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 type coreRequest struct {
 	mgr        namespace.Manager
 	or         orchestrator.Orchestrator
 	ctx        context.Context
-	filter     database.AndFilter
 	apiBaseURL string
 }
 
 type coreExtensions struct {
-	FilterFactory         database.QueryFactory
 	EnabledIf             func(or orchestrator.Orchestrator) bool
 	CoreJSONHandler       func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error)
 	CoreFormUploadHandler func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error)

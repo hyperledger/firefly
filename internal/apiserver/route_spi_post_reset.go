@@ -29,12 +29,12 @@ var spiPostReset = &ffapi.Route{
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsAdminPostReset,
 	JSONInputValue:  nil,
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent},
 	Extensions: &coreExtensions{
-		FilterFactory: nil,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			cr.mgr.Reset(cr.ctx)
 			return nil, nil

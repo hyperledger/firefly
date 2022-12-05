@@ -689,6 +689,8 @@ github.com/hyperledger/firefly-common v1.1.5-0.20221205010550-085676278a41 h1:Tb
 github.com/hyperledger/firefly-common v1.1.5-0.20221205010550-085676278a41/go.mod h1:3ubN46/dB+xurCPvdfqMKjB/CJU3I/DsfOoS7dY2SyQ=
 github.com/hyperledger/firefly-common v1.1.5-0.20221205013211-db8cd88a141f h1:EfkvaVkVldy0tmJUjN0pnR83DpZYfG1ARR60c+Q4NJ4=
 github.com/hyperledger/firefly-common v1.1.5-0.20221205013211-db8cd88a141f/go.mod h1:3ubN46/dB+xurCPvdfqMKjB/CJU3I/DsfOoS7dY2SyQ=
+github.com/hyperledger/firefly-common v1.1.5-0.20221205020100-299c0d5b3396 h1:iGT7SpBMGFR2+WlEXa3kYMeIQAFMbdsp9rRWwBk1E4o=
+github.com/hyperledger/firefly-common v1.1.5-0.20221205020100-299c0d5b3396/go.mod h1:3ubN46/dB+xurCPvdfqMKjB/CJU3I/DsfOoS7dY2SyQ=
 github.com/hyperledger/firefly-signer v1.1.2 h1:QuS3M5w9px3BnPa4jIWMDg+z2ySK76MoO5Egh0G+tFg=
 github.com/hyperledger/firefly-signer v1.1.2/go.mod h1:4h2MN910A2knrWGYCT+aWjBDlhptgQn/9WcT1N/Ct8s=
 github.com/iancoleman/strcase v0.2.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=

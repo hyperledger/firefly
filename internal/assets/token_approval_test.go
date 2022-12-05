@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
@@ -185,11 +186,11 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 		},
 	}
 	totalCount := int64(1)
-	filterResult := &database.FilterResult{
+	filterResult := &ffapi.FilterResult{
 		TotalCount: &totalCount,
 	}
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f database.AndFilter) bool {
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f ffapi.AndFilter) bool {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
@@ -227,10 +228,10 @@ func TestApprovalDefaultPoolNoPool(t *testing.T) {
 	f.Limit(1).Count(true)
 	tokenPools := []*core.TokenPool{}
 	totalCount := int64(0)
-	filterResult := &database.FilterResult{
+	filterResult := &ffapi.FilterResult{
 		TotalCount: &totalCount,
 	}
-	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f database.AndFilter) bool {
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f ffapi.AndFilter) bool {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)

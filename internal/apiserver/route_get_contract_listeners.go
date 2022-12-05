@@ -32,6 +32,7 @@ var getContractListeners = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.ContractListenerQueryFactory,
 	Description:     coremsgs.APIEndpointsGetContractListeners,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
@@ -40,9 +41,8 @@ var getContractListeners = &ffapi.Route{
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
 			return or.Contracts() != nil
 		},
-		FilterFactory: database.ContractListenerQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.Contracts().GetContractListeners(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.Contracts().GetContractListeners(cr.ctx, r.Filter))
 		},
 	},
 }

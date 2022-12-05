@@ -30,15 +30,15 @@ var getTokenApprovals = &ffapi.Route{
 	Path:            "tokens/approvals",
 	Method:          http.MethodGet,
 	PathParams:      nil,
+	FilterFactory:   database.TokenApprovalQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTokenApprovals,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenApproval{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.TokenApprovalQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			filter := cr.filter
-			return filterResult(cr.or.Assets().GetTokenApprovals(cr.ctx, filter))
+			filter := r.Filter
+			return r.FilterResult(cr.or.Assets().GetTokenApprovals(cr.ctx, filter))
 		},
 	},
 }

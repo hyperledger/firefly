@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
@@ -132,7 +133,7 @@ func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockc
 		newEventsHandler: ag.processPinsEventsHandler,
 		getItems:         ag.getPins,
 		queryFactory:     database.PinQueryFactory,
-		addCriteria: func(af database.AndFilter) database.AndFilter {
+		addCriteria: func(af ffapi.AndFilter) ffapi.AndFilter {
 			fb := af.Builder()
 			return af.Condition(fb.Eq("dispatched", false))
 		},
@@ -254,7 +255,7 @@ func (ag *aggregator) processPinsEventsHandler(items []core.LocallySequenced) (r
 	})
 }
 
-func (ag *aggregator) getPins(ctx context.Context, filter database.Filter, offset int64) ([]core.LocallySequenced, error) {
+func (ag *aggregator) getPins(ctx context.Context, filter ffapi.Filter, offset int64) ([]core.LocallySequenced, error) {
 	log.L(ctx).Tracef("Reading page of pins > %d (first pin would be %d)", offset, offset+1)
 	pins, _, err := ag.database.GetPins(ctx, ag.namespace, filter)
 	ls := make([]core.LocallySequenced, len(pins))

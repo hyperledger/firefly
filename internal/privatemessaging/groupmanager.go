@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -33,7 +34,7 @@ import (
 
 type GroupManager interface {
 	GetGroupByID(ctx context.Context, id string) (*core.Group, error)
-	GetGroups(ctx context.Context, filter database.AndFilter) ([]*core.Group, *database.FilterResult, error)
+	GetGroups(ctx context.Context, filter ffapi.AndFilter) ([]*core.Group, *ffapi.FilterResult, error)
 	ResolveInitGroup(ctx context.Context, msg *core.Message, creator *core.Member) (*core.Group, error)
 	EnsureLocalGroup(ctx context.Context, group *core.Group, creator *core.Member) (ok bool, err error)
 }
@@ -173,7 +174,7 @@ func (gm *groupManager) GetGroupByID(ctx context.Context, hash string) (*core.Gr
 	return gm.database.GetGroupByHash(ctx, gm.namespace.Name, h)
 }
 
-func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter) ([]*core.Group, *database.FilterResult, error) {
+func (gm *groupManager) GetGroups(ctx context.Context, filter ffapi.AndFilter) ([]*core.Group, *ffapi.FilterResult, error) {
 	return gm.database.GetGroups(ctx, gm.namespace.Name, filter)
 }
 

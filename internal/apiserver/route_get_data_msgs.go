@@ -34,17 +34,17 @@ var getDataMsgs = &ffapi.Route{
 		{Name: "dataid", Description: coremsgs.APIParamsDataID},
 	},
 	QueryParams:     nil,
+	FilterFactory:   database.MessageQueryFactory,
 	Description:     coremsgs.APIEndpointsGetDataMsgs,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Message{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.MessageQueryFactory,
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
 			return or.MultiParty() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetMessagesForData(cr.ctx, r.PP["dataid"], cr.filter))
+			return r.FilterResult(cr.or.GetMessagesForData(cr.ctx, r.PP["dataid"], r.Filter))
 		},
 	},
 }
