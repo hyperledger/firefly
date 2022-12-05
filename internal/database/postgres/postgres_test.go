@@ -39,6 +39,7 @@ func TestPostgresProvider(t *testing.T) {
 	assert.Error(t, err)
 
 	assert.Equal(t, "postgres", psql.Name())
+	assert.Equal(t, "seq", psql.SequenceColumn())
 	assert.Equal(t, sq.Dollar, psql.Features().PlaceholderFormat)
 	assert.Equal(t, `SELECT pg_advisory_xact_lock(8387236824920056683);`, psql.Features().AcquireLock("test-lock"))
 	assert.Equal(t, `SELECT pg_advisory_xact_lock(116);`, psql.Features().AcquireLock("t"))

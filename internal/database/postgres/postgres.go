@@ -27,6 +27,7 @@ import (
 	migratedb "github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 
@@ -51,6 +52,10 @@ func (psql *Postgres) Name() string {
 	return "postgres"
 }
 
+func (psql *Postgres) SequenceColumn() string {
+	return "seq"
+}
+
 func (psql *Postgres) MigrationsDir() string {
 	return psql.Name()
 }
@@ -64,8 +69,8 @@ func lockIndex(lockName string) int64 {
 	return big.NewInt(0).SetBytes([]byte(lockName)).Int64()
 }
 
-func (psql *Postgres) Features() sqlcommon.SQLFeatures {
-	features := sqlcommon.DefaultSQLProviderFeatures()
+func (psql *Postgres) Features() dbsql.SQLFeatures {
+	features := dbsql.DefaultSQLProviderFeatures()
 	features.PlaceholderFormat = sq.Dollar
 	features.UseILIKE = false // slower than lower()
 	features.AcquireLock = func(lockName string) string {

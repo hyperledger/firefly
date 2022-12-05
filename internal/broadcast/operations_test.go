@@ -22,13 +22,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -258,7 +258,7 @@ func TestPrepareAndRunUploadBlob(t *testing.T) {
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(blob, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, nil)
-	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.MatchedBy(func(update database.Update) bool {
+	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.MatchedBy(func(update ffapi.Update) bool {
 		info, _ := update.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
 		assert.Equal(t, "blob.public", info.SetOperations[0].Field)
@@ -302,7 +302,7 @@ func TestPrepareAndRunValue(t *testing.T) {
 
 	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
-	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.MatchedBy(func(update database.Update) bool {
+	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.MatchedBy(func(update ffapi.Update) bool {
 		info, _ := update.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
 		assert.Equal(t, "public", info.SetOperations[0].Field)

@@ -43,7 +43,7 @@ var getTokenTransfers = &ffapi.Route{
 			filter := r.Filter
 			if fromOrTo, ok := r.QP["fromOrTo"]; ok {
 				fb := database.TokenTransferQueryFactory.NewFilter(cr.ctx)
-				filter.Condition(
+				filter = filter.Condition(
 					fb.Or().
 						Condition(fb.Eq("from", fromOrTo)).
 						Condition(fb.Eq("to", fromOrTo)))

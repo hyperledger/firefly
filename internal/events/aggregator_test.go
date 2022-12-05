@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/cache"
@@ -312,7 +313,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	// Set the pin to dispatched
 	ag.mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	// Update the message
-	ag.mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.MatchedBy(func(u database.Update) bool {
+	ag.mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.MatchedBy(func(u ffapi.Update) bool {
 		update, err := u.Finalize()
 		assert.NoError(t, err)
 		assert.Len(t, update.SetOperations, 2)
@@ -430,7 +431,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	// Update member2 to nonce 1
 	ag.mdi.On("UpdateNextPin", ag.ctx, "ns1", mock.MatchedBy(func(seq int64) bool {
 		return seq == 424
-	}), mock.MatchedBy(func(update database.Update) bool {
+	}), mock.MatchedBy(func(update ffapi.Update) bool {
 		ui, _ := update.Finalize()
 		assert.Equal(t, "nonce", ui.SetOperations[0].Field)
 		v, _ := ui.SetOperations[0].Value.Value()

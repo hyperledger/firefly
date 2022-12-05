@@ -57,13 +57,10 @@ type Server interface {
 
 type apiServer struct {
 	// Defaults set with config
-	defaultFilterLimit uint64
-	maxFilterLimit     uint64
-	maxFilterSkip      uint64
-	apiTimeout         time.Duration
-	apiMaxTimeout      time.Duration
-	metricsEnabled     bool
-	ffiSwaggerGen      FFISwaggerGen
+	apiTimeout     time.Duration
+	apiMaxTimeout  time.Duration
+	metricsEnabled bool
+	ffiSwaggerGen  FFISwaggerGen
 }
 
 func InitConfig() {
@@ -76,13 +73,10 @@ func InitConfig() {
 
 func NewAPIServer() Server {
 	return &apiServer{
-		defaultFilterLimit: uint64(config.GetUint(coreconfig.APIDefaultFilterLimit)),
-		maxFilterLimit:     uint64(config.GetUint(coreconfig.APIMaxFilterLimit)),
-		maxFilterSkip:      uint64(config.GetUint(coreconfig.APIMaxFilterSkip)),
-		apiTimeout:         config.GetDuration(coreconfig.APIRequestTimeout),
-		apiMaxTimeout:      config.GetDuration(coreconfig.APIRequestMaxTimeout),
-		metricsEnabled:     config.GetBool(coreconfig.MetricsEnabled),
-		ffiSwaggerGen:      NewFFISwaggerGen(),
+		apiTimeout:     config.GetDuration(coreconfig.APIRequestTimeout),
+		apiMaxTimeout:  config.GetDuration(coreconfig.APIRequestMaxTimeout),
+		metricsEnabled: config.GetBool(coreconfig.MetricsEnabled),
+		ffiSwaggerGen:  NewFFISwaggerGen(),
 	}
 }
 
@@ -158,6 +152,9 @@ func (as *apiServer) swaggerGenConf(apiBaseURL string) *ffapi.Options {
 		Version:                   "1.0",
 		PanicOnMissingDescription: config.GetBool(coreconfig.APIOASPanicOnMissingDescription),
 		DefaultRequestTimeout:     config.GetDuration(coreconfig.APIRequestTimeout),
+		APIDefaultFilterLimit:     config.GetString(coreconfig.APIDefaultFilterLimit),
+		APIMaxFilterLimit:         config.GetUint(coreconfig.APIMaxFilterLimit),
+		APIMaxFilterSkip:          config.GetUint(coreconfig.APIMaxFilterSkip),
 	}
 }
 
@@ -289,6 +286,9 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 
 func (as *apiServer) handlerFactory() *ffapi.HandlerFactory {
 	return &ffapi.HandlerFactory{
+		DefaultFilterLimit:    uint64(config.GetUint(coreconfig.APIDefaultFilterLimit)),
+		MaxFilterLimit:        uint64(config.GetUint(coreconfig.APIMaxFilterLimit)),
+		MaxFilterSkip:         uint64(config.GetUint(coreconfig.APIMaxFilterSkip)),
 		DefaultRequestTimeout: config.GetDuration(coreconfig.APIRequestTimeout),
 		MaxTimeout:            config.GetDuration(coreconfig.APIRequestMaxTimeout),
 	}

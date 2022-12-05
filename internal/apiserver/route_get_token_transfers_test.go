@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
@@ -53,8 +54,9 @@ func TestGetTokenTransfersFromOrTo(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mam.On("GetTokenTransfers", mock.Anything, mock.MatchedBy(func(filter ffapi.AndFilter) bool {
-		info, _ := filter.Finalize()
-		return info.String() == "( ( from == '0x1' ) || ( to == '0x1' ) )"
+		f, _ := filter.Finalize()
+		filterStr := f.String()
+		return strings.Contains(filterStr, "( ( from == '0x1' ) || ( to == '0x1' ) )")
 	})).Return([]*core.TokenTransfer{}, nil, nil)
 	r.ServeHTTP(res, req)
 

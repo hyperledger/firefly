@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -48,7 +49,7 @@ func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHa
 		namespace:        "unit",
 		offsetName:       "test",
 		queryFactory:     database.EventQueryFactory,
-		getItems: func(c context.Context, f database.Filter, o int64) ([]core.LocallySequenced, error) {
+		getItems: func(c context.Context, f ffapi.Filter, o int64) ([]core.LocallySequenced, error) {
 			events, _, err := mdi.GetEvents(c, "unit", f)
 			ls := make([]core.LocallySequenced, len(events))
 			for i, e := range events {
@@ -57,7 +58,7 @@ func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHa
 			return ls, err
 		},
 		maybeRewind: rewinder,
-		addCriteria: func(af database.AndFilter) database.AndFilter { return af },
+		addCriteria: func(af ffapi.AndFilter) ffapi.AndFilter { return af },
 	})
 	return ep, cancel
 }
@@ -230,7 +231,7 @@ func TestReadPageRewind(t *testing.T) {
 	ep.pollingOffset = 23456
 	cancel()
 	ev1 := core.NewEvent(core.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
-	mdi.On("GetEvents", mock.Anything, "unit", mock.MatchedBy(func(filter database.Filter) bool {
+	mdi.On("GetEvents", mock.Anything, "unit", mock.MatchedBy(func(filter ffapi.Filter) bool {
 		f, err := filter.Finalize()
 		assert.NoError(t, err)
 		assert.Equal(t, "sequence", f.Children[0].Field)
