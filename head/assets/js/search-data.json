@@ -2951,293 +2951,293 @@
     "url": "/firefly/head/reference/types/identity.html#identitymessages",
     "relUrl": "/reference/types/identity.html#identitymessages"
   },"492": {
-    "doc": "pages.architecture",
-    "title": "Architecture",
-    "content": "This section contains a collection of technical architecture diagrams detailing the various runtime components of a FireFly deployment. ",
-    "url": "/firefly/head/architecture/#architecture",
-    "relUrl": "/architecture/#architecture"
-  },"493": {
-    "doc": "pages.architecture",
-    "title": "pages.architecture",
-    "content": " ",
-    "url": "/firefly/head/architecture/",
-    "relUrl": "/architecture/"
-  },"494": {
     "doc": "pages.getting_started",
     "title": "Getting Started",
     "content": "If you’re new to FireFly, this is the perfect place to start! With the FireFly CLI and the FireFly Sandbox it’s really easy to get started building powerful blockchain apps. Just follow along with the steps below and you’ll be up and running in no time! . What you will accomplish with this guide . With this easy-to-follow guide, you’ll go from “zero” to blockchain-hero in the time it takes to drink a single cup of coffee. It will walk you through setting up your machine, all the way through sending your first blockchain transactions using the FireFly Sandbox. We’re here to help! . We want to make it as easy as possible for anyone to get started with FireFly, and we don’t want anyone to feel like they’re stuck. If you’re having trouble, or are just curious about what else you can do with FireFly we encourage you to join the Hyperledger Discord server and come chat with us in the #firefly channel. ",
     "url": "/firefly/head/gettingstarted/#getting-started",
     "relUrl": "/gettingstarted/#getting-started"
-  },"495": {
+  },"493": {
     "doc": "pages.getting_started",
     "title": "Get started: Install the FireFly CLI",
     "content": "Now that you’ve got the FireFly CLI set up on your machine, the next step is to create and start a FireFly stack. ① Install the FireFly CLI → . ",
     "url": "/firefly/head/gettingstarted/#get-started-install-the-firefly-cli",
     "relUrl": "/gettingstarted/#get-started-install-the-firefly-cli"
-  },"496": {
+  },"494": {
     "doc": "pages.getting_started",
     "title": "pages.getting_started",
     "content": " ",
     "url": "/firefly/head/gettingstarted/",
     "relUrl": "/gettingstarted/"
-  },"497": {
-    "doc": "pages.faqs",
-    "title": "FAQs",
-    "content": "Find answers to the most commonly asked FireFly questions. ",
-    "url": "/firefly/head/faqs/#faqs",
-    "relUrl": "/faqs/#faqs"
-  },"498": {
-    "doc": "pages.faqs",
-    "title": "How does FireFly enable multi-chain applications?",
-    "content": "It’s best to think about FireFly as a rich orchestration layer that sits one layer above the blockchain. FireFly helps to abstract away much of the complex blockchain functionality (such as data exchange, private messaging, common token functionality, etc) in a loosely coupled microservice architecture with highly pluggable components. This enables application developers to focus on building innovative Web3 applications. There aren’t any out of the box bridges to connect two separate chains together, but with a collection of FireFly instances across a consortium, FireFly could help listen for events on Blockchain A and take an action on Blockchain B when certain conditions are met. ",
-    "url": "/firefly/head/faqs/#how-does-firefly-enable-multi-chain-applications",
-    "relUrl": "/faqs/#how-does-firefly-enable-multi-chain-applications"
-  },"499": {
-    "doc": "pages.faqs",
-    "title": "📜 How do I deploy smart contracts?",
-    "content": "In order to interact with a smart contract on a public or private Ethereum chain you need to first deploy it to the chain. Deployment means that you’ve sent a transaction with the compiled source code to the chain without a specified recipient and received a contract address that you and others on the network can use to interact with your contract. Refer to the Smart Contract Tutorial for instructions to deploy a smart contract to your private networking using FireFly. ",
-    "url": "/firefly/head/faqs/#-how-do-i-deploy-smart-contracts",
-    "relUrl": "/faqs/#-how-do-i-deploy-smart-contracts"
-  },"500": {
-    "doc": "pages.faqs",
-    "title": "🦊 Can I connect FireFly to MetaMask?",
-    "content": "Yes! Before you set up MetaMask you’ll likely want to create some tokens that you can use to send between wallets on your FF network. Go to the tokens tab in your FireFly node’s UI, create a token pool, and then mint some tokens. Once you’ve done this, follow the steps listed here to set up MetaMask on your network. ",
-    "url": "/firefly/head/faqs/#-can-i-connect-firefly-to-metamask",
-    "relUrl": "/faqs/#-can-i-connect-firefly-to-metamask"
-  },"501": {
-    "doc": "pages.faqs",
-    "title": "🚀 Connect with us on Discord",
-    "content": "If your question isn’t answered here or if you have immediate questions please don’t hesitate to reach out to us on Discord in the firefly channel: . ",
-    "url": "/firefly/head/faqs/#-connect-with-us-on-discord",
-    "relUrl": "/faqs/#-connect-with-us-on-discord"
-  },"502": {
-    "doc": "pages.faqs",
-    "title": "pages.faqs",
-    "content": " ",
-    "url": "/firefly/head/faqs/",
-    "relUrl": "/faqs/"
-  },"503": {
-    "doc": "pages.contributors",
-    "title": "Contributors’ Guide",
-    "content": " ",
-    "url": "/firefly/head/contributors/#contributors-guide",
-    "relUrl": "/contributors/#contributors-guide"
-  },"504": {
-    "doc": "pages.contributors",
-    "title": "Table of contents",
-    "content": ". | 🚀 Connect with us on Discord | 📅 Join our Community Calls | 🔍 Find your first issue . | Any level of experience | Go experience | Little or no Go experience, but want to learn | TypeScript experience | React/TypeScript experience | Go and blockchain experience | . | 📝 Make changes | 📑 Commit with Developer Certificate of Origin | 📥 Open a Pull Request | Inclusivity | . We welcome anyone to contribute to the FireFly project! If you’re interested, this is a guide on how to get started. You don’t have to be a blockchain expert to make valuable contributions! There are lots of places for developers of all experience levels to get involved. 🧑🏽‍💻 👩🏻‍💻 👩🏾‍💻 🧑🏻‍💻 🧑🏿‍💻 👨🏽‍💻 👩🏽‍💻 🧑🏾‍💻 👨🏿‍💻 👨🏾‍💻 👩🏿‍💻 👨🏻‍💻 . ",
-    "url": "/firefly/head/contributors/#table-of-contents",
-    "relUrl": "/contributors/#table-of-contents"
-  },"505": {
-    "doc": "pages.contributors",
-    "title": "🚀 Connect with us on Discord",
-    "content": "You can chat with maintainers and other contributors on Discord in the firefly channel: https://discord.gg/hyperledger . Join Discord Server . ",
-    "url": "/firefly/head/contributors/#-connect-with-us-on-discord",
-    "relUrl": "/contributors/#-connect-with-us-on-discord"
-  },"506": {
-    "doc": "pages.contributors",
-    "title": "📅 Join our Community Calls",
-    "content": "Community calls are a place to talk to other contributors, maintainers, and other people interested in FireFly. Maintainers often discuss upcoming changes and proposed new features on these calls. These calls are a great way for the community to give feedback on new ideas, ask questions about FireFly, and hear how others are using FireFly to solve real world problems. Please see the FireFly Calendar for the current meeting schedule, and the link to join. Everyone is welcome to join, regardless of background or experience level. ",
-    "url": "/firefly/head/contributors/#-join-our-community-calls",
-    "relUrl": "/contributors/#-join-our-community-calls"
-  },"507": {
-    "doc": "pages.contributors",
-    "title": "🔍 Find your first issue",
-    "content": "If you’re looking for somewhere to get started in the FireFly project and want something small and relatively easy, take a look at issues tagged with “Good first issue”. You can definitely work on other things if you want to. These are only suggestions for easy places to get started. See “Good First Issues” . NOTE Hyperledger FireFly has a microservice architecture so it has many different GitHub repos. Use the link or the button above to look for “Good First Issues” across all the repos at once. Here are some other suggestions of places to get started, based on experience you may already have: . Any level of experience . If you looking to make your first open source contribution the FireFly documentation is a great place to make small, easy improvements. These improvements are also very valuable, because they help the next person that may want to know the same thing. Here are some detailed instructions on Contributing to Documentation . Go experience . If you have some experience in Go and really want to jump into FireFly, the FireFly Core is the heart of the project. Here are some detailed instructions on Setting up a FireFly Core Development Environment. Little or no Go experience, but want to learn . If you don’t have a lot of experience with Go, but are interested in learning, the FireFly CLI might be a good place to start. The FireFly CLI is a tool to set up local instances of FireFly for building apps that use FireFly, and for doing development on FireFly itself. TypeScript experience . If you have some experience in TypeScript, there are several FireFly microservices that are written in TypeScript. The Data Exchange is used for private messaging between FireFly nodes. The ERC-20/ERC-271 Tokens Connector and ERC-1155 Tokens Connector are used to abstract token contract specifics from the FireFly Core. React/TypeScript experience . If you want to do some frontend development, the FireFly UI is written in TypeScript and React. Go and blockchain experience . If you already have some experience with blockchain and want to work on some backend components, the blockchain connectors, firefly-ethconnect (for Ethereum) and firefly-fabconnect (for Fabric) are great places to get involved. ",
-    "url": "/firefly/head/contributors/#-find-your-first-issue",
-    "relUrl": "/contributors/#-find-your-first-issue"
-  },"508": {
-    "doc": "pages.contributors",
-    "title": "📝 Make changes",
-    "content": "To contribute to the repository, please fork the repository that you want to change. Then clone your fork locally on your machine and make your changes. As you commit your changes, push them to your fork. More information on making commits below. ",
-    "url": "/firefly/head/contributors/#-make-changes",
-    "relUrl": "/contributors/#-make-changes"
-  },"509": {
-    "doc": "pages.contributors",
-    "title": "📑 Commit with Developer Certificate of Origin",
-    "content": "As with all Hyperledger repositories, FireFly requires proper sign-off on every commit that is merged into the main branch. The sign-off indicates that you certify the changes you are submitting are in accordance with the Developer Certificate of Origin. To sign-off on your commit, you can use the -s flag when you commit changes. git commit -s -m \"Your commit message\" . This will add a string like this to the end of your commit message: . \"Signed-off-by: Your Name &lt;your-email@address&gt;\" . NOTE: Sign-off is not the same thing as signing your commits with a private key. Both operations use a similar flag, which can be confusing. The one you want is the lowercase -s 🙂 . ",
-    "url": "/firefly/head/contributors/#-commit-with-developer-certificate-of-origin",
-    "relUrl": "/contributors/#-commit-with-developer-certificate-of-origin"
-  },"510": {
-    "doc": "pages.contributors",
-    "title": "📥 Open a Pull Request",
-    "content": "When you’re ready to submit your changes for review, open a Pull Request back to the upstream repository. When you open your pull request, the maintainers will automatically be notified. Additionally, a series of automated checks will be performed on your code to make sure it passes certain repository specific requirements. Maintainers may have suggestions on things to improve in your pull request. It is our goal to get code that is beneficial to the project merged as quickly as possible, so we don’t like to leave pull requests hanging around for a long time. If the project maintainers are satisfied with the changes, they will approve and merge the pull request. Thanks for your interest in collaborating on this project! . ",
-    "url": "/firefly/head/contributors/#-open-a-pull-request",
-    "relUrl": "/contributors/#-open-a-pull-request"
-  },"511": {
-    "doc": "pages.contributors",
-    "title": "Inclusivity",
-    "content": "The Hyperledger Foundation and the FireFly project are committed to fostering a community that is welcoming to all people. When participating in community discussions, contributing code, or documentaiton, please abide by the following guidelines: . | Consider that users who will read the docs are from different background and cultures and that they have different preferences. | Avoid potential offensive terms and, for instance, prefer “allow list and deny list” to “white list and black list”. | We believe that we all have a role to play to improve our world, and even if writing inclusive doc might not look like a huge improvement, it’s a first step in the right direction. | We suggest to refer to Microsoft bias free writing guidelines and Google inclusive doc writing guide as starting points. | . ",
-    "url": "/firefly/head/contributors/#inclusivity",
-    "relUrl": "/contributors/#inclusivity"
-  },"512": {
-    "doc": "pages.contributors",
-    "title": "pages.contributors",
-    "content": " ",
-    "url": "/firefly/head/contributors/",
-    "relUrl": "/contributors/"
-  },"513": {
-    "doc": "Core Resources",
-    "title": "Core Resources",
-    "content": " ",
-    "url": "/firefly/head/reference/types/",
-    "relUrl": "/reference/types/"
-  },"514": {
-    "doc": "pages.reference",
-    "title": "Reference",
-    "content": ". This section contains detailed reference information for developers using FireFly. ",
-    "url": "/firefly/head/reference/#reference",
-    "relUrl": "/reference/#reference"
-  },"515": {
-    "doc": "pages.reference",
-    "title": "pages.reference",
-    "content": " ",
-    "url": "/firefly/head/reference/",
-    "relUrl": "/reference/"
-  },"516": {
-    "doc": "pages.custom_smart_contracts",
-    "title": "Quick reference",
-    "content": "Almost all blockchain platforms offer the ability to execute smart contracts on-chain in order to manage states on the shared ledger. FireFly provides support to use RESTful APIs to interact with the smart contracts deployed in the target blockchains, and listening to events via websocket. FireFly’s unified API creates a consistent application experience regardless of the specific underlying blockchain implementation. It also provides developer-friendly features like automatic OpenAPI Specification generation for smart contracts, plus a built-in Swagger UI. ",
-    "url": "/firefly/head/tutorials/custom_contracts/#quick-reference",
-    "relUrl": "/tutorials/custom_contracts/#quick-reference"
-  },"517": {
-    "doc": "pages.custom_smart_contracts",
-    "title": "Key concepts",
-    "content": "FireFly defines the following constructs to support custom smart contracts: . | Contract Interface: FireFly defines a common, blockchain agnostic way to describe smart contracts. This is referred to as a Contract Interface. A contract interface is written in the FireFly Interface (FFI) format. It is a simple JSON document that has a name, a namespace, a version, a list of methods, and a list of events. | . For more details, you can also have a look at the Reference page for the FireFly Interface Format. For blockchains that offer a DSL describing the smart contract interface, such as Ethereum’s ABI (Application Binary Interface), FireFly offers a convenience tool to convert the DSL into the FFI format. NOTE: Contract interfaces are scoped to a namespace. Within a namespace each contract interface must have a unique name and version combination. The same name and version combination can exist in different namespaces simultaneously. | HTTP API: Based on a Contract Interface, FireFly further defines an HTTP API for the smart contract, which is complete with an OpenAPI Specification and the Swagger UI. An HTTP API defines an /invoke root path to submit transactions, and a /query root path to send query requests to read the state back out. | . How the invoke vs. query requests get interpreted into the native blockchain requests are specific to the blockchain’s connector. For instance, the Ethereum connector translates /invoke calls to eth_sendTransaction JSON-RPC requests, while /query calls are translated into eth_call JSON-RPC requests. One the other hand, the Fabric connector translates /invoke calls to the multiple requests required to submit a transaction to a Fabric channel (which first collects endorsements from peer nodes, and then sends the assembled transaction payload to an orderer, for details please refer to the Fabric documentation). | Blockchain Event Listener: Regardless of a blockchain’s specific design, transaction processing are always asynchronous. This means a transaction is submitted to the network, at which point the submitting client gets an acknowledgement that it has been accepted for further processing. The client then listens for notifications by the blockchain when the transaction gets committed to the blockchain’s ledger. | . FireFly defines event listeners to allow the client application to specify the relevant blockchain events to keep track of. A client application can then receive the notifications from FireFly via an event subscription. | Event Subscription: While an event listener tells FireFly to keep track of certain events emitted by the blockchain, an event subscription tells FireFly to relay those events to the client application. Each subscriptions represents a stream of events that can be delivered to a listening client with various modes of delivery with at-least-once delivery guarantee. | . This is exactly the same as listening for any other events from FireFly. For more details on how Subscriptions work in FireFly you can read the Getting Started guide to Listen for events. ",
-    "url": "/firefly/head/tutorials/custom_contracts/#key-concepts",
-    "relUrl": "/tutorials/custom_contracts/#key-concepts"
-  },"518": {
-    "doc": "pages.custom_smart_contracts",
-    "title": "Custom onchain logic async programming in FireFly",
-    "content": "Like the rest of FireFly, custom onchin logic support are implemented with an asynchronous programming model. The key concepts here are: . | Transactions are submitted to FireFly and an ID is returned. This is the Operation ID. | The transaction itself happens asynchronously from the HTTP request that initiated it | Blockchain events emitted by the custom onchain logic (Ethereum smart contracts, Fabric chaincodes, Corda flows, etc.) will be stored in FireFly’s database if FireFly has a Event Listener set up for that specific type of event. FireFly will also emit an event of type blockchain_event_received when this happens. | . ",
-    "url": "/firefly/head/tutorials/custom_contracts/#custom-onchain-logic-async-programming-in-firefly",
-    "relUrl": "/tutorials/custom_contracts/#custom-onchain-logic-async-programming-in-firefly"
-  },"519": {
-    "doc": "pages.custom_smart_contracts",
-    "title": "pages.custom_smart_contracts",
-    "content": " ",
-    "url": "/firefly/head/tutorials/custom_contracts/",
-    "relUrl": "/tutorials/custom_contracts/"
-  },"520": {
-    "doc": "pages.chains",
-    "title": "Connecting to remote blockchains",
-    "content": "If you want to connect a local development environment, created with the FireFly CLI to another chain, there are several tutorials below to help you do that. These other chains could also be on the same machine as FireFly, or they could be somewhere on the public internet, depending on the tutorial. ",
-    "url": "/firefly/head/tutorials/chains/#connecting-to-remote-blockchains",
-    "relUrl": "/tutorials/chains/#connecting-to-remote-blockchains"
-  },"521": {
-    "doc": "pages.chains",
-    "title": "pages.chains",
-    "content": " ",
-    "url": "/firefly/head/tutorials/chains/",
-    "relUrl": "/tutorials/chains/"
-  },"522": {
-    "doc": "Use tokens",
-    "title": "Quick reference",
-    "content": "Tokens are a critical building block in many blockchain-backed applications. Fungible tokens can represent a store of value or a means of rewarding participation in a multi-party system, while non-fungible tokens provide a clear way to identify and track unique entities across the network. FireFly provides flexible mechanisms to operate on any type of token and to tie those operations to on- and off-chain data. | FireFly provides an abstraction layer for multiple types of tokens | Tokens are grouped into pools, which each represent a particular type or class of token | Each pool is classified as fungible or non-fungible | In the case of non-fungible tokens, the pool is subdivided into individual tokens with a unique token index | Within a pool, you may mint (issue), transfer, and burn (redeem) tokens | Each operation can be optionally accompanied by a broadcast or private message, which will be recorded alongside the transfer on-chain | FireFly tracks a history of all token operations along with all current token balances | The blockchain backing each token connector may be the same or different from the one backing FireFly message pinning | . ",
-    "url": "/firefly/head/tutorials/tokens/#quick-reference",
-    "relUrl": "/tutorials/tokens/#quick-reference"
-  },"523": {
-    "doc": "Use tokens",
-    "title": "What is a pool?",
-    "content": "Token pools are a FireFly construct for describing a set of tokens. The exact definition of a token pool is dependent on the token connector implementation. Some examples of how pools might map to various well-defined Ethereum standards: . | ERC-1155: a single contract instance can efficiently allocate many isolated pools of fungible or non-fungible tokens | ERC-20 / ERC-777: each contract instance represents a single fungible pool of value, e.g. “a coin” | ERC-721: each contract instance represents a single pool of NFTs, each with unique identities within the pool | ERC-1400 / ERC-1410: partially supported in the same manner as ERC-20/ERC-777, but would require new features for working with partitions | . These are provided as examples only - a custom token connector could be backed by any token technology (Ethereum or otherwise) as long as it can support the basic operations described here (create pool, mint, burn, transfer). Other FireFly repos include a sample implementation of a token connector for ERC-20 and ERC-721 as well as ERC-1155. ",
-    "url": "/firefly/head/tutorials/tokens/#what-is-a-pool",
-    "relUrl": "/tutorials/tokens/#what-is-a-pool"
-  },"524": {
-    "doc": "Use tokens",
-    "title": "Use tokens",
-    "content": " ",
-    "url": "/firefly/head/tutorials/tokens/",
-    "relUrl": "/tutorials/tokens/"
-  },"525": {
-    "doc": "pages.tutorials",
-    "title": "Tutorials",
-    "content": " ",
-    "url": "/firefly/head/tutorials/#tutorials",
-    "relUrl": "/tutorials/#tutorials"
-  },"526": {
-    "doc": "pages.tutorials",
-    "title": "pages.tutorials",
-    "content": " ",
-    "url": "/firefly/head/tutorials/",
-    "relUrl": "/tutorials/"
-  },"527": {
+  },"495": {
     "doc": "pages.release_notes",
     "title": "Release Notes",
     "content": "Full release notes . ",
     "url": "/firefly/head/releasenotes/#release-notes",
     "relUrl": "/releasenotes/#release-notes"
-  },"528": {
+  },"496": {
     "doc": "pages.release_notes",
     "title": "Version 1.1 - September 12, 2022",
     "content": "FireFly 1.1 migration guide . What’s New: . | Gateway Mode: Connect to many chains with auto-indexing of activities | Public EVM Chain Support: Manage public chain connections including Ethereum, Polygon, Arbitrum, Binance Smart Chain, Moonbeam, and more. | Namespaces: Isolated environments within a FireFly runtime allowing independent configuration of plugin and infrastructure components and more | Connector Toolkit: Quickly build custom connectors | Pluggable API Security: Plug in your own API security | Mass Scale Tokens: Support many parallel copies of token plugins for mass scale | . ",
     "url": "/firefly/head/releasenotes/#version-11---september-12-2022",
     "relUrl": "/releasenotes/#version-11---september-12-2022"
-  },"529": {
+  },"497": {
     "doc": "pages.release_notes",
     "title": "Version 1.0.3 - July 07, 2022",
     "content": "What’s New: . | Adds support for custom URIs for non-fungible tokens and documentation updates | Deprecate default value for “ffdx” | Back port of custom URI support for non-fungible tokens | Update token connector versions | Back port of “FAQ and FireFly Tutorial updates” | . ",
     "url": "/firefly/head/releasenotes/#version-103---july-07-2022",
     "relUrl": "/releasenotes/#version-103---july-07-2022"
-  },"530": {
+  },"498": {
     "doc": "pages.release_notes",
     "title": "Version 1.0.2 - May 12, 2022",
     "content": "What’s New: . | Fix invocations on custom Fabric chaincode, which were not properly reporting success/failure status back to FireFly (along with other minor bugfixes). | De-duplicate existing token approvals in database migration | Backport docs generation and versioning code for 1.0 stream | Default fabconnect calls to async | Set message header type of broadcast/private | . ",
     "url": "/firefly/head/releasenotes/#version-102---may-12-2022",
     "relUrl": "/releasenotes/#version-102---may-12-2022"
-  },"531": {
+  },"499": {
     "doc": "pages.release_notes",
     "title": "Version 1.0.1 - May 09, 2022",
     "content": "What’s New: . | Fixes for token approvals - previously approvals would intermittently be missed by FireFly or recorded with incorrect details. | New versions of ERC20/ERC721 connector will assume “no data” support if you create a token pool against an older version of the sample smart contracts. | . ",
     "url": "/firefly/head/releasenotes/#version-101---may-09-2022",
     "relUrl": "/releasenotes/#version-101---may-09-2022"
-  },"532": {
+  },"500": {
     "doc": "pages.release_notes",
     "title": "Version 1.0.0 - April 28, 2022",
     "content": "This release includes lots of major hardening, performance improvements, and bug fixes, as well as more complete documentation and OpenAPI specifications. What’s New: . | Massive performance improvements across the board | Up-to-date documentation and fully annotated OpenAPI specification | Overhaul of UI | Cleaner logs and error messages | Lots of bug fixes and miscellaneous enhancements | . ",
     "url": "/firefly/head/releasenotes/#version-100---april-28-2022",
     "relUrl": "/releasenotes/#version-100---april-28-2022"
-  },"533": {
+  },"501": {
     "doc": "pages.release_notes",
     "title": "Version 0.14.0 - March 22, 2022",
     "content": "What’s New: . | Major UI updates including Activity, Blockchain, Off-Chain, Tokens, Network Map, and My Node sections | Custom contract APIs | Enhanced subscription filters | Event API enrichment | Performance updates | Bug fixes | . ",
     "url": "/firefly/head/releasenotes/#version-0140---march-22-2022",
     "relUrl": "/releasenotes/#version-0140---march-22-2022"
-  },"534": {
+  },"502": {
     "doc": "pages.release_notes",
     "title": "Version 0.13.0 - February 14, 2022",
     "content": "What’s New: . | Hardening release with significant rework to core of FireFly, mostly to fix issues exposed by the performance testing. | Support for running on ARM-based M1 processors | Rewrite of the message batching and event aggregation logic inside FireFly, to fix numerous edge cases with lost or hung messages | Hardening of operations and transactions to behave more consistently across all types | Metrics reporting to Prometheus | Continued development to support custom on-chain logic (still in preview) | . ",
     "url": "/firefly/head/releasenotes/#version-0130---february-14-2022",
     "relUrl": "/releasenotes/#version-0130---february-14-2022"
-  },"535": {
+  },"503": {
     "doc": "pages.release_notes",
     "title": "Version 0.12.0 - February 02, 2022",
     "content": "What’s New: . | All APIs deprecated in v0.11.0 or earlier are removed | Preview of custom on-chain logic | Support for new ERC20 / ERC721 connector | Overhaul of Transaction type and new BlockchainEvent type | Support for delivery confirmations via DX plugin | . ",
     "url": "/firefly/head/releasenotes/#version-0120---february-02-2022",
     "relUrl": "/releasenotes/#version-0120---february-02-2022"
-  },"536": {
+  },"504": {
     "doc": "pages.release_notes",
     "title": "Version 0.11.0 - November 22, 2021",
     "content": "What’s New: . | Significant hardening and enhanced token functionality | Major web UI overhaul | Optimized database operations for increased transactional throughput | Fixed PostgreSQL database migrations | . ",
     "url": "/firefly/head/releasenotes/#version-0110---november-22-2021",
     "relUrl": "/releasenotes/#version-0110---november-22-2021"
-  },"537": {
+  },"505": {
     "doc": "pages.release_notes",
     "title": "pages.release_notes",
     "content": " ",
     "url": "/firefly/head/releasenotes/",
     "relUrl": "/releasenotes/"
-  },"538": {
+  },"506": {
     "doc": "pages.understanding_firefly",
     "title": "Understanding FireFly",
     "content": " ",
     "url": "/firefly/head/overview/#understanding-firefly",
     "relUrl": "/overview/#understanding-firefly"
-  },"539": {
+  },"507": {
     "doc": "pages.understanding_firefly",
     "title": "pages.understanding_firefly",
     "content": " ",
     "url": "/firefly/head/overview/",
     "relUrl": "/overview/"
+  },"508": {
+    "doc": "Core Resources",
+    "title": "Core Resources",
+    "content": " ",
+    "url": "/firefly/head/reference/types/",
+    "relUrl": "/reference/types/"
+  },"509": {
+    "doc": "pages.reference",
+    "title": "Reference",
+    "content": ". This section contains detailed reference information for developers using FireFly. ",
+    "url": "/firefly/head/reference/#reference",
+    "relUrl": "/reference/#reference"
+  },"510": {
+    "doc": "pages.reference",
+    "title": "pages.reference",
+    "content": " ",
+    "url": "/firefly/head/reference/",
+    "relUrl": "/reference/"
+  },"511": {
+    "doc": "pages.contributors",
+    "title": "Contributors’ Guide",
+    "content": " ",
+    "url": "/firefly/head/contributors/#contributors-guide",
+    "relUrl": "/contributors/#contributors-guide"
+  },"512": {
+    "doc": "pages.contributors",
+    "title": "Table of contents",
+    "content": ". | 🚀 Connect with us on Discord | 📅 Join our Community Calls | 🔍 Find your first issue . | Any level of experience | Go experience | Little or no Go experience, but want to learn | TypeScript experience | React/TypeScript experience | Go and blockchain experience | . | 📝 Make changes | 📑 Commit with Developer Certificate of Origin | 📥 Open a Pull Request | Inclusivity | . We welcome anyone to contribute to the FireFly project! If you’re interested, this is a guide on how to get started. You don’t have to be a blockchain expert to make valuable contributions! There are lots of places for developers of all experience levels to get involved. 🧑🏽‍💻 👩🏻‍💻 👩🏾‍💻 🧑🏻‍💻 🧑🏿‍💻 👨🏽‍💻 👩🏽‍💻 🧑🏾‍💻 👨🏿‍💻 👨🏾‍💻 👩🏿‍💻 👨🏻‍💻 . ",
+    "url": "/firefly/head/contributors/#table-of-contents",
+    "relUrl": "/contributors/#table-of-contents"
+  },"513": {
+    "doc": "pages.contributors",
+    "title": "🚀 Connect with us on Discord",
+    "content": "You can chat with maintainers and other contributors on Discord in the firefly channel: https://discord.gg/hyperledger . Join Discord Server . ",
+    "url": "/firefly/head/contributors/#-connect-with-us-on-discord",
+    "relUrl": "/contributors/#-connect-with-us-on-discord"
+  },"514": {
+    "doc": "pages.contributors",
+    "title": "📅 Join our Community Calls",
+    "content": "Community calls are a place to talk to other contributors, maintainers, and other people interested in FireFly. Maintainers often discuss upcoming changes and proposed new features on these calls. These calls are a great way for the community to give feedback on new ideas, ask questions about FireFly, and hear how others are using FireFly to solve real world problems. Please see the FireFly Calendar for the current meeting schedule, and the link to join. Everyone is welcome to join, regardless of background or experience level. ",
+    "url": "/firefly/head/contributors/#-join-our-community-calls",
+    "relUrl": "/contributors/#-join-our-community-calls"
+  },"515": {
+    "doc": "pages.contributors",
+    "title": "🔍 Find your first issue",
+    "content": "If you’re looking for somewhere to get started in the FireFly project and want something small and relatively easy, take a look at issues tagged with “Good first issue”. You can definitely work on other things if you want to. These are only suggestions for easy places to get started. See “Good First Issues” . NOTE Hyperledger FireFly has a microservice architecture so it has many different GitHub repos. Use the link or the button above to look for “Good First Issues” across all the repos at once. Here are some other suggestions of places to get started, based on experience you may already have: . Any level of experience . If you looking to make your first open source contribution the FireFly documentation is a great place to make small, easy improvements. These improvements are also very valuable, because they help the next person that may want to know the same thing. Here are some detailed instructions on Contributing to Documentation . Go experience . If you have some experience in Go and really want to jump into FireFly, the FireFly Core is the heart of the project. Here are some detailed instructions on Setting up a FireFly Core Development Environment. Little or no Go experience, but want to learn . If you don’t have a lot of experience with Go, but are interested in learning, the FireFly CLI might be a good place to start. The FireFly CLI is a tool to set up local instances of FireFly for building apps that use FireFly, and for doing development on FireFly itself. TypeScript experience . If you have some experience in TypeScript, there are several FireFly microservices that are written in TypeScript. The Data Exchange is used for private messaging between FireFly nodes. The ERC-20/ERC-271 Tokens Connector and ERC-1155 Tokens Connector are used to abstract token contract specifics from the FireFly Core. React/TypeScript experience . If you want to do some frontend development, the FireFly UI is written in TypeScript and React. Go and blockchain experience . If you already have some experience with blockchain and want to work on some backend components, the blockchain connectors, firefly-ethconnect (for Ethereum) and firefly-fabconnect (for Fabric) are great places to get involved. ",
+    "url": "/firefly/head/contributors/#-find-your-first-issue",
+    "relUrl": "/contributors/#-find-your-first-issue"
+  },"516": {
+    "doc": "pages.contributors",
+    "title": "📝 Make changes",
+    "content": "To contribute to the repository, please fork the repository that you want to change. Then clone your fork locally on your machine and make your changes. As you commit your changes, push them to your fork. More information on making commits below. ",
+    "url": "/firefly/head/contributors/#-make-changes",
+    "relUrl": "/contributors/#-make-changes"
+  },"517": {
+    "doc": "pages.contributors",
+    "title": "📑 Commit with Developer Certificate of Origin",
+    "content": "As with all Hyperledger repositories, FireFly requires proper sign-off on every commit that is merged into the main branch. The sign-off indicates that you certify the changes you are submitting are in accordance with the Developer Certificate of Origin. To sign-off on your commit, you can use the -s flag when you commit changes. git commit -s -m \"Your commit message\" . This will add a string like this to the end of your commit message: . \"Signed-off-by: Your Name &lt;your-email@address&gt;\" . NOTE: Sign-off is not the same thing as signing your commits with a private key. Both operations use a similar flag, which can be confusing. The one you want is the lowercase -s 🙂 . ",
+    "url": "/firefly/head/contributors/#-commit-with-developer-certificate-of-origin",
+    "relUrl": "/contributors/#-commit-with-developer-certificate-of-origin"
+  },"518": {
+    "doc": "pages.contributors",
+    "title": "📥 Open a Pull Request",
+    "content": "When you’re ready to submit your changes for review, open a Pull Request back to the upstream repository. When you open your pull request, the maintainers will automatically be notified. Additionally, a series of automated checks will be performed on your code to make sure it passes certain repository specific requirements. Maintainers may have suggestions on things to improve in your pull request. It is our goal to get code that is beneficial to the project merged as quickly as possible, so we don’t like to leave pull requests hanging around for a long time. If the project maintainers are satisfied with the changes, they will approve and merge the pull request. Thanks for your interest in collaborating on this project! . ",
+    "url": "/firefly/head/contributors/#-open-a-pull-request",
+    "relUrl": "/contributors/#-open-a-pull-request"
+  },"519": {
+    "doc": "pages.contributors",
+    "title": "Inclusivity",
+    "content": "The Hyperledger Foundation and the FireFly project are committed to fostering a community that is welcoming to all people. When participating in community discussions, contributing code, or documentaiton, please abide by the following guidelines: . | Consider that users who will read the docs are from different background and cultures and that they have different preferences. | Avoid potential offensive terms and, for instance, prefer “allow list and deny list” to “white list and black list”. | We believe that we all have a role to play to improve our world, and even if writing inclusive doc might not look like a huge improvement, it’s a first step in the right direction. | We suggest to refer to Microsoft bias free writing guidelines and Google inclusive doc writing guide as starting points. | . ",
+    "url": "/firefly/head/contributors/#inclusivity",
+    "relUrl": "/contributors/#inclusivity"
+  },"520": {
+    "doc": "pages.contributors",
+    "title": "pages.contributors",
+    "content": " ",
+    "url": "/firefly/head/contributors/",
+    "relUrl": "/contributors/"
+  },"521": {
+    "doc": "pages.faqs",
+    "title": "FAQs",
+    "content": "Find answers to the most commonly asked FireFly questions. ",
+    "url": "/firefly/head/faqs/#faqs",
+    "relUrl": "/faqs/#faqs"
+  },"522": {
+    "doc": "pages.faqs",
+    "title": "How does FireFly enable multi-chain applications?",
+    "content": "It’s best to think about FireFly as a rich orchestration layer that sits one layer above the blockchain. FireFly helps to abstract away much of the complex blockchain functionality (such as data exchange, private messaging, common token functionality, etc) in a loosely coupled microservice architecture with highly pluggable components. This enables application developers to focus on building innovative Web3 applications. There aren’t any out of the box bridges to connect two separate chains together, but with a collection of FireFly instances across a consortium, FireFly could help listen for events on Blockchain A and take an action on Blockchain B when certain conditions are met. ",
+    "url": "/firefly/head/faqs/#how-does-firefly-enable-multi-chain-applications",
+    "relUrl": "/faqs/#how-does-firefly-enable-multi-chain-applications"
+  },"523": {
+    "doc": "pages.faqs",
+    "title": "📜 How do I deploy smart contracts?",
+    "content": "In order to interact with a smart contract on a public or private Ethereum chain you need to first deploy it to the chain. Deployment means that you’ve sent a transaction with the compiled source code to the chain without a specified recipient and received a contract address that you and others on the network can use to interact with your contract. Refer to the Smart Contract Tutorial for instructions to deploy a smart contract to your private networking using FireFly. ",
+    "url": "/firefly/head/faqs/#-how-do-i-deploy-smart-contracts",
+    "relUrl": "/faqs/#-how-do-i-deploy-smart-contracts"
+  },"524": {
+    "doc": "pages.faqs",
+    "title": "🦊 Can I connect FireFly to MetaMask?",
+    "content": "Yes! Before you set up MetaMask you’ll likely want to create some tokens that you can use to send between wallets on your FF network. Go to the tokens tab in your FireFly node’s UI, create a token pool, and then mint some tokens. Once you’ve done this, follow the steps listed here to set up MetaMask on your network. ",
+    "url": "/firefly/head/faqs/#-can-i-connect-firefly-to-metamask",
+    "relUrl": "/faqs/#-can-i-connect-firefly-to-metamask"
+  },"525": {
+    "doc": "pages.faqs",
+    "title": "🚀 Connect with us on Discord",
+    "content": "If your question isn’t answered here or if you have immediate questions please don’t hesitate to reach out to us on Discord in the firefly channel: . ",
+    "url": "/firefly/head/faqs/#-connect-with-us-on-discord",
+    "relUrl": "/faqs/#-connect-with-us-on-discord"
+  },"526": {
+    "doc": "pages.faqs",
+    "title": "pages.faqs",
+    "content": " ",
+    "url": "/firefly/head/faqs/",
+    "relUrl": "/faqs/"
+  },"527": {
+    "doc": "pages.custom_smart_contracts",
+    "title": "Quick reference",
+    "content": "Almost all blockchain platforms offer the ability to execute smart contracts on-chain in order to manage states on the shared ledger. FireFly provides support to use RESTful APIs to interact with the smart contracts deployed in the target blockchains, and listening to events via websocket. FireFly’s unified API creates a consistent application experience regardless of the specific underlying blockchain implementation. It also provides developer-friendly features like automatic OpenAPI Specification generation for smart contracts, plus a built-in Swagger UI. ",
+    "url": "/firefly/head/tutorials/custom_contracts/#quick-reference",
+    "relUrl": "/tutorials/custom_contracts/#quick-reference"
+  },"528": {
+    "doc": "pages.custom_smart_contracts",
+    "title": "Key concepts",
+    "content": "FireFly defines the following constructs to support custom smart contracts: . | Contract Interface: FireFly defines a common, blockchain agnostic way to describe smart contracts. This is referred to as a Contract Interface. A contract interface is written in the FireFly Interface (FFI) format. It is a simple JSON document that has a name, a namespace, a version, a list of methods, and a list of events. | . For more details, you can also have a look at the Reference page for the FireFly Interface Format. For blockchains that offer a DSL describing the smart contract interface, such as Ethereum’s ABI (Application Binary Interface), FireFly offers a convenience tool to convert the DSL into the FFI format. NOTE: Contract interfaces are scoped to a namespace. Within a namespace each contract interface must have a unique name and version combination. The same name and version combination can exist in different namespaces simultaneously. | HTTP API: Based on a Contract Interface, FireFly further defines an HTTP API for the smart contract, which is complete with an OpenAPI Specification and the Swagger UI. An HTTP API defines an /invoke root path to submit transactions, and a /query root path to send query requests to read the state back out. | . How the invoke vs. query requests get interpreted into the native blockchain requests are specific to the blockchain’s connector. For instance, the Ethereum connector translates /invoke calls to eth_sendTransaction JSON-RPC requests, while /query calls are translated into eth_call JSON-RPC requests. One the other hand, the Fabric connector translates /invoke calls to the multiple requests required to submit a transaction to a Fabric channel (which first collects endorsements from peer nodes, and then sends the assembled transaction payload to an orderer, for details please refer to the Fabric documentation). | Blockchain Event Listener: Regardless of a blockchain’s specific design, transaction processing are always asynchronous. This means a transaction is submitted to the network, at which point the submitting client gets an acknowledgement that it has been accepted for further processing. The client then listens for notifications by the blockchain when the transaction gets committed to the blockchain’s ledger. | . FireFly defines event listeners to allow the client application to specify the relevant blockchain events to keep track of. A client application can then receive the notifications from FireFly via an event subscription. | Event Subscription: While an event listener tells FireFly to keep track of certain events emitted by the blockchain, an event subscription tells FireFly to relay those events to the client application. Each subscriptions represents a stream of events that can be delivered to a listening client with various modes of delivery with at-least-once delivery guarantee. | . This is exactly the same as listening for any other events from FireFly. For more details on how Subscriptions work in FireFly you can read the Getting Started guide to Listen for events. ",
+    "url": "/firefly/head/tutorials/custom_contracts/#key-concepts",
+    "relUrl": "/tutorials/custom_contracts/#key-concepts"
+  },"529": {
+    "doc": "pages.custom_smart_contracts",
+    "title": "Custom onchain logic async programming in FireFly",
+    "content": "Like the rest of FireFly, custom onchin logic support are implemented with an asynchronous programming model. The key concepts here are: . | Transactions are submitted to FireFly and an ID is returned. This is the Operation ID. | The transaction itself happens asynchronously from the HTTP request that initiated it | Blockchain events emitted by the custom onchain logic (Ethereum smart contracts, Fabric chaincodes, Corda flows, etc.) will be stored in FireFly’s database if FireFly has a Event Listener set up for that specific type of event. FireFly will also emit an event of type blockchain_event_received when this happens. | . ",
+    "url": "/firefly/head/tutorials/custom_contracts/#custom-onchain-logic-async-programming-in-firefly",
+    "relUrl": "/tutorials/custom_contracts/#custom-onchain-logic-async-programming-in-firefly"
+  },"530": {
+    "doc": "pages.custom_smart_contracts",
+    "title": "pages.custom_smart_contracts",
+    "content": " ",
+    "url": "/firefly/head/tutorials/custom_contracts/",
+    "relUrl": "/tutorials/custom_contracts/"
+  },"531": {
+    "doc": "pages.chains",
+    "title": "Connecting to remote blockchains",
+    "content": "If you want to connect a local development environment, created with the FireFly CLI to another chain, there are several tutorials below to help you do that. These other chains could also be on the same machine as FireFly, or they could be somewhere on the public internet, depending on the tutorial. ",
+    "url": "/firefly/head/tutorials/chains/#connecting-to-remote-blockchains",
+    "relUrl": "/tutorials/chains/#connecting-to-remote-blockchains"
+  },"532": {
+    "doc": "pages.chains",
+    "title": "pages.chains",
+    "content": " ",
+    "url": "/firefly/head/tutorials/chains/",
+    "relUrl": "/tutorials/chains/"
+  },"533": {
+    "doc": "Use tokens",
+    "title": "Quick reference",
+    "content": "Tokens are a critical building block in many blockchain-backed applications. Fungible tokens can represent a store of value or a means of rewarding participation in a multi-party system, while non-fungible tokens provide a clear way to identify and track unique entities across the network. FireFly provides flexible mechanisms to operate on any type of token and to tie those operations to on- and off-chain data. | FireFly provides an abstraction layer for multiple types of tokens | Tokens are grouped into pools, which each represent a particular type or class of token | Each pool is classified as fungible or non-fungible | In the case of non-fungible tokens, the pool is subdivided into individual tokens with a unique token index | Within a pool, you may mint (issue), transfer, and burn (redeem) tokens | Each operation can be optionally accompanied by a broadcast or private message, which will be recorded alongside the transfer on-chain | FireFly tracks a history of all token operations along with all current token balances | The blockchain backing each token connector may be the same or different from the one backing FireFly message pinning | . ",
+    "url": "/firefly/head/tutorials/tokens/#quick-reference",
+    "relUrl": "/tutorials/tokens/#quick-reference"
+  },"534": {
+    "doc": "Use tokens",
+    "title": "What is a pool?",
+    "content": "Token pools are a FireFly construct for describing a set of tokens. The exact definition of a token pool is dependent on the token connector implementation. Some examples of how pools might map to various well-defined Ethereum standards: . | ERC-1155: a single contract instance can efficiently allocate many isolated pools of fungible or non-fungible tokens | ERC-20 / ERC-777: each contract instance represents a single fungible pool of value, e.g. “a coin” | ERC-721: each contract instance represents a single pool of NFTs, each with unique identities within the pool | ERC-1400 / ERC-1410: partially supported in the same manner as ERC-20/ERC-777, but would require new features for working with partitions | . These are provided as examples only - a custom token connector could be backed by any token technology (Ethereum or otherwise) as long as it can support the basic operations described here (create pool, mint, burn, transfer). Other FireFly repos include a sample implementation of a token connector for ERC-20 and ERC-721 as well as ERC-1155. ",
+    "url": "/firefly/head/tutorials/tokens/#what-is-a-pool",
+    "relUrl": "/tutorials/tokens/#what-is-a-pool"
+  },"535": {
+    "doc": "Use tokens",
+    "title": "Use tokens",
+    "content": " ",
+    "url": "/firefly/head/tutorials/tokens/",
+    "relUrl": "/tutorials/tokens/"
+  },"536": {
+    "doc": "pages.tutorials",
+    "title": "Tutorials",
+    "content": " ",
+    "url": "/firefly/head/tutorials/#tutorials",
+    "relUrl": "/tutorials/#tutorials"
+  },"537": {
+    "doc": "pages.tutorials",
+    "title": "pages.tutorials",
+    "content": " ",
+    "url": "/firefly/head/tutorials/",
+    "relUrl": "/tutorials/"
+  },"538": {
+    "doc": "pages.architecture",
+    "title": "Architecture",
+    "content": "This section contains a collection of technical architecture diagrams detailing the various runtime components of a FireFly deployment. ",
+    "url": "/firefly/head/architecture/#architecture",
+    "relUrl": "/architecture/#architecture"
+  },"539": {
+    "doc": "pages.architecture",
+    "title": "pages.architecture",
+    "content": " ",
+    "url": "/firefly/head/architecture/",
+    "relUrl": "/architecture/"
   },"540": {
     "doc": "pages.home",
     "title": "Hyperledger FireFly",
