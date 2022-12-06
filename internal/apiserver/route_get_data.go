@@ -31,14 +31,14 @@ var getData = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.DataQueryFactory,
 	Description:     coremsgs.APIEndpointsGetData,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return core.DataArray{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.DataQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetData(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.GetData(cr.ctx, r.Filter))
 		},
 	},
 }

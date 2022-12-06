@@ -35,12 +35,12 @@ var getDataBlob = &ffapi.Route{
 		{Name: "dataid", Description: coremsgs.APIParamsBlobID},
 	},
 	QueryParams:     nil,
+	FilterFactory:   database.MessageQueryFactory,
 	Description:     coremsgs.APIEndpointsGetDataBlob,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []byte{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.MessageQueryFactory,
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
 			return or.Data().BlobsEnabled()
 		},

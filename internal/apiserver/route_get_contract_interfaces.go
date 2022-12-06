@@ -32,6 +32,7 @@ var getContractInterfaces = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.FFIQueryFactory,
 	Description:     coremsgs.APIEndpointsGetContractInterfaces,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.FFI{} },
@@ -40,9 +41,8 @@ var getContractInterfaces = &ffapi.Route{
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
 			return or.Contracts() != nil
 		},
-		FilterFactory: database.FFIQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.Contracts().GetFFIs(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.Contracts().GetFFIs(cr.ctx, r.Filter))
 		},
 	},
 }

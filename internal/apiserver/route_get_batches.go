@@ -31,14 +31,14 @@ var getBatches = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.BatchQueryFactory,
 	Description:     coremsgs.APIEndpointsGetBatches,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.BatchPersisted{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.BatchQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetBatches(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.GetBatches(cr.ctx, r.Filter))
 		},
 	},
 }

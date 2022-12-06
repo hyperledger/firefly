@@ -31,14 +31,14 @@ var getVerifiers = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.VerifierQueryFactory,
 	Description:     coremsgs.APIEndpointsGetVerifiers,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.VerifierQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.NetworkMap().GetVerifiers(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.NetworkMap().GetVerifiers(cr.ctx, r.Filter))
 		},
 	},
 }

@@ -18,14 +18,11 @@ package sqlcommon
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -33,55 +30,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInitSQLCommonMissingURL(t *testing.T) {
-	conf := config.RootSection("unittest.db")
-	conf.AddKnownKey("url", "")
-	s := &SQLCommon{}
-	tp := &sqliteGoTestProvider{
-		t:            t,
-		callbacks:    &databasemocks.Callbacks{},
-		capabilities: &database.Capabilities{},
-		config:       conf,
-	}
-	s.InitConfig(tp, conf)
-	err := s.Init(context.Background(), tp, conf, nil)
-	assert.Regexp(t, "FF10138.*url", err)
-}
-
-func TestInitSQLCommon(t *testing.T) {
-	s, cleanup := newSQLiteTestProvider(t)
-	defer cleanup()
-	assert.NotNil(t, s.Capabilities())
-	assert.NotNil(t, s.DB())
-}
-
-func TestInitSQLCommonMissingOptions(t *testing.T) {
-	s := &SQLCommon{}
-	err := s.Init(context.Background(), nil, nil, nil)
-	assert.Regexp(t, "FF10112", err)
-}
-
-func TestInitSQLCommonOpenFailed(t *testing.T) {
-	mp := newMockProvider()
-	mp.openError = fmt.Errorf("pop")
-	err := mp.SQLCommon.Init(context.Background(), mp, mp.config, mp.capabilities)
-	assert.Regexp(t, "FF10112.*pop", err)
-}
-
-func TestInitSQLCommonMigrationOpenFailed(t *testing.T) {
-	mp := newMockProvider()
-	mp.config.Set(SQLConfMigrationsAuto, true)
-	mp.getMigrationDriverError = fmt.Errorf("pop")
-	err := mp.SQLCommon.Init(context.Background(), mp, mp.config, mp.capabilities)
-	assert.Regexp(t, "FF10163.*pop", err)
-}
-
 func TestMigrationUpDown(t *testing.T) {
 	tp, cleanup := newSQLiteTestProvider(t)
 	defer cleanup()
 
-	driver, err := tp.GetMigrationDriver(tp.db)
+	driver, err := tp.GetMigrationDriver(tp.DB())
 	assert.NoError(t, err)
+	assert.NotNil(t, tp.Capabilities())
 	var m *migrate.Migrate
 	m, err = migrate.NewWithDatabaseInstance(
 		"file://../../../db/migrations/sqlite",
@@ -89,160 +44,6 @@ func TestMigrationUpDown(t *testing.T) {
 	assert.NoError(t, err)
 	err = m.Down()
 	assert.NoError(t, err)
-}
-
-func TestQueryTxBadSQL(t *testing.T) {
-	tp, cleanup := newSQLiteTestProvider(t)
-	defer cleanup()
-	_, _, err := tp.queryTx(context.Background(), "table1", nil, sq.SelectBuilder{})
-	assert.Regexp(t, "FF10113", err)
-}
-
-func TestInsertTxPostgreSQLReturnedSyntax(t *testing.T) {
-	s, mdb := newMockProvider().init()
-	mdb.ExpectBegin()
-	mdb.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).AddRow(12345))
-	ctx, tx, _, err := s.beginOrUseTx(context.Background())
-	assert.NoError(t, err)
-	s.fakePSQLInsert = true
-	sb := sq.Insert("table").Columns("col1").Values(("val1"))
-	sequence, err := s.insertTx(ctx, "table1", tx, sb, nil)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(12345), sequence)
-}
-
-func TestInsertTxPostgreSQLReturnedSyntaxFail(t *testing.T) {
-	s, mdb := newMockProvider().init()
-	mdb.ExpectBegin()
-	mdb.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
-	ctx, tx, _, err := s.beginOrUseTx(context.Background())
-	assert.NoError(t, err)
-	s.fakePSQLInsert = true
-	sb := sq.Insert("table").Columns("col1").Values(("val1"))
-	_, err = s.insertTx(ctx, "table1", tx, sb, nil)
-	assert.Regexp(t, "FF10116", err)
-}
-
-func TestInsertTxBadSQL(t *testing.T) {
-	s, _ := newMockProvider().init()
-	_, err := s.insertTx(context.Background(), "table1", nil, sq.InsertBuilder{}, nil)
-	assert.Regexp(t, "FF10113", err)
-}
-
-func TestUpdateTxBadSQL(t *testing.T) {
-	s, _ := newMockProvider().init()
-	_, err := s.updateTx(context.Background(), "table1", nil, sq.UpdateBuilder{}, nil)
-	assert.Regexp(t, "FF10113", err)
-}
-
-func TestDeleteTxBadSQL(t *testing.T) {
-	s, _ := newMockProvider().init()
-	err := s.deleteTx(context.Background(), "table1", nil, sq.DeleteBuilder{}, nil)
-	assert.Regexp(t, "FF10113", err)
-}
-
-func TestDeleteTxZeroRowsAffected(t *testing.T) {
-	s, mdb := newMockProvider().init()
-	mdb.ExpectBegin()
-	mdb.ExpectExec("DELETE.*").WillReturnResult(driver.ResultNoRows)
-	ctx, tx, _, err := s.beginOrUseTx(context.Background())
-	assert.NoError(t, err)
-	s.fakePSQLInsert = true
-	sb := sq.Delete("table")
-	err = s.deleteTx(ctx, "table1", tx, sb, nil)
-	assert.Regexp(t, "FF10109", err)
-}
-
-func TestRunAsGroup(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("INSERT.*").WillReturnResult(driver.ResultNoRows)
-	mock.ExpectExec("INSERT.*").WillReturnResult(driver.ResultNoRows)
-	mock.ExpectQuery("SELECT.*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	mock.ExpectCommit()
-
-	err := s.RunAsGroup(context.Background(), func(ctx context.Context) (err error) {
-		// First insert
-		ctx, tx, ac, err := s.beginOrUseTx(ctx)
-		assert.NoError(t, err)
-		_, err = s.insertTx(ctx, "table1", tx, sq.Insert("test").Columns("test").Values("test"), nil)
-		assert.NoError(t, err)
-		err = s.commitTx(ctx, tx, ac)
-		assert.NoError(t, err)
-
-		// Second insert
-		ctx, tx, ac, err = s.beginOrUseTx(ctx)
-		assert.NoError(t, err)
-		_, err = s.insertTx(ctx, "table1", tx, sq.Insert("test").Columns("test").Values("test"), nil)
-		assert.NoError(t, err)
-		err = s.commitTx(ctx, tx, ac)
-		assert.NoError(t, err)
-
-		// Query, not specifying a transaction
-		_, _, err = s.query(ctx, "table1", sq.Select("test").From("test"))
-		assert.NoError(t, err)
-
-		// Nested call
-		err = s.RunAsGroup(ctx, func(ctx2 context.Context) error {
-			assert.Equal(t, ctx, ctx2)
-			return nil
-		})
-		assert.NoError(t, err)
-
-		return
-	})
-
-	assert.NoError(t, mock.ExpectationsWereMet())
-	assert.NoError(t, err)
-}
-
-func TestRunAsGroupBeginFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.RunAsGroup(context.Background(), func(ctx context.Context) (err error) {
-		return
-	})
-	assert.NoError(t, mock.ExpectationsWereMet())
-	assert.Regexp(t, "FF10114", err)
-}
-
-func TestRunAsGroupFunctionFails(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("INSERT.*").WillReturnResult(driver.ResultNoRows)
-	mock.ExpectRollback()
-	err := s.RunAsGroup(context.Background(), func(ctx context.Context) (err error) {
-		ctx, tx, ac, err := s.beginOrUseTx(ctx)
-		assert.NoError(t, err)
-		_, err = s.insertTx(ctx, "table1", tx, sq.Insert("test").Columns("test").Values("test"), nil)
-		assert.NoError(t, err)
-		s.rollbackTx(ctx, tx, ac) // won't actually rollback
-		assert.NoError(t, err)
-
-		return fmt.Errorf("pop")
-	})
-	assert.NoError(t, mock.ExpectationsWereMet())
-	assert.Regexp(t, "pop", err)
-}
-
-func TestRunAsGroupCommitFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.RunAsGroup(context.Background(), func(ctx context.Context) (err error) {
-		return
-	})
-	assert.NoError(t, mock.ExpectationsWereMet())
-	assert.Regexp(t, "FF10119", err)
-}
-
-func TestRollbackFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	tx, _ := s.db.Begin()
-	mock.ExpectRollback().WillReturnError(fmt.Errorf("pop"))
-	s.rollbackTx(context.Background(), &txWrapper{sqlTX: tx}, false)
-	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestTXConcurrency(t *testing.T) {
@@ -258,7 +59,7 @@ func TestTXConcurrency(t *testing.T) {
 	// test should be included.
 	// (additional refactor required - see https://github.com/hyperledger/firefly/issues/119)
 
-	_, err := s.db.Exec(`
+	_, err := s.DB().Exec(`
 		CREATE TABLE testconc ( seq INTEGER PRIMARY KEY AUTOINCREMENT, val VARCHAR(256) );
 	`)
 	assert.NoError(t, err)
@@ -267,13 +68,13 @@ func TestTXConcurrency(t *testing.T) {
 		return func() {
 			defer close(done)
 			for i := 0; i < 5; i++ {
-				ctx, tx, ac, err := s.beginOrUseTx(context.Background())
+				ctx, tx, ac, err := s.BeginOrUseTx(context.Background())
 				assert.NoError(t, err)
 				val := fmt.Sprintf("%s/%d", name, i)
-				sequence, err := s.insertTx(ctx, "table1", tx, sq.Insert("testconc").Columns("val").Values(val), nil)
+				sequence, err := s.InsertTx(ctx, "table1", tx, sq.Insert("testconc").Columns("val").Values(val), nil)
 				assert.NoError(t, err)
 				t.Logf("%s = %d", val, sequence)
-				err = s.commitTx(ctx, tx, ac)
+				err = s.CommitTx(ctx, tx, ac)
 				assert.NoError(t, err)
 			}
 		}
@@ -287,68 +88,6 @@ func TestTXConcurrency(t *testing.T) {
 		<-flags[i]
 		t.Logf("Racer %d complete", i)
 	}
-}
-
-func TestCountQueryBadSQL(t *testing.T) {
-	s, _ := newMockProvider().init()
-	_, err := s.countQuery(context.Background(), "table1", nil, sq.Insert("wrong"), "")
-	assert.Regexp(t, "FF10113", err)
-}
-
-func TestCountQueryQueryFailed(t *testing.T) {
-	s, mdb := newMockProvider().init()
-	mdb.ExpectQuery("^SELECT COUNT\\(\\*\\)").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.countQuery(context.Background(), "table1", nil, sq.Eq{"col1": "val1"}, "")
-	assert.Regexp(t, "FF10115.*pop", err)
-}
-
-func TestCountQueryScanFailTx(t *testing.T) {
-	s, mdb := newMockProvider().init()
-	mdb.ExpectBegin()
-	mdb.ExpectQuery("^SELECT COUNT\\(\\*\\)").WillReturnRows(sqlmock.NewRows([]string{"col1"}).AddRow("not a number"))
-	ctx, tx, _, err := s.beginOrUseTx(context.Background())
-	assert.NoError(t, err)
-	_, err = s.countQuery(ctx, "table1", tx, sq.Eq{"col1": "val1"}, "")
-	assert.Regexp(t, "FF10121", err)
-}
-
-func TestCountQueryWithExpr(t *testing.T) {
-	s, mdb := newMockProvider().init()
-	mdb.ExpectQuery("^SELECT COUNT\\(DISTINCT key\\)").WillReturnRows(sqlmock.NewRows([]string{"col1"}).AddRow(10))
-	_, err := s.countQuery(context.Background(), "table1", nil, sq.Eq{"col1": "val1"}, "DISTINCT key")
-	assert.NoError(t, err)
-	assert.NoError(t, mdb.ExpectationsWereMet())
-}
-
-func TestQueryResSwallowError(t *testing.T) {
-	s, _ := newMockProvider().init()
-	res := s.queryRes(context.Background(), "table1", nil, sq.Insert("wrong"), &database.FilterInfo{
-		Count: true,
-	})
-	assert.Equal(t, int64(-1), *res.TotalCount)
-}
-
-func TestInsertTxRowsBadConfig(t *testing.T) {
-	s, mdb := newMockProvider().init()
-	mdb.ExpectBegin()
-	ctx, tx, _, err := s.beginOrUseTx(context.Background())
-	assert.NoError(t, err)
-	s.fakePSQLInsert = false
-	sb := sq.Insert("table").Columns("col1").Values(("val1"))
-	err = s.insertTxRows(ctx, "table1", tx, sb, nil, []int64{1, 2}, false)
-	assert.Regexp(t, "FF10374", err)
-}
-
-func TestInsertTxRowsIncompleteReturn(t *testing.T) {
-	s, mdb := newMockProvider().init()
-	mdb.ExpectBegin()
-	mdb.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).AddRow(int64(1001)))
-	ctx, tx, _, err := s.beginOrUseTx(context.Background())
-	assert.NoError(t, err)
-	s.fakePSQLInsert = true
-	sb := sq.Insert("table").Columns("col1").Values(("val1"))
-	err = s.insertTxRows(ctx, "table1", tx, sb, nil, []int64{1, 2}, false)
-	assert.Regexp(t, "FF10116", err)
 }
 
 func TestNamespaceCallbacks(t *testing.T) {

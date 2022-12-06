@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -50,16 +51,16 @@ var (
 const datatypesTable = "datatypes"
 
 func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *core.Datatype, allowExisting bool) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		datatypeRows, _, err := s.queryTx(ctx, datatypesTable, tx,
+		datatypeRows, _, err := s.QueryTx(ctx, datatypesTable, tx,
 			sq.Select("id").
 				From(datatypesTable).
 				Where(sq.Eq{
@@ -77,7 +78,7 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *core.Datatype,
 	if existing {
 
 		// Update the datatype
-		if _, err = s.updateTx(ctx, datatypesTable, tx,
+		if _, err = s.UpdateTx(ctx, datatypesTable, tx,
 			sq.Update(datatypesTable).
 				Set("message_id", datatype.Message).
 				Set("validator", string(datatype.Validator)).
@@ -94,7 +95,7 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *core.Datatype,
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, datatypesTable, tx,
+		if _, err = s.InsertTx(ctx, datatypesTable, tx,
 			sq.Insert(datatypesTable).
 				Columns(datatypeColumns...).
 				Values(
@@ -116,7 +117,7 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *core.Datatype,
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) datatypeResult(ctx context.Context, row *sql.Rows) (*core.Datatype, error) {
@@ -140,7 +141,7 @@ func (s *SQLCommon) datatypeResult(ctx context.Context, row *sql.Rows) (*core.Da
 
 func (s *SQLCommon) getDatatypeEq(ctx context.Context, eq sq.Eq, textName string) (message *core.Datatype, err error) {
 
-	rows, _, err := s.query(ctx, datatypesTable,
+	rows, _, err := s.Query(ctx, datatypesTable,
 		sq.Select(datatypeColumns...).
 			From(datatypesTable).
 			Where(eq),
@@ -171,16 +172,16 @@ func (s *SQLCommon) GetDatatypeByName(ctx context.Context, ns, name, version str
 	return s.getDatatypeEq(ctx, sq.Eq{"namespace": ns, "name": name, "version": version}, fmt.Sprintf("%s:%s", ns, name))
 }
 
-func (s *SQLCommon) GetDatatypes(ctx context.Context, namespace string, filter database.Filter) (message []*core.Datatype, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetDatatypes(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Datatype, res *ffapi.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(
+	query, fop, fi, err := s.FilterSelect(
 		ctx, "", sq.Select(datatypeColumns...).From(datatypesTable),
 		filter, datatypeFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, datatypesTable, query)
+	rows, tx, err := s.Query(ctx, datatypesTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -195,6 +196,6 @@ func (s *SQLCommon) GetDatatypes(ctx context.Context, namespace string, filter d
 		datatypes = append(datatypes, datatype)
 	}
 
-	return datatypes, s.queryRes(ctx, datatypesTable, tx, fop, fi), err
+	return datatypes, s.QueryRes(ctx, datatypesTable, tx, fop, fi), err
 
 }

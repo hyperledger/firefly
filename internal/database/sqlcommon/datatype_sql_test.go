@@ -123,7 +123,7 @@ func TestUpsertDatatypeFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertDatatype(context.Background(), &core.Datatype{}, true)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -134,7 +134,7 @@ func TestUpsertDatatypeFailSelect(t *testing.T) {
 	mock.ExpectRollback()
 	datatypeID := fftypes.NewUUID()
 	err := s.UpsertDatatype(context.Background(), &core.Datatype{ID: datatypeID}, true)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -146,7 +146,7 @@ func TestUpsertDatatypeFailInsert(t *testing.T) {
 	mock.ExpectRollback()
 	datatypeID := fftypes.NewUUID()
 	err := s.UpsertDatatype(context.Background(), &core.Datatype{ID: datatypeID}, true)
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -158,7 +158,7 @@ func TestUpsertDatatypeFailUpdate(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertDatatype(context.Background(), &core.Datatype{ID: datatypeID}, true)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -170,7 +170,7 @@ func TestUpsertDatatypeFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertDatatype(context.Background(), &core.Datatype{ID: datatypeID}, true)
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -179,7 +179,7 @@ func TestGetDatatypeByIDSelectFail(t *testing.T) {
 	datatypeID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetDatatypeByID(context.Background(), "ns1", datatypeID)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -215,7 +215,7 @@ func TestGetDatatypesQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.DatatypeQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, _, err := s.GetDatatypes(context.Background(), "ns1", f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

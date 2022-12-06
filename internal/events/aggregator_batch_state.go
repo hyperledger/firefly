@@ -74,7 +74,7 @@ type dispatchedMessage struct {
 	msgID         *fftypes.UUID
 	firstPinIndex int64
 	topicCount    int
-	msgPins       core.FFStringArray
+	msgPins       fftypes.FFStringArray
 	newState      core.MessageState
 }
 

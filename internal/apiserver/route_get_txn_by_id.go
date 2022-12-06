@@ -33,12 +33,12 @@ var getTxnByID = &ffapi.Route{
 		{Name: "txnid", Description: coremsgs.APIParamsTransactionID},
 	},
 	QueryParams:     nil,
+	FilterFactory:   database.TransactionQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTxnByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.TransactionQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			output, err = cr.or.GetTransactionByID(cr.ctx, r.PP["txnid"])
 			return output, err

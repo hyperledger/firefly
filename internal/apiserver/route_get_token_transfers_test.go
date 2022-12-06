@@ -18,11 +18,12 @@ package apiserver
 
 import (
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -52,9 +53,10 @@ func TestGetTokenTransfersFromOrTo(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenTransfers", mock.Anything, mock.MatchedBy(func(filter database.AndFilter) bool {
-		info, _ := filter.Finalize()
-		return info.String() == "( ( from == '0x1' ) || ( to == '0x1' ) )"
+	mam.On("GetTokenTransfers", mock.Anything, mock.MatchedBy(func(filter ffapi.AndFilter) bool {
+		f, _ := filter.Finalize()
+		filterStr := f.String()
+		return strings.Contains(filterStr, "( ( from == '0x1' ) || ( to == '0x1' ) )")
 	})).Return([]*core.TokenTransfer{}, nil, nil)
 	r.ServeHTTP(res, req)
 

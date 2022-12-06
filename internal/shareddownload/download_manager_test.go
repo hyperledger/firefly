@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -234,7 +235,7 @@ func TestDownloadManagerStartupRecoveryCombinations(t *testing.T) {
 
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", mock.Anything, "ns1", mock.Anything).Return([]*core.Operation{}, nil, fmt.Errorf("initial error")).Once()
-	mdi.On("GetOperations", mock.Anything, "ns1", mock.MatchedBy(func(filter database.Filter) bool {
+	mdi.On("GetOperations", mock.Anything, "ns1", mock.MatchedBy(func(filter ffapi.Filter) bool {
 		fi, err := filter.Finalize()
 		assert.NoError(t, err)
 		return fi.Skip == 0 && fi.Limit == 25
@@ -270,7 +271,7 @@ func TestDownloadManagerStartupRecoveryCombinations(t *testing.T) {
 			},
 		},
 	}, nil, nil).Once()
-	mdi.On("GetOperations", mock.Anything, "ns1", mock.MatchedBy(func(filter database.Filter) bool {
+	mdi.On("GetOperations", mock.Anything, "ns1", mock.MatchedBy(func(filter ffapi.Filter) bool {
 		fi, err := filter.Finalize()
 		assert.NoError(t, err)
 		return fi.Skip == 25 && fi.Limit == 25

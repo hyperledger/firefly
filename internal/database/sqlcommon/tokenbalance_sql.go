@@ -21,12 +21,13 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 const tokenbalanceTable = "tokenbalance"
@@ -48,7 +49,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer *core.TokenTransfer, key string, negate bool) error {
+func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *dbsql.TXWrapper, transfer *core.TokenTransfer, key string, negate bool) error {
 	balance, err := s.GetTokenBalance(ctx, transfer.Namespace, transfer.Pool, transfer.TokenIndex, key)
 	if err != nil {
 		return err
@@ -67,7 +68,7 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 	}
 
 	if balance != nil {
-		if _, err = s.updateTx(ctx, tokenbalanceTable, tx,
+		if _, err = s.UpdateTx(ctx, tokenbalanceTable, tx,
 			sq.Update(tokenbalanceTable).
 				Set("uri", transfer.URI).
 				Set("balance", total).
@@ -83,7 +84,7 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, tokenbalanceTable, tx,
+		if _, err = s.InsertTx(ctx, tokenbalanceTable, tx,
 			sq.Insert(tokenbalanceTable).
 				Columns(tokenBalanceColumns...).
 				Values(
@@ -106,11 +107,11 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 }
 
 func (s *SQLCommon) UpdateTokenBalances(ctx context.Context, transfer *core.TokenTransfer) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	if transfer.From != "" {
 		if err := s.addTokenBalance(ctx, tx, transfer, transfer.From, true); err != nil {
@@ -123,7 +124,7 @@ func (s *SQLCommon) UpdateTokenBalances(ctx context.Context, transfer *core.Toke
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) tokenBalanceResult(ctx context.Context, row *sql.Rows) (*core.TokenBalance, error) {
@@ -145,7 +146,7 @@ func (s *SQLCommon) tokenBalanceResult(ctx context.Context, row *sql.Rows) (*cor
 }
 
 func (s *SQLCommon) getTokenBalancePred(ctx context.Context, desc string, pred interface{}) (*core.TokenBalance, error) {
-	rows, _, err := s.query(ctx, tokenbalanceTable,
+	rows, _, err := s.Query(ctx, tokenbalanceTable,
 		sq.Select(tokenBalanceColumns...).
 			From(tokenbalanceTable).
 			Where(pred),
@@ -178,14 +179,14 @@ func (s *SQLCommon) GetTokenBalance(ctx context.Context, namespace string, poolI
 	})
 }
 
-func (s *SQLCommon) GetTokenBalances(ctx context.Context, namespace string, filter database.Filter) ([]*core.TokenBalance, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenBalanceColumns...).From(tokenbalanceTable),
+func (s *SQLCommon) GetTokenBalances(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenBalance, *ffapi.FilterResult, error) {
+	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(tokenBalanceColumns...).From(tokenbalanceTable),
 		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, tokenbalanceTable, query)
+	rows, tx, err := s.Query(ctx, tokenbalanceTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -200,18 +201,18 @@ func (s *SQLCommon) GetTokenBalances(ctx context.Context, namespace string, filt
 		accounts = append(accounts, d)
 	}
 
-	return accounts, s.queryRes(ctx, tokenbalanceTable, tx, fop, fi), err
+	return accounts, s.QueryRes(ctx, tokenbalanceTable, tx, fop, fi), err
 }
 
-func (s *SQLCommon) GetTokenAccounts(ctx context.Context, namespace string, filter database.Filter) ([]*core.TokenAccount, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "",
+func (s *SQLCommon) GetTokenAccounts(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenAccount, *ffapi.FilterResult, error) {
+	query, fop, fi, err := s.FilterSelect(ctx, "",
 		sq.Select("key", "MAX(updated) AS updated", "MAX(seq) AS seq").From(tokenbalanceTable).GroupBy("key"),
 		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, tokenbalanceTable, query)
+	rows, tx, err := s.Query(ctx, tokenbalanceTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -228,18 +229,18 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, namespace string, filt
 		accounts = append(accounts, &account)
 	}
 
-	return accounts, s.queryRes(ctx, tokenbalanceTable, tx, fop, fi), err
+	return accounts, s.QueryRes(ctx, tokenbalanceTable, tx, fop, fi), err
 }
 
-func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, namespace, key string, filter database.Filter) ([]*core.TokenAccountPool, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "",
+func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, namespace, key string, filter ffapi.Filter) ([]*core.TokenAccountPool, *ffapi.FilterResult, error) {
+	query, fop, fi, err := s.FilterSelect(ctx, "",
 		sq.Select("pool_id", "MAX(updated) AS updated", "MAX(seq) AS seq").From(tokenbalanceTable).GroupBy("pool_id"),
 		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"}, sq.Eq{"key": key, "namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, tokenbalanceTable, query)
+	rows, tx, err := s.Query(ctx, tokenbalanceTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -256,5 +257,5 @@ func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, namespace, key str
 		pools = append(pools, &pool)
 	}
 
-	return pools, s.queryRes(ctx, tokenbalanceTable, tx, fop, fi), err
+	return pools, s.QueryRes(ctx, tokenbalanceTable, tx, fop, fi), err
 }

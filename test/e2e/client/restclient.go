@@ -315,7 +315,7 @@ func (client *FireFlyClient) BroadcastMessageAsIdentity(t *testing.T, did, topic
 		SetBody(core.MessageInOut{
 			Message: core.Message{
 				Header: core.MessageHeader{
-					Topics: core.FFStringArray{topic},
+					Topics: fftypes.FFStringArray{topic},
 					SignerRef: core.SignerRef{
 						Author: did,
 					},
@@ -435,7 +435,7 @@ func (client *FireFlyClient) BroadcastBlobMessage(t *testing.T, topic string) (*
 		SetBody(core.MessageInOut{
 			Message: core.Message{
 				Header: core.MessageHeader{
-					Topics: core.FFStringArray{topic},
+					Topics: fftypes.FFStringArray{topic},
 				},
 			},
 			InlineData: core.InlineData{
@@ -452,7 +452,7 @@ func (client *FireFlyClient) PrivateBlobMessageDatatypeTagged(t *testing.T, topi
 		SetBody(core.MessageInOut{
 			Message: core.Message{
 				Header: core.MessageHeader{
-					Topics: core.FFStringArray{topic},
+					Topics: fftypes.FFStringArray{topic},
 				},
 			},
 			InlineData: core.InlineData{
@@ -477,7 +477,7 @@ func (client *FireFlyClient) PrivateMessageWithKey(key, topic, idempotencyKey st
 			Header: core.MessageHeader{
 				Tag:    tag,
 				TxType: txType,
-				Topics: core.FFStringArray{topic},
+				Topics: fftypes.FFStringArray{topic},
 				SignerRef: core.SignerRef{
 					Key: key,
 				},

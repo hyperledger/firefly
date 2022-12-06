@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"time"
 
 	"github.com/ghodss/yaml"
@@ -42,7 +41,6 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/orchestrator"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 var (
@@ -59,13 +57,10 @@ type Server interface {
 
 type apiServer struct {
 	// Defaults set with config
-	defaultFilterLimit uint64
-	maxFilterLimit     uint64
-	maxFilterSkip      uint64
-	apiTimeout         time.Duration
-	apiMaxTimeout      time.Duration
-	metricsEnabled     bool
-	ffiSwaggerGen      FFISwaggerGen
+	apiTimeout     time.Duration
+	apiMaxTimeout  time.Duration
+	metricsEnabled bool
+	ffiSwaggerGen  FFISwaggerGen
 }
 
 func InitConfig() {
@@ -78,13 +73,10 @@ func InitConfig() {
 
 func NewAPIServer() Server {
 	return &apiServer{
-		defaultFilterLimit: uint64(config.GetUint(coreconfig.APIDefaultFilterLimit)),
-		maxFilterLimit:     uint64(config.GetUint(coreconfig.APIMaxFilterLimit)),
-		maxFilterSkip:      uint64(config.GetUint(coreconfig.APIMaxFilterSkip)),
-		apiTimeout:         config.GetDuration(coreconfig.APIRequestTimeout),
-		apiMaxTimeout:      config.GetDuration(coreconfig.APIRequestMaxTimeout),
-		metricsEnabled:     config.GetBool(coreconfig.MetricsEnabled),
-		ffiSwaggerGen:      NewFFISwaggerGen(),
+		apiTimeout:     config.GetDuration(coreconfig.APIRequestTimeout),
+		apiMaxTimeout:  config.GetDuration(coreconfig.APIRequestMaxTimeout),
+		metricsEnabled: config.GetBool(coreconfig.MetricsEnabled),
+		ffiSwaggerGen:  NewFFISwaggerGen(),
 	}
 }
 
@@ -160,23 +152,9 @@ func (as *apiServer) swaggerGenConf(apiBaseURL string) *ffapi.Options {
 		Version:                   "1.0",
 		PanicOnMissingDescription: config.GetBool(coreconfig.APIOASPanicOnMissingDescription),
 		DefaultRequestTimeout:     config.GetDuration(coreconfig.APIRequestTimeout),
-		RouteCustomizations: func(ctx context.Context, sg *ffapi.SwaggerGen, route *ffapi.Route, op *openapi3.Operation) {
-			if ce, ok := route.Extensions.(*coreExtensions); ok {
-				if ce.FilterFactory != nil {
-					fields := ce.FilterFactory.NewFilter(ctx).Fields()
-					sort.Strings(fields)
-					for _, field := range fields {
-						sg.AddParam(ctx, op, "query", field, "", "", coremsgs.APIFilterParamDesc, false)
-					}
-					sg.AddParam(ctx, op, "query", "sort", "", "", coremsgs.APIFilterSortDesc, false)
-					sg.AddParam(ctx, op, "query", "ascending", "", "", coremsgs.APIFilterAscendingDesc, false)
-					sg.AddParam(ctx, op, "query", "descending", "", "", coremsgs.APIFilterDescendingDesc, false)
-					sg.AddParam(ctx, op, "query", "skip", "", "", coremsgs.APIFilterSkipDesc, false, config.GetUint(coreconfig.APIMaxFilterSkip))
-					sg.AddParam(ctx, op, "query", "limit", "", config.GetString(coreconfig.APIDefaultFilterLimit), coremsgs.APIFilterLimitDesc, false, config.GetUint(coreconfig.APIMaxFilterLimit))
-					sg.AddParam(ctx, op, "query", "count", "", "", coremsgs.APIFilterCountDesc, false)
-				}
-			}
-		},
+		APIDefaultFilterLimit:     config.GetString(coreconfig.APIDefaultFilterLimit),
+		APIMaxFilterLimit:         config.GetUint(coreconfig.APIMaxFilterLimit),
+		APIMaxFilterSkip:          config.GetUint(coreconfig.APIMaxFilterSkip),
 	}
 }
 
@@ -276,19 +254,10 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 			return nil, i18n.NewError(r.Req.Context(), coremsgs.MsgActionNotSupported)
 		}
 
-		var filter database.AndFilter
-		if ce.FilterFactory != nil {
-			filter, err = as.buildFilter(r.Req, ce.FilterFactory)
-			if err != nil {
-				return nil, err
-			}
-		}
-
 		cr := &coreRequest{
 			mgr:        mgr,
 			or:         or,
 			ctx:        r.Req.Context(),
-			filter:     filter,
 			apiBaseURL: apiBaseURL,
 		}
 		return ce.CoreJSONHandler(r, cr)
@@ -317,6 +286,9 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 
 func (as *apiServer) handlerFactory() *ffapi.HandlerFactory {
 	return &ffapi.HandlerFactory{
+		DefaultFilterLimit:    uint64(config.GetUint(coreconfig.APIDefaultFilterLimit)),
+		MaxFilterLimit:        uint64(config.GetUint(coreconfig.APIMaxFilterLimit)),
+		MaxFilterSkip:         uint64(config.GetUint(coreconfig.APIMaxFilterSkip)),
 		DefaultRequestTimeout: config.GetDuration(coreconfig.APIRequestTimeout),
 		MaxTimeout:            config.GetDuration(coreconfig.APIRequestMaxTimeout),
 	}
@@ -410,4 +382,11 @@ func (as *apiServer) createMetricsMuxRouter() *mux.Router {
 		promhttp.HandlerFor(metrics.Registry(), promhttp.HandlerOpts{})))
 
 	return r
+}
+
+func syncRetcode(isSync bool) int {
+	if isSync {
+		return http.StatusOK
+	}
+	return http.StatusAccepted
 }

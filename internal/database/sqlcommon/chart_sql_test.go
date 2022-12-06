@@ -188,7 +188,7 @@ func TestGetChartHistogramsQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT *").WillReturnError(fmt.Errorf("pop"))
 
 	_, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("messages"))
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

@@ -31,14 +31,14 @@ var getTokenBalances = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.TokenBalanceQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTokenBalances,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenBalance{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.TokenBalanceQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.Assets().GetTokenBalances(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.Assets().GetTokenBalances(cr.ctx, r.Filter))
 		},
 	},
 }

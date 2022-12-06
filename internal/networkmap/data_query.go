@@ -20,6 +20,7 @@ import (
 	"context"
 	"database/sql/driver"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -50,12 +51,12 @@ func (nm *networkMap) GetOrganizationByNameOrID(ctx context.Context, nameOrID st
 	return org, nil
 }
 
-func (nm *networkMap) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+func (nm *networkMap) GetOrganizations(ctx context.Context, filter ffapi.AndFilter) ([]*core.Identity, *ffapi.FilterResult, error) {
 	filter.Condition(filter.Builder().Eq("type", core.IdentityTypeOrg))
 	return nm.GetIdentities(ctx, filter)
 }
 
-func (nm *networkMap) GetOrganizationsWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
+func (nm *networkMap) GetOrganizationsWithVerifiers(ctx context.Context, filter ffapi.AndFilter) ([]*core.IdentityWithVerifiers, *ffapi.FilterResult, error) {
 	filter.Condition(filter.Builder().Eq("type", core.IdentityTypeOrg))
 	return nm.GetIdentitiesWithVerifiers(ctx, filter)
 }
@@ -82,7 +83,7 @@ func (nm *networkMap) GetNodeByNameOrID(ctx context.Context, nameOrID string) (n
 	return node, nil
 }
 
-func (nm *networkMap) GetNodes(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+func (nm *networkMap) GetNodes(ctx context.Context, filter ffapi.AndFilter) ([]*core.Identity, *ffapi.FilterResult, error) {
 	filter.Condition(filter.Builder().Eq("type", core.IdentityTypeNode))
 	return nm.database.GetIdentities(ctx, nm.namespace, filter)
 }
@@ -145,11 +146,11 @@ func (nm *networkMap) GetIdentityByDIDWithVerifiers(ctx context.Context, did str
 	return nm.withVerifiers(ctx, identity)
 }
 
-func (nm *networkMap) GetIdentities(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+func (nm *networkMap) GetIdentities(ctx context.Context, filter ffapi.AndFilter) ([]*core.Identity, *ffapi.FilterResult, error) {
 	return nm.database.GetIdentities(ctx, nm.namespace, filter)
 }
 
-func (nm *networkMap) GetIdentitiesWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
+func (nm *networkMap) GetIdentitiesWithVerifiers(ctx context.Context, filter ffapi.AndFilter) ([]*core.IdentityWithVerifiers, *ffapi.FilterResult, error) {
 	identities, res, err := nm.database.GetIdentities(ctx, nm.namespace, filter)
 	if err != nil {
 		return nil, nil, err
@@ -181,7 +182,7 @@ func (nm *networkMap) GetIdentitiesWithVerifiers(ctx context.Context, filter dat
 	return idsWithVerifiers, res, err
 }
 
-func (nm *networkMap) GetIdentityVerifiers(ctx context.Context, id string, filter database.AndFilter) ([]*core.Verifier, *database.FilterResult, error) {
+func (nm *networkMap) GetIdentityVerifiers(ctx context.Context, id string, filter ffapi.AndFilter) ([]*core.Verifier, *ffapi.FilterResult, error) {
 	identity, err := nm.GetIdentityByID(ctx, id)
 	if err != nil {
 		return nil, nil, err
@@ -221,6 +222,6 @@ func (nm *networkMap) GetVerifierByHash(ctx context.Context, hash string) (*core
 	return verifier, nil
 }
 
-func (nm *networkMap) GetVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.Verifier, *database.FilterResult, error) {
+func (nm *networkMap) GetVerifiers(ctx context.Context, filter ffapi.AndFilter) ([]*core.Verifier, *ffapi.FilterResult, error) {
 	return nm.database.GetVerifiers(ctx, nm.namespace, filter)
 }

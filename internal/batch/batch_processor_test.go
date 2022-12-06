@@ -251,7 +251,7 @@ func TestInsertNewNonceFail(t *testing.T) {
 			{Header: core.MessageHeader{
 				ID:     fftypes.NewUUID(),
 				Group:  gid,
-				Topics: core.FFStringArray{"topic1"},
+				Topics: fftypes.FFStringArray{"topic1"},
 			}},
 		},
 	})
@@ -291,7 +291,7 @@ func TestUpdateExistingNonceFail(t *testing.T) {
 			{Header: core.MessageHeader{
 				ID:     fftypes.NewUUID(),
 				Group:  gid,
-				Topics: core.FFStringArray{"topic1"},
+				Topics: fftypes.FFStringArray{"topic1"},
 			}},
 		},
 	})
@@ -326,7 +326,7 @@ func TestGetNonceFail(t *testing.T) {
 			{Header: core.MessageHeader{
 				ID:     fftypes.NewUUID(),
 				Group:  gid,
-				Topics: core.FFStringArray{"topic1"},
+				Topics: fftypes.FFStringArray{"topic1"},
 			}},
 		},
 	})
@@ -362,7 +362,7 @@ func TestGetNonceMigrationFail(t *testing.T) {
 			{Header: core.MessageHeader{
 				ID:     fftypes.NewUUID(),
 				Group:  gid,
-				Topics: core.FFStringArray{"topic1"},
+				Topics: fftypes.FFStringArray{"topic1"},
 			}},
 		},
 	})
@@ -437,7 +437,7 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			msgid := fftypes.NewUUID()
 			bp.newWork <- &batchWork{
-				msg: &core.Message{Header: core.MessageHeader{ID: msgid, Topics: core.FFStringArray{"topic1"}}, Sequence: int64(1000 + i)},
+				msg: &core.Message{Header: core.MessageHeader{ID: msgid, Topics: fftypes.FFStringArray{"topic1"}}, Sequence: int64(1000 + i)},
 			}
 		}
 	}()
@@ -493,7 +493,7 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 			ID:     fftypes.NewUUID(),
 			Type:   core.MessageTypePrivate,
 			Group:  groupID,
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
 	}
 	msg2 := &core.Message{
@@ -501,7 +501,7 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 			ID:     fftypes.NewUUID(),
 			Type:   core.MessageTypePrivate,
 			Group:  groupID,
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
 	}
 
@@ -547,7 +547,7 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 			ID:     fftypes.NewUUID(),
 			Type:   core.MessageTypePrivate,
 			Group:  fftypes.NewRandB32(),
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
 	}
 

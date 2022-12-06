@@ -125,7 +125,7 @@ func TestUpsertApprovalFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertTokenApproval(context.Background(), &core.TokenApproval{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -134,7 +134,7 @@ func TestUpsertApprovalFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertTokenApproval(context.Background(), &core.TokenApproval{})
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -145,7 +145,7 @@ func TestUpsertApprovalFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertTokenApproval(context.Background(), &core.TokenApproval{})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -156,7 +156,7 @@ func TestUpsertApprovalFailUpdate(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertTokenApproval(context.Background(), &core.TokenApproval{})
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -167,7 +167,7 @@ func TestUpsertApprovalFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertTokenApproval(context.Background(), &core.TokenApproval{})
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -175,7 +175,7 @@ func TestGetApprovalByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetTokenApprovalByID(context.Background(), "ns1", fftypes.NewUUID())
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -201,7 +201,7 @@ func TestGetApprovalsQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.TokenApprovalQueryFactory.NewFilter(context.Background()).Eq("subject", "")
 	_, _, err := s.GetTokenApprovals(context.Background(), "ns1", f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 func TestGetApprovalsBuildQueryFail(t *testing.T) {
@@ -227,7 +227,7 @@ func TestUpdateApprovalsFailBegin(t *testing.T) {
 	f := database.TokenApprovalQueryFactory.NewFilter(context.Background()).Eq("subject", "test")
 	u := database.TokenApprovalQueryFactory.NewUpdate(context.Background()).Set("active", false)
 	err := s.UpdateTokenApprovals(context.Background(), f, u)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -257,5 +257,5 @@ func TestUpdateApprovalsUpdateFail(t *testing.T) {
 	f := database.TokenApprovalQueryFactory.NewFilter(context.Background()).Eq("subject", "test")
 	u := database.TokenApprovalQueryFactory.NewUpdate(context.Background()).Set("active", false)
 	err := s.UpdateTokenApprovals(context.Background(), f, u)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 }

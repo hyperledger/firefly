@@ -19,12 +19,12 @@ package orchestrator
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (or *orchestrator) CreateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error) {
@@ -65,7 +65,7 @@ func (or *orchestrator) DeleteSubscription(ctx context.Context, id string) error
 	return or.events.DeleteDurableSubscription(ctx, sub)
 }
 
-func (or *orchestrator) GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error) {
+func (or *orchestrator) GetSubscriptions(ctx context.Context, filter ffapi.AndFilter) ([]*core.Subscription, *ffapi.FilterResult, error) {
 	return or.database().GetSubscriptions(ctx, or.namespace.Name, filter)
 }
 

@@ -26,6 +26,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
@@ -102,7 +103,7 @@ type DispatchState struct {
 	Data           core.DataArray
 	Pins           []*fftypes.Bytes32
 	noncesAssigned map[fftypes.Bytes32]*nonceState
-	msgPins        map[fftypes.UUID]core.FFStringArray
+	msgPins        map[fftypes.UUID]fftypes.FFStringArray
 }
 
 const batchSizeEstimateBase = int64(512)
@@ -484,9 +485,9 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, state *DispatchState
 			log.L(ctx).Debugf("Message %s already has %d pins allocated", msg.Header.ID, len(msg.Pins))
 			continue
 		}
-		var pins core.FFStringArray
+		var pins fftypes.FFStringArray
 		if isPrivate {
-			pins = make(core.FFStringArray, len(msg.Header.Topics))
+			pins = make(fftypes.FFStringArray, len(msg.Header.Topics))
 			state.msgPins[*msg.Header.ID] = pins
 		}
 		for i, topic := range msg.Header.Topics {
@@ -548,7 +549,7 @@ func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 
 			// Clear state from any previous retry. We need to do fresh queries against the DB for nonces.
 			state.noncesAssigned = make(map[fftypes.Bytes32]*nonceState)
-			state.msgPins = make(map[fftypes.UUID]core.FFStringArray)
+			state.msgPins = make(map[fftypes.UUID]fftypes.FFStringArray)
 
 			if bp.conf.txType == core.TransactionTypeBatchPin {
 				// Generate a new Transaction, which will be used to record status of the associated transaction as it happens
@@ -629,7 +630,7 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 				fb.Eq("state", core.MessageStateReady), // In the outside chance the next state transition happens first (which supersedes this)
 			)
 
-			var allMsgsUpdate database.Update
+			var allMsgsUpdate ffapi.Update
 			if bp.conf.txType == core.TransactionTypeBatchPin {
 				// Sent state waiting for confirm
 				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).

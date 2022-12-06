@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
 	"github.com/hyperledger/firefly/internal/cache"
@@ -1313,7 +1314,7 @@ func TestGetFFIs(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
 	filter := database.FFIQueryFactory.NewFilter(context.Background()).And()
-	mdb.On("GetFFIs", mock.Anything, "ns1", filter).Return([]*fftypes.FFI{}, &database.FilterResult{}, nil)
+	mdb.On("GetFFIs", mock.Anything, "ns1", filter).Return([]*fftypes.FFI{}, &ffapi.FilterResult{}, nil)
 	_, _, err := cm.GetFFIs(context.Background(), filter)
 	assert.NoError(t, err)
 }
@@ -2108,7 +2109,7 @@ func TestGetContractAPIs(t *testing.T) {
 		},
 	}
 	filter := database.ContractAPIQueryFactory.NewFilter(context.Background()).And()
-	mdb.On("GetContractAPIs", mock.Anything, "ns1", filter).Return(apis, &database.FilterResult{}, nil)
+	mdb.On("GetContractAPIs", mock.Anything, "ns1", filter).Return(apis, &ffapi.FilterResult{}, nil)
 
 	results, _, err := cm.GetContractAPIs(context.Background(), "http://localhost/api", filter)
 

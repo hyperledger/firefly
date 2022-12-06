@@ -138,7 +138,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			Namespace:     "ns1",
 			Type:          core.TransactionTypeContractInvoke,
 			Created:       fftypes.UnixTime(1652664195),
-			BlockchainIDs: core.NewFFStringArray("0x34b0327567fefed09ac7b4429549bc609302b08a9cbd8f019a078ec44447593d"),
+			BlockchainIDs: fftypes.NewFFStringArray("0x34b0327567fefed09ac7b4429549bc609302b08a9cbd8f019a078ec44447593d"),
 		},
 
 		&core.Operation{
@@ -392,7 +392,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 				Created:   fftypes.UnixTime(1652664190),
 				Group:     fftypes.HashString("testgroup"),
 				Namespace: "ns1",
-				Topics:    core.NewFFStringArray("topic1"),
+				Topics:    fftypes.NewFFStringArray("topic1"),
 				Tag:       "blue_message",
 				DataHash:  fftypes.HashString("testmsghash"),
 			},

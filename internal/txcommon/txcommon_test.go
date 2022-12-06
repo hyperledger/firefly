@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -165,7 +166,7 @@ func TestPersistTransactionNew(t *testing.T) {
 		assert.Equal(t, txid, transaction.ID)
 		assert.Equal(t, "ns1", transaction.Namespace)
 		assert.Equal(t, core.TransactionTypeBatchPin, transaction.Type)
-		assert.Equal(t, core.FFStringArray{"0x222222"}, transaction.BlockchainIDs)
+		assert.Equal(t, fftypes.FFStringArray{"0x222222"}, transaction.BlockchainIDs)
 		return true
 	})).Return(nil)
 
@@ -213,7 +214,7 @@ func TestPersistTransactionExistingAddBlockchainID(t *testing.T) {
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeBatchPin,
 		Created:       fftypes.Now(),
-		BlockchainIDs: core.FFStringArray{"0x111111"},
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}, nil)
 	mdi.On("UpdateTransaction", ctx, "ns1", txid, mock.Anything).Return(nil)
 
@@ -240,7 +241,7 @@ func TestPersistTransactionExistingUpdateFail(t *testing.T) {
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeBatchPin,
 		Created:       fftypes.Now(),
-		BlockchainIDs: core.FFStringArray{"0x111111"},
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}, nil)
 	mdi.On("UpdateTransaction", ctx, "ns1", txid, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -280,7 +281,7 @@ func TestPersistTransactionExistingNoChange(t *testing.T) {
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeBatchPin,
 		Created:       fftypes.Now(),
-		BlockchainIDs: core.FFStringArray{"0x111111"},
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}, nil)
 
 	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "0x111111")
@@ -306,7 +307,7 @@ func TestPersistTransactionExistingNoBlockchainID(t *testing.T) {
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeBatchPin,
 		Created:       fftypes.Now(),
-		BlockchainIDs: core.FFStringArray{"0x111111"},
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}, nil)
 
 	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "")
@@ -352,7 +353,7 @@ func TestPersistTransactionExistingMismatchType(t *testing.T) {
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeContractInvoke,
 		Created:       fftypes.Now(),
-		BlockchainIDs: core.FFStringArray{"0x111111"},
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}, nil)
 
 	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "")
@@ -377,9 +378,9 @@ func TestAddBlockchainTX(t *testing.T) {
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeContractInvoke,
 		Created:       fftypes.Now(),
-		BlockchainIDs: core.FFStringArray{"0x111111"},
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}
-	mdi.On("UpdateTransaction", ctx, "ns1", tx.ID, mock.MatchedBy(func(u database.Update) bool {
+	mdi.On("UpdateTransaction", ctx, "ns1", tx.ID, mock.MatchedBy(func(u ffapi.Update) bool {
 		info, _ := u.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
 		assert.Equal(t, "blockchainids", info.SetOperations[0].Field)
@@ -409,7 +410,7 @@ func TestAddBlockchainTXUpdateFail(t *testing.T) {
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeContractInvoke,
 		Created:       fftypes.Now(),
-		BlockchainIDs: core.FFStringArray{"0x111111"},
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}
 	mdi.On("UpdateTransaction", ctx, "ns1", tx.ID, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -434,7 +435,7 @@ func TestAddBlockchainTXUnchanged(t *testing.T) {
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeContractInvoke,
 		Created:       fftypes.Now(),
-		BlockchainIDs: core.FFStringArray{"0x111111"},
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}
 
 	err := txHelper.AddBlockchainTX(ctx, tx, "0x111111")
@@ -455,7 +456,7 @@ func TestGetTransactionByIDCached(t *testing.T) {
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeContractInvoke,
 		Created:       fftypes.Now(),
-		BlockchainIDs: core.FFStringArray{"0x111111"},
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}, nil).Once()
 
 	tx, err := txHelper.GetTransactionByIDCached(ctx, txid)

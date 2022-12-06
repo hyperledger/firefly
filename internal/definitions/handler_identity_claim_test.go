@@ -101,7 +101,7 @@ func testCustomClaimAndVerification(t *testing.T) (*core.Identity, *core.Identit
 			ID:        custom1.Messages.Claim,
 			Type:      core.MessageTypeDefinition,
 			Tag:       core.SystemTagIdentityClaim,
-			Topics:    core.FFStringArray{custom1.Topic()},
+			Topics:    fftypes.FFStringArray{custom1.Topic()},
 			SignerRef: core.SignerRef{
 				Author: custom1.DID,
 				Key:    "0x12345",
@@ -128,7 +128,7 @@ func testCustomClaimAndVerification(t *testing.T) (*core.Identity, *core.Identit
 			ID:     fftypes.NewUUID(),
 			Type:   core.MessageTypeDefinition,
 			Tag:    core.SystemTagIdentityVerification,
-			Topics: core.FFStringArray{custom1.Topic()},
+			Topics: fftypes.FFStringArray{custom1.Topic()},
 			SignerRef: core.SignerRef{
 				Author: org1.DID,
 				Key:    "0x2456",

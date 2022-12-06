@@ -129,7 +129,7 @@ func (bm *definitionSender) sendDefinitionCommon(ctx context.Context, def core.D
 		Message: core.Message{
 			Header: core.MessageHeader{
 				Type:      core.MessageTypeDefinition,
-				Topics:    core.FFStringArray{def.Topic()},
+				Topics:    fftypes.FFStringArray{def.Topic()},
 				Tag:       tag,
 				TxType:    core.TransactionTypeBatchPin,
 				SignerRef: *signingIdentity,

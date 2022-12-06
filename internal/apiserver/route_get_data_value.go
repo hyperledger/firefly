@@ -32,13 +32,12 @@ var getDataValue = &ffapi.Route{
 		{Name: "dataid", Description: coremsgs.APIParamsBlobID},
 	},
 	QueryParams:     nil,
+	FilterFactory:   database.MessageQueryFactory,
 	Description:     coremsgs.APIEndpointsGetDataValue,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []byte{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.MessageQueryFactory,
-
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			d, err := cr.or.GetDataByID(cr.ctx, r.PP["dataid"])
 			if err != nil {

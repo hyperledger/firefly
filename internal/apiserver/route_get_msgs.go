@@ -34,17 +34,17 @@ var getMsgs = &ffapi.Route{
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "fetchdata", IsBool: true, Description: coremsgs.APIFetchDataDesc},
 	},
+	FilterFactory:   database.MessageQueryFactory,
 	Description:     coremsgs.APIEndpointsGetMsgs,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Message{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.MessageQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			if strings.EqualFold(r.QP["fetchdata"], "true") {
-				return filterResult(cr.or.GetMessagesWithData(cr.ctx, cr.filter))
+				return r.FilterResult(cr.or.GetMessagesWithData(cr.ctx, r.Filter))
 			}
-			return filterResult(cr.or.GetMessages(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.GetMessages(cr.ctx, r.Filter))
 		},
 	},
 }

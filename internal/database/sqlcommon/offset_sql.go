@@ -21,11 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 var (
@@ -42,17 +42,17 @@ var (
 const offsetsTable = "offsets"
 
 func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *core.Offset, allowExisting bool) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		offsetRows, _, err := s.queryTx(ctx, offsetsTable, tx,
-			sq.Select(sequenceColumn).
+		offsetRows, _, err := s.QueryTx(ctx, offsetsTable, tx,
+			sq.Select(s.SequenceColumn()).
 				From(offsetsTable).
 				Where(
 					sq.Eq{"otype": offset.Type,
@@ -75,18 +75,18 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *core.Offset, allow
 	if existing {
 
 		// Update the offset
-		if _, err = s.updateTx(ctx, offsetsTable, tx,
+		if _, err = s.UpdateTx(ctx, offsetsTable, tx,
 			sq.Update(offsetsTable).
 				Set("otype", string(offset.Type)).
 				Set("name", offset.Name).
 				Set("current", offset.Current).
-				Where(sq.Eq{sequenceColumn: offset.RowID}),
+				Where(sq.Eq{s.SequenceColumn(): offset.RowID}),
 			nil, // offsets do not have events
 		); err != nil {
 			return err
 		}
 	} else {
-		if offset.RowID, err = s.insertTx(ctx, offsetsTable, tx,
+		if offset.RowID, err = s.InsertTx(ctx, offsetsTable, tx,
 			sq.Insert(offsetsTable).
 				Columns(offsetColumns...).
 				Values(
@@ -100,7 +100,7 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *core.Offset, allow
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) offsetResult(ctx context.Context, row *sql.Rows) (*core.Offset, error) {
@@ -109,7 +109,7 @@ func (s *SQLCommon) offsetResult(ctx context.Context, row *sql.Rows) (*core.Offs
 		&offset.Type,
 		&offset.Name,
 		&offset.Current,
-		&offset.RowID, // must include sequenceColumn in colum list
+		&offset.RowID, // must include s.SequenceColumn() in colum list
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, offsetsTable)
@@ -120,8 +120,8 @@ func (s *SQLCommon) offsetResult(ctx context.Context, row *sql.Rows) (*core.Offs
 func (s *SQLCommon) GetOffset(ctx context.Context, t core.OffsetType, name string) (message *core.Offset, err error) {
 
 	cols := append([]string{}, offsetColumns...)
-	cols = append(cols, sequenceColumn)
-	rows, _, err := s.query(ctx, offsetsTable,
+	cols = append(cols, s.SequenceColumn())
+	rows, _, err := s.Query(ctx, offsetsTable,
 		sq.Select(cols...).
 			From(offsetsTable).
 			Where(sq.Eq{
@@ -147,16 +147,16 @@ func (s *SQLCommon) GetOffset(ctx context.Context, t core.OffsetType, name strin
 	return offset, nil
 }
 
-func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (message []*core.Offset, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetOffsets(ctx context.Context, filter ffapi.Filter) (message []*core.Offset, fr *ffapi.FilterResult, err error) {
 
 	cols := append([]string{}, offsetColumns...)
-	cols = append(cols, sequenceColumn)
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From(offsetsTable), filter, offsetFilterFieldMap, []interface{}{"sequence"})
+	cols = append(cols, s.SequenceColumn())
+	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(cols...).From(offsetsTable), filter, offsetFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, offsetsTable, query)
+	rows, tx, err := s.Query(ctx, offsetsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -171,52 +171,52 @@ func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (mes
 		offset = append(offset, d)
 	}
 
-	return offset, s.queryRes(ctx, offsetsTable, tx, fop, fi), err
+	return offset, s.QueryRes(ctx, offsetsTable, tx, fop, fi), err
 
 }
 
-func (s *SQLCommon) UpdateOffset(ctx context.Context, rowID int64, update database.Update) (err error) {
+func (s *SQLCommon) UpdateOffset(ctx context.Context, rowID int64, update ffapi.Update) (err error) {
 
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update(offsetsTable), update, offsetFilterFieldMap)
+	query, err := s.BuildUpdate(sq.Update(offsetsTable), update, offsetFilterFieldMap)
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{sequenceColumn: rowID})
+	query = query.Where(sq.Eq{s.SequenceColumn(): rowID})
 
-	_, err = s.updateTx(ctx, offsetsTable, tx, query, nil /* offsets do not have change events */)
+	_, err = s.UpdateTx(ctx, offsetsTable, tx, query, nil /* offsets do not have change events */)
 	if err != nil {
 		return err
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) DeleteOffset(ctx context.Context, t core.OffsetType, name string) (err error) {
 
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	offset, err := s.GetOffset(ctx, t, name)
 	if err != nil {
 		return err
 	}
 	if offset != nil {
-		err = s.deleteTx(ctx, offsetsTable, tx, sq.Delete(offsetsTable).Where(sq.Eq{
-			sequenceColumn: offset.RowID,
+		err = s.DeleteTx(ctx, offsetsTable, tx, sq.Delete(offsetsTable).Where(sq.Eq{
+			s.SequenceColumn(): offset.RowID,
 		}), nil /* offsets do not have change events */)
 		if err != nil {
 			return err
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }

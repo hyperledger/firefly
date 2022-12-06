@@ -25,6 +25,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	migratedb "github.com/golang-migrate/migrate/v4/database"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -72,12 +73,16 @@ func (mp *mockProvider) Name() string {
 	return "mockdb"
 }
 
+func (mp *mockProvider) SequenceColumn() string {
+	return "seq"
+}
+
 func (mp *mockProvider) MigrationsDir() string {
 	return mp.Name()
 }
 
-func (psql *mockProvider) Features() SQLFeatures {
-	features := DefaultSQLProviderFeatures()
+func (psql *mockProvider) Features() dbsql.SQLFeatures {
+	features := dbsql.DefaultSQLProviderFeatures()
 	features.UseILIKE = true
 	features.AcquireLock = func(lockName string) string {
 		return fmt.Sprintf(`<acquire lock %s>`, lockName)

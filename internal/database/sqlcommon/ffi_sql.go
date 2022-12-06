@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -46,13 +47,13 @@ var (
 const ffiTable = "ffi"
 
 func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, ffiTable, tx,
+	rows, _, err := s.QueryTx(ctx, ffiTable, tx,
 		sq.Select("id").
 			From(ffiTable).
 			Where(sq.Eq{
@@ -67,7 +68,7 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 	rows.Close()
 
 	if existing {
-		if _, err = s.updateTx(ctx, ffiTable, tx,
+		if _, err = s.UpdateTx(ctx, ffiTable, tx,
 			sq.Update(ffiTable).
 				Set("name", ffi.Name).
 				Set("version", ffi.Version).
@@ -80,7 +81,7 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, ffiTable, tx,
+		if _, err = s.InsertTx(ctx, ffiTable, tx,
 			sq.Insert(ffiTable).
 				Columns(ffiColumns...).
 				Values(
@@ -99,7 +100,7 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 		}
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*fftypes.FFI, error) {
@@ -119,7 +120,7 @@ func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*fftypes.FFI,
 }
 
 func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFI, error) {
-	rows, _, err := s.query(ctx, ffiTable,
+	rows, _, err := s.Query(ctx, ffiTable,
 		sq.Select(ffiColumns...).
 			From(ffiTable).
 			Where(pred),
@@ -142,15 +143,15 @@ func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{
 	return ffi, nil
 }
 
-func (s *SQLCommon) GetFFIs(ctx context.Context, namespace string, filter database.Filter) (ffis []*fftypes.FFI, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetFFIs(ctx context.Context, namespace string, filter ffapi.Filter) (ffis []*fftypes.FFI, res *ffapi.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiColumns...).From(ffiTable),
+	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(ffiColumns...).From(ffiTable),
 		filter, ffiFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, ffiTable, query)
+	rows, tx, err := s.Query(ctx, ffiTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -165,7 +166,7 @@ func (s *SQLCommon) GetFFIs(ctx context.Context, namespace string, filter databa
 		ffis = append(ffis, cd)
 	}
 
-	return ffis, s.queryRes(ctx, ffiTable, tx, fop, fi), err
+	return ffis, s.QueryRes(ctx, ffiTable, tx, fop, fi), err
 
 }
 

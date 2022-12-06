@@ -7,7 +7,7 @@ import (
 
 	core "github.com/hyperledger/firefly/pkg/core"
 
-	database "github.com/hyperledger/firefly/pkg/database"
+	ffapi "github.com/hyperledger/firefly-common/pkg/ffapi"
 
 	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
@@ -172,11 +172,11 @@ func (_m *Manager) GetContractAPIInterface(ctx context.Context, apiName string) 
 }
 
 // GetContractAPIListeners provides a mock function with given fields: ctx, apiName, eventPath, filter
-func (_m *Manager) GetContractAPIListeners(ctx context.Context, apiName string, eventPath string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
+func (_m *Manager) GetContractAPIListeners(ctx context.Context, apiName string, eventPath string, filter ffapi.AndFilter) ([]*core.ContractListener, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, apiName, eventPath, filter)
 
 	var r0 []*core.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*core.ContractListener); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, ffapi.AndFilter) []*core.ContractListener); ok {
 		r0 = rf(ctx, apiName, eventPath, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -184,17 +184,17 @@ func (_m *Manager) GetContractAPIListeners(ctx context.Context, apiName string, 
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, apiName, eventPath, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, string, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, apiName, eventPath, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -204,11 +204,11 @@ func (_m *Manager) GetContractAPIListeners(ctx context.Context, apiName string, 
 }
 
 // GetContractAPIs provides a mock function with given fields: ctx, httpServerURL, filter
-func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, filter database.AndFilter) ([]*core.ContractAPI, *database.FilterResult, error) {
+func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, filter ffapi.AndFilter) ([]*core.ContractAPI, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, httpServerURL, filter)
 
 	var r0 []*core.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.ContractAPI); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ffapi.AndFilter) []*core.ContractAPI); ok {
 		r0 = rf(ctx, httpServerURL, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -216,17 +216,17 @@ func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, fi
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, httpServerURL, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, string, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, httpServerURL, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -282,11 +282,11 @@ func (_m *Manager) GetContractListenerByNameOrIDWithStatus(ctx context.Context, 
 }
 
 // GetContractListeners provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetContractListeners(ctx context.Context, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
+func (_m *Manager) GetContractListeners(ctx context.Context, filter ffapi.AndFilter) ([]*core.ContractListener, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.ContractListener); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*core.ContractListener); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -294,17 +294,17 @@ func (_m *Manager) GetContractListeners(ctx context.Context, filter database.And
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -406,11 +406,11 @@ func (_m *Manager) GetFFIWithChildren(ctx context.Context, name string, version 
 }
 
 // GetFFIs provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetFFIs(ctx context.Context, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error) {
+func (_m *Manager) GetFFIs(ctx context.Context, filter ffapi.AndFilter) ([]*fftypes.FFI, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.FFI); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ffapi.AndFilter) []*fftypes.FFI); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -418,17 +418,17 @@ func (_m *Manager) GetFFIs(ctx context.Context, filter database.AndFilter) ([]*f
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, ffapi.AndFilter) *ffapi.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
+			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ffapi.AndFilter) error); ok {
 		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)

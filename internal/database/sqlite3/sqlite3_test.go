@@ -51,6 +51,7 @@ func TestSQLite3GoProvider(t *testing.T) {
 	conn.Close()
 
 	assert.Equal(t, "sqlite3", sqlite.Name())
+	assert.Equal(t, "seq", sqlite.SequenceColumn())
 	assert.Equal(t, sq.Dollar, sqlite.Features().PlaceholderFormat)
 
 	insert := sq.Insert("test").Columns("col1").Values("val1")

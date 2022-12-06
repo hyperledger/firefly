@@ -31,14 +31,14 @@ var getBlockchainEvents = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.BlockchainEventQueryFactory,
 	Description:     coremsgs.APIEndpointsListBlockchainEvents,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.BlockchainEventQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetBlockchainEvents(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.GetBlockchainEvents(cr.ctx, r.Filter))
 		},
 	},
 }

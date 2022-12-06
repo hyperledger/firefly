@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -55,13 +56,13 @@ var (
 const operationsTable = "operations"
 
 func (s *SQLCommon) InsertOperation(ctx context.Context, operation *core.Operation, hooks ...database.PostCompletionHook) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	if _, err = s.insertTx(ctx, operationsTable, tx,
+	if _, err = s.InsertTx(ctx, operationsTable, tx,
 		sq.Insert(operationsTable).
 			Columns(opColumns...).
 			Values(
@@ -88,7 +89,7 @@ func (s *SQLCommon) InsertOperation(ctx context.Context, operation *core.Operati
 		return err
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*core.Operation, error) {
@@ -115,7 +116,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*core.Operatio
 
 func (s *SQLCommon) GetOperationByID(ctx context.Context, namespace string, id *fftypes.UUID) (operation *core.Operation, err error) {
 
-	rows, _, err := s.query(ctx, operationsTable,
+	rows, _, err := s.Query(ctx, operationsTable,
 		sq.Select(opColumns...).
 			From(operationsTable).
 			Where(sq.Eq{"id": id, "namespace": namespace}),
@@ -138,14 +139,14 @@ func (s *SQLCommon) GetOperationByID(ctx context.Context, namespace string, id *
 	return op, nil
 }
 
-func (s *SQLCommon) GetOperations(ctx context.Context, namespace string, filter database.Filter) (operation []*core.Operation, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetOperations(ctx context.Context, namespace string, filter ffapi.Filter) (operation []*core.Operation, fr *ffapi.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From(operationsTable), filter, opFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
+	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(opColumns...).From(operationsTable), filter, opFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, operationsTable, query)
+	rows, tx, err := s.Query(ctx, operationsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -160,18 +161,18 @@ func (s *SQLCommon) GetOperations(ctx context.Context, namespace string, filter 
 		ops = append(ops, op)
 	}
 
-	return ops, s.queryRes(ctx, operationsTable, tx, fop, fi), err
+	return ops, s.QueryRes(ctx, operationsTable, tx, fop, fi), err
 }
 
-func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update ffapi.Update) (err error) {
 
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update(operationsTable), update, opFilterFieldMap)
+	query, err := s.BuildUpdate(sq.Update(operationsTable), update, opFilterFieldMap)
 	if err != nil {
 		return err
 	}
@@ -181,7 +182,7 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.
 		sq.Eq{"namespace": ns},
 	})
 
-	ra, err := s.updateTx(ctx, operationsTable, tx, query, func() {
+	ra, err := s.UpdateTx(ctx, operationsTable, tx, query, func() {
 		s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, core.ChangeEventTypeUpdated, ns, id)
 	})
 	if err != nil {
@@ -191,5 +192,5 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.
 		return i18n.NewError(ctx, coremsgs.Msg404NoResult)
 	}
 
-	return s.commitTx(ctx, tx, autoCommit)
+	return s.CommitTx(ctx, tx, autoCommit)
 }

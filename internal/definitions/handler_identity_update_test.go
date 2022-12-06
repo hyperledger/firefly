@@ -56,7 +56,7 @@ func testIdentityUpdate(t *testing.T) (*core.Identity, *core.Message, *core.Data
 			ID:     fftypes.NewUUID(),
 			Type:   core.MessageTypeDefinition,
 			Tag:    core.SystemTagIdentityUpdate,
-			Topics: core.FFStringArray{org1.Topic()},
+			Topics: fftypes.FFStringArray{org1.Topic()},
 			SignerRef: core.SignerRef{
 				Author: org1.DID,
 				Key:    "0x12345",
@@ -234,7 +234,7 @@ func TestHandleDefinitionIdentityValidateFail(t *testing.T) {
 			ID:     fftypes.NewUUID(),
 			Type:   core.MessageTypeDefinition,
 			Tag:    core.SystemTagIdentityUpdate,
-			Topics: core.FFStringArray{org1.Topic()},
+			Topics: fftypes.FFStringArray{org1.Topic()},
 			SignerRef: core.SignerRef{
 				Author: org1.DID,
 				Key:    "0x12345",
@@ -259,7 +259,7 @@ func TestHandleDefinitionIdentityMissingData(t *testing.T) {
 			ID:     fftypes.NewUUID(),
 			Type:   core.MessageTypeDefinition,
 			Tag:    core.SystemTagIdentityUpdate,
-			Topics: core.FFStringArray{org1.Topic()},
+			Topics: fftypes.FFStringArray{org1.Topic()},
 			SignerRef: core.SignerRef{
 				Author: org1.DID,
 				Key:    "0x12345",

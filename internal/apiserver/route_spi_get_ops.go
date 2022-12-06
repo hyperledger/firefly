@@ -30,15 +30,15 @@ var spiGetOps = &ffapi.Route{
 	Path:            "namespaces/{ns}/operations",
 	Method:          http.MethodGet,
 	QueryParams:     nil,
+	FilterFactory:   database.OperationQueryFactory,
 	Description:     coremsgs.APIEndpointsAdminGetOps,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Tag:             routeTagNonDefaultNamespace,
 	Extensions: &coreExtensions{
-		FilterFactory: database.OperationQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetOperations(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.GetOperations(cr.ctx, r.Filter))
 		},
 	},
 }
