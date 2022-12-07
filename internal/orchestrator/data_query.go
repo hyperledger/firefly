@@ -146,9 +146,18 @@ func (or *orchestrator) GetOperationByIDWithStatus(ctx context.Context, id strin
 				StatusError: err.Error(),
 			}
 		}
-		enrichedOperation = &core.OperationWithDetailedStatus{
-			Operation:      *op,
-			DetailedStatus: status,
+
+		// Not all blockchain plugins will necessarily implement GetTransactionStatus()
+		// so check if we get any extra status back
+		if status != nil {
+			enrichedOperation = &core.OperationWithDetailedStatus{
+				Operation:      *op,
+				DetailedStatus: status,
+			}
+		} else {
+			enrichedOperation = &core.OperationWithDetailedStatus{
+				Operation: *op,
+			}
 		}
 	} else {
 		enrichedOperation = &core.OperationWithDetailedStatus{

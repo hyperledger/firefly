@@ -47,6 +47,23 @@ const (
 	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"
 )
 
+// Headers that allow us to construct the equivalent of a web socket notification
+type wsrHeaders struct {
+	RequestID string `json:"requestId"`
+	Type      string `json:"type"`
+}
+
+const (
+	ethTxStatusPending   string = "Pending"
+	ethTxStatusSucceeded string = "Succeeded"
+	ethTxStatusFailed    string = "Failed"
+)
+
+const (
+	ethTransactionUpdateSuccess string = "TransactionSuccess"
+	ethTransactionUpdateFailure string = "TransactionFailure"
+)
+
 type Ethereum struct {
 	ctx             context.Context
 	cancelCtx       context.CancelFunc
@@ -948,37 +965,6 @@ func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (l
 	return location, fromBlock, err
 }
 
-func mergeObjects(detail interface{}, output fftypes.JSONObject) (fftypes.JSONObject, error) {
-
-	var mergedObj map[string]interface{}
-
-	outputJSON, err := json.Marshal(output)
-
-	if err != nil {
-		return output, err
-	}
-
-	detailJSON, err := json.Marshal(detail)
-
-	if err != nil {
-		return output, err
-	}
-
-	err = json.Unmarshal(outputJSON, &mergedObj)
-
-	if err != nil {
-		return output, err
-	}
-
-	err = json.Unmarshal(detailJSON, &mergedObj)
-
-	if err != nil {
-		return output, err
-	}
-
-	return fftypes.JSONObject(mergedObj), nil
-}
-
 func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
 	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
 	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
@@ -987,7 +973,7 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 		client = e.client
 	}
 	var resErr ethError
-	var statusResponse interface{}
+	var statusResponse fftypes.JSONObject
 	res, err := client.R().
 		SetContext(ctx).
 		SetError(&resErr).
@@ -996,17 +982,20 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 	if err != nil || !res.IsSuccess() {
 		return nil, wrapError(ctx, &resErr, res, err)
 	}
+	txStatus := statusResponse.GetString("status")
 
-	if operation.Status == core.OpStatusPending {
-		// handleReceipt() expects a single object with the fields from both operation.Output
-		// and the blockchain connector's transaction detail, so we merge the two
-		// before passing to handleReceipt()
-		mergedObj, err := mergeObjects(statusResponse, operation.Output)
-		if err != nil {
-			// Log a warning and return the output on its own
-			log.L(ctx).Warnf("Failed to add detail to transaction status: %v", err)
+	// If the status has changed, mock up a WSR as if we'd received a web socket update
+	if operation.Status == core.OpStatusPending && txStatus != ethTxStatusPending {
+		var headers wsrHeaders
+		headers.RequestID = statusResponse.GetString("id")
+		switch txStatus {
+		case ethTxStatusSucceeded:
+			headers.Type = ethTransactionUpdateSuccess
+		case ethTxStatusFailed:
+			headers.Type = ethTransactionUpdateFailure
 		}
-		e.handleReceipt(ctx, mergedObj)
+		statusResponse["headers"] = headers
+		e.handleReceipt(ctx, statusResponse)
 	}
 	return statusResponse, nil
 }

@@ -923,6 +923,6 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 }
 
 func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
-	// Fabconnect does not currently provide any additional status info for transactions
+	// TODO - add equivalent transaction status retrieval to ethereum
 	return nil, nil
 }
