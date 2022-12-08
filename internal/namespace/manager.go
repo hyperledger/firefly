@@ -90,12 +90,14 @@ type Manager interface {
 
 type namespace struct {
 	core.Namespace
+	ctx          context.Context
+	cancelCtx    context.CancelFunc
 	orchestrator orchestrator.Orchestrator
 	loadTime     fftypes.FFTime
 	config       orchestrator.Config
 	configHash   *fftypes.Bytes32
-	plugins      []string
-	cancelCtx    context.CancelFunc
+	pluginNames  []string
+	plugins      *orchestrator.Plugins
 }
 
 type namespaceManager struct {
@@ -159,15 +161,20 @@ func stringSlicesEqual(a, b []string) bool {
 	return true
 }
 
-func NewNamespaceManager(withDefaults bool) Manager {
+func NewNamespaceManager() Manager {
 	nm := &namespaceManager{
 		namespaces:          make(map[string]*namespace),
 		metricsEnabled:      config.GetBool(coreconfig.MetricsEnabled),
 		tokenBroadcastNames: make(map[string]string),
 		watchConfig:         viper.WatchConfig,
 	}
+	initAllConfig()
+	return nm
+}
 
-	InitConfig(withDefaults)
+func initAllConfig() {
+
+	InitConfig()
 
 	// Initialize the config on all the factories
 	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
@@ -185,8 +192,6 @@ func NewNamespaceManager(withDefaults bool) Manager {
 
 	// Events still live at the root of the config
 	eifactory.InitConfig(config.RootSection("events"))
-
-	return nm
 }
 
 func (nm *namespaceManager) startConfigListener(ctx context.Context) {
@@ -217,13 +222,20 @@ func (nm *namespaceManager) newConfigChangeListener(ctx context.Context) func(in
 	}
 }
 
+func (nm *namespaceManager) dumpRootConfig() (jsonTree fftypes.JSONObject) {
+	viperTree := viper.AllSettings()
+	b, _ := json.Marshal(viperTree)
+	_ = json.Unmarshal(b, &jsonTree)
+	return
+}
+
 func (nm *namespaceManager) configFileChanged(ctx context.Context, filename string) {
 	log.L(ctx).Infof("Detected configuration file reload: '%s'", filename)
 
 	// Get Viper to dump the whole new config, with everything resolved across env vars
 	// and the config file etc.
 	// We use this to detect if anything has changed.
-	rawConfig := viper.AllSettings()
+	rawConfig := nm.dumpRootConfig()
 
 	newPlugins, err := nm.loadPlugins(ctx, rawConfig)
 	if err != nil {
@@ -231,7 +243,7 @@ func (nm *namespaceManager) configFileChanged(ctx context.Context, filename stri
 		return
 	}
 
-	allNewNamespaces, err := nm.loadNamespaces(ctx, rawConfig)
+	allNewNamespaces, err := nm.loadNamespaces(ctx, rawConfig, newPlugins)
 	if err != nil {
 		log.L(ctx).Errorf("Failed to load namespaces after config reload: %s", err)
 		return
@@ -292,8 +304,8 @@ func (nm *namespaceManager) stopDefunctNamespaces(ctx context.Context, newPlugin
 	for nsName, newNS := range newNamespaces {
 		if existingNS := nm.namespaces[nsName]; existingNS != nil {
 			unchanged := existingNS.configHash.Equals(newNS.configHash) &&
-				len(existingNS.plugins) == len(newNS.plugins)
-			for _, pluginName := range newNS.plugins {
+				len(existingNS.pluginNames) == len(newNS.pluginNames)
+			for _, pluginName := range newNS.pluginNames {
 				existingPlugin := nm.plugins[pluginName]
 				newPlugin := newPlugins[pluginName]
 				unchanged = existingPlugin != nil && newPlugin != nil &&
@@ -355,15 +367,19 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	nm.reset = reset
 	nm.cancelCtx = cancelCtx
 
-	initTimeRawConfig := viper.AllSettings()
+	initTimeRawConfig := nm.dumpRootConfig()
 	nm.loadManagers(ctx)
 	if nm.plugins, err = nm.loadPlugins(ctx, initTimeRawConfig); err != nil {
 		return err
 	}
-	if nm.namespaces, err = nm.loadNamespaces(ctx, initTimeRawConfig); err != nil {
+	if nm.namespaces, err = nm.loadNamespaces(ctx, initTimeRawConfig, nm.plugins); err != nil {
 		return err
 	}
 
+	return nm.initComponents(ctx)
+}
+
+func (nm *namespaceManager) initComponents(ctx context.Context) (err error) {
 	// Initialize all the plugins on initial startup
 	if err = nm.initPlugins(ctx, nm.plugins); err != nil {
 		return err
@@ -411,7 +427,7 @@ func (nm *namespaceManager) initNamespaces(ctx context.Context, newNamespaces ma
 				if v1Namespace == nil {
 					v1Namespace = ns
 					v1Contract = contract
-				} else if !stringSlicesEqual(v1Namespace.plugins, ns.plugins) ||
+				} else if !stringSlicesEqual(v1Namespace.pluginNames, ns.pluginNames) ||
 					v1Contract.Location.String() != contract.Location.String() ||
 					v1Contract.FirstEvent != contract.FirstEvent {
 					return i18n.NewError(ctx, coremsgs.MsgCannotInitLegacyNS, core.LegacySystemNamespace, v1Namespace.Name, ns.Name)
@@ -422,13 +438,15 @@ func (nm *namespaceManager) initNamespaces(ctx context.Context, newNamespaces ma
 
 	if v1Namespace != nil {
 		systemNS := &namespace{
-			Namespace:  v1Namespace.Namespace,
-			config:     v1Namespace.config,
-			plugins:    v1Namespace.plugins,
-			configHash: v1Namespace.configHash,
+			Namespace:   v1Namespace.Namespace,
+			config:      v1Namespace.config,
+			pluginNames: v1Namespace.pluginNames,
+			plugins:     v1Namespace.plugins,
+			configHash:  v1Namespace.configHash,
 		}
 		systemNS.Name = core.LegacySystemNamespace
 		systemNS.NetworkName = core.LegacySystemNamespace
+		newNamespaces[core.LegacySystemNamespace] = systemNS
 		if err := nm.initNamespace(ctx, systemNS); err != nil {
 			return err
 		}
@@ -452,17 +470,7 @@ func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContra
 
 func (nm *namespaceManager) initNamespace(ctx context.Context, ns *namespace) (err error) {
 
-	var plugins *orchestrator.Plugins
-	if ns.config.Multiparty.Enabled {
-		plugins, err = nm.validateMultiPartyConfig(ctx, ns.Name, ns.plugins)
-	} else {
-		plugins, err = nm.validateNonMultipartyConfig(ctx, ns.Name, ns.plugins)
-	}
-	if err != nil {
-		return err
-	}
-
-	database := plugins.Database.Plugin
+	database := ns.plugins.Database.Plugin
 	existing, err := database.GetNamespace(ctx, ns.Name)
 	switch {
 	case err != nil:
@@ -485,21 +493,23 @@ func (nm *namespaceManager) initNamespace(ctx context.Context, ns *namespace) (e
 
 	or := nm.utOrchestrator
 	if or == nil {
-		or = orchestrator.NewOrchestrator(&ns.Namespace, ns.config, plugins, nm.metrics, nm.cacheManager)
+		or = orchestrator.NewOrchestrator(&ns.Namespace, ns.config, ns.plugins, nm.metrics, nm.cacheManager)
 	}
 	ns.orchestrator = or
-	orCtx, orCancel := context.WithCancel(ctx)
-	if err := or.Init(orCtx, orCancel); err != nil {
+	ns.ctx, ns.cancelCtx = context.WithCancel(ctx)
+	if err := or.Init(ns.ctx, ns.cancelCtx); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (nm *namespaceManager) stopNamespace(ctx context.Context, ns *namespace) {
-	log.L(ctx).Infof("Requesting stop of namespace '%s'", ns.Name)
-	ns.cancelCtx()
-	ns.orchestrator.WaitStop()
-	log.L(ctx).Infof("Namespace '%s' stopped", ns.Name)
+	if ns.cancelCtx != nil {
+		log.L(ctx).Infof("Requesting stop of namespace '%s'", ns.Name)
+		ns.cancelCtx()
+		ns.orchestrator.WaitStop()
+		log.L(ctx).Infof("Namespace '%s' stopped", ns.Name)
+	}
 }
 
 func (nm *namespaceManager) Start() error {
@@ -542,7 +552,7 @@ func (nm *namespaceManager) WaitStop() {
 	nm.nsMux.Unlock()
 
 	for _, ns := range namespaces {
-		ns.orchestrator.WaitStop()
+		nm.stopNamespace(nm.ctx, ns)
 	}
 	nm.adminEvents.WaitStop()
 }
@@ -957,7 +967,7 @@ func (nm *namespaceManager) initPlugins(ctx context.Context, pluginsToStart map[
 	return nil
 }
 
-func (nm *namespaceManager) loadNamespaces(ctx context.Context, rawConfig fftypes.JSONObject) (newNS map[string]*namespace, err error) {
+func (nm *namespaceManager) loadNamespaces(ctx context.Context, rawConfig fftypes.JSONObject, availablePlugins map[string]*plugin) (newNS map[string]*namespace, err error) {
 	defaultName := config.GetString(coreconfig.NamespacesDefault)
 	size := namespacePredefined.ArraySize()
 	rawPredefinedNSConfig := rawConfig.GetObject("namespaces").GetObjectArray("predefined")
@@ -980,7 +990,7 @@ func (nm *namespaceManager) loadNamespaces(ctx context.Context, rawConfig fftype
 			continue
 		}
 		foundDefault = foundDefault || name == defaultName
-		if newNS[name], err = nm.loadNamespace(ctx, name, i, nsConfig, rawPredefinedNSConfig[i]); err != nil {
+		if newNS[name], err = nm.loadNamespace(ctx, name, i, nsConfig, rawPredefinedNSConfig[i], availablePlugins); err != nil {
 			return nil, err
 		}
 	}
@@ -992,7 +1002,7 @@ func (nm *namespaceManager) loadNamespaces(ctx context.Context, rawConfig fftype
 	return newNS, err
 }
 
-func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section, rawNSConfig fftypes.JSONObject) (*namespace, error) {
+func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section, rawNSConfig fftypes.JSONObject, availablePlugins map[string]*plugin) (ns *namespace, err error) {
 	if err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
 		return nil, err
 	}
@@ -1057,10 +1067,20 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 
 	// If no plugins are listed under this namespace, use all defined plugins by default
 	pluginsRaw := conf.Get(coreconfig.NamespacePlugins)
-	plugins := conf.GetStringSlice(coreconfig.NamespacePlugins)
+	pluginNames := conf.GetStringSlice(coreconfig.NamespacePlugins)
 	if pluginsRaw == nil {
 		for pluginName := range nm.plugins {
-			plugins = append(plugins, pluginName)
+			p := availablePlugins[pluginName]
+			switch p.category {
+			case pluginCategoryBlockchain,
+				pluginCategoryDatabase,
+				pluginCategoryDataexchange,
+				pluginCategoryIdentity,
+				pluginCategorySharedstorage,
+				pluginCategoryTokens,
+				pluginCategoryAuth:
+				pluginNames = append(pluginNames, pluginName)
+			}
 		}
 	}
 
@@ -1076,12 +1096,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 
 		for i := 0; i < contractConfArraySize; i++ {
 			conf := contractsConf.ArrayEntry(i)
-			locationObject := conf.GetObject(coreconfig.NamespaceMultipartyContractLocation)
-			b, err := json.Marshal(locationObject)
-			if err != nil {
-				return nil, err
-			}
-			location := fftypes.JSONAnyPtrBytes(b)
+			location := fftypes.JSONAnyPtr(conf.GetObject(coreconfig.NamespaceMultipartyContractLocation).String())
 			contract := multiparty.Contract{
 				Location:   location,
 				FirstEvent: conf.GetString(coreconfig.NamespaceMultipartyContractFirstEvent),
@@ -1098,29 +1113,51 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		config.Multiparty.Node.Description = nodeDesc
 	}
 
-	return &namespace{
+	ns = &namespace{
 		Namespace: core.Namespace{
 			Name:        name,
 			NetworkName: networkName,
 			Description: conf.GetString(coreconfig.NamespaceDescription),
 		},
-		config:     config,
-		configHash: nm.configHash(rawNSConfig),
-		plugins:    plugins,
-	}, nil
+		config:      config,
+		configHash:  nm.configHash(rawNSConfig),
+		pluginNames: pluginNames,
+	}
+
+	if ns.plugins, err = nm.validateNSPlugins(ctx, ns, availablePlugins); err != nil {
+		return nil, err
+	}
+
+	if ns.config.Multiparty.Enabled {
+		err = nm.validateMultiPartyConfig(ctx, ns)
+	} else {
+		err = nm.validateNonMultipartyConfig(ctx, ns)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	ns.plugins.Events = make(map[string]events.Plugin)
+	for name, p := range nm.plugins {
+		if p.category == pluginCategoryEvents {
+			ns.plugins.Events[name] = p.events
+		}
+	}
+
+	return ns, nil
 }
 
-func (nm *namespaceManager) validatePlugins(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+func (nm *namespaceManager) validateNSPlugins(ctx context.Context, ns *namespace, availablePlugins map[string]*plugin) (*orchestrator.Plugins, error) {
 	var result orchestrator.Plugins
-	for _, pluginName := range plugins {
-		p := nm.plugins[pluginName]
+	for _, pluginName := range ns.pluginNames {
+		p := availablePlugins[pluginName]
 		if p == nil {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, ns.Name, pluginName)
 		}
 		switch p.category {
 		case pluginCategoryBlockchain:
 			if result.Blockchain.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "blockchain")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, ns.Name, "blockchain")
 			}
 			result.Blockchain = orchestrator.BlockchainPlugin{
 				Name:   pluginName,
@@ -1128,7 +1165,7 @@ func (nm *namespaceManager) validatePlugins(ctx context.Context, name string, pl
 			}
 		case pluginCategoryDataexchange:
 			if result.DataExchange.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "dataexchange")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, ns.Name, "dataexchange")
 			}
 			result.DataExchange = orchestrator.DataExchangePlugin{
 				Name:   pluginName,
@@ -1136,7 +1173,7 @@ func (nm *namespaceManager) validatePlugins(ctx context.Context, name string, pl
 			}
 		case pluginCategorySharedstorage:
 			if result.SharedStorage.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "sharedstorage")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, ns.Name, "sharedstorage")
 			}
 			result.SharedStorage = orchestrator.SharedStoragePlugin{
 				Name:   pluginName,
@@ -1144,7 +1181,7 @@ func (nm *namespaceManager) validatePlugins(ctx context.Context, name string, pl
 			}
 		case pluginCategoryDatabase:
 			if result.Database.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "database")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, ns.Name, "database")
 			}
 			result.Database = orchestrator.DatabasePlugin{
 				Name:   pluginName,
@@ -1157,7 +1194,7 @@ func (nm *namespaceManager) validatePlugins(ctx context.Context, name string, pl
 			})
 		case pluginCategoryIdentity:
 			if result.Identity.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "identity")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, ns.Name, "identity")
 			}
 			result.Identity = orchestrator.IdentityPlugin{
 				Name:   pluginName,
@@ -1165,61 +1202,38 @@ func (nm *namespaceManager) validatePlugins(ctx context.Context, name string, pl
 			}
 		case pluginCategoryAuth:
 			if result.Auth.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "auth")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, ns.Name, "auth")
 			}
 			result.Auth = orchestrator.AuthPlugin{
 				Name:   pluginName,
 				Plugin: p.auth,
 			}
-			continue
+		default:
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, ns.Name, pluginName)
 		}
-
-		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
 	}
 	return &result, nil
 }
 
-func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, ns *namespace) error {
 
-	result, err := nm.validatePlugins(ctx, name, plugins)
-	if err != nil {
-		return nil, err
+	if ns.plugins.Database.Plugin == nil ||
+		ns.plugins.SharedStorage.Plugin == nil ||
+		ns.plugins.DataExchange.Plugin == nil ||
+		ns.plugins.Blockchain.Plugin == nil {
+		return i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsMultiparty, ns.Name)
 	}
 
-	if result.Database.Plugin == nil ||
-		result.SharedStorage.Plugin == nil ||
-		result.DataExchange.Plugin == nil ||
-		result.Blockchain.Plugin == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsMultiparty, name)
-	}
-
-	result.Events = make(map[string]events.Plugin)
-	for name, p := range nm.plugins {
-		if p.category == pluginCategoryEvents {
-			result.Events[name] = p.events
-		}
-	}
-	return result, nil
+	return nil
 }
 
-func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, ns *namespace) error {
 
-	result, err := nm.validatePlugins(ctx, name, plugins)
-	if err != nil {
-		return nil, err
+	if ns.plugins.Database.Plugin == nil {
+		return i18n.NewError(ctx, coremsgs.MsgNamespaceNoDatabase, ns.Name)
 	}
 
-	if result.Database.Plugin == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceNoDatabase, name)
-	}
-
-	result.Events = make(map[string]events.Plugin)
-	for name, p := range nm.plugins {
-		if p.category == pluginCategoryEvents {
-			result.Events[name] = p.events
-		}
-	}
-	return result, nil
+	return nil
 }
 
 func (nm *namespaceManager) SPIEvents() spievents.Manager {

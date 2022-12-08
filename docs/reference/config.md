@@ -355,6 +355,12 @@ nav_order: 2
 |size|Max size of cached validators for data manager|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
 |ttl|Time to live of cached validators for data manager|`string`|`<nil>`
 
+## config
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|autoReload|Monitor the configuration file for changes, and automatically add/remove/reload namespaces and plugins|`boolean`|`<nil>`
+
 ## cors
 
 |Key|Description|Type|Default Value|

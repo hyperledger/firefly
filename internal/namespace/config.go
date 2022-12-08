@@ -33,7 +33,7 @@ var (
 	namespacePredefined    = namespaceConfigSection.SubArray(NamespacePredefined)
 )
 
-func InitConfig(withDefaults bool) {
+func InitConfig() {
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceName)
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceDescription)
 	namespacePredefined.AddKnownKey(coreconfig.NamespacePlugins)
@@ -52,10 +52,4 @@ func InitConfig(withDefaults bool) {
 	contractConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractFirstEvent, string(core.SubOptsFirstEventOldest))
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractLocation)
-
-	if withDefaults {
-		namespaceConfigSection.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceName, "default")
-		namespaceConfigSection.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceDescription, "Default predefined namespace")
-		namespaceConfigSection.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceAssetKeyNormalization, "blockchain_plugin")
-	}
 }

@@ -99,7 +99,7 @@ func getRootManager() namespace.Manager {
 	if _utManager != nil {
 		return _utManager
 	}
-	return namespace.NewNamespaceManager(true)
+	return namespace.NewNamespaceManager()
 }
 
 // Execute is called by the main method of the package
