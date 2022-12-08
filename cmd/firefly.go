@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/apiserver"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -59,7 +60,7 @@ var showConfigCommand = &cobra.Command{
 	Short:   "List out the configuration options",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config of all plugins
-		resetConfig()
+		_ = resetConfig(true)
 		getRootManager()
 		_ = config.ReadConfig(configSuffix, cfgFile)
 
@@ -81,9 +82,17 @@ func init() {
 	rootCmd.AddCommand(showConfigCommand)
 }
 
-func resetConfig() {
+func resetConfig(startup bool) error {
+	if !startup && config.GetBool(coreconfig.ConfigAutoReload) {
+		// We do not allow these settings to be combined, because viper does not provide a way to
+		// stop the file listener on the old root Viper instance (before reset). So we would
+		// leak file listeners in the background.
+		// Note: This check is also in the API layer
+		return i18n.NewError(context.Background(), coremsgs.MsgDeprecatedResetWithAutoReload)
+	}
 	coreconfig.Reset()
 	apiserver.InitConfig()
+	return nil
 }
 
 func getRootManager() namespace.Manager {
@@ -101,7 +110,7 @@ func Execute() error {
 func run() error {
 
 	// Read the configuration
-	resetConfig()
+	_ = resetConfig(true)
 	err := config.ReadConfig(configSuffix, cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly
@@ -142,14 +151,20 @@ func run() error {
 			mgr.WaitStop()
 			return nil
 		case <-resetChan:
+			// This API that performs a full stop/restart reset, is deprecated
+			// in favor of selective reload of namespaces based on listening to changes
+			// in the configuration file.
 			log.L(rootCtx).Infof("Restarting due to configuration change")
 			cancelRunCtx()
 			mgr.WaitStop()
 			// Must wait for the server to close before we restart
 			<-ffDone
 			// Re-read the configuration
-			resetConfig()
-			if err := config.ReadConfig(configSuffix, cfgFile); err != nil {
+			err := resetConfig(false)
+			if err == nil {
+				err = config.ReadConfig(configSuffix, cfgFile)
+			}
+			if err != nil {
 				return err
 			}
 		case err := <-errChan:

@@ -114,6 +114,9 @@ var (
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
 	BroadcastBatchTimeout = ffc("broadcast.batch.timeout")
 
+	// ConfigAutoReload starts a filesystem listener against the config file, and if it changes analyzes the config file for changes that require individual namespaces to restart
+	ConfigAutoReload = ffc("config.autoReload")
+
 	// CacheEnabled determines whether cache will be enabled or not, default to true
 	CacheEnabled = ffc("cache.enabled")
 

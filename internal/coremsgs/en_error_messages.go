@@ -271,4 +271,6 @@ var (
 	MsgIdempotencyKeyDuplicateMessage     = ffe("FF10430", "Idempotency key '%s' already used for message '%s'", 409)
 	MsgIdempotencyKeyDuplicateTransaction = ffe("FF10431", "Idempotency key '%s' already used for transaction '%s'", 409)
 	MsgNonIdempotencyKeyConflictTxInsert  = ffe("FF10432", "Conflict on insert of transaction '%s'. No existing transaction matching idempotency key '%s' found", 409)
+	MsgDeprecatedResetWithAutoReload      = ffe("FF10433", "The deprecated reset API cannot be used when dynamic config reload is enabled", 409)
+	MsgConfigArrayVsRawConfigMismatch     = ffe("FF10434", "Error processing configuration - mismatch between raw and processed array lengths")
 )

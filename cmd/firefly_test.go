@@ -23,6 +23,8 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/apiservermocks"
 	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/spf13/viper"
@@ -168,4 +170,12 @@ func TestAPIServerError(t *testing.T) {
 	go startFirefly(context.Background(), func() {}, o, as, errChan, resetChan, make(chan struct{}))
 	err := <-errChan
 	assert.EqualError(t, err, "pop")
+}
+
+func TestCannotResetWithConfigAutoReload(t *testing.T) {
+	err := resetConfig(true)
+	assert.NoError(t, err)
+	config.Set(coreconfig.ConfigAutoReload, true)
+	err = resetConfig(false)
+	assert.Regexp(t, "FF10433", err)
 }

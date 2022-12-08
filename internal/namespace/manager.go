@@ -22,7 +22,9 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/hyperledger/firefly-common/pkg/auth"
 	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -52,6 +54,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -75,7 +78,7 @@ type Manager interface {
 	Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool) error
 	Start() error
 	WaitStop()
-	Reset(ctx context.Context)
+	Reset(ctx context.Context) error
 
 	Orchestrator(ns string) orchestrator.Orchestrator
 	SPIEvents() spievents.Manager
@@ -88,71 +91,60 @@ type Manager interface {
 type namespace struct {
 	core.Namespace
 	orchestrator orchestrator.Orchestrator
+	loadTime     fftypes.FFTime
 	config       orchestrator.Config
+	configHash   *fftypes.Bytes32
 	plugins      []string
+	cancelCtx    context.CancelFunc
 }
 
 type namespaceManager struct {
-	reset       chan bool
-	nsMux       sync.Mutex
-	namespaces  map[string]*namespace
-	pluginNames map[string]bool
-	plugins     struct {
-		blockchain    map[string]blockchainPlugin
-		identity      map[string]identityPlugin
-		database      map[string]databasePlugin
-		sharedstorage map[string]sharedStoragePlugin
-		dataexchange  map[string]dataExchangePlugin
-		tokens        map[string]tokensPlugin
-		events        map[string]eventsPlugin
-		auth          map[string]authPlugin
-	}
+	reset               chan bool
+	ctx                 context.Context
+	cancelCtx           context.CancelFunc
+	nsMux               sync.Mutex
+	namespaces          map[string]*namespace
+	plugins             map[string]*plugin
 	metricsEnabled      bool
 	cacheManager        cache.Manager
 	metrics             metrics.Manager
 	adminEvents         spievents.Manager
 	utOrchestrator      orchestrator.Orchestrator
 	tokenBroadcastNames map[string]string
+	watchConfig         func() // indirect from viper.WatchConfig for testing
 }
 
-type blockchainPlugin struct {
-	config config.Section
-	plugin blockchain.Plugin
-}
+type pluginCategory string
 
-type databasePlugin struct {
-	config config.Section
-	plugin database.Plugin
-}
+const (
+	pluginCategoryBlockchain    pluginCategory = "blockchain"
+	pluginCategoryDatabase      pluginCategory = "database"
+	pluginCategoryDataexchange  pluginCategory = "dataexchange"
+	pluginCategorySharedstorage pluginCategory = "sharedstorage"
+	pluginCategoryTokens        pluginCategory = "tokens"
+	pluginCategoryIdentity      pluginCategory = "identity"
+	pluginCategoryEvents        pluginCategory = "events"
+	pluginCategoryAuth          pluginCategory = "auth"
+)
 
-type dataExchangePlugin struct {
-	config config.Section
-	plugin dataexchange.Plugin
-}
+type plugin struct {
+	name       string
+	category   pluginCategory
+	pluginType string
+	ctx        context.Context
+	cancelCtx  context.CancelFunc
+	config     config.Section
+	configHash *fftypes.Bytes32
+	loadTime   time.Time
 
-type sharedStoragePlugin struct {
-	config config.Section
-	plugin sharedstorage.Plugin
-}
-
-type tokensPlugin struct {
-	config config.Section
-	plugin tokens.Plugin
-}
-
-type identityPlugin struct {
-	config config.Section
-	plugin identity.Plugin
-}
-
-type eventsPlugin struct {
-	config config.Section
-	plugin events.Plugin
-}
-
-type authPlugin struct {
-	config config.Section
-	plugin auth.Plugin
+	blockchain    blockchain.Plugin
+	database      database.Plugin
+	dataexchange  dataexchange.Plugin
+	sharedstorage sharedstorage.Plugin
+	tokens        tokens.Plugin
+	identity      identity.Plugin
+	events        events.Plugin
+	auth          auth.Plugin
 }
 
 func stringSlicesEqual(a, b []string) bool {
@@ -172,6 +164,7 @@ func NewNamespaceManager(withDefaults bool) Manager {
 		namespaces:          make(map[string]*namespace),
 		metricsEnabled:      config.GetBool(coreconfig.MetricsEnabled),
 		tokenBroadcastNames: make(map[string]string),
+		watchConfig:         viper.WatchConfig,
 	}
 
 	InitConfig(withDefaults)
@@ -196,16 +189,188 @@ func NewNamespaceManager(withDefaults bool) Manager {
 	return nm
 }
 
+func (nm *namespaceManager) startConfigListener(ctx context.Context) {
+	go func() {
+		for {
+			log.L(ctx).Warnf("Starting configuration listener")
+			// Note there is no viper interface to make this end, so (apart from in unit tests)
+			// we never expect this to complete.
+			// To avoid this leak, we disable the use of the /spi/v1/reset API when config file
+			// listening is enabled.
+			viper.OnConfigChange(nm.newConfigChangeListener(ctx))
+			nm.watchConfig()
+			select {
+			case <-ctx.Done():
+				log.L(ctx).Debugf("Configuration listener ended")
+				return
+			default:
+			}
+			log.L(ctx).Warnf("Configuration listener ended (restarting)")
+			time.Sleep(5 * time.Second)
+		}
+	}()
+}
+
+func (nm *namespaceManager) newConfigChangeListener(ctx context.Context) func(in fsnotify.Event) {
+	return func(in fsnotify.Event) {
+		nm.configFileChanged(ctx, in.Name)
+	}
+}
+
+func (nm *namespaceManager) configFileChanged(ctx context.Context, filename string) {
+	log.L(ctx).Infof("Detected configuration file reload: '%s'", filename)
+
+	// Get Viper to dump the whole new config, with everything resolved across env vars
+	// and the config file etc.
+	// We use this to detect if anything has changed.
+	rawConfig := viper.AllSettings()
+
+	newPlugins, err := nm.loadPlugins(ctx, rawConfig)
+	if err != nil {
+		log.L(ctx).Errorf("Failed to initialize plugins after config reload: %s", err)
+		return
+	}
+
+	allNewNamespaces, err := nm.loadNamespaces(ctx, rawConfig)
+	if err != nil {
+		log.L(ctx).Errorf("Failed to load namespaces after config reload: %s", err)
+		return
+	}
+
+	// From this point we need to block any API calls resolving namespaces, until the reload is complete
+	nm.nsMux.Lock()
+	defer nm.nsMux.Unlock()
+
+	// Stop all defunct namespaces
+	updatedNamespaces, err := nm.stopDefunctNamespaces(ctx, newPlugins, allNewNamespaces)
+	if err != nil {
+		log.L(ctx).Errorf("Failed to stop namespaces after config reload: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+	// Stop all defunct plugins - now the namespaces using them are all stopped
+	updatedPlugins, err := nm.stopDefunctPlugins(ctx, newPlugins)
+	if err != nil {
+		log.L(ctx).Errorf("Failed to stop namespaces after config reload: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+	// Update the new lists
+	nm.plugins = newPlugins
+	nm.namespaces = allNewNamespaces
+
+	// Only initialize updated plugins
+	if err = nm.initPlugins(ctx, updatedPlugins); err != nil {
+		log.L(ctx).Errorf("Failed to initialize plugins after config reload: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+	// Only initialize the updated namespaces (which includes all that depend on above plugins)
+	if err = nm.initNamespaces(ctx, updatedNamespaces); err != nil {
+		log.L(ctx).Errorf("Failed to initialize namespaces after config reload: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+	// Now finally we can start all the new things
+	if err = nm.startNamespacesAndPlugins(updatedNamespaces, updatedPlugins); err != nil {
+		log.L(ctx).Errorf("Failed to initialize namespaces after config reload: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+}
+
+func (nm *namespaceManager) stopDefunctNamespaces(ctx context.Context, newPlugins map[string]*plugin, newNamespaces map[string]*namespace) (map[string]*namespace, error) {
+
+	// build a set of all the namespaces we've either added new, or have changed
+	updatedNamespaces := make(map[string]*namespace)
+	namespacesToStop := make(map[string]*namespace)
+	for nsName, newNS := range newNamespaces {
+		if existingNS := nm.namespaces[nsName]; existingNS != nil {
+			unchanged := existingNS.configHash.Equals(newNS.configHash) &&
+				len(existingNS.plugins) == len(newNS.plugins)
+			for _, pluginName := range newNS.plugins {
+				existingPlugin := nm.plugins[pluginName]
+				newPlugin := newPlugins[pluginName]
+				unchanged = existingPlugin != nil && newPlugin != nil &&
+					existingPlugin.configHash.Equals(newPlugin.configHash)
+			}
+			if unchanged {
+				log.L(ctx).Debugf("Namespace '%s' unchanged after config reload", nsName)
+				continue
+			}
+			// We need to stop the existing namespace
+			namespacesToStop[nsName] = existingNS
+		}
+		// This is either changed, or brand new - mark it in the map
+		updatedNamespaces[nsName] = newNS
+	}
+
+	// Stop everything we need to stop
+	for nsName, existingNS := range nm.namespaces {
+		if namespacesToStop[nsName] != nil || newNamespaces[nsName] == nil {
+			log.L(ctx).Debugf("Stopping namespace '%s' after config reload. Loaded at %s", nsName, existingNS.loadTime)
+			nm.stopNamespace(ctx, existingNS)
+		}
+	}
+
+	return updatedNamespaces, nil
+
+}
+
+func (nm *namespaceManager) stopDefunctPlugins(ctx context.Context, newPlugins map[string]*plugin) (map[string]*plugin, error) {
+
+	// build a set of all the plugins we've either added new, or have changed
+	updatedPlugins := make(map[string]*plugin)
+	pluginsToStop := make(map[string]*plugin)
+	for pluginName, newPlugin := range newPlugins {
+		if existingPlugin := nm.plugins[pluginName]; existingPlugin != nil {
+			if existingPlugin.configHash.Equals(newPlugin.configHash) {
+				log.L(ctx).Debugf("Plugin '%s' unchanged after config reload", pluginName)
+				continue
+			}
+			// We need to stop the existing plugin
+			pluginsToStop[pluginName] = existingPlugin
+		}
+		// This is either changed, or brand new - mark it in the map
+		updatedPlugins[pluginName] = newPlugin
+	}
+
+	// Stop everything we need to stop
+	for pluginName, existingPlugin := range nm.plugins {
+		if pluginsToStop[pluginName] != nil || newPlugins[pluginName] == nil {
+			log.L(ctx).Debugf("Stopping plugin '%s' after config reload. Loaded at %s", pluginName, existingPlugin.loadTime)
+			existingPlugin.cancelCtx()
+		}
+	}
+
+	return updatedPlugins, nil
+}
+
 func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool) (err error) {
 	nm.reset = reset
+	nm.cancelCtx = cancelCtx
 
-	if err = nm.loadPlugins(ctx); err != nil {
+	initTimeRawConfig := viper.AllSettings()
+	nm.loadManagers(ctx)
+	if nm.plugins, err = nm.loadPlugins(ctx, initTimeRawConfig); err != nil {
 		return err
 	}
-	if err = nm.initPlugins(ctx, cancelCtx); err != nil {
+	if nm.namespaces, err = nm.loadNamespaces(ctx, initTimeRawConfig); err != nil {
 		return err
 	}
-	if err = nm.loadNamespaces(ctx); err != nil {
+
+	// Initialize all the plugins on initial startup
+	if err = nm.initPlugins(ctx, nm.plugins); err != nil {
+		return err
+	}
+
+	// Initialize all the namespaces on initial startup
+	if err = nm.initNamespaces(ctx, nm.namespaces); err != nil {
 		return err
 	}
 
@@ -214,6 +379,14 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		metrics.Registry()
 	}
 
+	if config.GetBool(coreconfig.ConfigAutoReload) {
+		nm.startConfigListener(ctx)
+	}
+
+	return nil
+}
+
+func (nm *namespaceManager) initNamespaces(ctx context.Context, newNamespaces map[string]*namespace) error {
 	// In network version 1, the blockchain plugin and multiparty contract were global and singular.
 	// Therefore, if any namespace was EVER pointed at a V1 contract, that contract and that namespace's plugins
 	// become the de facto configuration for ff_system as well. There can only be one V1 contract in the history
@@ -222,7 +395,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	var v1Namespace *namespace
 	var v1Contract *core.MultipartyContract
 
-	for _, ns := range nm.namespaces {
+	for _, ns := range newNamespaces {
 		if err := nm.initNamespace(ctx, ns); err != nil {
 			return err
 		}
@@ -249,17 +422,20 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 
 	if v1Namespace != nil {
 		systemNS := &namespace{
-			Namespace: v1Namespace.Namespace,
-			config:    v1Namespace.config,
-			plugins:   v1Namespace.plugins,
+			Namespace:  v1Namespace.Namespace,
+			config:     v1Namespace.config,
+			plugins:    v1Namespace.plugins,
+			configHash: v1Namespace.configHash,
 		}
 		systemNS.Name = core.LegacySystemNamespace
 		systemNS.NetworkName = core.LegacySystemNamespace
-		nm.namespaces[core.LegacySystemNamespace] = systemNS
-		err = nm.initNamespace(ctx, systemNS)
+		if err := nm.initNamespace(ctx, systemNS); err != nil {
+			return err
+		}
 		log.L(ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, v1Namespace.Name)
 	}
-	return err
+
+	return nil
 }
 
 func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContract {
@@ -275,6 +451,7 @@ func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContra
 }
 
 func (nm *namespaceManager) initNamespace(ctx context.Context, ns *namespace) (err error) {
+
 	var plugins *orchestrator.Plugins
 	if ns.config.Multiparty.Enabled {
 		plugins, err = nm.validateMultiPartyConfig(ctx, ns.Name, ns.plugins)
@@ -315,36 +492,42 @@ func (nm *namespaceManager) initNamespace(ctx context.Context, ns *namespace) (e
 	if err := or.Init(orCtx, orCancel); err != nil {
 		return err
 	}
-	go func() {
-		<-orCtx.Done()
-		nm.nsMux.Lock()
-		defer nm.nsMux.Unlock()
-		log.L(ctx).Infof("Terminated namespace '%s'", ns.Name)
-		delete(nm.namespaces, ns.Name)
-	}()
 	return nil
 }
 
+func (nm *namespaceManager) stopNamespace(ctx context.Context, ns *namespace) {
+	log.L(ctx).Infof("Requesting stop of namespace '%s'", ns.Name)
+	ns.cancelCtx()
+	ns.orchestrator.WaitStop()
+	log.L(ctx).Infof("Namespace '%s' stopped", ns.Name)
+}
+
 func (nm *namespaceManager) Start() error {
+	// On initial start, we need to start everything
+	return nm.startNamespacesAndPlugins(nm.namespaces, nm.plugins)
+}
+
+func (nm *namespaceManager) startNamespacesAndPlugins(namespacesToStart map[string]*namespace, pluginsToStart map[string]*plugin) error {
 	// Orchestrators must be started before plugins so as not to miss events
-	for _, ns := range nm.namespaces {
+	for _, ns := range namespacesToStart {
 		if err := ns.orchestrator.Start(); err != nil {
 			return err
 		}
 	}
-	for _, plugin := range nm.plugins.blockchain {
-		if err := plugin.plugin.Start(); err != nil {
-			return err
-		}
-	}
-	for _, plugin := range nm.plugins.dataexchange {
-		if err := plugin.plugin.Start(); err != nil {
-			return err
-		}
-	}
-	for _, plugin := range nm.plugins.tokens {
-		if err := plugin.plugin.Start(); err != nil {
-			return err
+	for _, plugin := range pluginsToStart {
+		switch plugin.category {
+		case pluginCategoryBlockchain:
+			if err := plugin.blockchain.Start(); err != nil {
+				return err
+			}
+		case pluginCategoryDataexchange:
+			if err := plugin.dataexchange.Start(); err != nil {
+				return err
+			}
+		case pluginCategoryTokens:
+			if err := plugin.tokens.Start(); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -364,7 +547,14 @@ func (nm *namespaceManager) WaitStop() {
 	nm.adminEvents.WaitStop()
 }
 
-func (nm *namespaceManager) Reset(ctx context.Context) {
+func (nm *namespaceManager) Reset(ctx context.Context) error {
+	if config.GetBool(coreconfig.ConfigAutoReload) {
+		// We do not allow these settings to be combined, because viper does not provide a way to
+		// stop the file listener on the old root Viper instance (before reset). So we would
+		// leak file listeners in the background.
+		return i18n.NewError(context.Background(), coremsgs.MsgDeprecatedResetWithAutoReload)
+	}
+
 	// Queue a restart of the root context to pick up a configuration change.
 	// Caller is responsible for terminating the passed context to trigger the actual reset
 	// (allows caller to cleanly finish processing the current request/event).
@@ -372,10 +562,11 @@ func (nm *namespaceManager) Reset(ctx context.Context) {
 		<-ctx.Done()
 		nm.reset <- true
 	}()
+
+	return nil
 }
 
-func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
-	nm.pluginNames = make(map[string]bool)
+func (nm *namespaceManager) loadManagers(ctx context.Context) {
 	if nm.metrics == nil {
 		nm.metrics = metrics.NewMetricsManager(ctx)
 	}
@@ -384,100 +575,86 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 		nm.cacheManager = cache.NewCacheManager(ctx)
 	}
 
-	if nm.plugins.database == nil {
-		nm.plugins.database, err = nm.getDatabasePlugins(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
 	if nm.adminEvents == nil {
 		nm.adminEvents = spievents.NewAdminEventManager(ctx)
 	}
-
-	if nm.plugins.identity == nil {
-		nm.plugins.identity, err = nm.getIdentityPlugins(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
-	if nm.plugins.blockchain == nil {
-		nm.plugins.blockchain, err = nm.getBlockchainPlugins(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
-	if nm.plugins.sharedstorage == nil {
-		nm.plugins.sharedstorage, err = nm.getSharedStoragePlugins(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
-	if nm.plugins.dataexchange == nil {
-		nm.plugins.dataexchange, err = nm.getDataExchangePlugins(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
-	if nm.plugins.tokens == nil {
-		nm.plugins.tokens, err = nm.getTokensPlugins(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
-	if nm.plugins.events == nil {
-		nm.plugins.events, err = nm.getEventPlugins(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
-	if nm.plugins.auth == nil {
-		nm.plugins.auth, err = nm.getAuthPlugin(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
-func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[string]tokensPlugin, err error) {
-	plugins = make(map[string]tokensPlugin)
+func (nm *namespaceManager) loadPlugins(ctx context.Context, rawConfig fftypes.JSONObject) (newPlugins map[string]*plugin, err error) {
+
+	newPlugins = make(map[string]*plugin)
+
+	if err := nm.getDatabasePlugins(ctx, newPlugins, rawConfig); err != nil {
+		return nil, err
+	}
+
+	if err := nm.getIdentityPlugins(ctx, newPlugins, rawConfig); err != nil {
+		return nil, err
+	}
+
+	if err := nm.getBlockchainPlugins(ctx, newPlugins, rawConfig); err != nil {
+		return nil, err
+	}
+
+	if err := nm.getSharedStoragePlugins(ctx, newPlugins, rawConfig); err != nil {
+		return nil, err
+	}
+
+	if err := nm.getDataExchangePlugins(ctx, newPlugins, rawConfig); err != nil {
+		return nil, err
+	}
+
+	if err := nm.getTokensPlugins(ctx, newPlugins, rawConfig); err != nil {
+		return nil, err
+	}
+
+	if err := nm.getEventPlugins(ctx, newPlugins, rawConfig); err != nil {
+		return nil, err
+	}
+
+	if err := nm.getAuthPlugin(ctx, newPlugins, rawConfig); err != nil {
+		return nil, err
+	}
+
+	return newPlugins, nil
+}
+
+func (nm *namespaceManager) configHash(rawConfigObject fftypes.JSONObject) *fftypes.Bytes32 {
+	b, _ := json.Marshal(rawConfigObject)
+	return fftypes.HashString(string(b))
+}
+
+func (nm *namespaceManager) getTokensPlugins(ctx context.Context, plugins map[string]*plugin, rawConfig fftypes.JSONObject) (err error) {
 	// Broadcast names must be unique
 	broadcastNames := make(map[string]bool)
 
 	tokensConfigArraySize := tokensConfig.ArraySize()
+	rawPluginTokensConfig := rawConfig.GetObject("plugins").GetObjectArray("tokens")
+	if len(rawPluginTokensConfig) != tokensConfigArraySize {
+		log.L(ctx).Errorf("Expected len(%d) for plugins.tokens: %s", tokensConfigArraySize, rawPluginTokensConfig)
+		return i18n.NewError(ctx, coremsgs.MsgConfigArrayVsRawConfigMismatch)
+	}
 	for i := 0; i < tokensConfigArraySize; i++ {
 		config := tokensConfig.ArrayEntry(i)
-		name, pluginType, err := nm.validatePluginConfig(ctx, config, "tokens")
+		configHash := nm.configHash(rawPluginTokensConfig[i])
+		pc, err := nm.validatePluginConfig(ctx, plugins, pluginCategoryTokens, config, configHash)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		broadcastName := config.GetString(coreconfig.PluginBroadcastName)
 		// If there is no broadcast name, use the plugin name
 		if broadcastName == "" {
-			broadcastName = name
+			broadcastName = pc.name
 		}
 		if _, exists := broadcastNames[broadcastName]; exists {
-			return nil, i18n.NewError(ctx, coremsgs.MsgDuplicatePluginBroadcastName, "tokens", broadcastName)
+			return i18n.NewError(ctx, coremsgs.MsgDuplicatePluginBroadcastName, pluginCategoryTokens, broadcastName)
 		}
 		broadcastNames[broadcastName] = true
-		nm.tokenBroadcastNames[name] = broadcastName
+		nm.tokenBroadcastNames[pc.name] = broadcastName
 
-		plugin, err := tifactory.GetPlugin(ctx, pluginType)
+		pc.tokens, err = tifactory.GetPlugin(ctx, pc.pluginType)
 		if err != nil {
-			return nil, err
-		}
-
-		plugins[name] = tokensPlugin{
-			config: config.SubSection(pluginType),
-			plugin: plugin,
+			return err
 		}
 	}
 
@@ -493,46 +670,47 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[s
 			name := deprecatedConfig.GetString(coreconfig.PluginConfigName)
 			pluginType := deprecatedConfig.GetString(tokens.TokensConfigPlugin)
 			if name == "" || pluginType == "" {
-				return nil, i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
+				return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
 			}
 			if err = fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
-				return nil, err
+				return err
 			}
 			nm.tokenBroadcastNames[name] = name
 
-			plugin, err := tifactory.GetPlugin(ctx, pluginType)
+			configHash := nm.configHash(rawConfig.GetObject("plugins").GetObject("tokens"))
+			pc, err := nm.newPluginCommon(ctx, plugins, pluginCategoryTokens, name, pluginType, deprecatedConfig, configHash)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
-			plugins[name] = tokensPlugin{
-				config: deprecatedConfig,
-				plugin: plugin,
+			pc.tokens, err = tifactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return err
 			}
 		}
 	}
 
-	return plugins, err
+	return nil
 }
 
-func (nm *namespaceManager) getDatabasePlugins(ctx context.Context) (plugins map[string]databasePlugin, err error) {
-	plugins = make(map[string]databasePlugin)
+func (nm *namespaceManager) getDatabasePlugins(ctx context.Context, plugins map[string]*plugin, rawConfig fftypes.JSONObject) (err error) {
 	dbConfigArraySize := databaseConfig.ArraySize()
+	rawPluginDatabaseConfig := rawConfig.GetObject("plugins").GetObjectArray("database")
+	if len(rawPluginDatabaseConfig) != dbConfigArraySize {
+		log.L(ctx).Errorf("Expected len(%d) for plugins.database: %s", dbConfigArraySize, rawPluginDatabaseConfig)
+		return i18n.NewError(ctx, coremsgs.MsgConfigArrayVsRawConfigMismatch)
+	}
 	for i := 0; i < dbConfigArraySize; i++ {
 		config := databaseConfig.ArrayEntry(i)
-		name, pluginType, err := nm.validatePluginConfig(ctx, config, "database")
+		configHash := nm.configHash(rawPluginDatabaseConfig[i])
+		pc, err := nm.validatePluginConfig(ctx, plugins, pluginCategoryDatabase, config, configHash)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		plugin, err := difactory.GetPlugin(ctx, pluginType)
+		pc.database, err = difactory.GetPlugin(ctx, pc.pluginType)
 		if err != nil {
-			return nil, err
-		}
-
-		plugins[name] = databasePlugin{
-			config: config.SubSection(pluginType),
-			plugin: plugin,
+			return err
 		}
 	}
 
@@ -540,60 +718,74 @@ func (nm *namespaceManager) getDatabasePlugins(ctx context.Context) (plugins map
 	if len(plugins) == 0 {
 		pluginType := deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType)
 		if pluginType != "" {
-			plugin, err := difactory.GetPlugin(ctx, deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType))
-			if err != nil {
-				return nil, err
-			}
 			log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the database configuration has been moved under the 'plugins' section")
-			name := "database_0"
-			plugins[name] = databasePlugin{
-				config: deprecatedDatabaseConfig.SubSection(pluginType),
-				plugin: plugin,
+			configHash := nm.configHash(rawConfig.GetObject("plugins").GetObject("database"))
+			pc, err := nm.newPluginCommon(ctx, plugins, pluginCategoryDatabase, "database_0", pluginType, deprecatedDatabaseConfig, configHash)
+			if err != nil {
+				return err
+			}
+			pc.database, err = difactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return err
 			}
 		}
 	}
 
-	return plugins, err
+	return nil
 }
 
-func (nm *namespaceManager) validatePluginConfig(ctx context.Context, config config.Section, sectionName string) (name, pluginType string, err error) {
-	name = config.GetString(coreconfig.PluginConfigName)
-	pluginType = config.GetString(coreconfig.PluginConfigType)
+func (nm *namespaceManager) validatePluginConfig(ctx context.Context, plugins map[string]*plugin, category pluginCategory, config config.Section, configHash *fftypes.Bytes32) (*plugin, error) {
+	name := config.GetString(coreconfig.PluginConfigName)
+	pluginType := config.GetString(coreconfig.PluginConfigType)
 
 	if name == "" || pluginType == "" {
-		return "", "", i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, sectionName)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, category)
 	}
 
 	if err := fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
-		return "", "", err
+		return nil, err
 	}
 
-	if _, ok := nm.pluginNames[name]; ok {
-		return "", "", i18n.NewError(ctx, coremsgs.MsgDuplicatePluginName, name)
-	}
-	nm.pluginNames[name] = true
-
-	return name, pluginType, nil
+	return nm.newPluginCommon(ctx, plugins, category, name, pluginType, config, configHash)
 }
 
-func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins map[string]dataExchangePlugin, err error) {
-	plugins = make(map[string]dataExchangePlugin)
+func (nm *namespaceManager) newPluginCommon(ctx context.Context, plugins map[string]*plugin, category pluginCategory, name, pluginType string, config config.Section, configHash *fftypes.Bytes32) (*plugin, error) {
+	if _, ok := plugins[name]; ok {
+		return nil, i18n.NewError(ctx, coremsgs.MsgDuplicatePluginName, name)
+	}
+
+	pc := &plugin{
+		name:       name,
+		category:   category,
+		pluginType: pluginType,
+		config:     config,
+		configHash: configHash,
+		loadTime:   time.Now(),
+	}
+	plugins[name] = pc
+	// context is always inherited from namespaceManager BG context _not_ the context of the caller
+	pc.ctx, pc.cancelCtx = context.WithCancel(nm.ctx)
+	return pc, nil
+}
+
+func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context, plugins map[string]*plugin, rawConfig fftypes.JSONObject) (err error) {
 	dxConfigArraySize := dataexchangeConfig.ArraySize()
+	rawPluginDXConfig := rawConfig.GetObject("plugins").GetObjectArray("dataexchange")
+	if len(rawPluginDXConfig) != dxConfigArraySize {
+		log.L(ctx).Errorf("Expected len(%d) for plugins.dataexchange: %s", dxConfigArraySize, rawPluginDXConfig)
+		return i18n.NewError(ctx, coremsgs.MsgConfigArrayVsRawConfigMismatch)
+	}
 	for i := 0; i < dxConfigArraySize; i++ {
 		config := dataexchangeConfig.ArrayEntry(i)
-		name, pluginType, err := nm.validatePluginConfig(ctx, config, "dataexchange")
+		configHash := nm.configHash(rawPluginDXConfig[i])
+		pc, err := nm.validatePluginConfig(ctx, plugins, pluginCategoryDataexchange, config, configHash)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		plugin, err := dxfactory.GetPlugin(ctx, pluginType)
+		pc.dataexchange, err = dxfactory.GetPlugin(ctx, pc.pluginType)
 		if err != nil {
-			return nil, err
-		}
-
-		plugins[name] = dataExchangePlugin{
-			config: config.SubSection(pluginType),
-			plugin: plugin,
+			return err
 		}
 	}
 
@@ -601,64 +793,64 @@ func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins
 	if len(plugins) == 0 {
 		pluginType := deprecatedDataexchangeConfig.GetString(coreconfig.PluginConfigType)
 		if pluginType != "" {
-			plugin, err := dxfactory.GetPlugin(ctx, pluginType)
-			if err != nil {
-				return nil, err
-			}
 			log.L(ctx).Warnf("Your data exchange config uses a deprecated configuration structure - the data exchange configuration has been moved under the 'plugins' section")
-			name := "dataexchange_0"
-			plugins[name] = dataExchangePlugin{
-				config: deprecatedDataexchangeConfig.SubSection(pluginType),
-				plugin: plugin,
+			configHash := nm.configHash(rawConfig.GetObject("plugins").GetObject("dataexchange"))
+			pc, err := nm.newPluginCommon(ctx, plugins, pluginCategoryDataexchange, "dataexchange_0", pluginType, deprecatedDataexchangeConfig, configHash)
+			if err != nil {
+				return err
+			}
+			pc.dataexchange, err = dxfactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return err
 			}
 		}
 	}
 
-	return plugins, err
+	return nil
 }
 
-func (nm *namespaceManager) getIdentityPlugins(ctx context.Context) (plugins map[string]identityPlugin, err error) {
-	plugins = make(map[string]identityPlugin)
+func (nm *namespaceManager) getIdentityPlugins(ctx context.Context, plugins map[string]*plugin, rawConfig fftypes.JSONObject) (err error) {
 	configSize := identityConfig.ArraySize()
+	rawPluginIdentityConfig := rawConfig.GetObject("plugins").GetObjectArray("identity")
+	if len(rawPluginIdentityConfig) != configSize {
+		log.L(ctx).Errorf("Expected len(%d) for plugins.identity: %s", configSize, rawPluginIdentityConfig)
+		return i18n.NewError(ctx, coremsgs.MsgConfigArrayVsRawConfigMismatch)
+	}
 	for i := 0; i < configSize; i++ {
 		config := identityConfig.ArrayEntry(i)
-		name, pluginType, err := nm.validatePluginConfig(ctx, config, "identity")
+		configHash := nm.configHash(rawPluginIdentityConfig[i])
+		pc, err := nm.validatePluginConfig(ctx, plugins, pluginCategoryIdentity, config, configHash)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		plugin, err := iifactory.GetPlugin(ctx, pluginType)
+		pc.identity, err = iifactory.GetPlugin(ctx, pc.pluginType)
 		if err != nil {
-			return nil, err
-		}
-
-		plugins[name] = identityPlugin{
-			config: config.SubSection(pluginType),
-			plugin: plugin,
+			return err
 		}
 	}
 
-	return plugins, err
+	return nil
 }
 
-func (nm *namespaceManager) getBlockchainPlugins(ctx context.Context) (plugins map[string]blockchainPlugin, err error) {
-	plugins = make(map[string]blockchainPlugin)
+func (nm *namespaceManager) getBlockchainPlugins(ctx context.Context, plugins map[string]*plugin, rawConfig fftypes.JSONObject) (err error) {
 	blockchainConfigArraySize := blockchainConfig.ArraySize()
+	rawPluginBlockchainsConfig := rawConfig.GetObject("plugins").GetObjectArray("blockchain")
+	if len(rawPluginBlockchainsConfig) != blockchainConfigArraySize {
+		log.L(ctx).Errorf("Expected len(%d) for plugins.blockchain: %s", blockchainConfigArraySize, rawPluginBlockchainsConfig)
+		return i18n.NewError(ctx, coremsgs.MsgConfigArrayVsRawConfigMismatch)
+	}
 	for i := 0; i < blockchainConfigArraySize; i++ {
 		config := blockchainConfig.ArrayEntry(i)
-		name, pluginType, err := nm.validatePluginConfig(ctx, config, "blockchain")
+		configHash := nm.configHash(rawPluginBlockchainsConfig[i])
+		pc, err := nm.validatePluginConfig(ctx, plugins, pluginCategoryBlockchain, config, configHash)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		plugin, err := bifactory.GetPlugin(ctx, pluginType)
+		pc.blockchain, err = bifactory.GetPlugin(ctx, pc.pluginType)
 		if err != nil {
-			return nil, err
-		}
-
-		plugins[name] = blockchainPlugin{
-			config: config.SubSection(pluginType),
-			plugin: plugin,
+			return err
 		}
 	}
 
@@ -666,40 +858,41 @@ func (nm *namespaceManager) getBlockchainPlugins(ctx context.Context) (plugins m
 	if len(plugins) == 0 {
 		pluginType := deprecatedBlockchainConfig.GetString(coreconfig.PluginConfigType)
 		if pluginType != "" {
-			plugin, err := bifactory.GetPlugin(ctx, pluginType)
-			if err != nil {
-				return nil, err
-			}
 			log.L(ctx).Warnf("Your blockchain config uses a deprecated configuration structure - the blockchain configuration has been moved under the 'plugins' section")
-			name := "blockchain_0"
-			plugins[name] = blockchainPlugin{
-				config: deprecatedBlockchainConfig.SubSection(pluginType),
-				plugin: plugin,
+
+			configHash := nm.configHash(rawConfig.GetObject("plugins").GetObject("blockchain"))
+			pc, err := nm.newPluginCommon(ctx, plugins, pluginCategoryBlockchain, "blockchain_0", pluginType, deprecatedBlockchainConfig, configHash)
+			if err != nil {
+				return err
+			}
+			pc.blockchain, err = bifactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return err
 			}
 		}
 	}
 
-	return plugins, err
+	return nil
 }
 
-func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugins map[string]sharedStoragePlugin, err error) {
-	plugins = make(map[string]sharedStoragePlugin)
+func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context, plugins map[string]*plugin, rawConfig fftypes.JSONObject) (err error) {
 	configSize := sharedstorageConfig.ArraySize()
+	rawPluginSharedStorageConfig := rawConfig.GetObject("plugins").GetObjectArray("sharedstorage")
+	if len(rawPluginSharedStorageConfig) != configSize {
+		log.L(ctx).Errorf("Expected len(%d) for plugins.sharedstorage: %s", configSize, rawPluginSharedStorageConfig)
+		return i18n.NewError(ctx, coremsgs.MsgConfigArrayVsRawConfigMismatch)
+	}
 	for i := 0; i < configSize; i++ {
 		config := sharedstorageConfig.ArrayEntry(i)
-		name, pluginType, err := nm.validatePluginConfig(ctx, config, "sharedstorage")
+		configHash := nm.configHash(rawPluginSharedStorageConfig[i])
+		pc, err := nm.validatePluginConfig(ctx, plugins, pluginCategorySharedstorage, config, configHash)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		plugin, err := ssfactory.GetPlugin(ctx, pluginType)
+		pc.sharedstorage, err = ssfactory.GetPlugin(ctx, pc.pluginType)
 		if err != nil {
-			return nil, err
-		}
-
-		plugins[name] = sharedStoragePlugin{
-			config: config.SubSection(pluginType),
-			plugin: plugin,
+			return err
 		}
 	}
 
@@ -707,66 +900,74 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 	if len(plugins) == 0 {
 		pluginType := deprecatedSharedStorageConfig.GetString(coreconfig.PluginConfigType)
 		if pluginType != "" {
-			plugin, err := ssfactory.GetPlugin(ctx, pluginType)
-			if err != nil {
-				return nil, err
-			}
 			log.L(ctx).Warnf("Your shared storage config uses a deprecated configuration structure - the shared storage configuration has been moved under the 'plugins' section")
-			name := "sharedstorage_0"
-			plugins[name] = sharedStoragePlugin{
-				config: deprecatedSharedStorageConfig.SubSection(pluginType),
-				plugin: plugin,
+
+			configHash := nm.configHash(rawConfig.GetObject("plugins").GetObject("sharedstorage"))
+			pc, err := nm.newPluginCommon(ctx, plugins, pluginCategorySharedstorage, "sharedstorage_0", pluginType, deprecatedBlockchainConfig, configHash)
+			if err != nil {
+				return err
+			}
+			pc.sharedstorage, err = ssfactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return err
 			}
 		}
 	}
 
-	return plugins, err
+	return nil
 }
 
-func (nm *namespaceManager) initPlugins(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
-	for _, entry := range nm.plugins.database {
-		if err = entry.plugin.Init(ctx, entry.config); err != nil {
-			return err
+func (nm *namespaceManager) initPlugins(ctx context.Context, pluginsToStart map[string]*plugin) (err error) {
+	for name, p := range nm.plugins {
+		if pluginsToStart[name] == nil {
+			continue
 		}
-		entry.plugin.SetHandler(database.GlobalHandler, nm)
-	}
-	for _, entry := range nm.plugins.blockchain {
-		if err = entry.plugin.Init(ctx, cancelCtx, entry.config, nm.metrics, nm.cacheManager); err != nil {
-			return err
-		}
-	}
-	for _, entry := range nm.plugins.dataexchange {
-		if err = entry.plugin.Init(ctx, cancelCtx, entry.config); err != nil {
-			return err
-		}
-	}
-	for _, entry := range nm.plugins.sharedstorage {
-		if err = entry.plugin.Init(ctx, entry.config); err != nil {
-			return err
-		}
-	}
-	for name, entry := range nm.plugins.tokens {
-		if err = entry.plugin.Init(ctx, cancelCtx, name, entry.config); err != nil {
-			return err
-		}
-	}
-	for _, entry := range nm.plugins.events {
-		if err = entry.plugin.Init(ctx, entry.config); err != nil {
-			return err
-		}
-	}
-	for name, entry := range nm.plugins.auth {
-		if err = entry.plugin.Init(ctx, name, entry.config); err != nil {
-			return err
+		switch p.category {
+		case pluginCategoryDatabase:
+			if err = p.database.Init(p.ctx, p.config); err != nil {
+				return err
+			}
+			p.database.SetHandler(database.GlobalHandler, nm)
+		case pluginCategoryBlockchain:
+			if err = p.blockchain.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, p.config, nm.metrics, nm.cacheManager); err != nil {
+				return err
+			}
+		case pluginCategoryDataexchange:
+			if err = p.dataexchange.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, p.config); err != nil {
+				return err
+			}
+		case pluginCategorySharedstorage:
+			if err = p.sharedstorage.Init(p.ctx, p.config); err != nil {
+				return err
+			}
+		case pluginCategoryTokens:
+			if err = p.tokens.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, name, p.config); err != nil {
+				return err
+			}
+		case pluginCategoryEvents:
+			if err = p.events.Init(p.ctx, p.config); err != nil {
+				return err
+			}
+		case pluginCategoryAuth:
+			if err = p.auth.Init(p.ctx, name, p.config); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func (nm *namespaceManager) loadNamespaces(ctx context.Context) (err error) {
+func (nm *namespaceManager) loadNamespaces(ctx context.Context, rawConfig fftypes.JSONObject) (newNS map[string]*namespace, err error) {
 	defaultName := config.GetString(coreconfig.NamespacesDefault)
 	size := namespacePredefined.ArraySize()
+	rawPredefinedNSConfig := rawConfig.GetObject("namespaces").GetObjectArray("predefined")
+	if len(rawPredefinedNSConfig) != size {
+		log.L(ctx).Errorf("Expected len(%d) for namespaces.predefined: %s", size, rawPredefinedNSConfig)
+		return nil, i18n.NewError(ctx, coremsgs.MsgConfigArrayVsRawConfigMismatch)
+	}
 	foundDefault := false
+
+	newNS = make(map[string]*namespace)
 	for i := 0; i < size; i++ {
 		nsConfig := namespacePredefined.ArrayEntry(i)
 		name := nsConfig.GetString(coreconfig.NamespaceName)
@@ -774,22 +975,24 @@ func (nm *namespaceManager) loadNamespaces(ctx context.Context) (err error) {
 			log.L(ctx).Warnf("Skipping unnamed entry at namespaces.predefined[%d]", i)
 			continue
 		}
-		if _, ok := nm.namespaces[name]; ok {
+		if _, ok := newNS[name]; ok {
 			log.L(ctx).Warnf("Duplicate predefined namespace (ignored): %s", name)
 			continue
 		}
 		foundDefault = foundDefault || name == defaultName
-		if nm.namespaces[name], err = nm.loadNamespace(ctx, name, i, nsConfig); err != nil {
-			return err
+		if newNS[name], err = nm.loadNamespace(ctx, name, i, nsConfig, rawPredefinedNSConfig[i]); err != nil {
+			return nil, err
 		}
 	}
-	if !foundDefault {
-		return i18n.NewError(ctx, coremsgs.MsgDefaultNamespaceNotFound, defaultName)
+	// We allow startup with zero namespaces defined, so that we can have a FF Core
+	// ready to accept config updates to add new namespaces.
+	if !foundDefault && size > 0 {
+		return nil, i18n.NewError(ctx, coremsgs.MsgDefaultNamespaceNotFound, defaultName)
 	}
-	return err
+	return newNS, err
 }
 
-func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section) (*namespace, error) {
+func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section, rawNSConfig fftypes.JSONObject) (*namespace, error) {
 	if err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
 		return nil, err
 	}
@@ -856,28 +1059,8 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	pluginsRaw := conf.Get(coreconfig.NamespacePlugins)
 	plugins := conf.GetStringSlice(coreconfig.NamespacePlugins)
 	if pluginsRaw == nil {
-		for plugin := range nm.plugins.blockchain {
-			plugins = append(plugins, plugin)
-		}
-
-		for plugin := range nm.plugins.dataexchange {
-			plugins = append(plugins, plugin)
-		}
-
-		for plugin := range nm.plugins.sharedstorage {
-			plugins = append(plugins, plugin)
-		}
-
-		for plugin := range nm.plugins.database {
-			plugins = append(plugins, plugin)
-		}
-
-		for plugin := range nm.plugins.identity {
-			plugins = append(plugins, plugin)
-		}
-
-		for plugin := range nm.plugins.tokens {
-			plugins = append(plugins, plugin)
+		for pluginName := range nm.plugins {
+			plugins = append(plugins, pluginName)
 		}
 	}
 
@@ -921,72 +1104,72 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 			NetworkName: networkName,
 			Description: conf.GetString(coreconfig.NamespaceDescription),
 		},
-		config:  config,
-		plugins: plugins,
+		config:     config,
+		configHash: nm.configHash(rawNSConfig),
+		plugins:    plugins,
 	}, nil
 }
 
 func (nm *namespaceManager) validatePlugins(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
 	var result orchestrator.Plugins
 	for _, pluginName := range plugins {
-		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
+		p := nm.plugins[pluginName]
+		if p == nil {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
+		}
+		switch p.category {
+		case pluginCategoryBlockchain:
 			if result.Blockchain.Plugin != nil {
 				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "blockchain")
 			}
 			result.Blockchain = orchestrator.BlockchainPlugin{
 				Name:   pluginName,
-				Plugin: instance.plugin,
+				Plugin: p.blockchain,
 			}
-			continue
-		}
-		if instance, ok := nm.plugins.dataexchange[pluginName]; ok {
+		case pluginCategoryDataexchange:
 			if result.DataExchange.Plugin != nil {
 				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "dataexchange")
 			}
 			result.DataExchange = orchestrator.DataExchangePlugin{
 				Name:   pluginName,
-				Plugin: instance.plugin,
+				Plugin: p.dataexchange,
 			}
-			continue
-		}
-		if instance, ok := nm.plugins.sharedstorage[pluginName]; ok {
+		case pluginCategorySharedstorage:
 			if result.SharedStorage.Plugin != nil {
 				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "sharedstorage")
 			}
 			result.SharedStorage = orchestrator.SharedStoragePlugin{
 				Name:   pluginName,
-				Plugin: instance.plugin,
+				Plugin: p.sharedstorage,
 			}
-			continue
-		}
-		if instance, ok := nm.plugins.database[pluginName]; ok {
+		case pluginCategoryDatabase:
 			if result.Database.Plugin != nil {
 				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "database")
 			}
 			result.Database = orchestrator.DatabasePlugin{
 				Name:   pluginName,
-				Plugin: instance.plugin,
+				Plugin: p.database,
 			}
-			continue
-		}
-		if instance, ok := nm.plugins.tokens[pluginName]; ok {
+		case pluginCategoryTokens:
 			result.Tokens = append(result.Tokens, orchestrator.TokensPlugin{
 				Name:   pluginName,
-				Plugin: instance.plugin,
+				Plugin: p.tokens,
 			})
-			continue
-		}
-		if instance, ok := nm.plugins.identity[pluginName]; ok {
+		case pluginCategoryIdentity:
+			if result.Identity.Plugin != nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "identity")
+			}
 			result.Identity = orchestrator.IdentityPlugin{
 				Name:   pluginName,
-				Plugin: instance.plugin,
+				Plugin: p.identity,
 			}
-			continue
-		}
-		if instance, ok := nm.plugins.auth[pluginName]; ok {
+		case pluginCategoryAuth:
+			if result.Auth.Plugin != nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "auth")
+			}
 			result.Auth = orchestrator.AuthPlugin{
 				Name:   pluginName,
-				Plugin: instance.plugin,
+				Plugin: p.auth,
 			}
 			continue
 		}
@@ -1010,9 +1193,11 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsMultiparty, name)
 	}
 
-	result.Events = make(map[string]events.Plugin, len(nm.plugins.events))
-	for name, entry := range nm.plugins.events {
-		result.Events[name] = entry.plugin
+	result.Events = make(map[string]events.Plugin)
+	for name, p := range nm.plugins {
+		if p.category == pluginCategoryEvents {
+			result.Events[name] = p.events
+		}
 	}
 	return result, nil
 }
@@ -1028,9 +1213,11 @@ func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, nam
 		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceNoDatabase, name)
 	}
 
-	result.Events = make(map[string]events.Plugin, len(nm.plugins.events))
-	for name, entry := range nm.plugins.events {
-		result.Events[name] = entry.plugin
+	result.Events = make(map[string]events.Plugin)
+	for name, p := range nm.plugins {
+		if p.category == pluginCategoryEvents {
+			result.Events[name] = p.events
+		}
 	}
 	return result, nil
 }
@@ -1082,8 +1269,7 @@ func (nm *namespaceManager) ResolveOperationByNamespacedID(ctx context.Context, 
 	return or.Operations().ResolveOperationByID(ctx, u, op)
 }
 
-func (nm *namespaceManager) getEventPlugins(ctx context.Context) (plugins map[string]eventsPlugin, err error) {
-	plugins = make(map[string]eventsPlugin)
+func (nm *namespaceManager) getEventPlugins(ctx context.Context, plugins map[string]*plugin, rawConfig fftypes.JSONObject) (err error) {
 	enabledTransports := config.GetStringSlice(coreconfig.EventTransportsEnabled)
 	uniqueTransports := make(map[string]bool)
 	for _, transport := range enabledTransports {
@@ -1092,44 +1278,46 @@ func (nm *namespaceManager) getEventPlugins(ctx context.Context) (plugins map[st
 	// Cannot disable the internal listener
 	uniqueTransports[system.SystemEventsTransport] = true
 	for transport := range uniqueTransports {
-		plugin, err := eifactory.GetPlugin(ctx, transport)
-		if err != nil {
-			return nil, err
-		}
 
-		name := plugin.Name()
-		section := config.RootSection("events").SubSection(name)
-		plugin.InitConfig(section)
-		plugins[name] = eventsPlugin{
-			config: section,
-			plugin: plugin,
+		eventsPlugin, err := eifactory.GetPlugin(ctx, transport)
+		if err != nil {
+			return err
 		}
+		name := eventsPlugin.Name()
+		section := config.RootSection("events").SubSection(name)
+		rawEventConfig := rawConfig.GetObject("events").GetObject(name)
+
+		pc, err := nm.newPluginCommon(ctx, plugins, pluginCategoryEvents, name, name /* name is category for events */, section, nm.configHash(rawEventConfig))
+		if err != nil {
+			return err
+		}
+		pc.events = eventsPlugin
+		pc.events.InitConfig(section)
 	}
-	return plugins, err
+	return nil
 }
 
-func (nm *namespaceManager) getAuthPlugin(ctx context.Context) (plugins map[string]authPlugin, err error) {
-	plugins = make(map[string]authPlugin)
-
+func (nm *namespaceManager) getAuthPlugin(ctx context.Context, plugins map[string]*plugin, rawConfig fftypes.JSONObject) (err error) {
 	authConfigArraySize := authConfig.ArraySize()
+	rawPluginAuthConfig := rawConfig.GetObject("plugins").GetObjectArray("auth")
+	if len(rawPluginAuthConfig) != authConfigArraySize {
+		log.L(ctx).Errorf("Expected len(%d) for plugins.auth: %s", authConfigArraySize, rawPluginAuthConfig)
+		return i18n.NewError(ctx, coremsgs.MsgConfigArrayVsRawConfigMismatch)
+	}
 	for i := 0; i < authConfigArraySize; i++ {
 		config := authConfig.ArrayEntry(i)
-		name, pluginType, err := nm.validatePluginConfig(ctx, config, "auth")
+		configHash := nm.configHash(rawPluginAuthConfig[i])
+		pc, err := nm.validatePluginConfig(ctx, plugins, pluginCategoryAuth, config, configHash)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		plugin, err := authfactory.GetPlugin(ctx, pluginType)
+		pc.auth, err = authfactory.GetPlugin(ctx, pc.pluginType)
 		if err != nil {
-			return nil, err
-		}
-
-		plugins[name] = authPlugin{
-			config: config.SubSection(pluginType),
-			plugin: plugin,
+			return err
 		}
 	}
-	return plugins, err
+	return nil
 }
 
 func (nm *namespaceManager) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
