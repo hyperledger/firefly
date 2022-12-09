@@ -190,6 +190,11 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 }
 
 func (nm *namespaceManager) initComponents(ctx context.Context) (err error) {
+	if nm.metricsEnabled {
+		// Ensure metrics are registered, before initializing the namespaces
+		metrics.Registry()
+	}
+
 	// Initialize all the plugins on initial startup
 	if err = nm.initPlugins(ctx, nm.plugins); err != nil {
 		return err
@@ -198,11 +203,6 @@ func (nm *namespaceManager) initComponents(ctx context.Context) (err error) {
 	// Initialize all the namespaces on initial startup
 	if err = nm.initNamespaces(ctx, nm.namespaces); err != nil {
 		return err
-	}
-
-	if nm.metricsEnabled {
-		// Ensure metrics are registered
-		metrics.Registry()
 	}
 
 	if err := nm.startConfigListener(); err != nil {
