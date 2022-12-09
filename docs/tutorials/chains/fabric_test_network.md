@@ -274,7 +274,7 @@ After everything starts up, you should have two FireFly nodes that are each mapp
 This same guide can be adapted to connect to a remote Fabric network running somewhere else. They key takeaways are:
 
 - You need the FireFly chaincode deployed on channel in your Fabric network
-- You need to pass the channel and chaincode name when you run `ff init` 
+- You need to pass the channel and chaincode name when you run `ff init`
 - You need to provide a connection profile and the correct certs, keys, etc. for each node when you run `ff init`
 - Your FireFly containers will need to have network access to your Fabric network
 

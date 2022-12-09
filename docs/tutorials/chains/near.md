@@ -100,7 +100,7 @@ Note, for the NEAR protocol, the line labeled privateKey is the address you will
 
 Go to [https://near-faucet.io/](https://near-faucet.io/) and click **Connect with Near Testnet**. Next click **Create Accounte**, make an account ID, and choose a security method. Follow the steps for either the Seedphrase or Ledger Hardware Wallet until your NEAR account is created. Once complete you will be redirected to the original https://near-faucet.io/ page and are now able to request 20 NEAR tokens.
 
-![NEAR Faucet](images/near_faucet.png) 
+![NEAR Faucet](images/near_faucet.png)
 ![NEAR Account](images/near_account.png)
 ![NEAR Account Name](images/near_account_name.png)
 ![Fund Account](images/near_fund_account.png)

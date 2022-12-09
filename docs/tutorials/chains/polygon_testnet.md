@@ -36,8 +36,6 @@ policyengine.simple:
     gasOracle:
         mode: connector
 ```
-For more info about `confirmations`, see [Public vs. Permissioned](../../overview/public_vs_permissioned.md)
-
 For this tutorial, we will assume this file is saved at `~/Desktop/evmconnect.yml`. If your path is different, you will need to adjust the path in the next command below.
 
 ## Creating a new stack
@@ -48,7 +46,7 @@ To create a local FireFly development stack and connect it to the Polygon Mumbai
  - Connect to an ethereum network
  - Use the `evmconnect` blockchain connector
  - Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.
- - See the polygon [docs](https://docs.polygon.technology/docs/develop/network-details/network/) and select an HTTPS RPC endpoint.
+ - See the list of Polygon [RPC endpoints](https://polygon-rpc.com/) and select an HTTPS RPC endpoint.
  - Set the chain ID to `80001` (the correct ID for the Polygon Mumbai testnet)
  - Merge the custom config created above with the generated `evmconnect` config file
 
@@ -61,7 +59,7 @@ ff init polygon 1 \
     -n remote-rpc \
     --remote-node-url <selected RPC endpoint> \
     --chain-id 80001 \
-    --connector-config ~/Desktop/evmconnect.yml 
+    --connector-config ~/Desktop/evmconnect.yml
 ```
 
 ## Start the stack
@@ -98,12 +96,12 @@ ff accounts list polygon
 ]
 ```
 
-Copy the address listed in the output from this command. Go to [https://faucet.polygon.technology/](https://faucet.polygon.technology/) and paste the address in the form. Click the **Submit** button, and then **Confirm**. 
+Copy the address listed in the output from this command. Go to [https://faucet.polygon.technology/](https://faucet.polygon.technology/) and paste the address in the form. Click the **Submit** button, and then **Confirm**.
 
 ![Polygon Faucet](images/polygon_faucet.png)
 
 ### Confirm the transaction on Polygonscan
-You should be able to go lookup your account on [Polygonscan for the Mumbai testnet https://mumbai.polygonscan.com/](https://mumbai.polygonscan.com/) and see that you now have a balance of 0.2 MATIC. Simply paste in your account address to search for it.
+You should be able to go lookup your account on [Polygonscan for the Mumbai testnet](https://mumbai.polygonscan.com/) and see that you now have a balance of 0.2 MATIC. Simply paste in your account address to search for it.
 
 You can also click on the **Internal Txns** tab from you account page to see the actual transfer of the MATIC from the faucet.
 
