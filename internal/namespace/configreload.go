@@ -25,7 +25,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/spf13/viper"
 )
 
@@ -63,8 +62,9 @@ func (nm *namespaceManager) configFileChanged(in fsnotify.Event) {
 
 	// Because of the things we do to make defaults work with arrays, we have to reset
 	// the config when it changes and re-read it.
-	coreconfig.Reset()
-	initAllConfig()
+	// We are passed this by our parent, as the config initialization of defaults and sections
+	// might include others than under the namespaces tree (API Server etc. etc.)
+	nm.resetConfig()
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.L(nm.ctx).Errorf("Failed to re-read configuration after config reload notification: %s", err)

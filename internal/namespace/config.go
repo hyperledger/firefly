@@ -17,8 +17,16 @@
 package namespace
 
 import (
+	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/database/difactory"
+	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
+	"github.com/hyperledger/firefly/internal/events/eifactory"
+	"github.com/hyperledger/firefly/internal/identity/iifactory"
+	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
+	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -31,6 +39,22 @@ const (
 var (
 	namespaceConfigSection = config.RootSection("namespaces")
 	namespacePredefined    = namespaceConfigSection.SubArray(NamespacePredefined)
+
+	blockchainConfig    = config.RootArray("plugins.blockchain")
+	tokensConfig        = config.RootArray("plugins.tokens")
+	databaseConfig      = config.RootArray("plugins.database")
+	sharedstorageConfig = config.RootArray("plugins.sharedstorage")
+	dataexchangeConfig  = config.RootArray("plugins.dataexchange")
+	identityConfig      = config.RootArray("plugins.identity")
+	authConfig          = config.RootArray("plugins.auth")
+	eventsConfig        = config.RootSection("events") // still at root
+
+	// Deprecated configs
+	deprecatedTokensConfig        = config.RootArray("tokens")
+	deprecatedBlockchainConfig    = config.RootSection("blockchain")
+	deprecatedDatabaseConfig      = config.RootSection("database")
+	deprecatedSharedStorageConfig = config.RootSection("sharedstorage")
+	deprecatedDataexchangeConfig  = config.RootSection("dataexchange")
 )
 
 func InitConfig() {
@@ -52,4 +76,18 @@ func InitConfig() {
 	contractConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractFirstEvent, string(core.SubOptsFirstEventOldest))
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractLocation)
+
+	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
+	bifactory.InitConfig(blockchainConfig)
+	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
+	difactory.InitConfig(databaseConfig)
+	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
+	ssfactory.InitConfig(sharedstorageConfig)
+	dxfactory.InitConfig(dataexchangeConfig)
+	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
+	iifactory.InitConfig(identityConfig)
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+	tifactory.InitConfig(tokensConfig)
+	authfactory.InitConfigArray(authConfig)
+	eifactory.InitConfig(eventsConfig)
 }

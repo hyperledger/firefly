@@ -34,7 +34,7 @@ import (
 
 func TestConfigDocsUpToDate(t *testing.T) {
 	// Initialize config of all plugins
-	namespace.NewNamespaceManager()
+	namespace.InitConfig()
 	apiserver.InitConfig()
 	generatedConfig, err := config.GenerateConfigMarkdown(context.Background(), configDocHeader, config.GetKnownKeys())
 	assert.NoError(t, err)

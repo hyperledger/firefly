@@ -151,7 +151,7 @@ func factoryMocks(m *mock.Mock, name string) {
 
 func newTestNamespaceManager(t *testing.T, initConfig bool) (*testNamespaceManager, func()) {
 	coreconfig.Reset()
-	initAllConfig()
+	InitConfig()
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	nm := &testNamespaceManager{
 		mmi: &metricsmocks.Manager{},
@@ -181,6 +181,7 @@ func newTestNamespaceManager(t *testing.T, initConfig bool) (*testNamespaceManag
 		ctx:                 ctx,
 		cancelCtx:           cancelCtx,
 		reset:               make(chan bool, 1),
+		resetConfig:         InitConfig,
 		namespaces:          make(map[string]*namespace),
 		plugins:             make(map[string]*plugin),
 		tokenBroadcastNames: make(map[string]string),
@@ -260,7 +261,7 @@ func newTestNamespaceManager(t *testing.T, initConfig bool) (*testNamespaceManag
 		nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil).Once()
 		nm.mai.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
-		err = nm.Init(nm.ctx, nm.cancelCtx, nm.reset)
+		err = nm.Init(nm.ctx, nm.cancelCtx, nm.reset, nm.resetConfig)
 		assert.NoError(t, err)
 	}
 
@@ -287,7 +288,7 @@ func TestInitEmpty(t *testing.T) {
 	nm.mei[1].On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mei[2].On("Init", mock.Anything, mock.Anything).Return(nil)
 
-	err := nm.Init(nm.ctx, nm.cancelCtx, nm.reset)
+	err := nm.Init(nm.ctx, nm.cancelCtx, nm.reset, nm.resetConfig)
 	assert.NoError(t, err)
 
 	assert.Len(t, nm.plugins, 3) // events
@@ -381,7 +382,7 @@ func TestInitEventsFail(t *testing.T) {
 		mei.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Maybe()
 	}
 
-	err := nm.Init(nm.ctx, nm.cancelCtx, nm.reset)
+	err := nm.Init(nm.ctx, nm.cancelCtx, nm.reset, nm.resetConfig)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -798,7 +799,7 @@ func TestIdentityPluginNoType(t *testing.T) {
 	config.Set("plugins.identity", []fftypes.JSONObject{{}})
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx, nm.reset)
+	err := nm.Init(ctx, cancelCtx, nm.reset, nm.resetConfig)
 	assert.Regexp(t, "FF10386.*type", err)
 }
 
@@ -1245,7 +1246,7 @@ func TestInitBadNamespace(t *testing.T) {
 	assert.NoError(t, err)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx, nm.reset)
+	err = nm.Init(ctx, cancelCtx, nm.reset, nm.resetConfig)
 	assert.Regexp(t, "FF00140", err)
 }
 

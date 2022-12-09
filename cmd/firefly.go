@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/apiserver"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -60,7 +59,7 @@ var showConfigCommand = &cobra.Command{
 	Short:   "List out the configuration options",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config of all plugins
-		_ = resetConfig(true)
+		resetConfig()
 		getRootManager()
 		_ = config.ReadConfig(configSuffix, cfgFile)
 
@@ -82,17 +81,10 @@ func init() {
 	rootCmd.AddCommand(showConfigCommand)
 }
 
-func resetConfig(startup bool) error {
-	if !startup && config.GetBool(coreconfig.ConfigAutoReload) {
-		// We do not allow these settings to be combined, because viper does not provide a way to
-		// stop the file listener on the old root Viper instance (before reset). So we would
-		// leak file listeners in the background.
-		// Note: This check is also in the API layer
-		return i18n.NewError(context.Background(), coremsgs.MsgDeprecatedResetWithAutoReload)
-	}
+func resetConfig() {
 	coreconfig.Reset()
+	namespace.InitConfig()
 	apiserver.InitConfig()
-	return nil
 }
 
 func getRootManager() namespace.Manager {
@@ -110,7 +102,7 @@ func Execute() error {
 func run() error {
 
 	// Read the configuration
-	_ = resetConfig(true)
+	resetConfig()
 	err := config.ReadConfig(configSuffix, cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly
@@ -160,11 +152,8 @@ func run() error {
 			// Must wait for the server to close before we restart
 			<-ffDone
 			// Re-read the configuration
-			err := resetConfig(false)
-			if err == nil {
-				err = config.ReadConfig(configSuffix, cfgFile)
-			}
-			if err != nil {
+			resetConfig()
+			if err = config.ReadConfig(configSuffix, cfgFile); err != nil {
 				return err
 			}
 		case err := <-errChan:
@@ -201,7 +190,7 @@ func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespa
 		close(ffDone)
 	}()
 
-	if err = mgr.Init(ctx, cancelCtx, resetChan); err != nil {
+	if err = mgr.Init(ctx, cancelCtx, resetChan, resetConfig); err != nil {
 		errChan <- err
 		return
 	}

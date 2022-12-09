@@ -333,7 +333,7 @@ func TestConfigReload1to2(t *testing.T) {
 
 	mockInitConfig(nm)
 
-	err = nm.Init(ctx, cancelCtx, make(chan bool))
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
 	assert.NoError(t, err)
 
 	err = nm.Start()
@@ -351,7 +351,7 @@ func TestConfigReload1to2(t *testing.T) {
 	}
 
 	coreconfig.Reset()
-	initAllConfig()
+	InitConfig()
 	viper.SetConfigType("yaml")
 	err = viper.ReadConfig(strings.NewReader(exampleConfig2extraNS))
 	assert.NoError(t, err)
