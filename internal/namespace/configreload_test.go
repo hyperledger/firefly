@@ -18,9 +18,13 @@ package namespace
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -285,29 +289,29 @@ plugins:
         passwordfile: /etc/firefly/test_users
 `
 
-func mockInitConfig(nm *testNamespaceManager) {
-	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nm.mmi, mock.Anything).Return(nil)
-	nm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mti[1].On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nm.mei[0].On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mei[1].On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mei[2].On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
-	nm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
-	nm.mdi.On("GetNamespace", mock.Anything, "ns3").Return(nil, nil).Maybe()
-	nm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	nm.mai.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nm.mbi.On("Start").Return(nil)
-	nm.mdx.On("Start").Return(nil)
-	nm.mti[1].On("Start").Return(nil)
+func mockInitConfig(nmm *nmMocks) {
+	nmm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
+	nmm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nmm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nmm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mti[1].On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nmm.mei[0].On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mei[1].On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mei[2].On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
+	nmm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
+	nmm.mdi.On("GetNamespace", mock.Anything, "ns3").Return(nil, nil).Maybe()
+	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	nmm.mai.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nmm.mbi.On("Start").Return(nil)
+	nmm.mdx.On("Start").Return(nil)
+	nmm.mti[1].On("Start").Return(nil)
 
-	nm.mo.On("Init", mock.Anything, mock.Anything).
+	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			if nm.namespaces["ns1"] != nil && nm.namespaces["ns1"].Contracts != nil {
-				nm.namespaces["ns1"].Contracts.Active = &core.MultipartyContract{
+			if nmm.nm != nil && nmm.nm.namespaces["ns1"] != nil && nmm.nm.namespaces["ns1"].Contracts != nil {
+				nmm.nm.namespaces["ns1"].Contracts.Active = &core.MultipartyContract{
 					Info: core.MultipartyContractInfo{
 						Version: 2,
 					},
@@ -315,13 +319,51 @@ func mockInitConfig(nm *testNamespaceManager) {
 			}
 		}).
 		Return(nil)
-	nm.mo.On("Start").Return(nil)
+	nmm.mo.On("Start").Return(nil)
+	nmm.mo.On("WaitStop").Return(nil).Maybe()
+}
+
+func TestConfigListenerE2E(t *testing.T) {
+
+	testDir := t.TempDir()
+	configFilename := fmt.Sprintf("%s/config.firefly.yaml", testDir)
+	err := ioutil.WriteFile(configFilename, []byte(exampleConfig1base), 0664)
+	assert.NoError(t, err)
+
+	coreconfig.Reset()
+	InitConfig()
+	err = config.ReadConfig("firefly", configFilename)
+	assert.NoError(t, err)
+	config.Set(coreconfig.ConfigAutoReload, true)
+
+	nm := NewNamespaceManager().(*namespaceManager)
+	nmm := mockPluginFactories(nm)
+	mockInitConfig(nmm)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() { coreconfig.Reset() })
+	assert.NoError(t, err)
+	defer func() {
+		cancelCtx()
+		nm.WaitStop()
+	}()
+
+	err = nm.Start()
+	assert.NoError(t, err)
+
+	err = ioutil.WriteFile(configFilename, []byte(exampleConfig2extraNS), 0664)
+	assert.NoError(t, err)
+
+	for nm.namespaces["ns3"] == nil {
+		time.Sleep(10 * time.Millisecond)
+	}
+
 }
 
 func TestConfigReload1to2(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel)
 
-	nm, cleanup := newTestNamespaceManager(t, false)
+	nm, mmn, cleanup := newTestNamespaceManager(t, false)
 	defer cleanup()
 
 	viper.SetConfigType("yaml")
@@ -331,7 +373,7 @@ func TestConfigReload1to2(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
-	mockInitConfig(nm)
+	mockInitConfig(mmn)
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
 	assert.NoError(t, err)
@@ -386,5 +428,203 @@ func TestConfigReload1to2(t *testing.T) {
 	// Check we have one more than before
 	assert.Len(t, nm.namespaces, len(originaNS)+1)
 	assert.NotNil(t, nm.namespaces["ns3"])
+
+}
+
+func TestConfigReloadBadNewConfigPlugins(t *testing.T) {
+	logrus.SetLevel(logrus.TraceLevel)
+
+	nm, mmn, cleanup := newTestNamespaceManager(t, false)
+	defer cleanup()
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(exampleConfig1base))
+	assert.NoError(t, err)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	mockInitConfig(mmn)
+
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	assert.NoError(t, err)
+
+	originalPlugins := nm.plugins
+	originaNS := nm.namespaces
+
+	err = nm.Start()
+	assert.NoError(t, err)
+
+	coreconfig.Reset()
+	InitConfig()
+	viper.SetConfigType("yaml")
+	err = viper.ReadConfig(strings.NewReader(`
+plugins:
+  database: [{"type": "invalid"}]
+`))
+	assert.NoError(t, err)
+
+	// Drive the config reload
+	nm.configReloaded(nm.ctx)
+
+	// Check that we didn't cancel the context
+	select {
+	case <-nm.ctx.Done():
+		assert.Fail(t, "Config parse failure should not have crashed the system")
+	default:
+	}
+
+	// Check we didn't lose our plugins
+	assert.Len(t, nm.plugins, len(originalPlugins))
+	assert.Len(t, nm.namespaces, len(originaNS))
+
+}
+
+func TestConfigReloadBadNSMissingRequiredPlugins(t *testing.T) {
+	logrus.SetLevel(logrus.TraceLevel)
+
+	nm, mmn, cleanup := newTestNamespaceManager(t, false)
+	defer cleanup()
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(exampleConfig1base))
+	assert.NoError(t, err)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	mockInitConfig(mmn)
+
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	assert.NoError(t, err)
+
+	originalPlugins := nm.plugins
+	originaNS := nm.namespaces
+
+	err = nm.Start()
+	assert.NoError(t, err)
+
+	coreconfig.Reset()
+	InitConfig()
+	viper.SetConfigType("yaml")
+	err = viper.ReadConfig(strings.NewReader(`
+namespaces:
+  predefined:
+  - defaultKey: 0xbEa50Ec98776beF144Fc63078e7b15291Ac64cfA
+    name: ns1
+    plugins:
+      - sharedstorage-ns1
+      - database0
+      - blockchain-ns1
+      - ff-dx
+      - erc1155-ns1
+      - erc20_erc721-ns1
+      - test_user_auth-ns1
+`))
+	assert.NoError(t, err)
+
+	// Drive the config reload
+	nm.configReloaded(nm.ctx)
+
+	// Check that we didn't cancel the context
+	select {
+	case <-nm.ctx.Done():
+		assert.Fail(t, "Config parse failure should not have crashed the system")
+	default:
+	}
+
+	// Check we didn't lose our plugins
+	assert.Len(t, nm.plugins, len(originalPlugins))
+	assert.Len(t, nm.namespaces, len(originaNS))
+
+}
+
+func TestConfigDownToNothingOk(t *testing.T) {
+	logrus.SetLevel(logrus.TraceLevel)
+
+	nm, mmn, cleanup := newTestNamespaceManager(t, false)
+	defer cleanup()
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(exampleConfig1base))
+	assert.NoError(t, err)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	mockInitConfig(mmn)
+
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	assert.NoError(t, err)
+
+	err = nm.Start()
+	assert.NoError(t, err)
+
+	coreconfig.Reset()
+	InitConfig()
+	viper.SetConfigType("yaml")
+	// Nothing - no plugins, no namespaces
+	assert.NoError(t, err)
+
+	mmn.mo.On("WaitStop").Return(nil)
+
+	// Drive the config reload
+	nm.configReloaded(nm.ctx)
+
+	// Check that we didn't cancel the context
+	select {
+	case <-nm.ctx.Done():
+		assert.Fail(t, "Should have been happy destroying everything")
+	default:
+	}
+
+	// Check we didn't lose our plugins
+	assert.Len(t, nm.plugins, len(mmn.mei)) // Just the events plugins
+	assert.Empty(t, nm.namespaces, 0)
+
+}
+
+func TestConfigStartPluginsFails(t *testing.T) {
+	logrus.SetLevel(logrus.TraceLevel)
+
+	nm, mmn, cleanup := newTestNamespaceManager(t, false)
+	defer cleanup()
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(exampleConfig1base))
+	assert.NoError(t, err)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	mockInitConfig(mmn)
+
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	assert.NoError(t, err)
+
+	err = nm.Start()
+	assert.NoError(t, err)
+
+	coreconfig.Reset()
+	InitConfig()
+	viper.SetConfigType("yaml")
+	// Nothing - no plugins, no namespaces
+	assert.NoError(t, err)
+
+	mmn.mo.On("WaitStop").Return(nil)
+
+	// Drive the config reload
+	nm.configReloaded(nm.ctx)
+
+	// Check that we didn't cancel the context
+	select {
+	case <-nm.ctx.Done():
+		assert.Fail(t, "Should have been happy destroying everything")
+	default:
+	}
+
+	// Check we didn't lose our plugins
+	assert.Len(t, nm.plugins, len(mmn.mei)) // Just the events plugins
+	assert.Empty(t, nm.namespaces, 0)
 
 }
