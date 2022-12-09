@@ -54,26 +54,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	blockchainConfig    = config.RootArray("plugins.blockchain")
-	tokensConfig        = config.RootArray("plugins.tokens")
-	databaseConfig      = config.RootArray("plugins.database")
-	sharedstorageConfig = config.RootArray("plugins.sharedstorage")
-	dataexchangeConfig  = config.RootArray("plugins.dataexchange")
-	identityConfig      = config.RootArray("plugins.identity")
-	authConfig          = config.RootArray("plugins.auth")
-	eventsConfig        = config.RootSection("events") // still at root
-
-	// Deprecated configs
-	deprecatedTokensConfig        = config.RootArray("tokens")
-	deprecatedBlockchainConfig    = config.RootSection("blockchain")
-	deprecatedDatabaseConfig      = config.RootSection("database")
-	deprecatedSharedStorageConfig = config.RootSection("sharedstorage")
-	deprecatedDataexchangeConfig  = config.RootSection("dataexchange")
-)
-
 type Manager interface {
-	Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool, resetConfig func()) error
 	Start() error
 	WaitStop()
 	Reset(ctx context.Context) error
@@ -100,6 +82,7 @@ type namespace struct {
 
 type namespaceManager struct {
 	reset               chan bool
+	resetConfig         func()
 	ctx                 context.Context
 	cancelCtx           context.CancelFunc
 	nsMux               sync.Mutex
@@ -185,32 +168,12 @@ func NewNamespaceManager() Manager {
 		eventsFactory:        eifactory.GetPlugin,
 		authFactory:          authfactory.GetPlugin,
 	}
-	initAllConfig()
 	return nm
 }
 
-func initAllConfig() {
-
-	InitConfig()
-
-	// Initialize the config on all the factories
-	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
-	bifactory.InitConfig(blockchainConfig)
-	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
-	difactory.InitConfig(databaseConfig)
-	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
-	ssfactory.InitConfig(sharedstorageConfig)
-	dxfactory.InitConfig(dataexchangeConfig)
-	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
-	iifactory.InitConfig(identityConfig)
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	tifactory.InitConfig(tokensConfig)
-	authfactory.InitConfigArray(authConfig)
-	eifactory.InitConfig(eventsConfig)
-}
-
-func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool) (err error) {
-	nm.reset = reset
+func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool, resetConfig func()) (err error) {
+	nm.reset = reset             // channel to ask our parent to reload us
+	nm.resetConfig = resetConfig // function to cause our parent to call InitConfig on all components, including us
 	nm.ctx = ctx
 	nm.cancelCtx = cancelCtx
 

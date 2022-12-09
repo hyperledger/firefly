@@ -23,8 +23,6 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/apiservermocks"
 	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/spf13/viper"
@@ -58,7 +56,7 @@ func TestShowConfig(t *testing.T) {
 
 func TestExecEngineInitFail(t *testing.T) {
 	o := &namespacemocks.Manager{}
-	o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("splutter"))
+	o.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("splutter"))
 	_utManager = o
 	defer func() { _utManager = nil }()
 	os.Chdir(configDir)
@@ -68,7 +66,7 @@ func TestExecEngineInitFail(t *testing.T) {
 
 func TestExecEngineStartFail(t *testing.T) {
 	o := &namespacemocks.Manager{}
-	o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	o.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	o.On("Start").Return(fmt.Errorf("bang"))
 	_utManager = o
 	defer func() { _utManager = nil }()
@@ -79,7 +77,7 @@ func TestExecEngineStartFail(t *testing.T) {
 
 func TestExecOkExitSIGINT(t *testing.T) {
 	o := &namespacemocks.Manager{}
-	o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	o.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	o.On("Start").Return(nil)
 	o.On("WaitStop").Return()
 	_utManager = o
@@ -95,7 +93,7 @@ func TestExecOkExitSIGINT(t *testing.T) {
 
 func TestExecOkCancel(t *testing.T) {
 	o := &namespacemocks.Manager{}
-	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	init.RunFn = func(a mock.Arguments) {
 		cancelCtx := a[1].(context.CancelFunc)
 		cancelCtx()
@@ -113,7 +111,7 @@ func TestExecOkCancel(t *testing.T) {
 func TestExecOkRestartThenExit(t *testing.T) {
 	o := &namespacemocks.Manager{}
 	initCount := 0
-	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	init.RunFn = func(a mock.Arguments) {
 		resetChan := a[2].(chan bool)
 		initCount++
@@ -139,7 +137,7 @@ func TestExecOkRestartConfigProblem(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	var orContext context.Context
-	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	init.RunFn = func(a mock.Arguments) {
 		orContext = a[0].(context.Context)
 		resetChan := a[2].(chan bool)
@@ -160,7 +158,7 @@ func TestExecOkRestartConfigProblem(t *testing.T) {
 
 func TestAPIServerError(t *testing.T) {
 	o := &namespacemocks.Manager{}
-	o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	o.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	o.On("Start").Return(nil)
 	as := &apiservermocks.Server{}
 	as.On("Serve", mock.Anything, o).Return(fmt.Errorf("pop"))
@@ -170,12 +168,4 @@ func TestAPIServerError(t *testing.T) {
 	go startFirefly(context.Background(), func() {}, o, as, errChan, resetChan, make(chan struct{}))
 	err := <-errChan
 	assert.EqualError(t, err, "pop")
-}
-
-func TestCannotResetWithConfigAutoReload(t *testing.T) {
-	err := resetConfig(true)
-	assert.NoError(t, err)
-	config.Set(coreconfig.ConfigAutoReload, true)
-	err = resetConfig(false)
-	assert.Regexp(t, "FF10433", err)
 }
