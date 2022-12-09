@@ -140,6 +140,10 @@
                     <a href="/firefly/head/tutorials/chains/fabric_test_network.html" class="nav-list-link">Fabric-Samples Test Network</a>
                   </li><li class="nav-list-item ">
                     <a href="/firefly/head/tutorials/chains/moonbeam.html" class="nav-list-link">Moonbeam Testnet</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/chains/xdc_testnet.html" class="nav-list-link">XDC Testnet</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/chains/zksync_testnet.html" class="nav-list-link">zkSync Testnet</a>
                   </li></ul></li><li class="nav-list-item "><a href="/firefly/head/tutorials/basic_auth.html" class="nav-list-link">Enable Basic Auth</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
                     <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
                   </li><li class="nav-list-item ">
@@ -329,8 +333,6 @@
     <span class="na">gasOracle</span><span class="pi">:</span>
         <span class="na">mode</span><span class="pi">:</span> <span class="s">connector</span>
 </code></pre></div></div>
-<p>For more info about <code class="language-plaintext highlighter-rouge">confirmations</code>, see <a href="/firefly/head/overview/public_vs_permissioned.html">Public vs. Permissioned</a></p>
-
 <p>For this tutorial, we will assume this file is saved at <code class="language-plaintext highlighter-rouge">~/Desktop/evmconnect.yml</code>. If your path is different, you will need to adjust the path in the next command below.</p>
       <h2 id="creating-a-new-stack">
         
@@ -348,7 +350,7 @@
   <li>Connect to an ethereum network</li>
   <li>Use the <code class="language-plaintext highlighter-rouge">evmconnect</code> blockchain connector</li>
   <li>Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.</li>
-  <li>See the polygon <a href="https://docs.polygon.technology/docs/develop/network-details/network/">docs</a> and select an HTTPS RPC endpoint.</li>
+  <li>See the list of Polygon <a href="https://polygon-rpc.com/">RPC endpoints</a> and select an HTTPS RPC endpoint.</li>
   <li>Set the chain ID to <code class="language-plaintext highlighter-rouge">80001</code> (the correct ID for the Polygon Mumbai testnet)</li>
   <li>Merge the custom config created above with the generated <code class="language-plaintext highlighter-rouge">evmconnect</code> config file</li>
 </ul>
@@ -361,7 +363,7 @@
     -n remote-rpc \
     --remote-node-url &lt;selected RPC endpoint&gt; \
     --chain-id 80001 \
-    --connector-config ~/Desktop/evmconnect.yml 
+    --connector-config ~/Desktop/evmconnect.yml
 </code></pre></div></div>
       <h2 id="start-the-stack">
         
@@ -418,7 +420,7 @@ ff logs polygon
         
       </h3>
     
-<p>You should be able to go lookup your account on <a href="https://mumbai.polygonscan.com/">Polygonscan for the Mumbai testnet https://mumbai.polygonscan.com/</a> and see that you now have a balance of 0.2 MATIC. Simply paste in your account address to search for it.</p>
+<p>You should be able to go lookup your account on <a href="https://mumbai.polygonscan.com/">Polygonscan for the Mumbai testnet</a> and see that you now have a balance of 0.2 MATIC. Simply paste in your account address to search for it.</p>
 
 <p>You can also click on the <strong>Internal Txns</strong> tab from you account page to see the actual transfer of the MATIC from the faucet.</p>
 

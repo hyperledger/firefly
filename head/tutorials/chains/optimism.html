@@ -140,6 +140,10 @@
                     <a href="/firefly/head/tutorials/chains/fabric_test_network.html" class="nav-list-link">Fabric-Samples Test Network</a>
                   </li><li class="nav-list-item ">
                     <a href="/firefly/head/tutorials/chains/moonbeam.html" class="nav-list-link">Moonbeam Testnet</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/chains/xdc_testnet.html" class="nav-list-link">XDC Testnet</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/chains/zksync_testnet.html" class="nav-list-link">zkSync Testnet</a>
                   </li></ul></li><li class="nav-list-item "><a href="/firefly/head/tutorials/basic_auth.html" class="nav-list-link">Enable Basic Auth</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
                     <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
                   </li><li class="nav-list-item ">
@@ -329,8 +333,6 @@
     <span class="na">gasOracle</span><span class="pi">:</span>
         <span class="na">mode</span><span class="pi">:</span> <span class="s">connector</span>
 </code></pre></div></div>
-<p>For more info about <code class="language-plaintext highlighter-rouge">confirmations</code>, see <a href="/firefly/head/overview/public_vs_permissioned.html">Public vs. Permissioned</a></p>
-
 <p>For this tutorial, we will assume this file is saved at <code class="language-plaintext highlighter-rouge">~/Desktop/evmconnect.yml</code>. If your path is different, you will need to adjust the path in the next command below.</p>
       <h2 id="creating-a-new-stack">
         
@@ -361,7 +363,7 @@
     -n remote-rpc \
     --remote-node-url &lt;selected RPC endpoint&gt; \
     --chain-id 420 \
-    --connector-config ~/Desktop/evmconnect.yml 
+    --connector-config ~/Desktop/evmconnect.yml
 </code></pre></div></div>
       <h2 id="start-the-stack">
         
