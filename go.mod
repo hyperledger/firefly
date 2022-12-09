@@ -8,14 +8,13 @@ require (
 	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/blang/semver/v4 v4.0.0
 	github.com/docker/go-units v0.5.0
-	github.com/fsnotify/fsnotify v1.6.0
 	github.com/getkin/kin-openapi v0.107.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/hyperledger/firefly-common v1.1.6-0.20221209193217-440fcceceaae
+	github.com/hyperledger/firefly-common v1.1.6-0.20221209201448-45af5a8b2529
 	github.com/hyperledger/firefly-signer v1.1.2
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/karlseguin/ccache v2.0.3+incompatible
@@ -39,6 +38,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

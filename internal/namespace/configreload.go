@@ -133,10 +133,7 @@ func (nm *namespaceManager) stopDefunctNamespaces(ctx context.Context, newPlugin
 		if existingNS := nm.namespaces[nsName]; existingNS != nil {
 			var changes []string
 			if !existingNS.configHash.Equals(newNS.configHash) {
-				changes = append(changes, "namespace_config")
-			}
-			if len(existingNS.pluginNames) != len(newNS.pluginNames) {
-				changes = append(changes, "plugin_count")
+				changes = append(changes, "namespace_config") // Encompasses the list of plugins
 			}
 			for _, pluginName := range newNS.pluginNames {
 				existingPlugin := nm.plugins[pluginName]
