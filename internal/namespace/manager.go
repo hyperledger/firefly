@@ -196,7 +196,7 @@ func (nm *namespaceManager) initComponents(ctx context.Context) (err error) {
 	}
 
 	// Initialize all the plugins on initial startup
-	if err = nm.initPlugins(ctx, nm.plugins); err != nil {
+	if err = nm.initPlugins(nm.plugins); err != nil {
 		return err
 	}
 
@@ -709,7 +709,7 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context, plugins
 	return nil
 }
 
-func (nm *namespaceManager) initPlugins(ctx context.Context, pluginsToStart map[string]*plugin) (err error) {
+func (nm *namespaceManager) initPlugins(pluginsToStart map[string]*plugin) (err error) {
 	for name, p := range nm.plugins {
 		if pluginsToStart[name] == nil {
 			continue

@@ -101,7 +101,7 @@ func (nm *namespaceManager) configReloaded(ctx context.Context) {
 	nm.namespaces = availableNS
 
 	// Only initialize updated plugins
-	if err = nm.initPlugins(ctx, updatedPlugins); err != nil {
+	if err = nm.initPlugins(updatedPlugins); err != nil {
 		log.L(ctx).Errorf("Failed to initialize plugins after config reload: %s", err)
 		nm.cancelCtx() // stop the world
 		return

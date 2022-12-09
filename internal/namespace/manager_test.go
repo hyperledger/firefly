@@ -334,7 +334,7 @@ func TestInitDatabaseFail(t *testing.T) {
 
 	nmm.mdi.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(context.Background(), map[string]*plugin{
+	err := nm.initPlugins(map[string]*plugin{
 		"postgres": nm.plugins["postgres"],
 	})
 	assert.EqualError(t, err, "pop")
@@ -346,7 +346,7 @@ func TestInitBlockchainFail(t *testing.T) {
 
 	nmm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nmm.mmi, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(context.Background(), map[string]*plugin{
+	err := nm.initPlugins(map[string]*plugin{
 		"ethereum": nm.plugins["ethereum"],
 	})
 	assert.EqualError(t, err, "pop")
@@ -358,7 +358,7 @@ func TestInitDataExchangeFail(t *testing.T) {
 
 	nmm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(context.Background(), map[string]*plugin{
+	err := nm.initPlugins(map[string]*plugin{
 		"ffdx": nm.plugins["ffdx"],
 	})
 	assert.EqualError(t, err, "pop")
@@ -370,7 +370,7 @@ func TestInitSharedStorageFail(t *testing.T) {
 
 	nmm.mps.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(context.Background(), map[string]*plugin{
+	err := nm.initPlugins(map[string]*plugin{
 		"ipfs": nm.plugins["ipfs"],
 	})
 	assert.EqualError(t, err, "pop")
@@ -382,7 +382,7 @@ func TestInitTokensFail(t *testing.T) {
 
 	nmm.mti[0].On("Init", mock.Anything, mock.Anything, "erc721", mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(context.Background(), map[string]*plugin{
+	err := nm.initPlugins(map[string]*plugin{
 		"erc721": nm.plugins["erc721"],
 	})
 	assert.EqualError(t, err, "pop")
@@ -406,7 +406,7 @@ func TestInitAuthFail(t *testing.T) {
 
 	nmm.mai.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(context.Background(), map[string]*plugin{
+	err := nm.initPlugins(map[string]*plugin{
 		"basicauth": nm.plugins["basicauth"],
 	})
 	assert.EqualError(t, err, "pop")
