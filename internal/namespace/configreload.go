@@ -1,0 +1,236 @@
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package namespace
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/spf13/viper"
+)
+
+func (nm *namespaceManager) dumpRootConfig() (jsonTree fftypes.JSONObject) {
+	viperTree := viper.AllSettings()
+	b, _ := json.Marshal(viperTree)
+	_ = json.Unmarshal(b, &jsonTree)
+	return
+}
+
+func (nm *namespaceManager) startConfigListener(ctx context.Context) {
+	go func() {
+		for {
+			log.L(ctx).Warnf("Starting configuration listener")
+			// Note there is no viper interface to make this end, so (apart from in unit tests)
+			// we never expect this to complete.
+			// To avoid this leak, we disable the use of the /spi/v1/reset API when config file
+			// listening is enabled.
+			viper.OnConfigChange(nm.configFileChanged)
+			nm.watchConfig()
+			select {
+			case <-ctx.Done():
+				log.L(ctx).Debugf("Configuration listener ended")
+				return
+			default:
+			}
+			log.L(ctx).Warnf("Configuration listener ended (restarting)")
+			time.Sleep(5 * time.Second)
+		}
+	}()
+}
+
+func (nm *namespaceManager) configFileChanged(in fsnotify.Event) {
+	log.L(nm.ctx).Infof("Detected configuration file reload: '%s'", in.Name)
+
+	// Because of the things we do to make defaults work with arrays, we have to reset
+	// the config when it changes and re-read it.
+	coreconfig.Reset()
+	initAllConfig()
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.L(nm.ctx).Errorf("Failed to re-read configuration after config reload notification: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+	nm.configReloaded(nm.ctx)
+}
+
+func (nm *namespaceManager) configReloaded(ctx context.Context) {
+
+	// Get Viper to dump the whole new config, with everything resolved across env vars
+	// and the config file etc.
+	// We use this to detect if anything has changed.
+	rawConfig := nm.dumpRootConfig()
+
+	// Build the new set of plugins from the config (including those that are unchanged)
+	allPluginsInNewConf, err := nm.loadPlugins(ctx, rawConfig)
+	if err != nil {
+		log.L(ctx).Errorf("Failed to initialize plugins after config reload: %s", err)
+		return
+	}
+
+	// Analyze the new list to see which plugins need to be updated,
+	// so we load the namespaces against the correct list of plugins
+	availablePlugins, updatedPlugins, pluginsToStop, err := nm.analyzePluginChanges(ctx, allPluginsInNewConf)
+	if err != nil {
+		log.L(ctx).Errorf("Failed to stop namespaces after config reload: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+	// Build the new set of namespaces (including those that are unchanged)
+	allNewNamespaces, err := nm.loadNamespaces(ctx, rawConfig, availablePlugins)
+	if err != nil {
+		log.L(ctx).Errorf("Failed to load namespaces after config reload: %s", err)
+		return
+	}
+
+	// From this point we need to block any API calls resolving namespaces,
+	// until the reload is complete
+	nm.nsMux.Lock()
+	defer nm.nsMux.Unlock()
+
+	// Stop all defunct namespaces
+	availableNS, updatedNamespaces, err := nm.stopDefunctNamespaces(ctx, availablePlugins, allNewNamespaces)
+	if err != nil {
+		log.L(ctx).Errorf("Failed to stop namespaces after config reload: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+	// Stop all defunct plugins - now the namespaces using them are all stopped
+	nm.stopDefunctPlugins(ctx, pluginsToStop)
+
+	// Update the new lists
+	nm.plugins = availablePlugins
+	nm.namespaces = availableNS
+
+	// Only initialize updated plugins
+	if err = nm.initPlugins(ctx, updatedPlugins); err != nil {
+		log.L(ctx).Errorf("Failed to initialize plugins after config reload: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+	// Only initialize the updated namespaces (which includes all that depend on above plugins)
+	if err = nm.initNamespaces(ctx, updatedNamespaces); err != nil {
+		log.L(ctx).Errorf("Failed to initialize namespaces after config reload: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+	// Now finally we can start all the new things
+	if err = nm.startNamespacesAndPlugins(updatedNamespaces, updatedPlugins); err != nil {
+		log.L(ctx).Errorf("Failed to initialize namespaces after config reload: %s", err)
+		nm.cancelCtx() // stop the world
+		return
+	}
+
+}
+
+func (nm *namespaceManager) stopDefunctNamespaces(ctx context.Context, newPlugins map[string]*plugin, newNamespaces map[string]*namespace) (availableNamespaces, updatedNamespaces map[string]*namespace, err error) {
+
+	// build a set of all the namespaces we've either added new, or have changed
+	updatedNamespaces = make(map[string]*namespace)
+	availableNamespaces = make(map[string]*namespace)
+	namespacesToStop := make(map[string]*namespace)
+	for nsName, newNS := range newNamespaces {
+		if existingNS := nm.namespaces[nsName]; existingNS != nil {
+			var changes []string
+			if !existingNS.configHash.Equals(newNS.configHash) {
+				changes = append(changes, "namespace_config")
+			}
+			if len(existingNS.pluginNames) != len(newNS.pluginNames) {
+				changes = append(changes, "plugin_count")
+			}
+			for _, pluginName := range newNS.pluginNames {
+				existingPlugin := nm.plugins[pluginName]
+				newPlugin := newPlugins[pluginName]
+				if existingPlugin == nil || newPlugin == nil ||
+					!existingPlugin.configHash.Equals(newPlugin.configHash) {
+					changes = append(changes, fmt.Sprintf("plugin:%s", pluginName))
+				}
+			}
+			if len(changes) == 0 {
+				log.L(ctx).Debugf("Namespace '%s' unchanged after config reload", nsName)
+				availableNamespaces[nsName] = existingNS
+				continue
+			}
+			// We need to stop the existing namespace
+			log.L(ctx).Infof("Namespace '%s' configuration changed: %v", nsName, changes)
+			namespacesToStop[nsName] = existingNS
+		}
+		// This is either changed, or brand new - mark it in the map
+		availableNamespaces[nsName] = newNS
+		updatedNamespaces[nsName] = newNS
+	}
+
+	// Stop everything we need to stop
+	for nsName, existingNS := range nm.namespaces {
+		if namespacesToStop[nsName] != nil || newNamespaces[nsName] == nil {
+			log.L(ctx).Debugf("Stopping namespace '%s' after config reload. Loaded at %s", nsName, existingNS.loadTime)
+			nm.stopNamespace(ctx, existingNS)
+		}
+	}
+
+	return availableNamespaces, updatedNamespaces, nil
+
+}
+
+func (nm *namespaceManager) analyzePluginChanges(ctx context.Context, newPlugins map[string]*plugin) (availablePlugins, updatedPlugins, pluginsToStop map[string]*plugin, err error) {
+
+	// build a set of all the plugins we've either added new, or have changed
+	availablePlugins = make(map[string]*plugin)
+	updatedPlugins = make(map[string]*plugin)
+	pluginsToStop = make(map[string]*plugin)
+	for pluginName, newPlugin := range newPlugins {
+		if existingPlugin := nm.plugins[pluginName]; existingPlugin != nil {
+			if existingPlugin.configHash.Equals(newPlugin.configHash) {
+				log.L(ctx).Debugf("Plugin '%s' unchanged after config reload", pluginName)
+				availablePlugins[pluginName] = existingPlugin
+				continue
+			}
+			// We need to stop the existing plugin
+			pluginsToStop[pluginName] = existingPlugin
+		}
+		// This is either changed, or brand new - mark it in the map
+		updatedPlugins[pluginName] = newPlugin
+		availablePlugins[pluginName] = newPlugin
+	}
+
+	// Look for everything that's deleted
+	for pluginName, existingPlugin := range nm.plugins {
+		if newPlugins[pluginName] == nil {
+			pluginsToStop[pluginName] = existingPlugin
+		}
+	}
+
+	return
+}
+
+func (nm *namespaceManager) stopDefunctPlugins(ctx context.Context, pluginsToStop map[string]*plugin) {
+	for pluginName, plugin := range pluginsToStop {
+		log.L(ctx).Debugf("Stopping plugin '%s' after config reload. Loaded at %s", pluginName, plugin.loadTime)
+		plugin.cancelCtx()
+	}
+}
