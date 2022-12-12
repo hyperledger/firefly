@@ -14,7 +14,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/hyperledger/firefly-common v1.1.6-0.20221209201448-45af5a8b2529
+	github.com/hyperledger/firefly-common v1.1.6-0.20221212133115-cadb1f33bc0d
 	github.com/hyperledger/firefly-signer v1.1.2
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/karlseguin/ccache v2.0.3+incompatible
