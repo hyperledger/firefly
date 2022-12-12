@@ -369,26 +369,6 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	})
 }
 
-func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
-	l := log.L(ctx)
-
-	headers := reply.GetObject("headers")
-	requestID := headers.GetString("requestId")
-	replyType := headers.GetString("type")
-	txHash := reply.GetString("transactionId")
-	message := reply.GetString("errorMessage")
-	if requestID == "" || replyType == "" {
-		l.Errorf("Reply cannot be processed: %+v", reply)
-		return
-	}
-	updateType := core.OpStatusSucceeded
-	if replyType != "TransactionSuccess" {
-		updateType = core.OpStatusFailed
-	}
-	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, requestID, txHash, message)
-	f.callbacks.OperationUpdate(ctx, f, requestID, updateType, txHash, message, reply)
-}
-
 func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
@@ -497,8 +477,8 @@ func (f *Fabric) eventLoop() {
 				if err == nil {
 					err = f.wsconn.Send(ctx, ack)
 				}
-			case map[string]interface{}:
-				f.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
+			case common.BlockchainReceiptNotification:
+				common.HandleReceipt(ctx, f, &msgTyped, f.callbacks)
 			default:
 				l.Errorf("Message unexpected: %+v", msgTyped)
 				continue

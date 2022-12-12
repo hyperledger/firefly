@@ -19,6 +19,8 @@ package common
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -68,6 +70,18 @@ type SubscriptionInfo struct {
 	V1Namespace map[string][]string
 	V2Namespace string
 	Extra       interface{}
+}
+
+type BlockchainReceiptHeaders struct {
+	ReceiptID string `json:"requestId,omitempty"`
+	ReplyType string `json:"type,omitempty"`
+}
+
+type BlockchainReceiptNotification struct {
+	Headers    BlockchainReceiptHeaders
+	TxHash     string `json:"transactionHash,omitempty"`
+	Message    string `json:"errorMessage,omitempty"`
+	ProtocolID string `json:"protocolId,omitempty"`
 }
 
 func NewBlockchainCallbacks() BlockchainCallbacks {
@@ -274,4 +288,41 @@ func (s *subscriptions) RemoveSubscription(ctx context.Context, subID string) {
 
 func (s *subscriptions) GetSubscription(subID string) *SubscriptionInfo {
 	return s.subs[subID]
+}
+
+// Common function for handling receipts from blockchain connectors.
+func HandleReceipt(ctx context.Context, plugin core.Named, reply *BlockchainReceiptNotification, callbacks BlockchainCallbacks) {
+	l := log.L(ctx)
+
+	if reply.Headers.ReceiptID == "" || reply.Headers.ReplyType == "" {
+		l.Errorf("Reply cannot be processed - missing fields: %+v", reply)
+		return
+	}
+	var updateType core.OpStatus
+	switch reply.Headers.ReplyType {
+	case "TransactionSuccess":
+		updateType = core.OpStatusSucceeded
+	case "TransactionUpdate":
+		updateType = core.OpStatusPending
+	default:
+		updateType = core.OpStatusFailed
+	}
+
+	// Slightly upgly conversion from ReceiptFromBlockchain -> JSONObject which the generic OperationUpdate() function requires
+	var output fftypes.JSONObject
+	obj, err := json.Marshal(reply)
+	if err != nil {
+		l.Errorf("Reply cannot be processed - conversion failed", reply)
+	}
+	err = json.Unmarshal(obj, &output)
+	if err != nil {
+		l.Errorf("Reply cannot be processed - conversion failed", reply)
+	}
+
+	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, reply.Headers.ReceiptID, reply.TxHash, reply.Message)
+	callbacks.OperationUpdate(ctx, plugin, reply.Headers.ReceiptID, updateType, reply.TxHash, reply.Message, output)
+}
+
+func ProtocolIDForReceipt(blockNumber, transactionIndex *fftypes.FFBigInt) string {
+	return fmt.Sprintf("%.12d/%.6d", blockNumber.Int(), transactionIndex.Int())
 }

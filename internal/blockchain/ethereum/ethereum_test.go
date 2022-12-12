@@ -1458,7 +1458,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	}
 	e.SetOperationHandler("ns1", em)
 
-	var reply fftypes.JSONObject
+	var reply common.BlockchainReceiptNotification
 	operationID := fftypes.NewUUID()
 	data := fftypes.JSONAnyPtr(`{
 		"_id": "4373614c-e0f7-47b0-640e-7eacec417a9e",
@@ -1492,7 +1492,8 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	e.handleReceipt(context.Background(), reply)
+
+	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
 
 	em.AssertExpectations(t)
 }
@@ -1508,7 +1509,7 @@ func TestHandleReceiptTXUpdateEVMConnect(t *testing.T) {
 	}
 	e.SetOperationHandler("ns1", em)
 
-	var reply fftypes.JSONObject
+	var reply common.BlockchainReceiptNotification
 	operationID := fftypes.NewUUID()
 	data := fftypes.JSONAnyPtr(`{
 		"created": "2022-08-03T18:55:42.671166Z",
@@ -1577,7 +1578,7 @@ func TestHandleReceiptTXUpdateEVMConnect(t *testing.T) {
 
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	e.handleReceipt(context.Background(), reply)
+	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
 
 	em.AssertExpectations(t)
 }
@@ -1637,11 +1638,11 @@ func TestHandleMsgBatchBadData(t *testing.T) {
 		wsconn: wsm,
 	}
 
-	var reply fftypes.JSONObject
+	var reply common.BlockchainReceiptNotification
 	data := fftypes.JSONAnyPtr(`{}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	e.handleReceipt(context.Background(), reply)
+	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
 }
 
 func TestFormatNil(t *testing.T) {

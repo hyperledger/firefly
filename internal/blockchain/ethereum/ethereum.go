@@ -47,21 +47,8 @@ const (
 	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"
 )
 
-// Headers that allow us to construct the equivalent of a web socket notification
-type wsrHeaders struct {
-	RequestID string `json:"requestId"`
-	Type      string `json:"type"`
-}
-
 const (
-	ethTxStatusPending   string = "Pending"
-	ethTxStatusSucceeded string = "Succeeded"
-	ethTxStatusFailed    string = "Failed"
-)
-
-const (
-	ethTransactionUpdateSuccess string = "TransactionSuccess"
-	ethTransactionUpdateFailure string = "TransactionFailure"
+	ethTxStatusPending string = "Pending"
 )
 
 type Ethereum struct {
@@ -362,31 +349,6 @@ func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSON
 	return err
 }
 
-func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
-	l := log.L(ctx)
-
-	headers := reply.GetObject("headers")
-	requestID := headers.GetString("requestId")
-	replyType := headers.GetString("type")
-	txHash := reply.GetString("transactionHash")
-	message := reply.GetString("errorMessage")
-	if requestID == "" || replyType == "" {
-		l.Errorf("Reply cannot be processed - missing fields: %+v", reply)
-		return
-	}
-	var updateType core.OpStatus
-	switch replyType {
-	case "TransactionSuccess":
-		updateType = core.OpStatusSucceeded
-	case "TransactionUpdate":
-		updateType = core.OpStatusPending
-	default:
-		updateType = core.OpStatusFailed
-	}
-	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, requestID, txHash, message)
-	e.callbacks.OperationUpdate(ctx, e, requestID, updateType, txHash, message, reply)
-}
-
 func (e *Ethereum) buildEventLocationString(msgJSON fftypes.JSONObject) string {
 	return fmt.Sprintf("address=%s", msgJSON.GetString("address"))
 }
@@ -496,7 +458,12 @@ func (e *Ethereum) eventLoop() {
 					}
 				}
 				if !isBatch {
-					e.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
+					switch receiptObj := msgParsed.(type) {
+					case common.BlockchainReceiptNotification:
+						common.HandleReceipt(ctx, e, &receiptObj, e.callbacks)
+					default:
+						l.Errorf("Message cannot be parsed as a receipt: %s\n%s", err, string(msgBytes))
+					}
 				}
 			default:
 				l.Errorf("Message unexpected: %+v", msgTyped)
@@ -982,20 +949,30 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 	if err != nil || !res.IsSuccess() {
 		return nil, wrapError(ctx, &resErr, res, err)
 	}
+
+	headers := statusResponse.GetObject("headers")
+	receiptInfo := statusResponse.GetObject("receipt")
 	txStatus := statusResponse.GetString("status")
 
-	// If the status has changed, mock up a WSR as if we'd received a web socket update
-	if operation.Status == core.OpStatusPending && txStatus != ethTxStatusPending {
-		var headers wsrHeaders
-		headers.RequestID = statusResponse.GetString("id")
-		switch txStatus {
-		case ethTxStatusSucceeded:
-			headers.Type = ethTransactionUpdateSuccess
-		case ethTxStatusFailed:
-			headers.Type = ethTransactionUpdateFailure
+	if txStatus != "" {
+		// If the status has changed, mock up blockchain receipt as if we'd received it
+		// as a web socket notification
+		if operation.Status == core.OpStatusPending && txStatus != ethTxStatusPending {
+			receipt := &common.BlockchainReceiptNotification{
+				Headers: common.BlockchainReceiptHeaders{
+					ReceiptID: headers.GetString("id"),
+					ReplyType: headers.GetString("type")},
+				TxHash:  statusResponse.GetString("transactionId"),
+				Message: statusResponse.GetString("errorMessage"),
+				ProtocolID: common.ProtocolIDForReceipt(
+					(*fftypes.FFBigInt)(receiptInfo.GetInteger("blockNumber")),
+					(*fftypes.FFBigInt)(receiptInfo.GetInteger("transactionIndex")))}
+			common.HandleReceipt(ctx, e, receipt, e.callbacks)
 		}
-		statusResponse["headers"] = headers
-		e.handleReceipt(ctx, statusResponse)
+	} else {
+		// Don't expect to get here so issue a warning
+		log.L(ctx).Warnf("Transaction status didn't include txStatus information")
 	}
+
 	return statusResponse, nil
 }
