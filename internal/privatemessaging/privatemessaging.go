@@ -142,6 +142,7 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 			core.MessageTypeGroupInit,
 			core.MessageTypePrivate,
 			core.MessageTypeTransferPrivate,
+			core.MessageTypeApprovalPrivate,
 		},
 		pm.dispatchPinnedBatch, bo)
 

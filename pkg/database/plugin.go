@@ -928,6 +928,8 @@ var TokenApprovalQueryFactory = &ffapi.QueryFields{
 	"tx.type":         &ffapi.StringField{},
 	"tx.id":           &ffapi.UUIDField{},
 	"blockchainevent": &ffapi.UUIDField{},
+	"message":         &ffapi.UUIDField{},
+	"messagehash":     &ffapi.Bytes32Field{},
 }
 
 // FFIQueryFactory filter fields for contract definitions
