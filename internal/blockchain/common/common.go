@@ -291,12 +291,11 @@ func (s *subscriptions) GetSubscription(subID string) *SubscriptionInfo {
 }
 
 // Common function for handling receipts from blockchain connectors.
-func HandleReceipt(ctx context.Context, plugin core.Named, reply *BlockchainReceiptNotification, callbacks BlockchainCallbacks) {
+func HandleReceipt(ctx context.Context, plugin core.Named, reply *BlockchainReceiptNotification, callbacks BlockchainCallbacks) error {
 	l := log.L(ctx)
 
 	if reply.Headers.ReceiptID == "" || reply.Headers.ReplyType == "" {
-		l.Errorf("Reply cannot be processed - missing fields: %+v", reply)
-		return
+		return fmt.Errorf("reply cannot be processed - missing fields: %+v", reply)
 	}
 	var updateType core.OpStatus
 	switch reply.Headers.ReplyType {
@@ -312,17 +311,12 @@ func HandleReceipt(ctx context.Context, plugin core.Named, reply *BlockchainRece
 	var output fftypes.JSONObject
 	obj, err := json.Marshal(reply)
 	if err != nil {
-		l.Errorf("Reply cannot be processed - conversion failed", reply)
+		return fmt.Errorf("reply cannot be processed - marshalling error: %+v", reply)
 	}
-	err = json.Unmarshal(obj, &output)
-	if err != nil {
-		l.Errorf("Reply cannot be processed - conversion failed", reply)
-	}
+	_ = json.Unmarshal(obj, &output)
 
 	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, reply.Headers.ReceiptID, reply.TxHash, reply.Message)
 	callbacks.OperationUpdate(ctx, plugin, reply.Headers.ReceiptID, updateType, reply.TxHash, reply.Message, output)
-}
 
-func ProtocolIDForReceipt(blockNumber, transactionIndex *fftypes.FFBigInt) string {
-	return fmt.Sprintf("%.12d/%.6d", blockNumber.Int(), transactionIndex.Int())
+	return nil
 }

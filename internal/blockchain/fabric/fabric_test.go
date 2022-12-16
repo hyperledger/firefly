@@ -2712,7 +2712,59 @@ func TestGetTransactionStatus(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	status, err := e.GetTransactionStatus(context.Background(), nil)
-	assert.Nil(t, status)
+	op := &core.Operation{
+		Namespace: "ns1",
+		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+	}
+
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(200, make(map[string]interface{}))(req)
+		})
+
+	status, err := e.GetTransactionStatus(context.Background(), op)
+	assert.NotNil(t, status)
 	assert.NoError(t, err)
+}
+
+func TestGetTransactionStatusNoResult(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	op := &core.Operation{
+		Namespace: "ns1",
+		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+	}
+
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(404, make(map[string]interface{}))(req)
+		})
+
+	status, err := e.GetTransactionStatus(context.Background(), op)
+	assert.Nil(t, status)
+	assert.Nil(t, err)
+}
+
+func TestGetTransactionStatusBadResult(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	op := &core.Operation{
+		Namespace: "ns1",
+		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+	}
+
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(500, make(map[string]interface{}))(req)
+		})
+
+	status, err := e.GetTransactionStatus(context.Background(), op)
+	assert.Nil(t, status)
+	assert.NotNil(t, err)
 }

@@ -477,8 +477,14 @@ func (f *Fabric) eventLoop() {
 				if err == nil {
 					err = f.wsconn.Send(ctx, ack)
 				}
-			case common.BlockchainReceiptNotification:
-				common.HandleReceipt(ctx, f, &msgTyped, f.callbacks)
+			case map[string]interface{}:
+				var receipt common.BlockchainReceiptNotification
+				_ = json.Unmarshal(msgBytes, &receipt)
+
+				err := common.HandleReceipt(ctx, f, &receipt, f.callbacks)
+				if err != nil {
+					l.Errorf("Failed to process receipt: %+v", msgTyped)
+				}
 			default:
 				l.Errorf("Message unexpected: %+v", msgTyped)
 				continue
@@ -903,6 +909,26 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 }
 
 func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
-	// TODO - add equivalent transaction status retrieval to ethereum
-	return nil, nil
+	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
+
+	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
+	client := f.client
+	var resErr fabError
+	var statusResponse fftypes.JSONObject
+	res, err := client.R().
+		SetContext(ctx).
+		SetError(&resErr).
+		SetResult(&statusResponse).
+		Get(transactionRequestPath)
+	if err != nil || !res.IsSuccess() {
+		if res.StatusCode() == 404 {
+			return nil, nil
+		}
+		return nil, wrapError(ctx, &resErr, res, err)
+	}
+
+	// TODO - could implement the same enhancement ethconnect has, and build a mock WS receipt if an API query
+	// happens to update the status of a pending transaction in our store.
+
+	return statusResponse, nil
 }

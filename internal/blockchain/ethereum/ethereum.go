@@ -51,6 +51,11 @@ const (
 	ethTxStatusPending string = "Pending"
 )
 
+const (
+	ReceiptTransactionSuccess string = "TransactionSuccess"
+	ReceiptTransactionFailed  string = "TransactionFailed"
+)
+
 type Ethereum struct {
 	ctx             context.Context
 	cancelCtx       context.CancelFunc
@@ -458,11 +463,11 @@ func (e *Ethereum) eventLoop() {
 					}
 				}
 				if !isBatch {
-					switch receiptObj := msgParsed.(type) {
-					case common.BlockchainReceiptNotification:
-						common.HandleReceipt(ctx, e, &receiptObj, e.callbacks)
-					default:
-						l.Errorf("Message cannot be parsed as a receipt: %s\n%s", err, string(msgBytes))
+					var receipt common.BlockchainReceiptNotification
+					_ = json.Unmarshal(msgBytes, &receipt)
+					err := common.HandleReceipt(ctx, e, &receipt, e.callbacks)
+					if err != nil {
+						l.Errorf("Failed to process receipt: %+v", msgTyped)
 					}
 				}
 			default:
@@ -934,11 +939,9 @@ func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (l
 
 func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
 	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
+
 	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
 	client := e.client
-	if client == nil {
-		client = e.client
-	}
 	var resErr ethError
 	var statusResponse fftypes.JSONObject
 	res, err := client.R().
@@ -947,27 +950,36 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 		SetResult(&statusResponse).
 		Get(transactionRequestPath)
 	if err != nil || !res.IsSuccess() {
+		if res.StatusCode() == 404 {
+			return nil, nil
+		}
 		return nil, wrapError(ctx, &resErr, res, err)
 	}
 
-	headers := statusResponse.GetObject("headers")
 	receiptInfo := statusResponse.GetObject("receipt")
 	txStatus := statusResponse.GetString("status")
 
 	if txStatus != "" {
+		var replyType string
+		if txStatus == "Succeeded" {
+			replyType = ReceiptTransactionSuccess
+		} else {
+			replyType = ReceiptTransactionFailed
+		}
 		// If the status has changed, mock up blockchain receipt as if we'd received it
 		// as a web socket notification
 		if operation.Status == core.OpStatusPending && txStatus != ethTxStatusPending {
 			receipt := &common.BlockchainReceiptNotification{
 				Headers: common.BlockchainReceiptHeaders{
-					ReceiptID: headers.GetString("id"),
-					ReplyType: headers.GetString("type")},
-				TxHash:  statusResponse.GetString("transactionId"),
-				Message: statusResponse.GetString("errorMessage"),
-				ProtocolID: common.ProtocolIDForReceipt(
-					(*fftypes.FFBigInt)(receiptInfo.GetInteger("blockNumber")),
-					(*fftypes.FFBigInt)(receiptInfo.GetInteger("transactionIndex")))}
-			common.HandleReceipt(ctx, e, receipt, e.callbacks)
+					ReceiptID: statusResponse.GetString("id"),
+					ReplyType: replyType},
+				TxHash:     statusResponse.GetString("transactionHash"),
+				Message:    statusResponse.GetString("errorMessage"),
+				ProtocolID: receiptInfo.GetString("protocolId")}
+			err := common.HandleReceipt(ctx, e, receipt, e.callbacks)
+			if err != nil {
+				log.L(ctx).Warnf("Failed to handle receipt")
+			}
 		}
 	} else {
 		// Don't expect to get here so issue a warning
