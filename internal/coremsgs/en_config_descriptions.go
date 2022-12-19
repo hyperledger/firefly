@@ -39,9 +39,11 @@ var (
 	ConfigSPIReadTimeout  = ffc("config.spi.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigSPIWriteTimeout = ffc("config.spi.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
-	ConfigAPIDefaultFilterLimit        = ffc("config.api.defaultFilterLimit", "The maximum number of rows to return if no limit is specified on an API request", i18n.IntType)
-	ConfigAPIMaxFilterLimit            = ffc("config.api.maxFilterLimit", "The largest value of `limit` that an HTTP client can specify in a request", i18n.IntType)
-	ConfigAPIRequestMaxTimeout         = ffc("config.api.requestMaxTimeout", "The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open", i18n.TimeDurationType)
+	ConfigAPIDefaultFilterLimit = ffc("config.api.defaultFilterLimit", "The maximum number of rows to return if no limit is specified on an API request", i18n.IntType)
+	ConfigAPIMaxFilterLimit     = ffc("config.api.maxFilterLimit", "The largest value of `limit` that an HTTP client can specify in a request", i18n.IntType)
+	ConfigAPIRequestMaxTimeout  = ffc("config.api.requestMaxTimeout", "The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open", i18n.TimeDurationType)
+	ConfigAPIPassthroughHeaders = ffc("config.api.passthroughHeaders", "A list of HTTP request headers to pass through to dependency microservices", i18n.ArrayStringType)
+
 	ConfigAssetManagerKeyNormalization = ffc("config.asset.manager.keyNormalization", "Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keyNormalization)", i18n.StringType)
 
 	ConfigBatchManagerMinimumPollDelay = ffc("config.batch.manager.minimumPollDelay", "The minimum time the batch manager waits between polls on the DB - to prevent thrashing", i18n.TimeDurationType)
@@ -66,8 +68,7 @@ var (
 	ConfigBlockchainEthereumAddressResolverRetainOriginal = ffc("config.blockchain.ethereum.addressResolver.retainOriginal", "When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address", i18n.BooleanType)
 	ConfigBlockchainEthereumAddressResolverURL            = ffc("config.blockchain.ethereum.addressResolver.url", "The URL of the Address Resolver", i18n.StringType)
 	ConfigBlockchainEthereumAddressResolverURLTemplate    = ffc("config.blockchain.ethereum.addressResolver.urlTemplate", "The URL Go template string to use when calling the Address Resolver", i18n.GoTemplateType)
-
-	ConfigBlockchainEthereumAddressResolverProxyURL = ffc("config.blockchain.ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", "URL "+i18n.StringType)
+	ConfigBlockchainEthereumAddressResolverProxyURL       = ffc("config.blockchain.ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", "URL "+i18n.StringType)
 
 	ConfigBlockchainEthereumEthconnectBatchSize    = ffc("config.blockchain.ethereum.ethconnect.batchSize", "The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
 	ConfigBlockchainEthereumEthconnectBatchTimeout = ffc("config.blockchain.ethereum.ethconnect.batchTimeout", "How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream", i18n.TimeDurationType)

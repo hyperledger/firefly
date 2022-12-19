@@ -291,6 +291,7 @@ func (as *apiServer) handlerFactory() *ffapi.HandlerFactory {
 		MaxFilterSkip:         uint64(config.GetUint(coreconfig.APIMaxFilterSkip)),
 		DefaultRequestTimeout: config.GetDuration(coreconfig.APIRequestTimeout),
 		MaxTimeout:            config.GetDuration(coreconfig.APIRequestMaxTimeout),
+		PassthroughHeaders:    config.GetStringSlice(coreconfig.APIPassthroughHeaders),
 	}
 }
 
