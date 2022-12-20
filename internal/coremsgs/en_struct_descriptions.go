@@ -519,12 +519,15 @@ var (
 	TokenApprovalProtocolID      = ffm("TokenApproval.protocolId", "An alphanumerically sortable string that represents this event uniquely with respect to the blockchain")
 	TokenApprovalSubject         = ffm("TokenApproval.subject", "A string identifying the parties and entities in the scope of this approval, as provided by the token connector")
 	TokenApprovalActive          = ffm("TokenApproval.active", "Indicates if this approval is currently active (only one approval can be active per subject)")
+	TokenApprovalMessage         = ffm("TokenApproval.message", "The UUID of a message that has been correlated with this approval using the data field of the approval in a compatible token connector")
+	TokenApprovalMessageHash     = ffm("TokenApproval.messageHash", "The hash of a message that has been correlated with this approval using the data field of the approval in a compatible token connector")
 	TokenApprovalCreated         = ffm("TokenApproval.created", "The creation time of the token approval")
 	TokenApprovalTX              = ffm("TokenApproval.tx", "If submitted via FireFly, this will reference the UUID of the FireFly transaction (if the token connector in use supports attaching data)")
 	TokenApprovalBlockchainEvent = ffm("TokenApproval.blockchainEvent", "The UUID of the blockchain event")
 	TokenApprovalConfig          = ffm("TokenApproval.config", "Input only field, with token connector specific configuration of the approval.  See your chosen token connector documentation for details")
 
 	// TokenApprovalInput field descriptions
+	TokenApprovalInputMessage        = ffm("TokenApprovalInput.message", "You can specify a message to correlate with the approval, which can be of type broadcast or private. Your chosen token connector and on-chain smart contract must support on-chain/off-chain correlation by taking a `data` input on the approval")
 	TokenApprovalInputPool           = ffm("TokenApprovalInput.pool", "The name or UUID of a token pool. Required if more than one pool exists.")
 	TokenApprovalInputIdempotencyKey = ffm("TokenApprovalInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
 
