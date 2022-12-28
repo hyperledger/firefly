@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE tokenpool ADD COLUMN interface UUID;
+COMMIT;

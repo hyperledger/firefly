@@ -56,16 +56,16 @@ type Plugin interface {
 	ActivateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error)
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
-	MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer) error
+	MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer, methods []*fftypes.FFIMethod) error
 
 	// BurnTokens burns tokens from an account
-	BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer) error
+	BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer, methods []*fftypes.FFIMethod) error
 
 	// TransferTokens transfers tokens within a pool from one account to another
-	TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer) error
+	TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer, methods []*fftypes.FFIMethod) error
 
 	// TokenApproval approves an operator to transfer tokens on the owner's behalf
-	TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval) error
+	TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval, methods []*fftypes.FFIMethod) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.

@@ -868,6 +868,7 @@ var TokenPoolQueryFactory = &ffapi.QueryFields{
 	"connector": &ffapi.StringField{},
 	"tx.type":   &ffapi.StringField{},
 	"tx.id":     &ffapi.UUIDField{},
+	"interface": &ffapi.UUIDField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances

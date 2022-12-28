@@ -99,6 +99,13 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 	}
 }
 
+func (am *assetManager) getFFIMethods(ctx context.Context, interfaceID *fftypes.UUID) (methods []*fftypes.FFIMethod, err error) {
+	if interfaceID != nil && am.contracts != nil {
+		methods, err = am.contracts.GetFFIMethods(ctx, interfaceID)
+	}
+	return methods, err
+}
+
 func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case createPoolData:
@@ -122,13 +129,17 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		if err != nil {
 			return nil, false, err
 		}
+		methods, err := am.getFFIMethods(ctx, data.Pool.Interface)
+		if err != nil {
+			return nil, false, err
+		}
 		switch data.Transfer.Type {
 		case core.TokenTransferTypeMint:
-			return nil, false, plugin.MintTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer)
+			return nil, false, plugin.MintTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, methods)
 		case core.TokenTransferTypeTransfer:
-			return nil, false, plugin.TransferTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer)
+			return nil, false, plugin.TransferTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, methods)
 		case core.TokenTransferTypeBurn:
-			return nil, false, plugin.BurnTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer)
+			return nil, false, plugin.BurnTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, methods)
 		default:
 			panic(fmt.Sprintf("unknown transfer type: %v", data.Transfer.Type))
 		}
@@ -138,7 +149,11 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		if err != nil {
 			return nil, false, err
 		}
-		return nil, false, plugin.TokensApproval(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Approval)
+		methods, err := am.getFFIMethods(ctx, data.Pool.Interface)
+		if err != nil {
+			return nil, false, err
+		}
+		return nil, false, plugin.TokensApproval(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Approval, methods)
 
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)

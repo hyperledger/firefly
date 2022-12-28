@@ -25357,6 +25357,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: interface
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: locator
         schema:
           type: string
@@ -25466,6 +25471,11 @@ paths:
                       description: Token connector specific information about the
                         pool. See your chosen token connector documentation for details
                       type: object
+                    interface:
+                      description: The UUID of the contract interface that defines
+                        the methods and events for this token pool
+                      format: uuid
+                      type: string
                     key:
                       description: The signing key used to create the token pool.
                         On input for token connectors that support on-chain deployment
@@ -25576,6 +25586,11 @@ paths:
                   description: An optional identifier to allow idempotent submission
                     of requests. Stored on the transaction uniquely within a namespace
                   type: string
+                interface:
+                  description: The UUID of the contract interface that defines the
+                    methods and events for this token pool
+                  format: uuid
+                  type: string
                 key:
                   description: The signing key used to create the token pool. On input
                     for token connectors that support on-chain deployment of new tokens
@@ -25627,6 +25642,11 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: The UUID of the contract interface that defines the
+                      methods and events for this token pool
+                    format: uuid
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -25713,6 +25733,11 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: The UUID of the contract interface that defines the
+                      methods and events for this token pool
+                    format: uuid
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -25829,6 +25854,11 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: The UUID of the contract interface that defines the
+                      methods and events for this token pool
+                    format: uuid
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -32648,6 +32678,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: interface
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: locator
         schema:
           type: string
@@ -32757,6 +32792,11 @@ paths:
                       description: Token connector specific information about the
                         pool. See your chosen token connector documentation for details
                       type: object
+                    interface:
+                      description: The UUID of the contract interface that defines
+                        the methods and events for this token pool
+                      format: uuid
+                      type: string
                     key:
                       description: The signing key used to create the token pool.
                         On input for token connectors that support on-chain deployment
@@ -32860,6 +32900,11 @@ paths:
                   description: An optional identifier to allow idempotent submission
                     of requests. Stored on the transaction uniquely within a namespace
                   type: string
+                interface:
+                  description: The UUID of the contract interface that defines the
+                    methods and events for this token pool
+                  format: uuid
+                  type: string
                 key:
                   description: The signing key used to create the token pool. On input
                     for token connectors that support on-chain deployment of new tokens
@@ -32911,6 +32956,11 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: The UUID of the contract interface that defines the
+                      methods and events for this token pool
+                    format: uuid
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -32997,6 +33047,11 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: The UUID of the contract interface that defines the
+                      methods and events for this token pool
+                    format: uuid
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -33106,6 +33161,11 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: The UUID of the contract interface that defines the
+                      methods and events for this token pool
+                    format: uuid
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment

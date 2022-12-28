@@ -64,6 +64,7 @@ type TokenPool struct {
 	Config    fftypes.JSONObject `ffstruct:"TokenPool" json:"config,omitempty" ffexcludeoutput:"true"` // for REST calls only (not stored)
 	Info      fftypes.JSONObject `ffstruct:"TokenPool" json:"info,omitempty" ffexcludeinput:"true"`
 	TX        TransactionRef     `ffstruct:"TokenPool" json:"tx,omitempty" ffexcludeinput:"true"`
+	Interface *fftypes.UUID      `ffstruct:"TokenPool" json:"interface,omitempty"`
 }
 
 type TokenPoolAnnouncement struct {

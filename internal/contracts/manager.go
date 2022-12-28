@@ -42,6 +42,8 @@ type Manager interface {
 	GetFFIWithChildren(ctx context.Context, name, version string) (*fftypes.FFI, error)
 	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
 	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
+	GetFFIMethods(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIMethod, error)
+	GetFFIEvents(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIEvent, error)
 	GetFFIs(ctx context.Context, filter ffapi.AndFilter) ([]*fftypes.FFI, *ffapi.FilterResult, error)
 	ResolveFFI(ctx context.Context, ffi *fftypes.FFI) error
 
@@ -134,23 +136,29 @@ func (cm *contractManager) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*f
 	return cm.database.GetFFIByID(ctx, cm.namespace, id)
 }
 
+func (cm *contractManager) GetFFIMethods(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIMethod, error) {
+	fb := database.FFIMethodQueryFactory.NewFilter(ctx)
+	methods, _, err := cm.database.GetFFIMethods(ctx, cm.namespace, fb.Eq("interface", id))
+	return methods, err
+}
+
+func (cm *contractManager) GetFFIEvents(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIEvent, error) {
+	fb := database.FFIMethodQueryFactory.NewFilter(ctx)
+	events, _, err := cm.database.GetFFIEvents(ctx, cm.namespace, fb.Eq("interface", id))
+	if err == nil {
+		for _, event := range events {
+			event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
+		}
+	}
+	return events, err
+}
+
 func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *fftypes.FFI) (err error) {
-	mfb := database.FFIMethodQueryFactory.NewFilter(ctx)
-	ffi.Methods, _, err = cm.database.GetFFIMethods(ctx, cm.namespace, mfb.Eq("interface", ffi.ID))
-	if err != nil {
-		return err
+	ffi.Methods, err = cm.GetFFIMethods(ctx, ffi.ID)
+	if err == nil {
+		ffi.Events, err = cm.GetFFIEvents(ctx, ffi.ID)
 	}
-
-	efb := database.FFIEventQueryFactory.NewFilter(ctx)
-	ffi.Events, _, err = cm.database.GetFFIEvents(ctx, cm.namespace, efb.Eq("interface", ffi.ID))
-	if err != nil {
-		return err
-	}
-
-	for _, event := range ffi.Events {
-		event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
-	}
-	return nil
+	return err
 }
 
 func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (ffi *fftypes.FFI, err error) {

@@ -27,6 +27,8 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
+	"github.com/hyperledger/firefly-signer/pkg/abi"
+	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -151,6 +153,10 @@ type activatePool struct {
 	RequestID   string             `json:"requestId,omitempty"`
 }
 
+type tokenInterface struct {
+	ABI []*abi.Entry `json:"abi,omitempty"`
+}
+
 type mintTokens struct {
 	PoolLocator string             `json:"poolLocator"`
 	TokenIndex  string             `json:"tokenIndex,omitempty"`
@@ -161,6 +167,7 @@ type mintTokens struct {
 	Data        string             `json:"data,omitempty"`
 	URI         string             `json:"uri,omitempty"`
 	Config      fftypes.JSONObject `json:"config"`
+	Interface   *tokenInterface    `json:"interface,omitempty"`
 }
 
 type burnTokens struct {
@@ -172,6 +179,7 @@ type burnTokens struct {
 	Signer      string             `json:"signer"`
 	Data        string             `json:"data,omitempty"`
 	Config      fftypes.JSONObject `json:"config"`
+	Interface   *tokenInterface    `json:"interface,omitempty"`
 }
 
 type transferTokens struct {
@@ -184,6 +192,7 @@ type transferTokens struct {
 	Signer      string             `json:"signer"`
 	Data        string             `json:"data,omitempty"`
 	Config      fftypes.JSONObject `json:"config"`
+	Interface   *tokenInterface    `json:"interface,omitempty"`
 }
 
 type tokenApproval struct {
@@ -194,6 +203,7 @@ type tokenApproval struct {
 	RequestID   string             `json:"requestId,omitempty"`
 	Data        string             `json:"data,omitempty"`
 	Config      fftypes.JSONObject `json:"config"`
+	Interface   *tokenInterface    `json:"interface,omitempty"`
 }
 
 type tokenError struct {
@@ -643,13 +653,34 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *
 	return false, nil
 }
 
-func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer) error {
+func (ft *FFTokens) prepareABI(ctx context.Context, methods []*fftypes.FFIMethod) (*tokenInterface, error) {
+	if methods == nil {
+		return nil, nil
+	}
+	abiMethods := make([]*abi.Entry, len(methods))
+	for i, method := range methods {
+		abi, err := ffi2abi.ConvertFFIMethodToABI(ctx, method)
+		if err != nil {
+			return nil, err
+		}
+		abiMethods[i] = abi
+	}
+	return &tokenInterface{ABI: abiMethods}, nil
+}
+
+func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer, methods []*fftypes.FFIMethod) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          mint.TX.ID,
 		TXType:      mint.TX.Type,
 		Message:     mint.Message,
 		MessageHash: mint.MessageHash,
 	})
+
+	iface, err := ft.prepareABI(ctx, methods)
+	if err != nil {
+		return err
+	}
+
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&mintTokens{
@@ -662,6 +693,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator s
 			Data:        string(data),
 			URI:         mint.URI,
 			Config:      mint.Config,
+			Interface:   iface,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/mint")
@@ -671,13 +703,19 @@ func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator s
 	return nil
 }
 
-func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer) error {
+func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer, methods []*fftypes.FFIMethod) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          burn.TX.ID,
 		TXType:      burn.TX.Type,
 		Message:     burn.Message,
 		MessageHash: burn.MessageHash,
 	})
+
+	iface, err := ft.prepareABI(ctx, methods)
+	if err != nil {
+		return err
+	}
+
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&burnTokens{
@@ -689,6 +727,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator s
 			Signer:      burn.Key,
 			Data:        string(data),
 			Config:      burn.Config,
+			Interface:   iface,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/burn")
@@ -698,13 +737,19 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator s
 	return nil
 }
 
-func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer) error {
+func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer, methods []*fftypes.FFIMethod) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          transfer.TX.ID,
 		TXType:      transfer.TX.Type,
 		Message:     transfer.Message,
 		MessageHash: transfer.MessageHash,
 	})
+
+	iface, err := ft.prepareABI(ctx, methods)
+	if err != nil {
+		return err
+	}
+
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&transferTokens{
@@ -717,6 +762,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocat
 			Signer:      transfer.Key,
 			Data:        string(data),
 			Config:      transfer.Config,
+			Interface:   iface,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/transfer")
@@ -726,13 +772,19 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocat
 	return nil
 }
 
-func (ft *FFTokens) TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval) error {
+func (ft *FFTokens) TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval, methods []*fftypes.FFIMethod) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          approval.TX.ID,
 		TXType:      approval.TX.Type,
 		Message:     approval.Message,
 		MessageHash: approval.MessageHash,
 	})
+
+	iface, err := ft.prepareABI(ctx, methods)
+	if err != nil {
+		return err
+	}
+
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&tokenApproval{
@@ -743,6 +795,7 @@ func (ft *FFTokens) TokensApproval(ctx context.Context, nsOpID string, poolLocat
 			RequestID:   nsOpID,
 			Data:        string(data),
 			Config:      approval.Config,
+			Interface:   iface,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/approval")
