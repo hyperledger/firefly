@@ -102,17 +102,6 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 		log.L(ctx).Errorf("Error processing pool for transaction '%s' (%s) - ignoring", pool.TX.ID, err)
 		return nil, nil
 	}
-
-	log.L(ctx).Debugf("shouldConfirm checking pool: state=%s name=%s connector=%s locator=%s", existingPool.State, em.namespace.Name, pool.Connector, pool.PoolLocator)
-	if existingPool.State == core.TokenPoolStateUnknown {
-		// Unknown pool state - should only happen on first run after database migration
-		// Activate the pool, then immediately confirm
-		// TODO: can this state eventually be removed?
-		if err = em.assets.ActivateTokenPool(ctx, existingPool); err != nil {
-			log.L(ctx).Errorf("Failed to activate token pool '%s': %s", existingPool.ID, err)
-			return nil, err
-		}
-	}
 	return existingPool, nil
 }
 
