@@ -103,6 +103,20 @@ func (_m *Plugin) DeployContract(ctx context.Context, nsOpID string, signingKey 
 	return r0
 }
 
+// GenerateErrorSignature provides a mock function with given fields: ctx, errorDef
+func (_m *Plugin) GenerateErrorSignature(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) string {
+	ret := _m.Called(ctx, errorDef)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIErrorDefinition) string); ok {
+		r0 = rf(ctx, errorDef)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // GenerateEventSignature provides a mock function with given fields: ctx, event
 func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
 	ret := _m.Called(ctx, event)
