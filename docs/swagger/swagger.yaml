@@ -391,6 +391,57 @@ paths:
                   description:
                     description: A description of the smart contract this FFI represents
                     type: string
+                  errors:
+                    description: An array of smart contract error definitions
+                    items:
+                      description: An array of smart contract error definitions
+                      properties:
+                        description:
+                          description: A description of the smart contract error
+                          type: string
+                        id:
+                          description: The UUID of the FFI error definition
+                          format: uuid
+                          type: string
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this error is part of
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the error
+                          type: string
+                        namespace:
+                          description: The namespace of the FFI
+                          type: string
+                        params:
+                          description: An array of error parameter/argument definitions
+                          items:
+                            description: An array of error parameter/argument definitions
+                            properties:
+                              name:
+                                description: The name of the parameter. Note that
+                                  parameters must be ordered correctly on the FFI,
+                                  according to the order in the blockchain smart contract
+                                type: string
+                              schema:
+                                description: FireFly uses an extended subset of JSON
+                                  Schema to describe parameters, similar to OpenAPI/Swagger.
+                                  Converters are available for native blockchain interface
+                                  definitions / type systems - such as an Ethereum
+                                  ABI. See the documentation for more detail
+                            type: object
+                          type: array
+                        pathname:
+                          description: The unique name allocated to this error within
+                            the FFI for use on URL paths
+                          type: string
+                        signature:
+                          description: The stringified signature of the error, as
+                            computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   events:
                     description: An array of smart contract event definitions
                     items:
@@ -2269,6 +2320,59 @@ paths:
                     description:
                       description: A description of the smart contract this FFI represents
                       type: string
+                    errors:
+                      description: An array of smart contract error definitions
+                      items:
+                        description: An array of smart contract error definitions
+                        properties:
+                          description:
+                            description: A description of the smart contract error
+                            type: string
+                          id:
+                            description: The UUID of the FFI error definition
+                            format: uuid
+                            type: string
+                          interface:
+                            description: The UUID of the FFI smart contract definition
+                              that this error is part of
+                            format: uuid
+                            type: string
+                          name:
+                            description: The name of the error
+                            type: string
+                          namespace:
+                            description: The namespace of the FFI
+                            type: string
+                          params:
+                            description: An array of error parameter/argument definitions
+                            items:
+                              description: An array of error parameter/argument definitions
+                              properties:
+                                name:
+                                  description: The name of the parameter. Note that
+                                    parameters must be ordered correctly on the FFI,
+                                    according to the order in the blockchain smart
+                                    contract
+                                  type: string
+                                schema:
+                                  description: FireFly uses an extended subset of
+                                    JSON Schema to describe parameters, similar to
+                                    OpenAPI/Swagger. Converters are available for
+                                    native blockchain interface definitions / type
+                                    systems - such as an Ethereum ABI. See the documentation
+                                    for more detail
+                              type: object
+                            type: array
+                          pathname:
+                            description: The unique name allocated to this error within
+                              the FFI for use on URL paths
+                            type: string
+                          signature:
+                            description: The stringified signature of the error, as
+                              computed by the blockchain plugin
+                            type: string
+                        type: object
+                      type: array
                     events:
                       description: An array of smart contract event definitions
                       items:
@@ -2464,6 +2568,37 @@ paths:
                 description:
                   description: A description of the smart contract this FFI represents
                   type: string
+                errors:
+                  description: An array of smart contract error definitions
+                  items:
+                    description: An array of smart contract error definitions
+                    properties:
+                      description:
+                        description: A description of the smart contract error
+                        type: string
+                      name:
+                        description: The name of the error
+                        type: string
+                      params:
+                        description: An array of error parameter/argument definitions
+                        items:
+                          description: An array of error parameter/argument definitions
+                          properties:
+                            name:
+                              description: The name of the parameter. Note that parameters
+                                must be ordered correctly on the FFI, according to
+                                the order in the blockchain smart contract
+                              type: string
+                            schema:
+                              description: FireFly uses an extended subset of JSON
+                                Schema to describe parameters, similar to OpenAPI/Swagger.
+                                Converters are available for native blockchain interface
+                                definitions / type systems - such as an Ethereum ABI.
+                                See the documentation for more detail
+                          type: object
+                        type: array
+                    type: object
+                  type: array
                 events:
                   description: An array of smart contract event definitions
                   items:
@@ -2580,6 +2715,57 @@ paths:
                   description:
                     description: A description of the smart contract this FFI represents
                     type: string
+                  errors:
+                    description: An array of smart contract error definitions
+                    items:
+                      description: An array of smart contract error definitions
+                      properties:
+                        description:
+                          description: A description of the smart contract error
+                          type: string
+                        id:
+                          description: The UUID of the FFI error definition
+                          format: uuid
+                          type: string
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this error is part of
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the error
+                          type: string
+                        namespace:
+                          description: The namespace of the FFI
+                          type: string
+                        params:
+                          description: An array of error parameter/argument definitions
+                          items:
+                            description: An array of error parameter/argument definitions
+                            properties:
+                              name:
+                                description: The name of the parameter. Note that
+                                  parameters must be ordered correctly on the FFI,
+                                  according to the order in the blockchain smart contract
+                                type: string
+                              schema:
+                                description: FireFly uses an extended subset of JSON
+                                  Schema to describe parameters, similar to OpenAPI/Swagger.
+                                  Converters are available for native blockchain interface
+                                  definitions / type systems - such as an Ethereum
+                                  ABI. See the documentation for more detail
+                            type: object
+                          type: array
+                        pathname:
+                          description: The unique name allocated to this error within
+                            the FFI for use on URL paths
+                          type: string
+                        signature:
+                          description: The stringified signature of the error, as
+                            computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   events:
                     description: An array of smart contract event definitions
                     items:
@@ -2777,6 +2963,57 @@ paths:
                   description:
                     description: A description of the smart contract this FFI represents
                     type: string
+                  errors:
+                    description: An array of smart contract error definitions
+                    items:
+                      description: An array of smart contract error definitions
+                      properties:
+                        description:
+                          description: A description of the smart contract error
+                          type: string
+                        id:
+                          description: The UUID of the FFI error definition
+                          format: uuid
+                          type: string
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this error is part of
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the error
+                          type: string
+                        namespace:
+                          description: The namespace of the FFI
+                          type: string
+                        params:
+                          description: An array of error parameter/argument definitions
+                          items:
+                            description: An array of error parameter/argument definitions
+                            properties:
+                              name:
+                                description: The name of the parameter. Note that
+                                  parameters must be ordered correctly on the FFI,
+                                  according to the order in the blockchain smart contract
+                                type: string
+                              schema:
+                                description: FireFly uses an extended subset of JSON
+                                  Schema to describe parameters, similar to OpenAPI/Swagger.
+                                  Converters are available for native blockchain interface
+                                  definitions / type systems - such as an Ethereum
+                                  ABI. See the documentation for more detail
+                            type: object
+                          type: array
+                        pathname:
+                          description: The unique name allocated to this error within
+                            the FFI for use on URL paths
+                          type: string
+                        signature:
+                          description: The stringified signature of the error, as
+                            computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   events:
                     description: An array of smart contract event definitions
                     items:
@@ -2980,6 +3217,57 @@ paths:
                   description:
                     description: A description of the smart contract this FFI represents
                     type: string
+                  errors:
+                    description: An array of smart contract error definitions
+                    items:
+                      description: An array of smart contract error definitions
+                      properties:
+                        description:
+                          description: A description of the smart contract error
+                          type: string
+                        id:
+                          description: The UUID of the FFI error definition
+                          format: uuid
+                          type: string
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this error is part of
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the error
+                          type: string
+                        namespace:
+                          description: The namespace of the FFI
+                          type: string
+                        params:
+                          description: An array of error parameter/argument definitions
+                          items:
+                            description: An array of error parameter/argument definitions
+                            properties:
+                              name:
+                                description: The name of the parameter. Note that
+                                  parameters must be ordered correctly on the FFI,
+                                  according to the order in the blockchain smart contract
+                                type: string
+                              schema:
+                                description: FireFly uses an extended subset of JSON
+                                  Schema to describe parameters, similar to OpenAPI/Swagger.
+                                  Converters are available for native blockchain interface
+                                  definitions / type systems - such as an Ethereum
+                                  ABI. See the documentation for more detail
+                            type: object
+                          type: array
+                        pathname:
+                          description: The unique name allocated to this error within
+                            the FFI for use on URL paths
+                          type: string
+                        signature:
+                          description: The stringified signature of the error, as
+                            computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   events:
                     description: An array of smart contract event definitions
                     items:
@@ -3190,6 +3478,57 @@ paths:
                   description:
                     description: A description of the smart contract this FFI represents
                     type: string
+                  errors:
+                    description: An array of smart contract error definitions
+                    items:
+                      description: An array of smart contract error definitions
+                      properties:
+                        description:
+                          description: A description of the smart contract error
+                          type: string
+                        id:
+                          description: The UUID of the FFI error definition
+                          format: uuid
+                          type: string
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this error is part of
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the error
+                          type: string
+                        namespace:
+                          description: The namespace of the FFI
+                          type: string
+                        params:
+                          description: An array of error parameter/argument definitions
+                          items:
+                            description: An array of error parameter/argument definitions
+                            properties:
+                              name:
+                                description: The name of the parameter. Note that
+                                  parameters must be ordered correctly on the FFI,
+                                  according to the order in the blockchain smart contract
+                                type: string
+                              schema:
+                                description: FireFly uses an extended subset of JSON
+                                  Schema to describe parameters, similar to OpenAPI/Swagger.
+                                  Converters are available for native blockchain interface
+                                  definitions / type systems - such as an Ethereum
+                                  ABI. See the documentation for more detail
+                            type: object
+                          type: array
+                        pathname:
+                          description: The unique name allocated to this error within
+                            the FFI for use on URL paths
+                          type: string
+                        signature:
+                          description: The stringified signature of the error, as
+                            computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   events:
                     description: An array of smart contract event definitions
                     items:
@@ -10059,6 +10398,57 @@ paths:
                   description:
                     description: A description of the smart contract this FFI represents
                     type: string
+                  errors:
+                    description: An array of smart contract error definitions
+                    items:
+                      description: An array of smart contract error definitions
+                      properties:
+                        description:
+                          description: A description of the smart contract error
+                          type: string
+                        id:
+                          description: The UUID of the FFI error definition
+                          format: uuid
+                          type: string
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this error is part of
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the error
+                          type: string
+                        namespace:
+                          description: The namespace of the FFI
+                          type: string
+                        params:
+                          description: An array of error parameter/argument definitions
+                          items:
+                            description: An array of error parameter/argument definitions
+                            properties:
+                              name:
+                                description: The name of the parameter. Note that
+                                  parameters must be ordered correctly on the FFI,
+                                  according to the order in the blockchain smart contract
+                                type: string
+                              schema:
+                                description: FireFly uses an extended subset of JSON
+                                  Schema to describe parameters, similar to OpenAPI/Swagger.
+                                  Converters are available for native blockchain interface
+                                  definitions / type systems - such as an Ethereum
+                                  ABI. See the documentation for more detail
+                            type: object
+                          type: array
+                        pathname:
+                          description: The unique name allocated to this error within
+                            the FFI for use on URL paths
+                          type: string
+                        signature:
+                          description: The stringified signature of the error, as
+                            computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   events:
                     description: An array of smart contract event definitions
                     items:
@@ -12208,6 +12598,59 @@ paths:
                     description:
                       description: A description of the smart contract this FFI represents
                       type: string
+                    errors:
+                      description: An array of smart contract error definitions
+                      items:
+                        description: An array of smart contract error definitions
+                        properties:
+                          description:
+                            description: A description of the smart contract error
+                            type: string
+                          id:
+                            description: The UUID of the FFI error definition
+                            format: uuid
+                            type: string
+                          interface:
+                            description: The UUID of the FFI smart contract definition
+                              that this error is part of
+                            format: uuid
+                            type: string
+                          name:
+                            description: The name of the error
+                            type: string
+                          namespace:
+                            description: The namespace of the FFI
+                            type: string
+                          params:
+                            description: An array of error parameter/argument definitions
+                            items:
+                              description: An array of error parameter/argument definitions
+                              properties:
+                                name:
+                                  description: The name of the parameter. Note that
+                                    parameters must be ordered correctly on the FFI,
+                                    according to the order in the blockchain smart
+                                    contract
+                                  type: string
+                                schema:
+                                  description: FireFly uses an extended subset of
+                                    JSON Schema to describe parameters, similar to
+                                    OpenAPI/Swagger. Converters are available for
+                                    native blockchain interface definitions / type
+                                    systems - such as an Ethereum ABI. See the documentation
+                                    for more detail
+                              type: object
+                            type: array
+                          pathname:
+                            description: The unique name allocated to this error within
+                              the FFI for use on URL paths
+                            type: string
+                          signature:
+                            description: The stringified signature of the error, as
+                              computed by the blockchain plugin
+                            type: string
+                        type: object
+                      type: array
                     events:
                       description: An array of smart contract event definitions
                       items:
@@ -12410,6 +12853,37 @@ paths:
                 description:
                   description: A description of the smart contract this FFI represents
                   type: string
+                errors:
+                  description: An array of smart contract error definitions
+                  items:
+                    description: An array of smart contract error definitions
+                    properties:
+                      description:
+                        description: A description of the smart contract error
+                        type: string
+                      name:
+                        description: The name of the error
+                        type: string
+                      params:
+                        description: An array of error parameter/argument definitions
+                        items:
+                          description: An array of error parameter/argument definitions
+                          properties:
+                            name:
+                              description: The name of the parameter. Note that parameters
+                                must be ordered correctly on the FFI, according to
+                                the order in the blockchain smart contract
+                              type: string
+                            schema:
+                              description: FireFly uses an extended subset of JSON
+                                Schema to describe parameters, similar to OpenAPI/Swagger.
+                                Converters are available for native blockchain interface
+                                definitions / type systems - such as an Ethereum ABI.
+                                See the documentation for more detail
+                          type: object
+                        type: array
+                    type: object
+                  type: array
                 events:
                   description: An array of smart contract event definitions
                   items:
@@ -12526,6 +13000,57 @@ paths:
                   description:
                     description: A description of the smart contract this FFI represents
                     type: string
+                  errors:
+                    description: An array of smart contract error definitions
+                    items:
+                      description: An array of smart contract error definitions
+                      properties:
+                        description:
+                          description: A description of the smart contract error
+                          type: string
+                        id:
+                          description: The UUID of the FFI error definition
+                          format: uuid
+                          type: string
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this error is part of
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the error
+                          type: string
+                        namespace:
+                          description: The namespace of the FFI
+                          type: string
+                        params:
+                          description: An array of error parameter/argument definitions
+                          items:
+                            description: An array of error parameter/argument definitions
+                            properties:
+                              name:
+                                description: The name of the parameter. Note that
+                                  parameters must be ordered correctly on the FFI,
+                                  according to the order in the blockchain smart contract
+                                type: string
+                              schema:
+                                description: FireFly uses an extended subset of JSON
+                                  Schema to describe parameters, similar to OpenAPI/Swagger.
+                                  Converters are available for native blockchain interface
+                                  definitions / type systems - such as an Ethereum
+                                  ABI. See the documentation for more detail
+                            type: object
+                          type: array
+                        pathname:
+                          description: The unique name allocated to this error within
+                            the FFI for use on URL paths
+                          type: string
+                        signature:
+                          description: The stringified signature of the error, as
+                            computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   events:
                     description: An array of smart contract event definitions
                     items:
@@ -12730,6 +13255,57 @@ paths:
                   description:
                     description: A description of the smart contract this FFI represents
                     type: string
+                  errors:
+                    description: An array of smart contract error definitions
+                    items:
+                      description: An array of smart contract error definitions
+                      properties:
+                        description:
+                          description: A description of the smart contract error
+                          type: string
+                        id:
+                          description: The UUID of the FFI error definition
+                          format: uuid
+                          type: string
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this error is part of
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the error
+                          type: string
+                        namespace:
+                          description: The namespace of the FFI
+                          type: string
+                        params:
+                          description: An array of error parameter/argument definitions
+                          items:
+                            description: An array of error parameter/argument definitions
+                            properties:
+                              name:
+                                description: The name of the parameter. Note that
+                                  parameters must be ordered correctly on the FFI,
+                                  according to the order in the blockchain smart contract
+                                type: string
+                              schema:
+                                description: FireFly uses an extended subset of JSON
+                                  Schema to describe parameters, similar to OpenAPI/Swagger.
+                                  Converters are available for native blockchain interface
+                                  definitions / type systems - such as an Ethereum
+                                  ABI. See the documentation for more detail
+                            type: object
+                          type: array
+                        pathname:
+                          description: The unique name allocated to this error within
+                            the FFI for use on URL paths
+                          type: string
+                        signature:
+                          description: The stringified signature of the error, as
+                            computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   events:
                     description: An array of smart contract event definitions
                     items:
@@ -12940,6 +13516,57 @@ paths:
                   description:
                     description: A description of the smart contract this FFI represents
                     type: string
+                  errors:
+                    description: An array of smart contract error definitions
+                    items:
+                      description: An array of smart contract error definitions
+                      properties:
+                        description:
+                          description: A description of the smart contract error
+                          type: string
+                        id:
+                          description: The UUID of the FFI error definition
+                          format: uuid
+                          type: string
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this error is part of
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the error
+                          type: string
+                        namespace:
+                          description: The namespace of the FFI
+                          type: string
+                        params:
+                          description: An array of error parameter/argument definitions
+                          items:
+                            description: An array of error parameter/argument definitions
+                            properties:
+                              name:
+                                description: The name of the parameter. Note that
+                                  parameters must be ordered correctly on the FFI,
+                                  according to the order in the blockchain smart contract
+                                type: string
+                              schema:
+                                description: FireFly uses an extended subset of JSON
+                                  Schema to describe parameters, similar to OpenAPI/Swagger.
+                                  Converters are available for native blockchain interface
+                                  definitions / type systems - such as an Ethereum
+                                  ABI. See the documentation for more detail
+                            type: object
+                          type: array
+                        pathname:
+                          description: The unique name allocated to this error within
+                            the FFI for use on URL paths
+                          type: string
+                        signature:
+                          description: The stringified signature of the error, as
+                            computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   events:
                     description: An array of smart contract event definitions
                     items:
@@ -13157,6 +13784,57 @@ paths:
                   description:
                     description: A description of the smart contract this FFI represents
                     type: string
+                  errors:
+                    description: An array of smart contract error definitions
+                    items:
+                      description: An array of smart contract error definitions
+                      properties:
+                        description:
+                          description: A description of the smart contract error
+                          type: string
+                        id:
+                          description: The UUID of the FFI error definition
+                          format: uuid
+                          type: string
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this error is part of
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the error
+                          type: string
+                        namespace:
+                          description: The namespace of the FFI
+                          type: string
+                        params:
+                          description: An array of error parameter/argument definitions
+                          items:
+                            description: An array of error parameter/argument definitions
+                            properties:
+                              name:
+                                description: The name of the parameter. Note that
+                                  parameters must be ordered correctly on the FFI,
+                                  according to the order in the blockchain smart contract
+                                type: string
+                              schema:
+                                description: FireFly uses an extended subset of JSON
+                                  Schema to describe parameters, similar to OpenAPI/Swagger.
+                                  Converters are available for native blockchain interface
+                                  definitions / type systems - such as an Ethereum
+                                  ABI. See the documentation for more detail
+                            type: object
+                          type: array
+                        pathname:
+                          description: The unique name allocated to this error within
+                            the FFI for use on URL paths
+                          type: string
+                        signature:
+                          description: The stringified signature of the error, as
+                            computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   events:
                     description: An array of smart contract event definitions
                     items:
