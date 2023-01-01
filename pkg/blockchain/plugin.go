@@ -93,6 +93,9 @@ type Plugin interface {
 	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
 	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string
 
+	// GenerateErrorSignature generates a strigified signature for the custom error, incorporating any fields significant to identifying the error as unique
+	GenerateErrorSignature(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) string
+
 	// GetNetworkVersion queries the provided contract to get the network version
 	GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error)
 
