@@ -150,6 +150,15 @@ func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *fftypes.FFI)
 	for _, event := range ffi.Events {
 		event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
 	}
+
+	ffi.Errors, err = cm.database.GetFFIErrors(ctx, cm.namespace, ffi.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, errorDef := range ffi.Errors {
+		errorDef.Signature = cm.blockchain.GenerateErrorSignature(ctx, &errorDef.FFIErrorDefinition)
+	}
 	return nil
 }
 
@@ -299,6 +308,17 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req
 		if err != nil || req.Method == nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
 		}
+		errors, err := cm.database.GetFFIErrors(ctx, cm.namespace, req.Interface)
+		if err != nil {
+			return i18n.NewError(ctx, coremsgs.MsgContractErrorsResolveError, err)
+		}
+		if req.Options == nil {
+			req.Options = map[string]interface{}{
+				"errors": errors,
+			}
+		} else {
+			req.Options["errors"] = errors
+		}
 	}
 	return nil
 }
@@ -434,6 +454,16 @@ func (cm *contractManager) ResolveFFI(ctx context.Context, ffi *fftypes.FFI) err
 			return err
 		}
 	}
+
+	errorPathNames := map[string]bool{}
+	for _, errorDef := range ffi.Errors {
+		errorDef.Interface = ffi.ID
+		errorDef.Namespace = ffi.Namespace
+		errorDef.Pathname = cm.uniquePathName(errorDef.Name, errorPathNames)
+		if err := cm.validateFFIError(ctx, &errorDef.FFIErrorDefinition); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -470,6 +500,18 @@ func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.
 		return i18n.NewError(ctx, coremsgs.MsgEventNameMustBeSet)
 	}
 	for _, param := range event.Params {
+		if err := cm.validateFFIParam(ctx, param); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cm *contractManager) validateFFIError(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) error {
+	if errorDef.Name == "" {
+		return i18n.NewError(ctx, coremsgs.MsgErrorNameMustBeSet)
+	}
+	for _, param := range errorDef.Params {
 		if err := cm.validateFFIParam(ctx, param); err != nil {
 			return err
 		}

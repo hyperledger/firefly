@@ -47,6 +47,11 @@ func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *fftypes.FFI) (
 			return true, err
 		}
 	}
+	for _, errorDef := range ffi.Errors {
+		if err := dh.database.UpsertFFIError(ctx, errorDef); err != nil {
+			return true, err
+		}
+	}
 
 	return false, nil
 }

@@ -669,7 +669,6 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signi
 			"",
 		}
 	}
-
 	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, nil)
 }
 
@@ -718,10 +717,15 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 	if err != nil {
 		return err
 	}
-	abi, orderedInput, err := e.prepareRequest(ctx, method, input)
+	var errors []*fftypes.FFIError
+	if errorDefs := options["errors"]; errorDefs != nil {
+		errors = errorDefs.([]*fftypes.FFIError)
+	}
+	abi, errorsAbi, orderedInput, err := e.prepareRequest(ctx, method, errors, input)
 	if err != nil {
 		return err
 	}
+	options["errors"] = errorsAbi
 	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, nsOpID, orderedInput, options)
 }
 
@@ -730,10 +734,15 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	if err != nil {
 		return nil, err
 	}
-	abi, orderedInput, err := e.prepareRequest(ctx, method, input)
+	var errors []*fftypes.FFIError
+	if errorDefs := options["errors"]; errorDefs != nil {
+		errors = errorDefs.([]*fftypes.FFIError)
+	}
+	abi, errorsAbi, orderedInput, err := e.prepareRequest(ctx, method, errors, input)
 	if err != nil {
 		return nil, err
 	}
+	options["errors"] = errorsAbi
 	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, abi, orderedInput, options)
 	if err != nil || !res.IsSuccess() {
 		return nil, err
@@ -836,17 +845,34 @@ func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FF
 	return ffi2abi.ABIMethodToSignature(abi)
 }
 
-func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}) (*abi.Entry, []interface{}, error) {
-	orderedInput := make([]interface{}, len(method.Params))
-	abi, err := ffi2abi.ConvertFFIMethodToABI(ctx, method)
+func (e *Ethereum) GenerateErrorSignature(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) string {
+	abi, err := ffi2abi.ConvertFFIErrorDefinitionToABI(ctx, errorDef)
 	if err != nil {
-		return abi, orderedInput, err
+		return ""
+	}
+	return ffi2abi.ABIMethodToSignature(abi)
+}
+
+func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError, input map[string]interface{}) (*abi.Entry, []*abi.Entry, []interface{}, error) {
+	errorsAbi := make([]*abi.Entry, len(errors))
+	orderedInput := make([]interface{}, len(method.Params))
+	abi, err := ffi2abi.ConvertFFIMethodToABI(ctx, method, errors)
+	if err != nil {
+		return abi, errorsAbi, orderedInput, err
+	}
+	for i, ffiError := range errors {
+
+		abi, err := ffi2abi.ConvertFFIErrorDefinitionToABI(ctx, &ffiError.FFIErrorDefinition)
+		if err == nil {
+			errorsAbi[i] = abi
+		}
+
 	}
 	for i, ffiParam := range method.Params {
 
 		orderedInput[i] = input[ffiParam.Name]
 	}
-	return abi, orderedInput, nil
+	return abi, errorsAbi, orderedInput, nil
 }
 
 func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) (string, error) {

@@ -862,6 +862,11 @@ func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIE
 	return event.Name
 }
 
+func (f *Fabric) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIErrorDefinition) string {
+	// not relevant to Fabric blockchains
+	return ""
+}
+
 func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (version int, err error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {

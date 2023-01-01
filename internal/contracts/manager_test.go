@@ -1202,6 +1202,12 @@ func TestGetFFIWithChildren(t *testing.T) {
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIError{
+		{ID: fftypes.NewUUID(), FFIErrorDefinition: fftypes.FFIErrorDefinition{Name: "customError1"}},
+	}, nil, nil)
+	mbi.On("GenerateErrorSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIErrorDefinition) bool {
+		return ev.Name == "customError1"
+	})).Return("error1Sig")
 
 	_, err := cm.GetFFIWithChildren(context.Background(), "ffi", "v1.0.0")
 	assert.NoError(t, err)
@@ -1237,6 +1243,12 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIError{
+		{ID: fftypes.NewUUID(), FFIErrorDefinition: fftypes.FFIErrorDefinition{Name: "customError1"}},
+	}, nil, nil)
+	mbi.On("GenerateErrorSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIErrorDefinition) bool {
+		return ev.Name == "customError1"
+	})).Return("error1Sig")
 
 	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
@@ -2142,6 +2154,12 @@ func TestGetContractAPIInterface(t *testing.T) {
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIError{
+		{ID: fftypes.NewUUID(), FFIErrorDefinition: fftypes.FFIErrorDefinition{Name: "customError1"}},
+	}, nil, nil)
+	mbi.On("GenerateErrorSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIErrorDefinition) bool {
+		return ev.Name == "customError1"
+	})).Return("error1Sig")
 
 	result, err := cm.GetContractAPIInterface(context.Background(), "banana")
 
