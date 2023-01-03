@@ -2383,7 +2383,6 @@ func TestInvokeContractOK(t *testing.T) {
 	}
 	options := map[string]interface{}{
 		"customOption": "customValue",
-		"errors":       errors,
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
@@ -2399,7 +2398,7 @@ func TestInvokeContractOK(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.NoError(t, err)
 }
 
@@ -2420,7 +2419,6 @@ func TestInvokeContractInvalidOption(t *testing.T) {
 	}
 	options := map[string]interface{}{
 		"params": "shouldn't be allowed",
-		"errors": errors,
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
@@ -2435,7 +2433,7 @@ func TestInvokeContractInvalidOption(t *testing.T) {
 			assert.Equal(t, "1000000000000000000000000", params[1])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10398", err)
 }
 
@@ -2456,7 +2454,6 @@ func TestInvokeContractInvalidInput(t *testing.T) {
 	}
 	options := map[string]interface{}{
 		"customOption": "customValue",
-		"errors":       errors,
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
@@ -2472,7 +2469,7 @@ func TestInvokeContractInvalidInput(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "unsupported type", err)
 }
 
@@ -2487,12 +2484,10 @@ func TestInvokeContractAddressNotSet(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
-	options := map[string]interface{}{
-		"errors": errors,
-	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -2511,16 +2506,14 @@ func TestInvokeContractEthconnectError(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
-	options := map[string]interface{}{
-		"errors": errors,
-	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -2546,12 +2539,10 @@ func TestInvokeContractPrepareFail(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
-	options := map[string]interface{}{
-		"errors": errors,
-	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "invalid json", err)
 }
 
@@ -2568,7 +2559,6 @@ func TestQueryContractOK(t *testing.T) {
 	params := map[string]interface{}{}
 	options := map[string]interface{}{
 		"customOption": "customValue",
-		"errors":       errors,
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
@@ -2581,7 +2571,7 @@ func TestQueryContractOK(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
 		})
-	result, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	result, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.NoError(t, err)
 	j, err := json.Marshal(result)
 	assert.NoError(t, err)
@@ -2601,7 +2591,6 @@ func TestQueryContractInvalidOption(t *testing.T) {
 	params := map[string]interface{}{}
 	options := map[string]interface{}{
 		"params": "shouldn't be allowed",
-		"errors": errors,
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
@@ -2613,7 +2602,7 @@ func TestQueryContractInvalidOption(t *testing.T) {
 			assert.Equal(t, "Query", headers["type"])
 			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10398", err)
 }
 
@@ -2635,12 +2624,10 @@ func TestQueryContractErrorPrepare(t *testing.T) {
 	}
 	errors := testFFIErrors()
 	params := map[string]interface{}{}
-	options := map[string]interface{}{
-		"errors": errors,
-	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "invalid json", err)
 }
 
@@ -2654,12 +2641,10 @@ func TestQueryContractAddressNotSet(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
-	options := map[string]interface{}{
-		"errors": errors,
-	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -2677,16 +2662,14 @@ func TestQueryContractEthconnectError(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
-	options := map[string]interface{}{
-		"errors": errors,
-	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, queryOutput{})(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -2704,9 +2687,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
-	options := map[string]interface{}{
-		"errors": errors,
-	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
@@ -2717,7 +2698,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 			assert.Equal(t, "Query", headers["type"])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "invalid character", err)
 }
 

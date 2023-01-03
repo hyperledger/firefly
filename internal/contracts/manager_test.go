@@ -1610,7 +1610,7 @@ func TestInvokeContractFailResolve(t *testing.T) {
 	}
 
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(nil)
+	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input, req.Errors).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
@@ -1723,7 +1723,7 @@ func TestQueryContract(t *testing.T) {
 	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
-	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input, req.Options).Return(struct{}{}, nil)
+	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input, req.Errors, req.Options).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 

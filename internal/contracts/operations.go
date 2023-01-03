@@ -83,7 +83,7 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOp
 	switch data := op.Data.(type) {
 	case blockchainInvokeData:
 		req := data.Request
-		return nil, false, cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, req.Method, req.Input, req.Options)
+		return nil, false, cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, req.Method, req.Input, req.Errors, req.Options)
 
 	case blockchainContractDeployData:
 		req := data.Request

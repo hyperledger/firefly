@@ -278,7 +278,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 		err = send(ctx)
 		return op, err
 	case core.CallTypeQuery:
-		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Options)
+		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Errors, req.Options)
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}
@@ -308,16 +308,9 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req
 		if err != nil || req.Method == nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
 		}
-		errors, err := cm.database.GetFFIErrors(ctx, cm.namespace, req.Interface)
+		req.Errors, err = cm.database.GetFFIErrors(ctx, cm.namespace, req.Interface)
 		if err != nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractErrorsResolveError, err)
-		}
-		if req.Options == nil {
-			req.Options = map[string]interface{}{
-				"errors": errors,
-			}
-		} else {
-			req.Options["errors"] = errors
 		}
 	}
 	return nil

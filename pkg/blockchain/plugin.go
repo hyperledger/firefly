@@ -68,10 +68,10 @@ type Plugin interface {
 	DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
-	InvokeContract(ctx context.Context, nsOpID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error
+	InvokeContract(ctx context.Context, nsOpID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error
 
 	// QueryContract executes a method via custom on-chain logic and returns the result
-	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error)
+	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error)
 
 	// AddContractListener adds a new subscription to a user-specified contract and event
 	AddContractListener(ctx context.Context, subscription *core.ContractListenerInput) error

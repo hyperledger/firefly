@@ -54,7 +54,7 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 		return loc.String() == req.Location.String()
 	}), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
 		return method.Name == req.Method.Name
-	}), req.Input, req.Options).Return(nil)
+	}), req.Input, req.Errors, req.Options).Return(nil)
 
 	po, err := cm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
