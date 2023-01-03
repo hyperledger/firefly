@@ -271,6 +271,6 @@ var (
 	MsgIdempotencyKeyDuplicateMessage     = ffe("FF10430", "Idempotency key '%s' already used for message '%s'", 409)
 	MsgIdempotencyKeyDuplicateTransaction = ffe("FF10431", "Idempotency key '%s' already used for transaction '%s'", 409)
 	MsgNonIdempotencyKeyConflictTxInsert  = ffe("FF10432", "Conflict on insert of transaction '%s'. No existing transaction matching idempotency key '%s' found", 409)
-	MsgErrorNameMustBeSet                 = ffe("FF10433", "Error name must be set", 400)
+	MsgErrorNameMustBeSet                 = ffe("FF10433", "The name of the error must be set", 400)
 	MsgContractErrorsResolveError         = ffe("FF10434", "Unable to resolve contract errors: %s", 400)
 )
