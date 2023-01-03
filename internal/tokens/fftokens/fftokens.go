@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -327,6 +327,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 
 	// These fields are optional
 	standard := data.GetString("standard")
+	interfaceFormat := data.GetString("interfaceFormat")
 	symbol := data.GetString("symbol")
 	decimals := data.GetInt64("decimals")
 	info := data.GetObject("info")
@@ -354,12 +355,13 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 			ID:   poolData.TX,
 			Type: txType,
 		},
-		Connector: ft.configuredName,
-		Standard:  standard,
-		Symbol:    symbol,
-		Decimals:  int(decimals),
-		Info:      info,
-		Event:     ft.buildBlockchainEvent(blockchainEvent),
+		Connector:       ft.configuredName,
+		Standard:        standard,
+		InterfaceFormat: interfaceFormat,
+		Symbol:          symbol,
+		Decimals:        int(decimals),
+		Info:            info,
+		Event:           ft.buildBlockchainEvent(blockchainEvent),
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown

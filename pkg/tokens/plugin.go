@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -112,7 +112,10 @@ type TokenPool struct {
 	// Standard is the well-defined token standard that this pool conforms to (optional)
 	Standard string
 
-	// Decimals is the number of decimal places that this token has
+	// InterfaceFormat is the interface encoding format understood by this connector (optional)
+	InterfaceFormat string
+
+	// Decimals is the number of decimal places that this token has (optional)
 	Decimals int
 
 	// Symbol is the short token symbol, if the connector uses one (optional)

@@ -68,6 +68,7 @@ nav_order: 10
 | `info` | Token connector specific information about the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |
 | `tx` | Reference to the FireFly transaction used to create and broadcast this pool to the network | [`TransactionRef`](#transactionref) |
 | `interface` | A reference to an existing FFI, containing pre-registered type information for the token contract | [`FFIReference`](#ffireference) |
+| `interfaceFormat` | The interface encoding format supported by the connector for this token pool | `string` |
 
 ## TransactionRef
 

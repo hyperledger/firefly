@@ -25362,6 +25362,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: interfaceformat
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: locator
         schema:
           type: string
@@ -25486,6 +25491,10 @@ paths:
                           description: The version of the FireFly interface
                           type: string
                       type: object
+                    interfaceFormat:
+                      description: The interface encoding format supported by the
+                        connector for this token pool
+                      type: string
                     key:
                       description: The signing key used to create the token pool.
                         On input for token connectors that support on-chain deployment
@@ -25677,6 +25686,10 @@ paths:
                         description: The version of the FireFly interface
                         type: string
                     type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -25778,6 +25791,10 @@ paths:
                         description: The version of the FireFly interface
                         type: string
                     type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -25909,6 +25926,10 @@ paths:
                         description: The version of the FireFly interface
                         type: string
                     type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -32733,6 +32754,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: interfaceformat
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: locator
         schema:
           type: string
@@ -32857,6 +32883,10 @@ paths:
                           description: The version of the FireFly interface
                           type: string
                       type: object
+                    interfaceFormat:
+                      description: The interface encoding format supported by the
+                        connector for this token pool
+                      type: string
                     key:
                       description: The signing key used to create the token pool.
                         On input for token connectors that support on-chain deployment
@@ -33041,6 +33071,10 @@ paths:
                         description: The version of the FireFly interface
                         type: string
                     type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -33142,6 +33176,10 @@ paths:
                         description: The version of the FireFly interface
                         type: string
                     type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -33266,6 +33304,10 @@ paths:
                         description: The version of the FireFly interface
                         type: string
                     type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment

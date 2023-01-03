@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -34,6 +34,7 @@ func addPoolDetailsFromPlugin(ffPool *core.TokenPool, pluginPool *tokens.TokenPo
 	ffPool.Locator = pluginPool.PoolLocator
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
+	ffPool.InterfaceFormat = pluginPool.InterfaceFormat
 	ffPool.Decimals = pluginPool.Decimals
 	if pluginPool.TX.ID != nil {
 		ffPool.TX = pluginPool.TX
