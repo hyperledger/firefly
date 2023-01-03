@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -47,6 +47,12 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, pool *core.TokenPoo
 			return nil, err
 		}
 		pool.Connector = connector
+	}
+
+	if pool.Interface != nil {
+		if err := am.contracts.ResolveFFIReference(ctx, pool.Interface); err != nil {
+			return nil, err
+		}
 	}
 
 	var err error

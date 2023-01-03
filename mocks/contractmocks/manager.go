@@ -594,6 +594,20 @@ func (_m *Manager) ResolveFFI(ctx context.Context, ffi *fftypes.FFI) error {
 	return r0
 }
 
+// ResolveFFIReference provides a mock function with given fields: ctx, ref
+func (_m *Manager) ResolveFFIReference(ctx context.Context, ref *fftypes.FFIReference) error {
+	ret := _m.Called(ctx, ref)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIReference) error); ok {
+		r0 = rf(ctx, ref)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RunOperation provides a mock function with given fields: ctx, op
 func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation) (fftypes.JSONObject, bool, error) {
 	ret := _m.Called(ctx, op)

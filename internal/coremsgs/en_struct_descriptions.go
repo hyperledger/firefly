@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -561,7 +561,7 @@ var (
 	TokenPoolConfig    = ffm("TokenPool.config", "Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details")
 	TokenPoolInfo      = ffm("TokenPool.info", "Token connector specific information about the pool. See your chosen token connector documentation for details")
 	TokenPoolTX        = ffm("TokenPool.tx", "Reference to the FireFly transaction used to create and broadcast this pool to the network")
-	TokenPoolInterface = ffm("TokenPool.interface", "The UUID of the contract interface that defines the methods and events for this token pool")
+	TokenPoolInterface = ffm("TokenPool.interface", "A reference to an existing FFI, containing pre-registered type information for the token contract")
 
 	// TokenPoolInput field descriptions
 	TokenPoolInputIdempotencyKey = ffm("TokenPoolInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")

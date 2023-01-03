@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -89,6 +89,11 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 	}
 	rows.Close()
 
+	var interfaceID *fftypes.UUID
+	if pool.Interface != nil {
+		interfaceID = pool.Interface.ID
+	}
+
 	if existing {
 		if _, err = s.UpdateTx(ctx, tokenpoolTable, tx,
 			sq.Update(tokenpoolTable).
@@ -104,7 +109,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 				Set("tx_type", pool.TX.Type).
 				Set("tx_id", pool.TX.ID).
 				Set("info", pool.Info).
-				Set("interface", pool.Interface).
+				Set("interface", interfaceID).
 				Where(sq.Eq{"id": pool.ID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
@@ -133,7 +138,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 					pool.TX.Type,
 					pool.TX.ID,
 					pool.Info,
-					pool.Interface,
+					interfaceID,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeCreated, pool.Namespace, pool.ID)
@@ -148,6 +153,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 
 func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.TokenPool, error) {
 	pool := core.TokenPool{}
+	iface := fftypes.FFIReference{}
 	err := row.Scan(
 		&pool.ID,
 		&pool.Namespace,
@@ -164,8 +170,11 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.T
 		&pool.TX.Type,
 		&pool.TX.ID,
 		&pool.Info,
-		&pool.Interface,
+		&iface.ID,
 	)
+	if iface.ID != nil {
+		pool.Interface = &iface
+	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, tokenpoolTable)
 	}

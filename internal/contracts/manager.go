@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -46,6 +46,7 @@ type Manager interface {
 	GetFFIEvents(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIEvent, error)
 	GetFFIs(ctx context.Context, filter ffapi.AndFilter) ([]*fftypes.FFI, *ffapi.FilterResult, error)
 	ResolveFFI(ctx context.Context, ffi *fftypes.FFI) error
+	ResolveFFIReference(ctx context.Context, ref *fftypes.FFIReference) error
 
 	DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (interface{}, error)
 	InvokeContract(ctx context.Context, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
@@ -357,7 +358,7 @@ func (cm *contractManager) ResolveContractAPI(ctx context.Context, httpServerURL
 			}
 		}
 
-		if err := cm.resolveFFIReference(ctx, api.Interface); err != nil {
+		if err := cm.ResolveFFIReference(ctx, api.Interface); err != nil {
 			return err
 		}
 		return nil
@@ -372,7 +373,7 @@ func (cm *contractManager) ResolveContractAPI(ctx context.Context, httpServerURL
 	return nil
 }
 
-func (cm *contractManager) resolveFFIReference(ctx context.Context, ref *fftypes.FFIReference) error {
+func (cm *contractManager) ResolveFFIReference(ctx context.Context, ref *fftypes.FFIReference) error {
 	switch {
 	case ref == nil:
 		return i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotFound, "")
@@ -504,7 +505,7 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 }
 
 func (cm *contractManager) resolveEvent(ctx context.Context, ffi *fftypes.FFIReference, eventPath string) (*core.FFISerializedEvent, error) {
-	if err := cm.resolveFFIReference(ctx, ffi); err != nil {
+	if err := cm.ResolveFFIReference(ctx, ffi); err != nil {
 		return nil, err
 	}
 	event, err := cm.database.GetFFIEvent(ctx, cm.namespace, ffi.ID, eventPath)

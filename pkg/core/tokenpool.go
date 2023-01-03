@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,23 +48,23 @@ type TokenPoolInput struct {
 }
 
 type TokenPool struct {
-	ID        *fftypes.UUID      `ffstruct:"TokenPool" json:"id,omitempty" ffexcludeinput:"true"`
-	Type      TokenType          `ffstruct:"TokenPool" json:"type" ffenum:"tokentype"`
-	Namespace string             `ffstruct:"TokenPool" json:"namespace,omitempty" ffexcludeinput:"true"`
-	Name      string             `ffstruct:"TokenPool" json:"name,omitempty"`
-	Standard  string             `ffstruct:"TokenPool" json:"standard,omitempty" ffexcludeinput:"true"`
-	Locator   string             `ffstruct:"TokenPool" json:"locator,omitempty" ffexcludeinput:"true"`
-	Key       string             `ffstruct:"TokenPool" json:"key,omitempty"`
-	Symbol    string             `ffstruct:"TokenPool" json:"symbol,omitempty"`
-	Decimals  int                `ffstruct:"TokenPool" json:"decimals,omitempty" ffexcludeinput:"true"`
-	Connector string             `ffstruct:"TokenPool" json:"connector,omitempty"`
-	Message   *fftypes.UUID      `ffstruct:"TokenPool" json:"message,omitempty" ffexcludeinput:"true"`
-	State     TokenPoolState     `ffstruct:"TokenPool" json:"state,omitempty" ffenum:"tokenpoolstate" ffexcludeinput:"true"`
-	Created   *fftypes.FFTime    `ffstruct:"TokenPool" json:"created,omitempty" ffexcludeinput:"true"`
-	Config    fftypes.JSONObject `ffstruct:"TokenPool" json:"config,omitempty" ffexcludeoutput:"true"` // for REST calls only (not stored)
-	Info      fftypes.JSONObject `ffstruct:"TokenPool" json:"info,omitempty" ffexcludeinput:"true"`
-	TX        TransactionRef     `ffstruct:"TokenPool" json:"tx,omitempty" ffexcludeinput:"true"`
-	Interface *fftypes.UUID      `ffstruct:"TokenPool" json:"interface,omitempty"`
+	ID        *fftypes.UUID         `ffstruct:"TokenPool" json:"id,omitempty" ffexcludeinput:"true"`
+	Type      TokenType             `ffstruct:"TokenPool" json:"type" ffenum:"tokentype"`
+	Namespace string                `ffstruct:"TokenPool" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Name      string                `ffstruct:"TokenPool" json:"name,omitempty"`
+	Standard  string                `ffstruct:"TokenPool" json:"standard,omitempty" ffexcludeinput:"true"`
+	Locator   string                `ffstruct:"TokenPool" json:"locator,omitempty" ffexcludeinput:"true"`
+	Key       string                `ffstruct:"TokenPool" json:"key,omitempty"`
+	Symbol    string                `ffstruct:"TokenPool" json:"symbol,omitempty"`
+	Decimals  int                   `ffstruct:"TokenPool" json:"decimals,omitempty" ffexcludeinput:"true"`
+	Connector string                `ffstruct:"TokenPool" json:"connector,omitempty"`
+	Message   *fftypes.UUID         `ffstruct:"TokenPool" json:"message,omitempty" ffexcludeinput:"true"`
+	State     TokenPoolState        `ffstruct:"TokenPool" json:"state,omitempty" ffenum:"tokenpoolstate" ffexcludeinput:"true"`
+	Created   *fftypes.FFTime       `ffstruct:"TokenPool" json:"created,omitempty" ffexcludeinput:"true"`
+	Config    fftypes.JSONObject    `ffstruct:"TokenPool" json:"config,omitempty" ffexcludeoutput:"true"` // for REST calls only (not stored)
+	Info      fftypes.JSONObject    `ffstruct:"TokenPool" json:"info,omitempty" ffexcludeinput:"true"`
+	TX        TransactionRef        `ffstruct:"TokenPool" json:"tx,omitempty" ffexcludeinput:"true"`
+	Interface *fftypes.FFIReference `ffstruct:"TokenPool" json:"interface,omitempty"`
 }
 
 type TokenPoolAnnouncement struct {

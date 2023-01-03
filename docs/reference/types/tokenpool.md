@@ -67,7 +67,7 @@ nav_order: 10
 | `config` | Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |
 | `info` | Token connector specific information about the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |
 | `tx` | Reference to the FireFly transaction used to create and broadcast this pool to the network | [`TransactionRef`](#transactionref) |
-| `interface` | The UUID of the contract interface that defines the methods and events for this token pool | [`UUID`](simpletypes#uuid) |
+| `interface` | A reference to an existing FFI, containing pre-registered type information for the token contract | [`FFIReference`](#ffireference) |
 
 ## TransactionRef
 
@@ -75,5 +75,14 @@ nav_order: 10
 |------------|-------------|------|
 | `type` | The type of the FireFly transaction | `FFEnum`: |
 | `id` | The UUID of the FireFly transaction | [`UUID`](simpletypes#uuid) |
+
+
+## FFIReference
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `id` | The UUID of the FireFly interface | [`UUID`](simpletypes#uuid) |
+| `name` | The name of the FireFly interface | `string` |
+| `version` | The version of the FireFly interface | `string` |
 
 

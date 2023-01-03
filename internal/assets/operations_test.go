@@ -493,7 +493,7 @@ func TestRunOperationTransferMintWithInterface(t *testing.T) {
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 		Locator:   "F1",
-		Interface: fftypes.NewUUID(),
+		Interface: &fftypes.FFIReference{ID: fftypes.NewUUID()},
 	}
 	transfer := &core.TokenTransfer{
 		Type: core.TokenTransferTypeMint,
@@ -504,7 +504,7 @@ func TestRunOperationTransferMintWithInterface(t *testing.T) {
 	}
 
 	mcm := am.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFIMethods", context.Background(), pool.Interface).Return(methods, nil)
+	mcm.On("GetFFIMethods", context.Background(), pool.Interface.ID).Return(methods, nil)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mti.On("MintTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, methods).Return(nil)
 
@@ -528,14 +528,14 @@ func TestRunOperationTransferMintWithInterfaceFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 		Locator:   "F1",
-		Interface: fftypes.NewUUID(),
+		Interface: &fftypes.FFIReference{ID: fftypes.NewUUID()},
 	}
 	transfer := &core.TokenTransfer{
 		Type: core.TokenTransferTypeMint,
 	}
 
 	mcm := am.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFIMethods", context.Background(), pool.Interface).Return(nil, fmt.Errorf("pop"))
+	mcm.On("GetFFIMethods", context.Background(), pool.Interface.ID).Return(nil, fmt.Errorf("pop"))
 
 	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
@@ -610,12 +610,12 @@ func TestRunOperationApprovalWithInterfaceFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 		Locator:   "F1",
-		Interface: fftypes.NewUUID(),
+		Interface: &fftypes.FFIReference{ID: fftypes.NewUUID()},
 	}
 	approval := &core.TokenApproval{}
 
 	mcm := am.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFIMethods", context.Background(), pool.Interface).Return(nil, fmt.Errorf("pop"))
+	mcm.On("GetFFIMethods", context.Background(), pool.Interface.ID).Return(nil, fmt.Errorf("pop"))
 
 	_, complete, err := am.RunOperation(context.Background(), opApproval(op, pool, approval))
 

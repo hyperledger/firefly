@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -129,9 +129,12 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		if err != nil {
 			return nil, false, err
 		}
-		methods, err := am.getFFIMethods(ctx, data.Pool.Interface)
-		if err != nil {
-			return nil, false, err
+		var methods []*fftypes.FFIMethod
+		if data.Pool.Interface != nil {
+			methods, err = am.getFFIMethods(ctx, data.Pool.Interface.ID)
+			if err != nil {
+				return nil, false, err
+			}
 		}
 		switch data.Transfer.Type {
 		case core.TokenTransferTypeMint:
@@ -149,9 +152,12 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		if err != nil {
 			return nil, false, err
 		}
-		methods, err := am.getFFIMethods(ctx, data.Pool.Interface)
-		if err != nil {
-			return nil, false, err
+		var methods []*fftypes.FFIMethod
+		if data.Pool.Interface != nil {
+			methods, err = am.getFFIMethods(ctx, data.Pool.Interface.ID)
+			if err != nil {
+				return nil, false, err
+			}
 		}
 		return nil, false, plugin.TokensApproval(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Approval, methods)
 
