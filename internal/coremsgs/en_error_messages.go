@@ -33,7 +33,7 @@ var (
 	MsgWebsocketClientError               = ffe("FF10108", "Error received from WebSocket client: %s")
 	Msg404NotFound                        = ffe("FF10109", "Not found", 404)
 	MsgUnknownBlockchainPlugin            = ffe("FF10110", "Unknown blockchain plugin: %s")
-	MsgEthconnectRESTErr                  = ffe("FF10111", "Error from ethereum connector: %s")
+	MsgEthConnectorRESTErr                = ffe("FF10111", "Error from ethereum connector: %s")
 	MsgDBInitFailed                       = ffe("FF10112", "Database initialization failed")
 	MsgDBQueryBuildFailed                 = ffe("FF10113", "Database query builder failed")
 	MsgDBBeginFailed                      = ffe("FF10114", "Database begin transaction failed")

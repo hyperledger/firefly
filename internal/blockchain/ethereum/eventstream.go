@@ -78,7 +78,7 @@ func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventSt
 		SetResult(&streams).
 		Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return streams, nil
 }
@@ -105,7 +105,7 @@ func (s *streamManager) createEventStream(ctx context.Context, topic string, bat
 		SetResult(stream).
 		Post("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return stream, nil
 }
@@ -118,7 +118,7 @@ func (s *streamManager) updateEventStream(ctx context.Context, topic string, bat
 		SetResult(stream).
 		Patch("/eventstreams/" + eventStreamID)
 	if err != nil || !res.IsSuccess() {
-		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return stream, nil
 }
@@ -146,7 +146,7 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 		SetResult(&subs).
 		Get("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return subs, nil
 }
@@ -157,7 +157,7 @@ func (s *streamManager) getSubscription(ctx context.Context, subID string) (sub 
 		SetResult(&sub).
 		Get(fmt.Sprintf("/subscriptions/%s", subID))
 	if err != nil || !res.IsSuccess() {
-		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return sub, nil
 }
@@ -200,7 +200,7 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		SetResult(&sub).
 		Post("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return &sub, nil
 }
@@ -210,7 +210,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 		SetContext(ctx).
 		Delete("/subscriptions/" + subID)
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return nil
 }

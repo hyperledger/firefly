@@ -518,9 +518,9 @@ func (e *Ethereum) NormalizeSigningKey(ctx context.Context, key string) (string,
 
 func wrapError(ctx context.Context, errRes *ethError, res *resty.Response, err error) error {
 	if errRes != nil && errRes.Error != "" {
-		return i18n.WrapError(ctx, err, coremsgs.MsgEthconnectRESTErr, errRes.Error)
+		return i18n.WrapError(ctx, err, coremsgs.MsgEthConnectorRESTErr, errRes.Error)
 	}
-	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 }
 
 func (e *Ethereum) buildEthconnectRequestBody(ctx context.Context, messageType, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (map[string]interface{}, error) {
@@ -875,7 +875,7 @@ func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) 
 		SetContext(ctx).
 		Get(instancePath)
 	if err != nil || !res.IsSuccess() {
-		return "", ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return "", ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	var output map[string]string
 	if err = json.Unmarshal(res.Body(), &output); err != nil {
