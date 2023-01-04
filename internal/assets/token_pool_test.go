@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
+	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -752,4 +753,31 @@ func TestGetTokenPools(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestResolvePoolMethods(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	methods := []*fftypes.FFIMethod{{Name: "method1"}}
+	resolved := fftypes.JSONAnyPtr(`"resolved"`)
+
+	mcm := am.contracts.(*contractmocks.Manager)
+	mcm.On("GetFFIMethods", context.Background(), pool.Interface.ID).Return(methods, nil)
+
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mti.On("CheckInterface", context.Background(), pool, methods).Return(resolved, nil)
+
+	err := am.ResolvePoolMethods(context.Background(), pool)
+	assert.NoError(t, err)
+	assert.Equal(t, resolved, pool.Methods)
+
+	mcm.AssertExpectations(t)
+	mti.AssertExpectations(t)
 }

@@ -22,7 +22,6 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/txcommon"
-	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -117,7 +116,7 @@ func TestPrepareAndRunTransfer(t *testing.T) {
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
-	mti.On("TransferTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, ([]*fftypes.FFIMethod)(nil)).Return(nil)
+	mti.On("TransferTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, (*fftypes.JSONAny)(nil)).Return(nil)
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
@@ -156,7 +155,7 @@ func TestPrepareAndRunApproval(t *testing.T) {
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
-	mti.On("TokensApproval", context.Background(), "ns1:"+op.ID.String(), "F1", approval, ([]*fftypes.FFIMethod)(nil)).Return(nil)
+	mti.On("TokensApproval", context.Background(), "ns1:"+op.ID.String(), "F1", approval, (*fftypes.JSONAny)(nil)).Return(nil)
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
@@ -472,7 +471,7 @@ func TestRunOperationTransferMint(t *testing.T) {
 	}
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("MintTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, ([]*fftypes.FFIMethod)(nil)).Return(nil)
+	mti.On("MintTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, (*fftypes.JSONAny)(nil)).Return(nil)
 
 	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
@@ -493,56 +492,21 @@ func TestRunOperationTransferMintWithInterface(t *testing.T) {
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 		Locator:   "F1",
-		Interface: &fftypes.FFIReference{ID: fftypes.NewUUID()},
+		Methods:   fftypes.JSONAnyPtr(`{"mint": "test_interface"}`),
 	}
 	transfer := &core.TokenTransfer{
 		Type: core.TokenTransferTypeMint,
 	}
-	methods := []*fftypes.FFIMethod{
-		{Name: "method1"},
-		{Name: "method2"},
-	}
 
-	mcm := am.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFIMethods", context.Background(), pool.Interface.ID).Return(methods, nil)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("MintTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, methods).Return(nil)
+	mti.On("MintTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, pool.Methods).Return(nil)
 
 	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
 	assert.False(t, complete)
 	assert.NoError(t, err)
 
-	mcm.AssertExpectations(t)
 	mti.AssertExpectations(t)
-}
-
-func TestRunOperationTransferMintWithInterfaceFail(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	op := &core.Operation{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-	}
-	pool := &core.TokenPool{
-		Connector: "magic-tokens",
-		Locator:   "F1",
-		Interface: &fftypes.FFIReference{ID: fftypes.NewUUID()},
-	}
-	transfer := &core.TokenTransfer{
-		Type: core.TokenTransferTypeMint,
-	}
-
-	mcm := am.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFIMethods", context.Background(), pool.Interface.ID).Return(nil, fmt.Errorf("pop"))
-
-	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
-
-	assert.False(t, complete)
-	assert.EqualError(t, err, "pop")
-
-	mcm.AssertExpectations(t)
 }
 
 func TestRunOperationTransferBurn(t *testing.T) {
@@ -562,7 +526,7 @@ func TestRunOperationTransferBurn(t *testing.T) {
 	}
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("BurnTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, ([]*fftypes.FFIMethod)(nil)).Return(nil)
+	mti.On("BurnTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, (*fftypes.JSONAny)(nil)).Return(nil)
 
 	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
@@ -589,7 +553,7 @@ func TestRunOperationTransfer(t *testing.T) {
 	}
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("TransferTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, ([]*fftypes.FFIMethod)(nil)).Return(nil)
+	mti.On("TransferTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, (*fftypes.JSONAny)(nil)).Return(nil)
 
 	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
@@ -597,32 +561,6 @@ func TestRunOperationTransfer(t *testing.T) {
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
-}
-
-func TestRunOperationApprovalWithInterfaceFail(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	op := &core.Operation{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-	}
-	pool := &core.TokenPool{
-		Connector: "magic-tokens",
-		Locator:   "F1",
-		Interface: &fftypes.FFIReference{ID: fftypes.NewUUID()},
-	}
-	approval := &core.TokenApproval{}
-
-	mcm := am.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFIMethods", context.Background(), pool.Interface.ID).Return(nil, fmt.Errorf("pop"))
-
-	_, complete, err := am.RunOperation(context.Background(), opApproval(op, pool, approval))
-
-	assert.False(t, complete)
-	assert.EqualError(t, err, "pop")
-
-	mcm.AssertExpectations(t)
 }
 
 func TestOperationUpdatePool(t *testing.T) {

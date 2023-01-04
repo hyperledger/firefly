@@ -180,3 +180,15 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 	}
 	return pool, nil
 }
+
+func (am *assetManager) ResolvePoolMethods(ctx context.Context, pool *core.TokenPool) error {
+	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
+	if err == nil && pool.Interface != nil && pool.Interface.ID != nil && am.contracts != nil {
+		var methods []*fftypes.FFIMethod
+		methods, err = am.contracts.GetFFIMethods(ctx, pool.Interface.ID)
+		if err == nil {
+			pool.Methods, err = plugin.CheckInterface(ctx, pool, methods)
+		}
+	}
+	return err
+}

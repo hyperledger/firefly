@@ -563,6 +563,7 @@ var (
 	TokenPoolTX              = ffm("TokenPool.tx", "Reference to the FireFly transaction used to create and broadcast this pool to the network")
 	TokenPoolInterface       = ffm("TokenPool.interface", "A reference to an existing FFI, containing pre-registered type information for the token contract")
 	TokenPoolInterfaceFormat = ffm("TokenPool.interfaceFormat", "The interface encoding format supported by the connector for this token pool")
+	TokenPoolMethods         = ffm("TokenPool.methods", "The method definitions resolved by the token connector to be used by each token operation")
 
 	// TokenPoolInput field descriptions
 	TokenPoolInputIdempotencyKey = ffm("TokenPoolInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")

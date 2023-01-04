@@ -154,7 +154,14 @@ type activatePool struct {
 }
 
 type tokenInterface struct {
-	ABI []*abi.Entry `json:"abi,omitempty"`
+	Format  core.TokenInterfaceFormat `json:"format"`
+	ABI     []*abi.Entry              `json:"abi,omitempty"`
+	Methods []*fftypes.FFIMethod      `json:"methods,omitempty"`
+}
+
+type checkInterface struct {
+	tokenInterface
+	PoolLocator string `json:"poolLocator"`
 }
 
 type mintTokens struct {
@@ -167,7 +174,7 @@ type mintTokens struct {
 	Data        string             `json:"data,omitempty"`
 	URI         string             `json:"uri,omitempty"`
 	Config      fftypes.JSONObject `json:"config"`
-	Interface   *tokenInterface    `json:"interface,omitempty"`
+	Interface   interface{}        `json:"interface,omitempty"`
 }
 
 type burnTokens struct {
@@ -179,7 +186,7 @@ type burnTokens struct {
 	Signer      string             `json:"signer"`
 	Data        string             `json:"data,omitempty"`
 	Config      fftypes.JSONObject `json:"config"`
-	Interface   *tokenInterface    `json:"interface,omitempty"`
+	Interface   interface{}        `json:"interface,omitempty"`
 }
 
 type transferTokens struct {
@@ -192,7 +199,7 @@ type transferTokens struct {
 	Signer      string             `json:"signer"`
 	Data        string             `json:"data,omitempty"`
 	Config      fftypes.JSONObject `json:"config"`
-	Interface   *tokenInterface    `json:"interface,omitempty"`
+	Interface   interface{}        `json:"interface,omitempty"`
 }
 
 type tokenApproval struct {
@@ -203,7 +210,7 @@ type tokenApproval struct {
 	RequestID   string             `json:"requestId,omitempty"`
 	Data        string             `json:"data,omitempty"`
 	Config      fftypes.JSONObject `json:"config"`
-	Interface   *tokenInterface    `json:"interface,omitempty"`
+	Interface   interface{}        `json:"interface,omitempty"`
 }
 
 type tokenError struct {
@@ -655,10 +662,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *
 	return false, nil
 }
 
-func (ft *FFTokens) prepareABI(ctx context.Context, methods []*fftypes.FFIMethod) (*tokenInterface, error) {
-	if methods == nil {
-		return nil, nil
-	}
+func (ft *FFTokens) prepareABI(ctx context.Context, methods []*fftypes.FFIMethod) ([]*abi.Entry, error) {
 	abiMethods := make([]*abi.Entry, len(methods))
 	for i, method := range methods {
 		abi, err := ffi2abi.ConvertFFIMethodToABI(ctx, method)
@@ -667,10 +671,47 @@ func (ft *FFTokens) prepareABI(ctx context.Context, methods []*fftypes.FFIMethod
 		}
 		abiMethods[i] = abi
 	}
-	return &tokenInterface{ABI: abiMethods}, nil
+	return abiMethods, nil
 }
 
-func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer, methods []*fftypes.FFIMethod) error {
+func (ft *FFTokens) CheckInterface(ctx context.Context, pool *core.TokenPool, methods []*fftypes.FFIMethod) (*fftypes.JSONAny, error) {
+	body := checkInterface{
+		PoolLocator: pool.Locator,
+		tokenInterface: tokenInterface{
+			Format: pool.InterfaceFormat,
+		},
+	}
+
+	switch pool.InterfaceFormat {
+	case core.TokenInterfaceFormatFFI:
+		body.tokenInterface.Methods = methods
+	case core.TokenInterfaceFormatABI:
+		abi, err := ft.prepareABI(ctx, methods)
+		if err != nil {
+			return nil, err
+		}
+		body.tokenInterface.ABI = abi
+	default:
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownInterfaceFormat, pool.InterfaceFormat)
+	}
+
+	var errRes tokenError
+	res, err := ft.client.R().SetContext(ctx).
+		SetBody(&body).
+		SetError(&errRes).
+		Post("/api/v1/checkinterface")
+	if err != nil || !res.IsSuccess() {
+		return nil, wrapError(ctx, &errRes, res, err)
+	}
+
+	var obj tokens.TokenPoolMethods
+	if err := json.Unmarshal(res.Body(), &obj); err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
+	}
+	return fftypes.JSONAnyPtrBytes(res.Body()), nil
+}
+
+func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer, methods *fftypes.JSONAny) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          mint.TX.ID,
 		TXType:      mint.TX.Type,
@@ -678,9 +719,9 @@ func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator s
 		MessageHash: mint.MessageHash,
 	})
 
-	iface, err := ft.prepareABI(ctx, methods)
-	if err != nil {
-		return err
+	var iface interface{}
+	if methods != nil {
+		iface = methods.JSONObject()["mint"]
 	}
 
 	var errRes tokenError
@@ -705,7 +746,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator s
 	return nil
 }
 
-func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer, methods []*fftypes.FFIMethod) error {
+func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer, methods *fftypes.JSONAny) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          burn.TX.ID,
 		TXType:      burn.TX.Type,
@@ -713,9 +754,9 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator s
 		MessageHash: burn.MessageHash,
 	})
 
-	iface, err := ft.prepareABI(ctx, methods)
-	if err != nil {
-		return err
+	var iface interface{}
+	if methods != nil {
+		iface = methods.JSONObject()["burn"]
 	}
 
 	var errRes tokenError
@@ -739,7 +780,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator s
 	return nil
 }
 
-func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer, methods []*fftypes.FFIMethod) error {
+func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer, methods *fftypes.JSONAny) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          transfer.TX.ID,
 		TXType:      transfer.TX.Type,
@@ -747,9 +788,9 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocat
 		MessageHash: transfer.MessageHash,
 	})
 
-	iface, err := ft.prepareABI(ctx, methods)
-	if err != nil {
-		return err
+	var iface interface{}
+	if methods != nil {
+		iface = methods.JSONObject()["transfer"]
 	}
 
 	var errRes tokenError
@@ -774,7 +815,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocat
 	return nil
 }
 
-func (ft *FFTokens) TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval, methods []*fftypes.FFIMethod) error {
+func (ft *FFTokens) TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval, methods *fftypes.JSONAny) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          approval.TX.ID,
 		TXType:      approval.TX.Type,
@@ -782,9 +823,9 @@ func (ft *FFTokens) TokensApproval(ctx context.Context, nsOpID string, poolLocat
 		MessageHash: approval.MessageHash,
 	})
 
-	iface, err := ft.prepareABI(ctx, methods)
-	if err != nil {
-		return err
+	var iface interface{}
+	if methods != nil {
+		iface = methods.JSONObject()["approval"]
 	}
 
 	var errRes tokenError

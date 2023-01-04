@@ -25494,6 +25494,9 @@ paths:
                     interfaceFormat:
                       description: The interface encoding format supported by the
                         connector for this token pool
+                      enum:
+                      - abi
+                      - ffi
                       type: string
                     key:
                       description: The signing key used to create the token pool.
@@ -25510,6 +25513,9 @@ paths:
                         the network to index this pool
                       format: uuid
                       type: string
+                    methods:
+                      description: The method definitions resolved by the token connector
+                        to be used by each token operation
                     name:
                       description: The name of the token pool. Note the name is not
                         validated against the description of the token on the blockchain
@@ -25689,6 +25695,9 @@ paths:
                   interfaceFormat:
                     description: The interface encoding format supported by the connector
                       for this token pool
+                    enum:
+                    - abi
+                    - ffi
                     type: string
                   key:
                     description: The signing key used to create the token pool. On
@@ -25705,6 +25714,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -25794,6 +25806,9 @@ paths:
                   interfaceFormat:
                     description: The interface encoding format supported by the connector
                       for this token pool
+                    enum:
+                    - abi
+                    - ffi
                     type: string
                   key:
                     description: The signing key used to create the token pool. On
@@ -25810,6 +25825,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -25929,6 +25947,9 @@ paths:
                   interfaceFormat:
                     description: The interface encoding format supported by the connector
                       for this token pool
+                    enum:
+                    - abi
+                    - ffi
                     type: string
                   key:
                     description: The signing key used to create the token pool. On
@@ -25945,6 +25966,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -32886,6 +32910,9 @@ paths:
                     interfaceFormat:
                       description: The interface encoding format supported by the
                         connector for this token pool
+                      enum:
+                      - abi
+                      - ffi
                       type: string
                     key:
                       description: The signing key used to create the token pool.
@@ -32902,6 +32929,9 @@ paths:
                         the network to index this pool
                       format: uuid
                       type: string
+                    methods:
+                      description: The method definitions resolved by the token connector
+                        to be used by each token operation
                     name:
                       description: The name of the token pool. Note the name is not
                         validated against the description of the token on the blockchain
@@ -33074,6 +33104,9 @@ paths:
                   interfaceFormat:
                     description: The interface encoding format supported by the connector
                       for this token pool
+                    enum:
+                    - abi
+                    - ffi
                     type: string
                   key:
                     description: The signing key used to create the token pool. On
@@ -33090,6 +33123,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -33179,6 +33215,9 @@ paths:
                   interfaceFormat:
                     description: The interface encoding format supported by the connector
                       for this token pool
+                    enum:
+                    - abi
+                    - ffi
                     type: string
                   key:
                     description: The signing key used to create the token pool. On
@@ -33195,6 +33234,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -33307,6 +33349,9 @@ paths:
                   interfaceFormat:
                     description: The interface encoding format supported by the connector
                       for this token pool
+                    enum:
+                    - abi
+                    - ffi
                     type: string
                   key:
                     description: The signing key used to create the token pool. On
@@ -33323,6 +33368,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain

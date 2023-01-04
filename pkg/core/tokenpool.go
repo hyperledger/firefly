@@ -42,6 +42,13 @@ var (
 	TokenPoolStateConfirmed = fftypes.FFEnumValue("tokenpoolstate", "confirmed")
 )
 
+type TokenInterfaceFormat = fftypes.FFEnum
+
+var (
+	TokenInterfaceFormatABI = fftypes.FFEnumValue("tokeninterfaceformat", "abi")
+	TokenInterfaceFormatFFI = fftypes.FFEnumValue("tokeninterfaceformat", "ffi")
+)
+
 type TokenPoolInput struct {
 	TokenPool
 	IdempotencyKey IdempotencyKey `ffstruct:"TokenPoolInput" json:"idempotencyKey,omitempty" ffexcludeoutput:"true"`
@@ -65,7 +72,8 @@ type TokenPool struct {
 	Info            fftypes.JSONObject    `ffstruct:"TokenPool" json:"info,omitempty" ffexcludeinput:"true"`
 	TX              TransactionRef        `ffstruct:"TokenPool" json:"tx,omitempty" ffexcludeinput:"true"`
 	Interface       *fftypes.FFIReference `ffstruct:"TokenPool" json:"interface,omitempty"`
-	InterfaceFormat string                `ffstruct:"TokenPool" json:"interfaceFormat,omitempty" ffexcludeinput:"true"`
+	InterfaceFormat TokenInterfaceFormat  `ffstruct:"TokenPool" json:"interfaceFormat,omitempty" ffenum:"tokeninterfaceformat" ffexcludeinput:"true"`
+	Methods         *fftypes.JSONAny      `ffstruct:"TokenPool" json:"methods,omitempty" ffexcludeinput:"true"`
 }
 
 type TokenPoolAnnouncement struct {

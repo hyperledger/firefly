@@ -49,6 +49,7 @@ var (
 		"info",
 		"interface",
 		"interface_format",
+		"methods",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
 		"message":         "message_id",
@@ -113,6 +114,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 				Set("info", pool.Info).
 				Set("interface", interfaceID).
 				Set("interface_format", pool.InterfaceFormat).
+				Set("methods", pool.Methods).
 				Where(sq.Eq{"id": pool.ID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
@@ -143,6 +145,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 					pool.Info,
 					interfaceID,
 					pool.InterfaceFormat,
+					pool.Methods,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeCreated, pool.Namespace, pool.ID)
@@ -176,6 +179,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.T
 		&pool.Info,
 		&iface.ID,
 		&pool.InterfaceFormat,
+		&pool.Methods,
 	)
 	if iface.ID != nil {
 		pool.Interface = &iface

@@ -43,11 +43,11 @@ func (_m *Plugin) ActivateTokenPool(ctx context.Context, nsOpID string, pool *co
 }
 
 // BurnTokens provides a mock function with given fields: ctx, nsOpID, poolLocator, burn, methods
-func (_m *Plugin) BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer, methods []*fftypes.FFIMethod) error {
+func (_m *Plugin) BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer, methods *fftypes.JSONAny) error {
 	ret := _m.Called(ctx, nsOpID, poolLocator, burn, methods)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.TokenTransfer, []*fftypes.FFIMethod) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.TokenTransfer, *fftypes.JSONAny) error); ok {
 		r0 = rf(ctx, nsOpID, poolLocator, burn, methods)
 	} else {
 		r0 = ret.Error(0)
@@ -70,6 +70,29 @@ func (_m *Plugin) Capabilities() *tokens.Capabilities {
 	}
 
 	return r0
+}
+
+// CheckInterface provides a mock function with given fields: ctx, pool, methods
+func (_m *Plugin) CheckInterface(ctx context.Context, pool *core.TokenPool, methods []*fftypes.FFIMethod) (*fftypes.JSONAny, error) {
+	ret := _m.Called(ctx, pool, methods)
+
+	var r0 *fftypes.JSONAny
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool, []*fftypes.FFIMethod) *fftypes.JSONAny); ok {
+		r0 = rf(ctx, pool, methods)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.JSONAny)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenPool, []*fftypes.FFIMethod) error); ok {
+		r1 = rf(ctx, pool, methods)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // CreateTokenPool provides a mock function with given fields: ctx, nsOpID, pool
@@ -113,11 +136,11 @@ func (_m *Plugin) InitConfig(_a0 config.KeySet) {
 }
 
 // MintTokens provides a mock function with given fields: ctx, nsOpID, poolLocator, mint, methods
-func (_m *Plugin) MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer, methods []*fftypes.FFIMethod) error {
+func (_m *Plugin) MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer, methods *fftypes.JSONAny) error {
 	ret := _m.Called(ctx, nsOpID, poolLocator, mint, methods)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.TokenTransfer, []*fftypes.FFIMethod) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.TokenTransfer, *fftypes.JSONAny) error); ok {
 		r0 = rf(ctx, nsOpID, poolLocator, mint, methods)
 	} else {
 		r0 = ret.Error(0)
@@ -165,11 +188,11 @@ func (_m *Plugin) Start() error {
 }
 
 // TokensApproval provides a mock function with given fields: ctx, nsOpID, poolLocator, approval, methods
-func (_m *Plugin) TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval, methods []*fftypes.FFIMethod) error {
+func (_m *Plugin) TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval, methods *fftypes.JSONAny) error {
 	ret := _m.Called(ctx, nsOpID, poolLocator, approval, methods)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.TokenApproval, []*fftypes.FFIMethod) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.TokenApproval, *fftypes.JSONAny) error); ok {
 		r0 = rf(ctx, nsOpID, poolLocator, approval, methods)
 	} else {
 		r0 = ret.Error(0)
@@ -179,11 +202,11 @@ func (_m *Plugin) TokensApproval(ctx context.Context, nsOpID string, poolLocator
 }
 
 // TransferTokens provides a mock function with given fields: ctx, nsOpID, poolLocator, transfer, methods
-func (_m *Plugin) TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer, methods []*fftypes.FFIMethod) error {
+func (_m *Plugin) TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer, methods *fftypes.JSONAny) error {
 	ret := _m.Called(ctx, nsOpID, poolLocator, transfer, methods)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.TokenTransfer, []*fftypes.FFIMethod) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.TokenTransfer, *fftypes.JSONAny) error); ok {
 		r0 = rf(ctx, nsOpID, poolLocator, transfer, methods)
 	} else {
 		r0 = ret.Error(0)
