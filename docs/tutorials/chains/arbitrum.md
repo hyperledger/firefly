@@ -36,8 +36,6 @@ policyengine.simple:
     gasOracle:
         mode: connector
 ```
-For more info about `confirmations`, see [Public vs. Permissioned](../../overview/public_vs_permissioned.md)
-
 For this tutorial, we will assume this file is saved at `~/Desktop/evmconnect.yml`. If your path is different, you will need to adjust the path in the next command below.
 
 ## Creating a new stack
@@ -84,7 +82,7 @@ ff logs arbitrum
 ```
 
 ## Get some Aribitrum
-At this point you should have a working FireFly stack, talking to a public chain. However, you won't be able to run any transactions just yet, because you don't have any way to pay for gas. 
+At this point you should have a working FireFly stack, talking to a public chain. However, you won't be able to run any transactions just yet, because you don't have any way to pay for gas.
 
 First, you will need to know what signing address your FireFly node is using. To check that, you can run:
 
@@ -98,7 +96,7 @@ ff accounts list arbitrum
 ]
 ```
 
-Copy the address listed in the output from this command. Next, check out this article [https://medium.com/offchainlabs/new-g%C3%B6rli-testnet-and-getting-rinkeby-ready-for-nitro-3ff590448053](https://medium.com/offchainlabs/new-g%C3%B6rli-testnet-and-getting-rinkeby-ready-for-nitro-3ff590448053) and follow the instructions to send a tweet to the developers. Make sure to change the address to the one in the CLI. 
+Copy the address listed in the output from this command. Next, check out this article [https://medium.com/offchainlabs/new-g%C3%B6rli-testnet-and-getting-rinkeby-ready-for-nitro-3ff590448053](https://medium.com/offchainlabs/new-g%C3%B6rli-testnet-and-getting-rinkeby-ready-for-nitro-3ff590448053) and follow the instructions to send a tweet to the developers. Make sure to change the address to the one in the CLI.
 
 ![Arbitrum Faucet](images/arbitrum_faucet.png)
 

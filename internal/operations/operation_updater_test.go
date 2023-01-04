@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -69,8 +70,8 @@ func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabi
 	return newOperationUpdater(context.Background(), mom, mdi, txHelper)
 }
 
-func updateMatcher(vals [][]string) func(database.Update) bool {
-	return func(update database.Update) bool {
+func updateMatcher(vals [][]string) func(ffapi.Update) bool {
+	return func(update ffapi.Update) bool {
 		info, _ := update.Finalize()
 		if len(info.SetOperations) != len(vals) {
 			fmt.Printf("Failed: %d != %d\n", len(info.SetOperations), len(vals))

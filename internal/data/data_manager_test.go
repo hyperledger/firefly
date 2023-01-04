@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -89,7 +90,7 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 
 	cmi := &cachemocks.Manager{}
-	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 10000, 5*time.Minute), nil)
 	dm, err := NewDataManager(ctx, ns, mdi, mdx, cmi)
 	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
 		ctx,
@@ -961,6 +962,7 @@ func TestHydrateBatchMsgBadManifest(t *testing.T) {
 }
 
 func TestGetMessageWithDataOk(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
 
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
@@ -1083,14 +1085,14 @@ func TestUpdateMessageCacheCRORequirePins(t *testing.T) {
 	msgNoPins := &core.Message{
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Data: data.Refs(),
 	}
 	msgWithPins := &core.Message{
 		Header: msgNoPins.Header,
 		Data:   data.Refs(),
-		Pins:   core.FFStringArray{"pin1"},
+		Pins:   fftypes.FFStringArray{"pin1"},
 	}
 
 	msg, _ := dm.PeekMessageCache(ctx, msgWithPins.Header.ID)
@@ -1127,7 +1129,7 @@ func TestUpdateMessageCacheCRORequireBatchID(t *testing.T) {
 	msgNoPins := &core.Message{
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Topics: core.FFStringArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Data: data.Refs(),
 	}

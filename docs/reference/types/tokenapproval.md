@@ -62,6 +62,8 @@ nav_order: 12
 | `protocolId` | An alphanumerically sortable string that represents this event uniquely with respect to the blockchain | `string` |
 | `subject` | A string identifying the parties and entities in the scope of this approval, as provided by the token connector | `string` |
 | `active` | Indicates if this approval is currently active (only one approval can be active per subject) | `bool` |
+| `message` | The UUID of a message that has been correlated with this approval using the data field of the approval in a compatible token connector | [`UUID`](simpletypes#uuid) |
+| `messageHash` | The hash of a message that has been correlated with this approval using the data field of the approval in a compatible token connector | `Bytes32` |
 | `created` | The creation time of the token approval | [`FFTime`](simpletypes#fftime) |
 | `tx` | If submitted via FireFly, this will reference the UUID of the FireFly transaction (if the token connector in use supports attaching data) | [`TransactionRef`](#transactionref) |
 | `blockchainEvent` | The UUID of the blockchain event | [`UUID`](simpletypes#uuid) |

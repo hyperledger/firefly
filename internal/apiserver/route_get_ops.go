@@ -31,14 +31,14 @@ var getOps = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.OperationQueryFactory,
 	Description:     coremsgs.APIEndpointsGetOps,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.OperationQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetOperations(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.GetOperations(cr.ctx, r.Filter))
 		},
 	},
 }

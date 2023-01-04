@@ -19,12 +19,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
+	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -185,11 +188,11 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 		},
 	}
 	totalCount := int64(1)
-	filterResult := &database.FilterResult{
+	filterResult := &ffapi.FilterResult{
 		TotalCount: &totalCount,
 	}
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f database.AndFilter) bool {
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f ffapi.AndFilter) bool {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
@@ -227,10 +230,10 @@ func TestApprovalDefaultPoolNoPool(t *testing.T) {
 	f.Limit(1).Count(true)
 	tokenPools := []*core.TokenPool{}
 	totalCount := int64(0)
-	filterResult := &database.FilterResult{
+	filterResult := &ffapi.FilterResult{
 		TotalCount: &totalCount,
 	}
-	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f database.AndFilter) bool {
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f ffapi.AndFilter) bool {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
@@ -389,6 +392,317 @@ func TestApprovalTransactionFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestApprovalWithBroadcastMessage(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	msgID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
+			Operator: "B",
+			Approved: true,
+		},
+		Pool: "pool1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					ID: msgID,
+				},
+				Hash: hash,
+			},
+			InlineData: core.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+		IdempotencyKey: "idem1",
+	}
+	pool := &core.TokenPool{
+		Connector: "magic-tokens",
+		State:     core.TokenPoolStateConfirmed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &syncasyncmocks.Sender{}
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
+	mbm.On("NewBroadcast", approval.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mms.On("Send", context.Background()).Return(nil)
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(approvalData)
+		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
+	})).Return(nil, nil)
+
+	_, err := am.TokenApproval(context.Background(), approval, false)
+	assert.NoError(t, err)
+	assert.Equal(t, *msgID, *approval.TokenApproval.Message)
+	assert.Equal(t, *hash, *approval.TokenApproval.MessageHash)
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mms.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestApprovalWithBroadcastMessageDisabled(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	am.broadcast = nil
+
+	msgID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
+			Operator: "B",
+			Approved: true,
+		},
+		Pool: "pool1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					ID: msgID,
+				},
+				Hash: hash,
+			},
+			InlineData: core.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	_, err := am.TokenApproval(context.Background(), approval, false)
+	assert.Regexp(t, "FF10415", err)
+}
+
+func TestApprovalWithBroadcastMessageSendFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	msgID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
+			Operator: "B",
+			Approved: true,
+		},
+		Pool: "pool1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					ID: msgID,
+				},
+				Hash: hash,
+			},
+			InlineData: core.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+		IdempotencyKey: "idem1",
+	}
+	pool := &core.TokenPool{
+		Connector: "magic-tokens",
+		State:     core.TokenPoolStateConfirmed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &syncasyncmocks.Sender{}
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
+	mbm.On("NewBroadcast", approval.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
+
+	_, err := am.TokenApproval(context.Background(), approval, false)
+	assert.Regexp(t, "pop", err)
+	assert.Equal(t, *msgID, *approval.TokenApproval.Message)
+	assert.Equal(t, *hash, *approval.TokenApproval.MessageHash)
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mms.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestApprovalWithBroadcastPrepareFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
+			Operator: "B",
+			Approved: true,
+		},
+		Pool: "pool1",
+		Message: &core.MessageInOut{
+			InlineData: core.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+	}
+
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &syncasyncmocks.Sender{}
+	mbm.On("NewBroadcast", approval.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
+
+	_, err := am.TokenApproval(context.Background(), approval, false)
+	assert.EqualError(t, err, "pop")
+
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestApprovalWithPrivateMessage(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	msgID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
+			Operator: "B",
+			Approved: true,
+		},
+		Pool: "pool1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					ID:   msgID,
+					Type: core.MessageTypeApprovalPrivate,
+				},
+				Hash: hash,
+			},
+			InlineData: core.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+		IdempotencyKey: "idem1",
+	}
+	pool := &core.TokenPool{
+		Connector: "magic-tokens",
+		State:     core.TokenPoolStateConfirmed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mpm := am.messaging.(*privatemessagingmocks.Manager)
+	mms := &syncasyncmocks.Sender{}
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
+	mpm.On("NewMessage", approval.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mms.On("Send", context.Background()).Return(nil)
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(approvalData)
+		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
+	})).Return(nil, nil)
+
+	_, err := am.TokenApproval(context.Background(), approval, false)
+	assert.NoError(t, err)
+	assert.Equal(t, *msgID, *approval.TokenApproval.Message)
+	assert.Equal(t, *hash, *approval.TokenApproval.MessageHash)
+
+	mpm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mms.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestApprovalWithPrivateMessageDisabled(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	am.messaging = nil
+
+	msgID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
+			Operator: "B",
+			Approved: true,
+		},
+		Pool: "pool1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					ID:   msgID,
+					Type: core.MessageTypeApprovalPrivate,
+				},
+				Hash: hash,
+			},
+			InlineData: core.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+	}
+
+	_, err := am.TokenApproval(context.Background(), approval, false)
+	assert.Regexp(t, "FF10415", err)
+}
+
+func TestApprovalWithInvalidMessage(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
+			Operator: "B",
+			Approved: true,
+		},
+		Pool: "pool1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					Type: core.MessageTypeDefinition,
+				},
+			},
+			InlineData: core.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+	}
+
+	_, err := am.TokenApproval(context.Background(), approval, false)
+	assert.Regexp(t, "FF10287", err)
+}
+
 func TestApprovalOperationsFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -475,6 +789,83 @@ func TestTokenApprovalConfirm(t *testing.T) {
 	msa.AssertExpectations(t)
 	mom.AssertExpectations(t)
 	mth.AssertExpectations(t)
+}
+
+func TestApprovalWithBroadcastConfirm(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	msgID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
+			Approved: true,
+			Operator: "operator",
+			Key:      "key",
+		},
+		Pool: "pool1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					ID: msgID,
+				},
+				Hash: hash,
+			},
+			InlineData: core.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+		IdempotencyKey: "idem1",
+	}
+	pool := &core.TokenPool{
+		Connector: "magic-tokens",
+		State:     core.TokenPoolStateConfirmed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &syncasyncmocks.Sender{}
+	msa := am.syncasync.(*syncasyncmocks.Bridge)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+	mbm.On("NewBroadcast", approval.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mms.On("Send", context.Background()).Return(nil)
+	msa.On("WaitForMessage", context.Background(), mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[2].(syncasync.SendFunction)
+			send(context.Background())
+		}).
+		Return(&core.Message{}, nil)
+	msa.On("WaitForTokenApproval", context.Background(), mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[2].(syncasync.SendFunction)
+			send(context.Background())
+		}).
+		Return(&approval.TokenApproval, nil)
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(approvalData)
+		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
+	})).Return(nil, nil)
+
+	_, err := am.TokenApproval(context.Background(), approval, true)
+	assert.NoError(t, err)
+	assert.Equal(t, *msgID, *approval.TokenApproval.Message)
+	assert.Equal(t, *hash, *approval.TokenApproval.MessageHash)
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mms.AssertExpectations(t)
+	msa.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestApprovalPrepare(t *testing.T) {

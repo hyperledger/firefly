@@ -33,22 +33,22 @@ var getTokenTransfers = &ffapi.Route{
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "fromOrTo", Description: coremsgs.APIParamsTokenTransferFromOrTo},
 	},
+	FilterFactory:   database.TokenTransferQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTokenTransfers,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.TokenTransferQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			filter := cr.filter
+			filter := r.Filter
 			if fromOrTo, ok := r.QP["fromOrTo"]; ok {
 				fb := database.TokenTransferQueryFactory.NewFilter(cr.ctx)
-				filter.Condition(
+				filter = filter.Condition(
 					fb.Or().
 						Condition(fb.Eq("from", fromOrTo)).
 						Condition(fb.Eq("to", fromOrTo)))
 			}
-			return filterResult(cr.or.Assets().GetTokenTransfers(cr.ctx, filter))
+			return r.FilterResult(cr.or.Assets().GetTokenTransfers(cr.ctx, filter))
 		},
 	},
 }

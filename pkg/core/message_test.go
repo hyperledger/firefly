@@ -272,7 +272,7 @@ func TestMessageImmutable(t *testing.T) {
 		Data: DataRefs{
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 		},
-		Pins: NewFFStringArray("pin1", "pin2"),
+		Pins: fftypes.NewFFStringArray("pin1", "pin2"),
 	}
 	assert.True(t, msg.Hash.Equals(msg.BatchMessage().Hash))
 }

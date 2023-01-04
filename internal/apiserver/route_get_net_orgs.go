@@ -31,14 +31,14 @@ var getNetworkOrgs = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.IdentityQueryFactory,
 	Description:     coremsgs.APIEndpointsGetNetworkOrgs,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.IdentityQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.NetworkMap().GetOrganizations(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.NetworkMap().GetOrganizations(cr.ctx, r.Filter))
 		},
 	},
 }

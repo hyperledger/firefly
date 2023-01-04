@@ -36,8 +36,6 @@ policyengine.simple:
     gasOracle:
         mode: connector
 ```
-For more info about `confirmations`, see [Public vs. Permissioned](../../overview/public_vs_permissioned.md)
-
 For this tutorial, we will assume this file is saved at `~/Desktop/evmconnect.yml`. If your path is different, you will need to adjust the path in the next command below.
 
 ## Creating a new stack
@@ -61,7 +59,7 @@ ff init moonbeam 1 \
     -n remote-rpc \
     --remote-node-url <selected RPC endpoint> \
     --chain-id 1287 \
-    --connector-config ~/Desktop/evmconnect.yml 
+    --connector-config ~/Desktop/evmconnect.yml
 ```
 
 ## Start the stack
@@ -98,7 +96,7 @@ ff accounts list moonbeam
 ]
 ```
 
-Copy the address listed in the output from this command. Go to [https://apps.moonbeam.network/moonbase-alpha/faucet/](https://apps.moonbeam.network/moonbase-alpha/faucet/) and paste the address in the form. Click the **Submit** button. 
+Copy the address listed in the output from this command. Go to [https://apps.moonbeam.network/moonbase-alpha/faucet/](https://apps.moonbeam.network/moonbase-alpha/faucet/) and paste the address in the form. Click the **Submit** button.
 
 ![Moonbase Alpha Faucet](images/moonbase_faucet.png)
 
@@ -108,4 +106,4 @@ You should be able to go lookup your account on [Moonscan for the Moonbase Alpha
 ![Moonscan](images/moonscan.png)
 
 ## Use the public testnet
-Now that you have everything set up, you can follow one of the other FireFly guides such as [Using Tokens](../tokens/index.md) or [Custom Smart Contracts](../custom_contracts/ethereum.md). For detailed instructions on interacting with the Moonbeam Alpha testnet, please see the [Moonbeam docs](https://docs.moonbeam.network/learn/platform/networks/moonbase/). 
+Now that you have everything set up, you can follow one of the other FireFly guides such as [Using Tokens](../tokens/index.md) or [Custom Smart Contracts](../custom_contracts/ethereum.md). For detailed instructions on interacting with the Moonbeam Alpha testnet, please see the [Moonbeam docs](https://docs.moonbeam.network/learn/platform/networks/moonbase/).

@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -263,7 +264,7 @@ func TestRetryOperationSuccess(t *testing.T) {
 		assert.Equal(t, core.OpTypeBlockchainPinBatch, newOp.Type)
 		return true
 	})).Return(nil)
-	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.MatchedBy(func(update database.Update) bool {
+	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.MatchedBy(func(update ffapi.Update) bool {
 		info, err := update.Finalize()
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(info.SetOperations))

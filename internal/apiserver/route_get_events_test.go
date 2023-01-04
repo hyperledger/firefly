@@ -21,8 +21,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -50,13 +50,13 @@ func TestGetEventsWithReferences(t *testing.T) {
 
 	var ten int64 = 10
 	o.On("GetEventsWithReferences", mock.Anything, mock.Anything).
-		Return([]*core.EnrichedEvent{}, &database.FilterResult{
+		Return([]*core.EnrichedEvent{}, &ffapi.FilterResult{
 			TotalCount: &ten,
 		}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
-	var resWithCount filterResultsWithCount
+	var resWithCount ffapi.FilterResultsWithCount
 	err := json.NewDecoder(res.Body).Decode(&resWithCount)
 	assert.NoError(t, err)
 	assert.NotNil(t, resWithCount.Items)
@@ -73,13 +73,13 @@ func TestGetEventsWithFetchReference(t *testing.T) {
 
 	var ten int64 = 10
 	o.On("GetEventsWithReferences", mock.Anything, mock.Anything).
-		Return([]*core.EnrichedEvent{}, &database.FilterResult{
+		Return([]*core.EnrichedEvent{}, &ffapi.FilterResult{
 			TotalCount: &ten,
 		}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
-	var resWithCount filterResultsWithCount
+	var resWithCount ffapi.FilterResultsWithCount
 	err := json.NewDecoder(res.Body).Decode(&resWithCount)
 	assert.NoError(t, err)
 	assert.NotNil(t, resWithCount.Items)

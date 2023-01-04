@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
@@ -132,7 +133,7 @@ func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockc
 		newEventsHandler: ag.processPinsEventsHandler,
 		getItems:         ag.getPins,
 		queryFactory:     database.PinQueryFactory,
-		addCriteria: func(af database.AndFilter) database.AndFilter {
+		addCriteria: func(af ffapi.AndFilter) ffapi.AndFilter {
 			fb := af.Builder()
 			return af.Condition(fb.Eq("dispatched", false))
 		},
@@ -254,7 +255,7 @@ func (ag *aggregator) processPinsEventsHandler(items []core.LocallySequenced) (r
 	})
 }
 
-func (ag *aggregator) getPins(ctx context.Context, filter database.Filter, offset int64) ([]core.LocallySequenced, error) {
+func (ag *aggregator) getPins(ctx context.Context, filter ffapi.Filter, offset int64) ([]core.LocallySequenced, error) {
 	log.L(ctx).Tracef("Reading page of pins > %d (first pin would be %d)", offset, offset+1)
 	pins, _, err := ag.database.GetPins(ctx, ag.namespace, filter)
 	ls := make([]core.LocallySequenced, len(pins))
@@ -557,6 +558,21 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 				return "", false, err
 			} else if !msg.Hash.Equals(transfers[0].MessageHash) {
 				log.L(ctx).Errorf("Message hash %s does not match hash recorded in transfer: %s", msg.Hash, transfers[0].MessageHash)
+				return "", false, nil
+			}
+		}
+
+		// For approvals, verify the approval has come through
+		if msg.Header.Type == core.MessageTypeApprovalBroadcast || msg.Header.Type == core.MessageTypeApprovalPrivate {
+			fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
+			filter := fb.And(
+				fb.Eq("message", msg.Header.ID),
+			)
+			if approvals, _, err := ag.database.GetTokenApprovals(ctx, ag.namespace, filter); err != nil || len(approvals) == 0 {
+				log.L(ctx).Debugf("Approval for message %s not yet available", msg.Header.ID)
+				return "", false, err
+			} else if !msg.Hash.Equals(approvals[0].MessageHash) {
+				log.L(ctx).Errorf("Message hash %s does not match hash recorded in approval: %s", msg.Hash, approvals[0].MessageHash)
 				return "", false, nil
 			}
 		}

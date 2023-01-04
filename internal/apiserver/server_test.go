@@ -56,10 +56,10 @@ func newTestServer() (*namespacemocks.Manager, *orchestratormocks.Orchestrator, 
 	mgr.On("Orchestrator", "default").Return(o).Maybe()
 	mgr.On("Orchestrator", "mynamespace").Return(o).Maybe()
 	mgr.On("Orchestrator", "ns1").Return(o).Maybe()
+	config.Set(coreconfig.APIMaxFilterLimit, 100)
 	as := &apiServer{
-		apiTimeout:     5 * time.Second,
-		maxFilterLimit: 100,
-		ffiSwaggerGen:  &apiservermocks.FFISwaggerGen{},
+		apiTimeout:    5 * time.Second,
+		ffiSwaggerGen: &apiservermocks.FFISwaggerGen{},
 	}
 	return mgr, o, as
 }
@@ -204,7 +204,7 @@ func TestFilterTooMany(t *testing.T) {
 	assert.Equal(t, 400, res.Result().StatusCode)
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
-	assert.Regexp(t, "FF10184", resJSON["error"])
+	assert.Regexp(t, "FF00192", resJSON["error"])
 }
 
 func TestUnauthorized(t *testing.T) {

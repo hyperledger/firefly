@@ -151,7 +151,7 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, id *fftypes.
 			ID:            id,
 			Namespace:     t.namespace,
 			Type:          txType,
-			BlockchainIDs: core.NewFFStringArray(strings.ToLower(blockchainTXID)),
+			BlockchainIDs: fftypes.NewFFStringArray(strings.ToLower(blockchainTXID)),
 		}
 		if err = t.database.InsertTransaction(ctx, tx); err != nil {
 			return false, err

@@ -217,7 +217,7 @@ func validateReceivedMessages(ts *testState, client *client.FireFlyClient, topic
 	var returnData []*core.Data
 	for idx := 0; idx < len(messages); idx++ {
 		assert.Equal(ts.t, txtype, (messages)[idx].Header.TxType)
-		assert.Equal(ts.t, core.FFStringArray{topic}, (messages)[idx].Header.Topics)
+		assert.Equal(ts.t, fftypes.FFStringArray{topic}, (messages)[idx].Header.Topics)
 		assert.Equal(ts.t, topic, (messages)[idx].Header.Topics[0])
 
 		data := client.GetDataForMessage(ts.t, ts.startTime, (messages)[idx].Header.ID)

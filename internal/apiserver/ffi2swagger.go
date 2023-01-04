@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 type FFISwaggerGen interface {
@@ -151,9 +150,6 @@ func (og *ffiSwaggerGen) addEvent(routes []*ffapi.Route, event *fftypes.FFIEvent
 		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
 		JSONOutputCodes: []int{http.StatusOK},
-		Extensions: &coreExtensions{
-			FilterFactory: database.ContractListenerQueryFactory,
-		},
 	})
 	return routes
 }

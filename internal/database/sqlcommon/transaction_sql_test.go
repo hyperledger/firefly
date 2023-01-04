@@ -42,7 +42,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		ID:            transactionID,
 		Type:          core.TransactionTypeBatchPin,
 		Namespace:     "ns1",
-		BlockchainIDs: core.FFStringArray{"tx1"},
+		BlockchainIDs: fftypes.FFStringArray{"tx1"},
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, core.ChangeEventTypeCreated, "ns1", transactionID, mock.Anything).Return()
@@ -83,7 +83,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 
 	// Update
 	up := database.TransactionQueryFactory.NewUpdate(ctx).
-		Set("blockchainids", core.FFStringArray{"0x12345", "0x23456"}).
+		Set("blockchainids", fftypes.FFStringArray{"0x12345", "0x23456"}).
 		Set("idempotencykey", "testKey")
 	err = s.UpdateTransaction(ctx, "ns1", transaction.ID, up)
 	assert.NoError(t, err)
@@ -112,7 +112,7 @@ func TestInsertTransactionFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertTransaction(context.Background(), &core.Transaction{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -123,7 +123,7 @@ func TestInsertTransactionFailInsert(t *testing.T) {
 	mock.ExpectRollback()
 	transactionID := fftypes.NewUUID()
 	err := s.InsertTransaction(context.Background(), &core.Transaction{ID: transactionID})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -146,7 +146,7 @@ func TestInsertTransactionFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertTransaction(context.Background(), &core.Transaction{ID: transactionID})
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -155,7 +155,7 @@ func TestGetTransactionByIDSelectFail(t *testing.T) {
 	transactionID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetTransactionByID(context.Background(), "ns1", transactionID)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -183,7 +183,7 @@ func TestGetTransactionsQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.TransactionQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, _, err := s.GetTransactions(context.Background(), "ns1", f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -208,7 +208,7 @@ func TestTransactionUpdateBeginFail(t *testing.T) {
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateTransaction(context.Background(), "ns1", fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 }
 
 func TestTransactionUpdateBuildQueryFail(t *testing.T) {
@@ -226,5 +226,5 @@ func TestTransactionUpdateFail(t *testing.T) {
 	mock.ExpectRollback()
 	u := database.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
 	err := s.UpdateTransaction(context.Background(), "ns1", fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 }

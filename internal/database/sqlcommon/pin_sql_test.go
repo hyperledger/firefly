@@ -90,7 +90,7 @@ func TestUpsertPinFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertPin(context.Background(), &core.Pin{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -101,7 +101,7 @@ func TestUpsertPinFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertPin(context.Background(), &core.Pin{Hash: fftypes.NewRandB32()})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -111,7 +111,7 @@ func TestUpsertPinFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertPin(context.Background(), &core.Pin{Hash: fftypes.NewRandB32()})
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -132,7 +132,7 @@ func TestUpsertPinFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertPin(context.Background(), &core.Pin{Hash: fftypes.NewRandB32()})
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -140,7 +140,7 @@ func TestInsertPinsBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertPins(context.Background(), []*core.Pin{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
 }
@@ -156,7 +156,7 @@ func TestInsertPinsMultiRowOK(t *testing.T) {
 	s.callbacks.On("OrderedCollectionNSEvent", database.CollectionPins, core.ChangeEventTypeCreated, "ns1", int64(1002))
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{s.SequenceColumn()}).
 		AddRow(int64(1001)).
 		AddRow(int64(1002)),
 	)
@@ -175,7 +175,7 @@ func TestInsertPinsMultiRowFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertPins(context.Background(), []*core.Pin{pin1})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
 }
@@ -186,7 +186,7 @@ func TestInsertPinsSingleRowFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertPins(context.Background(), []*core.Pin{pin1})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
 }
@@ -196,7 +196,7 @@ func TestGetPinQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.PinQueryFactory.NewFilter(context.Background()).Eq("hash", "")
 	_, _, err := s.GetPins(context.Background(), "ns", f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -221,7 +221,7 @@ func TestUpdatePinsBeginFail(t *testing.T) {
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	ctx := context.Background()
 	err := s.UpdatePins(ctx, "ns1", database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 }
 
 func TestUpdatePinsUpdateFail(t *testing.T) {
@@ -231,7 +231,7 @@ func TestUpdatePinsUpdateFail(t *testing.T) {
 	mock.ExpectRollback()
 	ctx := context.Background()
 	err := s.UpdatePins(ctx, "ns1", database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 }
 
 func TestUpdatePinsBadFilter(t *testing.T) {

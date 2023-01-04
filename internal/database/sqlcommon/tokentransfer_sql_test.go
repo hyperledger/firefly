@@ -119,7 +119,7 @@ func TestUpsertTokenTransferFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertTokenTransfer(context.Background(), &core.TokenTransfer{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -128,7 +128,7 @@ func TestUpsertTokenTransferFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertTokenTransfer(context.Background(), &core.TokenTransfer{})
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -139,7 +139,7 @@ func TestUpsertTokenTransferFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertTokenTransfer(context.Background(), &core.TokenTransfer{})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -150,7 +150,7 @@ func TestUpsertTokenTransferFailUpdate(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertTokenTransfer(context.Background(), &core.TokenTransfer{})
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -161,7 +161,7 @@ func TestUpsertTokenTransferFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertTokenTransfer(context.Background(), &core.TokenTransfer{})
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -169,7 +169,7 @@ func TestGetTokenTransferByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetTokenTransferByID(context.Background(), "ns1", fftypes.NewUUID())
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -195,7 +195,7 @@ func TestGetTokenTransfersQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.TokenTransferQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
 	_, _, err := s.GetTokenTransfers(context.Background(), "ns1", f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

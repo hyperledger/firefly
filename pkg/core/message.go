@@ -46,6 +46,10 @@ var (
 	MessageTypeTransferBroadcast = fftypes.FFEnumValue("messagetype", "transfer_broadcast")
 	// MessageTypeTransferPrivate is a private message to accompany/annotate a token transfer
 	MessageTypeTransferPrivate = fftypes.FFEnumValue("messagetype", "transfer_private")
+	// MessageTypeApprovalBroadcast is a broadcast message to accompany/annotate a token approval
+	MessageTypeApprovalBroadcast = fftypes.FFEnumValue("messagetype", "approval_broadcast")
+	// MessageTypeApprovalPrivate is a private message to accompany/annotate a token approval
+	MessageTypeApprovalPrivate = fftypes.FFEnumValue("messagetype", "approval_private")
 )
 
 // MessageState is the current transmission/confirmation state of a message
@@ -74,28 +78,28 @@ type MessageHeader struct {
 	Type   MessageType     `ffstruct:"MessageHeader" json:"type" ffenum:"messagetype"`
 	TxType TransactionType `ffstruct:"MessageHeader" json:"txtype,omitempty" ffenum:"txtype"`
 	SignerRef
-	Created   *fftypes.FFTime  `ffstruct:"MessageHeader" json:"created,omitempty" ffexcludeinput:"true"`
-	Namespace string           `ffstruct:"MessageHeader" json:"namespace,omitempty" ffexcludeinput:"true"`
-	Group     *fftypes.Bytes32 `ffstruct:"MessageHeader" json:"group,omitempty" ffexclude:"postNewMessageBroadcast"`
-	Topics    FFStringArray    `ffstruct:"MessageHeader" json:"topics,omitempty"`
-	Tag       string           `ffstruct:"MessageHeader" json:"tag,omitempty"`
-	DataHash  *fftypes.Bytes32 `ffstruct:"MessageHeader" json:"datahash,omitempty" ffexcludeinput:"true"`
+	Created   *fftypes.FFTime       `ffstruct:"MessageHeader" json:"created,omitempty" ffexcludeinput:"true"`
+	Namespace string                `ffstruct:"MessageHeader" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Group     *fftypes.Bytes32      `ffstruct:"MessageHeader" json:"group,omitempty" ffexclude:"postNewMessageBroadcast"`
+	Topics    fftypes.FFStringArray `ffstruct:"MessageHeader" json:"topics,omitempty"`
+	Tag       string                `ffstruct:"MessageHeader" json:"tag,omitempty"`
+	DataHash  *fftypes.Bytes32      `ffstruct:"MessageHeader" json:"datahash,omitempty" ffexcludeinput:"true"`
 }
 
 // Message is the envelope by which coordinated data exchange can happen between parties in the network
 // Data is passed by reference in these messages, and a chain of hashes covering the data and the
 // details of the message, provides a verification against tampering.
 type Message struct {
-	Header         MessageHeader    `ffstruct:"Message" json:"header"`
-	LocalNamespace string           `ffstruct:"Message" json:"localNamespace,omitempty" ffexcludeinput:"true"`
-	Hash           *fftypes.Bytes32 `ffstruct:"Message" json:"hash,omitempty" ffexcludeinput:"true"`
-	BatchID        *fftypes.UUID    `ffstruct:"Message" json:"batch,omitempty" ffexcludeinput:"true"`
-	State          MessageState     `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate" ffexcludeinput:"true"`
-	Confirmed      *fftypes.FFTime  `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
-	Data           DataRefs         `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
-	Pins           FFStringArray    `ffstruct:"Message" json:"pins,omitempty" ffexcludeinput:"true"`
-	IdempotencyKey IdempotencyKey   `ffstruct:"Message" json:"idempotencyKey,omitempty"`
-	Sequence       int64            `ffstruct:"Message" json:"-"` // Local database sequence used internally for batch assembly
+	Header         MessageHeader         `ffstruct:"Message" json:"header"`
+	LocalNamespace string                `ffstruct:"Message" json:"localNamespace,omitempty" ffexcludeinput:"true"`
+	Hash           *fftypes.Bytes32      `ffstruct:"Message" json:"hash,omitempty" ffexcludeinput:"true"`
+	BatchID        *fftypes.UUID         `ffstruct:"Message" json:"batch,omitempty" ffexcludeinput:"true"`
+	State          MessageState          `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate" ffexcludeinput:"true"`
+	Confirmed      *fftypes.FFTime       `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
+	Data           DataRefs              `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
+	Pins           fftypes.FFStringArray `ffstruct:"Message" json:"pins,omitempty" ffexcludeinput:"true"`
+	IdempotencyKey IdempotencyKey        `ffstruct:"Message" json:"idempotencyKey,omitempty"`
+	Sequence       int64                 `ffstruct:"Message" json:"-"` // Local database sequence used internally for batch assembly
 }
 
 // BatchMessage is the fields in a message record that are assured to be consistent on all parties.

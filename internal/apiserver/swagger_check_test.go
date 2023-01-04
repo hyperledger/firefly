@@ -38,6 +38,7 @@ import (
 )
 
 func TestDiffSwaggerYAML(t *testing.T) {
+	coreconfig.Reset()
 	config.Set(coreconfig.APIOASPanicOnMissingDescription, true)
 	as := &apiServer{}
 	hf := as.handlerFactory()

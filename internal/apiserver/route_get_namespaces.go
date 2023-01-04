@@ -30,12 +30,12 @@ var getNamespaces = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetNamespaces,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Namespace{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: nil,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			return cr.mgr.GetNamespaces(cr.ctx)
 		},

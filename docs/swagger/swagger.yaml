@@ -5251,6 +5251,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -7688,6 +7690,8 @@ paths:
                           - groupinit
                           - transfer_broadcast
                           - transfer_private
+                          - approval_broadcast
+                          - approval_private
                           type: string
                       type: object
                     idempotencyKey:
@@ -7938,6 +7942,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -8431,6 +8437,8 @@ paths:
                       - groupinit
                       - transfer_broadcast
                       - transfer_private
+                      - approval_broadcast
+                      - approval_private
                       type: string
                   type: object
                 idempotencyKey:
@@ -8545,6 +8553,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -8680,6 +8690,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -8863,6 +8875,8 @@ paths:
                       - groupinit
                       - transfer_broadcast
                       - transfer_private
+                      - approval_broadcast
+                      - approval_private
                       type: string
                   type: object
                 idempotencyKey:
@@ -8983,6 +8997,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -9124,6 +9140,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -9303,6 +9321,8 @@ paths:
                       - groupinit
                       - transfer_broadcast
                       - transfer_private
+                      - approval_broadcast
+                      - approval_private
                       type: string
                   type: object
                 idempotencyKey:
@@ -9503,6 +9523,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -15280,6 +15302,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -17836,6 +17860,8 @@ paths:
                           - groupinit
                           - transfer_broadcast
                           - transfer_private
+                          - approval_broadcast
+                          - approval_private
                           type: string
                       type: object
                     idempotencyKey:
@@ -18093,6 +18119,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -18652,6 +18680,8 @@ paths:
                       - groupinit
                       - transfer_broadcast
                       - transfer_private
+                      - approval_broadcast
+                      - approval_private
                       type: string
                   type: object
                 idempotencyKey:
@@ -18772,6 +18802,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -18913,6 +18945,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -19103,6 +19137,8 @@ paths:
                       - groupinit
                       - transfer_broadcast
                       - transfer_private
+                      - approval_broadcast
+                      - approval_private
                       type: string
                   type: object
                 idempotencyKey:
@@ -19223,6 +19259,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -19364,6 +19402,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -19550,6 +19590,8 @@ paths:
                       - groupinit
                       - transfer_broadcast
                       - transfer_private
+                      - approval_broadcast
+                      - approval_private
                       type: string
                   type: object
                 idempotencyKey:
@@ -19750,6 +19792,8 @@ paths:
                         - groupinit
                         - transfer_broadcast
                         - transfer_private
+                        - approval_broadcast
+                        - approval_private
                         type: string
                     type: object
                   idempotencyKey:
@@ -24118,6 +24162,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: message
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messagehash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: operator
         schema:
           type: string
@@ -24230,6 +24284,18 @@ paths:
                         node
                       format: uuid
                       type: string
+                    message:
+                      description: The UUID of a message that has been correlated
+                        with this approval using the data field of the approval in
+                        a compatible token connector
+                      format: uuid
+                      type: string
+                    messageHash:
+                      description: The hash of a message that has been correlated
+                        with this approval using the data field of the approval in
+                        a compatible token connector
+                      format: byte
+                      type: string
                     namespace:
                       description: The namespace for the approval, which must match
                         the namespace of the token pool
@@ -24320,6 +24386,12 @@ paths:
                     On input defaults to the first signing key of the organization
                     that operates the node
                   type: string
+                message:
+                  description: The UUID of a message that has been correlated with
+                    this approval using the data field of the approval in a compatible
+                    token connector
+                  format: uuid
+                  type: string
                 operator:
                   description: The blockchain identity that is granted the approval
                   type: string
@@ -24376,6 +24448,18 @@ paths:
                     description: The UUID of this token approval, in the local FireFly
                       node
                     format: uuid
+                    type: string
+                  message:
+                    description: The UUID of a message that has been correlated with
+                      this approval using the data field of the approval in a compatible
+                      token connector
+                    format: uuid
+                    type: string
+                  messageHash:
+                    description: The hash of a message that has been correlated with
+                      this approval using the data field of the approval in a compatible
+                      token connector
+                    format: byte
                     type: string
                   namespace:
                     description: The namespace for the approval, which must match
@@ -24458,6 +24542,18 @@ paths:
                     description: The UUID of this token approval, in the local FireFly
                       node
                     format: uuid
+                    type: string
+                  message:
+                    description: The UUID of a message that has been correlated with
+                      this approval using the data field of the approval in a compatible
+                      token connector
+                    format: uuid
+                    type: string
+                  messageHash:
+                    description: The hash of a message that has been correlated with
+                      this approval using the data field of the approval in a compatible
+                      token connector
+                    format: byte
                     type: string
                   namespace:
                     description: The namespace for the approval, which must match
@@ -31414,6 +31510,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: message
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messagehash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: operator
         schema:
           type: string
@@ -31526,6 +31632,18 @@ paths:
                         node
                       format: uuid
                       type: string
+                    message:
+                      description: The UUID of a message that has been correlated
+                        with this approval using the data field of the approval in
+                        a compatible token connector
+                      format: uuid
+                      type: string
+                    messageHash:
+                      description: The hash of a message that has been correlated
+                        with this approval using the data field of the approval in
+                        a compatible token connector
+                      format: byte
+                      type: string
                     namespace:
                       description: The namespace for the approval, which must match
                         the namespace of the token pool
@@ -31609,6 +31727,12 @@ paths:
                     On input defaults to the first signing key of the organization
                     that operates the node
                   type: string
+                message:
+                  description: The UUID of a message that has been correlated with
+                    this approval using the data field of the approval in a compatible
+                    token connector
+                  format: uuid
+                  type: string
                 operator:
                   description: The blockchain identity that is granted the approval
                   type: string
@@ -31665,6 +31789,18 @@ paths:
                     description: The UUID of this token approval, in the local FireFly
                       node
                     format: uuid
+                    type: string
+                  message:
+                    description: The UUID of a message that has been correlated with
+                      this approval using the data field of the approval in a compatible
+                      token connector
+                    format: uuid
+                    type: string
+                  messageHash:
+                    description: The hash of a message that has been correlated with
+                      this approval using the data field of the approval in a compatible
+                      token connector
+                    format: byte
                     type: string
                   namespace:
                     description: The namespace for the approval, which must match
@@ -31747,6 +31883,18 @@ paths:
                     description: The UUID of this token approval, in the local FireFly
                       node
                     format: uuid
+                    type: string
+                  message:
+                    description: The UUID of a message that has been correlated with
+                      this approval using the data field of the approval in a compatible
+                      token connector
+                    format: uuid
+                    type: string
+                  messageHash:
+                    description: The hash of a message that has been correlated with
+                      this approval using the data field of the approval in a compatible
+                      token connector
+                    format: byte
                     type: string
                   namespace:
                     description: The namespace for the approval, which must match

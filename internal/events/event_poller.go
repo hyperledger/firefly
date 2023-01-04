@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -49,9 +50,9 @@ type eventPollerConf struct {
 	eventBatchTimeout          time.Duration
 	eventPollTimeout           time.Duration
 	firstEvent                 *core.SubOptsFirstEvent
-	queryFactory               database.QueryFactory
-	addCriteria                func(database.AndFilter) database.AndFilter
-	getItems                   func(context.Context, database.Filter, int64) ([]core.LocallySequenced, error)
+	queryFactory               ffapi.QueryFactory
+	addCriteria                func(ffapi.AndFilter) ffapi.AndFilter
+	getItems                   func(context.Context, ffapi.Filter, int64) ([]core.LocallySequenced, error)
 	maybeRewind                func() (bool, int64)
 	newEventsHandler           newEventsHandler
 	namespace                  string

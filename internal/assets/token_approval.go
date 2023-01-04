@@ -19,34 +19,36 @@ package assets
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (am *assetManager) GetTokenApprovals(ctx context.Context, filter database.AndFilter) ([]*core.TokenApproval, *database.FilterResult, error) {
+func (am *assetManager) GetTokenApprovals(ctx context.Context, filter ffapi.AndFilter) ([]*core.TokenApproval, *ffapi.FilterResult, error) {
 	return am.database.GetTokenApprovals(ctx, am.namespace, filter)
 }
 
 type approveSender struct {
-	mgr      *assetManager
-	approval *core.TokenApprovalInput
+	mgr       *assetManager
+	approval  *core.TokenApprovalInput
+	resolved  bool
+	msgSender syncasync.Sender
 }
 
 func (s *approveSender) Prepare(ctx context.Context) error {
-	return s.sendInternal(ctx, methodPrepare)
+	return s.resolveAndSend(ctx, methodPrepare)
 }
 
 func (s *approveSender) Send(ctx context.Context) error {
-	return s.sendInternal(ctx, methodSend)
+	return s.resolveAndSend(ctx, methodSend)
 }
 
 func (s *approveSender) SendAndWait(ctx context.Context) error {
-	return s.sendInternal(ctx, methodSendAndWait)
+	return s.resolveAndSend(ctx, methodSendAndWait)
 }
 
 func (s *approveSender) setDefaults() {
@@ -70,6 +72,42 @@ func (am *assetManager) TokenApproval(ctx context.Context, approval *core.TokenA
 		err = sender.Send(ctx)
 	}
 	return &approval.TokenApproval, err
+}
+
+func (s *approveSender) resolveAndSend(ctx context.Context, method sendMethod) (err error) {
+	if !s.resolved {
+		if err = s.resolve(ctx); err != nil {
+			return err
+		}
+		s.resolved = true
+	}
+
+	if method == methodSendAndWait && s.approval.Message != nil {
+		// Begin waiting for the message, and trigger the approval.
+		// A successful approval will trigger the message via the event handler, so we can wait for it all to complete.
+		_, err := s.mgr.syncasync.WaitForMessage(ctx, s.approval.Message.Header.ID, func(ctx context.Context) error {
+			return s.sendInternal(ctx, methodSendAndWait)
+		})
+		return err
+	}
+
+	return s.sendInternal(ctx, method)
+}
+
+func (s *approveSender) resolve(ctx context.Context) (err error) {
+	// Resolve the attached message
+	if s.approval.Message != nil {
+		s.msgSender, err = s.buildApprovalMessage(ctx, s.approval.Message)
+		if err != nil {
+			return err
+		}
+		if err = s.msgSender.Prepare(ctx); err != nil {
+			return err
+		}
+		s.approval.TokenApproval.Message = s.approval.Message.Header.ID
+		s.approval.TokenApproval.MessageHash = s.approval.Message.Hash
+	}
+	return nil
 }
 
 func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (err error) {
@@ -121,6 +159,14 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 		return nil
 	}
 
+	// Write the approval message outside of any DB transaction, as it will use the background message writer.
+	if s.approval.Message != nil {
+		s.approval.Message.State = core.MessageStateStaged
+		if err = s.msgSender.Send(ctx); err != nil {
+			return err
+		}
+	}
+
 	_, err = s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval))
 	return err
 }
@@ -145,4 +191,28 @@ func (am *assetManager) validateApproval(ctx context.Context, approval *core.Tok
 	}
 	approval.Key, err = am.identity.NormalizeSigningKey(ctx, approval.Key, am.keyNormalization)
 	return pool, err
+}
+
+func (s *approveSender) buildApprovalMessage(ctx context.Context, in *core.MessageInOut) (syncasync.Sender, error) {
+	allowedTypes := []fftypes.FFEnum{
+		core.MessageTypeApprovalBroadcast,
+		core.MessageTypeApprovalPrivate,
+	}
+	if in.Header.Type == "" {
+		in.Header.Type = core.MessageTypeApprovalBroadcast
+	}
+	switch in.Header.Type {
+	case core.MessageTypeApprovalBroadcast:
+		if s.mgr.broadcast == nil {
+			return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
+		}
+		return s.mgr.broadcast.NewBroadcast(in), nil
+	case core.MessageTypeApprovalPrivate:
+		if s.mgr.messaging == nil {
+			return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
+		}
+		return s.mgr.messaging.NewMessage(in), nil
+	default:
+		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidMessageType, allowedTypes)
+	}
 }

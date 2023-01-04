@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly-common/pkg/auth"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -74,7 +75,7 @@ type Orchestrator interface {
 	GetStatus(ctx context.Context) (*core.NamespaceStatus, error)
 
 	// Subscription management
-	GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
+	GetSubscriptions(ctx context.Context, filter ffapi.AndFilter) ([]*core.Subscription, *ffapi.FilterResult, error)
 	GetSubscriptionByID(ctx context.Context, id string) (*core.Subscription, error)
 	GetSubscriptionByIDWithStatus(ctx context.Context, id string) (*core.SubscriptionWithStatus, error)
 	CreateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
@@ -84,35 +85,35 @@ type Orchestrator interface {
 	// Data Query
 	GetNamespace(ctx context.Context) *core.Namespace
 	GetTransactionByID(ctx context.Context, id string) (*core.Transaction, error)
-	GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *database.FilterResult, error)
-	GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *database.FilterResult, error)
+	GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *ffapi.FilterResult, error)
+	GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *ffapi.FilterResult, error)
 	GetTransactionStatus(ctx context.Context, id string) (*core.TransactionStatus, error)
-	GetTransactions(ctx context.Context, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error)
+	GetTransactions(ctx context.Context, filter ffapi.AndFilter) ([]*core.Transaction, *ffapi.FilterResult, error)
 	GetMessageByID(ctx context.Context, id string) (*core.Message, error)
 	GetMessageByIDWithData(ctx context.Context, id string) (*core.MessageInOut, error)
-	GetMessages(ctx context.Context, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error)
-	GetMessagesWithData(ctx context.Context, filter database.AndFilter) ([]*core.MessageInOut, *database.FilterResult, error)
+	GetMessages(ctx context.Context, filter ffapi.AndFilter) ([]*core.Message, *ffapi.FilterResult, error)
+	GetMessagesWithData(ctx context.Context, filter ffapi.AndFilter) ([]*core.MessageInOut, *ffapi.FilterResult, error)
 	GetMessageTransaction(ctx context.Context, id string) (*core.Transaction, error)
-	GetMessageEvents(ctx context.Context, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
+	GetMessageEvents(ctx context.Context, id string, filter ffapi.AndFilter) ([]*core.Event, *ffapi.FilterResult, error)
 	GetMessageData(ctx context.Context, id string) (core.DataArray, error)
-	GetMessagesForData(ctx context.Context, dataID string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error)
+	GetMessagesForData(ctx context.Context, dataID string, filter ffapi.AndFilter) ([]*core.Message, *ffapi.FilterResult, error)
 	GetBatchByID(ctx context.Context, id string) (*core.BatchPersisted, error)
-	GetBatches(ctx context.Context, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error)
+	GetBatches(ctx context.Context, filter ffapi.AndFilter) ([]*core.BatchPersisted, *ffapi.FilterResult, error)
 	GetDataByID(ctx context.Context, id string) (*core.Data, error)
-	GetData(ctx context.Context, filter database.AndFilter) (core.DataArray, *database.FilterResult, error)
+	GetData(ctx context.Context, filter ffapi.AndFilter) (core.DataArray, *ffapi.FilterResult, error)
 	GetDatatypeByID(ctx context.Context, id string) (*core.Datatype, error)
 	GetDatatypeByName(ctx context.Context, name, version string) (*core.Datatype, error)
-	GetDatatypes(ctx context.Context, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error)
+	GetDatatypes(ctx context.Context, filter ffapi.AndFilter) ([]*core.Datatype, *ffapi.FilterResult, error)
 	GetOperationByID(ctx context.Context, id string) (*core.Operation, error)
 	GetOperationByIDWithStatus(ctx context.Context, id string) (*core.OperationWithDetailedStatus, error)
-	GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
+	GetOperations(ctx context.Context, filter ffapi.AndFilter) ([]*core.Operation, *ffapi.FilterResult, error)
 	GetEventByID(ctx context.Context, id string) (*core.Event, error)
 	GetEventByIDWithReference(ctx context.Context, id string) (*core.EnrichedEvent, error)
-	GetEvents(ctx context.Context, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
-	GetEventsWithReferences(ctx context.Context, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error)
+	GetEvents(ctx context.Context, filter ffapi.AndFilter) ([]*core.Event, *ffapi.FilterResult, error)
+	GetEventsWithReferences(ctx context.Context, filter ffapi.AndFilter) ([]*core.EnrichedEvent, *ffapi.FilterResult, error)
 	GetBlockchainEventByID(ctx context.Context, id string) (*core.BlockchainEvent, error)
-	GetBlockchainEvents(ctx context.Context, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error)
-	GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error)
+	GetBlockchainEvents(ctx context.Context, filter ffapi.AndFilter) ([]*core.BlockchainEvent, *ffapi.FilterResult, error)
+	GetPins(ctx context.Context, filter ffapi.AndFilter) ([]*core.Pin, *ffapi.FilterResult, error)
 	RewindPins(ctx context.Context, rewind *core.PinRewind) (*core.PinRewind, error)
 
 	// Charts

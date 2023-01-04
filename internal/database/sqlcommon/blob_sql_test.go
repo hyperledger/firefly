@@ -84,7 +84,7 @@ func TestInsertBlobFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertBlob(context.Background(), &core.Blob{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -94,7 +94,7 @@ func TestInsertBlobFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.InsertBlob(context.Background(), &core.Blob{Hash: fftypes.NewRandB32()})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -104,7 +104,7 @@ func TestInsertBlobFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertBlob(context.Background(), &core.Blob{Hash: fftypes.NewRandB32()})
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -112,7 +112,7 @@ func TestInsertBlobsBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertBlobs(context.Background(), []*core.Blob{})
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
 }
@@ -126,7 +126,7 @@ func TestInsertBlobsMultiRowOK(t *testing.T) {
 	blob2 := &core.Blob{Hash: fftypes.NewRandB32(), PayloadRef: "pay2"}
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{s.SequenceColumn()}).
 		AddRow(int64(1001)).
 		AddRow(int64(1002)),
 	)
@@ -145,7 +145,7 @@ func TestInsertBlobsMultiRowFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertBlobs(context.Background(), []*core.Blob{blob1})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
 }
@@ -156,7 +156,7 @@ func TestInsertBlobsSingleRowFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertBlobs(context.Background(), []*core.Blob{blob1})
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
 }
@@ -165,7 +165,7 @@ func TestGetBlobByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetBlobMatchingHash(context.Background(), fftypes.NewRandB32())
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -191,7 +191,7 @@ func TestGetBlobQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.BlobQueryFactory.NewFilter(context.Background()).Eq("hash", "")
 	_, _, err := s.GetBlobs(context.Background(), f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -215,7 +215,7 @@ func TestBlobDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteBlob(context.Background(), 12345)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 }
 
 func TestBlobDeleteFail(t *testing.T) {
@@ -224,5 +224,5 @@ func TestBlobDeleteFail(t *testing.T) {
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.DeleteBlob(context.Background(), 12345)
-	assert.Regexp(t, "FF10118", err)
+	assert.Regexp(t, "FF00179", err)
 }

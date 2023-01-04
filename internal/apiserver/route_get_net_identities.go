@@ -33,18 +33,18 @@ var getNetworkIdentities = &ffapi.Route{
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
 	},
+	FilterFactory:   database.IdentityQueryFactory,
 	Description:     coremsgs.APIEndpointsGetNetworkIdentities,
 	Deprecated:      true, // use getIdentities instead
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.IdentityQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			if strings.EqualFold(r.QP["fetchverifiers"], "true") {
-				return filterResult(cr.or.NetworkMap().GetIdentitiesWithVerifiers(cr.ctx, cr.filter))
+				return r.FilterResult(cr.or.NetworkMap().GetIdentitiesWithVerifiers(cr.ctx, r.Filter))
 			}
-			return filterResult(cr.or.NetworkMap().GetIdentities(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.NetworkMap().GetIdentities(cr.ctx, r.Filter))
 		},
 	},
 }

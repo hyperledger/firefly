@@ -33,14 +33,14 @@ var getIdentityVerifiers = &ffapi.Route{
 		{Name: "iid", Example: "id", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams:     nil,
+	FilterFactory:   database.VerifierQueryFactory,
 	Description:     coremsgs.APIEndpointsGetIdentityVerifiers,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.VerifierQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.NetworkMap().GetIdentityVerifiers(cr.ctx, r.PP["iid"], cr.filter))
+			return r.FilterResult(cr.or.NetworkMap().GetIdentityVerifiers(cr.ctx, r.PP["iid"], r.Filter))
 		},
 	},
 }

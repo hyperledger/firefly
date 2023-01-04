@@ -21,6 +21,8 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -72,8 +74,8 @@ func (s *SQLCommon) setBlockchainEventInsertValues(query sq.InsertBuilder, event
 	)
 }
 
-func (s *SQLCommon) attemptBlockchainEventInsert(ctx context.Context, tx *txWrapper, event *core.BlockchainEvent, requestConflictEmptyResult bool) (err error) {
-	_, err = s.insertTxExt(ctx, messagesTable, tx,
+func (s *SQLCommon) attemptBlockchainEventInsert(ctx context.Context, tx *dbsql.TXWrapper, event *core.BlockchainEvent, requestConflictEmptyResult bool) (err error) {
+	_, err = s.InsertTxExt(ctx, messagesTable, tx,
 		s.setBlockchainEventInsertValues(sq.Insert(blockchaineventsTable).Columns(blockchainEventColumns...), event),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, event.Namespace, event.ID)
@@ -82,15 +84,15 @@ func (s *SQLCommon) attemptBlockchainEventInsert(ctx context.Context, tx *txWrap
 }
 
 func (s *SQLCommon) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	opErr := s.attemptBlockchainEventInsert(ctx, tx, event, true /* we want a failure here we can progress past */)
 	if opErr == nil {
-		return nil, s.commitTx(ctx, tx, autoCommit)
+		return nil, s.CommitTx(ctx, tx, autoCommit)
 	}
 
 	// Do a select within the transaction to determine if the protocolID already exists
@@ -126,7 +128,7 @@ func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*
 }
 
 func (s *SQLCommon) getBlockchainEventPred(ctx context.Context, desc string, pred interface{}) (*core.BlockchainEvent, error) {
-	rows, _, err := s.query(ctx, blockchaineventsTable,
+	rows, _, err := s.Query(ctx, blockchaineventsTable,
 		sq.Select(blockchainEventColumns...).
 			From(blockchaineventsTable).
 			Where(pred),
@@ -161,16 +163,16 @@ func (s *SQLCommon) GetBlockchainEventByProtocolID(ctx context.Context, ns strin
 	})
 }
 
-func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, namespace string, filter database.Filter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
+func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.BlockchainEvent, *ffapi.FilterResult, error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "",
+	query, fop, fi, err := s.FilterSelect(ctx, "",
 		sq.Select(blockchainEventColumns...).From(blockchaineventsTable),
 		filter, blockchainEventFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, blockchaineventsTable, query)
+	rows, tx, err := s.Query(ctx, blockchaineventsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -185,5 +187,5 @@ func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, namespace string, f
 		events = append(events, event)
 	}
 
-	return events, s.queryRes(ctx, blockchaineventsTable, tx, fop, fi), err
+	return events, s.QueryRes(ctx, blockchaineventsTable, tx, fop, fi), err
 }

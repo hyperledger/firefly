@@ -31,14 +31,14 @@ var getTokenPools = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.TokenPoolQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTokenPools,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.TokenPoolQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.Assets().GetTokenPools(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.Assets().GetTokenPools(cr.ctx, r.Filter))
 		},
 	},
 }

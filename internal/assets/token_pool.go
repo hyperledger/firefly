@@ -19,6 +19,7 @@ package assets
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -133,7 +134,7 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenP
 	return err
 }
 
-func (am *assetManager) GetTokenPools(ctx context.Context, filter database.AndFilter) ([]*core.TokenPool, *database.FilterResult, error) {
+func (am *assetManager) GetTokenPools(ctx context.Context, filter ffapi.AndFilter) ([]*core.TokenPool, *ffapi.FilterResult, error) {
 	return am.database.GetTokenPools(ctx, am.namespace, filter)
 }
 

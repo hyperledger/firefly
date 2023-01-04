@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -408,7 +409,7 @@ func TestGetMessageEventsOk(t *testing.T) {
 	f := fb.And(fb.Eq("type", core.EventTypeMessageConfirmed))
 	_, _, err := or.GetMessageEvents(context.Background(), fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
-	calculatedFilter, err := or.mdi.Calls[1].Arguments[2].(database.Filter).Finalize()
+	calculatedFilter, err := or.mdi.Calls[1].Arguments[2].(ffapi.Filter).Finalize()
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf(
 		`( type == 'message_confirmed' ) && ( reference IN ['%s','%s','%s'] )`,

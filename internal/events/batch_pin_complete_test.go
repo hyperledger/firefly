@@ -52,7 +52,7 @@ func sampleBatch(t *testing.T, batchType core.BatchType, txType core.Transaction
 			ID:        fftypes.NewUUID(),
 			Type:      msgType,
 			TxType:    txType,
-			Topics:    core.FFStringArray{"topic1"},
+			Topics:    fftypes.FFStringArray{"topic1"},
 		},
 		Data: data.Refs(),
 	}

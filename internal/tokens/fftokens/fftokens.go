@@ -453,13 +453,13 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
 	approvalDataString := data.GetString("data")
-	var transferData tokenData
-	if err = json.Unmarshal([]byte(approvalDataString), &transferData); err != nil {
+	var approvalData tokenData
+	if err = json.Unmarshal([]byte(approvalDataString), &approvalData); err != nil {
 		log.L(ctx).Infof("TokenApproval event data could not be parsed - continuing anyway (%s): %+v", err, data)
-		transferData = tokenData{}
+		approvalData = tokenData{}
 	}
 
-	txType := transferData.TXType
+	txType := approvalData.TXType
 	if txType == "" {
 		txType = core.TransactionTypeTokenApproval
 	}
@@ -467,15 +467,17 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	approval := &tokens.TokenApproval{
 		PoolLocator: poolLocator,
 		TokenApproval: core.TokenApproval{
-			Connector:  ft.configuredName,
-			Key:        signerAddress,
-			Operator:   operatorAddress,
-			Approved:   approved,
-			ProtocolID: protocolID,
-			Subject:    subject,
-			Info:       info,
+			Connector:   ft.configuredName,
+			Key:         signerAddress,
+			Operator:    operatorAddress,
+			Approved:    approved,
+			ProtocolID:  protocolID,
+			Subject:     subject,
+			Info:        info,
+			Message:     approvalData.Message,
+			MessageHash: approvalData.MessageHash,
 			TX: core.TransactionRef{
-				ID:   transferData.TX,
+				ID:   approvalData.TX,
 				Type: txType,
 			},
 		},
@@ -726,8 +728,10 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocat
 
 func (ft *FFTokens) TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval) error {
 	data, _ := json.Marshal(tokenData{
-		TX:     approval.TX.ID,
-		TXType: approval.TX.Type,
+		TX:          approval.TX.ID,
+		TXType:      approval.TX.Type,
+		Message:     approval.Message,
+		MessageHash: approval.MessageHash,
 	})
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).

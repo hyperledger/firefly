@@ -32,17 +32,17 @@ var getGroups = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
+	FilterFactory:   database.GroupQueryFactory,
 	Description:     coremsgs.APIEndpointsGetGroups,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.GroupQueryFactory,
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
 			return or.PrivateMessaging() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.PrivateMessaging().GetGroups(cr.ctx, cr.filter))
+			return r.FilterResult(cr.or.PrivateMessaging().GetGroups(cr.ctx, r.Filter))
 		},
 	},
 }

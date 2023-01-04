@@ -150,7 +150,7 @@ func TestUpsertSubscriptionFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertSubscription(context.Background(), &core.Subscription{}, true)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -160,7 +160,7 @@ func TestUpsertSubscriptionFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertSubscription(context.Background(), &core.Subscription{SubscriptionRef: core.SubscriptionRef{Name: "name1"}}, true)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -171,7 +171,7 @@ func TestUpsertSubscriptionFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertSubscription(context.Background(), &core.Subscription{SubscriptionRef: core.SubscriptionRef{Name: "name1"}}, true)
-	assert.Regexp(t, "FF10116", err)
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -183,7 +183,7 @@ func TestUpsertSubscriptionFailUpdate(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertSubscription(context.Background(), &core.Subscription{SubscriptionRef: core.SubscriptionRef{Name: "name1"}}, true)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -194,7 +194,7 @@ func TestUpsertSubscriptionFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertSubscription(context.Background(), &core.Subscription{SubscriptionRef: core.SubscriptionRef{Name: "name1"}}, true)
-	assert.Regexp(t, "FF10119", err)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -202,7 +202,7 @@ func TestGetSubscriptionByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetSubscriptionByName(context.Background(), "ns1", "name1")
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -228,7 +228,7 @@ func TestGetSubscriptionQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", "")
 	_, _, err := s.GetSubscriptions(context.Background(), "ns1", f)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -253,7 +253,7 @@ func TestSubscriptionUpdateBeginFail(t *testing.T) {
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
 	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 }
 
 func TestSubscriptionUpdateBuildQueryFail(t *testing.T) {
@@ -274,7 +274,7 @@ func TestSubscriptionUpdateSelectFail(t *testing.T) {
 	mock.ExpectRollback()
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
 	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF00176", err)
 }
 
 func TestSubscriptionUpdateSelectNotFound(t *testing.T) {
@@ -297,14 +297,14 @@ func TestSubscriptionUpdateFail(t *testing.T) {
 	mock.ExpectRollback()
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
 	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
-	assert.Regexp(t, "FF10117", err)
+	assert.Regexp(t, "FF00178", err)
 }
 
 func TestSubscriptionDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteSubscriptionByID(context.Background(), "ns1", fftypes.NewUUID())
-	assert.Regexp(t, "FF10114", err)
+	assert.Regexp(t, "FF00175", err)
 }
 
 func TestSubscriptionDeleteFail(t *testing.T) {
@@ -315,5 +315,5 @@ func TestSubscriptionDeleteFail(t *testing.T) {
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteSubscriptionByID(context.Background(), "ns1", fftypes.NewUUID())
-	assert.Regexp(t, "FF10118", err)
+	assert.Regexp(t, "FF00179", err)
 }

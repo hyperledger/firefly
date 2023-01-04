@@ -423,7 +423,7 @@ func TestFilterEventsMatch(t *testing.T) {
 				},
 				Message: &core.Message{
 					Header: core.MessageHeader{
-						Topics: core.FFStringArray{"topic1"},
+						Topics: fftypes.FFStringArray{"topic1"},
 						Tag:    "tag1",
 						Group:  nil,
 						SignerRef: core.SignerRef{
@@ -443,7 +443,7 @@ func TestFilterEventsMatch(t *testing.T) {
 				},
 				Message: &core.Message{
 					Header: core.MessageHeader{
-						Topics: core.FFStringArray{"topic1"},
+						Topics: fftypes.FFStringArray{"topic1"},
 						Tag:    "tag2",
 						Group:  gid1,
 						SignerRef: core.SignerRef{
@@ -463,7 +463,7 @@ func TestFilterEventsMatch(t *testing.T) {
 				},
 				Message: &core.Message{
 					Header: core.MessageHeader{
-						Topics: core.FFStringArray{"topic2"},
+						Topics: fftypes.FFStringArray{"topic2"},
 						Tag:    "tag1",
 						Group:  nil,
 						SignerRef: core.SignerRef{
