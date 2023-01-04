@@ -136,6 +136,7 @@ func (suite *EthereumContractTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *EthereumContractTestSuite) AfterTest(suiteName, testName string) {
 	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	suite.testState.done()
 }
 
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {

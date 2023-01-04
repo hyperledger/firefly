@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,11 +42,10 @@ func (suite *IdentityTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *IdentityTestSuite) AfterTest(suiteName, testName string) {
 	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	suite.testState.done()
 }
 
 func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
-	defer suite.testState.done()
-
 	ctx := context.Background()
 	received1 := e2e.WsReader(suite.testState.ws1)
 	received2 := e2e.WsReader(suite.testState.ws2)
@@ -99,8 +98,6 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 }
 
 func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
-	defer suite.testState.done()
-
 	received1 := e2e.WsReader(suite.testState.ws1)
 	received2 := e2e.WsReader(suite.testState.ws2)
 
@@ -143,8 +140,6 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 }
 
 func (suite *IdentityTestSuite) TestInvalidIdentityAlreadyRegistered() {
-	defer suite.testState.done()
-
 	received1 := e2e.WsReader(suite.testState.ws1)
 
 	key := getUnregisteredAccount(suite, suite.testState.org1.Name)

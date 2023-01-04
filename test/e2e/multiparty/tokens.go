@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -45,11 +45,10 @@ func (suite *TokensTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *TokensTestSuite) AfterTest(suiteName, testName string) {
 	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	suite.testState.done()
 }
 
 func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
-	defer suite.testState.done()
-
 	received1 := e2e.WsReader(suite.testState.ws1)
 	received2 := e2e.WsReader(suite.testState.ws2)
 
@@ -220,8 +219,6 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 }
 
 func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
-	defer suite.testState.done()
-
 	received1 := e2e.WsReader(suite.testState.ws1)
 	received2 := e2e.WsReader(suite.testState.ws2)
 
