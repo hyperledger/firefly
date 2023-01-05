@@ -31,12 +31,14 @@
 <meta name="generator" content="Jekyll v3.9.2" />
 <meta property="og:title" content="TokenPool" />
 <meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
 <meta property="og:site_name" content="Hyperledger FireFly Docs" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="TokenPool" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"TokenPool","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/reference/types/tokenpool.html"}</script>
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"TokenPool","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/reference/types/tokenpool.html"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -298,6 +300,7 @@
     </ol>
   </li>
   <li><a href="#transactionref" id="markdown-toc-transactionref">TransactionRef</a></li>
+  <li><a href="#ffireference" id="markdown-toc-ffireference">FFIReference</a></li>
 </ol><hr />
       <h2 id="tokenpool-1">
         
@@ -473,6 +476,21 @@ as long as it can support the basic operations described here (create pool, mint
       <td>Reference to the FireFly transaction used to create and broadcast this pool to the network</td>
       <td><a href="#transactionref"><code class="language-plaintext highlighter-rouge">TransactionRef</code></a></td>
     </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">interface</code></td>
+      <td>A reference to an existing FFI, containing pre-registered type information for the token contract</td>
+      <td><a href="#ffireference"><code class="language-plaintext highlighter-rouge">FFIReference</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">interfaceFormat</code></td>
+      <td>The interface encoding format supported by the connector for this token pool</td>
+      <td><code class="language-plaintext highlighter-rouge">FFEnum</code>:<br /><code class="language-plaintext highlighter-rouge">"abi"</code><br /><code class="language-plaintext highlighter-rouge">"ffi"</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">methods</code></td>
+      <td>The method definitions resolved by the token connector to be used by each token operation</td>
+      <td><a href="simpletypes#jsonany"><code class="language-plaintext highlighter-rouge">JSONAny</code></a></td>
+    </tr>
   </tbody>
 </table>
       <h2 id="transactionref">
@@ -502,6 +520,41 @@ as long as it can support the basic operations described here (create pool, mint
       <td><code class="language-plaintext highlighter-rouge">id</code></td>
       <td>The UUID of the FireFly transaction</td>
       <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="ffireference">
+        
+        
+          <a href="#ffireference" class="anchor-heading" aria-labelledby="ffireference"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FFIReference
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">id</code></td>
+      <td>The UUID of the FireFly interface</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>The name of the FireFly interface</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">version</code></td>
+      <td>The version of the FireFly interface</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
   </tbody>
 </table>
