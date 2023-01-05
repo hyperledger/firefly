@@ -94,8 +94,8 @@ func (_m *Manager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset
 	return r0
 }
 
-// Orchestrator provides a mock function with given fields: ns
-func (_m *Manager) Orchestrator(ns string) orchestrator.Orchestrator {
+// MustOrchestrator provides a mock function with given fields: ns
+func (_m *Manager) MustOrchestrator(ns string) orchestrator.Orchestrator {
 	ret := _m.Called(ns)
 
 	var r0 orchestrator.Orchestrator
@@ -108,6 +108,29 @@ func (_m *Manager) Orchestrator(ns string) orchestrator.Orchestrator {
 	}
 
 	return r0
+}
+
+// Orchestrator provides a mock function with given fields: ctx, ns
+func (_m *Manager) Orchestrator(ctx context.Context, ns string) (orchestrator.Orchestrator, error) {
+	ret := _m.Called(ctx, ns)
+
+	var r0 orchestrator.Orchestrator
+	if rf, ok := ret.Get(0).(func(context.Context, string) orchestrator.Orchestrator); ok {
+		r0 = rf(ctx, ns)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orchestrator.Orchestrator)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, ns)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Reset provides a mock function with given fields: ctx
