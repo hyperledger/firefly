@@ -302,6 +302,8 @@
   <li><a href="#ffiparam" id="markdown-toc-ffiparam">FFIParam</a></li>
   <li><a href="#ffievent" id="markdown-toc-ffievent">FFIEvent</a></li>
   <li><a href="#ffiparam-1" id="markdown-toc-ffiparam-1">FFIParam</a></li>
+  <li><a href="#ffierror" id="markdown-toc-ffierror">FFIError</a></li>
+  <li><a href="#ffiparam-2" id="markdown-toc-ffiparam-2">FFIParam</a></li>
 </ol><hr />
       <h2 id="ffi-1">
         
@@ -469,6 +471,11 @@
       <td>An array of smart contract event definitions</td>
       <td><a href="#ffievent"><code class="language-plaintext highlighter-rouge">FFIEvent[]</code></a></td>
     </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">errors</code></td>
+      <td>An array of smart contract error definitions</td>
+      <td><a href="#ffierror"><code class="language-plaintext highlighter-rouge">FFIError[]</code></a></td>
+    </tr>
   </tbody>
 </table>
       <h2 id="ffimethod">
@@ -635,6 +642,96 @@
         
         
           <a href="#ffiparam-1" class="anchor-heading" aria-labelledby="ffiparam-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FFIParam
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>The name of the parameter. Note that parameters must be ordered correctly on the FFI, according to the order in the blockchain smart contract</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">schema</code></td>
+      <td>FireFly uses an extended subset of JSON Schema to describe parameters, similar to OpenAPI/Swagger. Converters are available for native blockchain interface definitions / type systems - such as an Ethereum ABI. See the documentation for more detail</td>
+      <td><a href="simpletypes#jsonany"><code class="language-plaintext highlighter-rouge">JSONAny</code></a></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="ffierror">
+        
+        
+          <a href="#ffierror" class="anchor-heading" aria-labelledby="ffierror"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FFIError
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">id</code></td>
+      <td>The UUID of the FFI error definition</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">interface</code></td>
+      <td>The UUID of the FFI smart contract definition that this error is part of</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">namespace</code></td>
+      <td>The namespace of the FFI</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">pathname</code></td>
+      <td>The unique name allocated to this error within the FFI for use on URL paths</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">signature</code></td>
+      <td>The stringified signature of the error, as computed by the blockchain plugin</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>The name of the error</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">description</code></td>
+      <td>A description of the smart contract error</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">params</code></td>
+      <td>An array of error parameter/argument definitions</td>
+      <td><a href="#ffiparam"><code class="language-plaintext highlighter-rouge">FFIParam[]</code></a></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="ffiparam-2">
+        
+        
+          <a href="#ffiparam-2" class="anchor-heading" aria-labelledby="ffiparam-2"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FFIParam
         
         
       </h2>

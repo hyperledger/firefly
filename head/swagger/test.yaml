@@ -26371,6 +26371,7 @@ paths:
                     state:
                       description: The current state of the token pool
                       enum:
+                      - unknown
                       - pending
                       - confirmed
                       type: string
@@ -26531,6 +26532,7 @@ paths:
                   state:
                     description: The current state of the token pool
                     enum:
+                    - unknown
                     - pending
                     - confirmed
                     type: string
@@ -26616,6 +26618,7 @@ paths:
                   state:
                     description: The current state of the token pool
                     enum:
+                    - unknown
                     - pending
                     - confirmed
                     type: string
@@ -26731,6 +26734,7 @@ paths:
                   state:
                     description: The current state of the token pool
                     enum:
+                    - unknown
                     - pending
                     - confirmed
                     type: string
@@ -33658,6 +33662,7 @@ paths:
                     state:
                       description: The current state of the token pool
                       enum:
+                      - unknown
                       - pending
                       - confirmed
                       type: string
@@ -33811,6 +33816,7 @@ paths:
                   state:
                     description: The current state of the token pool
                     enum:
+                    - unknown
                     - pending
                     - confirmed
                     type: string
@@ -33896,6 +33902,7 @@ paths:
                   state:
                     description: The current state of the token pool
                     enum:
+                    - unknown
                     - pending
                     - confirmed
                     type: string
@@ -34004,6 +34011,7 @@ paths:
                   state:
                     description: The current state of the token pool
                     enum:
+                    - unknown
                     - pending
                     - confirmed
                     type: string
