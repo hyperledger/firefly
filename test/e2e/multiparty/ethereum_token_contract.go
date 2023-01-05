@@ -31,7 +31,7 @@ import (
 var expectedERC20Methods = fftypes.JSONAnyPtr(`{
 	"approval": {
 		"format": "abi",
-		"abi": [
+		"methods": [
 		{
 			"type": "function",
 			"name": "approve",
@@ -60,7 +60,7 @@ var expectedERC20Methods = fftypes.JSONAnyPtr(`{
 	},
 	"burn": {
 		"format": "abi",
-		"abi": [
+		"methods": [
 		{
 			"type": "function",
 			"name": "burn",
@@ -96,7 +96,7 @@ var expectedERC20Methods = fftypes.JSONAnyPtr(`{
 	},
 	"mint": {
 		"format": "abi",
-		"abi": [
+		"methods": [
 		{
 			"type": "function",
 			"name": "mint",
@@ -119,7 +119,7 @@ var expectedERC20Methods = fftypes.JSONAnyPtr(`{
 	},
 	"transfer": {
 		"format": "abi",
-		"abi": [
+		"methods": [
 		{
 			"type": "function",
 			"name": "transfer",
