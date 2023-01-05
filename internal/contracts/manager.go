@@ -156,10 +156,28 @@ func (cm *contractManager) GetFFIEvents(ctx context.Context, id *fftypes.UUID) (
 
 func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *fftypes.FFI) (err error) {
 	ffi.Methods, err = cm.GetFFIMethods(ctx, ffi.ID)
-	if err == nil {
-		ffi.Events, err = cm.GetFFIEvents(ctx, ffi.ID)
+	if err != nil {
+		return err
 	}
-	return err
+
+	ffi.Events, err = cm.GetFFIEvents(ctx, ffi.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, event := range ffi.Events {
+		event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
+	}
+
+	ffi.Errors, err = cm.database.GetFFIErrors(ctx, cm.namespace, ffi.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, errorDef := range ffi.Errors {
+		errorDef.Signature = cm.blockchain.GenerateErrorSignature(ctx, &errorDef.FFIErrorDefinition)
+	}
+	return nil
 }
 
 func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (ffi *fftypes.FFI, err error) {
@@ -278,7 +296,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 		err = send(ctx)
 		return op, err
 	case core.CallTypeQuery:
-		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Options)
+		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Errors, req.Options)
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}
@@ -307,6 +325,10 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req
 		req.Method, err = cm.database.GetFFIMethod(ctx, cm.namespace, req.Interface, req.MethodPath)
 		if err != nil || req.Method == nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
+		}
+		req.Errors, err = cm.database.GetFFIErrors(ctx, cm.namespace, req.Interface)
+		if err != nil {
+			return i18n.NewError(ctx, coremsgs.MsgContractErrorsResolveError, err)
 		}
 	}
 	return nil
@@ -443,6 +465,16 @@ func (cm *contractManager) ResolveFFI(ctx context.Context, ffi *fftypes.FFI) err
 			return err
 		}
 	}
+
+	errorPathNames := map[string]bool{}
+	for _, errorDef := range ffi.Errors {
+		errorDef.Interface = ffi.ID
+		errorDef.Namespace = ffi.Namespace
+		errorDef.Pathname = cm.uniquePathName(errorDef.Name, errorPathNames)
+		if err := cm.validateFFIError(ctx, &errorDef.FFIErrorDefinition); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -479,6 +511,18 @@ func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.
 		return i18n.NewError(ctx, coremsgs.MsgEventNameMustBeSet)
 	}
 	for _, param := range event.Params {
+		if err := cm.validateFFIParam(ctx, param); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cm *contractManager) validateFFIError(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) error {
+	if errorDef.Name == "" {
+		return i18n.NewError(ctx, coremsgs.MsgErrorNameMustBeSet)
+	}
+	for _, param := range errorDef.Params {
 		if err := cm.validateFFIParam(ctx, param); err != nil {
 			return err
 		}

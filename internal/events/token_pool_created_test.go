@@ -225,56 +225,6 @@ func TestTokenPoolCreatedConfirmFailBadSymbol(t *testing.T) {
 
 }
 
-func TestTokenPoolCreatedMigrate(t *testing.T) {
-	em := newTestEventManager(t)
-	defer em.cleanup(t)
-	mti := &tokenmocks.Plugin{}
-
-	txID := fftypes.NewUUID()
-	chainPool := &tokens.TokenPool{
-		Type:        core.TokenTypeFungible,
-		PoolLocator: "123",
-		Connector:   "magic-tokens",
-		TX: core.TransactionRef{
-			ID:   txID,
-			Type: core.TransactionTypeTokenPool,
-		},
-		Event: &blockchain.Event{
-			BlockchainTXID: "0xffffeeee",
-			ProtocolID:     "tx1",
-			Info:           fftypes.JSONObject{"some": "info"},
-		},
-	}
-	storedPool := &core.TokenPool{
-		Namespace: "ns1",
-		ID:        fftypes.NewUUID(),
-		State:     core.TokenPoolStateUnknown,
-		TX: core.TransactionRef{
-			Type: core.TransactionTypeTokenPool,
-			ID:   txID,
-		},
-	}
-
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "magic-tokens", "123").Return(storedPool, nil).Times(2)
-	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Name == chainPool.Event.Name
-	})).Return(nil, nil).Once()
-	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
-		return e.Type == core.EventTypeBlockchainEventReceived
-	})).Return(nil).Once()
-	em.mth.On("PersistTransaction", mock.Anything, txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
-	em.mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
-	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
-		return e.Type == core.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
-	})).Return(nil).Once()
-	em.mam.On("ActivateTokenPool", em.ctx, storedPool).Return(fmt.Errorf("pop")).Once()
-	em.mam.On("ActivateTokenPool", em.ctx, storedPool).Return(nil).Once()
-
-	err := em.TokenPoolCreated(mti, chainPool)
-	assert.NoError(t, err)
-
-}
-
 func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)

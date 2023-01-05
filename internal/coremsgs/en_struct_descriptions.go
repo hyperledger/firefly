@@ -242,6 +242,7 @@ var (
 	FFIVersion     = ffm("FFI.version", "A version for the FFI - use of semantic versioning such as 'v1.0.1' is encouraged")
 	FFIMethods     = ffm("FFI.methods", "An array of smart contract method definitions")
 	FFIEvents      = ffm("FFI.events", "An array of smart contract event definitions")
+	FFIErrors      = ffm("FFI.errors", "An array of smart contract error definitions")
 
 	// FFIMethod field descriptions
 	FFIMethodID          = ffm("FFIMethod.id", "The UUID of the FFI method definition")
@@ -264,6 +265,17 @@ var (
 	FFIEventParams      = ffm("FFIEvent.params", "An array of event parameter/argument definitions")
 	FFIEventSignature   = ffm("FFIEvent.signature", "The stringified signature of the event, as computed by the blockchain plugin")
 	FFIEventDetails     = ffm("FFIEvent.details", "Additional blockchain specific fields about this event from the original smart contract. Used by the blockchain plugin and for documentation generation.")
+
+	// FFIError field descriptions
+	FFIErrorID          = ffm("FFIError.id", "The UUID of the FFI error definition")
+	FFIErrorInterface   = ffm("FFIError.interface", "The UUID of the FFI smart contract definition that this error is part of")
+	FFIErrorName        = ffm("FFIError.name", "The name of the error")
+	FFIErrorNamespace   = ffm("FFIError.namespace", "The namespace of the FFI")
+	FFIErrorPathname    = ffm("FFIError.pathname", "The unique name allocated to this error within the FFI for use on URL paths")
+	FFIErrorDescription = ffm("FFIError.description", "A description of the smart contract error")
+	FFIErrorParams      = ffm("FFIError.params", "An array of error parameter/argument definitions")
+	FFIErrorSignature   = ffm("FFIError.signature", "The stringified signature of the error, as computed by the blockchain plugin")
+	FFIErrorDetails     = ffm("FFIError.details", "Additional blockchain specific fields about this error from the original smart contract. Used by the blockchain plugin and for documentation generation.")
 
 	// FFIParam field descriptions
 	FFIParamName   = ffm("FFIParam.name", "The name of the parameter. Note that parameters must be ordered correctly on the FFI, according to the order in the blockchain smart contract")
@@ -611,6 +623,7 @@ var (
 	ContractDeployRequestInput          = ffm("ContractDeployRequest.input", "An optional array of inputs passed to the smart contract's constructor, if applicable")
 	ContractDeployRequestDefinition     = ffm("ContractDeployRequest.definition", "The definition of the smart contract")
 	ContractDeployRequestContract       = ffm("ContractDeployRequest.contract", "The smart contract to deploy. This should be pre-compiled if required by the blockchain connector")
+	ContractDeployRequestErrors         = ffm("ContractDeployRequest.errors", "An in-line FFI errors definition for the constructor")
 	ContractDeployRequestOptions        = ffm("ContractDeployRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
 	ContractDeployRequestIdempotencyKey = ffm("ContractDeployRequest.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
 
@@ -621,6 +634,7 @@ var (
 	ContractCallRequestKey        = ffm("ContractCallRequest.key", "The blockchain signing key that will sign the invocation. Defaults to the first signing key of the organization that operates the node")
 	ContractCallRequestMethod     = ffm("ContractCallRequest.method", "An in-line FFI method definition for the method to invoke. Required when FFI is not specified")
 	ContractCallRequestMethodPath = ffm("ContractCallRequest.methodPath", "The pathname of the method on the specified FFI")
+	ContractCallRequestErrors     = ffm("ContractCallRequest.errors", "An in-line FFI errors definition for the method to invoke. Alternative to specifying FFI")
 	ContractCallRequestInput      = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
 	ContractCallRequestOptions    = ffm("ContractCallRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
 	ContractCallIdempotencyKey    = ffm("ContractCallRequest.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")

@@ -33,9 +33,6 @@ var (
 type TokenPoolState = fftypes.FFEnum
 
 var (
-	// TokenPoolStateUnknown is a token pool that may not yet be activated
-	// (should not be used in the code - only set via database migration for previously-created pools)
-	TokenPoolStateUnknown = fftypes.FFEnumValue("tokenpoolstate", "unknown")
 	// TokenPoolStatePending is a token pool that has been announced but not yet confirmed
 	TokenPoolStatePending = fftypes.FFEnumValue("tokenpoolstate", "pending")
 	// TokenPoolStateConfirmed is a token pool that has been confirmed on chain

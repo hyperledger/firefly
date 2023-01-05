@@ -1462,7 +1462,7 @@ func TestCheckInterfaceBadFormat(t *testing.T) {
 	}
 
 	_, err := h.CheckInterface(context.Background(), pool, nil)
-	assert.Regexp(t, "FF10433.*bad", err)
+	assert.Regexp(t, "FF10435.*bad", err)
 }
 
 func TestCheckInterfaceABI(t *testing.T) {
@@ -1485,7 +1485,7 @@ func TestCheckInterfaceABI(t *testing.T) {
 			assert.Equal(t, fftypes.JSONObject{
 				"format":      "abi",
 				"poolLocator": "N1",
-				"abi": []interface{}{
+				"methods": []interface{}{
 					map[string]interface{}{
 						"name":    "method1",
 						"type":    "function",

@@ -6,8 +6,8 @@
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.1.9",
-    "sha": "6a81ba67bf2611274cbc1c1597ba0377ec91618d5bff5874f0bc489b1a7b0e10"
+    "tag": "v1.1.11",
+    "sha": "a6fa5e764da7103e628fab1ca6cbc7fbcf9b9f47f5ea016981b7947e77d3e74e"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
@@ -31,8 +31,8 @@
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",
-    "tag": "v1.1.2",
-    "sha": "1023af58afadc0e62f423984f4dd863ef13552282a9fe60210b7cda4f9b43518"
+    "tag": "v1.1.5",
+    "sha": "4ee8549d12339f6d4224a277faf143da1749a51a5994e074224c95e3cce64670"
   },
   "build": {
     "firefly-builder": {
