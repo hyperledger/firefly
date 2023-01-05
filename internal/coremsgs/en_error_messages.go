@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,7 +33,7 @@ var (
 	MsgWebsocketClientError               = ffe("FF10108", "Error received from WebSocket client: %s")
 	Msg404NotFound                        = ffe("FF10109", "Not found", 404)
 	MsgUnknownBlockchainPlugin            = ffe("FF10110", "Unknown blockchain plugin: %s")
-	MsgEthconnectRESTErr                  = ffe("FF10111", "Error from ethconnect: %s")
+	MsgEthConnectorRESTErr                = ffe("FF10111", "Error from ethereum connector: %s")
 	MsgDBInitFailed                       = ffe("FF10112", "Database initialization failed")
 	MsgDBQueryBuildFailed                 = ffe("FF10113", "Database query builder failed")
 	MsgDBBeginFailed                      = ffe("FF10114", "Database begin transaction failed")
@@ -271,4 +271,6 @@ var (
 	MsgIdempotencyKeyDuplicateMessage     = ffe("FF10430", "Idempotency key '%s' already used for message '%s'", 409)
 	MsgIdempotencyKeyDuplicateTransaction = ffe("FF10431", "Idempotency key '%s' already used for transaction '%s'", 409)
 	MsgNonIdempotencyKeyConflictTxInsert  = ffe("FF10432", "Conflict on insert of transaction '%s'. No existing transaction matching idempotency key '%s' found", 409)
+	MsgErrorNameMustBeSet                 = ffe("FF10433", "The name of the error must be set", 400)
+	MsgContractErrorsResolveError         = ffe("FF10434", "Unable to resolve contract errors: %s", 400)
 )

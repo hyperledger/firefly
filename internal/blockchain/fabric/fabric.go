@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -722,7 +722,7 @@ func (f *Fabric) DeployContract(ctx context.Context, nsOpID, signingKey string, 
 	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
+func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -745,7 +745,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey s
 	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, nsOpID, prefixItems, input, options)
 }
 
-func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
+func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -860,6 +860,11 @@ func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFI
 
 func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
 	return event.Name
+}
+
+func (f *Fabric) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIErrorDefinition) string {
+	// not relevant to Fabric blockchains
+	return ""
 }
 
 func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (version int, err error) {

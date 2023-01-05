@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -44,6 +44,11 @@ func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *fftypes.FFI) (
 	}
 	for _, event := range ffi.Events {
 		if err := dh.database.UpsertFFIEvent(ctx, event); err != nil {
+			return true, err
+		}
+	}
+	for _, errorDef := range ffi.Errors {
+		if err := dh.database.UpsertFFIError(ctx, errorDef); err != nil {
 			return true, err
 		}
 	}

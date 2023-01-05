@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -39,6 +39,7 @@ type ContractCallRequest struct {
 	Method         *fftypes.FFIMethod     `ffstruct:"ContractCallRequest" json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
 	MethodPath     string                 `ffstruct:"ContractCallRequest" json:"methodPath,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
 	Input          map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
+	Errors         []*fftypes.FFIError    `ffstruct:"ContractCallRequest" json:"errors,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
 	Options        map[string]interface{} `ffstruct:"ContractCallRequest" json:"options"`
 	IdempotencyKey IdempotencyKey         `ffstruct:"ContractCallRequest" json:"idempotencyKey,omitempty" ffexcludeoutput:"true"`
 }

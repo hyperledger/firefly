@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -71,6 +71,28 @@ func testFFIMethod() *fftypes.FFIMethod {
 				Schema: fftypes.JSONAnyPtr(`{"oneOf":[{"type":"string"},{"type":"integer"}],"details":{"type":"uint256"}}`),
 			},
 		},
+	}
+}
+
+func testFFIErrors() []*fftypes.FFIError {
+	errorDef1 := fftypes.FFIErrorDefinition{
+		Name: "CustomError1",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"oneOf":[{"type":"string"},{"type":"integer"}],"details":{"type":"uint256"}}`),
+			},
+			{
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"oneOf":[{"type":"string"},{"type":"integer"}],"details":{"type":"uint256"}}`),
+			},
+		},
+	}
+	error1 := &fftypes.FFIError{
+		FFIErrorDefinition: errorDef1,
+	}
+	return []*fftypes.FFIError{
+		error1,
 	}
 }
 
@@ -2354,6 +2376,7 @@ func TestInvokeContractOK(t *testing.T) {
 		Address: "0x12345",
 	}
 	method := testFFIMethod()
+	errors := testFFIErrors()
 	params := map[string]interface{}{
 		"x": float64(1),
 		"y": "1000000000000000000000000",
@@ -2375,7 +2398,7 @@ func TestInvokeContractOK(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.NoError(t, err)
 }
 
@@ -2389,6 +2412,7 @@ func TestInvokeContractInvalidOption(t *testing.T) {
 		Address: "0x12345",
 	}
 	method := testFFIMethod()
+	errors := testFFIErrors()
 	params := map[string]interface{}{
 		"x": float64(1),
 		"y": float64(2),
@@ -2409,7 +2433,7 @@ func TestInvokeContractInvalidOption(t *testing.T) {
 			assert.Equal(t, "1000000000000000000000000", params[1])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10398", err)
 }
 
@@ -2423,6 +2447,7 @@ func TestInvokeContractInvalidInput(t *testing.T) {
 		Address: "0x12345",
 	}
 	method := testFFIMethod()
+	errors := testFFIErrors()
 	params := map[string]interface{}{
 		"x": map[bool]bool{true: false},
 		"y": float64(2),
@@ -2444,7 +2469,7 @@ func TestInvokeContractInvalidInput(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "unsupported type", err)
 }
 
@@ -2454,6 +2479,7 @@ func TestInvokeContractAddressNotSet(t *testing.T) {
 	signingKey := ethHexFormatB32(fftypes.NewRandB32())
 	location := &Location{}
 	method := testFFIMethod()
+	errors := testFFIErrors()
 	params := map[string]interface{}{
 		"x": float64(1),
 		"y": float64(2),
@@ -2461,7 +2487,7 @@ func TestInvokeContractAddressNotSet(t *testing.T) {
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -2475,6 +2501,7 @@ func TestInvokeContractEthconnectError(t *testing.T) {
 		Address: "0x12345",
 	}
 	method := testFFIMethod()
+	errors := testFFIErrors()
 	params := map[string]interface{}{
 		"x": float64(1),
 		"y": float64(2),
@@ -2486,7 +2513,7 @@ func TestInvokeContractEthconnectError(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -2507,6 +2534,7 @@ func TestInvokeContractPrepareFail(t *testing.T) {
 			},
 		},
 	}
+	errors := testFFIErrors()
 	params := map[string]interface{}{
 		"x": float64(1),
 		"y": float64(2),
@@ -2514,7 +2542,7 @@ func TestInvokeContractPrepareFail(t *testing.T) {
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "invalid json", err)
 }
 
@@ -2527,6 +2555,7 @@ func TestQueryContractOK(t *testing.T) {
 		Address: "0x12345",
 	}
 	method := testFFIMethod()
+	errors := testFFIErrors()
 	params := map[string]interface{}{}
 	options := map[string]interface{}{
 		"customOption": "customValue",
@@ -2542,7 +2571,7 @@ func TestQueryContractOK(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
 		})
-	result, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	result, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.NoError(t, err)
 	j, err := json.Marshal(result)
 	assert.NoError(t, err)
@@ -2558,6 +2587,7 @@ func TestQueryContractInvalidOption(t *testing.T) {
 		Address: "0x12345",
 	}
 	method := testFFIMethod()
+	errors := testFFIErrors()
 	params := map[string]interface{}{}
 	options := map[string]interface{}{
 		"params": "shouldn't be allowed",
@@ -2572,7 +2602,7 @@ func TestQueryContractInvalidOption(t *testing.T) {
 			assert.Equal(t, "Query", headers["type"])
 			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10398", err)
 }
 
@@ -2592,11 +2622,12 @@ func TestQueryContractErrorPrepare(t *testing.T) {
 			},
 		},
 	}
+	errors := testFFIErrors()
 	params := map[string]interface{}{}
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "invalid json", err)
 }
 
@@ -2605,6 +2636,7 @@ func TestQueryContractAddressNotSet(t *testing.T) {
 	defer cancel()
 	location := &Location{}
 	method := testFFIMethod()
+	errors := testFFIErrors()
 	params := map[string]interface{}{
 		"x": float64(1),
 		"y": float64(2),
@@ -2612,7 +2644,7 @@ func TestQueryContractAddressNotSet(t *testing.T) {
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -2625,6 +2657,7 @@ func TestQueryContractEthconnectError(t *testing.T) {
 		Address: "0x12345",
 	}
 	method := testFFIMethod()
+	errors := testFFIErrors()
 	params := map[string]interface{}{
 		"x": float64(1),
 		"y": float64(2),
@@ -2636,7 +2669,7 @@ func TestQueryContractEthconnectError(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, queryOutput{})(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -2649,6 +2682,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 		Address: "0x12345",
 	}
 	method := testFFIMethod()
+	errors := testFFIErrors()
 	params := map[string]interface{}{
 		"x": float64(1),
 		"y": float64(2),
@@ -2664,7 +2698,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 			assert.Equal(t, "Query", headers["type"])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "invalid character", err)
 }
 
@@ -2834,6 +2868,69 @@ func TestGenerateEventSignatureInvalid(t *testing.T) {
 	}
 
 	signature := e.GenerateEventSignature(context.Background(), event)
+	assert.Equal(t, "", signature)
+}
+
+func TestGenerateErrorSignature(t *testing.T) {
+	e, _ := newTestEthereum()
+	complexParam := fftypes.JSONObject{
+		"type": "object",
+		"details": fftypes.JSONObject{
+			"type": "tuple",
+		},
+		"properties": fftypes.JSONObject{
+			"prop1": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":  "uint256",
+					"index": 0,
+				},
+			},
+			"prop2": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":  "uint256",
+					"index": 1,
+				},
+			},
+		},
+	}.String()
+
+	errorDef := &fftypes.FFIErrorDefinition{
+		Name: "CustomError",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "z",
+				Schema: fftypes.JSONAnyPtr(complexParam),
+			},
+		},
+	}
+
+	signature := e.GenerateErrorSignature(context.Background(), errorDef)
+	assert.Equal(t, "CustomError(uint256,uint256,(uint256,uint256))", signature)
+}
+
+func TestGenerateErrorSignatureInvalid(t *testing.T) {
+	e, _ := newTestEthereum()
+	event := &fftypes.FFIErrorDefinition{
+		Name: "CustomError",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"!bad": "bad"`),
+			},
+		},
+	}
+
+	signature := e.GenerateErrorSignature(context.Background(), event)
 	assert.Equal(t, "", signature)
 }
 
