@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,6 +19,8 @@ package multiparty
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"testing"
 
@@ -134,6 +136,7 @@ func (suite *EthereumContractTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *EthereumContractTestSuite) AfterTest(suiteName, testName string) {
 	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	suite.testState.done()
 }
 
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
@@ -306,4 +309,17 @@ func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
 	assert.Equal(suite.T(), `{"output":"42"}`, string(resJSON))
 
 	suite.testState.client1.DeleteContractListener(suite.T(), listener.ID)
+}
+
+func readContractJSON(t *testing.T, contract string) fftypes.JSONObject {
+	path := "../../data/contracts/" + contract
+	jsonFile, err := os.Open(path)
+	assert.NoError(t, err)
+	defer jsonFile.Close()
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	assert.NoError(t, err)
+	var jsonValue fftypes.JSONObject
+	err = json.Unmarshal(byteValue, &jsonValue)
+	assert.NoError(t, err)
+	return jsonValue
 }

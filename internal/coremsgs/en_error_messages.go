@@ -273,4 +273,5 @@ var (
 	MsgNonIdempotencyKeyConflictTxInsert  = ffe("FF10432", "Conflict on insert of transaction '%s'. No existing transaction matching idempotency key '%s' found", 409)
 	MsgErrorNameMustBeSet                 = ffe("FF10433", "The name of the error must be set", 400)
 	MsgContractErrorsResolveError         = ffe("FF10434", "Unable to resolve contract errors: %s", 400)
+	MsgUnknownInterfaceFormat             = ffe("FF10435", "Unknown interface format: %s", 400)
 )

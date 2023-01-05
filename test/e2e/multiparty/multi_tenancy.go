@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,16 +33,13 @@ type NamespaceAliasSuite struct {
 	testState *testState
 }
 
-func (suite *NamespaceAliasSuite) SetupSuite() {
-	suite.testState = beforeE2ETest(suite.T())
-}
-
 func (suite *NamespaceAliasSuite) BeforeTest(suiteName, testName string) {
 	suite.testState = beforeE2ETest(suite.T())
 }
 
 func (suite *NamespaceAliasSuite) AfterTest(suiteName, testName string) {
 	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	suite.testState.done()
 }
 
 func newNamespace(networkNamespace, contractAddress string) (ns, org, node map[string]interface{}) {

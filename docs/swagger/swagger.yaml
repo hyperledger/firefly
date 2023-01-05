@@ -26240,6 +26240,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: interface
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: interfaceformat
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: locator
         schema:
           type: string
@@ -26349,6 +26359,28 @@ paths:
                       description: Token connector specific information about the
                         pool. See your chosen token connector documentation for details
                       type: object
+                    interface:
+                      description: A reference to an existing FFI, containing pre-registered
+                        type information for the token contract
+                      properties:
+                        id:
+                          description: The UUID of the FireFly interface
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the FireFly interface
+                          type: string
+                        version:
+                          description: The version of the FireFly interface
+                          type: string
+                      type: object
+                    interfaceFormat:
+                      description: The interface encoding format supported by the
+                        connector for this token pool
+                      enum:
+                      - abi
+                      - ffi
+                      type: string
                     key:
                       description: The signing key used to create the token pool.
                         On input for token connectors that support on-chain deployment
@@ -26364,6 +26396,9 @@ paths:
                         the network to index this pool
                       format: uuid
                       type: string
+                    methods:
+                      description: The method definitions resolved by the token connector
+                        to be used by each token operation
                     name:
                       description: The name of the token pool. Note the name is not
                         validated against the description of the token on the blockchain
@@ -26458,6 +26493,21 @@ paths:
                   description: An optional identifier to allow idempotent submission
                     of requests. Stored on the transaction uniquely within a namespace
                   type: string
+                interface:
+                  description: A reference to an existing FFI, containing pre-registered
+                    type information for the token contract
+                  properties:
+                    id:
+                      description: The UUID of the FireFly interface
+                      format: uuid
+                      type: string
+                    name:
+                      description: The name of the FireFly interface
+                      type: string
+                    version:
+                      description: The version of the FireFly interface
+                      type: string
+                  type: object
                 key:
                   description: The signing key used to create the token pool. On input
                     for token connectors that support on-chain deployment of new tokens
@@ -26509,6 +26559,28 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: A reference to an existing FFI, containing pre-registered
+                      type information for the token contract
+                    properties:
+                      id:
+                        description: The UUID of the FireFly interface
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the FireFly interface
+                        type: string
+                      version:
+                        description: The version of the FireFly interface
+                        type: string
+                    type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    enum:
+                    - abi
+                    - ffi
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -26524,6 +26596,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -26594,6 +26669,28 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: A reference to an existing FFI, containing pre-registered
+                      type information for the token contract
+                    properties:
+                      id:
+                        description: The UUID of the FireFly interface
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the FireFly interface
+                        type: string
+                      version:
+                        description: The version of the FireFly interface
+                        type: string
+                    type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    enum:
+                    - abi
+                    - ffi
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -26609,6 +26706,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -26709,6 +26809,28 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: A reference to an existing FFI, containing pre-registered
+                      type information for the token contract
+                    properties:
+                      id:
+                        description: The UUID of the FireFly interface
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the FireFly interface
+                        type: string
+                      version:
+                        description: The version of the FireFly interface
+                        type: string
+                    type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    enum:
+                    - abi
+                    - ffi
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -26724,6 +26846,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -33534,6 +33659,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: interface
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: interfaceformat
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: locator
         schema:
           type: string
@@ -33643,6 +33778,28 @@ paths:
                       description: Token connector specific information about the
                         pool. See your chosen token connector documentation for details
                       type: object
+                    interface:
+                      description: A reference to an existing FFI, containing pre-registered
+                        type information for the token contract
+                      properties:
+                        id:
+                          description: The UUID of the FireFly interface
+                          format: uuid
+                          type: string
+                        name:
+                          description: The name of the FireFly interface
+                          type: string
+                        version:
+                          description: The version of the FireFly interface
+                          type: string
+                      type: object
+                    interfaceFormat:
+                      description: The interface encoding format supported by the
+                        connector for this token pool
+                      enum:
+                      - abi
+                      - ffi
+                      type: string
                     key:
                       description: The signing key used to create the token pool.
                         On input for token connectors that support on-chain deployment
@@ -33658,6 +33815,9 @@ paths:
                         the network to index this pool
                       format: uuid
                       type: string
+                    methods:
+                      description: The method definitions resolved by the token connector
+                        to be used by each token operation
                     name:
                       description: The name of the token pool. Note the name is not
                         validated against the description of the token on the blockchain
@@ -33745,6 +33905,21 @@ paths:
                   description: An optional identifier to allow idempotent submission
                     of requests. Stored on the transaction uniquely within a namespace
                   type: string
+                interface:
+                  description: A reference to an existing FFI, containing pre-registered
+                    type information for the token contract
+                  properties:
+                    id:
+                      description: The UUID of the FireFly interface
+                      format: uuid
+                      type: string
+                    name:
+                      description: The name of the FireFly interface
+                      type: string
+                    version:
+                      description: The version of the FireFly interface
+                      type: string
+                  type: object
                 key:
                   description: The signing key used to create the token pool. On input
                     for token connectors that support on-chain deployment of new tokens
@@ -33796,6 +33971,28 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: A reference to an existing FFI, containing pre-registered
+                      type information for the token contract
+                    properties:
+                      id:
+                        description: The UUID of the FireFly interface
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the FireFly interface
+                        type: string
+                      version:
+                        description: The version of the FireFly interface
+                        type: string
+                    type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    enum:
+                    - abi
+                    - ffi
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -33811,6 +34008,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -33881,6 +34081,28 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: A reference to an existing FFI, containing pre-registered
+                      type information for the token contract
+                    properties:
+                      id:
+                        description: The UUID of the FireFly interface
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the FireFly interface
+                        type: string
+                      version:
+                        description: The version of the FireFly interface
+                        type: string
+                    type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    enum:
+                    - abi
+                    - ffi
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -33896,6 +34118,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -33989,6 +34214,28 @@ paths:
                     description: Token connector specific information about the pool.
                       See your chosen token connector documentation for details
                     type: object
+                  interface:
+                    description: A reference to an existing FFI, containing pre-registered
+                      type information for the token contract
+                    properties:
+                      id:
+                        description: The UUID of the FireFly interface
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the FireFly interface
+                        type: string
+                      version:
+                        description: The version of the FireFly interface
+                        type: string
+                    type: object
+                  interfaceFormat:
+                    description: The interface encoding format supported by the connector
+                      for this token pool
+                    enum:
+                    - abi
+                    - ffi
+                    type: string
                   key:
                     description: The signing key used to create the token pool. On
                       input for token connectors that support on-chain deployment
@@ -34004,6 +34251,9 @@ paths:
                       the network to index this pool
                     format: uuid
                     type: string
+                  methods:
+                    description: The method definitions resolved by the token connector
+                      to be used by each token operation
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain

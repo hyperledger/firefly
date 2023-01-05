@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,4 +27,5 @@ func TestEthereumNamespaceE2ESuite(t *testing.T) {
 	suite.Run(t, new(multiparty.OnChainOffChainTestSuite))
 	suite.Run(t, new(multiparty.TokensTestSuite))
 	suite.Run(t, new(multiparty.EthereumContractTestSuite))
+	suite.Run(t, new(multiparty.EthereumTokenContractTestSuite))
 }
