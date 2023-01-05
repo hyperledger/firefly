@@ -103,6 +103,20 @@ func (_m *Plugin) DeployContract(ctx context.Context, nsOpID string, signingKey 
 	return r0
 }
 
+// GenerateErrorSignature provides a mock function with given fields: ctx, errorDef
+func (_m *Plugin) GenerateErrorSignature(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) string {
+	ret := _m.Called(ctx, errorDef)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIErrorDefinition) string); ok {
+		r0 = rf(ctx, errorDef)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // GenerateEventSignature provides a mock function with given fields: ctx, event
 func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
 	ret := _m.Called(ctx, event)
@@ -237,6 +251,29 @@ func (_m *Plugin) GetNetworkVersion(ctx context.Context, location *fftypes.JSONA
 	return r0, r1
 }
 
+// GetTransactionStatus provides a mock function with given fields: ctx, operation
+func (_m *Plugin) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
+	ret := _m.Called(ctx, operation)
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Operation) interface{}); ok {
+		r0 = rf(ctx, operation)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Operation) error); ok {
+		r1 = rf(ctx, operation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Init provides a mock function with given fields: ctx, cancelCtx, _a2, _a3, cacheManager
 func (_m *Plugin) Init(ctx context.Context, cancelCtx context.CancelFunc, _a2 config.Section, _a3 metrics.Manager, cacheManager cache.Manager) error {
 	ret := _m.Called(ctx, cancelCtx, _a2, _a3, cacheManager)
@@ -256,13 +293,13 @@ func (_m *Plugin) InitConfig(_a0 config.Section) {
 	_m.Called(_a0)
 }
 
-// InvokeContract provides a mock function with given fields: ctx, nsOpID, signingKey, location, method, input, options
-func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
-	ret := _m.Called(ctx, nsOpID, signingKey, location, method, input, options)
+// InvokeContract provides a mock function with given fields: ctx, nsOpID, signingKey, location, method, input, errors, options
+func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error {
+	ret := _m.Called(ctx, nsOpID, signingKey, location, method, input, errors, options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, map[string]interface{}) error); ok {
-		r0 = rf(ctx, nsOpID, signingKey, location, method, input, options)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) error); ok {
+		r0 = rf(ctx, nsOpID, signingKey, location, method, input, errors, options)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -328,13 +365,13 @@ func (_m *Plugin) NormalizeSigningKey(ctx context.Context, keyRef string) (strin
 	return r0, r1
 }
 
-// QueryContract provides a mock function with given fields: ctx, location, method, input, options
-func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
-	ret := _m.Called(ctx, location, method, input, options)
+// QueryContract provides a mock function with given fields: ctx, location, method, input, errors, options
+func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
+	ret := _m.Called(ctx, location, method, input, errors, options)
 
 	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, map[string]interface{}) interface{}); ok {
-		r0 = rf(ctx, location, method, input, options)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) interface{}); ok {
+		r0 = rf(ctx, location, method, input, errors, options)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
@@ -342,8 +379,8 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, map[string]interface{}) error); ok {
-		r1 = rf(ctx, location, method, input, options)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) error); ok {
+		r1 = rf(ctx, location, method, input, errors, options)
 	} else {
 		r1 = ret.Error(1)
 	}

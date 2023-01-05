@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,9 +33,9 @@ import (
 
 // addressResolver is a REST-pluggable interface to allow arbitrary strings that reference
 // keys, to be resolved down to an Ethereum address - which will be kept in a LRU cache.
-// This supports cases where the signing device behind Ethconnect is able to support keys
+// This supports cases where the signing device behind Ethconnect/evmconnect is able to support keys
 // addressed using somthing like a HD Wallet hierarchical syntax.
-// Once the resolver has returned the String->Address mapping, the ethconnect downstream
+// Once the resolver has returned the String->Address mapping, the ethconnect/evmconnect downstream
 // signing process must be able to process using the resolved ethereum address (meaning
 // it might have to reliably store the reverse mapping, it the case of a HD wallet).
 type addressResolver struct {

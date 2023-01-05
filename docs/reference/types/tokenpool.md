@@ -62,7 +62,7 @@ nav_order: 10
 | `decimals` | Number of decimal places that this token has | `int` |
 | `connector` | The name of the token connector, as specified in the FireFly core configuration file that is responsible for the token pool. Required on input when multiple token connectors are configured | `string` |
 | `message` | The UUID of the broadcast message used to inform the network to index this pool | [`UUID`](simpletypes#uuid) |
-| `state` | The current state of the token pool | `FFEnum`:<br/>`"unknown"`<br/>`"pending"`<br/>`"confirmed"` |
+| `state` | The current state of the token pool | `FFEnum`:<br/>`"pending"`<br/>`"confirmed"` |
 | `created` | The creation time of the pool | [`FFTime`](simpletypes#fftime) |
 | `config` | Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |
 | `info` | Token connector specific information about the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |

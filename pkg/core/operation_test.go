@@ -44,6 +44,59 @@ func TestNewPendingMessageOp(t *testing.T) {
 	}, *op)
 }
 
+func TestOperationTypes(t *testing.T) {
+
+	txID := fftypes.NewUUID()
+	op := NewOperation(&fakePlugin{}, "ns1", txID, OpTypeSharedStorageUploadBatch)
+	assert.Equal(t, Operation{
+		ID:          op.ID,
+		Namespace:   "ns1",
+		Transaction: txID,
+		Plugin:      "fake",
+		Type:        OpTypeSharedStorageUploadBatch,
+		Status:      OpStatusPending,
+		Created:     op.Created,
+		Updated:     op.Created,
+	}, *op)
+
+	assert.False(t, op.IsBlockchainOperation())
+	assert.False(t, op.IsTokenOperation())
+
+	// Blockchain operation types
+	op.Type = OpTypeBlockchainContractDeploy
+	assert.True(t, op.IsBlockchainOperation())
+	assert.False(t, op.IsTokenOperation())
+
+	op.Type = OpTypeBlockchainInvoke
+	assert.True(t, op.IsBlockchainOperation())
+	assert.False(t, op.IsTokenOperation())
+
+	op.Type = OpTypeBlockchainNetworkAction
+	assert.True(t, op.IsBlockchainOperation())
+	assert.False(t, op.IsTokenOperation())
+
+	op.Type = OpTypeBlockchainPinBatch
+	assert.True(t, op.IsBlockchainOperation())
+	assert.False(t, op.IsTokenOperation())
+
+	// Token operation types
+	op.Type = OpTypeTokenActivatePool
+	assert.True(t, op.IsTokenOperation())
+	assert.False(t, op.IsBlockchainOperation())
+
+	op.Type = OpTypeTokenApproval
+	assert.True(t, op.IsTokenOperation())
+	assert.False(t, op.IsBlockchainOperation())
+
+	op.Type = OpTypeTokenCreatePool
+	assert.True(t, op.IsTokenOperation())
+	assert.False(t, op.IsBlockchainOperation())
+
+	op.Type = OpTypeTokenTransfer
+	assert.True(t, op.IsTokenOperation())
+	assert.False(t, op.IsBlockchainOperation())
+}
+
 func TestParseNamespacedOpID(t *testing.T) {
 
 	ctx := context.Background()

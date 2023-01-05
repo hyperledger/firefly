@@ -542,11 +542,100 @@ func TestGetOperationByID(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetOperationIDdBadID(t *testing.T) {
+func TestGetOperationIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	_, err := or.GetOperationByID(context.Background(), "")
 	assert.Regexp(t, "FF00138", err)
+}
+
+type txnStatus struct {
+	TxnId string
+}
+
+func TestGetOperationByIDWithStatus(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	u := fftypes.NewUUID()
+
+	or.mom.On("GetOperationByIDCached", mock.Anything, u).Return(&core.Operation{
+		Namespace: "ns1",
+		Type:      core.OpTypeBlockchainInvoke,
+	}, nil)
+
+	or.mbi.On("GetTransactionStatus", mock.Anything, mock.Anything).Return(&txnStatus{TxnId: "abc123"}, nil)
+	opStatus, err := or.GetOperationByIDWithStatus(context.Background(), u.String())
+	assert.Nil(t, err)
+	assert.NotNil(t, opStatus)
+	var expectedTxnStatus = &txnStatus{TxnId: "abc123"}
+	assert.Equal(t, expectedTxnStatus, opStatus.DetailedStatus)
+}
+
+func TestGetOperationByIDWithGoodEmptyStatus(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	u := fftypes.NewUUID()
+
+	or.mom.On("GetOperationByIDCached", mock.Anything, u).Return(&core.Operation{
+		Namespace: "ns1",
+		Type:      core.OpTypeBlockchainInvoke,
+	}, nil)
+
+	or.mbi.On("GetTransactionStatus", mock.Anything, mock.Anything).Return(nil, nil)
+	opStatus, err := or.GetOperationByIDWithStatus(context.Background(), u.String())
+	assert.Nil(t, err)
+	assert.NotNil(t, opStatus)
+	assert.Equal(t, nil, opStatus.DetailedStatus)
+}
+
+func TestGetOperationByIDWithStatusWrongOpType(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	u := fftypes.NewUUID()
+
+	or.mom.On("GetOperationByIDCached", mock.Anything, u).Return(&core.Operation{
+		Namespace: "ns1",
+		Type:      core.OpTypeDataExchangeSendBatch,
+	}, nil)
+
+	opStatus, err := or.GetOperationByIDWithStatus(context.Background(), u.String())
+	assert.Nil(t, err)
+	assert.NotNil(t, opStatus)
+	assert.Equal(t, nil, opStatus.DetailedStatus)
+}
+
+func TestGetOperationIDWithStatusBadID(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	_, err := or.GetOperationByIDWithStatus(context.Background(), "")
+	assert.Regexp(t, "FF00138", err)
+}
+
+func TestGetOperationByIDWithStatusNoOp(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	u := fftypes.NewUUID()
+
+	or.mom.On("GetOperationByIDCached", mock.Anything, u).Return(nil, fmt.Errorf("pop"))
+	_, err := or.GetOperationByIDWithStatus(context.Background(), u.String())
+	assert.Error(t, err)
+}
+
+func TestGetOperationByIDWithStatusError(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	u := fftypes.NewUUID()
+
+	or.mom.On("GetOperationByIDCached", mock.Anything, u).Return(&core.Operation{
+		Namespace: "ns1",
+		Type:      core.OpTypeBlockchainInvoke,
+	}, nil)
+
+	or.mbi.On("GetTransactionStatus", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	opStatus, err := or.GetOperationByIDWithStatus(context.Background(), u.String())
+	assert.Nil(t, err)
+	assert.NotNil(t, opStatus)
+	assert.Regexp(t, "pop", opStatus.DetailedStatus)
 }
 
 func TestGetEventByID(t *testing.T) {
