@@ -308,3 +308,108 @@ func TestApprovedBlockchainEventFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 }
+
+func TestTokensApprovedWithMessageReceived(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	mti := &tokenmocks.Plugin{}
+
+	info := fftypes.JSONObject{"some": "info"}
+	approval := &tokens.TokenApproval{
+		PoolLocator: "F1",
+		TokenApproval: core.TokenApproval{
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			ProtocolID: "123",
+			Message:    fftypes.NewUUID(),
+		},
+		Event: &blockchain.Event{
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "0000/0000/0000",
+			Info:           info,
+		},
+	}
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	message := &core.Message{
+		BatchID: fftypes.NewUUID(),
+	}
+
+	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
+	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(2)
+	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
+	})).Return(nil, nil).Times(2)
+	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
+		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
+	})).Return(nil).Times(2)
+	em.mdi.On("UpsertTokenApproval", em.ctx, &approval.TokenApproval).Return(nil).Times(2)
+	em.mdi.On("UpdateTokenApprovals", em.ctx, mock.Anything, mock.Anything).Return(nil).Times(2)
+	em.mdi.On("GetMessageByID", em.ctx, "ns1", approval.Message).Return(nil, fmt.Errorf("pop")).Once()
+	em.mdi.On("GetMessageByID", em.ctx, "ns1", approval.Message).Return(message, nil).Once()
+	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
+		return ev.Type == core.EventTypeApprovalConfirmed && ev.Reference == approval.LocalID && ev.Namespace == pool.Namespace
+	})).Return(nil).Once()
+
+	err := em.TokensApproved(mti, approval)
+	assert.NoError(t, err)
+
+	mti.AssertExpectations(t)
+}
+
+func TestTokensApprovedWithMessageSend(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	mti := &tokenmocks.Plugin{}
+
+	info := fftypes.JSONObject{"some": "info"}
+	approval := &tokens.TokenApproval{
+		PoolLocator: "F1",
+		TokenApproval: core.TokenApproval{
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			ProtocolID: "123",
+			Message:    fftypes.NewUUID(),
+		},
+		Event: &blockchain.Event{
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "0000/0000/0000",
+			Info:           info,
+		},
+	}
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	message := &core.Message{
+		BatchID: fftypes.NewUUID(),
+		State:   core.MessageStateStaged,
+	}
+
+	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
+	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(2)
+	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
+	})).Return(nil, nil).Times(2)
+	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
+		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
+	})).Return(nil).Times(2)
+	em.mdi.On("UpsertTokenApproval", em.ctx, &approval.TokenApproval).Return(nil).Times(2)
+	em.mdi.On("UpdateTokenApprovals", em.ctx, mock.Anything, mock.Anything).Return(nil).Times(2)
+	em.mdi.On("GetMessageByID", em.ctx, "ns1", mock.Anything).Return(message, nil).Times(2)
+	em.mdi.On("ReplaceMessage", em.ctx, mock.MatchedBy(func(msg *core.Message) bool {
+		return msg.State == core.MessageStateReady
+	})).Return(fmt.Errorf("pop"))
+	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
+		return ev.Type == core.EventTypeApprovalConfirmed && ev.Reference == approval.LocalID && ev.Namespace == pool.Namespace
+	})).Return(nil).Once()
+
+	err := em.TokensApproved(mti, approval)
+	assert.NoError(t, err)
+
+	mti.AssertExpectations(t)
+}

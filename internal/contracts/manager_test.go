@@ -138,6 +138,13 @@ func TestResolveFFI(t *testing.T) {
 				},
 			},
 		},
+		Errors: []*fftypes.FFIError{
+			{
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
+					Name: "changed",
+				},
+			},
+		},
 	}
 
 	err := cm.ResolveFFI(context.Background(), ffi)
@@ -419,6 +426,19 @@ func TestValidateFFI(t *testing.T) {
 				},
 			},
 		},
+		Errors: []*fftypes.FFIError{
+			{
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
+					Name: "sum",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:   "z",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	mdi.On("GetFFI", context.Background(), "ns1", "math", "1.0.0").Return(nil, nil)
@@ -591,6 +611,64 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 
 	err := cm.ResolveFFI(context.Background(), ffi)
 	assert.Regexp(t, "FF10319", err)
+}
+
+func TestValidateFFIBadError(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	ffi := &fftypes.FFI{
+		Name:      "math",
+		Version:   "1.0.0",
+		Namespace: "default",
+		Errors: []*fftypes.FFIError{
+			{
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
+					Name: "",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:   "z",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	mdi.On("GetFFI", context.Background(), "ns1", "math", "1.0.0").Return(nil, nil)
+
+	err := cm.ResolveFFI(context.Background(), ffi)
+	assert.Regexp(t, "FF10433", err)
+}
+
+func TestValidateFFIBadErrorParam(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	ffi := &fftypes.FFI{
+		Name:      "math",
+		Version:   "1.0.0",
+		Namespace: "default",
+		Errors: []*fftypes.FFIError{
+			{
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
+					Name: "pop",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:   "z",
+							Schema: fftypes.JSONAnyPtr(`{"type": "wrongness"`),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	mdi.On("GetFFI", context.Background(), "ns1", "math", "1.0.0").Return(nil, nil)
+
+	err := cm.ResolveFFI(context.Background(), ffi)
+	assert.Regexp(t, "FF10332", err)
 }
 
 func TestAddContractListenerInline(t *testing.T) {
@@ -1260,6 +1338,26 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 	assert.Equal(t, "event1", ffi.Events[0].Name)
 }
 
+func TestGetFFIByIDWithChildrenErrorsFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetFFIByID", mock.Anything, "ns1", cid).Return(&fftypes.FFI{
+		ID: cid,
+	}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIMethod{
+		{ID: fftypes.NewUUID(), Name: "method1"},
+	}, nil, nil)
+	mdb.On("GetFFIEvents", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIEvent{}, nil, nil)
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
+
+	assert.EqualError(t, err, "pop")
+	mdb.AssertExpectations(t)
+}
+
 func TestGetFFIByIDWithChildrenEventsFail(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
@@ -1661,6 +1759,27 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.Regexp(t, "FF10315", err)
+}
+
+func TestInvokeContractErrorsFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mim := cm.identity.(*identitymanagermocks.Manager)
+
+	req := &core.ContractCallRequest{
+		Type:       core.CallTypeInvoke,
+		Interface:  fftypes.NewUUID(),
+		Location:   fftypes.JSONAnyPtr(""),
+		MethodPath: "set",
+	}
+
+	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.MethodPath).Return(&fftypes.FFIMethod{Name: "set"}, nil)
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", req.Interface).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.InvokeContract(context.Background(), req, false)
+
+	assert.Regexp(t, "FF10434", err)
 }
 
 func TestInvokeContractMethodBadInput(t *testing.T) {

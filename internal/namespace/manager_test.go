@@ -171,9 +171,9 @@ func TestInit(t *testing.T) {
 	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.NoError(t, err)
 
-	assert.Equal(t, mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
-	assert.Nil(t, nm.Orchestrator(core.LegacySystemNamespace))
+	assert.Equal(t, mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
+	assert.Panics(t, func() { nm.MustOrchestrator(core.LegacySystemNamespace) })
 
 	mo.AssertExpectations(t)
 }
@@ -359,9 +359,9 @@ func TestInitVersion1(t *testing.T) {
 	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.NoError(t, err)
 
-	assert.Equal(t, mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
-	assert.NotNil(t, nm.Orchestrator(core.LegacySystemNamespace))
+	assert.Equal(t, mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
+	assert.NotNil(t, nm.MustOrchestrator(core.LegacySystemNamespace))
 
 	mo.AssertExpectations(t)
 }
@@ -408,8 +408,8 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 	err := nm.Init(ctx, cancelCtx, nm.reset)
 	assert.NoError(t, err)
 
-	assert.Equal(t, mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.Equal(t, mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
 
 	mo.AssertExpectations(t)
 }
@@ -476,8 +476,8 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10421", err)
 
-	assert.Equal(t, mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.Equal(t, mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
 
 	mo.AssertExpectations(t)
 }
@@ -543,8 +543,8 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.Regexp(t, "FF10421", err)
 
-	assert.Equal(t, mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.Equal(t, mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
 
 	mo.AssertExpectations(t)
 }
@@ -611,8 +611,8 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 	err = nm.Init(ctx, cancelCtx, nm.reset)
 	assert.NoError(t, err)
 
-	assert.Equal(t, mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.Equal(t, mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
 
 	mo.AssertExpectations(t)
 }
@@ -1919,7 +1919,7 @@ func TestGetOperationByNamespacedIDNoOrchestrator(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	_, err := nm.GetOperationByNamespacedID(context.Background(), "bad:"+opID.String())
-	assert.Regexp(t, "FF10109", err)
+	assert.Regexp(t, "FF10435", err)
 
 	mo.AssertExpectations(t)
 }
@@ -1972,7 +1972,7 @@ func TestResolveOperationByNamespacedIDNoOrchestrator(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	err := nm.ResolveOperationByNamespacedID(context.Background(), "bad:"+opID.String(), &core.OperationUpdateDTO{})
-	assert.Regexp(t, "FF10109", err)
+	assert.Regexp(t, "FF10435", err)
 
 	mo.AssertExpectations(t)
 }
@@ -1992,6 +1992,15 @@ func TestAuthorize(t *testing.T) {
 	assert.NoError(t, err)
 
 	mo.AssertExpectations(t)
+}
+
+func TestAuthorizeBadNamespace(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	err := nm.Authorize(context.Background(), &fftypes.AuthReq{
+		Namespace: "ns1",
+	})
+	assert.Regexp(t, "FF10435", err)
 }
 
 func TestValidateNonMultipartyConfig(t *testing.T) {

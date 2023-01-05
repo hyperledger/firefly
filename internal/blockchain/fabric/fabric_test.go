@@ -135,6 +135,14 @@ func TestInitMissingURL(t *testing.T) {
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
+func TestGenerateErrorSignatureNoOp(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+
+	assert.Empty(t, e.GenerateErrorSignature(context.Background(), &fftypes.FFIErrorDefinition{}))
+}
+
 func TestInitMissingTopic(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
@@ -205,7 +213,8 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
 	startupMessage = <-toServer
 	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
-	fromServer <- `[]` // empty batch, will be ignored, but acked
+	fromServer <- `{"bad":"receipt"}` // will be ignored - no ack\
+	fromServer <- `[]`                // empty batch, will be ignored, but acked
 	reply := <-toServer
 	assert.Equal(t, `{"topic":"topic1","type":"ack"}`, reply)
 

@@ -39,6 +39,7 @@ func TestDefineFFIResolveFail(t *testing.T) {
 	ffi := &fftypes.FFI{
 		Methods: []*fftypes.FFIMethod{{}},
 		Events:  []*fftypes.FFIEvent{{}},
+		Errors:  []*fftypes.FFIError{{}},
 	}
 
 	mcm := ds.contracts.(*contractmocks.Manager)

@@ -296,6 +296,7 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
 	startupMessage = <-toServer
 	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
+	fromServer <- `{"bad":"receipt"}`                 // bad receipt that cannot be handled - will be swallowed
 	fromServer <- `{"batchNumber":12345,"events":[]}` // empty batch, will be ignored, but acked
 	reply := <-toServer
 	assert.Equal(t, `{"type":"ack","topic":"topic1","batchNumber":12345}`, reply)

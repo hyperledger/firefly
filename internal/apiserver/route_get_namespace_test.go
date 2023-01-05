@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"context"
+	"fmt"
 	"net/http/httptest"
 	"testing"
 
@@ -48,8 +49,8 @@ func TestGetNamespaceInvalid(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mgr.On("Orchestrator", "BAD").Return(nil, nil)
+	mgr.On("Orchestrator", mock.Anything, "BAD").Return(nil, fmt.Errorf("pop"))
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 404, res.Result().StatusCode)
+	assert.Equal(t, 500, res.Result().StatusCode)
 }

@@ -1582,6 +1582,59 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 
 }
 
+func TestAttemptMessageDispatchGetApprovalsFail(t *testing.T) {
+	ag := newTestAggregator()
+	defer ag.cleanup(t)
+
+	org1 := newTestOrg("org1")
+	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
+
+	ag.mdi.On("GetTokenApprovals", ag.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Type:      core.MessageTypeApprovalBroadcast,
+			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
+		},
+	}
+	msg.Hash = msg.Header.Hash()
+	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	assert.EqualError(t, err, "pop")
+	assert.False(t, dispatched)
+
+}
+
+func TestAttemptMessageDispatchApprovalMismatch(t *testing.T) {
+	ag := newTestAggregator()
+	defer ag.cleanup(t)
+
+	org1 := newTestOrg("org1")
+
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Type:      core.MessageTypeApprovalBroadcast,
+			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
+		},
+	}
+	msg.Hash = msg.Header.Hash()
+
+	approvals := []*core.TokenApproval{{
+		Message:     msg.Header.ID,
+		MessageHash: fftypes.NewRandB32(),
+	}}
+
+	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
+
+	ag.mdi.On("GetTokenApprovals", ag.ctx, "ns1", mock.Anything).Return(approvals, nil, nil)
+
+	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	assert.NoError(t, err)
+	assert.False(t, dispatched)
+
+}
+
 func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 	ag := newTestAggregator()
 	defer ag.cleanup(t)
