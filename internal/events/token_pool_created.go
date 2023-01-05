@@ -93,30 +93,20 @@ func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, o
 	return nil, nil
 }
 
-func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
+func (em *eventManager) loadExisting(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
 	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace.Name, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
 		log.L(ctx).Debugf("Pool not found with ns=%s connector=%s locator=%s (err=%v)", em.namespace.Name, pool.Connector, pool.PoolLocator, err)
 		return existingPool, err
 	}
+
 	if err = addPoolDetailsFromPlugin(existingPool, pool); err != nil {
 		log.L(ctx).Errorf("Error processing pool for transaction '%s' (%s) - ignoring", pool.TX.ID, err)
 		return nil, nil
 	}
-
-	log.L(ctx).Debugf("shouldConfirm checking pool: state=%s name=%s connector=%s locator=%s", existingPool.State, em.namespace.Name, pool.Connector, pool.PoolLocator)
-	if existingPool.State == core.TokenPoolStateUnknown {
-		// Unknown pool state - should only happen on first run after database migration
-		// Activate the pool, then immediately confirm
-		// TODO: can this state eventually be removed?
-		if err = em.assets.ActivateTokenPool(ctx, existingPool); err != nil {
-			log.L(ctx).Errorf("Failed to activate token pool '%s': %s", existingPool.ID, err)
-			return nil, err
-		}
-	}
 	return existingPool, nil
 }
 
-func (em *eventManager) shouldAnnounce(ctx context.Context, pool *tokens.TokenPool) (announcePool *core.TokenPool, err error) {
+func (em *eventManager) loadFromOperation(ctx context.Context, pool *tokens.TokenPool) (announcePool *core.TokenPool, err error) {
 	op, err := em.findTXOperation(ctx, pool.TX.ID, core.OpTypeTokenCreatePool)
 	if err != nil {
 		return nil, err
@@ -148,7 +138,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 	err = em.retry.Do(em.ctx, "persist token pool transaction", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// See if this is a confirmation of an unconfirmed pool
-			existingPool, err := em.shouldConfirm(ctx, pool)
+			existingPool, err := em.loadExisting(ctx, pool)
 			if err != nil {
 				return err
 			}
@@ -167,7 +157,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			}
 
 			// See if this pool was submitted locally and needs to be announced
-			if announcePool, err = em.shouldAnnounce(ctx, pool); err != nil {
+			if announcePool, err = em.loadFromOperation(ctx, pool); err != nil {
 				return err
 			} else if announcePool != nil {
 				return nil // trigger announce after completion of database transaction
