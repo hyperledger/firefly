@@ -38,9 +38,6 @@ var (
 		"description",
 		"params",
 	}
-	ffiErrorFilterFieldMap = map[string]string{
-		"interface": "interface_id",
-	}
 )
 
 const ffierrorsTable = "ffierrors"
