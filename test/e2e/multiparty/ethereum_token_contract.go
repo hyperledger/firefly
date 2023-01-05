@@ -177,9 +177,220 @@ var expectedERC20Methods = fftypes.JSONAnyPtr(`{
 	}
 }`)
 
+var expectedERC1155Methods = fftypes.JSONAnyPtr(`{
+	"approval": {
+	  "format": "abi",
+	  "methods": [
+		{
+		  "type": "function",
+		  "name": "setApprovalForAllWithData",
+		  "stateMutability": "nonpayable",
+		  "inputs": [
+			{
+			  "name": "operator",
+			  "type": "address",
+			  "internalType": "address"
+			},
+			{
+			  "name": "approved",
+			  "type": "bool",
+			  "internalType": "bool"
+			},
+			{
+			  "name": "data",
+			  "type": "bytes",
+			  "internalType": "bytes"
+			}
+		  ],
+		  "outputs": []
+		},
+		{
+		  "type": "function",
+		  "name": "setApprovalForAll",
+		  "stateMutability": "nonpayable",
+		  "inputs": [
+			{
+			  "name": "operator",
+			  "type": "address",
+			  "internalType": "address"
+			},
+			{
+			  "name": "approved",
+			  "type": "bool",
+			  "internalType": "bool"
+			}
+		  ],
+		  "outputs": []
+		}
+	  ]
+	},
+	"burn": {
+	  "format": "abi",
+	  "methods": [
+		{
+		  "type": "function",
+		  "name": "burn",
+		  "stateMutability": "nonpayable",
+		  "inputs": [
+			{
+			  "name": "account",
+			  "type": "address",
+			  "internalType": "address"
+			},
+			{
+			  "name": "id",
+			  "type": "uint256",
+			  "internalType": "uint256"
+			},
+			{
+			  "name": "value",
+			  "type": "uint256",
+			  "internalType": "uint256"
+			}
+		  ],
+		  "outputs": []
+		}
+	  ]
+	},
+	"mint": {
+	  "format": "abi",
+	  "methods": [
+		{
+		  "type": "function",
+		  "name": "mintFungible",
+		  "stateMutability": "nonpayable",
+		  "inputs": [
+			{
+			  "name": "type_id",
+			  "type": "uint256",
+			  "internalType": "uint256"
+			},
+			{
+			  "name": "to",
+			  "type": "address[]",
+			  "internalType": "address[]"
+			},
+			{
+			  "name": "amounts",
+			  "type": "uint256[]",
+			  "internalType": "uint256[]"
+			},
+			{
+			  "name": "data",
+			  "type": "bytes",
+			  "internalType": "bytes"
+			}
+		  ],
+		  "outputs": []
+		},
+		{
+		  "type": "function",
+		  "name": "mintNonFungibleWithURI",
+		  "stateMutability": "nonpayable",
+		  "inputs": [
+			{
+			  "name": "type_id",
+			  "type": "uint256",
+			  "internalType": "uint256"
+			},
+			{
+			  "name": "to",
+			  "type": "address[]",
+			  "internalType": "address[]"
+			},
+			{
+			  "name": "data",
+			  "type": "bytes",
+			  "internalType": "bytes"
+			},
+			{
+			  "name": "_uri",
+			  "type": "string",
+			  "internalType": "string"
+			}
+		  ],
+		  "outputs": []
+		},
+		{
+		  "type": "function",
+		  "name": "mintNonFungible",
+		  "stateMutability": "nonpayable",
+		  "inputs": [
+			{
+			  "name": "type_id",
+			  "type": "uint256",
+			  "internalType": "uint256"
+			},
+			{
+			  "name": "to",
+			  "type": "address[]",
+			  "internalType": "address[]"
+			},
+			{
+			  "name": "data",
+			  "type": "bytes",
+			  "internalType": "bytes"
+			}
+		  ],
+		  "outputs": []
+		}
+	  ]
+	},
+	"transfer": {
+	  "format": "abi",
+	  "methods": [
+		{
+		  "type": "function",
+		  "name": "safeTransferFrom",
+		  "stateMutability": "nonpayable",
+		  "inputs": [
+			{
+			  "name": "from",
+			  "type": "address",
+			  "internalType": "address"
+			},
+			{
+			  "name": "to",
+			  "type": "address",
+			  "internalType": "address"
+			},
+			{
+			  "name": "id",
+			  "type": "uint256",
+			  "internalType": "uint256"
+			},
+			{
+			  "name": "amount",
+			  "type": "uint256",
+			  "internalType": "uint256"
+			},
+			{
+			  "name": "data",
+			  "type": "bytes",
+			  "internalType": "bytes"
+			}
+		  ],
+		  "outputs": []
+		}
+	  ]
+	}
+  }`)
+
 type EthereumTokenContractTestSuite struct {
 	suite.Suite
-	testState *testState
+	testState       *testState
+	contract        string
+	expectedMethods *fftypes.JSONAny
+}
+
+func (suite *EthereumTokenContractTestSuite) SetupSuite() {
+	stack := e2e.ReadStack(suite.T())
+	suite.contract = "erc20/ERC20OpenZeppelin.json"
+	suite.expectedMethods = expectedERC20Methods
+	if stack.TokenProviders[0] == "erc1155" {
+		suite.contract = "erc1155/ERC1155Sample.json"
+		suite.expectedMethods = expectedERC1155Methods
+	}
 }
 
 func (suite *EthereumTokenContractTestSuite) BeforeTest(suiteName, testName string) {
@@ -196,10 +407,10 @@ func (suite *EthereumTokenContractTestSuite) TestTokensWithInterface() {
 
 	received1 := e2e.WsReader(suite.testState.ws1)
 
-	contract := "erc20/ERC20OpenZeppelin.json"
-	contractAddress := deployContract(suite.T(), suite.testState.stackName, contract)
+	suite.T().Logf("contract: %s", suite.contract)
+	contractAddress := deployContract(suite.T(), suite.testState.stackName, suite.contract)
+	contractJSON := readContractJSON(suite.T(), suite.contract)
 
-	contractJSON := readContractJSON(suite.T(), contract)
 	ffi := suite.testState.client1.GenerateFFIFromABI(suite.T(), &fftypes.FFIGenerationRequest{
 		Name:    "ERC20",
 		Version: contractVersion,
@@ -225,7 +436,7 @@ func (suite *EthereumTokenContractTestSuite) TestTokensWithInterface() {
 
 	poolResp = suite.testState.client1.GetTokenPool(suite.T(), poolResp.ID)
 	assert.Equal(suite.T(), core.TokenInterfaceFormatABI, poolResp.InterfaceFormat)
-	assert.Equal(suite.T(), expectedERC20Methods.JSONObject(), poolResp.Methods.JSONObject())
+	assert.Equal(suite.T(), suite.expectedMethods.JSONObject(), poolResp.Methods.JSONObject())
 
 	transfer := &core.TokenTransferInput{
 		TokenTransfer: core.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
