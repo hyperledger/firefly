@@ -155,8 +155,7 @@ type activatePool struct {
 
 type tokenInterface struct {
 	Format  core.TokenInterfaceFormat `json:"format"`
-	ABI     []*abi.Entry              `json:"abi,omitempty"`
-	Methods []*fftypes.FFIMethod      `json:"methods,omitempty"`
+	Methods interface{}               `json:"methods,omitempty"`
 }
 
 type checkInterface struct {
@@ -690,7 +689,7 @@ func (ft *FFTokens) CheckInterface(ctx context.Context, pool *core.TokenPool, me
 		if err != nil {
 			return nil, err
 		}
-		body.tokenInterface.ABI = abi
+		body.tokenInterface.Methods = abi
 	default:
 		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownInterfaceFormat, pool.InterfaceFormat)
 	}
