@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -31,13 +32,18 @@ var getOpByID = &ffapi.Route{
 	PathParams: []*ffapi.PathParam{
 		{Name: "opid", Description: coremsgs.APIParamsOperationIDGet},
 	},
-	QueryParams:     nil,
+	QueryParams: []*ffapi.QueryParam{
+		{Name: "fetchstatus", Example: "true", Description: coremsgs.APIParamsFetchStatus, IsBool: true},
+	},
 	Description:     coremsgs.APIEndpointsGetOpByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			if strings.EqualFold(r.QP["fetchstatus"], "true") {
+				return cr.or.GetOperationByIDWithStatus(cr.ctx, r.PP["opid"])
+			}
 			output, err = cr.or.GetOperationByID(cr.ctx, r.PP["opid"])
 			return output, err
 		},

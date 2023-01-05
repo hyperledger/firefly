@@ -1480,7 +1480,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	}
 	e.SetOperationHandler("ns1", em)
 
-	var reply fftypes.JSONObject
+	var reply common.BlockchainReceiptNotification
 	operationID := fftypes.NewUUID()
 	data := fftypes.JSONAnyPtr(`{
 		"_id": "4373614c-e0f7-47b0-640e-7eacec417a9e",
@@ -1514,7 +1514,8 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	e.handleReceipt(context.Background(), reply)
+
+	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
 
 	em.AssertExpectations(t)
 }
@@ -1530,7 +1531,7 @@ func TestHandleReceiptTXUpdateEVMConnect(t *testing.T) {
 	}
 	e.SetOperationHandler("ns1", em)
 
-	var reply fftypes.JSONObject
+	var reply common.BlockchainReceiptNotification
 	operationID := fftypes.NewUUID()
 	data := fftypes.JSONAnyPtr(`{
 		"created": "2022-08-03T18:55:42.671166Z",
@@ -1599,7 +1600,9 @@ func TestHandleReceiptTXUpdateEVMConnect(t *testing.T) {
 
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	e.handleReceipt(context.Background(), reply)
+	expectedReceiptId := "ns1:" + operationID.String()
+	assert.Equal(t, reply.Headers.ReceiptID, expectedReceiptId)
+	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
 
 	em.AssertExpectations(t)
 }
@@ -1659,11 +1662,11 @@ func TestHandleMsgBatchBadData(t *testing.T) {
 		wsconn: wsm,
 	}
 
-	var reply fftypes.JSONObject
+	var reply common.BlockchainReceiptNotification
 	data := fftypes.JSONAnyPtr(`{}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	e.handleReceipt(context.Background(), reply)
+	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
 }
 
 func TestFormatNil(t *testing.T) {
@@ -3650,4 +3653,116 @@ func TestGetContractListenerStatusGetSubFail(t *testing.T) {
 	status, err := e.GetContractListenerStatus(context.Background(), "sub1")
 	assert.Nil(t, status)
 	assert.Regexp(t, "FF10111", err)
+}
+
+func TestGetTransactionStatusSuccess(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	op := &core.Operation{
+		Namespace: "ns1",
+		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		Status:    "Pending",
+	}
+
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+		func(req *http.Request) (*http.Response, error) {
+			transactionStatus := make(map[string]interface{})
+			transactionStatus["status"] = "Succeeded"
+			return httpmock.NewJsonResponderOrPanic(200, transactionStatus)(req)
+		})
+
+	status, err := e.GetTransactionStatus(context.Background(), op)
+	assert.NotNil(t, status)
+	assert.NoError(t, err)
+}
+
+func TestGetTransactionStatusFailed(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	op := &core.Operation{
+		Namespace: "ns1",
+		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		Status:    "Pending",
+	}
+
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+		func(req *http.Request) (*http.Response, error) {
+			transactionStatus := make(map[string]interface{})
+			transactionStatus["status"] = "Failed"
+			return httpmock.NewJsonResponderOrPanic(200, transactionStatus)(req)
+		})
+
+	status, err := e.GetTransactionStatus(context.Background(), op)
+	assert.NotNil(t, status)
+	assert.NoError(t, err)
+}
+
+func TestGetTransactionStatusEmptyResult(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	op := &core.Operation{
+		Namespace: "ns1",
+		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		Status:    "Pending",
+	}
+
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(200, make(map[string]interface{}))(req)
+		})
+
+	status, err := e.GetTransactionStatus(context.Background(), op)
+	assert.NotNil(t, status)
+	assert.NoError(t, err)
+}
+
+func TestGetTransactionStatusNoResult(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	op := &core.Operation{
+		Namespace: "ns1",
+		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+	}
+
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(404, make(map[string]interface{}))(req)
+		})
+
+	status, err := e.GetTransactionStatus(context.Background(), op)
+	assert.Nil(t, status)
+	assert.Nil(t, err)
+}
+
+func TestGetTransactionStatusBadResult(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	op := &core.Operation{
+		Namespace: "ns1",
+		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+	}
+
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(500, make(map[string]interface{}))(req)
+		})
+
+	status, err := e.GetTransactionStatus(context.Background(), op)
+	assert.Nil(t, status)
+	assert.Error(t, err)
 }

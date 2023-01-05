@@ -251,6 +251,29 @@ func (_m *Plugin) GetNetworkVersion(ctx context.Context, location *fftypes.JSONA
 	return r0, r1
 }
 
+// GetTransactionStatus provides a mock function with given fields: ctx, operation
+func (_m *Plugin) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
+	ret := _m.Called(ctx, operation)
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Operation) interface{}); ok {
+		r0 = rf(ctx, operation)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Operation) error); ok {
+		r1 = rf(ctx, operation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Init provides a mock function with given fields: ctx, cancelCtx, _a2, _a3, cacheManager
 func (_m *Plugin) Init(ctx context.Context, cancelCtx context.CancelFunc, _a2 config.Section, _a3 metrics.Manager, cacheManager cache.Manager) error {
 	ret := _m.Called(ctx, cancelCtx, _a2, _a3, cacheManager)

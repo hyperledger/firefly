@@ -369,26 +369,6 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	})
 }
 
-func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
-	l := log.L(ctx)
-
-	headers := reply.GetObject("headers")
-	requestID := headers.GetString("requestId")
-	replyType := headers.GetString("type")
-	txHash := reply.GetString("transactionId")
-	message := reply.GetString("errorMessage")
-	if requestID == "" || replyType == "" {
-		l.Errorf("Reply cannot be processed: %+v", reply)
-		return
-	}
-	updateType := core.OpStatusSucceeded
-	if replyType != "TransactionSuccess" {
-		updateType = core.OpStatusFailed
-	}
-	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, requestID, txHash, message)
-	f.callbacks.OperationUpdate(ctx, f, requestID, updateType, txHash, message, reply)
-}
-
 func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
@@ -498,7 +478,13 @@ func (f *Fabric) eventLoop() {
 					err = f.wsconn.Send(ctx, ack)
 				}
 			case map[string]interface{}:
-				f.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
+				var receipt common.BlockchainReceiptNotification
+				_ = json.Unmarshal(msgBytes, &receipt)
+
+				err := common.HandleReceipt(ctx, f, &receipt, f.callbacks)
+				if err != nil {
+					l.Errorf("Failed to process receipt: %+v", msgTyped)
+				}
 			default:
 				l.Errorf("Message unexpected: %+v", msgTyped)
 				continue
@@ -925,4 +911,29 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 		Channel:   f.defaultChannel,
 	})
 	return location, fromBlock, err
+}
+
+func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
+	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
+
+	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
+	client := f.client
+	var resErr fabError
+	var statusResponse fftypes.JSONObject
+	res, err := client.R().
+		SetContext(ctx).
+		SetError(&resErr).
+		SetResult(&statusResponse).
+		Get(transactionRequestPath)
+	if err != nil || !res.IsSuccess() {
+		if res.StatusCode() == 404 {
+			return nil, nil
+		}
+		return nil, wrapError(ctx, &resErr, res, err)
+	}
+
+	// TODO - could implement the same enhancement ethconnect has, and build a mock WS receipt if an API query
+	// happens to update the status of a pending transaction in our store.
+
+	return statusResponse, nil
 }

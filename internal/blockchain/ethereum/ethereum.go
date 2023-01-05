@@ -47,6 +47,15 @@ const (
 	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"
 )
 
+const (
+	ethTxStatusPending string = "Pending"
+)
+
+const (
+	ReceiptTransactionSuccess string = "TransactionSuccess"
+	ReceiptTransactionFailed  string = "TransactionFailed"
+)
+
 type Ethereum struct {
 	ctx             context.Context
 	cancelCtx       context.CancelFunc
@@ -345,31 +354,6 @@ func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSON
 	return err
 }
 
-func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
-	l := log.L(ctx)
-
-	headers := reply.GetObject("headers")
-	requestID := headers.GetString("requestId")
-	replyType := headers.GetString("type")
-	txHash := reply.GetString("transactionHash")
-	message := reply.GetString("errorMessage")
-	if requestID == "" || replyType == "" {
-		l.Errorf("Reply cannot be processed - missing fields: %+v", reply)
-		return
-	}
-	var updateType core.OpStatus
-	switch replyType {
-	case "TransactionSuccess":
-		updateType = core.OpStatusSucceeded
-	case "TransactionUpdate":
-		updateType = core.OpStatusPending
-	default:
-		updateType = core.OpStatusFailed
-	}
-	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, requestID, txHash, message)
-	e.callbacks.OperationUpdate(ctx, e, requestID, updateType, txHash, message, reply)
-}
-
 func (e *Ethereum) buildEventLocationString(msgJSON fftypes.JSONObject) string {
 	return fmt.Sprintf("address=%s", msgJSON.GetString("address"))
 }
@@ -479,7 +463,12 @@ func (e *Ethereum) eventLoop() {
 					}
 				}
 				if !isBatch {
-					e.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
+					var receipt common.BlockchainReceiptNotification
+					_ = json.Unmarshal(msgBytes, &receipt)
+					err := common.HandleReceipt(ctx, e, &receipt, e.callbacks)
+					if err != nil {
+						l.Errorf("Failed to process receipt: %+v", msgTyped)
+					}
 				}
 			default:
 				l.Errorf("Message unexpected: %+v", msgTyped)
@@ -968,4 +957,56 @@ func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (l
 		Address: address,
 	})
 	return location, fromBlock, err
+}
+
+func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
+	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
+
+	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
+	client := e.client
+	var resErr ethError
+	var statusResponse fftypes.JSONObject
+	res, err := client.R().
+		SetContext(ctx).
+		SetError(&resErr).
+		SetResult(&statusResponse).
+		Get(transactionRequestPath)
+	if err != nil || !res.IsSuccess() {
+		if res.StatusCode() == 404 {
+			return nil, nil
+		}
+		return nil, wrapError(ctx, &resErr, res, err)
+	}
+
+	receiptInfo := statusResponse.GetObject("receipt")
+	txStatus := statusResponse.GetString("status")
+
+	if txStatus != "" {
+		var replyType string
+		if txStatus == "Succeeded" {
+			replyType = ReceiptTransactionSuccess
+		} else {
+			replyType = ReceiptTransactionFailed
+		}
+		// If the status has changed, mock up blockchain receipt as if we'd received it
+		// as a web socket notification
+		if operation.Status == core.OpStatusPending && txStatus != ethTxStatusPending {
+			receipt := &common.BlockchainReceiptNotification{
+				Headers: common.BlockchainReceiptHeaders{
+					ReceiptID: statusResponse.GetString("id"),
+					ReplyType: replyType},
+				TxHash:     statusResponse.GetString("transactionHash"),
+				Message:    statusResponse.GetString("errorMessage"),
+				ProtocolID: receiptInfo.GetString("protocolId")}
+			err := common.HandleReceipt(ctx, e, receipt, e.callbacks)
+			if err != nil {
+				log.L(ctx).Warnf("Failed to handle receipt")
+			}
+		}
+	} else {
+		// Don't expect to get here so issue a warning
+		log.L(ctx).Warnf("Transaction status didn't include txStatus information")
+	}
+
+	return statusResponse, nil
 }
