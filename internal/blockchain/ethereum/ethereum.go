@@ -851,7 +851,7 @@ func (e *Ethereum) GenerateErrorSignature(ctx context.Context, errorDef *fftypes
 func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError, input map[string]interface{}) (*abi.Entry, []*abi.Entry, []interface{}, error) {
 	errorsAbi := make([]*abi.Entry, len(errors))
 	orderedInput := make([]interface{}, len(method.Params))
-	abi, err := ffi2abi.ConvertFFIMethodToABI(ctx, method, errors)
+	abi, err := ffi2abi.ConvertFFIMethodToABI(ctx, method)
 	if err != nil {
 		return abi, errorsAbi, orderedInput, err
 	}
