@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,6 +43,7 @@ type ContractListenerWithStatus struct {
 	ContractListener
 	Status interface{} `ffstruct:"ContractListenerWithStatus" json:"status,omitempty" ffexcludeinput:"true"`
 }
+
 type ContractListenerOptions struct {
 	FirstEvent string `ffstruct:"ContractListenerOptions" json:"firstEvent,omitempty"`
 }
