@@ -1,7 +1,7 @@
 BEGIN;
 
 CREATE TABLE temp_blobs (
-  seq            INTEGER         PRIMARY KEY AUTOINCREMENT,
+  seq            SERIAL          PRIMARY KEY,
   namespace      VARCHAR(64)     NOT NULL,
   hash           CHAR(64)        NOT NULL,
   payload_ref    VARCHAR(1024)   NOT NULL,
