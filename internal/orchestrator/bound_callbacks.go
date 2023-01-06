@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -38,6 +38,6 @@ func (bc *boundCallbacks) SharedStorageBatchDownloaded(payloadRef string, data [
 	return bc.ei.SharedStorageBatchDownloaded(bc.ss, payloadRef, data)
 }
 
-func (bc *boundCallbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string) {
-	bc.ei.SharedStorageBlobDownloaded(bc.ss, hash, size, payloadRef)
+func (bc *boundCallbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) {
+	bc.ei.SharedStorageBlobDownloaded(bc.ss, hash, size, payloadRef, dataID)
 }

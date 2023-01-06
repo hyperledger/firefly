@@ -31,6 +31,8 @@ import (
 )
 
 func TestBlobsE2EWithDB(t *testing.T) {
+	dataID := fftypes.NewUUID()
+	namesapce := "e2e"
 	log.SetLevel("debug")
 
 	s, cleanup := newSQLiteTestProvider(t)
@@ -39,17 +41,19 @@ func TestBlobsE2EWithDB(t *testing.T) {
 
 	// Create a new blob entry
 	blob := &core.Blob{
+		Namespace:  namesapce,
 		Hash:       fftypes.NewRandB32(),
 		Size:       12345,
 		PayloadRef: fftypes.NewRandB32().String(),
 		Peer:       "peer1",
 		Created:    fftypes.Now(),
+		DataID:     dataID,
 	}
 	err := s.InsertBlob(ctx, blob)
 	assert.NoError(t, err)
 
 	// Check we get the exact same blob back
-	blobRead, err := s.GetBlobMatchingHash(ctx, blob.Hash)
+	blobRead, err := s.GetBlobMatchingHash(ctx, blob.Hash, dataID)
 	assert.NoError(t, err)
 	assert.NotNil(t, blobRead)
 	blobJson, _ := json.Marshal(&blob)
@@ -164,7 +168,7 @@ func TestInsertBlobsSingleRowFail(t *testing.T) {
 func TestGetBlobByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetBlobMatchingHash(context.Background(), fftypes.NewRandB32())
+	_, err := s.GetBlobMatchingHash(context.Background(), fftypes.NewRandB32(), fftypes.NewUUID())
 	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -172,7 +176,7 @@ func TestGetBlobByIDSelectFail(t *testing.T) {
 func TestGetBlobByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
-	msg, err := s.GetBlobMatchingHash(context.Background(), fftypes.NewRandB32())
+	msg, err := s.GetBlobMatchingHash(context.Background(), fftypes.NewRandB32(), fftypes.NewUUID())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -181,7 +185,7 @@ func TestGetBlobByIDNotFound(t *testing.T) {
 func TestGetBlobByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
-	_, err := s.GetBlobMatchingHash(context.Background(), fftypes.NewRandB32())
+	_, err := s.GetBlobMatchingHash(context.Background(), fftypes.NewRandB32(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

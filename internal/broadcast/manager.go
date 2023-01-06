@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -203,7 +203,7 @@ func (bm *broadcastManager) uploadDataBlob(ctx context.Context, tx *fftypes.UUID
 		return err
 	}
 
-	blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
+	blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash, d.ID)
 	if err != nil {
 		return err
 	} else if blob == nil {

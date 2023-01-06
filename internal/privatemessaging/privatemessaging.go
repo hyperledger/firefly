@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -213,7 +213,7 @@ func (pm *privateMessaging) prepareBlobTransfers(ctx context.Context, data core.
 					return i18n.NewError(ctx, coremsgs.MsgDataMissingBlobHash, d.ID)
 				}
 
-				blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
+				blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash, d.ID)
 				if err != nil {
 					return err
 				}
@@ -226,7 +226,7 @@ func (pm *privateMessaging) prepareBlobTransfers(ctx context.Context, data core.
 					pm.namespace.Name,
 					txid,
 					core.OpTypeDataExchangeSendBlob)
-				addTransferBlobInputs(op, node.ID, blob.Hash)
+				addTransferBlobInputs(op, node.ID, blob.Hash, d.ID)
 				if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
 					return err
 				}

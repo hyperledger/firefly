@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -213,11 +213,13 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 	// Dispatch to the blob receiver for efficient batch DB operations
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
 		blob: &core.Blob{
+			Namespace:  br.Namespace,
 			Peer:       br.PeerID,
 			PayloadRef: br.PayloadRef,
 			Hash:       &br.Hash,
 			Size:       br.Size,
 			Created:    fftypes.Now(),
+			DataID:     fftypes.MustParseUUID(br.DataID),
 		},
 		onComplete: func() {
 			event.Ack()

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,6 +19,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly-common/pkg/dbsql"
@@ -32,11 +33,13 @@ import (
 
 var (
 	blobColumns = []string{
+		"namespace",
 		"hash",
 		"payload_ref",
-		"peer",
 		"created",
+		"peer",
 		"size",
+		"data_id",
 	}
 	blobFilterFieldMap = map[string]string{
 		"payloadref": "payload_ref",
@@ -62,11 +65,13 @@ func (s *SQLCommon) InsertBlob(ctx context.Context, blob *core.Blob) (err error)
 
 func (s *SQLCommon) setBlobInsertValues(query sq.InsertBuilder, blob *core.Blob) sq.InsertBuilder {
 	return query.Values(
+		blob.Namespace,
 		blob.Hash,
 		blob.PayloadRef,
-		blob.Peer,
 		blob.Created,
+		blob.Peer,
 		blob.Size,
+		blob.DataID,
 	)
 }
 
@@ -116,11 +121,13 @@ func (s *SQLCommon) InsertBlobs(ctx context.Context, blobs []*core.Blob) (err er
 func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*core.Blob, error) {
 	blob := core.Blob{}
 	err := row.Scan(
+		&blob.Namespace,
 		&blob.Hash,
 		&blob.PayloadRef,
-		&blob.Peer,
 		&blob.Created,
+		&blob.Peer,
 		&blob.Size,
+		&blob.DataID,
 		&blob.Sequence,
 	)
 	if err != nil {
@@ -156,9 +163,10 @@ func (s *SQLCommon) getBlobPred(ctx context.Context, desc string, pred interface
 	return blob, nil
 }
 
-func (s *SQLCommon) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *core.Blob, err error) {
-	return s.getBlobPred(ctx, hash.String(), sq.Eq{
-		"hash": hash,
+func (s *SQLCommon) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32, dataID *fftypes.UUID) (blob *core.Blob, err error) {
+	return s.getBlobPred(ctx, fmt.Sprintf("%s %s", hash.String(), dataID.String()), sq.Eq{
+		"hash":    hash,
+		"data_id": dataID,
 	})
 }
 

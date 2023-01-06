@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -114,7 +114,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 		} else if d == nil || d.Blob == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
+		blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash, d.ID)
 		if err != nil {
 			return nil, err
 		} else if blob == nil {

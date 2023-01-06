@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -505,7 +506,7 @@ func TestResolveInlineDataDataToPublish(t *testing.T) {
 			Hash: blobHash,
 		},
 	}, nil)
-	mdi.On("GetBlobMatchingHash", ctx, blobHash).Return(&core.Blob{
+	mdi.On("GetBlobMatchingHash", ctx, blobHash, mock.Anything).Return(&core.Blob{
 		Hash:       blobHash,
 		PayloadRef: "blob/1",
 	}, nil)
@@ -535,7 +536,7 @@ func TestResolveInlineDataResolveBlobFail(t *testing.T) {
 			Hash: blobHash,
 		},
 	}, nil)
-	mdi.On("GetBlobMatchingHash", ctx, blobHash).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobMatchingHash", ctx, blobHash, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := dm.ResolveInlineData(ctx, newMsg)
 	assert.EqualError(t, err, "pop")
@@ -754,7 +755,7 @@ func TestValidateAndStoreBlobError(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	blobHash := fftypes.NewRandB32()
-	mdi.On("GetBlobMatchingHash", mock.Anything, blobHash).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobMatchingHash", mock.Anything, blobHash, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	_, err := dm.validateInputData(ctx, &core.DataRefOrValue{
 		Blob: &core.BlobRef{
 			Hash: blobHash,
@@ -769,7 +770,7 @@ func TestValidateAndStoreBlobNotFound(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	blobHash := fftypes.NewRandB32()
-	mdi.On("GetBlobMatchingHash", mock.Anything, blobHash).Return(nil, nil)
+	mdi.On("GetBlobMatchingHash", mock.Anything, blobHash, mock.Anything).Return(nil, nil)
 	_, err := dm.validateInputData(ctx, &core.DataRefOrValue{
 		Blob: &core.BlobRef{
 			Hash: blobHash,
@@ -1170,4 +1171,224 @@ func TestWriteNewMessageFailClosed(t *testing.T) {
 		Message: &core.MessageInOut{},
 	})
 	assert.Regexp(t, "FF00154", err)
+}
+
+func TestDeleteData(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdb := dm.database.(*databasemocks.Plugin)
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+
+	msgID := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	payloadRef := "payloadRef"
+
+	data := &core.Data{
+		ID:        dataID,
+		Namespace: dm.namespace.Name,
+		Blob: &core.BlobRef{
+			Hash: hash,
+		},
+	}
+
+	blob := &core.Blob{
+		Sequence:   0,
+		Namespace:  dm.namespace.Name,
+		PayloadRef: payloadRef,
+		Hash:       hash,
+		DataID:     dataID,
+	}
+
+	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
+	mdb.On("GetBlobMatchingHash", ctx, hash, dataID).Return(blob, nil)
+	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
+	mdx.On("DeleteBlob", ctx, payloadRef).Return(nil)
+	mdb.On("DeleteBlob", ctx, int64(0)).Return(nil)
+	mdb.On("GetMessagesForData", ctx, dm.namespace.Name, dataID, mock.Anything).Return([]*core.Message{
+		{
+			Header: core.MessageHeader{
+				ID: msgID,
+			},
+		},
+	}, &ffapi.FilterResult{}, nil)
+	mdb.On("DeleteData", ctx, dm.namespace.Name, dataID).Return(nil)
+
+	err := dm.DeleteData(ctx, dataID.String())
+
+	assert.NoError(t, err)
+	mdb.AssertExpectations(t)
+}
+
+func TestDeleteDataFailParseUUID(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	err := dm.DeleteData(ctx, "NOT_A_UUID")
+	assert.Regexp(t, "FF00138", err)
+}
+
+func TestDeleteDataFailGetData(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdb := dm.database.(*databasemocks.Plugin)
+
+	dataID := fftypes.NewUUID()
+
+	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(nil, fmt.Errorf("pop"))
+
+	err := dm.DeleteData(ctx, dataID.String())
+
+	assert.Regexp(t, "pop", err)
+	mdb.AssertExpectations(t)
+}
+
+func TestDeleteDataNotFound(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdb := dm.database.(*databasemocks.Plugin)
+	dataID := fftypes.NewUUID()
+
+	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(nil, nil)
+
+	err := dm.DeleteData(ctx, dataID.String())
+
+	assert.Regexp(t, "FF10143", err)
+	mdb.AssertExpectations(t)
+}
+
+func TestDeleteDataFailGetBlob(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdb := dm.database.(*databasemocks.Plugin)
+
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+
+	data := &core.Data{
+		ID:        dataID,
+		Namespace: dm.namespace.Name,
+		Blob: &core.BlobRef{
+			Hash: hash,
+		},
+	}
+
+	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
+	mdb.On("GetBlobMatchingHash", ctx, hash, dataID).Return(nil, fmt.Errorf("pop"))
+
+	err := dm.DeleteData(ctx, dataID.String())
+
+	assert.Regexp(t, "pop", err)
+	mdb.AssertExpectations(t)
+}
+
+func TestDeleteDataFailDeleteBlob(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdb := dm.database.(*databasemocks.Plugin)
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	payloadRef := "payloadRef"
+
+	data := &core.Data{
+		ID:        dataID,
+		Namespace: dm.namespace.Name,
+		Blob: &core.BlobRef{
+			Hash: hash,
+		},
+	}
+
+	blob := &core.Blob{
+		Sequence:   0,
+		Namespace:  dm.namespace.Name,
+		PayloadRef: payloadRef,
+		Hash:       hash,
+		DataID:     dataID,
+	}
+
+	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
+	mdb.On("GetBlobMatchingHash", ctx, hash, dataID).Return(blob, nil)
+	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
+	mdx.On("DeleteBlob", ctx, payloadRef).Return(nil)
+	mdb.On("DeleteBlob", ctx, int64(0)).Return(fmt.Errorf("pop"))
+
+	err := dm.DeleteData(ctx, dataID.String())
+
+	assert.Regexp(t, "pop", err)
+	mdb.AssertExpectations(t)
+}
+
+func TestDeleteDataFailGetBlobs(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdb := dm.database.(*databasemocks.Plugin)
+
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	payloadRef := "payloadRef"
+
+	data := &core.Data{
+		ID:        dataID,
+		Namespace: dm.namespace.Name,
+		Blob: &core.BlobRef{
+			Hash: hash,
+		},
+	}
+
+	blob := &core.Blob{
+		Sequence:   0,
+		Namespace:  dm.namespace.Name,
+		PayloadRef: payloadRef,
+		Hash:       hash,
+		DataID:     dataID,
+	}
+
+	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
+	mdb.On("GetBlobMatchingHash", ctx, hash, dataID).Return(blob, nil)
+	mdb.On("GetBlobs", ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	err := dm.DeleteData(ctx, dataID.String())
+
+	assert.Regexp(t, "pop", err)
+	mdb.AssertExpectations(t)
+}
+
+func TestDeleteDataFailGetMessages(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdb := dm.database.(*databasemocks.Plugin)
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	payloadRef := "payloadRef"
+
+	data := &core.Data{
+		ID:        dataID,
+		Namespace: dm.namespace.Name,
+		Blob: &core.BlobRef{
+			Hash: hash,
+		},
+	}
+
+	blob := &core.Blob{
+		Sequence:   0,
+		Namespace:  dm.namespace.Name,
+		PayloadRef: payloadRef,
+		Hash:       hash,
+		DataID:     dataID,
+	}
+
+	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
+	mdb.On("GetBlobMatchingHash", ctx, hash, dataID).Return(blob, nil)
+	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
+	mdx.On("DeleteBlob", ctx, payloadRef).Return(nil)
+	mdb.On("DeleteBlob", ctx, int64(0)).Return(nil)
+	mdb.On("GetMessagesForData", ctx, dm.namespace.Name, dataID, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	err := dm.DeleteData(ctx, dataID.String())
+
+	assert.Regexp(t, "pop", err)
+	mdb.AssertExpectations(t)
 }

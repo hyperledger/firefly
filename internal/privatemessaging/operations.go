@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -36,19 +36,28 @@ type batchSendData struct {
 	Transport *core.TransportWrapper `json:"transport"`
 }
 
-func addTransferBlobInputs(op *core.Operation, nodeID *fftypes.UUID, blobHash *fftypes.Bytes32) {
+func addTransferBlobInputs(op *core.Operation, nodeID *fftypes.UUID, blobHash *fftypes.Bytes32, dataID *fftypes.UUID) {
 	op.Input = fftypes.JSONObject{
-		"node": nodeID.String(),
-		"hash": blobHash.String(),
+		"node":    nodeID.String(),
+		"hash":    blobHash.String(),
+		"data_id": dataID.String(),
 	}
 }
 
-func retrieveSendBlobInputs(ctx context.Context, op *core.Operation) (nodeID *fftypes.UUID, blobHash *fftypes.Bytes32, err error) {
+func retrieveSendBlobInputs(ctx context.Context, op *core.Operation) (nodeID *fftypes.UUID, blobHash *fftypes.Bytes32, dataID *fftypes.UUID, err error) {
 	nodeID, err = fftypes.ParseUUID(ctx, op.Input.GetString("node"))
-	if err == nil {
-		blobHash, err = fftypes.ParseBytes32(ctx, op.Input.GetString("hash"))
+	if err != nil {
+		return nil, nil, nil, err
 	}
-	return nodeID, blobHash, err
+	blobHash, err = fftypes.ParseBytes32(ctx, op.Input.GetString("hash"))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	dataID, err = fftypes.ParseUUID(ctx, op.Input.GetString("data_id"))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return nodeID, blobHash, dataID, err
 }
 
 func addBatchSendInputs(op *core.Operation, nodeID *fftypes.UUID, groupHash *fftypes.Bytes32, batchID *fftypes.UUID) {
@@ -73,7 +82,7 @@ func retrieveBatchSendInputs(ctx context.Context, op *core.Operation) (nodeID *f
 func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	switch op.Type {
 	case core.OpTypeDataExchangeSendBlob:
-		nodeID, blobHash, err := retrieveSendBlobInputs(ctx, op)
+		nodeID, blobHash, dataID, err := retrieveSendBlobInputs(ctx, op)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +92,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 		} else if node == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		blob, err := pm.database.GetBlobMatchingHash(ctx, blobHash)
+		blob, err := pm.database.GetBlobMatchingHash(ctx, blobHash, dataID)
 		if err != nil {
 			return nil, err
 		} else if blob == nil {

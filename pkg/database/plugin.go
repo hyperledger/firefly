@@ -133,6 +133,9 @@ type iDataCollection interface {
 
 	// GetDataRefs - Get data references only (no data)
 	GetDataRefs(ctx context.Context, namespace string, filter ffapi.Filter) (message core.DataRefs, res *ffapi.FilterResult, err error)
+
+	// DeleteData - Deletes a data record by ID
+	DeleteData(ctx context.Context, namespace string, id *fftypes.UUID) (err error)
 }
 
 type iBatchCollection interface {
@@ -335,7 +338,7 @@ type iBlobCollection interface {
 	InsertBlobs(ctx context.Context, blobs []*core.Blob) (err error)
 
 	// GetBlobMatchingHash - lookup first blob batching a hash
-	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *core.Blob, err error)
+	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32, dataID *fftypes.UUID) (message *core.Blob, err error)
 
 	// GetBlobs - get blobs
 	GetBlobs(ctx context.Context, filter ffapi.Filter) (message []*core.Blob, res *ffapi.FilterResult, err error)

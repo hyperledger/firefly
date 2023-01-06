@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -649,7 +649,7 @@ func (ag *aggregator) resolveBlobs(ctx context.Context, data core.DataArray) (re
 		}
 
 		// See if we already have the data
-		blob, err := ag.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
+		blob, err := ag.database.GetBlobMatchingHash(ctx, d.Blob.Hash, d.ID)
 		if err != nil {
 			return false, err
 		}

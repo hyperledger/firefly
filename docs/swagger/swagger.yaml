@@ -5055,6 +5055,97 @@ paths:
       tags:
       - Default Namespace
   /data/{dataid}:
+    delete:
+      description: Gets a data item by its ID, including metadata about this item
+      operationId: deleteData
+      parameters:
+      - description: The data item ID
+        in: path
+        name: dataid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "204":
+          content:
+            application/json:
+              schema:
+                properties:
+                  blob:
+                    description: An optional hash reference to a binary blob attachment
+                    properties:
+                      hash:
+                        description: The hash of the binary blob data
+                        format: byte
+                        type: string
+                      name:
+                        description: The name field from the metadata attached to
+                          the blob, commonly used as a path/filename, and indexed
+                          for search
+                        type: string
+                      public:
+                        description: If the blob data has been published to shared
+                          storage, this field is the id of the data in the shared
+                          storage plugin (IPFS hash etc.)
+                        type: string
+                      size:
+                        description: The size of the binary data
+                        format: int64
+                        type: integer
+                    type: object
+                  created:
+                    description: The creation time of the data resource
+                    format: date-time
+                    type: string
+                  datatype:
+                    description: The optional datatype to use of validation of this
+                      data
+                    properties:
+                      name:
+                        description: The name of the datatype
+                        type: string
+                      version:
+                        description: The version of the datatype. Semantic versioning
+                          is encouraged, such as v1.0.1
+                        type: string
+                    type: object
+                  hash:
+                    description: The hash of the data resource. Derived from the value
+                      and the hash of any binary blob attachment
+                    format: byte
+                    type: string
+                  id:
+                    description: The UUID of the data resource
+                    format: uuid
+                    type: string
+                  namespace:
+                    description: The namespace of the data resource
+                    type: string
+                  public:
+                    description: If the JSON value has been published to shared storage,
+                      this field is the id of the data in the shared storage plugin
+                      (IPFS hash etc.)
+                    type: string
+                  validator:
+                    description: The data validator type
+                    type: string
+                  value:
+                    description: The value for the data, stored in the FireFly core
+                      database. Can be any JSON type - object, array, string, number
+                      or boolean. Can be combined with a binary blob attachment
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
     get:
       description: Gets a data item by its ID, including metadata about this item
       operationId: getDataByID
@@ -15549,6 +15640,104 @@ paths:
       tags:
       - Non-Default Namespace
   /namespaces/{ns}/data/{dataid}:
+    delete:
+      description: Gets a data item by its ID, including metadata about this item
+      operationId: deleteDataNamespace
+      parameters:
+      - description: The data item ID
+        in: path
+        name: dataid
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "204":
+          content:
+            application/json:
+              schema:
+                properties:
+                  blob:
+                    description: An optional hash reference to a binary blob attachment
+                    properties:
+                      hash:
+                        description: The hash of the binary blob data
+                        format: byte
+                        type: string
+                      name:
+                        description: The name field from the metadata attached to
+                          the blob, commonly used as a path/filename, and indexed
+                          for search
+                        type: string
+                      public:
+                        description: If the blob data has been published to shared
+                          storage, this field is the id of the data in the shared
+                          storage plugin (IPFS hash etc.)
+                        type: string
+                      size:
+                        description: The size of the binary data
+                        format: int64
+                        type: integer
+                    type: object
+                  created:
+                    description: The creation time of the data resource
+                    format: date-time
+                    type: string
+                  datatype:
+                    description: The optional datatype to use of validation of this
+                      data
+                    properties:
+                      name:
+                        description: The name of the datatype
+                        type: string
+                      version:
+                        description: The version of the datatype. Semantic versioning
+                          is encouraged, such as v1.0.1
+                        type: string
+                    type: object
+                  hash:
+                    description: The hash of the data resource. Derived from the value
+                      and the hash of any binary blob attachment
+                    format: byte
+                    type: string
+                  id:
+                    description: The UUID of the data resource
+                    format: uuid
+                    type: string
+                  namespace:
+                    description: The namespace of the data resource
+                    type: string
+                  public:
+                    description: If the JSON value has been published to shared storage,
+                      this field is the id of the data in the shared storage plugin
+                      (IPFS hash etc.)
+                    type: string
+                  validator:
+                    description: The data validator type
+                    type: string
+                  value:
+                    description: The value for the data, stored in the FireFly core
+                      database. Can be any JSON type - object, array, string, number
+                      or boolean. Can be combined with a binary blob attachment
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
     get:
       description: Gets a data item by its ID, including metadata about this item
       operationId: getDataByIDNamespace

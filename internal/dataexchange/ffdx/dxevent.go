@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -83,6 +83,7 @@ func (e *dxEvent) PrivateBlobReceived() *dataexchange.PrivateBlobReceived {
 }
 
 func (h *FFDX) dispatchEvent(msg *wsEvent) {
+	var dataID string
 	var namespace string
 	var err error
 	e := &dxEvent{ffdx: h, id: msg.EventID}
@@ -179,7 +180,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		var hash *fftypes.Bytes32
 		hash, err = fftypes.ParseBytes32(h.ctx, msg.Hash)
 		if err == nil {
-			_, namespace, _ = splitBlobPath(msg.Path)
+			_, namespace, dataID = splitBlobPath(msg.Path)
 			e.dxType = dataexchange.DXEventTypePrivateBlobReceived
 			e.privateBlobReceived = &dataexchange.PrivateBlobReceived{
 				Namespace:  namespace,
@@ -187,6 +188,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 				Hash:       *hash,
 				Size:       msg.Size,
 				PayloadRef: msg.Path,
+				DataID:     dataID,
 			}
 		}
 

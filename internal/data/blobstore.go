@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -111,6 +111,8 @@ func (bs *blobStore) UploadBlob(ctx context.Context, inData *core.DataRefOrValue
 	}
 
 	blob := &core.Blob{
+		Namespace:  data.Namespace,
+		DataID:     data.ID,
 		Hash:       hash,
 		Size:       blobSize,
 		PayloadRef: payloadRef,
@@ -162,7 +164,7 @@ func (bs *blobStore) DownloadBlob(ctx context.Context, dataID string) (*core.Blo
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgDataDoesNotHaveBlob)
 	}
 
-	blob, err := bs.database.GetBlobMatchingHash(ctx, data.Blob.Hash)
+	blob, err := bs.database.GetBlobMatchingHash(ctx, data.Blob.Hash, data.ID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -172,4 +174,32 @@ func (bs *blobStore) DownloadBlob(ctx context.Context, dataID string) (*core.Blo
 
 	reader, err := bs.exchange.DownloadBlob(ctx, blob.PayloadRef)
 	return blob, reader, err
+}
+
+func (bs *blobStore) DeleteBlob(ctx context.Context, blob *core.Blob) error {
+	if bs.exchange == nil {
+		return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
+	}
+
+	// Compatibility check: Previous versions of FireFly could have had multiple
+	// data items pointing at the same blob. We should NOT delete the blob if other
+	// data items still reference this blob! Look at the payloadRef to determine
+	// uniqueness, as of FireFly 1.2.x this will be unique per data item.
+	fb := database.BlobQueryFactory.NewFilter(ctx)
+	blobs, _, err := bs.database.GetBlobs(ctx, fb.Eq("payloadref", blob.PayloadRef))
+	if err != nil {
+		return err
+	}
+	if len(blobs) <= 1 {
+
+		err := bs.exchange.DeleteBlob(ctx, blob.PayloadRef)
+		if err != nil {
+			return err
+		}
+	}
+	err = bs.database.DeleteBlob(ctx, blob.Sequence)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -713,7 +713,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 	mim.On("GetLocalNode", pm.ctx).Return(node1, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.sendData(pm.ctx, &core.TransportWrapper{
 		Batch: &core.Batch{

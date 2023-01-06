@@ -677,7 +677,7 @@ func TestPersistBatchDataWithPublicAlreaydDownloadedOk(t *testing.T) {
 	}}
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data}, blob)
 
-	em.mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(blob, nil)
+	em.mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash, mock.Anything).Return(blob, nil)
 
 	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
 	assert.Nil(t, err)
@@ -700,7 +700,7 @@ func TestPersistBatchDataWithPublicInitiateDownload(t *testing.T) {
 	}}
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data}, blob)
 
-	em.mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
+	em.mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash, mock.Anything).Return(nil, nil)
 
 	em.msd.On("InitiateDownloadBlob", mock.Anything, batch.Payload.TX.ID, data.ID, "ref1").Return(nil)
 
@@ -725,7 +725,7 @@ func TestPersistBatchDataWithPublicInitiateDownloadFail(t *testing.T) {
 	}}
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data}, blob)
 
-	em.mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
+	em.mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash, mock.Anything).Return(nil, nil)
 
 	em.msd.On("InitiateDownloadBlob", mock.Anything, batch.Payload.TX.ID, data.ID, "ref1").Return(fmt.Errorf("pop"))
 
@@ -750,7 +750,7 @@ func TestPersistBatchDataWithBlobGetBlobFail(t *testing.T) {
 	}}
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data}, blob)
 
-	em.mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, fmt.Errorf("pop"))
+	em.mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
 	assert.Regexp(t, "pop", err)

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -166,7 +166,7 @@ func (em *eventManager) checkAndInitiateBlobDownloads(ctx context.Context, batch
 
 	if data.Blob != nil && batch.Type == core.BatchTypeBroadcast {
 		// Need to check if we need to initiate a download
-		blob, err := em.database.GetBlobMatchingHash(ctx, data.Blob.Hash)
+		blob, err := em.database.GetBlobMatchingHash(ctx, data.Blob.Hash, data.ID)
 		if err != nil {
 			return false, err
 		}

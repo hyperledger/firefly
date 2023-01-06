@@ -145,7 +145,8 @@ func TestSharedStorageBlobDownloadedOk(t *testing.T) {
 	em.mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil, nil)
 
 	hash := fftypes.NewRandB32()
-	em.SharedStorageBlobDownloaded(mss, *hash, 12345, "payload1")
+	dataID := fftypes.NewUUID()
+	em.SharedStorageBlobDownloaded(mss, *hash, 12345, "payload1", dataID)
 
 	brw := <-em.aggregator.rewinder.rewindRequests
 	assert.Equal(t, rewind{hash: *hash, rewindType: rewindBlob}, brw)

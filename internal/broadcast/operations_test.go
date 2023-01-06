@@ -255,7 +255,7 @@ func TestPrepareAndRunUploadBlob(t *testing.T) {
 
 	reader := ioutil.NopCloser(strings.NewReader("some data"))
 	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
-	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(blob, nil)
+	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash, mock.Anything).Return(blob, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, nil)
 	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.MatchedBy(func(update ffapi.Update) bool {
@@ -349,7 +349,7 @@ func TestPrepareUploadBlobGetBlobMissing(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 
 	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
-	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
+	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash, mock.Anything).Return(nil, nil)
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
@@ -381,7 +381,7 @@ func TestPrepareUploadBlobGetBlobFailing(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 
 	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
-	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "pop", err)

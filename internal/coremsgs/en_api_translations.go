@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -91,6 +91,7 @@ var (
 	APIEndpointsGetDataBlob                     = ffm("api.endpoints.getDataBlob", "Downloads the original file that was previously uploaded or received")
 	APIEndpointsGetDataValue                    = ffm("api.endpoints.getDataValue", "Downloads the JSON value of the data resource, without the associated metadata")
 	APIEndpointsGetDataByID                     = ffm("api.endpoints.getDataByID", "Gets a data item by its ID, including metadata about this item")
+	APIEndpointsDeleteData                      = ffm("api.endpoints.deleteData", "Deletes a data item by its ID, including metadata about this item")
 	APIEndpointsGetDataMsgs                     = ffm("api.endpoints.getDataMsgs", "Gets a list of the messages associated with a data item")
 	APIEndpointsGetData                         = ffm("api.endpoints.getData", "Gets a list of data items")
 	APIEndpointsGetDatatypeByName               = ffm("api.endpoints.getDatatypeByName", "Gets a datatype by its name and version")
