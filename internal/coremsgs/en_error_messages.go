@@ -274,4 +274,6 @@ var (
 	MsgErrorNameMustBeSet                 = ffe("FF10433", "The name of the error must be set", 400)
 	MsgContractErrorsResolveError         = ffe("FF10434", "Unable to resolve contract errors: %s", 400)
 	MsgUnknownInterfaceFormat             = ffe("FF10435", "Unknown interface format: %s", 400)
+	MsgUnknownNamespace                   = ffe("FF10436", "Unknown namespace '%s'", 404)
+	MsgMissingNamespace                   = ffe("FF10437", "Missing namespace in request", 400)
 )

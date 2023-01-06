@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,11 +20,14 @@ import "github.com/hyperledger/firefly-common/pkg/ffapi"
 
 // The Service Provider Interface (SPI) allows external microservices (such as the FireFly Transaction Manager)
 // to act as augmented components to the core.
-var spiRoutes = []*ffapi.Route{
+var spiRoutes = append(globalRoutes([]*ffapi.Route{
 	spiGetNamespaceByName,
 	spiGetNamespaces,
 	spiGetOpByID,
-	spiGetOps,
 	spiPatchOpByID,
 	spiPostReset,
-}
+}),
+	namespacedRoutes([]*ffapi.Route{
+		spiGetOps,
+	})...,
+)

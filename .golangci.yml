@@ -30,8 +30,9 @@ linters-settings:
       limitations under the License.
 linters:
   disable-all: false
+  disable:
+    - structcheck
   enable:
-    - bodyclose
     - deadcode
     - depguard
     - dogsled
@@ -51,10 +52,8 @@ linters:
     - nakedret
     - revive
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
-    - unparam
     - unused
     - varcheck
