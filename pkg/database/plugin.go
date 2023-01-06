@@ -865,19 +865,21 @@ var BlobQueryFactory = &ffapi.QueryFields{
 
 // TokenPoolQueryFactory filter fields for token pools
 var TokenPoolQueryFactory = &ffapi.QueryFields{
-	"id":        &ffapi.UUIDField{},
-	"type":      &ffapi.StringField{},
-	"name":      &ffapi.StringField{},
-	"standard":  &ffapi.StringField{},
-	"locator":   &ffapi.StringField{},
-	"symbol":    &ffapi.StringField{},
-	"decimals":  &ffapi.Int64Field{},
-	"message":   &ffapi.UUIDField{},
-	"state":     &ffapi.StringField{},
-	"created":   &ffapi.TimeField{},
-	"connector": &ffapi.StringField{},
-	"tx.type":   &ffapi.StringField{},
-	"tx.id":     &ffapi.UUIDField{},
+	"id":              &ffapi.UUIDField{},
+	"type":            &ffapi.StringField{},
+	"name":            &ffapi.StringField{},
+	"standard":        &ffapi.StringField{},
+	"locator":         &ffapi.StringField{},
+	"symbol":          &ffapi.StringField{},
+	"decimals":        &ffapi.Int64Field{},
+	"message":         &ffapi.UUIDField{},
+	"state":           &ffapi.StringField{},
+	"created":         &ffapi.TimeField{},
+	"connector":       &ffapi.StringField{},
+	"tx.type":         &ffapi.StringField{},
+	"tx.id":           &ffapi.UUIDField{},
+	"interface":       &ffapi.UUIDField{},
+	"interfaceformat": &ffapi.StringField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances

@@ -449,6 +449,20 @@ func (_m *Manager) PrepareOperation(ctx context.Context, op *core.Operation) (*c
 	return r0, r1
 }
 
+// ResolvePoolMethods provides a mock function with given fields: ctx, pool
+func (_m *Manager) ResolvePoolMethods(ctx context.Context, pool *core.TokenPool) error {
+	ret := _m.Called(ctx, pool)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) error); ok {
+		r0 = rf(ctx, pool)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RunOperation provides a mock function with given fields: ctx, op
 func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation) (fftypes.JSONObject, bool, error) {
 	ret := _m.Called(ctx, op)

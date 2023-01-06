@@ -475,5 +475,5 @@ func TestFormDataDisabledRoute(t *testing.T) {
 
 func TestGetOrchestratorMissingTag(t *testing.T) {
 	_, err := getOrchestrator(context.Background(), &namespacemocks.Manager{}, "", nil)
-	assert.Regexp(t, "FF10436", err)
+	assert.Regexp(t, "FF10437", err)
 }

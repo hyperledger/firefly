@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -34,6 +34,7 @@ func addPoolDetailsFromPlugin(ffPool *core.TokenPool, pluginPool *tokens.TokenPo
 	ffPool.Locator = pluginPool.PoolLocator
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
+	ffPool.InterfaceFormat = (core.TokenInterfaceFormat)(pluginPool.InterfaceFormat)
 	ffPool.Decimals = pluginPool.Decimals
 	if pluginPool.TX.ID != nil {
 		ffPool.TX = pluginPool.TX
@@ -180,9 +181,17 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			em.aggregator.queueMessageRewind(msgIDforRewind)
 		}
 
-		// Announce the details of the new token pool
-		// Other nodes will pass these details to their own token connector for validation/activation of the pool
 		if announcePool != nil {
+			// If the pool is tied to a contract interface, resolve the methods to be used for later operations
+			if announcePool.Interface != nil && announcePool.Interface.ID != nil && announcePool.InterfaceFormat != "" {
+				log.L(em.ctx).Infof("Querying token connector interface, id=%s", announcePool.ID)
+				if err := em.assets.ResolvePoolMethods(em.ctx, announcePool); err != nil {
+					return err
+				}
+			}
+
+			// Announce the details of the new token pool
+			// Other nodes will pass these details to their own token connector for validation/activation of the pool
 			log.L(em.ctx).Infof("Announcing token pool, id=%s", announcePool.ID)
 			err = em.defsender.DefineTokenPool(em.ctx, &core.TokenPoolAnnouncement{
 				Pool: announcePool,

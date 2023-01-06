@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -64,6 +64,7 @@ var (
 	urlContractInvoke    = "/contracts/invoke"
 	urlContractQuery     = "/contracts/query"
 	urlContractInterface = "/contracts/interfaces"
+	urlContractGenerate  = "/contracts/interfaces/generate"
 	urlContractListeners = "/contracts/listeners"
 	urlContractAPI       = "/apis"
 	urlBlockchainEvents  = "/blockchainevents"
@@ -576,6 +577,16 @@ func (client *FireFlyClient) GetTokenPools(t *testing.T, startTime time.Time) (p
 	return pools
 }
 
+func (client *FireFlyClient) GetTokenPool(t *testing.T, poolID *fftypes.UUID) (pool *core.TokenPool) {
+	path := client.namespaced(urlTokenPools + "/" + poolID.String())
+	resp, err := client.Client.R().
+		SetResult(&pool).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return pool
+}
+
 func (client *FireFlyClient) MintTokens(t *testing.T, mint *core.TokenTransferInput, confirm bool, expectedStatus ...int) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
 	path := client.namespaced(urlTokenMint)
@@ -711,7 +722,7 @@ func (client *FireFlyClient) GetTokenBalance(t *testing.T, poolID *fftypes.UUID,
 		Get(path)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	require.Equal(t, len(accounts), 1)
+	require.Equal(t, 1, len(accounts))
 	return accounts[0]
 }
 
@@ -811,6 +822,18 @@ func (client *FireFlyClient) QueryContractMethod(t *testing.T, req *core.Contrac
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
+}
+
+func (client *FireFlyClient) GenerateFFIFromABI(t *testing.T, req *fftypes.FFIGenerationRequest) *fftypes.FFI {
+	var res fftypes.FFI
+	path := client.namespaced(urlContractGenerate)
+	resp, err := client.Client.R().
+		SetBody(req).
+		SetResult(&res).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &res
 }
 
 func (client *FireFlyClient) CreateFFI(t *testing.T, ffi *fftypes.FFI) (interface{}, error) {

@@ -382,6 +382,52 @@ func (_m *Manager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID)
 	return r0, r1
 }
 
+// GetFFIEvents provides a mock function with given fields: ctx, id
+func (_m *Manager) GetFFIEvents(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIEvent, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 []*fftypes.FFIEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) []*fftypes.FFIEvent); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.FFIEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetFFIMethods provides a mock function with given fields: ctx, id
+func (_m *Manager) GetFFIMethods(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIMethod, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 []*fftypes.FFIMethod
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) []*fftypes.FFIMethod); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.FFIMethod)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetFFIWithChildren provides a mock function with given fields: ctx, name, version
 func (_m *Manager) GetFFIWithChildren(ctx context.Context, name string, version string) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, name, version)
@@ -541,6 +587,20 @@ func (_m *Manager) ResolveFFI(ctx context.Context, ffi *fftypes.FFI) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) error); ok {
 		r0 = rf(ctx, ffi)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ResolveFFIReference provides a mock function with given fields: ctx, ref
+func (_m *Manager) ResolveFFIReference(ctx context.Context, ref *fftypes.FFIReference) error {
+	ret := _m.Called(ctx, ref)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIReference) error); ok {
+		r0 = rf(ctx, ref)
 	} else {
 		r0 = ret.Error(0)
 	}

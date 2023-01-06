@@ -1919,7 +1919,7 @@ func TestGetOperationByNamespacedIDNoOrchestrator(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	_, err := nm.GetOperationByNamespacedID(context.Background(), "bad:"+opID.String())
-	assert.Regexp(t, "FF10435", err)
+	assert.Regexp(t, "FF10436", err)
 
 	mo.AssertExpectations(t)
 }
@@ -1972,7 +1972,7 @@ func TestResolveOperationByNamespacedIDNoOrchestrator(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	err := nm.ResolveOperationByNamespacedID(context.Background(), "bad:"+opID.String(), &core.OperationUpdateDTO{})
-	assert.Regexp(t, "FF10435", err)
+	assert.Regexp(t, "FF10436", err)
 
 	mo.AssertExpectations(t)
 }
@@ -2000,7 +2000,7 @@ func TestAuthorizeBadNamespace(t *testing.T) {
 	err := nm.Authorize(context.Background(), &fftypes.AuthReq{
 		Namespace: "ns1",
 	})
-	assert.Regexp(t, "FF10435", err)
+	assert.Regexp(t, "FF10436", err)
 }
 
 func TestValidateNonMultipartyConfig(t *testing.T) {

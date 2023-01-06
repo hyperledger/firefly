@@ -22,10 +22,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
+	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -312,6 +314,33 @@ func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	mim.AssertExpectations(t)
 	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
+}
+
+func TestCreateTokenPoolWithInterfaceFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Connector: "magic-tokens",
+			Name:      "testpool",
+			Interface: &fftypes.FFIReference{
+				ID: fftypes.NewUUID(),
+			},
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mcm := am.contracts.(*contractmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
+	mcm.On("ResolveFFIReference", context.Background(), pool.Interface).Return(fmt.Errorf("pop"))
+
+	_, err := am.CreateTokenPool(context.Background(), pool, false)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+	mcm.AssertExpectations(t)
 }
 
 func TestCreateTokenPoolSyncSuccess(t *testing.T) {
@@ -724,4 +753,31 @@ func TestGetTokenPools(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestResolvePoolMethods(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	methods := []*fftypes.FFIMethod{{Name: "method1"}}
+	resolved := fftypes.JSONAnyPtr(`"resolved"`)
+
+	mcm := am.contracts.(*contractmocks.Manager)
+	mcm.On("GetFFIMethods", context.Background(), pool.Interface.ID).Return(methods, nil)
+
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mti.On("CheckInterface", context.Background(), pool, methods).Return(resolved, nil)
+
+	err := am.ResolvePoolMethods(context.Background(), pool)
+	assert.NoError(t, err)
+	assert.Equal(t, resolved, pool.Methods)
+
+	mcm.AssertExpectations(t)
+	mti.AssertExpectations(t)
 }

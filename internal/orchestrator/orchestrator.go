@@ -473,19 +473,19 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.namespace.Name, or.config.KeyNormalization, or.database(), or.tokens(), or.identity, or.syncasync, or.broadcast, or.messaging, or.metrics, or.operations, or.txHelper)
-		if err != nil {
-			return err
-		}
-	}
-
 	if or.blockchain() != nil {
 		if or.contracts == nil {
 			or.contracts, err = contracts.NewContractManager(ctx, or.namespace.Name, or.database(), or.blockchain(), or.identity, or.operations, or.txHelper, or.syncasync)
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	if or.assets == nil {
+		or.assets, err = assets.NewAssetManager(ctx, or.namespace.Name, or.config.KeyNormalization, or.database(), or.tokens(), or.identity, or.syncasync, or.broadcast, or.messaging, or.metrics, or.operations, or.contracts, or.txHelper)
+		if err != nil {
+			return err
 		}
 	}
 
