@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -37,6 +38,9 @@ var (
 		"pathname",
 		"description",
 		"params",
+	}
+	ffiErrorFilterFieldMap = map[string]string{
+		"interface": "interface_id",
 	}
 )
 
@@ -112,25 +116,27 @@ func (s *SQLCommon) ffiErrorResult(ctx context.Context, row *sql.Rows) (*fftypes
 	return &errorDef, nil
 }
 
-func (s *SQLCommon) GetFFIErrors(ctx context.Context, namespace string, interfaceID *fftypes.UUID) (errors []*fftypes.FFIError, err error) {
-	rows, _, err := s.Query(ctx, ffierrorsTable,
-		sq.Select(ffiErrorsColumns...).
-			From(ffierrorsTable).
-			Where(sq.Eq{"namespace": namespace, "interface_id": interfaceID}),
-	)
+func (s *SQLCommon) GetFFIErrors(ctx context.Context, namespace string, filter ffapi.Filter) (errors []*fftypes.FFIError, res *ffapi.FilterResult, err error) {
+	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(ffiErrorsColumns...).From(ffierrorsTable),
+		filter, ffiErrorFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	rows, tx, err := s.Query(ctx, ffierrorsTable, query)
+	if err != nil {
+		return nil, nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		ci, err := s.ffiErrorResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		errors = append(errors, ci)
 	}
 
-	return errors, err
+	return errors, s.QueryRes(ctx, ffierrorsTable, tx, fop, fi), err
 
 }

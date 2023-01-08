@@ -169,7 +169,8 @@ func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *fftypes.FFI)
 		event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
 	}
 
-	ffi.Errors, err = cm.database.GetFFIErrors(ctx, cm.namespace, ffi.ID)
+	fb := database.FFIErrorQueryFactory.NewFilter(ctx)
+	ffi.Errors, _, err = cm.database.GetFFIErrors(ctx, cm.namespace, fb.Eq("interface", ffi.ID))
 	if err != nil {
 		return err
 	}
@@ -326,7 +327,8 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req
 		if err != nil || req.Method == nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
 		}
-		req.Errors, err = cm.database.GetFFIErrors(ctx, cm.namespace, req.Interface)
+		fb := database.FFIErrorQueryFactory.NewFilter(ctx)
+		req.Errors, _, err = cm.database.GetFFIErrors(ctx, cm.namespace, fb.Eq("interface", req.Interface))
 		if err != nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractErrorsResolveError, err)
 		}

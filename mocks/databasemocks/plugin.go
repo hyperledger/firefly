@@ -811,27 +811,36 @@ func (_m *Plugin) GetFFIByID(ctx context.Context, namespace string, id *fftypes.
 	return r0, r1
 }
 
-// GetFFIErrors provides a mock function with given fields: ctx, namespace, interfaceID
-func (_m *Plugin) GetFFIErrors(ctx context.Context, namespace string, interfaceID *fftypes.UUID) ([]*fftypes.FFIError, error) {
-	ret := _m.Called(ctx, namespace, interfaceID)
+// GetFFIErrors provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetFFIErrors(ctx context.Context, namespace string, filter ffapi.Filter) ([]*fftypes.FFIError, *ffapi.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*fftypes.FFIError
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) []*fftypes.FFIError); ok {
-		r0 = rf(ctx, namespace, interfaceID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, ffapi.Filter) []*fftypes.FFIError); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.FFIError)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, namespace, interfaceID)
+	var r1 *ffapi.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, ffapi.Filter) *ffapi.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*ffapi.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, ffapi.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetFFIEvent provides a mock function with given fields: ctx, namespace, interfaceID, pathName
