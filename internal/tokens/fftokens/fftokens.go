@@ -349,11 +349,12 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		}
 	}
 
-	txType := poolData.TXType
-	if txType == "" {
+	if poolData != nil {
+	    txType := poolData.TXType
+	    if txType == "" {
 		txType = core.TransactionTypeTokenPool
+	    }
 	}
-
 	pool := &tokens.TokenPool{
 		Type:        fftypes.FFEnum(tokenType),
 		PoolLocator: poolLocator,
