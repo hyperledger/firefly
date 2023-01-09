@@ -8,7 +8,7 @@ CREATE TABLE temp_blobs (
   created        BIGINT          NOT NULL,
   peer           VARCHAR(256)    NOT NULL,
   size           BIGINT,
-  data_id        UUID            NOT NULL,
+  data_id        UUID            NOT NULL
 );
 INSERT INTO temp_blobs (namespace, data_id, hash, payload_ref, created, peer, size)
   SELECT DISTINCT data.namespace, data.id, data.blob_hash, blobs.payload_ref, blobs.created, blobs.peer, blobs.size
