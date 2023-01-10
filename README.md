@@ -30,11 +30,11 @@ FireFly CLI                   |  FireFly Explorer UI                | FireFly Sa
 
 ## Technical architecture
 
-Hyperledger FireFly has a pluggable microservices architecture. Everything is pluggable, from the the Blockchain technology,
+Hyperledger FireFly has a pluggable microservices architecture. Everything is pluggable, from the Blockchain technology,
 token ERC standards, and custom smart contracts, all the way to the event distribution layer and private database.
 
 So if there aren't yet instructions for making FireFly a Supernode for your favorite blockchain technology -
-don't worry. There is almost certainly a straightforward path to plugging it in that will save you re-building
+don't worry. There is almost certainly a straightforward path to plugging it in that will save you from re-building
 all the plumbing for your blockchain application from scratch.
 
 [![Hyperledger FireFly Architecture Overview](./docs/images/firefly_architecture_overview.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/main/docs/images/firefly_architecture_overview.jpg)
@@ -262,13 +262,13 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ ERC-20 / ERC-721  ├───┤ ERC-1155 ├───┤  Simple framework for building token connectors
   │           └───────────────────┘   └──────────┘   └─ 
   │
-  │           ┌───────────────┐  - P2P Content Addresssed Filesystem
+  │           ┌───────────────┐  - P2P Content Addressed Filesystem
   ├───────────┤ shared    [Si]│    * Payload upload / download
   │           │ storage       │    * Payload reference management
   │           │ interface     │
   │           └─────┬─────────┘
   │                 │
-  │                 ├───────── ... extensible to any shared storage sytem, accessible to all members
+  │                 ├───────── ... extensible to any shared storage system, accessible to all members
   │           ┌─────┴─────────┐
   │           │ ipfs          │
   │           └───────────────┘
@@ -318,7 +318,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           └───────────────┘     └────────────────┘
   │  ... more TBD
 
-  Additional utility framworks
+  Additional utility frameworks
               ┌───────────────┐  - REST API client
               │ rest      [Re]│    * Provides convenience and logging
               │ client        │    * Standardizes auth, config and retry logic
