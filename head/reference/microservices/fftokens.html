@@ -299,6 +299,7 @@
   <li><a href="#http-apis" id="markdown-toc-http-apis">HTTP APIs</a>    <ol>
       <li><a href="#post-createpool" id="markdown-toc-post-createpool"><code class="language-plaintext highlighter-rouge">POST /createpool</code></a></li>
       <li><a href="#post-activatepool" id="markdown-toc-post-activatepool"><code class="language-plaintext highlighter-rouge">POST /activatepool</code></a></li>
+      <li><a href="#post-checkinterface" id="markdown-toc-post-checkinterface"><code class="language-plaintext highlighter-rouge">POST /checkinterface</code></a></li>
       <li><a href="#post-mint" id="markdown-toc-post-mint"><code class="language-plaintext highlighter-rouge">POST /mint</code></a></li>
       <li><a href="#post-burn" id="markdown-toc-post-burn"><code class="language-plaintext highlighter-rouge">POST /burn</code></a></li>
       <li><a href="#post-transfer" id="markdown-toc-post-transfer"><code class="language-plaintext highlighter-rouge">POST /transfer</code></a></li>
@@ -501,6 +502,105 @@ existing ones).</p>
 <p>HTTP 204: activation was successful - no separate receipt will be delivered, but “token-pool” event will be sent later on the websocket.</p>
 
 <p><em>No body</em></p>
+      <h3 id="post-checkinterface">
+        
+        
+          <a href="#post-checkinterface" class="anchor-heading" aria-labelledby="post-checkinterface"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> <code class="language-plaintext highlighter-rouge">POST /checkinterface</code>
+        
+        
+      </h3>
+    
+
+<p>This is an optional (but recommended) API for token connectors. If implemented, support will be indicated by
+the presence of the <code class="language-plaintext highlighter-rouge">interfaceFormat</code> field in all <a href="#token-pool-1">Token Pool</a> responses.</p>
+
+<p>In the case that a connector supports multiple variants of a given token standard (such as many different ways to
+structure “mint” or “burn” calls on an underlying smart contract), this API allows the connector to be provided with a full
+description of the interface methods in use for a given token pool, so the connector can determine which methods it knows
+how to invoke.</p>
+
+<p><strong>Request</strong></p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+  "poolLocator": "id=F1",
+  "format": "abi",
+  "methods": [
+    {
+      "name": "burn",
+      "type": "function",
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    ...
+  ]
+}
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>poolLocator</td>
+      <td>string</td>
+      <td>The locator of the pool, as supplied by the output of the pool creation.</td>
+    </tr>
+    <tr>
+      <td>format</td>
+      <td>string enum</td>
+      <td>The format of the data in this payload. Should match the <code class="language-plaintext highlighter-rouge">interfaceFormat</code> as supplied by the output of the pool creation.</td>
+    </tr>
+    <tr>
+      <td>methods</td>
+      <td>object array</td>
+      <td>A list of all the methods available on the interface underpinning this token pool, encoded in the format specified by <code class="language-plaintext highlighter-rouge">format</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Response</strong></p>
+
+<p>HTTP 200: interface was successfully parsed, and methods of interest are returned in the body.</p>
+
+<p>The response body includes a section for each type of token operation (burn/mint/transfer/approval), which
+specifies a subset of the input body useful to that operation. The caller (FireFly) can then store and
+provide the proper subset of the interface for every future token operation (via the <code class="language-plaintext highlighter-rouge">interface</code> parameter).</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+  "burn": {
+    "format": "abi",
+    "methods": [
+      {
+        "name": "burn",
+        "type": "function",
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "tokenId",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+      }
+    ]
+  },
+  "mint": { ... },
+  "transfer": { ... },
+  "approval": { ... }
+}
+</code></pre></div></div>
       <h3 id="post-mint">
         
         
@@ -523,7 +623,8 @@ existing ones).</p>
   "uri": "ipfs://000000",
   "requestId": "1",
   "data": "transfer-metadata",
-  "config": {}
+  "config": {},
+  "interface": {}
 }
 </code></pre></div></div>
 
@@ -576,6 +677,11 @@ existing ones).</p>
       <td>object</td>
       <td>(OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the mint is carried out.</td>
     </tr>
+    <tr>
+      <td>interface</td>
+      <td>object</td>
+      <td>(OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a <code class="language-plaintext highlighter-rouge">/checkinterface</code> call.</td>
+    </tr>
   </tbody>
 </table>
 
@@ -605,7 +711,8 @@ existing ones).</p>
   "tokenIndex": "1",
   "requestId": "1",
   "data": "transfer-metadata",
-  "config": {}
+  "config": {},
+  "interface": {}
 }
 </code></pre></div></div>
 
@@ -653,6 +760,11 @@ existing ones).</p>
       <td>object</td>
       <td>(OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the burn is carried out.</td>
     </tr>
+    <tr>
+      <td>interface</td>
+      <td>object</td>
+      <td>(OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a <code class="language-plaintext highlighter-rouge">/checkinterface</code> call.</td>
+    </tr>
   </tbody>
 </table>
 
@@ -683,7 +795,8 @@ existing ones).</p>
   "tokenIndex": "1",
   "requestId": "1",
   "data": "transfer-metadata",
-  "config": {}
+  "config": {},
+  "interface": {}
 }
 </code></pre></div></div>
 
@@ -736,6 +849,11 @@ existing ones).</p>
       <td>object</td>
       <td>(OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the transfer is carried out.</td>
     </tr>
+    <tr>
+      <td>interface</td>
+      <td>object</td>
+      <td>(OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a <code class="language-plaintext highlighter-rouge">/checkinterface</code> call.</td>
+    </tr>
   </tbody>
 </table>
 
@@ -764,7 +882,8 @@ existing ones).</p>
   "approved": true,
   "requestId": "1",
   "data": "approval-metadata",
-  "config": {}
+  "config": {},
+  "interface": {}
 }
 </code></pre></div></div>
 
@@ -806,6 +925,11 @@ existing ones).</p>
       <td>config</td>
       <td>object</td>
       <td>(OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the approval is carried out.</td>
+    </tr>
+    <tr>
+      <td>interface</td>
+      <td>object</td>
+      <td>(OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a <code class="language-plaintext highlighter-rouge">/checkinterface</code> call.</td>
     </tr>
   </tbody>
 </table>
@@ -1018,6 +1142,7 @@ existing ones).</p>
   "data": "pool-metadata",
   "poolLocator": "id=F1",
   "standard": "ERC20",
+  "interfaceFormat": "abi",
   "symbol": "FFC",
   "decimals": 18,
   "info": {},
@@ -1054,6 +1179,11 @@ existing ones).</p>
       <td>standard</td>
       <td>string</td>
       <td>(OPTIONAL) The name of a well-defined token standard to which this pool conforms.</td>
+    </tr>
+    <tr>
+      <td>interfaceFormat</td>
+      <td>string enum</td>
+      <td>(OPTIONAL) If this connector supports the <code class="language-plaintext highlighter-rouge">/checkinterface</code> API, this is the interface format to be used for describing the interface underpinning this pool. Must be “abi” or “ffi”.</td>
     </tr>
     <tr>
       <td>symbol</td>
