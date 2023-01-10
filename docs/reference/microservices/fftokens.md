@@ -111,6 +111,80 @@ HTTP 204: activation was successful - no separate receipt will be delivered, but
 
 _No body_
 
+### `POST /checkinterface`
+
+This is an optional (but recommended) API for token connectors. If implemented, support will be indicated by
+the presence of the `interfaceFormat` field in all [Token Pool](#token-pool-1) responses.
+
+In the case that a connector supports multiple variants of a given token standard (such as many different ways to
+structure "mint" or "burn" calls on an underlying smart contract), this API allows the connector to be provided with a full
+description of the interface methods in use for a given token pool, so the connector can determine which methods it knows
+how to invoke.
+
+**Request**
+```
+{
+  "poolLocator": "id=F1",
+  "format": "abi",
+  "methods": [
+    {
+      "name": "burn",
+      "type": "function",
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    ...
+  ]
+}
+```
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation. |
+| format | string enum | The format of the data in this payload. Should match the `interfaceFormat` as supplied by the output of the pool creation. |
+| methods | object array | A list of all the methods available on the interface underpinning this token pool, encoded in the format specified by `format`. |
+
+**Response**
+
+HTTP 200: interface was successfully parsed, and methods of interest are returned in the body.
+
+The response body includes a section for each type of token operation (burn/mint/transfer/approval), which
+specifies a subset of the input body useful to that operation. The caller (FireFly) can then store and
+provide the proper subset of the interface for every future token operation (via the `interface` parameter).
+
+```
+{
+  "burn": {
+    "format": "abi",
+    "methods": [
+      {
+        "name": "burn",
+        "type": "function",
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "tokenId",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+      }
+    ]
+  },
+  "mint": { ... },
+  "transfer": { ... },
+  "approval": { ... }
+}
+```
+
 ### `POST /mint`
 
 Mint new tokens.
@@ -127,7 +201,8 @@ Mint new tokens.
   "uri": "ipfs://000000",
   "requestId": "1",
   "data": "transfer-metadata",
-  "config": {}
+  "config": {},
+  "interface": {}
 }
 ```
 
@@ -141,6 +216,7 @@ Mint new tokens.
 | uri | string | (OPTIONAL) For non-fungible tokens that support choosing a URI at mint time, the URI to be attached to the token. |
 | requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
 | config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the mint is carried out. |
+| interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
 
 **Response**
 
@@ -163,7 +239,8 @@ Burn tokens.
   "tokenIndex": "1",
   "requestId": "1",
   "data": "transfer-metadata",
-  "config": {}
+  "config": {},
+  "interface": {}
 }
 ```
 
@@ -176,6 +253,7 @@ Burn tokens.
 | tokenIndex | string | (OPTIONAL) For non-fungible tokens, the index of the specific token to burn. |
 | requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
 | config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the burn is carried out. |
+| interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
 
 **Response**
 
@@ -199,7 +277,8 @@ Transfer tokens from one address to another.
   "tokenIndex": "1",
   "requestId": "1",
   "data": "transfer-metadata",
-  "config": {}
+  "config": {},
+  "interface": {}
 }
 ```
 
@@ -213,6 +292,7 @@ Transfer tokens from one address to another.
 | tokenIndex | string | (OPTIONAL) For non-fungible tokens, the index of the specific token to transfer. |
 | requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
 | config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the transfer is carried out. |
+| interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
 
 **Response**
 
@@ -234,7 +314,8 @@ Approve another identity to manage tokens.
   "approved": true,
   "requestId": "1",
   "data": "approval-metadata",
-  "config": {}
+  "config": {},
+  "interface": {}
 }
 ```
 
@@ -246,6 +327,7 @@ Approve another identity to manage tokens.
 | approved | boolean | Whether to approve (the default) or unapprove. |
 | requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
 | config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the approval is carried out. |
+| interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
 
 **Response**
 
@@ -370,6 +452,7 @@ Many operations may happen asynchronously in the background, and will return onl
   "data": "pool-metadata",
   "poolLocator": "id=F1",
   "standard": "ERC20",
+  "interfaceFormat": "abi",
   "symbol": "FFC",
   "decimals": 18,
   "info": {},
@@ -384,6 +467,7 @@ Many operations may happen asynchronously in the background, and will return onl
 | data | string | A copy of the data that was passed in on the creation request. |
 | poolLocator | string | A string to identify this pool, generated by the connector. Must be unique for each pool created by this connector. Will be passed back on all operations within this pool, and may be packed with relevant data about the pool for later usage (such as the address and type of the pool). |
 | standard | string | (OPTIONAL) The name of a well-defined token standard to which this pool conforms. |
+| interfaceFormat | string enum | (OPTIONAL) If this connector supports the `/checkinterface` API, this is the interface format to be used for describing the interface underpinning this pool. Must be "abi" or "ffi". |
 | symbol | string | (OPTIONAL) The symbol for this token pool, if applicable. |
 | decimals | number | (OPTIONAL) The number of decimals used for balances in this token pool, if applicable. |
 | info | object | (OPTIONAL) Additional information about the pool. Each connector may define the format for this object. |
