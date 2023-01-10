@@ -445,6 +445,19 @@ func TestPrivateBlobReceivedBadEvent(t *testing.T) {
 	mde.AssertExpectations(t)
 }
 
+func TestPrivateBlobReceivedBadDataID(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	mde := newPrivateBlobReceivedNoAck("peer", fftypes.NewRandB32(), 12345, "ns1", fftypes.NewUUID())
+	mde.PrivateBlobReceived().DataID = "bad"
+	em.privateBlobReceived(mdx, mde)
+	mde.AssertExpectations(t)
+}
+
 func TestPrivateBlobReceivedInsertBlobFails(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)

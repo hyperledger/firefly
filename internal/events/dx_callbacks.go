@@ -210,6 +210,12 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 		return
 	}
 
+	dataID, err := fftypes.ParseUUID(em.ctx, br.DataID)
+	if err != nil {
+		log.L(em.ctx).Warnf("Ignoring blob with invalid data ID '%s'", br.DataID)
+		return
+	}
+
 	// Dispatch to the blob receiver for efficient batch DB operations
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
 		blob: &core.Blob{
@@ -219,7 +225,7 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 			Hash:       &br.Hash,
 			Size:       br.Size,
 			Created:    fftypes.Now(),
-			DataID:     fftypes.MustParseUUID(br.DataID),
+			DataID:     dataID,
 		},
 		onComplete: func() {
 			event.Ack()
