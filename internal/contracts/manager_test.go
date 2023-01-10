@@ -1350,7 +1350,7 @@ func TestGetFFIByIDWithChildrenErrorsFail(t *testing.T) {
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
 	mdb.On("GetFFIEvents", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIEvent{}, nil, nil)
-	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
@@ -1775,7 +1775,7 @@ func TestInvokeContractErrorsFail(t *testing.T) {
 
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.MethodPath).Return(&fftypes.FFIMethod{Name: "set"}, nil)
-	mdb.On("GetFFIErrors", mock.Anything, "ns1", req.Interface).Return(nil, fmt.Errorf("pop"))
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 

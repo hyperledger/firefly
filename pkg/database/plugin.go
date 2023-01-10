@@ -450,7 +450,7 @@ type iFFIErrorCollection interface {
 	UpsertFFIError(ctx context.Context, method *fftypes.FFIError) error
 
 	// GetFFIErrors - Get FFI error
-	GetFFIErrors(ctx context.Context, namespace string, interfaceID *fftypes.UUID) (errors []*fftypes.FFIError, err error)
+	GetFFIErrors(ctx context.Context, namespace string, filter ffapi.Filter) (errors []*fftypes.FFIError, res *ffapi.FilterResult, err error)
 }
 
 type iContractAPICollection interface {
