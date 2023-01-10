@@ -72,7 +72,7 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), mock.Anything).Return(node, nil)
-	mdi.On("GetBlobMatchingHash", context.Background(), blob.Hash, mock.Anything).Return(blob, nil)
+	mdi.On("GetBlob", context.Background(), "ns1", mock.Anything, blob.Hash).Return(blob, nil)
 	mim.On("GetLocalNode", context.Background()).Return(localNode, nil)
 	mdx.On("TransferBlob", context.Background(), "ns1:"+op.ID.String(), node.Profile, localNode.Profile, "payload").Return(nil)
 
@@ -307,7 +307,7 @@ func TestPrepareOperationBlobSendBlobFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
-	mdi.On("GetBlobMatchingHash", context.Background(), blobHash, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlob", context.Background(), mock.Anything, mock.Anything, blobHash).Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
@@ -343,7 +343,7 @@ func TestPrepareOperationBlobSendBlobNotFound(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
-	mdi.On("GetBlobMatchingHash", context.Background(), blobHash, mock.Anything).Return(nil, nil)
+	mdi.On("GetBlob", context.Background(), mock.Anything, mock.Anything, blobHash).Return(nil, nil)
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)

@@ -17,5 +17,5 @@ INSERT INTO temp_blobs (namespace, data_id, hash, payload_ref, created, peer, si
 DROP INDEX blobs_hash;
 DROP TABLE blobs;
 ALTER TABLE temp_blobs RENAME TO blobs; 
-CREATE INDEX blobs_hash_data_id ON blobs(hash, data_id);
+CREATE INDEX blobs_namespace_data_id ON blobs(namespace, data_id);
 CREATE INDEX blobs_payload_ref ON blobs(payload_ref);

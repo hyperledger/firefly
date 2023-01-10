@@ -213,7 +213,7 @@ func (pm *privateMessaging) prepareBlobTransfers(ctx context.Context, data core.
 					return i18n.NewError(ctx, coremsgs.MsgDataMissingBlobHash, d.ID)
 				}
 
-				blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash, d.ID)
+				blob, err := pm.database.GetBlob(ctx, d.Namespace, d.ID, d.Blob.Hash)
 				if err != nil {
 					return err
 				}

@@ -649,7 +649,7 @@ func (ag *aggregator) resolveBlobs(ctx context.Context, data core.DataArray) (re
 		}
 
 		// See if we already have the data
-		blob, err := ag.database.GetBlobMatchingHash(ctx, d.Blob.Hash, d.ID)
+		blob, err := ag.database.GetBlob(ctx, d.Namespace, d.ID, d.Blob.Hash)
 		if err != nil {
 			return false, err
 		}

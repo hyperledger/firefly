@@ -224,13 +224,13 @@ func (_m *Plugin) GetBatches(ctx context.Context, namespace string, filter ffapi
 	return r0, r1, r2
 }
 
-// GetBlobMatchingHash provides a mock function with given fields: ctx, hash, dataID
-func (_m *Plugin) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32, dataID *fftypes.UUID) (*core.Blob, error) {
-	ret := _m.Called(ctx, hash, dataID)
+// GetBlob provides a mock function with given fields: ctx, namespace, dataID, hash
+func (_m *Plugin) GetBlob(ctx context.Context, namespace string, dataID *fftypes.UUID, hash *fftypes.Bytes32) (*core.Blob, error) {
+	ret := _m.Called(ctx, namespace, dataID, hash)
 
 	var r0 *core.Blob
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32, *fftypes.UUID) *core.Blob); ok {
-		r0 = rf(ctx, hash, dataID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, *fftypes.Bytes32) *core.Blob); ok {
+		r0 = rf(ctx, namespace, dataID, hash)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Blob)
@@ -238,8 +238,8 @@ func (_m *Plugin) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, hash, dataID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, *fftypes.Bytes32) error); ok {
+		r1 = rf(ctx, namespace, dataID, hash)
 	} else {
 		r1 = ret.Error(1)
 	}

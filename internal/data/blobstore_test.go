@@ -276,7 +276,7 @@ func TestDownloadBlobOk(t *testing.T) {
 			Hash: blobHash,
 		},
 	}, nil)
-	mdi.On("GetBlobMatchingHash", ctx, blobHash, mock.Anything).Return(&core.Blob{
+	mdi.On("GetBlob", ctx, "ns1", dataID, blobHash).Return(&core.Blob{
 		Hash:       blobHash,
 		PayloadRef: "ns1/blob1",
 	}, nil)
@@ -322,7 +322,7 @@ func TestDownloadBlobNotFound(t *testing.T) {
 			Hash: blobHash,
 		},
 	}, nil)
-	mdi.On("GetBlobMatchingHash", ctx, blobHash, mock.Anything).Return(nil, nil)
+	mdi.On("GetBlob", ctx, "ns1", dataID, blobHash).Return(nil, nil)
 
 	_, _, err := dm.DownloadBlob(ctx, dataID.String())
 	assert.Regexp(t, "FF10239", err)
@@ -345,7 +345,7 @@ func TestDownloadBlobLookupErr(t *testing.T) {
 			Hash: blobHash,
 		},
 	}, nil)
-	mdi.On("GetBlobMatchingHash", ctx, blobHash, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlob", ctx, "ns1", dataID, blobHash).Return(nil, fmt.Errorf("pop"))
 
 	_, _, err := dm.DownloadBlob(ctx, dataID.String())
 	assert.Regexp(t, "pop", err)

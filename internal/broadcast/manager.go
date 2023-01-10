@@ -203,7 +203,7 @@ func (bm *broadcastManager) uploadDataBlob(ctx context.Context, tx *fftypes.UUID
 		return err
 	}
 
-	blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash, d.ID)
+	blob, err := bm.database.GetBlob(ctx, bm.namespace.Name, d.ID, d.Blob.Hash)
 	if err != nil {
 		return err
 	} else if blob == nil {
