@@ -155,7 +155,7 @@ The Webhook transport allows FireFly to make HTTP calls against your application
 when events matching your subscription are emitted.
 
 This means the direction of network connection is from the FireFly server, to the
-application (the reverse of WebHooks). Conversely it means you don't need to add
+application (the reverse of WebSockets). Conversely it means you don't need to add
 any connection management code to your application - just expose and API that
 FireFly can call to process the events.
 
