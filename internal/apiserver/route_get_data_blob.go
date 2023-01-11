@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -32,7 +32,7 @@ var getDataBlob = &ffapi.Route{
 	Path:   "data/{dataid}/blob",
 	Method: http.MethodGet,
 	PathParams: []*ffapi.PathParam{
-		{Name: "dataid", Description: coremsgs.APIParamsBlobID},
+		{Name: "dataid", Description: coremsgs.APIParamsDataID},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.MessageQueryFactory,

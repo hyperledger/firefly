@@ -21,7 +21,6 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var deleteData = &ffapi.Route{
@@ -34,7 +33,7 @@ var deleteData = &ffapi.Route{
 	QueryParams:     nil,
 	Description:     coremsgs.APIEndpointsGetDataByID,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &core.Data{} },
+	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {

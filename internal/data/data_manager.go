@@ -357,7 +357,7 @@ func (dm *dataManager) resolveRef(ctx context.Context, dataRef *core.DataRef) (*
 
 func (dm *dataManager) resolveBlob(ctx context.Context, blobRef *core.BlobRef, dataID *fftypes.UUID) (*core.Blob, error) {
 	if blobRef != nil && blobRef.Hash != nil {
-		blob, err := dm.database.GetBlob(ctx, "ns1", dataID, blobRef.Hash)
+		blob, err := dm.database.GetBlob(ctx, dm.namespace.Name, dataID, blobRef.Hash)
 		if err != nil {
 			return nil, err
 		}
@@ -556,7 +556,7 @@ func (dm *dataManager) DeleteData(ctx context.Context, dataID string) error {
 	}
 	if data.Blob != nil && data.Blob.Hash != nil {
 
-		blob, err := dm.database.GetBlob(ctx, "ns1", data.ID, data.Blob.Hash)
+		blob, err := dm.database.GetBlob(ctx, dm.namespace.Name, data.ID, data.Blob.Hash)
 		if err != nil {
 			return err
 		}
