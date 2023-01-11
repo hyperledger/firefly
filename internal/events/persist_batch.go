@@ -166,7 +166,7 @@ func (em *eventManager) checkAndInitiateBlobDownloads(ctx context.Context, batch
 
 	if data.Blob != nil && batch.Type == core.BatchTypeBroadcast {
 		// Need to check if we need to initiate a download
-		blob, err := em.database.GetBlob(ctx, data.Namespace, data.ID, data.Blob.Hash)
+		blob, err := em.database.GetBlob(ctx, em.namespace.Name, data.ID, data.Blob.Hash)
 		if err != nil {
 			return false, err
 		}

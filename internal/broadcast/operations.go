@@ -114,7 +114,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 		} else if d == nil || d.Blob == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		blob, err := bm.database.GetBlob(ctx, d.Namespace, d.ID, d.Blob.Hash)
+		blob, err := bm.database.GetBlob(ctx, bm.namespace.Name, d.ID, d.Blob.Hash)
 		if err != nil {
 			return nil, err
 		} else if blob == nil {

@@ -164,7 +164,7 @@ func (s *SQLCommon) getBlobPred(ctx context.Context, desc string, pred interface
 }
 
 func (s *SQLCommon) GetBlob(ctx context.Context, namespace string, dataID *fftypes.UUID, hash *fftypes.Bytes32) (blob *core.Blob, err error) {
-	return s.getBlobPred(ctx, fmt.Sprintf("%s %s", hash.String(), dataID.String()), sq.Eq{
+	return s.getBlobPred(ctx, fmt.Sprintf("%s %s %s", namespace, hash.String(), dataID.String()), sq.Eq{
 		"namespace": namespace,
 		"hash":      hash,
 		"data_id":   dataID,

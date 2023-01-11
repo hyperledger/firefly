@@ -92,7 +92,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 		} else if node == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		blob, err := pm.database.GetBlob(ctx, op.Namespace, dataID, blobHash)
+		blob, err := pm.database.GetBlob(ctx, pm.namespace.Name, dataID, blobHash)
 		if err != nil {
 			return nil, err
 		} else if blob == nil {

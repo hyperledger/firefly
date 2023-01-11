@@ -164,7 +164,7 @@ func (bs *blobStore) DownloadBlob(ctx context.Context, dataID string) (*core.Blo
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgDataDoesNotHaveBlob)
 	}
 
-	blob, err := bs.database.GetBlob(ctx, data.Namespace, data.ID, data.Blob.Hash)
+	blob, err := bs.database.GetBlob(ctx, bs.dm.namespace.Name, data.ID, data.Blob.Hash)
 	if err != nil {
 		return nil, nil, err
 	}
