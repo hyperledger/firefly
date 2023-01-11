@@ -111,7 +111,7 @@ func (bs *blobStore) UploadBlob(ctx context.Context, inData *core.DataRefOrValue
 	}
 
 	blob := &core.Blob{
-		Namespace:  data.Namespace,
+		Namespace:  bs.dm.namespace.Name,
 		DataID:     data.ID,
 		Hash:       hash,
 		Size:       blobSize,
