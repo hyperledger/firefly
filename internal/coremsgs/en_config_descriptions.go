@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -56,6 +56,7 @@ var (
 
 	ConfigBlockchainType = ffc("config.blockchain.type", "A string defining which type of blockchain plugin to use. This tells FireFly which type of configuration to load for the rest of the `blockchain` section", i18n.StringType)
 
+	ConfigBlockchainEthereumAddressResolverAlwaysResolve         = ffc("config.blockchain.ethereum.addressResolver.alwaysResolve", "Causes the address resolver to be invoked on every API call that submits a signing key, regardless of whether the input string conforms to an 0x address. Also disables any result caching", i18n.BooleanType)
 	ConfigBlockchainEthereumAddressResolverBodyTemplate          = ffc("config.blockchain.ethereum.addressResolver.bodyTemplate", "The body go template string to use when making HTTP requests", i18n.GoTemplateType)
 	ConfigBlockchainEthereumAddressResolverCustomClient          = ffc("config.blockchain.ethereum.addressResolver.customClient", "Used for testing purposes only", i18n.IgnoredType)
 	ConfigBlockchainEthereumAddressResolverExpectContinueTimeout = ffc("config.blockchain.ethereum.addressResolver.expectContinueTimeout", "See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)", i18n.TimeDurationType)
@@ -141,6 +142,7 @@ var (
 	ConfigPluginBlockchainName = ffc("config.plugins.blockchain[].name", "The name of the configured Blockchain plugin", i18n.StringType)
 	ConfigPluginBlockchainType = ffc("config.plugins.blockchain[].type", "The type of the configured Blockchain Connector plugin", i18n.StringType)
 
+	ConfigPluginBlockchainEthereumAddressResolverAlwaysResolve         = ffc("config.plugins.blockchain[].ethereum.addressResolver.alwaysResolve", "Causes the address resolver to be invoked on every API call that submits a signing key, regardless of whether the input string conforms to an 0x address. Also disables any result caching", i18n.BooleanType)
 	ConfigPluginBlockchainEthereumAddressResolverBodyTemplate          = ffc("config.plugins.blockchain[].ethereum.addressResolver.bodyTemplate", "The body go template string to use when making HTTP requests", i18n.GoTemplateType)
 	ConfigPluginBlockchainEthereumAddressResolverCustomClient          = ffc("config.plugins.blockchain[].ethereum.addressResolver.customClient", "Used for testing purposes only", i18n.IgnoredType)
 	ConfigPluginBlockchainEthereumAddressResolverExpectContinueTimeout = ffc("config.plugins.blockchain[].ethereum.addressResolver.expectContinueTimeout", "See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)", i18n.TimeDurationType)

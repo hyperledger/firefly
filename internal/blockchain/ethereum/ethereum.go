@@ -57,23 +57,24 @@ const (
 )
 
 type Ethereum struct {
-	ctx             context.Context
-	cancelCtx       context.CancelFunc
-	topic           string
-	prefixShort     string
-	prefixLong      string
-	capabilities    *blockchain.Capabilities
-	callbacks       common.BlockchainCallbacks
-	client          *resty.Client
-	streams         *streamManager
-	streamID        string
-	wsconn          wsclient.WSClient
-	closed          chan struct{}
-	addressResolver *addressResolver
-	metrics         metrics.Manager
-	ethconnectConf  config.Section
-	subs            common.FireflySubscriptions
-	cache           cache.CInterface
+	ctx                  context.Context
+	cancelCtx            context.CancelFunc
+	topic                string
+	prefixShort          string
+	prefixLong           string
+	capabilities         *blockchain.Capabilities
+	callbacks            common.BlockchainCallbacks
+	client               *resty.Client
+	streams              *streamManager
+	streamID             string
+	wsconn               wsclient.WSClient
+	closed               chan struct{}
+	addressResolveAlways bool
+	addressResolver      *addressResolver
+	metrics              metrics.Manager
+	ethconnectConf       config.Section
+	subs                 common.FireflySubscriptions
+	cache                cache.CInterface
 }
 
 type eventStreamWebsocket struct {
@@ -149,7 +150,9 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	e.subs = common.NewFireflySubscriptions()
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
-		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf, cacheManager); err != nil {
+		// Check if we need to invoke the address resolver (without caching) on every call
+		e.addressResolveAlways = addressResolverConf.GetBool(AddressResolverAlwaysResolve)
+		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf, cacheManager, !e.addressResolveAlways); err != nil {
 			return err
 		}
 	}
@@ -324,7 +327,9 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 		Contexts:   event.Output.GetStringArray("contexts"),
 	}
 
-	authorAddress, err = e.NormalizeSigningKey(ctx, authorAddress)
+	// Validate the ethereum address - it must already be a valid address, we do not
+	// engage the address resolve on this blockchain-driven path.
+	authorAddress, err = validateEthAddress(ctx, authorAddress)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
@@ -493,14 +498,19 @@ func validateEthAddress(ctx context.Context, key string) (string, error) {
 	return "", i18n.NewError(ctx, coremsgs.MsgInvalidEthAddress)
 }
 
-func (e *Ethereum) NormalizeSigningKey(ctx context.Context, key string) (string, error) {
-	resolved, err := validateEthAddress(ctx, key)
-	if err != nil && e.addressResolver != nil {
-		resolved, err := e.addressResolver.NormalizeSigningKey(ctx, key)
+func (e *Ethereum) NormalizeSigningKey(ctx context.Context, key string) (resolved string, err error) {
+	if !e.addressResolveAlways {
+		// If there's no address resolver plugin, or addressResolveAlways is false,
+		// we check if it's already an ethereum address - in which case we can just return it.
+		resolved, err = validateEthAddress(ctx, key)
+	}
+	if e.addressResolveAlways || (err != nil && e.addressResolver != nil) {
+		// Either it's not a valid ethereum address, or we've been configured to invoke the address resolver on every call
+		resolved, err = e.addressResolver.NormalizeSigningKey(ctx, key)
 		if err == nil {
 			log.L(ctx).Infof("Key '%s' resolved to '%s'", key, resolved)
+			return resolved, nil
 		}
-		return resolved, err
 	}
 	return resolved, err
 }

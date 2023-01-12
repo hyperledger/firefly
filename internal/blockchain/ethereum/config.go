@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -54,6 +54,8 @@ const (
 
 	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
 	AddressResolverConfigKey = "addressResolver"
+	// AddressResolverAlwaysResolve causes the address resolve to be invoked on every API call that resolves an address, regardless of whether the input conforms to an 0x address, and disables any caching
+	AddressResolverAlwaysResolve = "alwaysResolve"
 	// AddressResolverRetainOriginal when true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address
 	AddressResolverRetainOriginal = "retainOriginal"
 	// AddressResolverMethod the HTTP method to use to call the address resolver (default GET)
@@ -85,6 +87,7 @@ func (e *Ethereum) InitConfig(config config.Section) {
 
 	addressResolverConf := config.SubSection(AddressResolverConfigKey)
 	ffresty.InitConfig(addressResolverConf)
+	addressResolverConf.AddKnownKey(AddressResolverAlwaysResolve)
 	addressResolverConf.AddKnownKey(AddressResolverRetainOriginal)
 	addressResolverConf.AddKnownKey(AddressResolverMethod, defaultAddressResolverMethod)
 	addressResolverConf.AddKnownKey(AddressResolverURLTemplate)

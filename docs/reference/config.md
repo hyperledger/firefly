@@ -81,6 +81,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|alwaysResolve|Causes the address resolver to be invoked on every API call that submits a signing key, regardless of whether the input string conforms to an 0x address. Also disables any result caching|`boolean`|`<nil>`
 |bodyTemplate|The body go template string to use when making HTTP requests|[Go Template](https://pkg.go.dev/text/template) `string`|`<nil>`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
@@ -819,6 +820,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|alwaysResolve|Causes the address resolver to be invoked on every API call that submits a signing key, regardless of whether the input string conforms to an 0x address. Also disables any result caching|`boolean`|`<nil>`
 |bodyTemplate|The body go template string to use when making HTTP requests|[Go Template](https://pkg.go.dev/text/template) `string`|`<nil>`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`

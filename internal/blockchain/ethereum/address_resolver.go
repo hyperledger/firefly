@@ -52,24 +52,25 @@ type addressResolverInserts struct {
 	Key string
 }
 
-func newAddressResolver(ctx context.Context, localConfig config.Section, cacheManager cache.Manager) (ar *addressResolver, err error) {
-	cache, err := cacheManager.GetCache(
-		cache.NewCacheConfig(
-			ctx,
-			coreconfig.CacheAddressResolverLimit,
-			coreconfig.CacheAddressResolverTTL,
-			"",
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
+func newAddressResolver(ctx context.Context, localConfig config.Section, cacheManager cache.Manager, enableCache bool) (ar *addressResolver, err error) {
 	ar = &addressResolver{
 		retainOriginal: localConfig.GetBool(AddressResolverRetainOriginal),
 		method:         localConfig.GetString(AddressResolverMethod),
 		responseField:  localConfig.GetString(AddressResolverResponseField),
 		client:         ffresty.New(ctx, localConfig),
-		cache:          cache,
+	}
+	if enableCache {
+		ar.cache, err = cacheManager.GetCache(
+			cache.NewCacheConfig(
+				ctx,
+				coreconfig.CacheAddressResolverLimit,
+				coreconfig.CacheAddressResolverTTL,
+				"",
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	urlTemplateString := localConfig.GetString(AddressResolverURLTemplate)
@@ -91,8 +92,10 @@ func newAddressResolver(ctx context.Context, localConfig config.Section, cacheMa
 
 func (ar *addressResolver) NormalizeSigningKey(ctx context.Context, keyDescriptor string) (string, error) {
 
-	if cached := ar.cache.GetString(keyDescriptor); cached != "" {
-		return cached, nil
+	if ar.cache != nil {
+		if cached := ar.cache.GetString(keyDescriptor); cached != "" {
+			return cached, nil
+		}
 	}
 
 	inserts := &addressResolverInserts{
@@ -131,6 +134,8 @@ func (ar *addressResolver) NormalizeSigningKey(ctx context.Context, keyDescripto
 		return "", i18n.NewError(ctx, coremsgs.MsgAddressResolveBadResData, keyDescriptor, jsonRes.String(), err)
 	}
 
-	ar.cache.SetString(keyDescriptor, address)
+	if ar.cache != nil {
+		ar.cache.SetString(keyDescriptor, address)
+	}
 	return address, nil
 }
