@@ -347,6 +347,12 @@
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
+      <td>passthroughHeaders</td>
+      <td>A list of HTTP request headers to pass through to dependency microservices</td>
+      <td><code class="language-plaintext highlighter-rouge">[]string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>requestMaxTimeout</td>
       <td>The maximum amount of time that an HTTP client can specify in a <code class="language-plaintext highlighter-rouge">Request-Timeout</code> header to keep a specific request open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -632,6 +638,12 @@
       <td><code class="language-plaintext highlighter-rouge">GET</code></td>
     </tr>
     <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
       <td>requestTimeout</td>
       <td>The maximum amount of time that a request is allowed to remain open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -846,6 +858,12 @@
       <td>The max number of idle connections to hold pooled</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
+    </tr>
+    <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td>prefixLong</td>
@@ -1091,6 +1109,12 @@
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
       <td>requestTimeout</td>
       <td>The maximum amount of time that a request is allowed to remain open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -1287,6 +1311,12 @@
       <td>The max number of idle connections to hold pooled</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
+    </tr>
+    <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td>prefixLong</td>
@@ -2303,6 +2333,12 @@
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
       <td>requestTimeout</td>
       <td>The maximum amount of time that a request is allowed to remain open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -2877,6 +2913,12 @@
       <td>The max number of idle connections to hold pooled</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
+    </tr>
+    <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td>requestTimeout</td>
@@ -4241,6 +4283,12 @@
       <td><code class="language-plaintext highlighter-rouge">GET</code></td>
     </tr>
     <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
       <td>requestTimeout</td>
       <td>The maximum amount of time that a request is allowed to remain open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -4455,6 +4503,12 @@
       <td>The max number of idle connections to hold pooled</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
+    </tr>
+    <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td>prefixLong</td>
@@ -4700,6 +4754,12 @@
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
       <td>requestTimeout</td>
       <td>The maximum amount of time that a request is allowed to remain open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -4896,6 +4956,12 @@
       <td>The max number of idle connections to hold pooled</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
+    </tr>
+    <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td>prefixLong</td>
@@ -5393,6 +5459,12 @@
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
       <td>requestTimeout</td>
       <td>The maximum amount of time that a request is allowed to remain open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -5684,6 +5756,12 @@
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
       <td>requestTimeout</td>
       <td>The maximum amount of time that a request is allowed to remain open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -5856,6 +5934,12 @@
       <td>The max number of idle connections to hold pooled</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
+    </tr>
+    <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td>requestTimeout</td>
@@ -6069,6 +6153,12 @@
       <td>The max number of idle connections to hold pooled</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
+    </tr>
+    <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td>requestTimeout</td>
@@ -6407,6 +6497,12 @@
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
       <td>requestTimeout</td>
       <td>The maximum amount of time that a request is allowed to remain open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -6579,6 +6675,12 @@
       <td>The max number of idle connections to hold pooled</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
       <td><code class="language-plaintext highlighter-rouge">100</code></td>
+    </tr>
+    <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td>requestTimeout</td>
@@ -7064,6 +7166,12 @@
       <td>name</td>
       <td>A name to identify this token plugin</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>passthroughHeadersEnabled</td>
+      <td>Enable passing through the set of allowed HTTP request headers</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
