@@ -555,15 +555,17 @@ func (dm *dataManager) DeleteData(ctx context.Context, dataID string) error {
 		return i18n.NewError(ctx, coremsgs.Msg404NoResult)
 	}
 	if data.Blob != nil && data.Blob.Hash != nil {
-
-		blob, err := dm.database.GetBlob(ctx, dm.namespace.Name, data.ID, data.Blob.Hash)
+		fb := database.BlobQueryFactory.NewFilter(context.Background())
+		blobs, _, err := dm.database.GetBlobs(ctx, fb.And(fb.Eq("data_id", data.ID), fb.Eq("hash", data.Blob.Hash)))
 		if err != nil {
 			return err
 		}
-		if blob != nil {
-			err = dm.DeleteBlob(ctx, blob)
-			if err != nil {
-				return err
+		for _, blob := range blobs {
+			if blob != nil {
+				err = dm.DeleteBlob(ctx, blob)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

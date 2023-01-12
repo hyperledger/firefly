@@ -18,6 +18,7 @@ package events
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"time"
 
@@ -190,20 +191,30 @@ func (br *blobReceiver) handleBlobNotificationsRetry(ctx context.Context, notifi
 }
 
 func (br *blobReceiver) insertNewBlobs(ctx context.Context, notifications []*blobNotification) ([]*fftypes.Bytes32, error) {
+
+	allHashes := make([]driver.Value, len(notifications))
+	for i, n := range notifications {
+		allHashes[i] = n.blob.Hash
+	}
+
 	// We want just one record in our DB for each entry in DX, so make the logic idempotent.
 	// Note that we do create a record for each separate receipt of data on a new payload ref,
-	newBlobs := make([]*core.Blob, 0, len(notifications))
-	newHashes := make([]*fftypes.Bytes32, 0, len(notifications))
+	// even if the hash of that data is the same.
+	fb := database.BlobQueryFactory.NewFilter(ctx)
+	filter := fb.In("hash", allHashes)
+	existingBlobs, _, err := br.database.GetBlobs(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	newBlobs := make([]*core.Blob, 0, len(existingBlobs))
+	newHashes := make([]*fftypes.Bytes32, 0, len(existingBlobs))
 	for _, notification := range notifications {
 		foundExisting := false
 		// Check for duplicates in the DB
-		for _, notification := range notifications {
-			existing, err := br.database.GetBlob(ctx, br.aggregator.namespace, notification.blob.DataID, notification.blob.Hash)
-			if err != nil {
-				return nil, err
-			}
-			if existing != nil && existing.PayloadRef == notification.blob.PayloadRef {
+		for _, existing := range existingBlobs {
+			if existing.Hash.Equals(notification.blob.Hash) && existing.PayloadRef == notification.blob.PayloadRef {
 				foundExisting = true
+				break
 			}
 		}
 		// Check for duplicates in the notifications
@@ -221,7 +232,7 @@ func (br *blobReceiver) insertNewBlobs(ctx context.Context, notifications []*blo
 
 	// Insert the new blobs
 	if len(newBlobs) > 0 {
-		err := br.database.InsertBlobs(ctx, newBlobs)
+		err = br.database.InsertBlobs(ctx, newBlobs)
 		if err != nil {
 			return nil, err
 		}

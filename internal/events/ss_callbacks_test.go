@@ -141,7 +141,7 @@ func TestSharedStorageBlobDownloadedOk(t *testing.T) {
 
 	mss := &sharedstoragemocks.Plugin{}
 	mss.On("Name").Return("utsd")
-	em.mdi.On("GetBlob", em.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+	em.mdi.On("GetBlobs", em.ctx, mock.Anything, mock.Anything).Return(nil, nil, nil)
 	em.mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil, nil)
 
 	hash := fftypes.NewRandB32()

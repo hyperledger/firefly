@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -1201,8 +1201,7 @@ func TestDeleteData(t *testing.T) {
 	}
 
 	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
-	mdb.On("GetBlob", ctx, dm.namespace.Name, dataID, hash).Return(blob, nil)
-	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
+	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{blob}, &ffapi.FilterResult{}, nil)
 	mdx.On("DeleteBlob", ctx, payloadRef).Return(nil)
 	mdb.On("DeleteBlob", ctx, int64(0)).Return(nil)
 	mdb.On("GetMessagesForData", ctx, dm.namespace.Name, dataID, mock.Anything).Return([]*core.Message{
@@ -1273,7 +1272,7 @@ func TestDeleteDataFailGetBlob(t *testing.T) {
 	}
 
 	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
-	mdb.On("GetBlob", ctx, dm.namespace.Name, dataID, hash).Return(nil, fmt.Errorf("pop"))
+	mdb.On("GetBlobs", ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := dm.DeleteData(ctx, dataID.String())
 
@@ -1308,8 +1307,7 @@ func TestDeleteDataFailDeleteBlob(t *testing.T) {
 	}
 
 	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
-	mdb.On("GetBlob", ctx, dm.namespace.Name, dataID, hash).Return(blob, nil)
-	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
+	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{blob}, &ffapi.FilterResult{}, nil)
 	mdx.On("DeleteBlob", ctx, payloadRef).Return(nil)
 	mdb.On("DeleteBlob", ctx, int64(0)).Return(fmt.Errorf("pop"))
 
@@ -1326,7 +1324,6 @@ func TestDeleteDataFailGetBlobs(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
-	payloadRef := "payloadRef"
 
 	data := &core.Data{
 		ID:        dataID,
@@ -1336,16 +1333,7 @@ func TestDeleteDataFailGetBlobs(t *testing.T) {
 		},
 	}
 
-	blob := &core.Blob{
-		Sequence:   0,
-		Namespace:  dm.namespace.Name,
-		PayloadRef: payloadRef,
-		Hash:       hash,
-		DataID:     dataID,
-	}
-
 	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
-	mdb.On("GetBlob", ctx, dm.namespace.Name, dataID, hash).Return(blob, nil)
 	mdb.On("GetBlobs", ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := dm.DeleteData(ctx, dataID.String())
@@ -1381,8 +1369,7 @@ func TestDeleteDataFailGetMessages(t *testing.T) {
 	}
 
 	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
-	mdb.On("GetBlob", ctx, dm.namespace.Name, dataID, hash).Return(blob, nil)
-	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
+	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{blob}, &ffapi.FilterResult{}, nil)
 	mdx.On("DeleteBlob", ctx, payloadRef).Return(nil)
 	mdb.On("DeleteBlob", ctx, int64(0)).Return(nil)
 	mdb.On("GetMessagesForData", ctx, dm.namespace.Name, dataID, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
