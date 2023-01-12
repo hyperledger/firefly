@@ -35,6 +35,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/httpserver"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/apiservermocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
@@ -53,9 +54,9 @@ func newTestServer() (*namespacemocks.Manager, *orchestratormocks.Orchestrator, 
 	InitConfig()
 	mgr := &namespacemocks.Manager{}
 	o := &orchestratormocks.Orchestrator{}
-	mgr.On("Orchestrator", "default").Return(o).Maybe()
-	mgr.On("Orchestrator", "mynamespace").Return(o).Maybe()
-	mgr.On("Orchestrator", "ns1").Return(o).Maybe()
+	mgr.On("Orchestrator", mock.Anything, "default").Return(o, nil).Maybe()
+	mgr.On("Orchestrator", mock.Anything, "mynamespace").Return(o, nil).Maybe()
+	mgr.On("Orchestrator", mock.Anything, "ns1").Return(o, nil).Maybe()
 	config.Set(coreconfig.APIMaxFilterLimit, 100)
 	as := &apiServer{
 		apiTimeout:    5 * time.Second,
@@ -369,7 +370,7 @@ func TestContractAPISwaggerJSONBadNamespace(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mgr.On("Orchestrator", "BAD").Return(nil)
+	mgr.On("Orchestrator", mock.Anything, "BAD").Return(nil, i18n.NewError(context.Background(), coremsgs.MsgUnknownNamespace))
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/BAD/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
@@ -395,7 +396,7 @@ func TestJSONBadNamespace(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mgr.On("Orchestrator", "BAD").Return(nil)
+	mgr.On("Orchestrator", mock.Anything, "BAD").Return(nil, i18n.NewError(context.Background(), coremsgs.MsgUnknownNamespace))
 
 	var b bytes.Buffer
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/BAD/apis", &b)
@@ -413,7 +414,7 @@ func TestFormDataBadNamespace(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mgr.On("Orchestrator", "BAD").Return(nil)
+	mgr.On("Orchestrator", mock.Anything, "BAD").Return(nil, i18n.NewError(context.Background(), coremsgs.MsgUnknownNamespace))
 
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -470,4 +471,9 @@ func TestFormDataDisabledRoute(t *testing.T) {
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 400, res.Result().StatusCode)
+}
+
+func TestGetOrchestratorMissingTag(t *testing.T) {
+	_, err := getOrchestrator(context.Background(), &namespacemocks.Manager{}, "", nil)
+	assert.Regexp(t, "FF10437", err)
 }

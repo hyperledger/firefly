@@ -110,6 +110,7 @@ func NewBroadcastManager(ctx context.Context, ns *core.Namespace, di database.Pl
 				core.MessageTypeBroadcast,
 				core.MessageTypeDefinition,
 				core.MessageTypeTransferBroadcast,
+				core.MessageTypeApprovalBroadcast,
 			}, bm.dispatchBatch, bo)
 	}
 

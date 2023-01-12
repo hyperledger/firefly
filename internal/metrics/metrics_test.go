@@ -171,6 +171,17 @@ func TestTransferConfirmedMintBurn(t *testing.T) {
 	assert.Equal(t, len(mm.timeMap), 0)
 }
 
+func TestBlockchainContractDeployment(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.timeMap[tokenLocalID.String()] = time.Now()
+	mm.BlockchainContractDeployment()
+	m, err := BlockchainTransactionsCounter.GetMetricWith(prometheus.Labels{LocationLabelName: "", MethodNameLabelName: ""})
+	assert.NoError(t, err)
+	v := testutil.ToFloat64(m)
+	assert.Equal(t, float64(1), v)
+}
+
 func TestBlockchainTransaction(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()

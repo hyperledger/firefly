@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -242,6 +242,7 @@ var (
 	FFIVersion     = ffm("FFI.version", "A version for the FFI - use of semantic versioning such as 'v1.0.1' is encouraged")
 	FFIMethods     = ffm("FFI.methods", "An array of smart contract method definitions")
 	FFIEvents      = ffm("FFI.events", "An array of smart contract event definitions")
+	FFIErrors      = ffm("FFI.errors", "An array of smart contract error definitions")
 
 	// FFIMethod field descriptions
 	FFIMethodID          = ffm("FFIMethod.id", "The UUID of the FFI method definition")
@@ -264,6 +265,17 @@ var (
 	FFIEventParams      = ffm("FFIEvent.params", "An array of event parameter/argument definitions")
 	FFIEventSignature   = ffm("FFIEvent.signature", "The stringified signature of the event, as computed by the blockchain plugin")
 	FFIEventDetails     = ffm("FFIEvent.details", "Additional blockchain specific fields about this event from the original smart contract. Used by the blockchain plugin and for documentation generation.")
+
+	// FFIError field descriptions
+	FFIErrorID          = ffm("FFIError.id", "The UUID of the FFI error definition")
+	FFIErrorInterface   = ffm("FFIError.interface", "The UUID of the FFI smart contract definition that this error is part of")
+	FFIErrorName        = ffm("FFIError.name", "The name of the error")
+	FFIErrorNamespace   = ffm("FFIError.namespace", "The namespace of the FFI")
+	FFIErrorPathname    = ffm("FFIError.pathname", "The unique name allocated to this error within the FFI for use on URL paths")
+	FFIErrorDescription = ffm("FFIError.description", "A description of the smart contract error")
+	FFIErrorParams      = ffm("FFIError.params", "An array of error parameter/argument definitions")
+	FFIErrorSignature   = ffm("FFIError.signature", "The stringified signature of the error, as computed by the blockchain plugin")
+	FFIErrorDetails     = ffm("FFIError.details", "Additional blockchain specific fields about this error from the original smart contract. Used by the blockchain plugin and for documentation generation.")
 
 	// FFIParam field descriptions
 	FFIParamName   = ffm("FFIParam.name", "The name of the parameter. Note that parameters must be ordered correctly on the FFI, according to the order in the blockchain smart contract")
@@ -519,12 +531,15 @@ var (
 	TokenApprovalProtocolID      = ffm("TokenApproval.protocolId", "An alphanumerically sortable string that represents this event uniquely with respect to the blockchain")
 	TokenApprovalSubject         = ffm("TokenApproval.subject", "A string identifying the parties and entities in the scope of this approval, as provided by the token connector")
 	TokenApprovalActive          = ffm("TokenApproval.active", "Indicates if this approval is currently active (only one approval can be active per subject)")
+	TokenApprovalMessage         = ffm("TokenApproval.message", "The UUID of a message that has been correlated with this approval using the data field of the approval in a compatible token connector")
+	TokenApprovalMessageHash     = ffm("TokenApproval.messageHash", "The hash of a message that has been correlated with this approval using the data field of the approval in a compatible token connector")
 	TokenApprovalCreated         = ffm("TokenApproval.created", "The creation time of the token approval")
 	TokenApprovalTX              = ffm("TokenApproval.tx", "If submitted via FireFly, this will reference the UUID of the FireFly transaction (if the token connector in use supports attaching data)")
 	TokenApprovalBlockchainEvent = ffm("TokenApproval.blockchainEvent", "The UUID of the blockchain event")
 	TokenApprovalConfig          = ffm("TokenApproval.config", "Input only field, with token connector specific configuration of the approval.  See your chosen token connector documentation for details")
 
 	// TokenApprovalInput field descriptions
+	TokenApprovalInputMessage        = ffm("TokenApprovalInput.message", "You can specify a message to correlate with the approval, which can be of type broadcast or private. Your chosen token connector and on-chain smart contract must support on-chain/off-chain correlation by taking a `data` input on the approval")
 	TokenApprovalInputPool           = ffm("TokenApprovalInput.pool", "The name or UUID of a token pool. Required if more than one pool exists.")
 	TokenApprovalInputIdempotencyKey = ffm("TokenApprovalInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
 
@@ -542,22 +557,25 @@ var (
 	TokenConnectorName = ffm("TokenConnector.name", "The name of the token connector, as configured in the FireFly core configuration file")
 
 	// TokenPool field descriptions
-	TokenPoolID        = ffm("TokenPool.id", "The UUID of the token pool")
-	TokenPoolType      = ffm("TokenPool.type", "The type of token the pool contains, such as fungible/non-fungible")
-	TokenPoolNamespace = ffm("TokenPool.namespace", "The namespace for the token pool")
-	TokenPoolName      = ffm("TokenPool.name", "The name of the token pool. Note the name is not validated against the description of the token on the blockchain")
-	TokenPoolStandard  = ffm("TokenPool.standard", "The ERC standard the token pool conforms to, as reported by the token connector")
-	TokenPoolLocator   = ffm("TokenPool.locator", "A unique identifier for the pool, as provided by the token connector")
-	TokenPoolKey       = ffm("TokenPool.key", "The signing key used to create the token pool. On input for token connectors that support on-chain deployment of new tokens (vs. only index existing ones) this determines the signing key used to create the token on-chain")
-	TokenPoolSymbol    = ffm("TokenPool.symbol", "The token symbol. If supplied on input for an existing on-chain token, this must match the on-chain information")
-	TokenPoolDecimals  = ffm("TokenPool.decimals", "Number of decimal places that this token has")
-	TokenPoolConnector = ffm("TokenPool.connector", "The name of the token connector, as specified in the FireFly core configuration file that is responsible for the token pool. Required on input when multiple token connectors are configured")
-	TokenPoolMessage   = ffm("TokenPool.message", "The UUID of the broadcast message used to inform the network to index this pool")
-	TokenPoolState     = ffm("TokenPool.state", "The current state of the token pool")
-	TokenPoolCreated   = ffm("TokenPool.created", "The creation time of the pool")
-	TokenPoolConfig    = ffm("TokenPool.config", "Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details")
-	TokenPoolInfo      = ffm("TokenPool.info", "Token connector specific information about the pool. See your chosen token connector documentation for details")
-	TokenPoolTX        = ffm("TokenPool.tx", "Reference to the FireFly transaction used to create and broadcast this pool to the network")
+	TokenPoolID              = ffm("TokenPool.id", "The UUID of the token pool")
+	TokenPoolType            = ffm("TokenPool.type", "The type of token the pool contains, such as fungible/non-fungible")
+	TokenPoolNamespace       = ffm("TokenPool.namespace", "The namespace for the token pool")
+	TokenPoolName            = ffm("TokenPool.name", "The name of the token pool. Note the name is not validated against the description of the token on the blockchain")
+	TokenPoolStandard        = ffm("TokenPool.standard", "The ERC standard the token pool conforms to, as reported by the token connector")
+	TokenPoolLocator         = ffm("TokenPool.locator", "A unique identifier for the pool, as provided by the token connector")
+	TokenPoolKey             = ffm("TokenPool.key", "The signing key used to create the token pool. On input for token connectors that support on-chain deployment of new tokens (vs. only index existing ones) this determines the signing key used to create the token on-chain")
+	TokenPoolSymbol          = ffm("TokenPool.symbol", "The token symbol. If supplied on input for an existing on-chain token, this must match the on-chain information")
+	TokenPoolDecimals        = ffm("TokenPool.decimals", "Number of decimal places that this token has")
+	TokenPoolConnector       = ffm("TokenPool.connector", "The name of the token connector, as specified in the FireFly core configuration file that is responsible for the token pool. Required on input when multiple token connectors are configured")
+	TokenPoolMessage         = ffm("TokenPool.message", "The UUID of the broadcast message used to inform the network to index this pool")
+	TokenPoolState           = ffm("TokenPool.state", "The current state of the token pool")
+	TokenPoolCreated         = ffm("TokenPool.created", "The creation time of the pool")
+	TokenPoolConfig          = ffm("TokenPool.config", "Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details")
+	TokenPoolInfo            = ffm("TokenPool.info", "Token connector specific information about the pool. See your chosen token connector documentation for details")
+	TokenPoolTX              = ffm("TokenPool.tx", "Reference to the FireFly transaction used to create and broadcast this pool to the network")
+	TokenPoolInterface       = ffm("TokenPool.interface", "A reference to an existing FFI, containing pre-registered type information for the token contract")
+	TokenPoolInterfaceFormat = ffm("TokenPool.interfaceFormat", "The interface encoding format supported by the connector for this token pool")
+	TokenPoolMethods         = ffm("TokenPool.methods", "The method definitions resolved by the token connector to be used by each token operation")
 
 	// TokenPoolInput field descriptions
 	TokenPoolInputIdempotencyKey = ffm("TokenPoolInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
@@ -605,6 +623,7 @@ var (
 	ContractDeployRequestInput          = ffm("ContractDeployRequest.input", "An optional array of inputs passed to the smart contract's constructor, if applicable")
 	ContractDeployRequestDefinition     = ffm("ContractDeployRequest.definition", "The definition of the smart contract")
 	ContractDeployRequestContract       = ffm("ContractDeployRequest.contract", "The smart contract to deploy. This should be pre-compiled if required by the blockchain connector")
+	ContractDeployRequestErrors         = ffm("ContractDeployRequest.errors", "An in-line FFI errors definition for the constructor")
 	ContractDeployRequestOptions        = ffm("ContractDeployRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
 	ContractDeployRequestIdempotencyKey = ffm("ContractDeployRequest.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
 
@@ -615,6 +634,7 @@ var (
 	ContractCallRequestKey        = ffm("ContractCallRequest.key", "The blockchain signing key that will sign the invocation. Defaults to the first signing key of the organization that operates the node")
 	ContractCallRequestMethod     = ffm("ContractCallRequest.method", "An in-line FFI method definition for the method to invoke. Required when FFI is not specified")
 	ContractCallRequestMethodPath = ffm("ContractCallRequest.methodPath", "The pathname of the method on the specified FFI")
+	ContractCallRequestErrors     = ffm("ContractCallRequest.errors", "An in-line FFI errors definition for the method to invoke. Alternative to specifying FFI")
 	ContractCallRequestInput      = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
 	ContractCallRequestOptions    = ffm("ContractCallRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
 	ContractCallIdempotencyKey    = ffm("ContractCallRequest.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")

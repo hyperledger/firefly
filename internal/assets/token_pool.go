@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -47,6 +47,12 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, pool *core.TokenPoo
 			return nil, err
 		}
 		pool.Connector = connector
+	}
+
+	if pool.Interface != nil {
+		if err := am.contracts.ResolveFFIReference(ctx, pool.Interface); err != nil {
+			return nil, err
+		}
 	}
 
 	var err error
@@ -173,4 +179,16 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return pool, nil
+}
+
+func (am *assetManager) ResolvePoolMethods(ctx context.Context, pool *core.TokenPool) error {
+	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
+	if err == nil && pool.Interface != nil && pool.Interface.ID != nil && am.contracts != nil {
+		var methods []*fftypes.FFIMethod
+		methods, err = am.contracts.GetFFIMethods(ctx, pool.Interface.ID)
+		if err == nil {
+			pool.Methods, err = plugin.CheckInterface(ctx, pool, methods)
+		}
+	}
+	return err
 }

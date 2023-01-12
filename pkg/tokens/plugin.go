@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,7 +43,7 @@ type Plugin interface {
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
 	SetOperationHandler(namespace string, handler core.OperationCallbacks)
 
-	// Blockchain interface must not deliver any events until start is called
+	// Token interface must not deliver any events until start is called
 	Start() error
 
 	// Capabilities returns capabilities - not called until after Init
@@ -55,17 +55,20 @@ type Plugin interface {
 	// ActivateTokenPool activates a pool in order to begin receiving events
 	ActivateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error)
 
+	// CheckInterface checks which methods of a contract interface are supported by this connector
+	CheckInterface(ctx context.Context, pool *core.TokenPool, methods []*fftypes.FFIMethod) (*fftypes.JSONAny, error)
+
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
-	MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer) error
+	MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer, methods *fftypes.JSONAny) error
 
 	// BurnTokens burns tokens from an account
-	BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer) error
+	BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer, methods *fftypes.JSONAny) error
 
 	// TransferTokens transfers tokens within a pool from one account to another
-	TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer) error
+	TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer, methods *fftypes.JSONAny) error
 
 	// TokenApproval approves an operator to transfer tokens on the owner's behalf
-	TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval) error
+	TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval, methods *fftypes.JSONAny) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.
@@ -112,7 +115,10 @@ type TokenPool struct {
 	// Standard is the well-defined token standard that this pool conforms to (optional)
 	Standard string
 
-	// Decimals is the number of decimal places that this token has
+	// InterfaceFormat is the interface encoding format understood by this connector (optional)
+	InterfaceFormat string
+
+	// Decimals is the number of decimal places that this token has (optional)
 	Decimals int
 
 	// Symbol is the short token symbol, if the connector uses one (optional)
@@ -123,6 +129,14 @@ type TokenPool struct {
 
 	// Event contains info on the underlying blockchain event for this pool creation
 	Event *blockchain.Event
+}
+
+// TokenPoolMethods is a mapped set of interface methods to be used for various token operations
+type TokenPoolMethods struct {
+	Approval *fftypes.JSONAny `json:"approval"`
+	Burn     *fftypes.JSONAny `json:"burn"`
+	Mint     *fftypes.JSONAny `json:"mint"`
+	Transfer *fftypes.JSONAny `json:"transfer"`
 }
 
 type TokenTransfer struct {

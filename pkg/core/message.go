@@ -46,6 +46,10 @@ var (
 	MessageTypeTransferBroadcast = fftypes.FFEnumValue("messagetype", "transfer_broadcast")
 	// MessageTypeTransferPrivate is a private message to accompany/annotate a token transfer
 	MessageTypeTransferPrivate = fftypes.FFEnumValue("messagetype", "transfer_private")
+	// MessageTypeApprovalBroadcast is a broadcast message to accompany/annotate a token approval
+	MessageTypeApprovalBroadcast = fftypes.FFEnumValue("messagetype", "approval_broadcast")
+	// MessageTypeApprovalPrivate is a private message to accompany/annotate a token approval
+	MessageTypeApprovalPrivate = fftypes.FFEnumValue("messagetype", "approval_private")
 )
 
 // MessageState is the current transmission/confirmation state of a message

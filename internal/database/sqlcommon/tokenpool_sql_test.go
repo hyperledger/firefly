@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -57,6 +57,10 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		Info: fftypes.JSONObject{
 			"pool": "info",
 		},
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+		InterfaceFormat: "abi",
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, core.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).

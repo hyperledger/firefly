@@ -93,6 +93,16 @@ func TestSubscriptionDeleted(t *testing.T) {
 	mem.AssertExpectations(t)
 }
 
+func TestGroupCreatedNOOP(t *testing.T) {
+	mem := &eventmocks.EventManager{}
+	o := &orchestrator{
+		namespace: &core.Namespace{Name: "ns1", NetworkName: "ns1"},
+		events:    mem,
+	}
+	o.HashCollectionNSEvent(database.CollectionGroups, core.ChangeEventTypeCreated, "ns1", fftypes.NewRandB32())
+	mem.AssertExpectations(t)
+}
+
 func TestOrderedUUIDCollectionWrongNS(t *testing.T) {
 	o := &orchestrator{
 		ctx:       context.Background(),

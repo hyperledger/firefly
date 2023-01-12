@@ -125,6 +125,7 @@ nav_order: 8
 | `version` | A version for the FFI - use of semantic versioning such as 'v1.0.1' is encouraged | `string` |
 | `methods` | An array of smart contract method definitions | [`FFIMethod[]`](#ffimethod) |
 | `events` | An array of smart contract event definitions | [`FFIEvent[]`](#ffievent) |
+| `errors` | An array of smart contract error definitions | [`FFIError[]`](#ffierror) |
 
 ## FFIMethod
 
@@ -162,6 +163,28 @@ nav_order: 8
 | `description` | A description of the smart contract event | `string` |
 | `params` | An array of event parameter/argument definitions | [`FFIParam[]`](#ffiparam) |
 | `details` | Additional blockchain specific fields about this event from the original smart contract. Used by the blockchain plugin and for documentation generation. | [`JSONObject`](simpletypes#jsonobject) |
+
+## FFIParam
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `name` | The name of the parameter. Note that parameters must be ordered correctly on the FFI, according to the order in the blockchain smart contract | `string` |
+| `schema` | FireFly uses an extended subset of JSON Schema to describe parameters, similar to OpenAPI/Swagger. Converters are available for native blockchain interface definitions / type systems - such as an Ethereum ABI. See the documentation for more detail | [`JSONAny`](simpletypes#jsonany) |
+
+
+
+## FFIError
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `id` | The UUID of the FFI error definition | [`UUID`](simpletypes#uuid) |
+| `interface` | The UUID of the FFI smart contract definition that this error is part of | [`UUID`](simpletypes#uuid) |
+| `namespace` | The namespace of the FFI | `string` |
+| `pathname` | The unique name allocated to this error within the FFI for use on URL paths | `string` |
+| `signature` | The stringified signature of the error, as computed by the blockchain plugin | `string` |
+| `name` | The name of the error | `string` |
+| `description` | A description of the smart contract error | `string` |
+| `params` | An array of error parameter/argument definitions | [`FFIParam[]`](#ffiparam) |
 
 ## FFIParam
 

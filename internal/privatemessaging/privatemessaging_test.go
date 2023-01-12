@@ -71,6 +71,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 			core.MessageTypeGroupInit,
 			core.MessageTypePrivate,
 			core.MessageTypeTransferPrivate,
+			core.MessageTypeApprovalPrivate,
 		}, mock.Anything, mock.Anything).Return()
 
 	mba.On("RegisterDispatcher",

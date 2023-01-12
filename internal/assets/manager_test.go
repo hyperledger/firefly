@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/cachemocks"
+	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
@@ -63,13 +64,14 @@ func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
 	ctx := context.Background()
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	mom := &operationmocks.Manager{}
+	mcm := &contractmocks.Manager{}
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	mm.On("IsMetricsEnabled").Return(metrics)
 	mm.On("TransferSubmitted", mock.Anything)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 	mti.On("Name").Return("ut").Maybe()
 	ctx, cancel := context.WithCancel(ctx)
-	a, err := NewAssetManager(ctx, "ns1", "blockchain_plugin", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, txHelper)
+	a, err := NewAssetManager(ctx, "ns1", "blockchain_plugin", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, mcm, txHelper)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
@@ -81,7 +83,7 @@ func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewAssetManager(context.Background(), "", "", nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewAssetManager(context.Background(), "", "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
