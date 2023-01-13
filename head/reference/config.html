@@ -596,6 +596,12 @@
   </thead>
   <tbody>
     <tr>
+      <td>alwaysResolve</td>
+      <td>Causes the address resolver to be invoked on every API call that submits a signing key, regardless of whether the input string conforms to an 0x address. Also disables any result caching</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>bodyTemplate</td>
       <td>The body go template string to use when making HTTP requests</td>
       <td><a href="https://pkg.go.dev/text/template">Go Template</a> <code class="language-plaintext highlighter-rouge">string</code></td>
@@ -1882,39 +1888,6 @@
     <tr>
       <td>ttl</td>
       <td>Time to live of cached items for operations</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-  </tbody>
-</table>
-      <h2 id="cachesigningkey">
-        
-        
-          <a href="#cachesigningkey" class="anchor-heading" aria-labelledby="cachesigningkey"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.signingkey
-        
-        
-      </h2>
-    
-
-<table>
-  <thead>
-    <tr>
-      <th>Key</th>
-      <th>Description</th>
-      <th>Type</th>
-      <th>Default Value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>limit</td>
-      <td>Max number of cached signing keys for identity manager</td>
-      <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-    <tr>
-      <td>ttl</td>
-      <td>Time to live of cached signing keys for identity manager</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -4240,6 +4213,12 @@
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td>alwaysResolve</td>
+      <td>Causes the address resolver to be invoked on every API call that submits a signing key, regardless of whether the input string conforms to an 0x address. Also disables any result caching</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
     <tr>
       <td>bodyTemplate</td>
       <td>The body go template string to use when making HTTP requests</td>
