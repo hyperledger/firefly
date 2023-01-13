@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -28,7 +28,7 @@ import (
 func (bm *definitionSender) ClaimIdentity(ctx context.Context, claim *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error {
 	if bm.multiparty {
 		var err error
-		signingIdentity.Key, err = bm.identity.NormalizeSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
+		signingIdentity.Key, err = bm.identity.ResolveInputSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
 		if err != nil {
 			return err
 		}

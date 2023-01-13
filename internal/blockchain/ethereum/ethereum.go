@@ -57,23 +57,24 @@ const (
 )
 
 type Ethereum struct {
-	ctx             context.Context
-	cancelCtx       context.CancelFunc
-	topic           string
-	prefixShort     string
-	prefixLong      string
-	capabilities    *blockchain.Capabilities
-	callbacks       common.BlockchainCallbacks
-	client          *resty.Client
-	streams         *streamManager
-	streamID        string
-	wsconn          wsclient.WSClient
-	closed          chan struct{}
-	addressResolver *addressResolver
-	metrics         metrics.Manager
-	ethconnectConf  config.Section
-	subs            common.FireflySubscriptions
-	cache           cache.CInterface
+	ctx                  context.Context
+	cancelCtx            context.CancelFunc
+	topic                string
+	prefixShort          string
+	prefixLong           string
+	capabilities         *blockchain.Capabilities
+	callbacks            common.BlockchainCallbacks
+	client               *resty.Client
+	streams              *streamManager
+	streamID             string
+	wsconn               wsclient.WSClient
+	closed               chan struct{}
+	addressResolveAlways bool
+	addressResolver      *addressResolver
+	metrics              metrics.Manager
+	ethconnectConf       config.Section
+	subs                 common.FireflySubscriptions
+	cache                cache.CInterface
 }
 
 type eventStreamWebsocket struct {
@@ -149,7 +150,9 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	e.subs = common.NewFireflySubscriptions()
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
-		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf, cacheManager); err != nil {
+		// Check if we need to invoke the address resolver (without caching) on every call
+		e.addressResolveAlways = addressResolverConf.GetBool(AddressResolverAlwaysResolve)
+		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf, cacheManager, !e.addressResolveAlways); err != nil {
 			return err
 		}
 	}
@@ -221,7 +224,7 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 }
 
 func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
-	ethLocation, err := parseContractLocation(ctx, location)
+	ethLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return "", err
 	}
@@ -324,7 +327,9 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 		Contexts:   event.Output.GetStringArray("contexts"),
 	}
 
-	authorAddress, err = e.NormalizeSigningKey(ctx, authorAddress)
+	// Validate the ethereum address - it must already be a valid address, we do not
+	// engage the address resolve on this blockchain-driven path.
+	authorAddress, err = formatEthAddress(ctx, authorAddress)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
@@ -377,7 +382,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 
 		// Matches one of the active FireFly BatchPin subscriptions
 		if subInfo := e.subs.GetSubscription(sub); subInfo != nil {
-			location, err := encodeContractLocation(ctx, &Location{
+			location, err := e.encodeContractLocation(ctx, &Location{
 				Address: msgJSON.GetString("address"),
 			})
 			if err != nil {
@@ -484,7 +489,7 @@ func (e *Ethereum) eventLoop() {
 	}
 }
 
-func validateEthAddress(ctx context.Context, key string) (string, error) {
+func formatEthAddress(ctx context.Context, key string) (string, error) {
 	keyLower := strings.ToLower(key)
 	keyNoHexPrefix := strings.TrimPrefix(keyLower, "0x")
 	if addressVerify.MatchString(keyNoHexPrefix) {
@@ -493,14 +498,20 @@ func validateEthAddress(ctx context.Context, key string) (string, error) {
 	return "", i18n.NewError(ctx, coremsgs.MsgInvalidEthAddress)
 }
 
-func (e *Ethereum) NormalizeSigningKey(ctx context.Context, key string) (string, error) {
-	resolved, err := validateEthAddress(ctx, key)
-	if err != nil && e.addressResolver != nil {
-		resolved, err := e.addressResolver.NormalizeSigningKey(ctx, key)
+func (e *Ethereum) ResolveInputSigningKey(ctx context.Context, key string) (resolved string, err error) {
+	if !e.addressResolveAlways {
+		// If there's no address resolver plugin, or addressResolveAlways is false,
+		// we check if it's already an ethereum address - in which case we can just return it.
+		resolved, err = formatEthAddress(ctx, key)
+	}
+	if e.addressResolveAlways || (err != nil && e.addressResolver != nil) {
+		// Either it's not a valid ethereum address,
+		// or we've been configured to invoke the address resolver on every call
+		resolved, err = e.addressResolver.ResolveInputSigningKey(ctx, key)
 		if err == nil {
 			log.L(ctx).Infof("Key '%s' resolved to '%s'", key, resolved)
+			return resolved, nil
 		}
-		return resolved, err
 	}
 	return resolved, err
 }
@@ -589,7 +600,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 }
 
 func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
-	ethLocation, err := parseContractLocation(ctx, location)
+	ethLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return err
 	}
@@ -633,7 +644,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace,
 }
 
 func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
-	ethLocation, err := parseContractLocation(ctx, location)
+	ethLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return err
 	}
@@ -707,7 +718,7 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error {
-	ethereumLocation, err := parseContractLocation(ctx, location)
+	ethereumLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return err
 	}
@@ -719,7 +730,7 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 }
 
 func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
-	ethereumLocation, err := parseContractLocation(ctx, location)
+	ethereumLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
@@ -739,14 +750,14 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 }
 
 func (e *Ethereum) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
-	parsed, err := parseContractLocation(ctx, location)
+	parsed, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
-	return encodeContractLocation(ctx, parsed)
+	return e.encodeContractLocation(ctx, parsed)
 }
 
-func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
+func (e *Ethereum) parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
 	ethLocation := Location{}
 	if err := json.Unmarshal(location.Bytes(), &ethLocation); err != nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, err)
@@ -757,8 +768,8 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &ethLocation, nil
 }
 
-func encodeContractLocation(ctx context.Context, location *Location) (result *fftypes.JSONAny, err error) {
-	location.Address, err = validateEthAddress(ctx, location.Address)
+func (e *Ethereum) encodeContractLocation(ctx context.Context, location *Location) (result *fftypes.JSONAny, err error) {
+	location.Address, err = formatEthAddress(ctx, location.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -772,7 +783,7 @@ func encodeContractLocation(ctx context.Context, location *Location) (result *ff
 func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (err error) {
 	var location *Location
 	if listener.Location != nil {
-		location, err = parseContractLocation(ctx, listener.Location)
+		location, err = e.parseContractLocation(ctx, listener.Location)
 		if err != nil {
 			return err
 		}
@@ -886,7 +897,7 @@ func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.F
 }
 
 func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (version int, err error) {
-	ethLocation, err := parseContractLocation(ctx, location)
+	ethLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return 0, err
 	}
@@ -953,7 +964,7 @@ func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (l
 		address = strings.Replace(address, "/instances/", "", 1)
 	}
 
-	location, err = encodeContractLocation(ctx, &Location{
+	location, err = e.encodeContractLocation(ctx, &Location{
 		Address: address,
 	})
 	return location, fromBlock, err

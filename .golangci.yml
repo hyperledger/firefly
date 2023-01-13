@@ -33,7 +33,6 @@ linters:
   disable:
     - structcheck
   enable:
-    - deadcode
     - depguard
     - dogsled
     - errcheck
@@ -56,4 +55,3 @@ linters:
     - typecheck
     - unconvert
     - unused
-    - varcheck

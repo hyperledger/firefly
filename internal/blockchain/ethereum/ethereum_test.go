@@ -1113,10 +1113,10 @@ func TestVerifyEthAddress(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
-	_, err := e.NormalizeSigningKey(context.Background(), "0x12345")
+	_, err := e.ResolveInputSigningKey(context.Background(), "0x12345")
 	assert.Regexp(t, "FF10141", err)
 
-	key, err := e.NormalizeSigningKey(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
+	key, err := e.ResolveInputSigningKey(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
 	assert.NoError(t, err)
 	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", key)
 
@@ -3282,7 +3282,7 @@ func TestConvertDeprecatedContractConfig(t *testing.T) {
 	assert.Equal(t, "0", fromBlock)
 	assert.NoError(t, err)
 
-	location, err := parseContractLocation(e.ctx, locationBytes)
+	location, err := e.parseContractLocation(e.ctx, locationBytes)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f", location.Address)
@@ -3329,7 +3329,7 @@ func TestConvertDeprecatedContractConfigContractURL(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "0", fromBlock)
 
-	location, err := parseContractLocation(e.ctx, locationBytes)
+	location, err := e.parseContractLocation(e.ctx, locationBytes)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f", location.Address)

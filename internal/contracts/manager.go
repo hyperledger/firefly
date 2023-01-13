@@ -231,7 +231,7 @@ func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core
 }
 
 func (cm *contractManager) DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (res interface{}, err error) {
-	req.Key, err = cm.identity.NormalizeSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
+	req.Key, err = cm.identity.ResolveInputSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (cm *contractManager) DeployContract(ctx context.Context, req *core.Contrac
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, req *core.ContractCallRequest, waitConfirm bool) (res interface{}, err error) {
-	req.Key, err = cm.identity.NormalizeSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
+	req.Key, err = cm.identity.ResolveInputSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}

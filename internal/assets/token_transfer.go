@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -103,7 +103,7 @@ func (am *assetManager) validateTransfer(ctx context.Context, transfer *core.Tok
 	if pool.State != core.TokenPoolStateConfirmed {
 		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 	}
-	if transfer.Key, err = am.identity.NormalizeSigningKey(ctx, transfer.Key, am.keyNormalization); err != nil {
+	if transfer.Key, err = am.identity.ResolveInputSigningKey(ctx, transfer.Key, am.keyNormalization); err != nil {
 		return nil, err
 	}
 	if transfer.From == "" {

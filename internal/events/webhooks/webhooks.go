@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -271,7 +271,7 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 	return req, res, nil
 }
 
-func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray, fastAck bool) error {
+func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray, fastAck bool) {
 	req, res, gwErr := wh.attemptRequest(sub, event, data)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
@@ -329,7 +329,6 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 			})
 		}
 	}
-	return nil
 }
 
 func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
@@ -365,12 +364,10 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event
 				Subscription: event.Subscription,
 			})
 		}
-		go func() {
-			err := wh.doDelivery(connID, reply, sub, event, data, true)
-			log.L(wh.ctx).Warnf("Webhook delivery failed in fastack mode for event '%s': %s", event.ID, err)
-		}()
+		go wh.doDelivery(connID, reply, sub, event, data, true)
 		return nil
 	}
 
-	return wh.doDelivery(connID, reply, sub, event, data, false)
+	wh.doDelivery(connID, reply, sub, event, data, false)
+	return nil
 }

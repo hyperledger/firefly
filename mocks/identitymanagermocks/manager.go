@@ -191,27 +191,6 @@ func (_m *Manager) GetMultipartyRootVerifier(ctx context.Context) (*core.Verifie
 	return r0, r1
 }
 
-// NormalizeSigningKey provides a mock function with given fields: ctx, inputKey, keyNormalizationMode
-func (_m *Manager) NormalizeSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (string, error) {
-	ret := _m.Called(ctx, inputKey, keyNormalizationMode)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) string); ok {
-		r0 = rf(ctx, inputKey, keyNormalizationMode)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, int) error); ok {
-		r1 = rf(ctx, inputKey, keyNormalizationMode)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ResolveIdentitySigner provides a mock function with given fields: ctx, _a1
 func (_m *Manager) ResolveIdentitySigner(ctx context.Context, _a1 *core.Identity) (*core.SignerRef, error) {
 	ret := _m.Called(ctx, _a1)
@@ -249,8 +228,29 @@ func (_m *Manager) ResolveInputSigningIdentity(ctx context.Context, signerRef *c
 	return r0
 }
 
-// ResolveInputSigningKey provides a mock function with given fields: ctx, inputKey
-func (_m *Manager) ResolveInputSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
+// ResolveInputSigningKey provides a mock function with given fields: ctx, inputKey, keyNormalizationMode
+func (_m *Manager) ResolveInputSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (string, error) {
+	ret := _m.Called(ctx, inputKey, keyNormalizationMode)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) string); ok {
+		r0 = rf(ctx, inputKey, keyNormalizationMode)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, int) error); ok {
+		r1 = rf(ctx, inputKey, keyNormalizationMode)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResolveInputVerifierRef provides a mock function with given fields: ctx, inputKey
+func (_m *Manager) ResolveInputVerifierRef(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
 	ret := _m.Called(ctx, inputKey)
 
 	var r0 *core.VerifierRef
@@ -286,6 +286,27 @@ func (_m *Manager) ValidateNodeOwner(ctx context.Context, node *core.Identity, _
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *core.Identity, *core.Identity) error); ok {
 		r1 = rf(ctx, node, _a2)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ValidateReceivedSigningKey provides a mock function with given fields: ctx, inputKey, keyNormalizationMode
+func (_m *Manager) ValidateReceivedSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (string, error) {
+	ret := _m.Called(ctx, inputKey, keyNormalizationMode)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) string); ok {
+		r0 = rf(ctx, inputKey, keyNormalizationMode)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, int) error); ok {
+		r1 = rf(ctx, inputKey, keyNormalizationMode)
 	} else {
 		r1 = ret.Error(1)
 	}

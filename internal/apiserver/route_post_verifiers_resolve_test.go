@@ -40,7 +40,7 @@ func TestPostVerifiersResolve(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	im.On("ResolveInputSigningKey", mock.Anything, mock.AnythingOfType("*core.VerifierRef")).
+	im.On("ResolveInputVerifierRef", mock.Anything, mock.AnythingOfType("*core.VerifierRef")).
 		Return(&core.VerifierRef{}, nil)
 	r.ServeHTTP(res, req)
 

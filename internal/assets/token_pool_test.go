@@ -100,7 +100,7 @@ func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
@@ -193,7 +193,7 @@ func TestCreateTokenPoolIdentityFail(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.EqualError(t, err, "pop")
@@ -216,7 +216,7 @@ func TestCreateTokenPoolWrongConnector(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "FF10272", err)
@@ -242,7 +242,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
@@ -275,7 +275,7 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
@@ -303,7 +303,7 @@ func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -360,7 +360,7 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
@@ -394,7 +394,7 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
@@ -429,7 +429,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenPool", context.Background(), mock.Anything, mock.Anything).
