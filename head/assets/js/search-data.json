@@ -4591,7 +4591,7 @@
   },"765": {
     "doc": "Versioning Scheme",
     "title": "Candidate releases",
-    "content": "For pre-releases that are candidates to become a new major or minor release, the release name/tag will be based on the release that the candidate will become (as opposed to the test releases above, which are based on the previous release). For example, if the current latest release is v0.9.0 but we want to create an alpha release for 1.0, the release name/tag would be v1.0.0-alpha-01. ",
+    "content": "For pre-releases that are candidates to become a new major or minor release, the release name/tag will be based on the release that the candidate will become (as opposed to the test releases above, which are based on the previous release). For example, if the current latest release is v0.9.0 but we want to create an alpha release for 1.0, the release name/tag would be v1.0.0-alpha.1. ",
     "url": "/firefly/head/contributors/version_scheme.html#candidate-releases",
     "relUrl": "/contributors/version_scheme.html#candidate-releases"
   },"766": {
