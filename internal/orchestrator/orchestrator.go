@@ -534,7 +534,7 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.Ne
 	if or.multiparty == nil {
 		return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
 	}
-	key, err := or.identity.NormalizeSigningKey(ctx, "", identity.KeyNormalizationBlockchainPlugin)
+	key, err := or.identity.ResolveInputSigningKey(ctx, "", identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return err
 	}

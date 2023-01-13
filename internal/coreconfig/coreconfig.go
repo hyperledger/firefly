@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -145,10 +145,6 @@ var (
 	// IdentityManager identity cache config
 	CacheIdentityLimit = ffc("cache.identity.limit")
 	CacheIdentityTTL   = ffc("cache.identity.ttl")
-
-	// IdentityManager signing key cache config
-	CacheSigningKeyLimit = ffc("cache.signingkey.limit")
-	CacheSigningKeyTTL   = ffc("cache.signingkey.ttl")
 
 	// DataManager Message cache config
 	CacheMessageSize = ffc("cache.message.size")
@@ -428,8 +424,6 @@ func setDefaults() {
 	viper.SetDefault(string(CacheValidatorTTL), "1h")
 	viper.SetDefault(string(CacheIdentityLimit), 100)
 	viper.SetDefault(string(CacheIdentityTTL), "1h")
-	viper.SetDefault(string(CacheSigningKeyLimit), 100)
-	viper.SetDefault(string(CacheSigningKeyTTL), "1h")
 }
 
 func Reset() {

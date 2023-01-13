@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -36,7 +36,7 @@ var postVerifiersResolve = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.Identity().ResolveInputSigningKey(cr.ctx, r.Input.(*core.VerifierRef))
+			return cr.or.Identity().ResolveInputVerifierRef(cr.ctx, r.Input.(*core.VerifierRef))
 		},
 	},
 }

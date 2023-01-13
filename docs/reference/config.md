@@ -340,13 +340,6 @@ nav_order: 2
 |limit|Max number of cached items for operations|`int`|`<nil>`
 |ttl|Time to live of cached items for operations|`string`|`<nil>`
 
-## cache.signingkey
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|limit|Max number of cached signing keys for identity manager|`int`|`<nil>`
-|ttl|Time to live of cached signing keys for identity manager|`string`|`<nil>`
-
 ## cache.transaction
 
 |Key|Description|Type|Default Value|

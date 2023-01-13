@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,10 +40,11 @@ const (
 
 type Manager interface {
 	ResolveInputSigningIdentity(ctx context.Context, signerRef *core.SignerRef) (err error)
-	ResolveInputSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error)
-	NormalizeSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error)
-	FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, verifier *core.VerifierRef) (identity *core.Identity, err error)
+	ResolveInputVerifierRef(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error)
+	ResolveInputSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error)
+
+	FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, verifier *core.VerifierRef) (identity *core.Identity, err error)
 	CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *core.Identity, err error)
 	CachedIdentityLookupMustExist(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
 	CachedIdentityLookupNilOK(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
@@ -62,7 +63,6 @@ type identityManager struct {
 	defaultKey             string
 	multipartyRootVerifier *core.VerifierRef
 	identityCache          cache.CInterface
-	signingKeyCache        cache.CInterface
 }
 
 func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager, cacheManager cache.Manager) (Manager, error) {
@@ -90,21 +90,6 @@ func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.
 	}
 	im.identityCache = identityCache
 
-	signingKeyCache, err := cacheManager.GetCache(
-		cache.NewCacheConfig(
-			ctx,
-			coreconfig.CacheSigningKeyLimit,
-			coreconfig.CacheSigningKeyTTL,
-			ns,
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// For the identity and signingkey caches, we just treat them all equally sized and the max items
-	im.signingKeyCache = signingKeyCache
-
 	return im, nil
 }
 
@@ -124,10 +109,10 @@ func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identit
 	return node, err
 }
 
-// NormalizeSigningKey takes in only a "key" (which may be empty to use the default) to be normalized and returned.
+// ResolveInputSigningKey takes in only a "key" (which may be empty to use the default) to be resolved and returned.
 // This is for cases where keys are used directly without an "author" field alongside them (custom contracts, tokens),
 // or when the author is known by the caller and should not / cannot be confirmed prior to sending (identity claims)
-func (im *identityManager) NormalizeSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error) {
+func (im *identityManager) ResolveInputSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error) {
 	if inputKey == "" {
 		if im.blockchain == nil {
 			if im.defaultKey == "" {
@@ -149,14 +134,14 @@ func (im *identityManager) NormalizeSigningKey(ctx context.Context, inputKey str
 	if keyNormalizationMode != KeyNormalizationBlockchainPlugin {
 		return inputKey, nil
 	}
-	signer, err := im.normalizeKeyViaBlockchainPlugin(ctx, inputKey)
+	signer, err := im.resolveInputKeyViaBlockchainPlugin(ctx, inputKey)
 	if err != nil {
 		return "", err
 	}
 	return signer.Value, nil
 }
 
-func (im *identityManager) ResolveInputSigningKey(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
+func (im *identityManager) ResolveInputVerifierRef(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
 	log.L(ctx).Debugf("Resolving input signing key: type='%s' value='%s'", inputKey.Type, inputKey.Value)
 
 	if im.blockchain == nil {
@@ -173,7 +158,7 @@ func (im *identityManager) ResolveInputSigningKey(ctx context.Context, inputKey 
 		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownVerifierType)
 	}
 
-	signingKey, err := im.blockchain.NormalizeSigningKey(ctx, inputKey.Value)
+	signingKey, err := im.blockchain.ResolveInputSigningKey(ctx, inputKey.Value)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +189,7 @@ func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, sign
 
 	case signerRef.Key != "":
 		// Key specified: normalize it, then check it against author (if specified)
-		if verifier, err = im.normalizeKeyViaBlockchainPlugin(ctx, signerRef.Key); err != nil {
+		if verifier, err = im.resolveInputKeyViaBlockchainPlugin(ctx, signerRef.Key); err != nil {
 			return err
 		}
 		signerRef.Key = verifier.Value
@@ -290,7 +275,7 @@ func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, si
 // getDefaultVerifier gets the default blockchain verifier via the configuration
 func (im *identityManager) getDefaultVerifier(ctx context.Context) (verifier *core.VerifierRef, err error) {
 	if im.defaultKey != "" {
-		return im.normalizeKeyViaBlockchainPlugin(ctx, im.defaultKey)
+		return im.resolveInputKeyViaBlockchainPlugin(ctx, im.defaultKey)
 	}
 	if im.multiparty != nil {
 		return im.GetMultipartyRootVerifier(ctx)
@@ -298,7 +283,8 @@ func (im *identityManager) getDefaultVerifier(ctx context.Context) (verifier *co
 	return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 }
 
-// GetMultipartyRootVerifier gets the blockchain verifier of the root org via the configuration
+// GetMultipartyRootVerifier gets the blockchain verifier of the root org via the configuration,
+// resolving it for use as a signing key for the purpose of signing a child identity
 func (im *identityManager) GetMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error) {
 	if im.multipartyRootVerifier != nil {
 		return im.multipartyRootVerifier, nil
@@ -309,7 +295,7 @@ func (im *identityManager) GetMultipartyRootVerifier(ctx context.Context) (*core
 		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 	}
 
-	verifier, err := im.normalizeKeyViaBlockchainPlugin(ctx, orgKey)
+	verifier, err := im.resolveInputKeyViaBlockchainPlugin(ctx, orgKey)
 	if err != nil {
 		return nil, err
 	}
@@ -317,20 +303,18 @@ func (im *identityManager) GetMultipartyRootVerifier(ctx context.Context) (*core
 	return verifier, nil
 }
 
-// normalizeKeyViaBlockchainPlugin does a cached lookup of the fully qualified key, associated with a key reference string
-func (im *identityManager) normalizeKeyViaBlockchainPlugin(ctx context.Context, inputKey string) (verifier *core.VerifierRef, err error) {
-	if inputKey == "" {
-		return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainKeyNotSet)
-	}
+// resolveInputKeyViaBlockchainPlugin calls the blockchain plugin to resolve an input key string, to the
+// blockchain native representation of that key. Which might involve sophisticated processing.
+// See ResolveInputSigningKey on the blockchain connector
+//
+// Note: Caching is deferred down to the blockchain plugin (prior to v1.2 it was performed in the identity manager)
+func (im *identityManager) resolveInputKeyViaBlockchainPlugin(ctx context.Context, inputKey string) (verifier *core.VerifierRef, err error) {
 
 	if im.blockchain == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainNotConfigured)
 	}
 
-	if cachedValue := im.signingKeyCache.Get(inputKey); cachedValue != nil {
-		return cachedValue.(*core.VerifierRef), nil
-	}
-	keyString, err := im.blockchain.NormalizeSigningKey(ctx, inputKey)
+	keyString, err := im.blockchain.ResolveInputSigningKey(ctx, inputKey)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +322,6 @@ func (im *identityManager) normalizeKeyViaBlockchainPlugin(ctx context.Context, 
 		Type:  im.blockchain.VerifierType(),
 		Value: keyString,
 	}
-	im.signingKeyCache.Set(inputKey, verifier)
 	return verifier, nil
 }
 

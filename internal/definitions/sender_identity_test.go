@@ -37,7 +37,7 @@ func TestClaimIdentity(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", mock.Anything).Return(nil)
 
@@ -63,7 +63,7 @@ func TestClaimIdentityFail(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -87,7 +87,7 @@ func TestClaimIdentityFailKey(t *testing.T) {
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 
-	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
 	ds.multiparty = true
 
@@ -110,7 +110,7 @@ func TestClaimIdentityChild(t *testing.T) {
 	mms1 := &syncasyncmocks.Sender{}
 	mms2 := &syncasyncmocks.Sender{}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms1).Once()
 	mbm.On("NewBroadcast", mock.Anything).Return(mms2).Once()
 	mms1.On("SendAndWait", mock.Anything).Return(nil)
@@ -144,7 +144,7 @@ func TestClaimIdentityChildFail(t *testing.T) {
 	mms1 := &syncasyncmocks.Sender{}
 	mms2 := &syncasyncmocks.Sender{}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms1).Once()
 	mbm.On("NewBroadcast", mock.Anything).Return(mms2).Once()
 	mms1.On("SendAndWait", mock.Anything).Return(nil)

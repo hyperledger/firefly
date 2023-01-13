@@ -464,7 +464,7 @@ func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
 	or.namespace.Name = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
-	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
+	or.mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action).Return(nil)
 	err := or.SubmitNetworkAction(context.Background(), action)
 	assert.NoError(t, err)
@@ -474,7 +474,7 @@ func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
 	or.namespace.Name = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
-	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	or.mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	err := or.SubmitNetworkAction(context.Background(), action)
 	assert.EqualError(t, err, "pop")
 }

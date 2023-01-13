@@ -90,7 +90,7 @@ func newAddressResolver(ctx context.Context, localConfig config.Section, cacheMa
 	return ar, nil
 }
 
-func (ar *addressResolver) NormalizeSigningKey(ctx context.Context, keyDescriptor string) (string, error) {
+func (ar *addressResolver) ResolveInputSigningKey(ctx context.Context, keyDescriptor string) (string, error) {
 
 	if ar.cache != nil {
 		if cached := ar.cache.GetString(keyDescriptor); cached != "" {
@@ -129,7 +129,7 @@ func (ar *addressResolver) NormalizeSigningKey(ctx context.Context, keyDescripto
 		return "", i18n.NewError(ctx, coremsgs.MsgAddressResolveBadStatus, keyDescriptor, res.StatusCode(), jsonRes.String())
 	}
 
-	address, err := validateEthAddress(ctx, jsonRes.GetString(ar.responseField))
+	address, err := formatEthAddress(ctx, jsonRes.GetString(ar.responseField))
 	if err != nil {
 		return "", i18n.NewError(ctx, coremsgs.MsgAddressResolveBadResData, keyDescriptor, jsonRes.String(), err)
 	}

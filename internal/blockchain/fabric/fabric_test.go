@@ -959,7 +959,7 @@ func TestResolveFullIDSigner(t *testing.T) {
 	defer cancel()
 
 	id := "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server"
-	signKey, err := e.NormalizeSigningKey(context.Background(), id)
+	signKey, err := e.ResolveInputSigningKey(context.Background(), id)
 	assert.NoError(t, err)
 	assert.Equal(t, "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server", signKey)
 
@@ -979,7 +979,7 @@ func TestResolveSigner(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	resolved, err := e.NormalizeSigningKey(context.Background(), "signer001")
+	resolved, err := e.ResolveInputSigningKey(context.Background(), "signer001")
 	assert.NoError(t, err)
 	assert.Equal(t, "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server", resolved)
 }
@@ -994,7 +994,7 @@ func TestResolveSignerFailedFabricCARequest(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(503, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
+	_, err := e.ResolveInputSigningKey(context.Background(), "signer001")
 	assert.EqualError(t, err, "FF10284: Error from fabconnect: %!!(MISSING)s(<nil>)")
 }
 
@@ -1012,7 +1012,7 @@ func TestResolveSignerBadECertReturned(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
+	_, err := e.ResolveInputSigningKey(context.Background(), "signer001")
 	assert.Contains(t, err.Error(), "FF10286: Failed to decode certificate:")
 }
 
@@ -1030,7 +1030,7 @@ func TestResolveSignerBadCACertReturned(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
+	_, err := e.ResolveInputSigningKey(context.Background(), "signer001")
 	assert.Contains(t, err.Error(), "FF10286: Failed to decode certificate:")
 }
 
