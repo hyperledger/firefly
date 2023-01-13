@@ -189,7 +189,6 @@ func (am *assetManager) validateApproval(ctx context.Context, approval *core.Tok
 	if pool.State != core.TokenPoolStateConfirmed {
 		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 	}
-	// We are going to send the transfer using this key now, so we need to re-resolve it
 	approval.Key, err = am.identity.ResolveInputSigningKey(ctx, approval.Key, am.keyNormalization)
 	return pool, err
 }

@@ -103,7 +103,6 @@ func (am *assetManager) validateTransfer(ctx context.Context, transfer *core.Tok
 	if pool.State != core.TokenPoolStateConfirmed {
 		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 	}
-	// We are going to sign using this key now, so we have to re-resolve it.
 	if transfer.Key, err = am.identity.ResolveInputSigningKey(ctx, transfer.Key, am.keyNormalization); err != nil {
 		return nil, err
 	}
