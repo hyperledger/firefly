@@ -682,19 +682,31 @@ func TestWebhookFailFastAsk(t *testing.T) {
 		},
 	}
 
+	count := 0
 	waiter := make(chan struct{})
 	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.Anything).
 		Return(nil).
 		Run(func(a mock.Arguments) {
-			close(waiter)
+			count++
+			if count == 2 {
+				close(waiter)
+			}
 		})
 
+	// Drive two deliveries, waiting for them both to ack (noting both will fail)
 	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
 	assert.NoError(t, err)
+
+	err = wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
+	})
+	assert.NoError(t, err)
+
 	<-waiter
 
 	mcb.AssertExpectations(t)
