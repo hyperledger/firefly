@@ -80,13 +80,13 @@ func (_m *Manager) GetOperationByNamespacedID(ctx context.Context, nsOpID string
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, cancelCtx, reset
-func (_m *Manager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool) error {
-	ret := _m.Called(ctx, cancelCtx, reset)
+// Init provides a mock function with given fields: ctx, cancelCtx, reset, resetConfig
+func (_m *Manager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool, resetConfig func()) error {
+	ret := _m.Called(ctx, cancelCtx, reset, resetConfig)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc, chan bool) error); ok {
-		r0 = rf(ctx, cancelCtx, reset)
+	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc, chan bool, func()) error); ok {
+		r0 = rf(ctx, cancelCtx, reset, resetConfig)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -134,8 +134,17 @@ func (_m *Manager) Orchestrator(ctx context.Context, ns string) (orchestrator.Or
 }
 
 // Reset provides a mock function with given fields: ctx
-func (_m *Manager) Reset(ctx context.Context) {
-	_m.Called(ctx)
+func (_m *Manager) Reset(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // ResolveOperationByNamespacedID provides a mock function with given fields: ctx, nsOpID, op

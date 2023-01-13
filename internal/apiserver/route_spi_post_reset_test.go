@@ -32,7 +32,7 @@ func TestAdminPostResetConfig(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mgr.On("Reset", mock.Anything).Return()
+	mgr.On("Reset", mock.Anything).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 204, res.Result().StatusCode)

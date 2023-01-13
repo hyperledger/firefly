@@ -36,8 +36,7 @@ var spiPostReset = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusNoContent},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			cr.mgr.Reset(cr.ctx)
-			return nil, nil
+			return nil, cr.mgr.Reset(cr.ctx)
 		},
 	},
 }

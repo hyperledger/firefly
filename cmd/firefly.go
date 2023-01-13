@@ -83,6 +83,7 @@ func init() {
 
 func resetConfig() {
 	coreconfig.Reset()
+	namespace.InitConfig()
 	apiserver.InitConfig()
 }
 
@@ -90,7 +91,7 @@ func getRootManager() namespace.Manager {
 	if _utManager != nil {
 		return _utManager
 	}
-	return namespace.NewNamespaceManager(true)
+	return namespace.NewNamespaceManager()
 }
 
 // Execute is called by the main method of the package
@@ -142,6 +143,9 @@ func run() error {
 			mgr.WaitStop()
 			return nil
 		case <-resetChan:
+			// This API that performs a full stop/restart reset, is deprecated
+			// in favor of selective reload of namespaces based on listening to changes
+			// in the configuration file.
 			log.L(rootCtx).Infof("Restarting due to configuration change")
 			cancelRunCtx()
 			mgr.WaitStop()
@@ -149,7 +153,7 @@ func run() error {
 			<-ffDone
 			// Re-read the configuration
 			resetConfig()
-			if err := config.ReadConfig(configSuffix, cfgFile); err != nil {
+			if err = config.ReadConfig(configSuffix, cfgFile); err != nil {
 				return err
 			}
 		case err := <-errChan:
@@ -186,7 +190,7 @@ func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespa
 		close(ffDone)
 	}()
 
-	if err = mgr.Init(ctx, cancelCtx, resetChan); err != nil {
+	if err = mgr.Init(ctx, cancelCtx, resetChan, resetConfig); err != nil {
 		errChan <- err
 		return
 	}
