@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -105,6 +105,7 @@ type Orchestrator interface {
 	GetDatatypeByName(ctx context.Context, name, version string) (*core.Datatype, error)
 	GetDatatypes(ctx context.Context, filter ffapi.AndFilter) ([]*core.Datatype, *ffapi.FilterResult, error)
 	GetOperationByID(ctx context.Context, id string) (*core.Operation, error)
+	GetOperationByIDWithStatus(ctx context.Context, id string) (*core.OperationWithDetailedStatus, error)
 	GetOperations(ctx context.Context, filter ffapi.AndFilter) ([]*core.Operation, *ffapi.FilterResult, error)
 	GetEventByID(ctx context.Context, id string) (*core.Event, error)
 	GetEventByIDWithReference(ctx context.Context, id string) (*core.EnrichedEvent, error)
@@ -472,19 +473,19 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.namespace.Name, or.config.KeyNormalization, or.database(), or.tokens(), or.identity, or.syncasync, or.broadcast, or.messaging, or.metrics, or.operations, or.txHelper)
-		if err != nil {
-			return err
-		}
-	}
-
 	if or.blockchain() != nil {
 		if or.contracts == nil {
 			or.contracts, err = contracts.NewContractManager(ctx, or.namespace.Name, or.database(), or.blockchain(), or.identity, or.operations, or.txHelper, or.syncasync)
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	if or.assets == nil {
+		or.assets, err = assets.NewAssetManager(ctx, or.namespace.Name, or.config.KeyNormalization, or.database(), or.tokens(), or.identity, or.syncasync, or.broadcast, or.messaging, or.metrics, or.operations, or.contracts, or.txHelper)
+		if err != nil {
+			return err
 		}
 	}
 

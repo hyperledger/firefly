@@ -18,6 +18,7 @@ package common
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -223,4 +224,61 @@ func TestSubscriptionsAddRemoveSubscriptionV1(t *testing.T) {
 func TestSubscriptionsRemoveInvalid(t *testing.T) {
 	subs := NewFireflySubscriptions()
 	subs.RemoveSubscription(context.Background(), "sub1")
+}
+
+func TestGoodSuccessReceipt(t *testing.T) {
+	var reply BlockchainReceiptNotification
+	reply.Headers.ReceiptID = "ID"
+	reply.Headers.ReplyType = "TransactionSuccess"
+	reply.ProtocolID = "123456/098765453"
+
+	mcb := &blockchainmocks.Callbacks{}
+	cb := NewBlockchainCallbacks()
+	cb.SetHandler("ns1", mcb)
+	mcb.On("OperationUpdate", "ns1", mock.Anything).Return()
+
+	err := HandleReceipt(context.Background(), nil, &reply, cb)
+	assert.NoError(t, err)
+
+	reply.Headers.ReplyType = "TransactionUpdate"
+	err = HandleReceipt(context.Background(), nil, &reply, cb)
+	assert.NoError(t, err)
+
+	reply.Headers.ReplyType = "TransactionFailed"
+	err = HandleReceipt(context.Background(), nil, &reply, cb)
+	assert.NoError(t, err)
+}
+
+func TestReceiptMarshallingError(t *testing.T) {
+	var reply BlockchainReceiptNotification
+	reply.Headers.ReceiptID = "ID"
+	reply.Headers.ReplyType = "force-marshall-error"
+	reply.ProtocolID = "123456/098765453"
+
+	mcb := &blockchainmocks.Callbacks{}
+	cb := NewBlockchainCallbacks()
+	cb.SetHandler("ns1", mcb)
+	mcb.On("OperationUpdate", "ns1", mock.Anything).Return()
+
+	err := HandleReceipt(context.Background(), nil, &reply, cb)
+	assert.Error(t, err)
+	assert.Regexp(t, ".*[^n]marshalling error.*", err)
+}
+
+type TestReceipt BlockchainReceiptNotification
+
+func (receipt BlockchainReceiptNotification) MarshalJSON() ([]byte, error) {
+	if receipt.Headers.ReplyType == "force-marshall-error" {
+		return []byte(`null`), fmt.Errorf("json error")
+	}
+	return json.Marshal(TestReceipt(receipt))
+}
+
+func TestBadReceipt(t *testing.T) {
+	var reply BlockchainReceiptNotification
+	data := fftypes.JSONAnyPtr(`{}`)
+	err := json.Unmarshal(data.Bytes(), &reply)
+	assert.NoError(t, err)
+	err = HandleReceipt(context.Background(), nil, &reply, nil)
+	assert.Error(t, err)
 }

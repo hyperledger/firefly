@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -60,7 +60,8 @@ type Manager interface {
 	WaitStop()
 	Reset(ctx context.Context) error
 
-	Orchestrator(ns string) orchestrator.Orchestrator
+	Orchestrator(ctx context.Context, ns string) (orchestrator.Orchestrator, error)
+	MustOrchestrator(ns string) orchestrator.Orchestrator
 	SPIEvents() spievents.Manager
 	GetNamespaces(ctx context.Context) ([]*core.Namespace, error)
 	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
@@ -1022,13 +1023,22 @@ func (nm *namespaceManager) SPIEvents() spievents.Manager {
 	return nm.adminEvents
 }
 
-func (nm *namespaceManager) Orchestrator(ns string) orchestrator.Orchestrator {
+func (nm *namespaceManager) Orchestrator(ctx context.Context, ns string) (orchestrator.Orchestrator, error) {
 	nm.nsMux.Lock()
 	defer nm.nsMux.Unlock()
-	if namespace, ok := nm.namespaces[ns]; ok {
-		return namespace.orchestrator
+	if namespace, ok := nm.namespaces[ns]; ok && namespace != nil {
+		return namespace.orchestrator, nil
 	}
-	return nil
+	return nil, i18n.NewError(ctx, coremsgs.MsgUnknownNamespace, ns)
+}
+
+// MustOrchestrator must only be called by code that is absolutely sure the orchestrator exists
+func (nm *namespaceManager) MustOrchestrator(ns string) orchestrator.Orchestrator {
+	or, err := nm.Orchestrator(context.Background(), ns)
+	if err != nil {
+		panic(err)
+	}
+	return or
 }
 
 func (nm *namespaceManager) GetNamespaces(ctx context.Context) ([]*core.Namespace, error) {
@@ -1046,9 +1056,9 @@ func (nm *namespaceManager) GetOperationByNamespacedID(ctx context.Context, nsOp
 	if err != nil {
 		return nil, err
 	}
-	or := nm.Orchestrator(ns)
-	if or == nil {
-		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
+	or, err := nm.Orchestrator(ctx, ns)
+	if err != nil {
+		return nil, err
 	}
 	return or.GetOperationByID(ctx, u.String())
 }
@@ -1058,10 +1068,11 @@ func (nm *namespaceManager) ResolveOperationByNamespacedID(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	or := nm.Orchestrator(ns)
-	if or == nil {
-		return i18n.NewError(ctx, coremsgs.Msg404NotFound)
+	or, err := nm.Orchestrator(ctx, ns)
+	if err != nil {
+		return err
 	}
+
 	return or.Operations().ResolveOperationByID(ctx, u, op)
 }
 
@@ -1117,5 +1128,9 @@ func (nm *namespaceManager) getAuthPlugin(ctx context.Context, plugins map[strin
 }
 
 func (nm *namespaceManager) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
-	return nm.Orchestrator(authReq.Namespace).Authorize(ctx, authReq)
+	or, err := nm.Orchestrator(ctx, authReq.Namespace)
+	if err != nil {
+		return err
+	}
+	return or.Authorize(ctx, authReq)
 }

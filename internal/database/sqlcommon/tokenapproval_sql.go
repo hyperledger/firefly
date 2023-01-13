@@ -47,6 +47,8 @@ var (
 		"tx_id",
 		"blockchain_event",
 		"created",
+		"message_id",
+		"message_hash",
 	}
 	tokenApprovalFilterFieldMap = map[string]string{
 		"localid":         "local_id",
@@ -59,6 +61,8 @@ var (
 		"tx.id":           "tx_id",
 		"blockchainevent": "blockchain_event",
 		"created":         "created",
+		"message":         "message_id",
+		"messagehash":     "message_hash",
 	}
 )
 
@@ -100,6 +104,8 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *core.Toke
 				Set("tx_type", approval.TX.Type).
 				Set("tx_id", approval.TX.ID).
 				Set("blockchain_event", approval.BlockchainEvent).
+				Set("message_id", approval.Message).
+				Set("message_hash", approval.MessageHash).
 				Where(sq.Eq{"protocol_id": approval.ProtocolID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenApprovals, core.ChangeEventTypeUpdated, approval.Namespace, approval.LocalID)
@@ -128,6 +134,8 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *core.Toke
 					approval.TX.ID,
 					approval.BlockchainEvent,
 					approval.Created,
+					approval.Message,
+					approval.MessageHash,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenApprovals, core.ChangeEventTypeCreated, approval.Namespace, approval.LocalID)
@@ -157,6 +165,8 @@ func (s *SQLCommon) tokenApprovalResult(ctx context.Context, row *sql.Rows) (*co
 		&approval.TX.ID,
 		&approval.BlockchainEvent,
 		&approval.Created,
+		&approval.Message,
+		&approval.MessageHash,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, tokenapprovalTable)

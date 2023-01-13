@@ -80,6 +80,8 @@ var (
 	APIRequestMaxTimeout = ffc("api.requestMaxTimeout")
 	// APIOASPanicOnMissingDescription controls whether the OpenAPI Spec generator will strongly enforce descriptions on every field or not
 	APIOASPanicOnMissingDescription = ffc("api.oas.panicOnMissingDescription")
+	// APIPassThroughHeaders is a list of HTTP request headers to pass through to requests made to dependency microservices
+	APIPassthroughHeaders = ffc("api.passthroughHeaders")
 	// BatchManagerReadPageSize is the size of each page of messages read from the database into memory when assembling batches
 	BatchManagerReadPageSize = ffc("batch.manager.readPageSize")
 	// BatchManagerReadPollTimeout is how long without any notifications of new messages to wait, before doing a page query
@@ -331,6 +333,7 @@ func setDefaults() {
 	viper.SetDefault(string(APIMaxFilterLimit), 250)
 	viper.SetDefault(string(APIMaxFilterSkip), 1000) // protects database (skip+limit pagination is not for bulk operations)
 	viper.SetDefault(string(APIRequestTimeout), "120s")
+	viper.SetDefault(string(APIPassthroughHeaders), []string{})
 	viper.SetDefault(string(AssetManagerKeyNormalization), "blockchain_plugin")
 	viper.SetDefault(string(CacheBatchLimit), 100)
 	viper.SetDefault(string(CacheBatchTTL), "5m")

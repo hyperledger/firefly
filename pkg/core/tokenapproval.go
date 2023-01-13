@@ -20,6 +20,7 @@ import "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 type TokenApprovalInput struct {
 	TokenApproval
+	Message        *MessageInOut  `ffstruct:"TokenApprovalInput" json:"message,omitempty"`
 	Pool           string         `ffstruct:"TokenApprovalInput" json:"pool,omitempty" ffexcludeoutput:"true"`
 	IdempotencyKey IdempotencyKey `ffstruct:"TokenApprovalInput" json:"idempotencyKey,omitempty" ffexcludeoutput:"true"`
 }
@@ -36,6 +37,8 @@ type TokenApproval struct {
 	ProtocolID      string             `ffstruct:"TokenApproval" json:"protocolId,omitempty" ffexcludeinput:"true"`
 	Subject         string             `ffstruct:"TokenApproval" json:"subject,omitempty" ffexcludeinput:"true"`
 	Active          bool               `ffstruct:"TokenApproval" json:"active,omitempty" ffexcludeinput:"true"`
+	Message         *fftypes.UUID      `ffstruct:"TokenApproval" json:"message,omitempty"`
+	MessageHash     *fftypes.Bytes32   `ffstruct:"TokenApproval" json:"messageHash,omitempty" ffexcludeinput:"true"`
 	Created         *fftypes.FFTime    `ffstruct:"TokenApproval" json:"created,omitempty" ffexcludeinput:"true"`
 	TX              TransactionRef     `ffstruct:"TokenApproval" json:"tx" ffexcludeinput:"true"`
 	BlockchainEvent *fftypes.UUID      `ffstruct:"TokenApproval" json:"blockchainEvent,omitempty" ffexcludeinput:"true"`

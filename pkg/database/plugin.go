@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -445,6 +445,14 @@ type iFFIEventCollection interface {
 	GetFFIEvents(ctx context.Context, namespace string, filter ffapi.Filter) (events []*fftypes.FFIEvent, res *ffapi.FilterResult, err error)
 }
 
+type iFFIErrorCollection interface {
+	// UpsertFFIError - Upsert an FFI error
+	UpsertFFIError(ctx context.Context, method *fftypes.FFIError) error
+
+	// GetFFIErrors - Get FFI error
+	GetFFIErrors(ctx context.Context, namespace string, filter ffapi.Filter) (errors []*fftypes.FFIError, res *ffapi.FilterResult, err error)
+}
+
 type iContractAPICollection interface {
 	// UpsertFFIEvent - Upsert a contract API
 	UpsertContractAPI(ctx context.Context, cd *core.ContractAPI) error
@@ -500,7 +508,7 @@ type iChartCollection interface {
 	GetChartHistogram(ctx context.Context, namespace string, intervals []core.ChartHistogramInterval, collection CollectionName) ([]*core.ChartHistogram, error)
 }
 
-// PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
+// PeristenceInterface are the operations that must be implemented by a database interface plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
 // while not trying to become the core database of the application (where full deeply nested
@@ -558,6 +566,7 @@ type PersistenceInterface interface {
 	iFFICollection
 	iFFIMethodCollection
 	iFFIEventCollection
+	iFFIErrorCollection
 	iContractAPICollection
 	iContractListenerCollection
 	iBlockchainEventCollection
@@ -604,6 +613,7 @@ const (
 	CollectionFFIs              UUIDCollectionNS = "ffi"
 	CollectionFFIMethods        UUIDCollectionNS = "ffimethods"
 	CollectionFFIEvents         UUIDCollectionNS = "ffievents"
+	CollectionFFIErrors         UUIDCollectionNS = "ffierrors"
 	CollectionContractAPIs      UUIDCollectionNS = "contractapis"
 	CollectionContractListeners UUIDCollectionNS = "contractlisteners"
 	CollectionIdentities        UUIDCollectionNS = "identities"
@@ -855,19 +865,21 @@ var BlobQueryFactory = &ffapi.QueryFields{
 
 // TokenPoolQueryFactory filter fields for token pools
 var TokenPoolQueryFactory = &ffapi.QueryFields{
-	"id":        &ffapi.UUIDField{},
-	"type":      &ffapi.StringField{},
-	"name":      &ffapi.StringField{},
-	"standard":  &ffapi.StringField{},
-	"locator":   &ffapi.StringField{},
-	"symbol":    &ffapi.StringField{},
-	"decimals":  &ffapi.Int64Field{},
-	"message":   &ffapi.UUIDField{},
-	"state":     &ffapi.StringField{},
-	"created":   &ffapi.TimeField{},
-	"connector": &ffapi.StringField{},
-	"tx.type":   &ffapi.StringField{},
-	"tx.id":     &ffapi.UUIDField{},
+	"id":              &ffapi.UUIDField{},
+	"type":            &ffapi.StringField{},
+	"name":            &ffapi.StringField{},
+	"standard":        &ffapi.StringField{},
+	"locator":         &ffapi.StringField{},
+	"symbol":          &ffapi.StringField{},
+	"decimals":        &ffapi.Int64Field{},
+	"message":         &ffapi.UUIDField{},
+	"state":           &ffapi.StringField{},
+	"created":         &ffapi.TimeField{},
+	"connector":       &ffapi.StringField{},
+	"tx.type":         &ffapi.StringField{},
+	"tx.id":           &ffapi.UUIDField{},
+	"interface":       &ffapi.UUIDField{},
+	"interfaceformat": &ffapi.StringField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances
@@ -928,6 +940,8 @@ var TokenApprovalQueryFactory = &ffapi.QueryFields{
 	"tx.type":         &ffapi.StringField{},
 	"tx.id":           &ffapi.UUIDField{},
 	"blockchainevent": &ffapi.UUIDField{},
+	"message":         &ffapi.UUIDField{},
+	"messagehash":     &ffapi.Bytes32Field{},
 }
 
 // FFIQueryFactory filter fields for contract definitions
@@ -948,6 +962,15 @@ var FFIMethodQueryFactory = &ffapi.QueryFields{
 
 // FFIEventQueryFactory filter fields for contract events
 var FFIEventQueryFactory = &ffapi.QueryFields{
+	"id":          &ffapi.UUIDField{},
+	"name":        &ffapi.StringField{},
+	"pathname":    &ffapi.StringField{},
+	"interface":   &ffapi.UUIDField{},
+	"description": &ffapi.StringField{},
+}
+
+// FFIErrorQueryFactory filter fields for contract errors
+var FFIErrorQueryFactory = &ffapi.QueryFields{
 	"id":          &ffapi.UUIDField{},
 	"name":        &ffapi.StringField{},
 	"pathname":    &ffapi.StringField{},

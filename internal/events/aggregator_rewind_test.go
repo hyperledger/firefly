@@ -201,3 +201,15 @@ func TestPopRewindsDoublePopNoBlock(t *testing.T) {
 	assert.Empty(t, batchIDs)
 
 }
+
+func TestPopRewindsNoTapBlocked(t *testing.T) {
+
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	em.aggregator.rewinder.loop2ShoulderTap <- true
+	em.aggregator.rewinder.stagedRewinds = []*rewind{{}}
+
+	_ = em.aggregator.rewinder.popRewinds()
+
+}

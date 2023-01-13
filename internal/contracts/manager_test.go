@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -134,6 +134,13 @@ func TestResolveFFI(t *testing.T) {
 		Events: []*fftypes.FFIEvent{
 			{
 				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+				},
+			},
+		},
+		Errors: []*fftypes.FFIError{
+			{
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
 					Name: "changed",
 				},
 			},
@@ -419,6 +426,19 @@ func TestValidateFFI(t *testing.T) {
 				},
 			},
 		},
+		Errors: []*fftypes.FFIError{
+			{
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
+					Name: "sum",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:   "z",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	mdi.On("GetFFI", context.Background(), "ns1", "math", "1.0.0").Return(nil, nil)
@@ -591,6 +611,64 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 
 	err := cm.ResolveFFI(context.Background(), ffi)
 	assert.Regexp(t, "FF10319", err)
+}
+
+func TestValidateFFIBadError(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	ffi := &fftypes.FFI{
+		Name:      "math",
+		Version:   "1.0.0",
+		Namespace: "default",
+		Errors: []*fftypes.FFIError{
+			{
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
+					Name: "",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:   "z",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	mdi.On("GetFFI", context.Background(), "ns1", "math", "1.0.0").Return(nil, nil)
+
+	err := cm.ResolveFFI(context.Background(), ffi)
+	assert.Regexp(t, "FF10433", err)
+}
+
+func TestValidateFFIBadErrorParam(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	ffi := &fftypes.FFI{
+		Name:      "math",
+		Version:   "1.0.0",
+		Namespace: "default",
+		Errors: []*fftypes.FFIError{
+			{
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
+					Name: "pop",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:   "z",
+							Schema: fftypes.JSONAnyPtr(`{"type": "wrongness"`),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	mdi.On("GetFFI", context.Background(), "ns1", "math", "1.0.0").Return(nil, nil)
+
+	err := cm.ResolveFFI(context.Background(), ffi)
+	assert.Regexp(t, "FF10332", err)
 }
 
 func TestAddContractListenerInline(t *testing.T) {
@@ -1202,6 +1280,12 @@ func TestGetFFIWithChildren(t *testing.T) {
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIError{
+		{ID: fftypes.NewUUID(), FFIErrorDefinition: fftypes.FFIErrorDefinition{Name: "customError1"}},
+	}, nil, nil)
+	mbi.On("GenerateErrorSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIErrorDefinition) bool {
+		return ev.Name == "customError1"
+	})).Return("error1Sig")
 
 	_, err := cm.GetFFIWithChildren(context.Background(), "ffi", "v1.0.0")
 	assert.NoError(t, err)
@@ -1237,6 +1321,12 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIError{
+		{ID: fftypes.NewUUID(), FFIErrorDefinition: fftypes.FFIErrorDefinition{Name: "customError1"}},
+	}, nil, nil)
+	mbi.On("GenerateErrorSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIErrorDefinition) bool {
+		return ev.Name == "customError1"
+	})).Return("error1Sig")
 
 	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
@@ -1246,6 +1336,26 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 
 	assert.Equal(t, "method1", ffi.Methods[0].Name)
 	assert.Equal(t, "event1", ffi.Events[0].Name)
+}
+
+func TestGetFFIByIDWithChildrenErrorsFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetFFIByID", mock.Anything, "ns1", cid).Return(&fftypes.FFI{
+		ID: cid,
+	}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIMethod{
+		{ID: fftypes.NewUUID(), Name: "method1"},
+	}, nil, nil)
+	mdb.On("GetFFIEvents", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIEvent{}, nil, nil)
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
+
+	assert.EqualError(t, err, "pop")
+	mdb.AssertExpectations(t)
 }
 
 func TestGetFFIByIDWithChildrenEventsFail(t *testing.T) {
@@ -1598,7 +1708,7 @@ func TestInvokeContractFailResolve(t *testing.T) {
 	}
 
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(nil)
+	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input, req.Errors).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
@@ -1649,6 +1759,27 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.Regexp(t, "FF10315", err)
+}
+
+func TestInvokeContractErrorsFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mim := cm.identity.(*identitymanagermocks.Manager)
+
+	req := &core.ContractCallRequest{
+		Type:       core.CallTypeInvoke,
+		Interface:  fftypes.NewUUID(),
+		Location:   fftypes.JSONAnyPtr(""),
+		MethodPath: "set",
+	}
+
+	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.MethodPath).Return(&fftypes.FFIMethod{Name: "set"}, nil)
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := cm.InvokeContract(context.Background(), req, false)
+
+	assert.Regexp(t, "FF10434", err)
 }
 
 func TestInvokeContractMethodBadInput(t *testing.T) {
@@ -1711,7 +1842,7 @@ func TestQueryContract(t *testing.T) {
 	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
-	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input, req.Options).Return(struct{}{}, nil)
+	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input, req.Errors, req.Options).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
@@ -2142,6 +2273,12 @@ func TestGetContractAPIInterface(t *testing.T) {
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIError{
+		{ID: fftypes.NewUUID(), FFIErrorDefinition: fftypes.FFIErrorDefinition{Name: "customError1"}},
+	}, nil, nil)
+	mbi.On("GenerateErrorSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIErrorDefinition) bool {
+		return ev.Name == "customError1"
+	})).Return("error1Sig")
 
 	result, err := cm.GetContractAPIInterface(context.Background(), "banana")
 

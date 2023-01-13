@@ -67,6 +67,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 			core.MessageTypeBroadcast,
 			core.MessageTypeDefinition,
 			core.MessageTypeTransferBroadcast,
+			core.MessageTypeApprovalBroadcast,
 		}, mock.Anything, mock.Anything).Return()
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 

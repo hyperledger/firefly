@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,16 +25,13 @@ type ContractMigrationV1TestSuite struct {
 	ContractMigrationTestSuite
 }
 
-func (suite *ContractMigrationV1TestSuite) SetupSuite() {
-	suite.testState = beforeE2ETest(suite.T())
-}
-
 func (suite *ContractMigrationV1TestSuite) BeforeTest(suiteName, testName string) {
 	suite.testState = beforeE2ETest(suite.T())
 }
 
 func (suite *ContractMigrationV1TestSuite) AfterTest(suiteName, testName string) {
 	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	suite.testState.done()
 }
 
 func (suite *ContractMigrationV1TestSuite) TestContractMigration() {

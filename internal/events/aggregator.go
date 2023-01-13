@@ -562,6 +562,21 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 			}
 		}
 
+		// For approvals, verify the approval has come through
+		if msg.Header.Type == core.MessageTypeApprovalBroadcast || msg.Header.Type == core.MessageTypeApprovalPrivate {
+			fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
+			filter := fb.And(
+				fb.Eq("message", msg.Header.ID),
+			)
+			if approvals, _, err := ag.database.GetTokenApprovals(ctx, ag.namespace, filter); err != nil || len(approvals) == 0 {
+				log.L(ctx).Debugf("Approval for message %s not yet available", msg.Header.ID)
+				return "", false, err
+			} else if !msg.Hash.Equals(approvals[0].MessageHash) {
+				log.L(ctx).Errorf("Message hash %s does not match hash recorded in approval: %s", msg.Hash, approvals[0].MessageHash)
+				return "", false, nil
+			}
+		}
+
 		// Validate the message data
 		switch {
 		case msg.Header.Type == core.MessageTypeDefinition:

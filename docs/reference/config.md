@@ -29,6 +29,7 @@ nav_order: 2
 |---|-----------|----|-------------|
 |defaultFilterLimit|The maximum number of rows to return if no limit is specified on an API request|`int`|`<nil>`
 |maxFilterLimit|The largest value of `limit` that an HTTP client can specify in a request|`int`|`<nil>`
+|passthroughHeaders|A list of HTTP request headers to pass through to dependency microservices|`[]string`|`<nil>`
 |requestMaxTimeout|The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
@@ -87,6 +88,7 @@ nav_order: 2
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
 |method|The HTTP method to use when making requests to the Address Resolver|`string`|`GET`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |responseField|The name of a JSON field that is provided in the response, that contains the ethereum address (default `address`)|`string`|`address`
 |retainOriginal|When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address|`boolean`|`<nil>`
@@ -129,6 +131,7 @@ nav_order: 2
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |instance|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use namespaces.predefined[].multiparty.contract[].location.address)|Address `string`|`<nil>`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |prefixLong|The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect|`string`|`firefly`
 |prefixShort|The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect|`string`|`fly`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
@@ -177,6 +180,7 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |url|The URL of the FireFly Transaction Manager runtime, if enabled|`string`|`<nil>`
@@ -216,6 +220,7 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |prefixLong|The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect|`string`|`firefly`
 |prefixShort|The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect|`string`|`fly`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
@@ -430,6 +435,7 @@ nav_order: 2
 |initEnabled|Instructs FireFly to always post all current nodes to the `/init` API before connecting or reconnecting to the connector|`boolean`|`false`
 |manifestEnabled|Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector|`string`|`false`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |url|The URL of the Data Exchange instance|URL `string`|`<nil>`
@@ -547,6 +553,7 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 
@@ -825,6 +832,7 @@ nav_order: 2
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
 |method|The HTTP method to use when making requests to the Address Resolver|`string`|`GET`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |responseField|The name of a JSON field that is provided in the response, that contains the ethereum address (default `address`)|`string`|`address`
 |retainOriginal|When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address|`boolean`|`<nil>`
@@ -867,6 +875,7 @@ nav_order: 2
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |instance|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain|Address `string`|`<nil>`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |prefixLong|The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect|`string`|`firefly`
 |prefixShort|The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect|`string`|`fly`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
@@ -915,6 +924,7 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |url|The URL of the FireFly Transaction Manager runtime, if enabled|`string`|`<nil>`
@@ -954,6 +964,7 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |prefixLong|The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect|`string`|`firefly`
 |prefixShort|The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect|`string`|`fly`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
@@ -1053,6 +1064,7 @@ nav_order: 2
 |initEnabled|Instructs FireFly to always post all current nodes to the `/init` API before connecting or reconnecting to the connector|`boolean`|`false`
 |manifestEnabled|Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector|`string`|`false`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |url|The URL of the Data Exchange instance|URL `string`|`<nil>`
@@ -1112,6 +1124,7 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |url|The URL for the IPFS API|URL `string`|`<nil>`
@@ -1147,6 +1160,7 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |url|The URL for the IPFS Gateway|URL `string`|`<nil>`
@@ -1190,6 +1204,7 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |url|The URL of the token connector|URL `string`|`<nil>`
@@ -1258,6 +1273,7 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |url|The URL for the IPFS API|URL `string`|`<nil>`
@@ -1293,6 +1309,7 @@ nav_order: 2
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |url|The URL for the IPFS Gateway|URL `string`|`<nil>`
@@ -1392,6 +1409,7 @@ nav_order: 2
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`<nil>`
 |name|A name to identify this token plugin|`string`|`<nil>`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`<nil>`
 |plugin|The type of the token plugin to use|`string`|`<nil>`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`

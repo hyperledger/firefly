@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -188,9 +188,9 @@ func (as *apiServer) swaggerGenerator(routes []*ffapi.Route, apiBaseURL string) 
 func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
 	return func(req *http.Request) (*openapi3.T, error) {
 		vars := mux.Vars(req)
-		or := mgr.Orchestrator(vars["ns"])
-		if or == nil {
-			return nil, i18n.NewError(req.Context(), coremsgs.MsgNamespaceDoesNotExist)
+		or, err := mgr.Orchestrator(req.Context(), vars["ns"])
+		if err != nil {
+			return nil, err
 		}
 		cm := or.Contracts()
 		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["apiName"])
@@ -213,19 +213,16 @@ func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL 
 func getOrchestrator(ctx context.Context, mgr namespace.Manager, tag string, r *ffapi.APIRequest) (or orchestrator.Orchestrator, err error) {
 	switch tag {
 	case routeTagDefaultNamespace:
-		or = mgr.Orchestrator(config.GetString(coreconfig.NamespacesDefault))
+		return mgr.Orchestrator(ctx, config.GetString(coreconfig.NamespacesDefault))
 	case routeTagNonDefaultNamespace:
 		vars := mux.Vars(r.Req)
 		if ns, ok := vars["ns"]; ok {
-			or = mgr.Orchestrator(ns)
+			return mgr.Orchestrator(ctx, ns)
 		}
-	default:
+	case routeTagGlobal:
 		return nil, nil
 	}
-	if or == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceDoesNotExist)
-	}
-	return or, nil
+	return nil, i18n.NewError(ctx, coremsgs.MsgMissingNamespace)
 }
 
 func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manager, apiBaseURL string, route *ffapi.Route) http.HandlerFunc {
@@ -291,6 +288,7 @@ func (as *apiServer) handlerFactory() *ffapi.HandlerFactory {
 		MaxFilterSkip:         uint64(config.GetUint(coreconfig.APIMaxFilterSkip)),
 		DefaultRequestTimeout: config.GetDuration(coreconfig.APIRequestTimeout),
 		MaxTimeout:            config.GetDuration(coreconfig.APIRequestMaxTimeout),
+		PassthroughHeaders:    config.GetStringSlice(coreconfig.APIPassthroughHeaders),
 	}
 }
 

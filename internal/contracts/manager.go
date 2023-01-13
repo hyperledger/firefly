@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,8 +42,11 @@ type Manager interface {
 	GetFFIWithChildren(ctx context.Context, name, version string) (*fftypes.FFI, error)
 	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
 	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
+	GetFFIMethods(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIMethod, error)
+	GetFFIEvents(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIEvent, error)
 	GetFFIs(ctx context.Context, filter ffapi.AndFilter) ([]*fftypes.FFI, *ffapi.FilterResult, error)
 	ResolveFFI(ctx context.Context, ffi *fftypes.FFI) error
+	ResolveFFIReference(ctx context.Context, ref *fftypes.FFIReference) error
 
 	DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (interface{}, error)
 	InvokeContract(ctx context.Context, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
@@ -134,21 +137,46 @@ func (cm *contractManager) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*f
 	return cm.database.GetFFIByID(ctx, cm.namespace, id)
 }
 
+func (cm *contractManager) GetFFIMethods(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIMethod, error) {
+	fb := database.FFIMethodQueryFactory.NewFilter(ctx)
+	methods, _, err := cm.database.GetFFIMethods(ctx, cm.namespace, fb.Eq("interface", id))
+	return methods, err
+}
+
+func (cm *contractManager) GetFFIEvents(ctx context.Context, id *fftypes.UUID) ([]*fftypes.FFIEvent, error) {
+	fb := database.FFIMethodQueryFactory.NewFilter(ctx)
+	events, _, err := cm.database.GetFFIEvents(ctx, cm.namespace, fb.Eq("interface", id))
+	if err == nil {
+		for _, event := range events {
+			event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
+		}
+	}
+	return events, err
+}
+
 func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *fftypes.FFI) (err error) {
-	mfb := database.FFIMethodQueryFactory.NewFilter(ctx)
-	ffi.Methods, _, err = cm.database.GetFFIMethods(ctx, cm.namespace, mfb.Eq("interface", ffi.ID))
+	ffi.Methods, err = cm.GetFFIMethods(ctx, ffi.ID)
 	if err != nil {
 		return err
 	}
 
-	efb := database.FFIEventQueryFactory.NewFilter(ctx)
-	ffi.Events, _, err = cm.database.GetFFIEvents(ctx, cm.namespace, efb.Eq("interface", ffi.ID))
+	ffi.Events, err = cm.GetFFIEvents(ctx, ffi.ID)
 	if err != nil {
 		return err
 	}
 
 	for _, event := range ffi.Events {
 		event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
+	}
+
+	fb := database.FFIErrorQueryFactory.NewFilter(ctx)
+	ffi.Errors, _, err = cm.database.GetFFIErrors(ctx, cm.namespace, fb.Eq("interface", ffi.ID))
+	if err != nil {
+		return err
+	}
+
+	for _, errorDef := range ffi.Errors {
+		errorDef.Signature = cm.blockchain.GenerateErrorSignature(ctx, &errorDef.FFIErrorDefinition)
 	}
 	return nil
 }
@@ -269,7 +297,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 		err = send(ctx)
 		return op, err
 	case core.CallTypeQuery:
-		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Options)
+		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Errors, req.Options)
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}
@@ -298,6 +326,11 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req
 		req.Method, err = cm.database.GetFFIMethod(ctx, cm.namespace, req.Interface, req.MethodPath)
 		if err != nil || req.Method == nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
+		}
+		fb := database.FFIErrorQueryFactory.NewFilter(ctx)
+		req.Errors, _, err = cm.database.GetFFIErrors(ctx, cm.namespace, fb.Eq("interface", req.Interface))
+		if err != nil {
+			return i18n.NewError(ctx, coremsgs.MsgContractErrorsResolveError, err)
 		}
 	}
 	return nil
@@ -349,7 +382,7 @@ func (cm *contractManager) ResolveContractAPI(ctx context.Context, httpServerURL
 			}
 		}
 
-		if err := cm.resolveFFIReference(ctx, api.Interface); err != nil {
+		if err := cm.ResolveFFIReference(ctx, api.Interface); err != nil {
 			return err
 		}
 		return nil
@@ -364,7 +397,7 @@ func (cm *contractManager) ResolveContractAPI(ctx context.Context, httpServerURL
 	return nil
 }
 
-func (cm *contractManager) resolveFFIReference(ctx context.Context, ref *fftypes.FFIReference) error {
+func (cm *contractManager) ResolveFFIReference(ctx context.Context, ref *fftypes.FFIReference) error {
 	switch {
 	case ref == nil:
 		return i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotFound, "")
@@ -434,6 +467,16 @@ func (cm *contractManager) ResolveFFI(ctx context.Context, ffi *fftypes.FFI) err
 			return err
 		}
 	}
+
+	errorPathNames := map[string]bool{}
+	for _, errorDef := range ffi.Errors {
+		errorDef.Interface = ffi.ID
+		errorDef.Namespace = ffi.Namespace
+		errorDef.Pathname = cm.uniquePathName(errorDef.Name, errorPathNames)
+		if err := cm.validateFFIError(ctx, &errorDef.FFIErrorDefinition); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -477,6 +520,18 @@ func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.
 	return nil
 }
 
+func (cm *contractManager) validateFFIError(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) error {
+	if errorDef.Name == "" {
+		return i18n.NewError(ctx, coremsgs.MsgErrorNameMustBeSet)
+	}
+	for _, param := range errorDef.Params {
+		if err := cm.validateFFIParam(ctx, param); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, req *core.ContractCallRequest) error {
 	if err := cm.validateFFIMethod(ctx, req.Method); err != nil {
 		return err
@@ -496,7 +551,7 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 }
 
 func (cm *contractManager) resolveEvent(ctx context.Context, ffi *fftypes.FFIReference, eventPath string) (*core.FFISerializedEvent, error) {
-	if err := cm.resolveFFIReference(ctx, ffi); err != nil {
+	if err := cm.ResolveFFIReference(ctx, ffi); err != nil {
 		return nil, err
 	}
 	event, err := cm.database.GetFFIEvent(ctx, cm.namespace, ffi.ID, eventPath)

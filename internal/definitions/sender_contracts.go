@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -30,6 +30,9 @@ func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, wai
 	}
 	for _, event := range ffi.Events {
 		event.ID = fftypes.NewUUID()
+	}
+	for _, errorDef := range ffi.Errors {
+		errorDef.ID = fftypes.NewUUID()
 	}
 
 	if bm.multiparty {

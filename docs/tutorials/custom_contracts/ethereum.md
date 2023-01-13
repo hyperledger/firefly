@@ -564,7 +564,7 @@ If you look at the source code for the smart contract we're working with above, 
   },
   "eventPath": "Changed",
   "options": {
-    "firstEvent": "new"
+    "firstEvent": "newest"
   },
   "topic": "simple-storage"
 }

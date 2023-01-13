@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -465,9 +465,9 @@ func TestInitVersion1(t *testing.T) {
 	err := nm.initNamespaces(nm.ctx, nm.namespaces)
 	assert.NoError(t, err)
 
-	assert.Equal(t, nmm.mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
-	assert.NotNil(t, nm.Orchestrator(core.LegacySystemNamespace))
+	assert.Equal(t, nmm.mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
+	assert.NotNil(t, nm.MustOrchestrator(core.LegacySystemNamespace))
 
 }
 
@@ -502,8 +502,8 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 	err := nm.initNamespaces(nm.ctx, nm.namespaces)
 	assert.NoError(t, err)
 
-	assert.Equal(t, nmm.mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.Equal(t, nmm.mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
 
 }
 
@@ -562,8 +562,8 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 	err = nm.initNamespaces(nm.ctx, nm.namespaces)
 	assert.Regexp(t, "FF10421", err)
 
-	assert.Equal(t, nmm.mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.Equal(t, nmm.mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
 
 }
 
@@ -621,8 +621,8 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 	err = nm.initNamespaces(nm.ctx, nm.namespaces)
 	assert.Regexp(t, "FF10421", err)
 
-	assert.Equal(t, nmm.mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.Equal(t, nmm.mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
 
 }
 
@@ -681,8 +681,8 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 	err = nm.initNamespaces(nm.ctx, nm.namespaces)
 	assert.NoError(t, err)
 
-	assert.Equal(t, nmm.mo, nm.Orchestrator("default"))
-	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.Equal(t, nmm.mo, nm.MustOrchestrator("default"))
+	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
 
 }
 
@@ -1276,19 +1276,19 @@ func TestRawConfigCorrelation(t *testing.T) {
 
 	_, err := nm.loadNamespaces(nm.ctx, fftypes.JSONObject{}, nm.plugins)
 	err = nm.getDatabasePlugins(nm.ctx, nm.plugins, fftypes.JSONObject{})
-	assert.Regexp(t, "FF10434", err)
+	assert.Regexp(t, "FF10439", err)
 	err = nm.getBlockchainPlugins(nm.ctx, nm.plugins, fftypes.JSONObject{})
-	assert.Regexp(t, "FF10434", err)
+	assert.Regexp(t, "FF10439", err)
 	err = nm.getDataExchangePlugins(nm.ctx, nm.plugins, fftypes.JSONObject{})
-	assert.Regexp(t, "FF10434", err)
+	assert.Regexp(t, "FF10439", err)
 	err = nm.getSharedStoragePlugins(nm.ctx, nm.plugins, fftypes.JSONObject{})
-	assert.Regexp(t, "FF10434", err)
+	assert.Regexp(t, "FF10439", err)
 	err = nm.getTokensPlugins(nm.ctx, nm.plugins, fftypes.JSONObject{})
-	assert.Regexp(t, "FF10434", err)
+	assert.Regexp(t, "FF10439", err)
 	err = nm.getIdentityPlugins(nm.ctx, nm.plugins, fftypes.JSONObject{})
-	assert.Regexp(t, "FF10434", err)
+	assert.Regexp(t, "FF10439", err)
 	err = nm.getAuthPlugin(nm.ctx, nm.plugins, fftypes.JSONObject{})
-	assert.Regexp(t, "FF10434", err)
+	assert.Regexp(t, "FF10439", err)
 }
 
 func TestEventsPluginBadType(t *testing.T) {
@@ -1877,7 +1877,7 @@ func TestResetRejectIfConfigAutoReload(t *testing.T) {
 	config.Set(coreconfig.ConfigAutoReload, true)
 
 	err := nm.Reset(context.Background())
-	assert.Regexp(t, "FF10433", err)
+	assert.Regexp(t, "FF10438", err)
 
 }
 
@@ -1955,7 +1955,7 @@ func TestGetOperationByNamespacedIDNoOrchestrator(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	_, err := nm.GetOperationByNamespacedID(context.Background(), "bad:"+opID.String())
-	assert.Regexp(t, "FF10109", err)
+	assert.Regexp(t, "FF10436", err)
 
 	mo.AssertExpectations(t)
 }
@@ -2008,7 +2008,7 @@ func TestResolveOperationByNamespacedIDNoOrchestrator(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	err := nm.ResolveOperationByNamespacedID(context.Background(), "bad:"+opID.String(), &core.OperationUpdateDTO{})
-	assert.Regexp(t, "FF10109", err)
+	assert.Regexp(t, "FF10436", err)
 
 	mo.AssertExpectations(t)
 }
@@ -2024,6 +2024,15 @@ func TestAuthorize(t *testing.T) {
 		Namespace: "ns1",
 	})
 	assert.NoError(t, err)
+}
+
+func TestAuthorizeBadNamespace(t *testing.T) {
+	nm, _, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+	err := nm.Authorize(context.Background(), &fftypes.AuthReq{
+		Namespace: "ns1",
+	})
+	assert.Regexp(t, "FF10436", err)
 }
 
 func TestValidateNonMultipartyConfig(t *testing.T) {

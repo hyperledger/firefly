@@ -54,3 +54,5 @@ pages:
   web3_gateway_features: Web3 Gateway Features
   basic_auth: Enable Basic Auth
   fabric_test_network: Fabric-Samples Test Network
+  xdc_testnet: XDC Testnet
+  zksync_testnet: zkSync Testnet

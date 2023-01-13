@@ -72,6 +72,20 @@ func testFFI() *fftypes.FFI {
 				},
 			},
 		},
+		Errors: []*fftypes.FFIError{
+			{
+				ID: fftypes.NewUUID(),
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
+					Name: "event1",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "result",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -100,6 +114,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	mdi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertFFIEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertFFIError", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
@@ -175,6 +190,22 @@ func TestPersistFFIUpsertFFIEventFail(t *testing.T) {
 	mdi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertFFIEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mcm := dh.contracts.(*contractmocks.Manager)
+	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
+	retry, err := dh.persistFFI(context.Background(), testFFI())
+	assert.Regexp(t, "pop", err)
+	assert.True(t, retry)
+	mdi.AssertExpectations(t)
+	mcm.AssertExpectations(t)
+}
+
+func TestPersistFFIUpsertFFIErrorFail(t *testing.T) {
+	dh, _ := newTestDefinitionHandler(t)
+	mdi := dh.database.(*databasemocks.Plugin)
+	mdi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertFFIEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertFFIError", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
 	retry, err := dh.persistFFI(context.Background(), testFFI())

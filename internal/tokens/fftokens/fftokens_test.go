@@ -572,7 +572,65 @@ func TestMintTokens(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.MintTokens(context.Background(), nsOpID, "123", mint)
+	err := h.MintTokens(context.Background(), nsOpID, "123", mint, nil)
+	assert.NoError(t, err)
+}
+
+func TestMintTokensWithInterface(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	mint := &core.TokenTransfer{
+		LocalID: fftypes.NewUUID(),
+		To:      "user1",
+		Key:     "0x123",
+		Amount:  *fftypes.NewFFBigInt(10),
+		TX: core.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: core.TransactionTypeTokenTransfer,
+		},
+		URI: "FLAPFLIP",
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
+	}
+	methods := fftypes.JSONAnyPtr(`{"mint": "test_interface"}`)
+	opID := fftypes.NewUUID()
+	nsOpID := "ns1:" + opID.String()
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/mint", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			body := make(fftypes.JSONObject)
+			err := json.NewDecoder(req.Body).Decode(&body)
+			assert.NoError(t, err)
+			assert.Equal(t, fftypes.JSONObject{
+				"poolLocator": "123",
+				"to":          "user1",
+				"amount":      "10",
+				"signer":      "0x123",
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
+				"requestId": "ns1:" + opID.String(),
+				"data": fftypes.JSONObject{
+					"tx":     mint.TX.ID.String(),
+					"txtype": core.TransactionTypeTokenTransfer.String(),
+				}.String(),
+				"uri":       "FLAPFLIP",
+				"interface": "test_interface",
+			}, body)
+
+			res := &http.Response{
+				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+				StatusCode: 202,
+			}
+			return res, nil
+		})
+
+	err := h.MintTokens(context.Background(), nsOpID, "123", mint, methods)
 	assert.NoError(t, err)
 }
 
@@ -626,7 +684,7 @@ func TestTokenApproval(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.TokensApproval(context.Background(), nsOpID, "123", approval)
+	err := h.TokensApproval(context.Background(), nsOpID, "123", approval, nil)
 	assert.NoError(t, err)
 }
 
@@ -635,12 +693,13 @@ func TestTokenApprovalError(t *testing.T) {
 	defer done()
 
 	approval := &core.TokenApproval{}
+	methods := fftypes.JSONAnyPtr(`{}`)
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/approval", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	err := h.TokensApproval(context.Background(), nsOpID, "F1", approval)
+	err := h.TokensApproval(context.Background(), nsOpID, "F1", approval, methods)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -654,7 +713,7 @@ func TestMintTokensError(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	err := h.MintTokens(context.Background(), nsOpID, "F1", mint)
+	err := h.MintTokens(context.Background(), nsOpID, "F1", mint, nil)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -710,7 +769,7 @@ func TestBurnTokens(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.BurnTokens(context.Background(), nsOpID, "123", burn)
+	err := h.BurnTokens(context.Background(), nsOpID, "123", burn, nil)
 	assert.NoError(t, err)
 }
 
@@ -719,12 +778,13 @@ func TestBurnTokensError(t *testing.T) {
 	defer done()
 
 	burn := &core.TokenTransfer{}
+	methods := fftypes.JSONAnyPtr(`{}`)
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/burn", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	err := h.BurnTokens(context.Background(), nsOpID, "F1", burn)
+	err := h.BurnTokens(context.Background(), nsOpID, "F1", burn, methods)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -782,7 +842,7 @@ func TestTransferTokens(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.TransferTokens(context.Background(), nsOpID, "123", transfer)
+	err := h.TransferTokens(context.Background(), nsOpID, "123", transfer, nil)
 	assert.NoError(t, err)
 }
 
@@ -791,12 +851,13 @@ func TestTransferTokensError(t *testing.T) {
 	defer done()
 
 	transfer := &core.TokenTransfer{}
+	methods := fftypes.JSONAnyPtr(`{}`)
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfer", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	err := h.TransferTokens(context.Background(), nsOpID, "F1", transfer)
+	err := h.TransferTokens(context.Background(), nsOpID, "F1", transfer, methods)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -1390,4 +1451,180 @@ func TestCallbacksWrongNamespace(t *testing.T) {
 	h.callbacks.OperationUpdate(context.Background(), nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
 	h.callbacks.TokensTransferred(context.Background(), "ns1", nil)
 	h.callbacks.TokensApproved(context.Background(), "ns1", nil)
+}
+
+func TestCheckInterfaceBadFormat(t *testing.T) {
+	h, _, _, _, done := newTestFFTokens(t)
+	defer done()
+
+	pool := &core.TokenPool{
+		InterfaceFormat: "bad",
+	}
+
+	_, err := h.CheckInterface(context.Background(), pool, nil)
+	assert.Regexp(t, "FF10435.*bad", err)
+}
+
+func TestCheckInterfaceABI(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	pool := &core.TokenPool{
+		InterfaceFormat: "abi",
+		Locator:         "N1",
+	}
+	methods := []*fftypes.FFIMethod{
+		{Name: "method1"},
+	}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/checkinterface", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			body := make(fftypes.JSONObject)
+			err := json.NewDecoder(req.Body).Decode(&body)
+			assert.NoError(t, err)
+			assert.Equal(t, fftypes.JSONObject{
+				"format":      "abi",
+				"poolLocator": "N1",
+				"methods": []interface{}{
+					map[string]interface{}{
+						"name":    "method1",
+						"type":    "function",
+						"inputs":  []interface{}{},
+						"outputs": []interface{}{},
+					},
+				},
+			}, body)
+
+			res := &http.Response{
+				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+					"approval": fftypes.JSONAny(`[]`),
+					"burn":     fftypes.JSONAny(`[]`),
+					"mint":     fftypes.JSONAny(`[]`),
+					"transfer": fftypes.JSONAny(`[]`),
+				}.String()))),
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+				StatusCode: 200,
+			}
+			return res, nil
+		})
+
+	_, err := h.CheckInterface(context.Background(), pool, methods)
+	assert.NoError(t, err)
+}
+
+func TestCheckInterfaceABIBadInterface(t *testing.T) {
+	h, _, _, _, done := newTestFFTokens(t)
+	defer done()
+
+	pool := &core.TokenPool{
+		InterfaceFormat: "abi",
+		Locator:         "N1",
+	}
+	methods := []*fftypes.FFIMethod{
+		{Name: "method1", Params: fftypes.FFIParams{{Schema: fftypes.JSONAnyPtr("bad")}}},
+	}
+
+	_, err := h.CheckInterface(context.Background(), pool, methods)
+	assert.Regexp(t, "FF22052", err)
+}
+
+func TestCheckInterfaceFFI(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	pool := &core.TokenPool{
+		InterfaceFormat: "ffi",
+		Locator:         "N1",
+	}
+	methods := []*fftypes.FFIMethod{
+		{Name: "method1"},
+	}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/checkinterface", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			body := make(fftypes.JSONObject)
+			err := json.NewDecoder(req.Body).Decode(&body)
+			assert.NoError(t, err)
+			assert.Equal(t, fftypes.JSONObject{
+				"format":      "ffi",
+				"poolLocator": "N1",
+				"methods": []interface{}{
+					map[string]interface{}{
+						"name":        "method1",
+						"description": "",
+						"pathname":    "",
+						"params":      nil,
+						"returns":     nil,
+					},
+				},
+			}, body)
+
+			res := &http.Response{
+				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+					"approval": fftypes.JSONAny(`[]`),
+					"burn":     fftypes.JSONAny(`[]`),
+					"mint":     fftypes.JSONAny(`[]`),
+					"transfer": fftypes.JSONAny(`[]`),
+				}.String()))),
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+				StatusCode: 200,
+			}
+			return res, nil
+		})
+
+	_, err := h.CheckInterface(context.Background(), pool, methods)
+	assert.NoError(t, err)
+}
+
+func TestCheckInterfaceFFIFail(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	pool := &core.TokenPool{
+		InterfaceFormat: "ffi",
+		Locator:         "N1",
+	}
+	methods := []*fftypes.FFIMethod{
+		{Name: "method1"},
+	}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/checkinterface", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
+
+	_, err := h.CheckInterface(context.Background(), pool, methods)
+	assert.Regexp(t, "FF10274", err)
+}
+
+func TestCheckInterfaceFFIBadResponse(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	pool := &core.TokenPool{
+		InterfaceFormat: "ffi",
+		Locator:         "N1",
+	}
+	methods := []*fftypes.FFIMethod{
+		{Name: "method1"},
+	}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/checkinterface", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			res := &http.Response{
+				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+					"approval": map[bool]bool{true: false},
+				}.String()))),
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+				StatusCode: 200,
+			}
+			return res, nil
+		})
+
+	_, err := h.CheckInterface(context.Background(), pool, methods)
+	assert.Regexp(t, "FF00127", err)
 }

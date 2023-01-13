@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -47,11 +47,15 @@ var (
 		"tx_type",
 		"tx_id",
 		"info",
+		"interface",
+		"interface_format",
+		"methods",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
-		"message": "message_id",
-		"tx.type": "tx_type",
-		"tx.id":   "tx_id",
+		"message":         "message_id",
+		"tx.type":         "tx_type",
+		"tx.id":           "tx_id",
+		"interfaceformat": "interface_format",
 	}
 )
 
@@ -88,6 +92,11 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 	}
 	rows.Close()
 
+	var interfaceID *fftypes.UUID
+	if pool.Interface != nil {
+		interfaceID = pool.Interface.ID
+	}
+
 	if existing {
 		if _, err = s.UpdateTx(ctx, tokenpoolTable, tx,
 			sq.Update(tokenpoolTable).
@@ -103,6 +112,9 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 				Set("tx_type", pool.TX.Type).
 				Set("tx_id", pool.TX.ID).
 				Set("info", pool.Info).
+				Set("interface", interfaceID).
+				Set("interface_format", pool.InterfaceFormat).
+				Set("methods", pool.Methods).
 				Where(sq.Eq{"id": pool.ID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
@@ -131,6 +143,9 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 					pool.TX.Type,
 					pool.TX.ID,
 					pool.Info,
+					interfaceID,
+					pool.InterfaceFormat,
+					pool.Methods,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeCreated, pool.Namespace, pool.ID)
@@ -145,6 +160,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 
 func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.TokenPool, error) {
 	pool := core.TokenPool{}
+	iface := fftypes.FFIReference{}
 	err := row.Scan(
 		&pool.ID,
 		&pool.Namespace,
@@ -161,7 +177,13 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.T
 		&pool.TX.Type,
 		&pool.TX.ID,
 		&pool.Info,
+		&iface.ID,
+		&pool.InterfaceFormat,
+		&pool.Methods,
 	)
+	if iface.ID != nil {
+		pool.Interface = &iface
+	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, tokenpoolTable)
 	}

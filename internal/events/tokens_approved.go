@@ -133,17 +133,42 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 }
 
 func (em *eventManager) TokensApproved(ti tokens.Plugin, approval *tokens.TokenApproval) error {
+	var msgIDforRewind *fftypes.UUID
+
 	err := em.retry.Do(em.ctx, "persist token approval", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			if valid, err := em.persistTokenApproval(ctx, approval); !valid || err != nil {
 				return err
 			}
 
+			if approval.Message != nil {
+				msg, err := em.database.GetMessageByID(ctx, em.namespace.Name, approval.Message)
+				switch {
+				case err != nil:
+					return err
+				case msg != nil && msg.State == core.MessageStateStaged:
+					// Message can now be sent
+					msg.State = core.MessageStateReady
+					if err := em.database.ReplaceMessage(ctx, msg); err != nil {
+						return err
+					}
+				default:
+					// Message might already have been received, we need to rewind
+					msgIDforRewind = approval.Message
+				}
+			}
+			em.emitBlockchainEventMetric(approval.Event)
+
 			event := core.NewEvent(core.EventTypeApprovalConfirmed, approval.Namespace, approval.LocalID, approval.TX.ID, approval.Pool.String())
 			return em.database.InsertEvent(ctx, event)
 		})
 		return err != nil, err // retry indefinitely (until context closes)
 	})
+
+	// Initiate a rewind if a batch was potentially completed by the arrival of this transfer
+	if err == nil && msgIDforRewind != nil {
+		em.aggregator.queueMessageRewind(msgIDforRewind)
+	}
 
 	return err
 }

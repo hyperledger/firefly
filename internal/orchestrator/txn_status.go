@@ -187,7 +187,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 			})
 		}
 
-	case core.TransactionTypeContractInvoke, core.TransactionTypeDataPublish:
+	case core.TransactionTypeContractInvoke, core.TransactionTypeContractDeploy, core.TransactionTypeDataPublish:
 		// no blockchain events or other objects
 
 	default:
