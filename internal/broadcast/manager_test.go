@@ -189,7 +189,7 @@ func TestDispatchBatchBlobsFail(t *testing.T) {
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("GetBlob", mock.Anything, bm.namespace.Name, mock.Anything, blobHash).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobs", mock.Anything, bm.namespace.Name, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := bm.dispatchBatch(bm.ctx, state)
 	assert.EqualError(t, err, "pop")
@@ -327,7 +327,7 @@ func TestUploadBlobPublishFail(t *testing.T) {
 	ctx := context.Background()
 	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
-	mdi.On("GetBlob", ctx, bm.namespace.Name, mock.Anything, blob.Hash).Return(blob, nil)
+	mdi.On("GetBlobs", ctx, bm.namespace.Name, mock.Anything).Return([]*core.Blob{blob}, nil, nil)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBlobData)
@@ -355,7 +355,7 @@ func TestUploadBlobsGetBlobFail(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	ctx := context.Background()
-	mdi.On("GetBlob", ctx, bm.namespace.Name, mock.Anything, blob.Hash).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobs", ctx, bm.namespace.Name, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	mom := bm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
@@ -387,7 +387,7 @@ func TestUploadBlobsGetBlobNotFound(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	ctx := context.Background()
-	mdi.On("GetBlob", ctx, bm.namespace.Name, mock.Anything, blob.Hash).Return(nil, nil)
+	mdi.On("GetBlobs", ctx, bm.namespace.Name, mock.Anything).Return([]*core.Blob{}, nil, nil)
 
 	mom := bm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
@@ -596,7 +596,7 @@ func TestUploadBlobOK(t *testing.T) {
 
 	ctx := context.Background()
 	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
-	mdi.On("GetBlob", ctx, bm.namespace.Name, mock.Anything, blob.Hash).Return(blob, nil)
+	mdi.On("GetBlobs", ctx, bm.namespace.Name, mock.Anything).Return([]*core.Blob{blob}, nil, nil)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBlobData)

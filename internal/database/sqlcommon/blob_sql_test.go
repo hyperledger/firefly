@@ -53,7 +53,9 @@ func TestBlobsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same blob back
-	blobRead, err := s.GetBlob(ctx, namespace, dataID, blob.Hash)
+	fb := database.BlobQueryFactory.NewFilter(ctx)
+	blobs, _, err := s.GetBlobs(ctx, namespace, fb.Eq("payloadref", blob.PayloadRef))
+	blobRead := blobs[0]
 	assert.NoError(t, err)
 	assert.NotNil(t, blobRead)
 	blobJson, _ := json.Marshal(&blob)
@@ -61,13 +63,13 @@ func TestBlobsE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(blobJson), string(blobReadJson))
 
 	// Query back the blob
-	fb := database.BlobQueryFactory.NewFilter(ctx)
+	fb = database.BlobQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("hash", blob.Hash),
 		fb.Eq("payloadref", blob.PayloadRef),
 		fb.Eq("created", blob.Created),
 	)
-	blobRes, res, err := s.GetBlobs(ctx, filter.Count(true))
+	blobRes, res, err := s.GetBlobs(ctx, namespace, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(blobRes))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -78,7 +80,7 @@ func TestBlobsE2EWithDB(t *testing.T) {
 	// Test delete
 	err = s.DeleteBlob(ctx, blob.Sequence)
 	assert.NoError(t, err)
-	blobs, _, err := s.GetBlobs(ctx, filter)
+	blobs, _, err = s.GetBlobs(ctx, namespace, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(blobs))
 
@@ -165,36 +167,36 @@ func TestInsertBlobsSingleRowFail(t *testing.T) {
 	s.callbacks.AssertExpectations(t)
 }
 
-func TestGetBlobByIDSelectFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetBlob(context.Background(), "ns1", fftypes.NewUUID(), fftypes.NewRandB32())
-	assert.Regexp(t, "FF00176", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
+// func TestGetBlobByIDSelectFail(t *testing.T) {
+// 	s, mock := newMockProvider().init()
+// 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+// 	_, err := s.GetBlob(context.Background(), "ns1", fftypes.NewUUID(), fftypes.NewRandB32())
+// 	assert.Regexp(t, "FF00176", err)
+// 	assert.NoError(t, mock.ExpectationsWereMet())
+// }
 
-func TestGetBlobByIDNotFound(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
-	msg, err := s.GetBlob(context.Background(), "ns1", fftypes.NewUUID(), fftypes.NewRandB32())
-	assert.NoError(t, err)
-	assert.Nil(t, msg)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
+// func TestGetBlobByIDNotFound(t *testing.T) {
+// 	s, mock := newMockProvider().init()
+// 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
+// 	msg, err := s.GetBlob(context.Background(), "ns1", fftypes.NewUUID(), fftypes.NewRandB32())
+// 	assert.NoError(t, err)
+// 	assert.Nil(t, msg)
+// 	assert.NoError(t, mock.ExpectationsWereMet())
+// }
 
-func TestGetBlobByIDScanFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
-	_, err := s.GetBlob(context.Background(), "ns1", fftypes.NewUUID(), fftypes.NewRandB32())
-	assert.Regexp(t, "FF10121", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
+// func TestGetBlobByIDScanFail(t *testing.T) {
+// 	s, mock := newMockProvider().init()
+// 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
+// 	_, err := s.GetBlob(context.Background(), "ns1", fftypes.NewUUID(), fftypes.NewRandB32())
+// 	assert.Regexp(t, "FF10121", err)
+// 	assert.NoError(t, mock.ExpectationsWereMet())
+// }
 
 func TestGetBlobQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.BlobQueryFactory.NewFilter(context.Background()).Eq("hash", "")
-	_, _, err := s.GetBlobs(context.Background(), f)
+	_, _, err := s.GetBlobs(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -202,7 +204,7 @@ func TestGetBlobQueryFail(t *testing.T) {
 func TestGetBlobBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.BlobQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
-	_, _, err := s.GetBlobs(context.Background(), f)
+	_, _, err := s.GetBlobs(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF00143.*type", err)
 }
 
@@ -210,7 +212,7 @@ func TestGetBlobReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
 	f := database.BlobQueryFactory.NewFilter(context.Background()).Eq("hash", "")
-	_, _, err := s.GetBlobs(context.Background(), f)
+	_, _, err := s.GetBlobs(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

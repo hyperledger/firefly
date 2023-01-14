@@ -276,10 +276,10 @@ func TestDownloadBlobOk(t *testing.T) {
 			Hash: blobHash,
 		},
 	}, nil)
-	mdi.On("GetBlob", ctx, "ns1", dataID, blobHash).Return(&core.Blob{
+	mdi.On("GetBlobs", ctx, "ns1", mock.Anything).Return([]*core.Blob{{
 		Hash:       blobHash,
 		PayloadRef: "ns1/blob1",
-	}, nil)
+	}}, nil, nil)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("DownloadBlob", ctx, "ns1/blob1").Return(
@@ -322,7 +322,7 @@ func TestDownloadBlobNotFound(t *testing.T) {
 			Hash: blobHash,
 		},
 	}, nil)
-	mdi.On("GetBlob", ctx, "ns1", dataID, blobHash).Return(nil, nil)
+	mdi.On("GetBlobs", ctx, "ns1", mock.Anything).Return(nil, nil, nil)
 
 	_, _, err := dm.DownloadBlob(ctx, dataID.String())
 	assert.Regexp(t, "FF10239", err)
@@ -345,7 +345,7 @@ func TestDownloadBlobLookupErr(t *testing.T) {
 			Hash: blobHash,
 		},
 	}, nil)
-	mdi.On("GetBlob", ctx, "ns1", dataID, blobHash).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobs", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, _, err := dm.DownloadBlob(ctx, dataID.String())
 	assert.Regexp(t, "pop", err)
@@ -429,7 +429,7 @@ func TestDeleteBlob(t *testing.T) {
 		DataID:     fftypes.NewUUID(),
 	}
 
-	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
+	mdb.On("GetBlobs", ctx, "ns1", mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
 	mdx.On("DeleteBlob", ctx, "payloadref").Return(nil)
 	mdb.On("DeleteBlob", ctx, int64(1)).Return(nil)
 
@@ -457,7 +457,7 @@ func TestDeleteBlobFailDX(t *testing.T) {
 		DataID:     fftypes.NewUUID(),
 	}
 
-	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
+	mdb.On("GetBlobs", ctx, "ns1", mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
 	mdx.On("DeleteBlob", ctx, "payloadref").Return(fmt.Errorf("pop"))
 
 	err := dm.DeleteBlob(ctx, blob)
@@ -484,7 +484,7 @@ func TestDeleteBlobFailDB(t *testing.T) {
 		DataID:     fftypes.NewUUID(),
 	}
 
-	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
+	mdb.On("GetBlobs", ctx, "ns1", mock.Anything).Return([]*core.Blob{}, &ffapi.FilterResult{}, nil)
 	mdx.On("DeleteBlob", ctx, "payloadref").Return(nil)
 	mdb.On("DeleteBlob", ctx, int64(1)).Return(fmt.Errorf("pop"))
 
@@ -532,10 +532,34 @@ func TestDeleteBlobBackwardCompatibility(t *testing.T) {
 		DataID:     fftypes.NewUUID(),
 	}
 
-	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{{}, {}}, &ffapi.FilterResult{}, nil)
+	mdb.On("GetBlobs", ctx, "ns1", mock.Anything).Return([]*core.Blob{{}, {}}, &ffapi.FilterResult{}, nil)
 	mdb.On("DeleteBlob", ctx, int64(1)).Return(nil)
 
 	err := dm.DeleteBlob(ctx, blob)
 	assert.NoError(t, err)
+	mdb.AssertExpectations(t)
+}
+
+func TestDeleteBlobBackwardCompatibilityFail(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	mdb := dm.database.(*databasemocks.Plugin)
+
+	defer cancel()
+
+	blob := &core.Blob{
+		Sequence:   1,
+		Namespace:  "ns1",
+		Hash:       fftypes.NewRandB32(),
+		PayloadRef: "payloadref",
+		Created:    fftypes.Now(),
+		Peer:       "peer",
+		Size:       123456,
+		DataID:     fftypes.NewUUID(),
+	}
+
+	mdb.On("GetBlobs", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	err := dm.DeleteBlob(ctx, blob)
+	assert.Regexp(t, "pop", err)
 	mdb.AssertExpectations(t)
 }

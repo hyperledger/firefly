@@ -163,14 +163,15 @@ func (bs *blobStore) DownloadBlob(ctx context.Context, dataID string) (*core.Blo
 	if data.Blob == nil || data.Blob.Hash == nil {
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgDataDoesNotHaveBlob)
 	}
-
-	blob, err := bs.database.GetBlob(ctx, bs.dm.namespace.Name, data.ID, data.Blob.Hash)
+	fb := database.BlobQueryFactory.NewFilter(ctx)
+	blobs, _, err := bs.database.GetBlobs(ctx, bs.dm.namespace.Name, fb.And(fb.Eq("data_id", data.ID), fb.Eq("hash", data.Blob.Hash)))
 	if err != nil {
 		return nil, nil, err
 	}
-	if blob == nil {
+	if len(blobs) == 0 || blobs[0] == nil {
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgBlobNotFound, data.Blob.Hash)
 	}
+	blob := blobs[0]
 
 	reader, err := bs.exchange.DownloadBlob(ctx, blob.PayloadRef)
 	return blob, reader, err
@@ -186,7 +187,7 @@ func (bs *blobStore) DeleteBlob(ctx context.Context, blob *core.Blob) error {
 	// data items still reference this blob! Look at the payloadRef to determine
 	// uniqueness, as of FireFly 1.2.x this will be unique per data item.
 	fb := database.BlobQueryFactory.NewFilter(ctx)
-	blobs, _, err := bs.database.GetBlobs(ctx, fb.Eq("payloadref", blob.PayloadRef))
+	blobs, _, err := bs.database.GetBlobs(ctx, bs.dm.namespace.Name, fb.Eq("payloadref", blob.PayloadRef))
 	if err != nil {
 		return err
 	}

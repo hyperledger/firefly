@@ -31,7 +31,7 @@ func TestBlobReceiverBackgroundDispatchOK(t *testing.T) {
 	defer em.cleanup(t)
 	em.blobReceiver.start()
 
-	em.mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
+	em.mdi.On("GetBlobs", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 	em.mdi.On("InsertBlobs", mock.Anything, mock.Anything).Return(nil, nil)
 
 	blobHash := fftypes.NewRandB32()
@@ -78,7 +78,7 @@ func TestBlobReceiverBackgroundDispatchFail(t *testing.T) {
 	em.blobReceiver.start()
 
 	done := make(chan struct{})
-	em.mdi.On("GetBlobs", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Run(func(args mock.Arguments) {
+	em.mdi.On("GetBlobs", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Run(func(args mock.Arguments) {
 		em.cancel()
 		close(done)
 	})
@@ -101,7 +101,7 @@ func TestBlobReceiverDispatchDup(t *testing.T) {
 
 	blobHash := fftypes.NewRandB32()
 
-	em.mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*core.Blob{
+	em.mdi.On("GetBlobs", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Blob{
 		{Hash: blobHash, PayloadRef: "payload1"},
 	}, nil, nil)
 

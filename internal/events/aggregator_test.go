@@ -1489,7 +1489,7 @@ func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 	org1 := newTestOrg("org1")
 	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
-	ag.mdi.On("GetBlob", ag.ctx, mock.Anything, mock.Anything, blobHash).Return(nil, nil)
+	ag.mdi.On("GetBlobs", ag.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 
 	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, &core.Message{
 		Header: core.MessageHeader{ID: fftypes.NewUUID(), SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID}},
@@ -1756,7 +1756,7 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 	ag.mdi.On("GetNextPinsForContext", ag.ctx, "ns1", mock.Anything).Return([]*core.NextPin{
 		{Context: context, Nonce: 1 /* match member1NonceOne */, Identity: org1.DID, Hash: member1NonceOne},
 	}, nil).Once()
-	ag.mdi.On("GetBlob", ag.ctx, "ns1", mock.Anything, data2[0].Blob.Hash).Return(nil, nil)
+	ag.mdi.On("GetBlobs", ag.ctx, "ns1", mock.Anything).Return([]*core.Blob{}, nil, nil)
 
 	msg1.Pins = fftypes.FFStringArray{member1NonceOne.String()}
 	msg2.Pins = fftypes.FFStringArray{member1NonceTwo.String()}
@@ -2040,7 +2040,7 @@ func TestResolveBlobsErrorGettingHash(t *testing.T) {
 	ag := newTestAggregator()
 	defer ag.cleanup(t)
 
-	ag.mdi.On("GetBlob", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	ag.mdi.On("GetBlobs", ag.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, fmt.Errorf("pop"))
 
 	resolved, err := ag.resolveBlobs(ag.ctx, core.DataArray{
 		{ID: fftypes.NewUUID(), Blob: &core.BlobRef{
@@ -2056,7 +2056,7 @@ func TestResolveBlobsNotFoundPrivate(t *testing.T) {
 	ag := newTestAggregator()
 	defer ag.cleanup(t)
 
-	ag.mdi.On("GetBlob", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+	ag.mdi.On("GetBlobs", ag.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 
 	resolved, err := ag.resolveBlobs(ag.ctx, core.DataArray{
 		{ID: fftypes.NewUUID(), Blob: &core.BlobRef{
@@ -2072,7 +2072,7 @@ func TestResolveBlobsFoundPrivate(t *testing.T) {
 	ag := newTestAggregator()
 	defer ag.cleanup(t)
 
-	ag.mdi.On("GetBlob", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(&core.Blob{}, nil)
+	ag.mdi.On("GetBlobs", ag.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{{}}, nil, nil)
 
 	resolved, err := ag.resolveBlobs(ag.ctx, core.DataArray{
 		{ID: fftypes.NewUUID(), Blob: &core.BlobRef{

@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 type transferBlobData struct {
@@ -92,13 +93,14 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 		} else if node == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		blob, err := pm.database.GetBlob(ctx, pm.namespace.Name, dataID, blobHash)
+		fb := database.BlobQueryFactory.NewFilter(ctx)
+		blobs, _, err := pm.database.GetBlobs(ctx, pm.namespace.Name, fb.And(fb.Eq("data_id", dataID), fb.Eq("hash", blobHash)))
 		if err != nil {
 			return nil, err
-		} else if blob == nil {
+		} else if len(blobs) == 0 || blobs[0] == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		return opSendBlob(op, node, blob), nil
+		return opSendBlob(op, node, blobs[0]), nil
 
 	case core.OpTypeDataExchangeSendBatch:
 		nodeID, groupHash, batchID, err := retrieveBatchSendInputs(ctx, op)

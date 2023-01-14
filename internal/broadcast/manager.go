@@ -203,14 +203,15 @@ func (bm *broadcastManager) uploadDataBlob(ctx context.Context, tx *fftypes.UUID
 		return err
 	}
 
-	blob, err := bm.database.GetBlob(ctx, bm.namespace.Name, d.ID, d.Blob.Hash)
+	fb := database.BlobQueryFactory.NewFilter(ctx)
+	blobs, _, err := bm.database.GetBlobs(ctx, bm.namespace.Name, fb.And(fb.Eq("data_id", d.ID), fb.Eq("hash", d.Blob.Hash)))
 	if err != nil {
 		return err
-	} else if blob == nil {
+	} else if len(blobs) == 0 || blobs[0] == nil {
 		return i18n.NewError(ctx, coremsgs.MsgBlobNotFound, d.Blob.Hash)
 	}
 
-	_, err = bm.operations.RunOperation(ctx, opUploadBlob(op, d, blob))
+	_, err = bm.operations.RunOperation(ctx, opUploadBlob(op, d, blobs[0]))
 	return err
 }
 

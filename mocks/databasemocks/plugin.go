@@ -224,36 +224,13 @@ func (_m *Plugin) GetBatches(ctx context.Context, namespace string, filter ffapi
 	return r0, r1, r2
 }
 
-// GetBlob provides a mock function with given fields: ctx, namespace, dataID, hash
-func (_m *Plugin) GetBlob(ctx context.Context, namespace string, dataID *fftypes.UUID, hash *fftypes.Bytes32) (*core.Blob, error) {
-	ret := _m.Called(ctx, namespace, dataID, hash)
-
-	var r0 *core.Blob
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, *fftypes.Bytes32) *core.Blob); ok {
-		r0 = rf(ctx, namespace, dataID, hash)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Blob)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, *fftypes.Bytes32) error); ok {
-		r1 = rf(ctx, namespace, dataID, hash)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetBlobs provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetBlobs(ctx context.Context, filter ffapi.Filter) ([]*core.Blob, *ffapi.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetBlobs provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetBlobs(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.Blob, *ffapi.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.Blob
-	if rf, ok := ret.Get(0).(func(context.Context, ffapi.Filter) []*core.Blob); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, ffapi.Filter) []*core.Blob); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Blob)
@@ -261,8 +238,8 @@ func (_m *Plugin) GetBlobs(ctx context.Context, filter ffapi.Filter) ([]*core.Bl
 	}
 
 	var r1 *ffapi.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, ffapi.Filter) *ffapi.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, ffapi.Filter) *ffapi.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*ffapi.FilterResult)
@@ -270,8 +247,8 @@ func (_m *Plugin) GetBlobs(ctx context.Context, filter ffapi.Filter) ([]*core.Bl
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, ffapi.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, ffapi.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

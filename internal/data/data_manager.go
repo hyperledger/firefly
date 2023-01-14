@@ -355,16 +355,17 @@ func (dm *dataManager) resolveRef(ctx context.Context, dataRef *core.DataRef) (*
 	}
 }
 
-func (dm *dataManager) resolveBlob(ctx context.Context, blobRef *core.BlobRef, dataID *fftypes.UUID) (*core.Blob, error) {
+func (dm *dataManager) resolveBlob(ctx context.Context, namespace string, blobRef *core.BlobRef, dataID *fftypes.UUID) (*core.Blob, error) {
 	if blobRef != nil && blobRef.Hash != nil {
-		blob, err := dm.database.GetBlob(ctx, dm.namespace.Name, dataID, blobRef.Hash)
+		fb := database.BlobQueryFactory.NewFilter(ctx)
+		blobs, _, err := dm.database.GetBlobs(ctx, dm.dm.namespace.Name, fb.And(fb.Eq("data_id", dataID), fb.Eq("hash", blobRef.Hash)))
 		if err != nil {
 			return nil, err
 		}
-		if blob == nil {
+		if len(blobs) == 0 || blobs[0] == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgBlobNotFound, blobRef.Hash)
 		}
-		return blob, nil
+		return blobs[0], nil
 	}
 	return nil, nil
 }
@@ -409,7 +410,7 @@ func (dm *dataManager) validateInputData(ctx context.Context, inData *core.DataR
 		return nil, err
 	}
 
-	blob, err := dm.resolveBlob(ctx, blobRef, inData.ID)
+	blob, err := dm.resolveBlob(ctx, dm.namespace.Name, blobRef, inData.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +465,7 @@ func (dm *dataManager) ResolveInlineData(ctx context.Context, newMessage *NewMes
 			if d == nil {
 				return i18n.NewError(ctx, coremsgs.MsgDataReferenceUnresolvable, i)
 			}
-			if _, err = dm.resolveBlob(ctx, d.Blob, d.ID); err != nil {
+			if _, err = dm.resolveBlob(ctx, dm.namespace.Name, d.Blob, d.ID); err != nil {
 				return err
 			}
 		case dataOrValue.Value != nil || dataOrValue.Blob != nil:
@@ -555,8 +556,8 @@ func (dm *dataManager) DeleteData(ctx context.Context, dataID string) error {
 		return i18n.NewError(ctx, coremsgs.Msg404NoResult)
 	}
 	if data.Blob != nil && data.Blob.Hash != nil {
-		fb := database.BlobQueryFactory.NewFilter(context.Background())
-		blobs, _, err := dm.database.GetBlobs(ctx, fb.And(fb.Eq("data_id", data.ID), fb.Eq("hash", data.Blob.Hash)))
+		fb := database.BlobQueryFactory.NewFilter(ctx)
+		blobs, _, err := dm.database.GetBlobs(ctx, dm.namespace.Name, fb.And(fb.Eq("data_id", data.ID), fb.Eq("hash", data.Blob.Hash)))
 		if err != nil {
 			return err
 		}

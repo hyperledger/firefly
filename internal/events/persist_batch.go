@@ -166,11 +166,12 @@ func (em *eventManager) checkAndInitiateBlobDownloads(ctx context.Context, batch
 
 	if data.Blob != nil && batch.Type == core.BatchTypeBroadcast {
 		// Need to check if we need to initiate a download
-		blob, err := em.database.GetBlob(ctx, em.namespace.Name, data.ID, data.Blob.Hash)
+		fb := database.BlobQueryFactory.NewFilter(ctx)
+		blobs, _, err := em.database.GetBlobs(ctx, em.namespace.Name, fb.And(fb.Eq("data_id", data.ID), fb.Eq("hash", data.Blob.Hash)))
 		if err != nil {
 			return false, err
 		}
-		if blob == nil {
+		if len(blobs) == 0 || blobs[0] == nil {
 			if data.Blob.Public == "" {
 				log.L(ctx).Errorf("Invalid data entry %d id=%s in batch '%s' - missing public blob reference", i, data.ID, batch.ID)
 				return false, nil

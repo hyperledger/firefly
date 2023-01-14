@@ -416,7 +416,7 @@ func TestPrivateBlobReceivedTriggersRewindOk(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	em.mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*core.Blob{}, nil, nil)
+	em.mdi.On("GetBlobs", em.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 	em.mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil)
 
 	done := make(chan struct{})
@@ -467,7 +467,7 @@ func TestPrivateBlobReceivedInsertBlobFails(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	em.mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*core.Blob{}, nil, nil)
+	em.mdi.On("GetBlobs", em.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 	em.mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
@@ -486,7 +486,7 @@ func TestPrivateBlobReceivedGetBlobsFails(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	em.mdi.On("GetBlobs", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	em.mdi.On("GetBlobs", em.ctx, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
 	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1", fftypes.NewUUID())

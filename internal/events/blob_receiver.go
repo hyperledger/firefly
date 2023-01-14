@@ -202,7 +202,7 @@ func (br *blobReceiver) insertNewBlobs(ctx context.Context, notifications []*blo
 	// even if the hash of that data is the same.
 	fb := database.BlobQueryFactory.NewFilter(ctx)
 	filter := fb.In("hash", allHashes)
-	existingBlobs, _, err := br.database.GetBlobs(ctx, filter)
+	existingBlobs, _, err := br.database.GetBlobs(ctx, br.aggregator.namespace, filter)
 	if err != nil {
 		return nil, err
 	}

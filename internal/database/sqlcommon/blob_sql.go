@@ -19,14 +19,11 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
-	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -136,46 +133,16 @@ func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*core.Blob, 
 	return &blob, nil
 }
 
-func (s *SQLCommon) getBlobPred(ctx context.Context, desc string, pred interface{}) (message *core.Blob, err error) {
-	cols := append([]string{}, blobColumns...)
-	cols = append(cols, s.SequenceColumn())
-	rows, _, err := s.Query(ctx, blobsTable,
-		sq.Select(cols...).
-			From(blobsTable).
-			Where(pred).
-			Limit(1),
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		log.L(ctx).Debugf("Blob '%s' not found", desc)
-		return nil, nil
-	}
-
-	blob, err := s.blobResult(ctx, rows)
-	if err != nil {
-		return nil, err
-	}
-
-	return blob, nil
-}
-
-func (s *SQLCommon) GetBlob(ctx context.Context, namespace string, dataID *fftypes.UUID, hash *fftypes.Bytes32) (blob *core.Blob, err error) {
-	return s.getBlobPred(ctx, fmt.Sprintf("%s %s %s", namespace, hash.String(), dataID.String()), sq.Eq{
-		"namespace": namespace,
-		"hash":      hash,
-		"data_id":   dataID,
-	})
-}
-
-func (s *SQLCommon) GetBlobs(ctx context.Context, filter ffapi.Filter) (message []*core.Blob, res *ffapi.FilterResult, err error) {
+func (s *SQLCommon) GetBlobs(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Blob, res *ffapi.FilterResult, err error) {
 
 	cols := append([]string{}, blobColumns...)
 	cols = append(cols, s.SequenceColumn())
-	query, fop, fi, err := s.FilterSelect(ctx, "", sq.Select(cols...).From(blobsTable), filter, blobFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.FilterSelect(
+		ctx,
+		"",
+		sq.Select(cols...).From(blobsTable), filter, blobFilterFieldMap,
+		[]interface{}{"sequence"},
+		sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

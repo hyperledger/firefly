@@ -649,12 +649,13 @@ func (ag *aggregator) resolveBlobs(ctx context.Context, data core.DataArray) (re
 		}
 
 		// See if we already have the data
-		blob, err := ag.database.GetBlob(ctx, ag.namespace, d.ID, d.Blob.Hash)
+		fb := database.BlobQueryFactory.NewFilter(ctx)
+		blobs, _, err := ag.database.GetBlobs(ctx, ag.namespace, fb.And(fb.Eq("data_id", d.ID), fb.Eq("hash", d.Blob.Hash)))
 		if err != nil {
 			return false, err
 		}
-		if blob != nil {
-			l.Debugf("Blob '%s' found in local DX with ref '%s'", blob.Hash, blob.PayloadRef)
+		if len(blobs) > 0 && blobs[0] != nil {
+			l.Debugf("Blob '%s' found in local DX with ref '%s'", blobs[0].Hash, blobs[0].PayloadRef)
 			continue
 		}
 

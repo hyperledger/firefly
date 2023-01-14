@@ -114,13 +114,14 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 		} else if d == nil || d.Blob == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		blob, err := bm.database.GetBlob(ctx, bm.namespace.Name, d.ID, d.Blob.Hash)
+		fb := database.BlobQueryFactory.NewFilter(ctx)
+		blobs, _, err := bm.database.GetBlobs(ctx, bm.namespace.Name, fb.And(fb.Eq("data_id", dataID), fb.Eq("hash", d.Blob.Hash)))
 		if err != nil {
 			return nil, err
-		} else if blob == nil {
+		} else if len(blobs) == 0 || blobs[0] == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		return opUploadBlob(op, d, blob), nil
+		return opUploadBlob(op, d, blobs[0]), nil
 
 	case core.OpTypeSharedStorageUploadValue:
 		dataID, err := retrieveUploadValueInputs(ctx, op)

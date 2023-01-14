@@ -337,11 +337,8 @@ type iBlobCollection interface {
 	// InsertBlobs performs a batch insert of blobs assured to be new records - fails if they already exist, so caller can fall back to upsert individually
 	InsertBlobs(ctx context.Context, blobs []*core.Blob) (err error)
 
-	// GetBlob - lookup the blob for a data ID
-	GetBlob(ctx context.Context, namespace string, dataID *fftypes.UUID, hash *fftypes.Bytes32) (message *core.Blob, err error)
-
 	// GetBlobs - get blobs
-	GetBlobs(ctx context.Context, filter ffapi.Filter) (message []*core.Blob, res *ffapi.FilterResult, err error)
+	GetBlobs(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Blob, res *ffapi.FilterResult, err error)
 
 	// DeleteBlob - delete a blob, using its local database ID
 	DeleteBlob(ctx context.Context, sequence int64) (err error)

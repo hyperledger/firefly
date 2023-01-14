@@ -506,10 +506,10 @@ func TestResolveInlineDataDataToPublish(t *testing.T) {
 			Hash: blobHash,
 		},
 	}, nil)
-	mdi.On("GetBlob", ctx, "ns1", dataID, blobHash).Return(&core.Blob{
+	mdi.On("GetBlobs", ctx, "ns1", mock.Anything).Return([]*core.Blob{{
 		Hash:       blobHash,
 		PayloadRef: "blob/1",
-	}, nil)
+	}}, nil, nil)
 
 	err := dm.ResolveInlineData(ctx, newMsg)
 	assert.NoError(t, err)
@@ -536,7 +536,7 @@ func TestResolveInlineDataResolveBlobFail(t *testing.T) {
 			Hash: blobHash,
 		},
 	}, nil)
-	mdi.On("GetBlob", ctx, "ns1", dataID, blobHash).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobs", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := dm.ResolveInlineData(ctx, newMsg)
 	assert.EqualError(t, err, "pop")
@@ -755,7 +755,7 @@ func TestValidateAndStoreBlobError(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	blobHash := fftypes.NewRandB32()
-	mdi.On("GetBlob", ctx, dm.namespace.Name, mock.Anything, blobHash).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobs", ctx, dm.namespace.Name, mock.Anything).Return([]*core.Blob{}, nil, fmt.Errorf("pop"))
 	_, err := dm.validateInputData(ctx, &core.DataRefOrValue{
 		Blob: &core.BlobRef{
 			Hash: blobHash,
@@ -770,7 +770,7 @@ func TestValidateAndStoreBlobNotFound(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	blobHash := fftypes.NewRandB32()
-	mdi.On("GetBlob", ctx, dm.namespace.Name, mock.Anything, blobHash).Return(nil, nil)
+	mdi.On("GetBlobs", ctx, dm.namespace.Name, mock.Anything).Return([]*core.Blob{}, nil, nil)
 	_, err := dm.validateInputData(ctx, &core.DataRefOrValue{
 		Blob: &core.BlobRef{
 			Hash: blobHash,
@@ -1201,7 +1201,7 @@ func TestDeleteData(t *testing.T) {
 	}
 
 	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
-	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{blob}, &ffapi.FilterResult{}, nil)
+	mdb.On("GetBlobs", ctx, mock.Anything, mock.Anything).Return([]*core.Blob{blob}, &ffapi.FilterResult{}, nil)
 	mdx.On("DeleteBlob", ctx, payloadRef).Return(nil)
 	mdb.On("DeleteBlob", ctx, int64(0)).Return(nil)
 	mdb.On("GetMessagesForData", ctx, dm.namespace.Name, dataID, mock.Anything).Return([]*core.Message{
@@ -1272,7 +1272,7 @@ func TestDeleteDataFailGetBlob(t *testing.T) {
 	}
 
 	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
-	mdb.On("GetBlobs", ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdb.On("GetBlobs", ctx, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := dm.DeleteData(ctx, dataID.String())
 
@@ -1307,7 +1307,7 @@ func TestDeleteDataFailDeleteBlob(t *testing.T) {
 	}
 
 	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
-	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{blob}, &ffapi.FilterResult{}, nil)
+	mdb.On("GetBlobs", ctx, mock.Anything, mock.Anything).Return([]*core.Blob{blob}, &ffapi.FilterResult{}, nil)
 	mdx.On("DeleteBlob", ctx, payloadRef).Return(nil)
 	mdb.On("DeleteBlob", ctx, int64(0)).Return(fmt.Errorf("pop"))
 
@@ -1334,7 +1334,7 @@ func TestDeleteDataFailGetBlobs(t *testing.T) {
 	}
 
 	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
-	mdb.On("GetBlobs", ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdb.On("GetBlobs", ctx, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := dm.DeleteData(ctx, dataID.String())
 
@@ -1369,7 +1369,7 @@ func TestDeleteDataFailGetMessages(t *testing.T) {
 	}
 
 	mdb.On("GetDataByID", ctx, dm.namespace.Name, dataID, false).Return(data, nil)
-	mdb.On("GetBlobs", ctx, mock.Anything).Return([]*core.Blob{blob}, &ffapi.FilterResult{}, nil)
+	mdb.On("GetBlobs", ctx, mock.Anything, mock.Anything).Return([]*core.Blob{blob}, &ffapi.FilterResult{}, nil)
 	mdx.On("DeleteBlob", ctx, payloadRef).Return(nil)
 	mdb.On("DeleteBlob", ctx, int64(0)).Return(nil)
 	mdb.On("GetMessagesForData", ctx, dm.namespace.Name, dataID, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
