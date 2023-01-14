@@ -5055,6 +5055,32 @@ paths:
       tags:
       - Default Namespace
   /data/{dataid}:
+    delete:
+      description: Deletes a data item by its ID, including metadata about this item
+      operationId: deleteData
+      parameters:
+      - description: The data item ID
+        in: path
+        name: dataid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
     get:
       description: Gets a data item by its ID, including metadata about this item
       operationId: getDataByID
@@ -5151,7 +5177,7 @@ paths:
       description: Downloads the original file that was previously uploaded or received
       operationId: getDataBlob
       parameters:
-      - description: The blob ID
+      - description: The data item ID
         in: path
         name: dataid
         required: true
@@ -15549,6 +15575,39 @@ paths:
       tags:
       - Non-Default Namespace
   /namespaces/{ns}/data/{dataid}:
+    delete:
+      description: Deletes a data item by its ID, including metadata about this item
+      operationId: deleteDataNamespace
+      parameters:
+      - description: The data item ID
+        in: path
+        name: dataid
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
     get:
       description: Gets a data item by its ID, including metadata about this item
       operationId: getDataByIDNamespace
@@ -15652,7 +15711,7 @@ paths:
       description: Downloads the original file that was previously uploaded or received
       operationId: getDataBlobNamespace
       parameters:
-      - description: The blob ID
+      - description: The data item ID
         in: path
         name: dataid
         required: true
