@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -330,6 +330,19 @@ func (h *FFDX) DownloadBlob(ctx context.Context, payloadRef string) (content io.
 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return res.RawBody(), nil
+}
+
+func (h *FFDX) DeleteBlob(ctx context.Context, payloadRef string) (err error) {
+	res, err := h.client.R().SetContext(ctx).
+		SetDoNotParseResponse(true).
+		Delete(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
+	if err != nil || !res.IsSuccess() {
+		if err == nil {
+			_ = res.RawBody().Close()
+		}
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+	}
+	return nil
 }
 
 func (h *FFDX) SendMessage(ctx context.Context, nsOpID string, peer, sender fftypes.JSONObject, data []byte) (err error) {

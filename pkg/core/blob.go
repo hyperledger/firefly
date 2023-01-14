@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,10 +19,12 @@ package core
 import "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 type Blob struct {
-	Hash       *fftypes.Bytes32 `json:"hash"`
-	Size       int64            `json:"size"`
-	PayloadRef string           `json:"payloadRef,omitempty"`
-	Peer       string           `json:"peer,omitempty"`
-	Created    *fftypes.FFTime  `json:"created,omitempty"`
 	Sequence   int64            `json:"-"`
+	Namespace  string           `json:"namespace"`
+	Hash       *fftypes.Bytes32 `json:"hash"`
+	PayloadRef string           `json:"payloadRef,omitempty"`
+	Created    *fftypes.FFTime  `json:"created,omitempty"`
+	Peer       string           `json:"peer,omitempty"`
+	Size       int64            `json:"size"`
+	DataID     *fftypes.UUID    `json:"data_id"`
 }

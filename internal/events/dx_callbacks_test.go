@@ -94,7 +94,7 @@ func newMessageReceived(peerID string, transport *core.TransportWrapper, expecte
 	return mde
 }
 
-func newPrivateBlobReceivedNoAck(peerID string, hash *fftypes.Bytes32, size int64, payloadRef string) *dataexchangemocks.DXEvent {
+func newPrivateBlobReceivedNoAck(peerID string, hash *fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) *dataexchangemocks.DXEvent {
 	mde := &dataexchangemocks.DXEvent{}
 	pathParts := strings.Split(payloadRef, "/")
 	mde.On("PrivateBlobReceived").Return(&dataexchange.PrivateBlobReceived{
@@ -103,13 +103,14 @@ func newPrivateBlobReceivedNoAck(peerID string, hash *fftypes.Bytes32, size int6
 		Hash:       *hash,
 		Size:       size,
 		PayloadRef: payloadRef,
+		DataID:     dataID.String(),
 	})
 	mde.On("Type").Return(dataexchange.DXEventTypePrivateBlobReceived).Maybe()
 	return mde
 }
 
-func newPrivateBlobReceived(peerID string, hash *fftypes.Bytes32, size int64, payloadRef string) *dataexchangemocks.DXEvent {
-	mde := newPrivateBlobReceivedNoAck(peerID, hash, size, payloadRef)
+func newPrivateBlobReceived(peerID string, hash *fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) *dataexchangemocks.DXEvent {
+	mde := newPrivateBlobReceivedNoAck(peerID, hash, size, payloadRef, dataID)
 	mde.On("Ack").Return()
 	return mde
 }
@@ -415,11 +416,11 @@ func TestPrivateBlobReceivedTriggersRewindOk(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	em.mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*core.Blob{}, nil, nil)
+	em.mdi.On("GetBlobs", em.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 	em.mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil)
 
 	done := make(chan struct{})
-	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
+	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1", fftypes.NewUUID())
 	mde.On("Ack").Run(func(args mock.Arguments) {
 		close(done)
 	})
@@ -439,7 +440,20 @@ func TestPrivateBlobReceivedBadEvent(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	mde := newPrivateBlobReceived("", fftypes.NewRandB32(), 12345, "")
+	mde := newPrivateBlobReceived("", fftypes.NewRandB32(), 12345, "", fftypes.NewUUID())
+	em.privateBlobReceived(mdx, mde)
+	mde.AssertExpectations(t)
+}
+
+func TestPrivateBlobReceivedBadDataID(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	mde := newPrivateBlobReceivedNoAck("peer", fftypes.NewRandB32(), 12345, "ns1", fftypes.NewUUID())
+	mde.PrivateBlobReceived().DataID = "bad"
 	em.privateBlobReceived(mdx, mde)
 	mde.AssertExpectations(t)
 }
@@ -453,11 +467,11 @@ func TestPrivateBlobReceivedInsertBlobFails(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	em.mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*core.Blob{}, nil, nil)
+	em.mdi.On("GetBlobs", em.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 	em.mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
-	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
+	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1", fftypes.NewUUID())
 	em.privateBlobReceived(mdx, mde)
 
 	mde.AssertExpectations(t)
@@ -472,10 +486,10 @@ func TestPrivateBlobReceivedGetBlobsFails(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	em.mdi.On("GetBlobs", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	em.mdi.On("GetBlobs", em.ctx, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
-	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
+	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1", fftypes.NewUUID())
 	em.privateBlobReceived(mdx, mde)
 
 	mde.AssertExpectations(t)
@@ -491,7 +505,7 @@ func TestPrivateBlobReceivedWrongNS(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	mde := newPrivateBlobReceived("peer1", hash, 12345, "ns1/path1")
+	mde := newPrivateBlobReceived("peer1", hash, 12345, "ns1/path1", fftypes.NewUUID())
 	em.privateBlobReceived(mdx, mde)
 
 	mde.AssertExpectations(t)

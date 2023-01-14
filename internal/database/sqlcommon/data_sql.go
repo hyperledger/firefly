@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -365,6 +365,22 @@ func (s *SQLCommon) UpdateData(ctx context.Context, namespace string, id *fftype
 	query = query.Where(sq.Eq{"id": id, "namespace": namespace})
 
 	_, err = s.UpdateTx(ctx, dataTable, tx, query, nil /* no change events for filter based updates */)
+	if err != nil {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) DeleteData(ctx context.Context, namespace string, id *fftypes.UUID) (err error) {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	err = s.DeleteTx(ctx, blobsTable, tx, sq.Delete(dataTable).Where(sq.Eq{"id": id, "namespace": namespace}),
+		nil /* no change events for blobs */)
 	if err != nil {
 		return err
 	}

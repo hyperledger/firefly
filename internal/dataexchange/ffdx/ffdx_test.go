@@ -745,3 +745,29 @@ func TestDXUninitialized(t *testing.T) {
 	err = h.SendMessage(context.Background(), "ns1:"+fftypes.NewUUID().String(), peer, sender, []byte(`some data`))
 	assert.Regexp(t, "FF10342", err)
 }
+
+func TestDeleteBlob(t *testing.T) {
+
+	h, _, _, httpURL, done := newTestFFDX(t, false)
+	defer done()
+
+	u := fftypes.NewUUID()
+	httpmock.RegisterResponder("DELETE", fmt.Sprintf("%s/api/v1/blobs/ns1/%s", httpURL, u),
+		httpmock.NewBytesResponder(204, []byte(``)))
+
+	err := h.DeleteBlob(context.Background(), fmt.Sprintf("ns1/%s", u))
+	assert.NoError(t, err)
+}
+
+func TestDeleteBlobFail(t *testing.T) {
+
+	h, _, _, httpURL, done := newTestFFDX(t, false)
+	defer done()
+
+	u := fftypes.NewUUID()
+	httpmock.RegisterResponder("DELETE", fmt.Sprintf("%s/api/v1/blobs/ns1/%s", httpURL, u),
+		httpmock.NewBytesResponder(500, []byte(`ERROR`)))
+
+	err := h.DeleteBlob(context.Background(), fmt.Sprintf("ns1/%s", u))
+	assert.Regexp(t, "FF10229", err)
+}

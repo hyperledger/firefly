@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -212,21 +212,22 @@ func (pm *privateMessaging) prepareBlobTransfers(ctx context.Context, data core.
 				if d.Blob.Hash == nil {
 					return i18n.NewError(ctx, coremsgs.MsgDataMissingBlobHash, d.ID)
 				}
-
-				blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
+				fb := database.BlobQueryFactory.NewFilter(ctx)
+				blobs, _, err := pm.database.GetBlobs(ctx, pm.namespace.Name, fb.And(fb.Eq("data_id", d.ID), fb.Eq("hash", d.Blob.Hash)))
 				if err != nil {
 					return err
 				}
-				if blob == nil {
-					return i18n.NewError(ctx, coremsgs.MsgBlobNotFound, d.Blob)
+				if len(blobs) == 0 || blobs[0] == nil {
+					return i18n.NewError(ctx, coremsgs.MsgBlobNotFound, d.Blob.Hash)
 				}
+				blob := blobs[0]
 
 				op := core.NewOperation(
 					pm.exchange,
 					pm.namespace.Name,
 					txid,
 					core.OpTypeDataExchangeSendBlob)
-				addTransferBlobInputs(op, node.ID, blob.Hash)
+				addTransferBlobInputs(op, node.ID, blob.Hash, d.ID)
 				if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
 					return err
 				}

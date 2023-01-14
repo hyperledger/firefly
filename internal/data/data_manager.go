@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -50,6 +50,7 @@ type Manager interface {
 	UploadJSON(ctx context.Context, inData *core.DataRefOrValue) (*core.Data, error)
 	UploadBlob(ctx context.Context, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error)
 	DownloadBlob(ctx context.Context, dataID string) (*core.Blob, io.ReadCloser, error)
+	DeleteData(ctx context.Context, dataID string) error
 	HydrateBatch(ctx context.Context, persistedBatch *core.BatchPersisted) (*core.Batch, error)
 	Start()
 	WaitStop()
@@ -278,7 +279,7 @@ func (dm *dataManager) UpdateMessageCache(msg *core.Message, data core.DataArray
 
 // UpdateMessageIfCached is used in order to notify the fields of a message that are not initially filled in, have been filled in.
 // It does not guarantee the cache is up to date, and the CacheReadOptions should be used to check you have the updated data.
-// But calling this should reduce the possiblity of the CROs missing
+// But calling this should reduce the possibility of the CROs missing
 func (dm *dataManager) UpdateMessageIfCached(ctx context.Context, msg *core.Message) {
 	mce := dm.queryMessageCache(ctx, msg.Header.ID)
 	if mce != nil {
@@ -354,16 +355,17 @@ func (dm *dataManager) resolveRef(ctx context.Context, dataRef *core.DataRef) (*
 	}
 }
 
-func (dm *dataManager) resolveBlob(ctx context.Context, blobRef *core.BlobRef) (*core.Blob, error) {
+func (dm *dataManager) resolveBlob(ctx context.Context, namespace string, blobRef *core.BlobRef, dataID *fftypes.UUID) (*core.Blob, error) {
 	if blobRef != nil && blobRef.Hash != nil {
-		blob, err := dm.database.GetBlobMatchingHash(ctx, blobRef.Hash)
+		fb := database.BlobQueryFactory.NewFilter(ctx)
+		blobs, _, err := dm.database.GetBlobs(ctx, dm.dm.namespace.Name, fb.And(fb.Eq("data_id", dataID), fb.Eq("hash", blobRef.Hash)))
 		if err != nil {
 			return nil, err
 		}
-		if blob == nil {
+		if len(blobs) == 0 || blobs[0] == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgBlobNotFound, blobRef.Hash)
 		}
-		return blob, nil
+		return blobs[0], nil
 	}
 	return nil, nil
 }
@@ -408,7 +410,7 @@ func (dm *dataManager) validateInputData(ctx context.Context, inData *core.DataR
 		return nil, err
 	}
 
-	blob, err := dm.resolveBlob(ctx, blobRef)
+	blob, err := dm.resolveBlob(ctx, dm.namespace.Name, blobRef, inData.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -463,7 +465,7 @@ func (dm *dataManager) ResolveInlineData(ctx context.Context, newMessage *NewMes
 			if d == nil {
 				return i18n.NewError(ctx, coremsgs.MsgDataReferenceUnresolvable, i)
 			}
-			if _, err = dm.resolveBlob(ctx, d.Blob); err != nil {
+			if _, err = dm.resolveBlob(ctx, dm.namespace.Name, d.Blob, d.ID); err != nil {
 				return err
 			}
 		case dataOrValue.Value != nil || dataOrValue.Blob != nil:
@@ -538,4 +540,45 @@ func (dm *dataManager) WriteNewMessage(ctx context.Context, newMsg *NewMessage) 
 
 func (dm *dataManager) WaitStop() {
 	dm.messageWriter.close()
+}
+
+func (dm *dataManager) DeleteData(ctx context.Context, dataID string) error {
+	id, err := fftypes.ParseUUID(ctx, dataID)
+	if err != nil {
+		return err
+	}
+
+	data, err := dm.database.GetDataByID(ctx, dm.namespace.Name, id, false)
+	if err != nil {
+		return err
+	}
+	if data == nil {
+		return i18n.NewError(ctx, coremsgs.Msg404NoResult)
+	}
+	if data.Blob != nil && data.Blob.Hash != nil {
+		fb := database.BlobQueryFactory.NewFilter(ctx)
+		blobs, _, err := dm.database.GetBlobs(ctx, dm.namespace.Name, fb.And(fb.Eq("data_id", data.ID), fb.Eq("hash", data.Blob.Hash)))
+		if err != nil {
+			return err
+		}
+		for _, blob := range blobs {
+			if blob != nil {
+				err = dm.DeleteBlob(ctx, blob)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	// Invalidate cache entries for any messages that had these data refs
+	msgs, _, err := dm.database.GetMessagesForData(ctx, dm.namespace.Name, data.ID, database.MessageQueryFactory.NewFilter(ctx).And())
+	if err != nil {
+		return err
+	}
+	for _, msg := range msgs {
+		dm.messageCache.Set(msg.Header.ID.String(), nil)
+	}
+
+	return dm.database.DeleteData(ctx, data.Namespace, data.ID)
 }

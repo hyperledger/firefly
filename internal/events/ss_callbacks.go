@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -69,7 +69,7 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, pa
 	return batch.ID, nil
 }
 
-func (em *eventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) {
+func (em *eventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) {
 	l := log.L(em.ctx)
 	l.Infof("Blob received event from public storage %s: Hash='%v'", ss.Name(), hash)
 
@@ -77,10 +77,12 @@ func (em *eventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, has
 	blobHash := hash
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
 		blob: &core.Blob{
+			Namespace:  em.namespace.Name,
 			PayloadRef: payloadRef,
 			Hash:       &blobHash,
 			Size:       size,
 			Created:    fftypes.Now(),
+			DataID:     dataID,
 		},
 	})
 }

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -242,7 +242,8 @@ func TestPrepareAndRunUploadBlob(t *testing.T) {
 		Hash: fftypes.NewRandB32(),
 	}
 	data := &core.Data{
-		ID: fftypes.NewUUID(),
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
 		Blob: &core.BlobRef{
 			Hash: blob.Hash,
 		},
@@ -255,7 +256,7 @@ func TestPrepareAndRunUploadBlob(t *testing.T) {
 
 	reader := ioutil.NopCloser(strings.NewReader("some data"))
 	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
-	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(blob, nil)
+	mdi.On("GetBlobs", mock.Anything, bm.namespace.Name, mock.Anything).Return([]*core.Blob{blob}, nil, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, nil)
 	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.MatchedBy(func(update ffapi.Update) bool {
@@ -337,7 +338,8 @@ func TestPrepareUploadBlobGetBlobMissing(t *testing.T) {
 		Hash: fftypes.NewRandB32(),
 	}
 	data := &core.Data{
-		ID: fftypes.NewUUID(),
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
 		Blob: &core.BlobRef{
 			Hash: blob.Hash,
 		},
@@ -349,7 +351,7 @@ func TestPrepareUploadBlobGetBlobMissing(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 
 	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
-	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
+	mdi.On("GetBlobs", mock.Anything, bm.namespace.Name, mock.Anything).Return([]*core.Blob{}, nil, nil)
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
@@ -371,7 +373,8 @@ func TestPrepareUploadBlobGetBlobFailing(t *testing.T) {
 		Hash: fftypes.NewRandB32(),
 	}
 	data := &core.Data{
-		ID: fftypes.NewUUID(),
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
 		Blob: &core.BlobRef{
 			Hash: blob.Hash,
 		},
@@ -381,7 +384,7 @@ func TestPrepareUploadBlobGetBlobFailing(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 
 	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
-	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobs", mock.Anything, bm.namespace.Name, mock.Anything).Return([]*core.Blob{}, nil, fmt.Errorf("pop"))
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "pop", err)

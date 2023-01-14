@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -210,14 +210,22 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 		return
 	}
 
+	dataID, err := fftypes.ParseUUID(em.ctx, br.DataID)
+	if err != nil {
+		log.L(em.ctx).Warnf("Ignoring blob with invalid data ID '%s'", br.DataID)
+		return
+	}
+
 	// Dispatch to the blob receiver for efficient batch DB operations
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
 		blob: &core.Blob{
+			Namespace:  em.namespace.Name,
 			Peer:       br.PeerID,
 			PayloadRef: br.PayloadRef,
 			Hash:       &br.Hash,
 			Size:       br.Size,
 			Created:    fftypes.Now(),
+			DataID:     dataID,
 		},
 		onComplete: func() {
 			event.Ack()

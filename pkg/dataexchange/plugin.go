@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -89,6 +89,9 @@ type Plugin interface {
 	// DownloadBlob streams a received blob out of storage
 	DownloadBlob(ctx context.Context, payloadRef string) (content io.ReadCloser, err error)
 
+	// DeleteBlob streams a deletes a blob from the local DB and DX
+	DeleteBlob(ctx context.Context, payloadRef string) (err error)
+
 	// SendMessage sends an in-line package of data to another network node.
 	// Should return as quickly as possible for parallelism, then report completion asynchronously via the operation ID
 	SendMessage(ctx context.Context, nsOpID string, peer, sender fftypes.JSONObject, data []byte) (err error)
@@ -134,6 +137,7 @@ type PrivateBlobReceived struct {
 	Hash       fftypes.Bytes32
 	Size       int64
 	PayloadRef string
+	DataID     string
 }
 
 // Capabilities the supported featureset of the data exchange

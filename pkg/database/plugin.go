@@ -133,6 +133,9 @@ type iDataCollection interface {
 
 	// GetDataRefs - Get data references only (no data)
 	GetDataRefs(ctx context.Context, namespace string, filter ffapi.Filter) (message core.DataRefs, res *ffapi.FilterResult, err error)
+
+	// DeleteData - Deletes a data record by ID
+	DeleteData(ctx context.Context, namespace string, id *fftypes.UUID) (err error)
 }
 
 type iBatchCollection interface {
@@ -334,11 +337,8 @@ type iBlobCollection interface {
 	// InsertBlobs performs a batch insert of blobs assured to be new records - fails if they already exist, so caller can fall back to upsert individually
 	InsertBlobs(ctx context.Context, blobs []*core.Blob) (err error)
 
-	// GetBlobMatchingHash - lookup first blob batching a hash
-	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *core.Blob, err error)
-
 	// GetBlobs - get blobs
-	GetBlobs(ctx context.Context, filter ffapi.Filter) (message []*core.Blob, res *ffapi.FilterResult, err error)
+	GetBlobs(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Blob, res *ffapi.FilterResult, err error)
 
 	// DeleteBlob - delete a blob, using its local database ID
 	DeleteBlob(ctx context.Context, sequence int64) (err error)
@@ -861,6 +861,7 @@ var BlobQueryFactory = &ffapi.QueryFields{
 	"size":       &ffapi.Int64Field{},
 	"payloadref": &ffapi.StringField{},
 	"created":    &ffapi.TimeField{},
+	"data_id":    &ffapi.UUIDField{},
 }
 
 // TokenPoolQueryFactory filter fields for token pools

@@ -33,6 +33,7 @@ import (
 func TestPrepareAndRunTransferBlob(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
+	dataID := fftypes.NewUUID()
 
 	op := &core.Operation{
 		Type:      core.OpTypeDataExchangeSendBlob,
@@ -60,16 +61,18 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 		},
 	}
 	blob := &core.Blob{
+		Namespace:  "ns1",
 		Hash:       fftypes.NewRandB32(),
 		PayloadRef: "payload",
+		DataID:     dataID,
 	}
-	addTransferBlobInputs(op, node.ID, blob.Hash)
+	addTransferBlobInputs(op, node.ID, blob.Hash, dataID)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), mock.Anything).Return(node, nil)
-	mdi.On("GetBlobMatchingHash", context.Background(), blob.Hash).Return(blob, nil)
+	mdi.On("GetBlobs", context.Background(), "ns1", mock.Anything).Return([]*core.Blob{blob}, nil, nil)
 	mim.On("GetLocalNode", context.Background()).Return(localNode, nil)
 	mdx.On("TransferBlob", context.Background(), "ns1:"+op.ID.String(), node.Profile, localNode.Profile, "payload").Return(nil)
 
@@ -238,8 +241,9 @@ func TestPrepareOperationBlobSendNodeFail(t *testing.T) {
 	op := &core.Operation{
 		Type: core.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
-			"node": nodeID.String(),
-			"hash": blobHash.String(),
+			"node":    nodeID.String(),
+			"hash":    blobHash.String(),
+			"data_id": fftypes.NewUUID().String(),
 		},
 	}
 
@@ -261,8 +265,9 @@ func TestPrepareOperationBlobSendNodeNotFound(t *testing.T) {
 	op := &core.Operation{
 		Type: core.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
-			"node": nodeID.String(),
-			"hash": blobHash.String(),
+			"node":    nodeID.String(),
+			"hash":    blobHash.String(),
+			"data_id": fftypes.NewUUID().String(),
 		},
 	}
 
@@ -293,15 +298,16 @@ func TestPrepareOperationBlobSendBlobFail(t *testing.T) {
 	op := &core.Operation{
 		Type: core.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
-			"node": node.ID.String(),
-			"hash": blobHash.String(),
+			"node":    node.ID.String(),
+			"hash":    blobHash.String(),
+			"data_id": fftypes.NewUUID().String(),
 		},
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
-	mdi.On("GetBlobMatchingHash", context.Background(), blobHash).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlobs", context.Background(), mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
@@ -328,15 +334,16 @@ func TestPrepareOperationBlobSendBlobNotFound(t *testing.T) {
 	op := &core.Operation{
 		Type: core.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
-			"node": node.ID.String(),
-			"hash": blobHash.String(),
+			"node":    node.ID.String(),
+			"hash":    blobHash.String(),
+			"data_id": fftypes.NewUUID().String(),
 		},
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
-	mdi.On("GetBlobMatchingHash", context.Background(), blobHash).Return(nil, nil)
+	mdi.On("GetBlobs", context.Background(), mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
@@ -643,4 +650,51 @@ func TestOperationUpdate(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 	assert.NoError(t, pm.OnOperationUpdate(context.Background(), nil, nil))
+}
+
+func TestRetrieveBSendBlobInputs(t *testing.T) {
+
+	nodeID := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+
+	op := &core.Operation{
+		Input: fftypes.JSONObject{
+			"node":    nodeID.String(),
+			"hash":    hash.String(),
+			"data_id": dataID.String(),
+		},
+	}
+	n, h, d, err := retrieveSendBlobInputs(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, n, nodeID)
+	assert.Equal(t, h, hash)
+	assert.Equal(t, d, dataID)
+
+	op = &core.Operation{
+		Input: fftypes.JSONObject{
+			"hash":    hash.String(),
+			"data_id": dataID.String(),
+		},
+	}
+	n, h, d, err = retrieveSendBlobInputs(context.Background(), op)
+	assert.Regexp(t, "FF00138", err)
+
+	op = &core.Operation{
+		Input: fftypes.JSONObject{
+			"node":    nodeID.String(),
+			"data_id": dataID.String(),
+		},
+	}
+	n, h, d, err = retrieveSendBlobInputs(context.Background(), op)
+	assert.Regexp(t, "FF00107", err)
+
+	op = &core.Operation{
+		Input: fftypes.JSONObject{
+			"node": nodeID.String(),
+			"hash": hash.String(),
+		},
+	}
+	n, h, d, err = retrieveSendBlobInputs(context.Background(), op)
+	assert.Regexp(t, "FF00138", err)
 }

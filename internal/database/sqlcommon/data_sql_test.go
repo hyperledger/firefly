@@ -165,6 +165,13 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.Equal(t, int64(1), *res.TotalCount)
 
 	s.callbacks.AssertExpectations(t)
+
+	// Delete
+	err = s.DeleteData(ctx, "ns1", dataID)
+	assert.NoError(t, err)
+	dataRes, res, err = s.GetData(ctx, "ns1", filter.Count(true))
+	assert.NoError(t, err)
+	assert.Len(t, dataRes, 0)
 }
 
 func TestUpsertDataFailBegin(t *testing.T) {
@@ -380,4 +387,21 @@ func TestDataUpdateFail(t *testing.T) {
 	u := database.DataQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
 	err := s.UpdateData(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF00178", err)
+}
+
+func TestDeleteDataFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteData(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDataDeleteFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteData(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00179", err)
 }

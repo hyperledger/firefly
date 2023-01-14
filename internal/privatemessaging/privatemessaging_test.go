@@ -185,10 +185,10 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	}, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, node1.ID).Return(node1, nil).Once()
 	mim.On("CachedIdentityLookupByID", pm.ctx, node2.ID).Return(node2, nil).Once()
-	mdi.On("GetBlobMatchingHash", pm.ctx, blob1).Return(&core.Blob{
+	mdi.On("GetBlobs", pm.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{{
 		Hash:       blob1,
 		PayloadRef: "/blob/1",
-	}, nil)
+	}}, nil, nil)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Type == core.OpTypeDataExchangeSendBlob
 	})).Return(nil, nil)
@@ -422,10 +422,10 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
-	mdi.On("GetBlobMatchingHash", pm.ctx, blob1).Return(&core.Blob{
-		Hash:       blob1,
+	mdi.On("GetBlobs", pm.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{{
 		PayloadRef: "/blob/1",
-	}, nil)
+		Hash:       blob1,
+	}}, nil, nil)
 
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferBlobData)
@@ -497,10 +497,10 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 		return *data.Node.ID == *node2.ID
 	})).Return(nil, nil)
 
-	mdi.On("GetBlobMatchingHash", pm.ctx, blob1).Return(&core.Blob{
+	mdi.On("GetBlobs", pm.ctx, "ns1", mock.Anything).Return([]*core.Blob{{
 		Hash:       blob1,
 		PayloadRef: "/blob/1",
-	}, nil)
+	}}, nil, nil)
 
 	mmp := pm.multiparty.(*multipartymocks.Manager)
 	mmp.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, "").Return(fmt.Errorf("pop"))
@@ -516,7 +516,7 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 			},
 		},
 		Data: core.DataArray{
-			{ID: fftypes.NewUUID(), Blob: &core.BlobRef{Hash: blob1}},
+			{Namespace: "ns1", ID: fftypes.NewUUID(), Blob: &core.BlobRef{Hash: blob1}},
 		},
 	})
 	assert.Regexp(t, "pop", err)
@@ -543,7 +543,7 @@ func TestTransferBlobsNotFound(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetBlobs", pm.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 
 	_, err := pm.prepareBlobTransfers(pm.ctx, core.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &core.BlobRef{Hash: fftypes.NewRandB32()}},
@@ -561,7 +561,7 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mom := pm.operations.(*operationmocks.Manager)
 
-	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(&core.Blob{PayloadRef: "blob/1"}, nil)
+	mdi.On("GetBlobs", pm.ctx, mock.Anything, mock.Anything).Return([]*core.Blob{{PayloadRef: "blob/1"}}, nil, nil)
 	mdx.On("TransferBlob", pm.ctx, mock.Anything, "peer1", "blob/1").Return(nil)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 

@@ -310,7 +310,7 @@ func TestPersistBatchContentDataMissingBlobRef(t *testing.T) {
 	}}
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data}, blob)
 
-	em.mdi.On("GetBlobMatchingHash", mock.Anything, mock.Anything).Return(nil, nil)
+	em.mdi.On("GetBlobs", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 
 	ok, err := em.validateAndPersistBatchContent(em.ctx, batch)
 	assert.NoError(t, err)

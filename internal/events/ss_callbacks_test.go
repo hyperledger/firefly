@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -141,11 +141,12 @@ func TestSharedStorageBlobDownloadedOk(t *testing.T) {
 
 	mss := &sharedstoragemocks.Plugin{}
 	mss.On("Name").Return("utsd")
-	em.mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*core.Blob{}, nil, nil)
+	em.mdi.On("GetBlobs", em.ctx, mock.Anything, mock.Anything).Return(nil, nil, nil)
 	em.mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil, nil)
 
 	hash := fftypes.NewRandB32()
-	em.SharedStorageBlobDownloaded(mss, *hash, 12345, "payload1")
+	dataID := fftypes.NewUUID()
+	em.SharedStorageBlobDownloaded(mss, *hash, 12345, "payload1", dataID)
 
 	brw := <-em.aggregator.rewinder.rewindRequests
 	assert.Equal(t, rewind{hash: *hash, rewindType: rewindBlob}, brw)
