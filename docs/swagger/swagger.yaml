@@ -5056,7 +5056,7 @@ paths:
       - Default Namespace
   /data/{dataid}:
     delete:
-      description: Gets a data item by its ID, including metadata about this item
+      description: Deletes a data item by its ID, including metadata about this item
       operationId: deleteData
       parameters:
       - description: The data item ID
@@ -15576,7 +15576,7 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/data/{dataid}:
     delete:
-      description: Gets a data item by its ID, including metadata about this item
+      description: Deletes a data item by its ID, including metadata about this item
       operationId: deleteDataNamespace
       parameters:
       - description: The data item ID

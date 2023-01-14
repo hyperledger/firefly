@@ -31,7 +31,7 @@ var deleteData = &ffapi.Route{
 		{Name: "dataid", Description: coremsgs.APIParamsDataID},
 	},
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsGetDataByID,
+	Description:     coremsgs.APIEndpointsDeleteData,
 	JSONInputValue:  nil,
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent},

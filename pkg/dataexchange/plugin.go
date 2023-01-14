@@ -89,7 +89,7 @@ type Plugin interface {
 	// DownloadBlob streams a received blob out of storage
 	DownloadBlob(ctx context.Context, payloadRef string) (content io.ReadCloser, err error)
 
-	// DeleteBlob streams a received blob out of storage
+	// DeleteBlob streams a deletes a blob from the local DB and DX
 	DeleteBlob(ctx context.Context, payloadRef string) (err error)
 
 	// SendMessage sends an in-line package of data to another network node.
