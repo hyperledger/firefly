@@ -861,6 +861,7 @@ var BlobQueryFactory = &ffapi.QueryFields{
 	"size":       &ffapi.Int64Field{},
 	"payloadref": &ffapi.StringField{},
 	"created":    &ffapi.TimeField{},
+	"data_id":    &ffapi.UUIDField{},
 }
 
 // TokenPoolQueryFactory filter fields for token pools
