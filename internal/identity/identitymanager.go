@@ -56,13 +56,12 @@ type Manager interface {
 }
 
 type identityManager struct {
-	database               database.Plugin
-	blockchain             blockchain.Plugin  // optional
-	multiparty             multiparty.Manager // optional
-	namespace              string
-	defaultKey             string
-	multipartyRootVerifier *core.VerifierRef
-	identityCache          cache.CInterface
+	database      database.Plugin
+	blockchain    blockchain.Plugin  // optional
+	multiparty    multiparty.Manager // optional
+	namespace     string
+	defaultKey    string
+	identityCache cache.CInterface
 }
 
 func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager, cacheManager cache.Manager) (Manager, error) {
@@ -118,7 +117,7 @@ func (im *identityManager) ResolveInputSigningKey(ctx context.Context, inputKey 
 			if im.defaultKey == "" {
 				return "", i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 			}
-
+			// There is no blockchain plugin defined here, so no additional verification possible, or required
 			return im.defaultKey, nil
 		}
 
@@ -286,21 +285,12 @@ func (im *identityManager) getDefaultVerifier(ctx context.Context) (verifier *co
 // GetMultipartyRootVerifier gets the blockchain verifier of the root org via the configuration,
 // resolving it for use as a signing key for the purpose of signing a child identity
 func (im *identityManager) GetMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error) {
-	if im.multipartyRootVerifier != nil {
-		return im.multipartyRootVerifier, nil
-	}
-
 	orgKey := im.multiparty.RootOrg().Key
 	if orgKey == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 	}
 
-	verifier, err := im.resolveInputKeyViaBlockchainPlugin(ctx, orgKey)
-	if err != nil {
-		return nil, err
-	}
-	im.multipartyRootVerifier = verifier
-	return verifier, nil
+	return im.resolveInputKeyViaBlockchainPlugin(ctx, orgKey)
 }
 
 // resolveInputKeyViaBlockchainPlugin calls the blockchain plugin to resolve an input key string, to the
