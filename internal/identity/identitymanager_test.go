@@ -579,10 +579,10 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 
 }
 
-func TestResolveInputSigningKeyDefault(t *testing.T) {
+func TestResolveInputSigningKeyDefaultNoBlockchain(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
-	im.blockchain = nil
 
+	im.blockchain = nil
 	im.defaultKey = "key123"
 
 	resolvedKey, err := im.ResolveInputSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
@@ -622,12 +622,15 @@ func TestResolveInputSigningKeyDefaultNoBlockchainInputFallback(t *testing.T) {
 
 func TestResolveInputSigningKeyDefaultNoBlockchainDefaultKeyFallback(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
-	im.blockchain = nil
+
 	im.defaultKey = "key123"
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveInputSigningKey", ctx, "key123").Return("fullkey123", nil)
 
 	resolvedKey, err := im.ResolveInputSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
 	assert.NoError(t, err)
-	assert.Equal(t, "key123", resolvedKey)
+	assert.Equal(t, "fullkey123", resolvedKey)
 }
 
 func TestResolveInputSigningKeyOrgFallbackOk(t *testing.T) {
@@ -741,15 +744,14 @@ func TestFirstVerifierForIdentityNotFound(t *testing.T) {
 func TestResolveDefaultSigningIdentityNotFound(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.multipartyRootVerifier = &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "key12345",
-	}
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mmp := im.multiparty.(*multipartymocks.Manager)
 	mmp.On("GetNetworkVersion").Return(1)
-	mmp.On("RootOrg").Return(multiparty.RootOrg{})
+	mmp.On("RootOrg").Return(multiparty.RootOrg{
+		Key: "key12345",
+	})
+	mbi.On("ResolveInputSigningKey", ctx, "key12345").Return("key12345", nil)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
@@ -767,10 +769,6 @@ func TestResolveDefaultSigningIdentityNotFound(t *testing.T) {
 func TestResolveDefaultSigningIdentitySystemFallback(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.multipartyRootVerifier = &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "key12345",
-	}
 
 	id := &core.Identity{
 		IdentityBase: core.IdentityBase{
@@ -791,7 +789,8 @@ func TestResolveDefaultSigningIdentitySystemFallback(t *testing.T) {
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mmp := im.multiparty.(*multipartymocks.Manager)
 	mmp.On("GetNetworkVersion").Return(1)
-	mmp.On("RootOrg").Return(multiparty.RootOrg{Name: "org1"})
+	mmp.On("RootOrg").Return(multiparty.RootOrg{Name: "org1", Key: "key12345"})
+	mbi.On("ResolveInputSigningKey", ctx, "key12345").Return("key12345", nil)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
@@ -845,13 +844,13 @@ func TestGetMultipartyRootVerifierNotSet(t *testing.T) {
 func TestGetMultipartyRootOrgMismatch(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.multipartyRootVerifier = &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "fullkey123",
-	}
 
 	mmp := im.multiparty.(*multipartymocks.Manager)
-	mmp.On("RootOrg").Return(multiparty.RootOrg{})
+	mmp.On("RootOrg").Return(multiparty.RootOrg{
+		Key: "key12345",
+	})
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveInputSigningKey", ctx, "key12345").Return("fullkey123", nil)
 
 	orgID := fftypes.NewUUID()
 	mdi := im.database.(*databasemocks.Plugin)
