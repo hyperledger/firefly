@@ -71,7 +71,7 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core
 		},
 	}
 	for _, method := range ffi.Methods {
-		routes = og.addMethod(routes, method, hasLocation)
+		routes = og.addMethod(ctx, routes, method, hasLocation)
 	}
 	for _, event := range ffi.Events {
 		routes = og.addEvent(routes, event, hasLocation)
@@ -86,8 +86,7 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core
 	}).Generate(ctx, routes)
 }
 
-func (og *ffiSwaggerGen) addMethod(routes []*ffapi.Route, method *fftypes.FFIMethod, hasLocation bool) []*ffapi.Route {
-	ctx := context.Background()
+func (og *ffiSwaggerGen) addMethod(ctx context.Context, routes []*ffapi.Route, method *fftypes.FFIMethod, hasLocation bool) []*ffapi.Route {
 	description := method.Description
 	if method.Details != nil && len(method.Details) > 0 {
 		additionalDetailsHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetails)
@@ -98,10 +97,10 @@ func (og *ffiSwaggerGen) addMethod(routes []*ffapi.Route, method *fftypes.FFIMet
 		Path:   fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method: http.MethodPost,
 		JSONInputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
-			return contractJSONSchema(&method.Params, hasLocation)
+			return contractJSONSchema(ctx, &method.Params, hasLocation)
 		},
 		JSONOutputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
-			return contractJSONSchema(&method.Returns, true)
+			return contractJSONSchema(ctx, &method.Returns, true)
 		},
 		JSONOutputCodes:          []int{http.StatusOK},
 		PreTranslatedDescription: description,
@@ -111,10 +110,10 @@ func (og *ffiSwaggerGen) addMethod(routes []*ffapi.Route, method *fftypes.FFIMet
 		Path:   fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method: http.MethodPost,
 		JSONInputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
-			return contractJSONSchema(&method.Params, hasLocation)
+			return contractJSONSchema(ctx, &method.Params, hasLocation)
 		},
 		JSONOutputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
-			return contractJSONSchema(&method.Returns, true)
+			return contractJSONSchema(ctx, &method.Returns, true)
 		},
 		JSONOutputCodes:          []int{http.StatusOK},
 		PreTranslatedDescription: description,
@@ -158,19 +157,29 @@ func (og *ffiSwaggerGen) addEvent(routes []*ffapi.Route, event *fftypes.FFIEvent
  * Parse the FFI and build a corresponding JSON Schema to describe the request body for "invoke".
  * Returns the JSON Schema as an `fftypes.JSONObject`.
  */
-func contractJSONSchema(params *fftypes.FFIParams, hasLocation bool) (*openapi3.SchemaRef, error) {
+func contractJSONSchema(ctx context.Context, params *fftypes.FFIParams, hasLocation bool) (*openapi3.SchemaRef, error) {
 	paramSchema := make(fftypes.JSONObject, len(*params))
 	for _, param := range *params {
 		paramSchema[param.Name] = param.Schema
 	}
 	inputSchema := fftypes.JSONObject{
-		"type":       "object",
-		"properties": paramSchema,
+		"type":        "object",
+		"description": i18n.Expand(ctx, coremsgs.ContractCallRequestInput),
+		"properties":  paramSchema,
 	}
 	properties := fftypes.JSONObject{
 		"input": inputSchema,
 		"options": fftypes.JSONObject{
-			"type": "object",
+			"type":        "object",
+			"description": i18n.Expand(ctx, coremsgs.ContractCallRequestOptions),
+		},
+		"key": fftypes.JSONObject{
+			"type":        "string",
+			"description": i18n.Expand(ctx, coremsgs.ContractCallRequestKey),
+		},
+		"idempotencyKey": fftypes.JSONObject{
+			"type":        "string",
+			"description": i18n.Expand(ctx, coremsgs.ContractCallIdempotencyKey),
 		},
 	}
 	if !hasLocation {
