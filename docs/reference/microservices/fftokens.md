@@ -7,9 +7,11 @@ nav_order: 1
 ---
 
 # fftokens
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
@@ -42,6 +44,7 @@ In a multiparty network, this operation will only be performed by one of the par
 FireFly will store a "pending" token pool after a successful creation, but will replace it with a "confirmed" token pool after a successful activation (see below).
 
 **Request**
+
 ```
 {
   "type": "fungible",
@@ -54,15 +57,15 @@ FireFly will store a "pending" token pool after a successful creation, but will 
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| type | string enum | The type of pool to create. Currently supported types are "fungible" and "nonfungible". It is recommended (but not required) that token connectors support both. Unrecognized/unsupported types should be rejected with HTTP 400. |
-| signer | string | The signing identity to be used for the blockchain transaction, in a format understood by this connector. |
-| name | string | (OPTIONAL) If supported by this token contract, this is a requested name for the token pool. May be ignored at the connector's discretion. |
-| symbol | string | (OPTIONAL) If supported by this token contract, this is a requested symbol for the token pool. May be ignored at the connector's discretion. |
-| requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
-| data | string | (OPTIONAL) A data string that should be returned in the connector's response to this creation request. |
-| config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the token pool is created. |
+| Parameter | Type        | Description                                                                                                                                                                                                                       |
+| --------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type      | string enum | The type of pool to create. Currently supported types are "fungible" and "nonfungible". It is recommended (but not required) that token connectors support both. Unrecognized/unsupported types should be rejected with HTTP 400. |
+| signer    | string      | The signing identity to be used for the blockchain transaction, in a format understood by this connector.                                                                                                                         |
+| name      | string      | (OPTIONAL) If supported by this token contract, this is a requested name for the token pool. May be ignored at the connector's discretion.                                                                                        |
+| symbol    | string      | (OPTIONAL) If supported by this token contract, this is a requested symbol for the token pool. May be ignored at the connector's discretion.                                                                                      |
+| requestId | string      | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests.                                                                                                 |
+| data      | string      | (OPTIONAL) A data string that should be returned in the connector's response to this creation request.                                                                                                                            |
+| config    | object      | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the token pool is created.                                  |
 
 **Response**
 
@@ -81,6 +84,7 @@ Activate a token pool to begin receiving events. Generally this means the connec
 In a multiparty network, this step will be performed by every member after a successful token pool broadcast. It therefore also serves the purpose of validating the broadcast info - if the connector does not find a valid pool given the `poolLocator` and `config` information passed in to this call, the pool should not get confirmed.
 
 **Request**
+
 ```
 {
   "poolLocator": "id=F1",
@@ -90,12 +94,12 @@ In a multiparty network, this step will be performed by every member after a suc
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation. |
-| poolData | string | (OPTIONAL) A data string that should be permanently attached to this pool and returned in all events. |
-| requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
-| config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. This should be the same `config` object that was passed when the pool was created. |
+| Parameter   | Type   | Description                                                                                                                                                                             |
+| ----------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                |
+| poolData    | string | (OPTIONAL) A data string that should be permanently attached to this pool and returned in all events.                                                                                   |
+| requestId   | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests.                                                       |
+| config      | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. This should be the same `config` object that was passed when the pool was created. |
 
 **Response**
 
@@ -122,6 +126,7 @@ description of the interface methods in use for a given token pool, so the conne
 how to invoke.
 
 **Request**
+
 ```
 {
   "poolLocator": "id=F1",
@@ -145,11 +150,11 @@ how to invoke.
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation. |
-| format | string enum | The format of the data in this payload. Should match the `interfaceFormat` as supplied by the output of the pool creation. |
-| methods | object array | A list of all the methods available on the interface underpinning this token pool, encoded in the format specified by `format`. |
+| Parameter   | Type         | Description                                                                                                                     |
+| ----------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| poolLocator | string       | The locator of the pool, as supplied by the output of the pool creation.                                                        |
+| format      | string enum  | The format of the data in this payload. Should match the `interfaceFormat` as supplied by the output of the pool creation.      |
+| methods     | object array | A list of all the methods available on the interface underpinning this token pool, encoded in the format specified by `format`. |
 
 **Response**
 
@@ -206,17 +211,18 @@ Mint new tokens.
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation. |
-| signer | string | The signing identity to be used for the blockchain transaction, in a format understood by this connector. |
-| to | string | The identity to receive the minted tokens, in a format understood by this connector. |
-| amount | number string | The amount of tokens to mint. |
-| tokenIndex | string | (OPTIONAL) For non-fungible tokens that require choosing an index at mint time, the index of the specific token to mint. |
-| uri | string | (OPTIONAL) For non-fungible tokens that support choosing a URI at mint time, the URI to be attached to the token. |
-| requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
-| config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the mint is carried out. |
-| interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
+| Parameter   | Type          | Description                                                                                                                                                                                    |
+| ----------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| poolLocator | string        | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                       |
+| signer      | string        | The signing identity to be used for the blockchain transaction, in a format understood by this connector.                                                                                      |
+| to          | string        | The identity to receive the minted tokens, in a format understood by this connector.                                                                                                           |
+| amount      | number string | The amount of tokens to mint.                                                                                                                                                                  |
+| tokenIndex  | string        | (OPTIONAL) For non-fungible tokens that require choosing an index at mint time, the index of the specific token to mint.                                                                       |
+| uri         | string        | (OPTIONAL) For non-fungible tokens that support choosing a URI at mint time, the URI to be attached to the token.                                                                              |
+| requestId   | string        | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests.                                                              |
+| data        | string        | (OPTIONAL) A data string that should be returned in the connector's response to this mint request.                                                                                             |
+| config      | object        | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the mint is carried out. |
+| interface   | object        | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call.                                                               |
 
 **Response**
 
@@ -244,16 +250,17 @@ Burn tokens.
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation. |
-| signer | string | The signing identity to be used for the blockchain transaction, in a format understood by this connector. |
-| from | string | The identity that currently owns the tokens to be burned, in a format understood by this connector. |
-| amount | number string | The amount of tokens to burn. |
-| tokenIndex | string | (OPTIONAL) For non-fungible tokens, the index of the specific token to burn. |
-| requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
-| config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the burn is carried out. |
-| interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
+| Parameter   | Type          | Description                                                                                                                                                                                    |
+| ----------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| poolLocator | string        | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                       |
+| signer      | string        | The signing identity to be used for the blockchain transaction, in a format understood by this connector.                                                                                      |
+| from        | string        | The identity that currently owns the tokens to be burned, in a format understood by this connector.                                                                                            |
+| amount      | number string | The amount of tokens to burn.                                                                                                                                                                  |
+| tokenIndex  | string        | (OPTIONAL) For non-fungible tokens, the index of the specific token to burn.                                                                                                                   |
+| requestId   | string        | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests.                                                              |
+| data        | string        | (OPTIONAL) A data string that should be returned in the connector's response to this burn request.                                                                                             |
+| config      | object        | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the burn is carried out. |
+| interface   | object        | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call.                                                               |
 
 **Response**
 
@@ -282,17 +289,18 @@ Transfer tokens from one address to another.
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation. |
-| signer | string | The signing identity to be used for the blockchain transaction, in a format understood by this connector. |
-| from | string | The identity to be used for the source of the transfer, in a format understood by this connector. |
-| to | string | The identity to be used for the destination of the transfer, in a format understood by this connector. |
-| amount | number string | The amount of tokens to transfer. |
-| tokenIndex | string | (OPTIONAL) For non-fungible tokens, the index of the specific token to transfer. |
-| requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
-| config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the transfer is carried out. |
-| interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
+| Parameter   | Type          | Description                                                                                                                                                                                        |
+| ----------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| poolLocator | string        | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                           |
+| signer      | string        | The signing identity to be used for the blockchain transaction, in a format understood by this connector.                                                                                          |
+| from        | string        | The identity to be used for the source of the transfer, in a format understood by this connector.                                                                                                  |
+| to          | string        | The identity to be used for the destination of the transfer, in a format understood by this connector.                                                                                             |
+| amount      | number string | The amount of tokens to transfer.                                                                                                                                                                  |
+| tokenIndex  | string        | (OPTIONAL) For non-fungible tokens, the index of the specific token to transfer.                                                                                                                   |
+| requestId   | string        | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests.                                                                  |
+| data        | string        | (OPTIONAL) A data string that should be returned in the connector's response to this transfer request.                                                                                             |
+| config      | object        | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the transfer is carried out. |
+| interface   | object        | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call.                                                                   |
 
 **Response**
 
@@ -319,15 +327,16 @@ Approve another identity to manage tokens.
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation. |
-| signer | string | The signing identity to be used for the blockchain transaction, in a format understood by this connector. |
-| operator | string | The identity to be approved (or unapproved) for managing the signer's tokens. |
-| approved | boolean | Whether to approve (the default) or unapprove. |
-| requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
-| config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the approval is carried out. |
-| interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
+| Parameter   | Type    | Description                                                                                                                                                                                        |
+| ----------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| poolLocator | string  | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                           |
+| signer      | string  | The signing identity to be used for the blockchain transaction, in a format understood by this connector.                                                                                          |
+| operator    | string  | The identity to be approved (or unapproved) for managing the signer's tokens.                                                                                                                      |
+| approved    | boolean | Whether to approve (the default) or unapprove.                                                                                                                                                     |
+| requestId   | string  | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests.                                                                  |
+| data        | string  | (OPTIONAL) A data string that should be returned in the connector's response to this approval request.                                                                                             |
+| config      | object  | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the approval is carried out. |
+| interface   | object  | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call.                                                                   |
 
 **Response**
 
@@ -338,6 +347,7 @@ _See [Response Types: Async Request](#async-request)_
 ## Websocket Events
 
 A connector should expose a websocket at `/api/ws`. All emitted websocket events are a JSON string of the form:
+
 ```
 {
   "id": "event-id",
@@ -349,6 +359,7 @@ A connector should expose a websocket at `/api/ws`. All emitted websocket events
 The `event` name will match one of the names listed below, and the `data` payload will correspond to the linked response object.
 
 All events _except the receipt event_ must be acknowledged by sending an ack of the form:
+
 ```
 {
   "event": "ack",
@@ -359,6 +370,7 @@ All events _except the receipt event_ must be acknowledged by sending an ack of 
 ```
 
 Many messages may also be batched into a single websocket event of the form:
+
 ```
 {
   "id": "event-id",
@@ -437,12 +449,12 @@ Many operations may happen asynchronously in the background, and will return onl
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| headers.type | string enum | The type of this response. Should be "TransactionSuccess", "TransactionUpdate", or "TransactionFailed". |
-| headers.requestId | string | The ID of the request to which this receipt should correlate. |
-| transactionHash | string | The unique identifier for the blockchain transaction which generated this receipt. |
-| errorMessage| string | (OPTIONAL) If this is a failure, contains details on the reason for the failure. |
+| Parameter         | Type        | Description                                                                                             |
+| ----------------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| headers.type      | string enum | The type of this response. Should be "TransactionSuccess", "TransactionUpdate", or "TransactionFailed". |
+| headers.requestId | string      | The ID of the request to which this receipt should correlate.                                           |
+| transactionHash   | string      | The unique identifier for the blockchain transaction which generated this receipt.                      |
+| errorMessage      | string      | (OPTIONAL) If this is a failure, contains details on the reason for the failure.                        |
 
 ### Token Pool
 
@@ -461,18 +473,18 @@ Many operations may happen asynchronously in the background, and will return onl
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| type | string enum | The type of pool that was created. |
-| data | string | A copy of the data that was passed in on the creation request. |
-| poolLocator | string | A string to identify this pool, generated by the connector. Must be unique for each pool created by this connector. Will be passed back on all operations within this pool, and may be packed with relevant data about the pool for later usage (such as the address and type of the pool). |
-| standard | string | (OPTIONAL) The name of a well-defined token standard to which this pool conforms. |
-| interfaceFormat | string enum | (OPTIONAL) If this connector supports the `/checkinterface` API, this is the interface format to be used for describing the interface underpinning this pool. Must be "abi" or "ffi". |
-| symbol | string | (OPTIONAL) The symbol for this token pool, if applicable. |
-| decimals | number | (OPTIONAL) The number of decimals used for balances in this token pool, if applicable. |
-| info | object | (OPTIONAL) Additional information about the pool. Each connector may define the format for this object. |
-| signer | string | (OPTIONAL) If this operation triggered a blockchain transaction, the signing identity used for the transaction. |
-| blockchain | object | (OPTIONAL) If this operation triggered a blockchain transaction, contains details on the blockchain event in FireFly's standard blockchain event format. |
+| Parameter       | Type        | Description                                                                                                                                                                                                                                                                                 |
+| --------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type            | string enum | The type of pool that was created.                                                                                                                                                                                                                                                          |
+| data            | string      | A copy of the data that was passed in on the creation request.                                                                                                                                                                                                                              |
+| poolLocator     | string      | A string to identify this pool, generated by the connector. Must be unique for each pool created by this connector. Will be passed back on all operations within this pool, and may be packed with relevant data about the pool for later usage (such as the address and type of the pool). |
+| standard        | string      | (OPTIONAL) The name of a well-defined token standard to which this pool conforms.                                                                                                                                                                                                           |
+| interfaceFormat | string enum | (OPTIONAL) If this connector supports the `/checkinterface` API, this is the interface format to be used for describing the interface underpinning this pool. Must be "abi" or "ffi".                                                                                                       |
+| symbol          | string      | (OPTIONAL) The symbol for this token pool, if applicable.                                                                                                                                                                                                                                   |
+| decimals        | number      | (OPTIONAL) The number of decimals used for balances in this token pool, if applicable.                                                                                                                                                                                                      |
+| info            | object      | (OPTIONAL) Additional information about the pool. Each connector may define the format for this object.                                                                                                                                                                                     |
+| signer          | string      | (OPTIONAL) If this operation triggered a blockchain transaction, the signing identity used for the transaction.                                                                                                                                                                             |
+| blockchain      | object      | (OPTIONAL) If this operation triggered a blockchain transaction, contains details on the blockchain event in FireFly's standard blockchain event format.                                                                                                                                    |
 
 ### Token Transfer
 
@@ -495,19 +507,19 @@ while a burn will omit the "to" field.
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| id | string | An identifier for this transfer. Must be unique for every transfer within this pool. |
-| data | string | A copy of the data that was passed in on the mint/burn/transfer request. May be omitted if the token contract does not support a method of attaching extra data (will result in reduced ability for FireFly to correlate the inputs and outputs of the transaction). |
-| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation. |
-| poolData | string | The extra data associated with the pool at pool activation. |
-| from | string | The identity used for the source of the transfer. |
-| to | string | The identity used for the destination of the transfer. |
-| amount | number string | The amount of tokens transferred. |
-| tokenIndex | string | (OPTIONAL) For non-fungible tokens, the index of the specific token transferred. |
-| uri | string | (OPTIONAL) For non-fungible tokens, the URI attached to the token. |
-| signer | string | (OPTIONAL) If this operation triggered a blockchain transaction, the signing identity used for the transaction. |
-| blockchain | object | (OPTIONAL) If this operation triggered a blockchain transaction, contains details on the blockchain event in FireFly's standard blockchain event format. |
+| Parameter   | Type          | Description                                                                                                                                                                                                                                                          |
+| ----------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id          | string        | An identifier for this transfer. Must be unique for every transfer within this pool.                                                                                                                                                                                 |
+| data        | string        | A copy of the data that was passed in on the mint/burn/transfer request. May be omitted if the token contract does not support a method of attaching extra data (will result in reduced ability for FireFly to correlate the inputs and outputs of the transaction). |
+| poolLocator | string        | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                                                                                             |
+| poolData    | string        | The extra data associated with the pool at pool activation.                                                                                                                                                                                                          |
+| from        | string        | The identity used for the source of the transfer.                                                                                                                                                                                                                    |
+| to          | string        | The identity used for the destination of the transfer.                                                                                                                                                                                                               |
+| amount      | number string | The amount of tokens transferred.                                                                                                                                                                                                                                    |
+| tokenIndex  | string        | (OPTIONAL) For non-fungible tokens, the index of the specific token transferred.                                                                                                                                                                                     |
+| uri         | string        | (OPTIONAL) For non-fungible tokens, the URI attached to the token.                                                                                                                                                                                                   |
+| signer      | string        | (OPTIONAL) If this operation triggered a blockchain transaction, the signing identity used for the transaction.                                                                                                                                                      |
+| blockchain  | object        | (OPTIONAL) If this operation triggered a blockchain transaction, contains details on the blockchain event in FireFly's standard blockchain event format.                                                                                                             |
 
 ### Token Approval
 
@@ -526,15 +538,15 @@ while a burn will omit the "to" field.
 }
 ```
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| id | string | An identifier for this approval. Must be unique for every approval within this pool. |
-| data | string | A copy of the data that was passed in on the approval request. May be omitted if the token contract does not support a method of attaching extra data (will result in reduced ability for FireFly to correlate the inputs and outputs of the transaction). |
-| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation. |
-| poolData | string | The extra data associated with the pool at pool activation. |
-| operator | string | The identity that was approved (or unapproved) for managing tokens. |
-| approved | boolean | Whether this was an approval or unapproval. |
-| subject | string | A string identifying the scope of the approval, generated by the connector. Approvals with the same subject are understood replace one another, so that a previously-recorded approval becomes inactive. This string may be a combination of the identities involved, the token index, etc. |
-| info | object | (OPTIONAL) Additional information about the approval. Each connector may define the format for this object. |
-| signer | string | (OPTIONAL) If this operation triggered a blockchain transaction, the signing identity used for the transaction. |
-| blockchain | object | (OPTIONAL) If this operation triggered a blockchain transaction, contains details on the blockchain event in FireFly's standard blockchain event format. |
+| Parameter   | Type    | Description                                                                                                                                                                                                                                                                                 |
+| ----------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id          | string  | An identifier for this approval. Must be unique for every approval within this pool.                                                                                                                                                                                                        |
+| data        | string  | A copy of the data that was passed in on the approval request. May be omitted if the token contract does not support a method of attaching extra data (will result in reduced ability for FireFly to correlate the inputs and outputs of the transaction).                                  |
+| poolLocator | string  | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                                                                                                                    |
+| poolData    | string  | The extra data associated with the pool at pool activation.                                                                                                                                                                                                                                 |
+| operator    | string  | The identity that was approved (or unapproved) for managing tokens.                                                                                                                                                                                                                         |
+| approved    | boolean | Whether this was an approval or unapproval.                                                                                                                                                                                                                                                 |
+| subject     | string  | A string identifying the scope of the approval, generated by the connector. Approvals with the same subject are understood replace one another, so that a previously-recorded approval becomes inactive. This string may be a combination of the identities involved, the token index, etc. |
+| info        | object  | (OPTIONAL) Additional information about the approval. Each connector may define the format for this object.                                                                                                                                                                                 |
+| signer      | string  | (OPTIONAL) If this operation triggered a blockchain transaction, the signing identity used for the transaction.                                                                                                                                                                             |
+| blockchain  | object  | (OPTIONAL) If this operation triggered a blockchain transaction, contains details on the blockchain event in FireFly's standard blockchain event format.                                                                                                                                    |
