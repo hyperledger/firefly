@@ -215,6 +215,7 @@ Mint new tokens.
 | tokenIndex | string | (OPTIONAL) For non-fungible tokens that require choosing an index at mint time, the index of the specific token to mint. |
 | uri | string | (OPTIONAL) For non-fungible tokens that support choosing a URI at mint time, the URI to be attached to the token. |
 | requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
+| data | string | (OPTIONAL) A data string that should be returned in the connector's response to this mint request. |
 | config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the mint is carried out. |
 | interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
 
@@ -252,6 +253,7 @@ Burn tokens.
 | amount | number string | The amount of tokens to burn. |
 | tokenIndex | string | (OPTIONAL) For non-fungible tokens, the index of the specific token to burn. |
 | requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
+| data | string | (OPTIONAL) A data string that should be returned in the connector's response to this burn request. |
 | config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the burn is carried out. |
 | interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
 
@@ -291,6 +293,7 @@ Transfer tokens from one address to another.
 | amount | number string | The amount of tokens to transfer. |
 | tokenIndex | string | (OPTIONAL) For non-fungible tokens, the index of the specific token to transfer. |
 | requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
+| data | string | (OPTIONAL) A data string that should be returned in the connector's response to this transfer request. |
 | config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the transfer is carried out. |
 | interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
 
@@ -326,6 +329,7 @@ Approve another identity to manage tokens.
 | operator | string | The identity to be approved (or unapproved) for managing the signer's tokens. |
 | approved | boolean | Whether to approve (the default) or unapprove. |
 | requestId | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests. |
+| data | string | (OPTIONAL) A data string that should be returned in the connector's response to this approval request. |
 | config | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the approval is carried out. |
 | interface | object | (OPTIONAL) Details on interface methods that are useful to this operation, as negotiated previously by a `/checkinterface` call. |
 
