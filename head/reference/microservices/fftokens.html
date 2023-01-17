@@ -31,12 +31,14 @@
 <meta name="generator" content="Jekyll v3.9.2" />
 <meta property="og:title" content="fftokens" />
 <meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
 <meta property="og:site_name" content="Hyperledger FireFly Docs" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="fftokens" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"fftokens","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/reference/microservices/fftokens.html"}</script>
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"fftokens","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/reference/microservices/fftokens.html"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -273,7 +275,7 @@
       
       <div id="main-content" class="main-content" role="main">
         
-          <h1 class="no_toc" id="fftokens">
+          <h1 id="fftokens">
         
         
           <a href="#fftokens" class="anchor-heading" aria-labelledby="fftokens"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> fftokens
@@ -281,7 +283,7 @@
         
       </h1>
     
-      <h2 class="no_toc text-delta" id="table-of-contents">
+      <h2 class="no_toc" id="table-of-contents">
         
         
           <a href="#table-of-contents" class="anchor-heading" aria-labelledby="table-of-contents"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Table of contents
@@ -290,33 +292,36 @@
       </h2>
     
 
-<ol id="markdown-toc">
-  <li><a href="#overview" id="markdown-toc-overview">Overview</a></li>
-  <li><a href="#http-apis" id="markdown-toc-http-apis">HTTP APIs</a>    <ol>
-      <li><a href="#post-createpool" id="markdown-toc-post-createpool"><code class="language-plaintext highlighter-rouge">POST /createpool</code></a></li>
-      <li><a href="#post-activatepool" id="markdown-toc-post-activatepool"><code class="language-plaintext highlighter-rouge">POST /activatepool</code></a></li>
-      <li><a href="#post-checkinterface" id="markdown-toc-post-checkinterface"><code class="language-plaintext highlighter-rouge">POST /checkinterface</code></a></li>
-      <li><a href="#post-mint" id="markdown-toc-post-mint"><code class="language-plaintext highlighter-rouge">POST /mint</code></a></li>
-      <li><a href="#post-burn" id="markdown-toc-post-burn"><code class="language-plaintext highlighter-rouge">POST /burn</code></a></li>
-      <li><a href="#post-transfer" id="markdown-toc-post-transfer"><code class="language-plaintext highlighter-rouge">POST /transfer</code></a></li>
-      <li><a href="#post-approval" id="markdown-toc-post-approval"><code class="language-plaintext highlighter-rouge">POST /approval</code></a></li>
-    </ol>
-  </li>
-  <li><a href="#websocket-events" id="markdown-toc-websocket-events">Websocket Events</a>    <ol>
-      <li><a href="#receipt" id="markdown-toc-receipt"><code class="language-plaintext highlighter-rouge">receipt</code></a></li>
-      <li><a href="#token-pool" id="markdown-toc-token-pool"><code class="language-plaintext highlighter-rouge">token-pool</code></a></li>
-      <li><a href="#token-mint" id="markdown-toc-token-mint"><code class="language-plaintext highlighter-rouge">token-mint</code></a></li>
-      <li><a href="#token-burn" id="markdown-toc-token-burn"><code class="language-plaintext highlighter-rouge">token-burn</code></a></li>
-      <li><a href="#token-transfer" id="markdown-toc-token-transfer"><code class="language-plaintext highlighter-rouge">token-transfer</code></a></li>
-      <li><a href="#token-approval" id="markdown-toc-token-approval"><code class="language-plaintext highlighter-rouge">token-approval</code></a></li>
-    </ol>
-  </li>
-  <li><a href="#response-types" id="markdown-toc-response-types">Response Types</a>    <ol>
-      <li><a href="#async-request" id="markdown-toc-async-request">Async Request</a></li>
-      <li><a href="#receipt-1" id="markdown-toc-receipt-1">Receipt</a></li>
-      <li><a href="#token-pool-1" id="markdown-toc-token-pool-1">Token Pool</a></li>
-      <li><a href="#token-transfer-1" id="markdown-toc-token-transfer-1">Token Transfer</a></li>
-      <li><a href="#token-approval-1" id="markdown-toc-token-approval-1">Token Approval</a></li>
+<ol class="no_toc text-delta" id="markdown-toc">
+  <li><a href="#fftokens" id="markdown-toc-fftokens">fftokens</a>    <ol>
+      <li><a href="#overview" id="markdown-toc-overview">Overview</a></li>
+      <li><a href="#http-apis" id="markdown-toc-http-apis">HTTP APIs</a>        <ol>
+          <li><a href="#post-createpool" id="markdown-toc-post-createpool"><code class="language-plaintext highlighter-rouge">POST /createpool</code></a></li>
+          <li><a href="#post-activatepool" id="markdown-toc-post-activatepool"><code class="language-plaintext highlighter-rouge">POST /activatepool</code></a></li>
+          <li><a href="#post-checkinterface" id="markdown-toc-post-checkinterface"><code class="language-plaintext highlighter-rouge">POST /checkinterface</code></a></li>
+          <li><a href="#post-mint" id="markdown-toc-post-mint"><code class="language-plaintext highlighter-rouge">POST /mint</code></a></li>
+          <li><a href="#post-burn" id="markdown-toc-post-burn"><code class="language-plaintext highlighter-rouge">POST /burn</code></a></li>
+          <li><a href="#post-transfer" id="markdown-toc-post-transfer"><code class="language-plaintext highlighter-rouge">POST /transfer</code></a></li>
+          <li><a href="#post-approval" id="markdown-toc-post-approval"><code class="language-plaintext highlighter-rouge">POST /approval</code></a></li>
+        </ol>
+      </li>
+      <li><a href="#websocket-events" id="markdown-toc-websocket-events">Websocket Events</a>        <ol>
+          <li><a href="#receipt" id="markdown-toc-receipt"><code class="language-plaintext highlighter-rouge">receipt</code></a></li>
+          <li><a href="#token-pool" id="markdown-toc-token-pool"><code class="language-plaintext highlighter-rouge">token-pool</code></a></li>
+          <li><a href="#token-mint" id="markdown-toc-token-mint"><code class="language-plaintext highlighter-rouge">token-mint</code></a></li>
+          <li><a href="#token-burn" id="markdown-toc-token-burn"><code class="language-plaintext highlighter-rouge">token-burn</code></a></li>
+          <li><a href="#token-transfer" id="markdown-toc-token-transfer"><code class="language-plaintext highlighter-rouge">token-transfer</code></a></li>
+          <li><a href="#token-approval" id="markdown-toc-token-approval"><code class="language-plaintext highlighter-rouge">token-approval</code></a></li>
+        </ol>
+      </li>
+      <li><a href="#response-types" id="markdown-toc-response-types">Response Types</a>        <ol>
+          <li><a href="#async-request" id="markdown-toc-async-request">Async Request</a></li>
+          <li><a href="#receipt-1" id="markdown-toc-receipt-1">Receipt</a></li>
+          <li><a href="#token-pool-1" id="markdown-toc-token-pool-1">Token Pool</a></li>
+          <li><a href="#token-transfer-1" id="markdown-toc-token-transfer-1">Token Transfer</a></li>
+          <li><a href="#token-approval-1" id="markdown-toc-token-approval-1">Token Approval</a></li>
+        </ol>
+      </li>
     </ol>
   </li>
 </ol><hr />
@@ -364,6 +369,7 @@ existing ones).</p>
 <p>FireFly will store a “pending” token pool after a successful creation, but will replace it with a “confirmed” token pool after a successful activation (see below).</p>
 
 <p><strong>Request</strong></p>
+
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
   "type": "fungible",
   "signer": "0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A",
@@ -445,6 +451,7 @@ existing ones).</p>
 <p>In a multiparty network, this step will be performed by every member after a successful token pool broadcast. It therefore also serves the purpose of validating the broadcast info - if the connector does not find a valid pool given the <code class="language-plaintext highlighter-rouge">poolLocator</code> and <code class="language-plaintext highlighter-rouge">config</code> information passed in to this call, the pool should not get confirmed.</p>
 
 <p><strong>Request</strong></p>
+
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
   "poolLocator": "id=F1",
   "poolData": "extra-pool-info",
@@ -516,6 +523,7 @@ description of the interface methods in use for a given token pool, so the conne
 how to invoke.</p>
 
 <p><strong>Request</strong></p>
+
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
   "poolLocator": "id=F1",
   "format": "abi",
@@ -669,6 +677,11 @@ provide the proper subset of the interface for every future token operation (via
       <td>(OPTIONAL) A unique identifier for this request. Will be included in the “receipt” websocket event to match receipts to requests.</td>
     </tr>
     <tr>
+      <td>data</td>
+      <td>string</td>
+      <td>(OPTIONAL) A data string that should be returned in the connector’s response to this mint request.</td>
+    </tr>
+    <tr>
       <td>config</td>
       <td>object</td>
       <td>(OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the mint is carried out.</td>
@@ -750,6 +763,11 @@ provide the proper subset of the interface for every future token operation (via
       <td>requestId</td>
       <td>string</td>
       <td>(OPTIONAL) A unique identifier for this request. Will be included in the “receipt” websocket event to match receipts to requests.</td>
+    </tr>
+    <tr>
+      <td>data</td>
+      <td>string</td>
+      <td>(OPTIONAL) A data string that should be returned in the connector’s response to this burn request.</td>
     </tr>
     <tr>
       <td>config</td>
@@ -841,6 +859,11 @@ provide the proper subset of the interface for every future token operation (via
       <td>(OPTIONAL) A unique identifier for this request. Will be included in the “receipt” websocket event to match receipts to requests.</td>
     </tr>
     <tr>
+      <td>data</td>
+      <td>string</td>
+      <td>(OPTIONAL) A data string that should be returned in the connector’s response to this transfer request.</td>
+    </tr>
+    <tr>
       <td>config</td>
       <td>object</td>
       <td>(OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the transfer is carried out.</td>
@@ -918,6 +941,11 @@ provide the proper subset of the interface for every future token operation (via
       <td>(OPTIONAL) A unique identifier for this request. Will be included in the “receipt” websocket event to match receipts to requests.</td>
     </tr>
     <tr>
+      <td>data</td>
+      <td>string</td>
+      <td>(OPTIONAL) A data string that should be returned in the connector’s response to this approval request.</td>
+    </tr>
+    <tr>
       <td>config</td>
       <td>object</td>
       <td>(OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. Each connector may define its own valid options to influence how the approval is carried out.</td>
@@ -945,6 +973,7 @@ provide the proper subset of the interface for every future token operation (via
     
 
 <p>A connector should expose a websocket at <code class="language-plaintext highlighter-rouge">/api/ws</code>. All emitted websocket events are a JSON string of the form:</p>
+
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
   "id": "event-id",
   "event": "event-name",
@@ -955,6 +984,7 @@ provide the proper subset of the interface for every future token operation (via
 <p>The <code class="language-plaintext highlighter-rouge">event</code> name will match one of the names listed below, and the <code class="language-plaintext highlighter-rouge">data</code> payload will correspond to the linked response object.</p>
 
 <p>All events <em>except the receipt event</em> must be acknowledged by sending an ack of the form:</p>
+
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
   "event": "ack",
   "data": {
@@ -964,6 +994,7 @@ provide the proper subset of the interface for every future token operation (via
 </code></pre></div></div>
 
 <p>Many messages may also be batched into a single websocket event of the form:</p>
+
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
   "id": "event-id",
   "event": "batch",
