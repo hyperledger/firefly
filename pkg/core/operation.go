@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -180,11 +180,11 @@ type OperationUpdate struct {
 	OnComplete     func()
 }
 
-type OperationDetailedStatusError struct {
-	StatusError string `ffstruct:"OperationDetailedStatusError" json:"error,omitempty"`
+type OperationDetailError struct {
+	StatusError string `ffstruct:"OperationDetail" json:"error,omitempty"`
 }
 
-type OperationWithDetailedStatus struct {
+type OperationWithDetail struct {
 	Operation
-	DetailedStatus interface{} `ffstruct:"OperationWithDetailedStatus" json:"detailedStatus,omitempty" ffexcludeinput:"true"`
+	Detail interface{} `ffstruct:"OperationWithDetail" json:"detail,omitempty" ffexcludeinput:"true"`
 }
