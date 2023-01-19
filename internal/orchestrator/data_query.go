@@ -128,8 +128,8 @@ func (or *orchestrator) GetOperationByID(ctx context.Context, id string) (*core.
 	return or.operations.GetOperationByIDCached(ctx, u)
 }
 
-func (or *orchestrator) GetOperationByIDWithStatus(ctx context.Context, id string) (*core.OperationWithDetailedStatus, error) {
-	var enrichedOperation *core.OperationWithDetailedStatus
+func (or *orchestrator) GetOperationByIDWithStatus(ctx context.Context, id string) (*core.OperationWithDetail, error) {
+	var enrichedOperation *core.OperationWithDetail
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func (or *orchestrator) GetOperationByIDWithStatus(ctx context.Context, id strin
 	if op.IsBlockchainOperation() || op.IsTokenOperation() {
 		status, err := or.blockchain().GetTransactionStatus(ctx, op)
 		if err != nil {
-			status = core.OperationDetailedStatusError{
+			status = core.OperationDetailError{
 				StatusError: err.Error(),
 			}
 		}
@@ -151,17 +151,17 @@ func (or *orchestrator) GetOperationByIDWithStatus(ctx context.Context, id strin
 		// Not all blockchain plugins will necessarily implement GetTransactionStatus()
 		// so check if we get any extra status back
 		if status != nil {
-			enrichedOperation = &core.OperationWithDetailedStatus{
-				Operation:      *op,
-				DetailedStatus: status,
+			enrichedOperation = &core.OperationWithDetail{
+				Operation: *op,
+				Detail:    status,
 			}
 		} else {
-			enrichedOperation = &core.OperationWithDetailedStatus{
+			enrichedOperation = &core.OperationWithDetail{
 				Operation: *op,
 			}
 		}
 	} else {
-		enrichedOperation = &core.OperationWithDetailedStatus{
+		enrichedOperation = &core.OperationWithDetail{
 			Operation: *op,
 		}
 	}

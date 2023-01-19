@@ -568,7 +568,7 @@ func TestGetOperationByIDWithStatus(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, opStatus)
 	var expectedTxnStatus = &txnStatus{TxnId: "abc123"}
-	assert.Equal(t, expectedTxnStatus, opStatus.DetailedStatus)
+	assert.Equal(t, expectedTxnStatus, opStatus.Detail)
 }
 
 func TestGetOperationByIDWithGoodEmptyStatus(t *testing.T) {
@@ -585,7 +585,7 @@ func TestGetOperationByIDWithGoodEmptyStatus(t *testing.T) {
 	opStatus, err := or.GetOperationByIDWithStatus(context.Background(), u.String())
 	assert.Nil(t, err)
 	assert.NotNil(t, opStatus)
-	assert.Equal(t, nil, opStatus.DetailedStatus)
+	assert.Equal(t, nil, opStatus.Detail)
 }
 
 func TestGetOperationByIDWithStatusWrongOpType(t *testing.T) {
@@ -601,7 +601,7 @@ func TestGetOperationByIDWithStatusWrongOpType(t *testing.T) {
 	opStatus, err := or.GetOperationByIDWithStatus(context.Background(), u.String())
 	assert.Nil(t, err)
 	assert.NotNil(t, opStatus)
-	assert.Equal(t, nil, opStatus.DetailedStatus)
+	assert.Equal(t, nil, opStatus.Detail)
 }
 
 func TestGetOperationIDWithStatusBadID(t *testing.T) {
@@ -635,7 +635,7 @@ func TestGetOperationByIDWithStatusError(t *testing.T) {
 	opStatus, err := or.GetOperationByIDWithStatus(context.Background(), u.String())
 	assert.Nil(t, err)
 	assert.NotNil(t, opStatus)
-	assert.Regexp(t, "pop", opStatus.DetailedStatus)
+	assert.Regexp(t, "pop", opStatus.Detail)
 }
 
 func TestGetEventByID(t *testing.T) {

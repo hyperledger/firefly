@@ -47,7 +47,7 @@ func TestGetOperationByIDFetchStatus(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetOperationByIDWithStatus", mock.Anything, "abcd12345").
-		Return(&core.OperationWithDetailedStatus{}, nil)
+		Return(&core.OperationWithDetail{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
