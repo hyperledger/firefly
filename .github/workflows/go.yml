@@ -88,7 +88,6 @@ jobs:
             multiparty-enabled: true
 
           - stack-type: fabric
-            blockchain-connector: fabconnect
             test-suite: TestFabricE2ESuite
             database-type: sqlite3
             token-provider: none
@@ -102,7 +101,6 @@ jobs:
             multiparty-enabled: false
 
           - stack-type: fabric
-            blockchain-connector: fabconnect
             test-suite: TestFabricGatewayE2ESuite
             database-type: sqlite3
             token-provider: none
