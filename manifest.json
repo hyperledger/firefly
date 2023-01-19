@@ -11,8 +11,8 @@
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v.0.9.16",
-    "sha": "4f4798ee34eee0b67886f1baa37f4d50a33e2932c94312f189fe5f015f6564a4"
+    "tag": "null-20230119-30",
+    "sha": "d46b3408ff1a1c4730633c217fa41f78097f76caf5ca884ede8932cbafa83476"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
@@ -50,10 +50,10 @@
     }
   },
   "ui": {
-    "tag": "v1.1.5",
-    "release": "v1.1.5"
+    "tag": "v1.2.0-alpha.1",
+    "release": "v1.2.0-alpha.1"
   },
   "cli": {
-    "tag": "v1.1.2"
+    "tag": "v1.2.0-alpha.1"
   }
 }
