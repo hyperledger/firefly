@@ -1,8 +1,8 @@
-<!-- ---
+---
 layout: default
 title: Public and Permissioned
 parent: pages.understanding_firefly
-nav_order: 5
+nav_order: 6
 ---
 
 # Public and Permissioned Blockchain
@@ -16,7 +16,7 @@ nav_order: 5
 
 ---
 
-## Public and Permissioned Blockchain
+## Public and Permissioned Blockchains
 
 A separate choice to the technology for your blockchain, is what combination
 of blockchain ecosystems you will integrate with.
@@ -112,4 +112,4 @@ This evolution involves a significant refactoring of components used for product
 microservice since mid 2018. This was summarized in [firefly-ethconnect#149](https://github.com/hyperledger/firefly-ethconnect/issues/149),
 and cumulated in the creation of a new repository in 2022.
 
-You can follow the progress and contribute in this repo: https://github.com/hyperledger/firefly-transaction-manager -->
+You can follow the progress and contribute in this repo: https://github.com/hyperledger/firefly-transaction-manager
