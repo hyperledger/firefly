@@ -48,7 +48,7 @@ BUILD_FIREFLY=${BUILD_FIREFLY:-true}
 MULTIPARTY_ENABLED=${MULTIPARTY_ENABLED:-true}
 
 DATABASE_TYPE=${DATABASE_TYPE:-sqlite3}
-BLOCKCHAIN_PROVIDER=${BLOCKCHAIN_PROVIDER:-geth}
+STACK_TYPE=${STACK_TYPE:-ethereum}
 TOKENS_PROVIDER=${TOKENS_PROVIDER:-erc20_erc721}
 
 BLOCKCHAIN_CONNECTOR_FLAG=""
@@ -56,8 +56,13 @@ if [ -n "${BLOCKCHAIN_CONNECTOR}" ]; then
   BLOCKCHAIN_CONNECTOR_FLAG="--blockchain-connector ${BLOCKCHAIN_CONNECTOR}"
 fi
 
+BLOCKCHAIN_NODE_FLAG=""
+if [ -n "${BLOCKCHAIN_NODE}" ]; then
+  BLOCKCHAIN_CONNECTOR_FLAG="--blockchain-node ${BLOCKCHAIN_NODE}"
+fi
+
 if [ -z "${TEST_SUITE}" ]; then
-  if [ "${BLOCKCHAIN_PROVIDER}" == "fabric" ]; then
+  if [ "${STACK_TYPE}" == "fabric" ]; then
     if [ "${MULTIPARTY_ENABLED}" == "true" ]; then
       TEST_SUITE=TestFabricMultipartyE2ESuite
     else
@@ -86,7 +91,7 @@ fi
 
 if [ "$CREATE_STACK" == "true" ]; then
   $CLI remove -f $STACK_NAME
-  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER $BLOCKCHAIN_CONNECTOR_FLAG --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false --multiparty=$MULTIPARTY_ENABLED
+  $CLI init $STACK_TYPE --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 $BLOCKCHAIN_CONNECTOR_FLAG $BLOCKCHAIN_NODE_FLAG --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false --multiparty=$MULTIPARTY_ENABLED
   checkOk $?
 
   $CLI pull $STACK_NAME -r 3
