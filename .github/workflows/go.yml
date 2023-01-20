@@ -56,71 +56,69 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        blockchain-provider: [geth, fabric]
-        exclude: [ blockchain-provider: geth, blockchain-provider: fabric ]
+        stack-type: [ethereum, fabric]
+        exclude: [stack-type: ethereum, stack-type: fabric]
         include:
-            - blockchain-provider: geth
-              blockchain-connector: ethconnect
-              test-suite: TestEthereumMultipartyE2ESuite
-              database-type: sqlite3
-              token-provider: erc20_erc721
-              multiparty-enabled: true
+          - stack-type: ethereum
+            blockchain-connector: evmconnect
+            test-suite: TestEthereumMultipartyE2ESuite
+            database-type: sqlite3
+            token-provider: erc20_erc721
+            multiparty-enabled: true
 
-            - blockchain-provider: geth
-              blockchain-connector: ethconnect
-              test-suite: TestEthereumMultipartyE2ESuite
-              database-type: postgres
-              token-provider: erc20_erc721
-              multiparty-enabled: true
-            
-            - blockchain-provider: geth
-              blockchain-connector: ethconnect
-              test-suite: TestEthereumMultipartyE2ESuite
-              database-type: sqlite3
-              token-provider: erc1155
-              multiparty-enabled: true
+          - stack-type: ethereum
+            blockchain-connector: evmconnect
+            test-suite: TestEthereumMultipartyE2ESuite
+            database-type: postgres
+            token-provider: erc20_erc721
+            multiparty-enabled: true
 
-            - blockchain-provider: geth
-              blockchain-connector: ethconnect
-              test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
-              database-type: postgres
-              token-provider: erc20_erc721
-              multiparty-enabled: true
+          - stack-type: ethereum
+            blockchain-connector: evmconnect
+            test-suite: TestEthereumMultipartyE2ESuite
+            database-type: sqlite3
+            token-provider: erc1155
+            multiparty-enabled: true
 
-            - blockchain-provider: fabric
-              blockchain-connector: fabconnect
-              test-suite: TestFabricE2ESuite
-              database-type: sqlite3
-              token-provider: none
-              multiparty-enabled: true
+          - stack-type: ethereum
+            blockchain-connector: evmconnect
+            test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
+            database-type: postgres
+            token-provider: erc20_erc721
+            multiparty-enabled: true
 
-            - blockchain-provider: geth
-              blockchain-connector: ethconnect
-              test-suite: TestEthereumGatewayE2ESuite
-              database-type: sqlite3
-              token-provider: erc20_erc721
-              multiparty-enabled: false
+          - stack-type: fabric
+            test-suite: TestFabricE2ESuite
+            database-type: sqlite3
+            token-provider: none
+            multiparty-enabled: true
 
-            - blockchain-provider: fabric
-              blockchain-connector: fabconnect
-              test-suite: TestFabricGatewayE2ESuite
-              database-type: sqlite3
-              token-provider: none
-              multiparty-enabled: false
+          - stack-type: ethereum
+            blockchain-connector: evmconnect
+            test-suite: TestEthereumGatewayE2ESuite
+            database-type: sqlite3
+            token-provider: erc20_erc721
+            multiparty-enabled: false
 
-            - blockchain-provider: geth
-              blockchain-connector: evmconnect
-              test-suite: TestEthereumMultipartyE2ESuite
-              database-type: sqlite3
-              token-provider: erc20_erc721
-              multiparty-enabled: true
+          - stack-type: fabric
+            test-suite: TestFabricGatewayE2ESuite
+            database-type: sqlite3
+            token-provider: none
+            multiparty-enabled: false
 
-            - blockchain-provider: geth
-              blockchain-connector: evmconnect
-              test-suite: TestEthereumGatewayE2ESuite
-              database-type: sqlite3
-              token-provider: erc1155
-              multiparty-enabled: false
+          - stack-type: ethereum
+            blockchain-connector: ethconnect
+            test-suite: TestEthereumMultipartyE2ESuite
+            database-type: sqlite3
+            token-provider: erc20_erc721
+            multiparty-enabled: true
+
+          - stack-type: ethereum
+            blockchain-connector: ethconnect
+            test-suite: TestEthereumGatewayE2ESuite
+            database-type: sqlite3
+            token-provider: erc1155
+            multiparty-enabled: false
 
     steps:
       - uses: actions/checkout@v2
@@ -144,7 +142,7 @@ jobs:
         env:
           BUILD_FIREFLY: false
           TEST_SUITE: ${{ matrix.test-suite }}
-          BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
+          STACK_TYPE: ${{ matrix.stack-type }}
           BLOCKCHAIN_CONNECTOR: ${{ matrix.blockchain-connector }}
           TOKENS_PROVIDER: ${{ matrix.token-provider }}
           DATABASE_TYPE: ${{ matrix.database-type }}

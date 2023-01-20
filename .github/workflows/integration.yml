@@ -12,26 +12,33 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test-suite: [TestEthereumMultipartyE2ESuite, TestEthereumGatewayE2ESuite, TestEthereumMultipartyTokensRemoteNameE2ESuite, TestFabricGatewayE2ESuite, TestFabricMultipartyE2ESuite]
-        blockchain-provider: [geth, besu, fabric]
+        test-suite:
+          [
+            TestEthereumMultipartyE2ESuite,
+            TestEthereumGatewayE2ESuite,
+            TestEthereumMultipartyTokensRemoteNameE2ESuite,
+            TestFabricGatewayE2ESuite,
+            TestFabricMultipartyE2ESuite,
+          ]
+        blockchain-node: [geth, besu, fabric]
         database-type: [sqlite3, postgres]
         exclude:
           - test-suite: TestEthereumGatewayE2ESuite
-            blockchain-provider: fabric
+            blockchain-node: fabric
           - test-suite: TestEthereumMultipartyE2ESuite
-            blockchain-provider: fabric
+            blockchain-node: fabric
           - test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
-            blockchain-provider: fabric
+            blockchain-node: fabric
           - test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
-            blockchain-provider: fabric
+            blockchain-node: fabric
           - test-suite: TestFabricGatewayE2ESuite
-            blockchain-provider: geth
+            blockchain-node: geth
           - test-suite: TestFabricGatewayE2ESuite
-            blockchain-provider: besu
+            blockchain-node: besu
           - test-suite: TestFabricMultipartyE2ESuite
-            blockchain-provider: geth
+            blockchain-node: geth
           - test-suite: TestFabricMultipartyE2ESuite
-            blockchain-provider: besu
+            blockchain-node: besu
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -54,8 +61,9 @@ jobs:
       - name: Run E2E tests
         env:
           TEST_SUITE: ${{ matrix.test-suite }}
-          BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
+          STACK_TYPE: ${{ matrix.stack-type }}
           DATABASE_TYPE: ${{ matrix.database-type }}
+          BLOCKCHAIN_NODE: ${{ matrix.blockchain-node }}
           BUILD_FIREFLY: false
           RESTART: true
         run: ./test/e2e/run.sh
@@ -90,7 +98,7 @@ jobs:
       - name: Run E2E tests
         env:
           TEST_SUITE: TestEthereumV1MigrationE2ESuite
-          BLOCKCHAIN_PROVIDER: geth
+          STACK_TYPE: ethereum
           DATABASE_TYPE: postgres
           BUILD_FIREFLY: false
           RESTART: false

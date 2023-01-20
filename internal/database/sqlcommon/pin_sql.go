@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -93,13 +93,13 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *core.Pin) (err error) {
 }
 
 func (s *SQLCommon) attemptPinInsert(ctx context.Context, tx *dbsql.TXWrapper, pin *core.Pin) (err error) {
-	pin.Sequence, err = s.InsertTx(ctx, pinsTable, tx,
+	requestConflictEmptyResult := true
+	pin.Sequence, err = s.InsertTxExt(ctx, pinsTable, tx,
 		s.setPinInsertValues(sq.Insert(pinsTable).Columns(pinColumns...), pin),
 		func() {
 			log.L(ctx).Debugf("Triggering creation event for pin %d", pin.Sequence)
 			s.callbacks.OrderedCollectionNSEvent(database.CollectionPins, core.ChangeEventTypeCreated, pin.Namespace, pin.Sequence)
-		},
-	)
+		}, requestConflictEmptyResult)
 	return err
 }
 
