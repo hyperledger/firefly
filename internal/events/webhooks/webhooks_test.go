@@ -715,6 +715,8 @@ func TestWebhookFailFastAsk(t *testing.T) {
 func TestDeliveryRequestNilMessage(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb.On("DeliveryResponse", mock.Anything, mock.Anything).Return("", &core.EventDelivery{})
 
 	yes := true
 	sub := &core.Subscription{
@@ -741,6 +743,7 @@ func TestDeliveryRequestNilMessage(t *testing.T) {
 
 	err := wh.DeliveryRequest(mock.Anything, sub, event, nil)
 	assert.NoError(t, err)
+	mcb.AssertExpectations(t)
 }
 
 func TestDeliveryRequestReplyToReply(t *testing.T) {
