@@ -211,18 +211,19 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 
 	if req.method == http.MethodPost || req.method == http.MethodPatch || req.method == http.MethodPut {
 		switch {
-		case !withData:
-			// We are just sending the event itself
-			req.r.SetBody(event)
 		case req.body != nil:
 			// We might have been told to extract a body from the first data record
 			req.r.SetBody(req.body)
 		case len(allData) > 1:
 			// We've got an array of data to POST
 			req.r.SetBody(allData)
-		default:
-			// Otherwise just send the first object directly
+		case len(allData) == 1:
+			// Just send the first object directly
 			req.r.SetBody(firstData)
+		default:
+			// Just send the event itself
+			req.r.SetBody(event)
+
 		}
 	}
 
@@ -292,7 +293,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 	log.L(wh.ctx).Tracef("Webhook response: %s", string(b))
 
 	// Emit the response
-	if reply {
+	if reply && event.Message != nil {
 		txType := fftypes.FFEnum(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
 		if req != nil && req.replyTx != "" {
 			txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
@@ -332,13 +333,8 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 }
 
 func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
-	if event.Message == nil && sub.Options.WithData != nil && *sub.Options.WithData {
-		log.L(wh.ctx).Debugf("Webhook withData=true subscription called with non-message event '%s'", event.ID)
-		return nil
-	}
-
 	reply := sub.Options.TransportOptions().GetBool("reply")
-	if reply && event.Message.Header.CID != nil {
+	if reply && event.Message != nil && event.Message.Header.CID != nil {
 		// We cowardly refuse to dispatch a message that is itself a reply, as it's hard for users to
 		// avoid loops - and there's no way for us to detect here if a user has configured correctly
 		// to avoid a loop.
