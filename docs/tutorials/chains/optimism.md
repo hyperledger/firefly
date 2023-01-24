@@ -41,10 +41,8 @@ For this tutorial, we will assume this file is saved at `~/Desktop/evmconnect.ym
 ## Creating a new stack
 To create a local FireFly development stack and connect it to the Optimism testnet, we will use command line flags to customize the following settings:
 
- - Create a new stack named `optimism` with `1` member
+ - Create a new Ethereum based stack named `optimism` with `1` member
  - Disable `multiparty` mode. We are going to be using this FireFly node as a Web3 gateway, and we don't need to communicate with a consortium here
- - Connect to an ethereum network
- - Use the `evmconnect` blockchain connector
  - Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine.
  - See the optimism [docs](https://community.optimism.io/docs/useful-tools/networks/) and select an HTTPS RPC endpoint.
  - Set the chain ID to `420` (the correct ID for the Optimism testnet)
@@ -52,10 +50,8 @@ To create a local FireFly development stack and connect it to the Optimism testn
 
 To do this, run the following command:
 ```
-ff init optimism 1 \
+ff init ethereum optimism 1 \
     --multiparty=false \
-    -b ethereum \
-    -c evmconnect \
     -n remote-rpc \
     --remote-node-url <selected RPC endpoint> \
     --chain-id 420 \

@@ -41,9 +41,14 @@ The FireFly stack will run in a `docker-compose` project. For systems that run D
 
 It's really easy to create a new FireFly stack. The `ff init` command can create a new stack for you, and will prompt you for a few details such as the name, and how many members you want in your stack.
 
-Run:
+To create an Ethereum based stack, run:
 ```
-ff init
+ff init ethereum
+```
+
+To create an Fabric based stack, run:
+```
+ff init fabric
 ```
 
 Choose a stack name. For this guide, I will choose the name `dev`, but you can pick whatever you want:
@@ -60,37 +65,46 @@ number of members: 3
 
 ### Stack initialization options
 
-There are quite a few options that you can choose from when creating a new stack. For now, we'll just stick with the defaults. To see the full list of options, just run `ff init --help`. 
+There are quite a few options that you can choose from when creating a new stack. For now, we'll just stick with the defaults. To see the full list of Ethereum options, just run `ff init ethereum --help` or to see the full list of Fabric options run `ff init fabric --help` 
 
 ```
-$ ff init --help
-Create a new FireFly local dev stack
+ff init ethereum --help
+Create a new FireFly local dev stack using an Ethereum blockchain
 
 Usage:
-  ff init [stack_name] [member_count] [flags]
+  ff init ethereum [stack_name] [member_count] [flags]
 
 Flags:
       --block-period int              Block period in seconds. Default is variable based on selected blockchain provider. (default -1)
-  -b, --blockchain-provider string    Blockchain provider to use. Options are: [geth besu fabric corda] (default "geth")
+  -c, --blockchain-connector string   Blockchain connector to use. Options are: [evmconnect ethconnect] (default "evmconnect")
+  -n, --blockchain-node string        Blockchain node type to use. Options are: [geth besu remote-rpc] (default "geth")
+      --chain-id int                  The chain ID - also used as the network ID (default 2021)
       --contract-address string       Do not automatically deploy a contract, instead use a pre-configured address
+  -h, --help                          help for ethereum
+      --remote-node-url string        For cases where the node is pre-existing and running remotely
+
+Global Flags:
+      --ansi string                   control when to print ANSI control characters ("never"|"always"|"auto") (default "auto")
+      --channel string                Select the FireFly release channel to use. Options are: [stable head alpha beta rc] (default "stable")
+      --connector-config string       The path to a yaml file containing extra config for the blockchain connector
       --core-config string            The path to a yaml file containing extra config for FireFly Core
-  -d, --database string               Database type to use. Options are: [postgres sqlite3] (default "sqlite3")
-      --ethconnect-config string      The path to a yaml file containing extra config for Ethconnect
+  -d, --database string               Database type to use. Options are: [sqlite3 postgres] (default "sqlite3")
   -e, --external int                  Manage a number of FireFly core processes outside of the docker-compose stack - useful for development and debugging
   -p, --firefly-base-port int         Mapped port base of FireFly core API (1 added for each member) (default 5000)
-  -h, --help                          help for init
+      --ipfs-mode string              Set the mode in which IFPS operates. Options are: [private public] (default "private")
   -m, --manifest string               Path to a manifest.json file containing the versions of each FireFly microservice to use. Overrides the --release flag.
+      --multiparty                    Enable or disable multiparty mode (default true)
+      --node-name stringArray         Node name
+      --org-name stringArray          Organization name
       --prometheus-enabled            Enables Prometheus metrics exposition and aggregation to a shared Prometheus server
       --prometheus-port int           Port for the shared Prometheus server (default 9090)
       --prompt-names                  Prompt for org and node names instead of using the defaults
-  -r, --release string                Select the FireFly release version to use (default "latest")
+  -r, --release string                Select the FireFly release version to use. Options are: [stable head alpha beta rc] (default "latest")
+      --request-timeout int           Custom request timeout (in seconds) - useful for registration to public chains
       --sandbox-enabled               Enables the FireFly Sandbox to be started with your FireFly stack (default true)
   -s, --services-base-port int        Mapped port base of services (100 added for each member) (default 5100)
-  -t, --token-providers stringArray   Token providers to use. Options are: [none erc1155 erc20_erc721] (default [erc1155])
-
-Global Flags:
-      --ansi string   control when to print ANSI control characters ("never"|"always"|"auto") (default "auto")
-  -v, --verbose       verbose log output
+  -t, --token-providers stringArray   Token providers to use. Options are: [none erc1155 erc20_erc721] (default [erc20_erc721])
+  -v, --verbose                       verbose log output
 ```
 
 ### Start your stack
