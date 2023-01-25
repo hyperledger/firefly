@@ -1514,8 +1514,9 @@ func TestAttemptMessageDispatchMissingTransfers(t *testing.T) {
 
 	msg := &core.Message{
 		Header: core.MessageHeader{
-			ID:   fftypes.NewUUID(),
-			Type: core.MessageTypeTransferBroadcast,
+			ID:         fftypes.NewUUID(),
+			Type:       core.MessageTypeBroadcast,
+			Attachment: core.AttachmentTypeTokenTransfer,
 			SignerRef: core.SignerRef{
 				Author: org1.DID,
 				Key:    "0x12345",
@@ -1541,7 +1542,7 @@ func TestAttemptMessageDispatchGetTransfersFail(t *testing.T) {
 	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Type:      core.MessageTypeTransferBroadcast,
+			Type:      core.MessageTypeDeprecatedTransferBroadcast,
 			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
 	}
@@ -1561,7 +1562,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Type:      core.MessageTypeTransferBroadcast,
+			Type:      core.MessageTypeDeprecatedTransferBroadcast,
 			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
 	}
@@ -1593,9 +1594,10 @@ func TestAttemptMessageDispatchGetApprovalsFail(t *testing.T) {
 
 	msg := &core.Message{
 		Header: core.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Type:      core.MessageTypeApprovalBroadcast,
-			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
+			ID:         fftypes.NewUUID(),
+			Type:       core.MessageTypeBroadcast,
+			Attachment: core.AttachmentTypeTokenApproval,
+			SignerRef:  core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
 	}
 	msg.Hash = msg.Header.Hash()
@@ -1614,7 +1616,7 @@ func TestAttemptMessageDispatchApprovalMismatch(t *testing.T) {
 	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Type:      core.MessageTypeApprovalBroadcast,
+			Type:      core.MessageTypeDeprecatedApprovalBroadcast,
 			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
 	}

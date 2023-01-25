@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -41,7 +41,6 @@ func (bm *broadcastManager) NewBroadcast(in *core.MessageInOut) syncasync.Sender
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
 	broadcast := bm.NewBroadcast(in)
-	in.Header.Type = core.MessageTypeBroadcast
 	if bm.metrics.IsMetricsEnabled() {
 		bm.metrics.MessageSubmitted(&in.Message)
 	}
@@ -95,6 +94,7 @@ func (s *broadcastSender) setDefaults() {
 	}
 	// We only have one transaction type for broadcast currently
 	msg.Header.TxType = core.TransactionTypeBatchPin
+	msg.Header.Attachment = core.AttachmentTypeUnset
 }
 
 func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod) error {

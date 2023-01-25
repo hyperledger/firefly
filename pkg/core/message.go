@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,14 +42,26 @@ var (
 	MessageTypePrivate = fftypes.FFEnumValue("messagetype", "private")
 	// MessageTypeGroupInit is a special private message that contains the definition of the group
 	MessageTypeGroupInit = fftypes.FFEnumValue("messagetype", "groupinit")
-	// MessageTypeTransferBroadcast is a broadcast message to accompany/annotate a token transfer
-	MessageTypeTransferBroadcast = fftypes.FFEnumValue("messagetype", "transfer_broadcast")
-	// MessageTypeTransferPrivate is a private message to accompany/annotate a token transfer
-	MessageTypeTransferPrivate = fftypes.FFEnumValue("messagetype", "transfer_private")
-	// MessageTypeApprovalBroadcast is a broadcast message to accompany/annotate a token approval
-	MessageTypeApprovalBroadcast = fftypes.FFEnumValue("messagetype", "approval_broadcast")
-	// MessageTypeApprovalPrivate is a private message to accompany/annotate a token approval
-	MessageTypeApprovalPrivate = fftypes.FFEnumValue("messagetype", "approval_private")
+	// MessageTypeDeprecatedTransferBroadcast is deprecated - use MessageTypeBroadcast with AttachmentTypeTokenTransfer
+	MessageTypeDeprecatedTransferBroadcast = fftypes.FFEnumValue("messagetype", "transfer_broadcast")
+	// MessageTypeDeprecatedTransferPrivate is deprecated - use MessageTypePrivate with AttachmentTypeTokenTransfer
+	MessageTypeDeprecatedTransferPrivate = fftypes.FFEnumValue("messagetype", "transfer_private")
+	// MessageTypeDeprecatedApprovalBroadcast is deprecated - use MessageTypeBroadcast with AttachmentTypeTokenApproval
+	MessageTypeDeprecatedApprovalBroadcast = fftypes.FFEnumValue("messagetype", "approval_broadcast")
+	// MessageTypeDeprecatedApprovalPrivate is a deprecated - use MessageTypePrivate with AttachmentTypeTokenApproval
+	MessageTypeDeprecatedApprovalPrivate = fftypes.FFEnumValue("messagetype", "approval_private")
+)
+
+// AttachmentType identifies another type of FireFly object that must be correlated with the message
+type AttachmentType = fftypes.FFEnum
+
+var (
+	// AttachmentTypeUnset indicate the message has no attachment
+	AttachmentTypeUnset = fftypes.FFEnumValue("attachmenttype", "")
+	// AttachmentTypeTokenTransfer indicates the message is accompanied by a token transfer
+	AttachmentTypeTokenTransfer = fftypes.FFEnumValue("attachmenttype", "token_transfer")
+	// AttachmentTypeTokenApproval indicates the message is accompanied by a token approval
+	AttachmentTypeTokenApproval = fftypes.FFEnumValue("attachmenttype", "token_approval")
 )
 
 // MessageState is the current transmission/confirmation state of a message
@@ -73,10 +85,11 @@ var (
 // MessageHeader contains all fields that contribute to the hash
 // The order of the serialization mut not change, once released
 type MessageHeader struct {
-	ID     *fftypes.UUID   `ffstruct:"MessageHeader" json:"id,omitempty" ffexcludeinput:"true"`
-	CID    *fftypes.UUID   `ffstruct:"MessageHeader" json:"cid,omitempty"`
-	Type   MessageType     `ffstruct:"MessageHeader" json:"type" ffenum:"messagetype"`
-	TxType TransactionType `ffstruct:"MessageHeader" json:"txtype,omitempty" ffenum:"txtype"`
+	ID         *fftypes.UUID   `ffstruct:"MessageHeader" json:"id,omitempty" ffexcludeinput:"true"`
+	CID        *fftypes.UUID   `ffstruct:"MessageHeader" json:"cid,omitempty"`
+	Type       MessageType     `ffstruct:"MessageHeader" json:"type" ffenum:"messagetype"`
+	TxType     TransactionType `ffstruct:"MessageHeader" json:"txtype,omitempty" ffenum:"txtype"`
+	Attachment AttachmentType  `ffstruct:"MessageHeader" json:"attachment,omitempty" ffenum:"attachmenttype" ffexcludeinput:"true"`
 	SignerRef
 	Created   *fftypes.FFTime       `ffstruct:"MessageHeader" json:"created,omitempty" ffexcludeinput:"true"`
 	Namespace string                `ffstruct:"MessageHeader" json:"namespace,omitempty" ffexcludeinput:"true"`

@@ -74,6 +74,7 @@ nav_order: 15
 | `cid` | The correlation ID of the message. Set this when a message is a response to another message | [`UUID`](simpletypes#uuid) |
 | `type` | The type of the message | `FFEnum`:<br/>`"definition"`<br/>`"broadcast"`<br/>`"private"`<br/>`"groupinit"`<br/>`"transfer_broadcast"`<br/>`"transfer_private"`<br/>`"approval_broadcast"`<br/>`"approval_private"` |
 | `txtype` | The type of transaction used to order/deliver this message | `FFEnum`:<br/>`"none"`<br/>`"unpinned"`<br/>`"batch_pin"`<br/>`"network_action"`<br/>`"token_pool"`<br/>`"token_transfer"`<br/>`"contract_deploy"`<br/>`"contract_invoke"`<br/>`"token_approval"`<br/>`"data_publish"` |
+| `attachment` | The type of attachment to be correlated with this message | `FFEnum`:<br/>`""`<br/>`"token_transfer"`<br/>`"token_approval"` |
 | `author` | The DID of identity of the submitter | `string` |
 | `key` | The on-chain signing key used to sign the transaction | `string` |
 | `created` | The creation time of the message | [`FFTime`](simpletypes#fftime) |

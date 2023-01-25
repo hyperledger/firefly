@@ -905,8 +905,9 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 		Message: &core.MessageInOut{
 			Message: core.Message{
 				Header: core.MessageHeader{
-					ID:   msgID,
-					Type: core.MessageTypeTransferPrivate,
+					ID:         msgID,
+					Type:       core.MessageTypePrivate,
+					Attachment: core.AttachmentTypeTokenTransfer,
 				},
 				Hash: hash,
 			},
@@ -972,7 +973,7 @@ func TestTransferTokensWithPrivateMessageDisabled(t *testing.T) {
 			Message: core.Message{
 				Header: core.MessageHeader{
 					ID:   msgID,
-					Type: core.MessageTypeTransferPrivate,
+					Type: core.MessageTypeDeprecatedTransferPrivate,
 				},
 				Hash: hash,
 			},

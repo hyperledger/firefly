@@ -548,7 +548,9 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		}
 
 		// For transfers, verify the transfer has come through
-		if msg.Header.Type == core.MessageTypeTransferBroadcast || msg.Header.Type == core.MessageTypeTransferPrivate {
+		if msg.Header.Attachment == core.AttachmentTypeTokenTransfer ||
+			msg.Header.Type == core.MessageTypeDeprecatedTransferBroadcast ||
+			msg.Header.Type == core.MessageTypeDeprecatedTransferPrivate {
 			fb := database.TokenTransferQueryFactory.NewFilter(ctx)
 			filter := fb.And(
 				fb.Eq("message", msg.Header.ID),
@@ -563,7 +565,9 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		}
 
 		// For approvals, verify the approval has come through
-		if msg.Header.Type == core.MessageTypeApprovalBroadcast || msg.Header.Type == core.MessageTypeApprovalPrivate {
+		if msg.Header.Attachment == core.AttachmentTypeTokenApproval ||
+			msg.Header.Type == core.MessageTypeDeprecatedApprovalBroadcast ||
+			msg.Header.Type == core.MessageTypeDeprecatedApprovalPrivate {
 			fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
 			filter := fb.And(
 				fb.Eq("message", msg.Header.ID),

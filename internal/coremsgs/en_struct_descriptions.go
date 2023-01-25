@@ -48,16 +48,17 @@ var ffm = func(key, translation string) i18n.MessageKey {
 
 var (
 	// MessageHeader field descriptions
-	MessageHeaderID        = ffm("MessageHeader.id", "The UUID of the message. Unique to each message")
-	MessageHeaderCID       = ffm("MessageHeader.cid", "The correlation ID of the message. Set this when a message is a response to another message")
-	MessageHeaderType      = ffm("MessageHeader.type", "The type of the message")
-	MessageHeaderTxType    = ffm("MessageHeader.txtype", "The type of transaction used to order/deliver this message")
-	MessageHeaderCreated   = ffm("MessageHeader.created", "The creation time of the message")
-	MessageHeaderNamespace = ffm("MessageHeader.namespace", "The namespace of the message within the multiparty network")
-	MessageHeaderGroup     = ffm("MessageHeader.group", "Private messages only - the identifier hash of the privacy group. Derived from the name and member list of the group")
-	MessageHeaderTopics    = ffm("MessageHeader.topics", "A message topic associates this message with an ordered stream of data. A custom topic should be assigned - using the default topic is discouraged")
-	MessageHeaderTag       = ffm("MessageHeader.tag", "The message tag indicates the purpose of the message to the applications that process it")
-	MessageHeaderDataHash  = ffm("MessageHeader.datahash", "A single hash representing all data in the message. Derived from the array of data ids+hashes attached to this message")
+	MessageHeaderID         = ffm("MessageHeader.id", "The UUID of the message. Unique to each message")
+	MessageHeaderCID        = ffm("MessageHeader.cid", "The correlation ID of the message. Set this when a message is a response to another message")
+	MessageHeaderType       = ffm("MessageHeader.type", "The type of the message")
+	MessageHeaderTxType     = ffm("MessageHeader.txtype", "The type of transaction used to order/deliver this message")
+	MessageHeaderAttachment = ffm("MessageHeader.attachment", "The type of attachment to be correlated with this message")
+	MessageHeaderCreated    = ffm("MessageHeader.created", "The creation time of the message")
+	MessageHeaderNamespace  = ffm("MessageHeader.namespace", "The namespace of the message within the multiparty network")
+	MessageHeaderGroup      = ffm("MessageHeader.group", "Private messages only - the identifier hash of the privacy group. Derived from the name and member list of the group")
+	MessageHeaderTopics     = ffm("MessageHeader.topics", "A message topic associates this message with an ordered stream of data. A custom topic should be assigned - using the default topic is discouraged")
+	MessageHeaderTag        = ffm("MessageHeader.tag", "The message tag indicates the purpose of the message to the applications that process it")
+	MessageHeaderDataHash   = ffm("MessageHeader.datahash", "A single hash representing all data in the message. Derived from the array of data ids+hashes attached to this message")
 
 	// Message field descriptions
 	MessageHeader         = ffm("Message.header", "The message header contains all fields that are used to build the message hash")

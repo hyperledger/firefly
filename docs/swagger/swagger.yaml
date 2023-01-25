@@ -5609,6 +5609,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -8048,6 +8056,14 @@ paths:
                       description: The message header contains all fields that are
                         used to build the message hash
                       properties:
+                        attachment:
+                          description: The type of attachment to be correlated with
+                            this message
+                          enum:
+                          - ""
+                          - token_transfer
+                          - token_approval
+                          type: string
                         author:
                           description: The DID of identity of the submitter
                           type: string
@@ -8300,6 +8316,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -8917,6 +8941,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -9054,6 +9086,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -9355,6 +9395,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -9498,6 +9546,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -9881,6 +9937,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -16164,6 +16228,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -18722,6 +18794,14 @@ paths:
                       description: The message header contains all fields that are
                         used to build the message hash
                       properties:
+                        attachment:
+                          description: The type of attachment to be correlated with
+                            this message
+                          enum:
+                          - ""
+                          - token_transfer
+                          - token_approval
+                          type: string
                         author:
                           description: The DID of identity of the submitter
                           type: string
@@ -18981,6 +19061,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -19664,6 +19752,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -19807,6 +19903,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -20121,6 +20225,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -20264,6 +20376,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string
@@ -20654,6 +20774,14 @@ paths:
                     description: The message header contains all fields that are used
                       to build the message hash
                     properties:
+                      attachment:
+                        description: The type of attachment to be correlated with
+                          this message
+                        enum:
+                        - ""
+                        - token_transfer
+                        - token_approval
+                        type: string
                       author:
                         description: The DID of identity of the submitter
                         type: string

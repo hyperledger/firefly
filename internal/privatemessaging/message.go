@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -41,7 +41,6 @@ func (pm *privateMessaging) NewMessage(in *core.MessageInOut) syncasync.Sender {
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
 	message := pm.NewMessage(in)
-	in.Header.Type = core.MessageTypePrivate
 	if pm.metrics.IsMetricsEnabled() {
 		pm.metrics.MessageSubmitted(&in.Message)
 	}
@@ -112,6 +111,7 @@ func (s *messageSender) setDefaults() {
 		// the only other valid option is "batch_pin"
 		msg.Header.TxType = core.TransactionTypeBatchPin
 	}
+	msg.Header.Attachment = core.AttachmentTypeUnset
 }
 
 func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) error {
