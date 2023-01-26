@@ -143,6 +143,10 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 		s.approval.TX.ID = txid
 		s.approval.TX.Type = core.TransactionTypeTokenApproval
 
+		if s.approval.Message != nil {
+			s.approval.Message.Transactions.Related = txid
+		}
+
 		op = core.NewOperation(
 			plugin,
 			s.mgr.namespace,

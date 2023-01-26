@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,6 +48,8 @@ var (
 		"datahash",
 		"hash",
 		"pins",
+		"tx_batch",
+		"tx_related",
 		"state",
 		"confirmed",
 		"tx_type",
@@ -57,6 +59,8 @@ var (
 	msgFilterFieldMap = map[string]string{
 		"type":           "mtype",
 		"txtype":         "tx_type",
+		"txbatch":        "tx_batch",
+		"txrelated":      "tx_related",
 		"batch":          "batch_id",
 		"group":          "group_hash",
 		"idempotencykey": "idempotency_key",
@@ -80,6 +84,8 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *dbsql.TXWrappe
 			Set("datahash", message.Header.DataHash).
 			Set("hash", message.Hash).
 			Set("pins", message.Pins).
+			Set("tx_batch", message.Transactions.Batch).
+			Set("tx_related", message.Transactions.Related).
 			Set("state", message.State).
 			Set("confirmed", message.Confirmed).
 			Set("tx_type", message.Header.TxType).
@@ -112,6 +118,8 @@ func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *core
 		message.Header.DataHash,
 		message.Hash,
 		message.Pins,
+		message.Transactions.Batch,
+		message.Transactions.Related,
 		message.State,
 		message.Confirmed,
 		message.Header.TxType,
@@ -422,6 +430,8 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message
 		&msg.Header.DataHash,
 		&msg.Hash,
 		&msg.Pins,
+		&msg.Transactions.Batch,
+		&msg.Transactions.Related,
 		&msg.State,
 		&msg.Confirmed,
 		&msg.Header.TxType,

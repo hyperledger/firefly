@@ -5272,6 +5272,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txbatch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txrelated
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -5529,6 +5539,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txbatch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txrelated
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -5713,6 +5733,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -5816,6 +5851,16 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: topics
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txbatch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txrelated
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -7966,6 +8011,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txbatch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txrelated
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -8152,6 +8207,22 @@ paths:
                       - confirmed
                       - rejected
                       type: string
+                    transactions:
+                      description: Identifiers for all transactions with which this
+                        message is associated
+                      properties:
+                        batch:
+                          description: The transaction ID representing delivery of
+                            the message batch
+                          format: uuid
+                          type: string
+                        related:
+                          description: The transaction ID of another transaction related
+                            to this one, which must complete before the message is
+                            confirmed
+                          format: uuid
+                          type: string
+                      type: object
                   type: object
                 type: array
           description: Success
@@ -8404,6 +8475,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -9015,6 +9101,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         "202":
@@ -9152,6 +9253,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -9459,6 +9575,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         "202":
@@ -9602,6 +9733,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -9985,6 +10131,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -15813,6 +15974,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txbatch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txrelated
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -16084,6 +16255,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txbatch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txrelated
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -16268,6 +16449,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -16378,6 +16574,16 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: topics
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txbatch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txrelated
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -18640,6 +18846,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txbatch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txrelated
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -18826,6 +19042,22 @@ paths:
                       - confirmed
                       - rejected
                       type: string
+                    transactions:
+                      description: Identifiers for all transactions with which this
+                        message is associated
+                      properties:
+                        batch:
+                          description: The transaction ID representing delivery of
+                            the message batch
+                          format: uuid
+                          type: string
+                        related:
+                          description: The transaction ID of another transaction related
+                            to this one, which must complete before the message is
+                            confirmed
+                          format: uuid
+                          type: string
+                      type: object
                   type: object
                 type: array
           description: Success
@@ -19085,6 +19317,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -19768,6 +20015,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         "202":
@@ -19911,6 +20173,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -20225,6 +20502,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         "202":
@@ -20368,6 +20660,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -20758,6 +21065,21 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  transactions:
+                    description: Identifiers for all transactions with which this
+                      message is associated
+                    properties:
+                      batch:
+                        description: The transaction ID representing delivery of the
+                          message batch
+                        format: uuid
+                        type: string
+                      related:
+                        description: The transaction ID of another transaction related
+                          to this one, which must complete before the message is confirmed
+                        format: uuid
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:

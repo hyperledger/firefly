@@ -232,6 +232,10 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 		s.transfer.TX.ID = txid
 		s.transfer.TX.Type = core.TransactionTypeTokenTransfer
 
+		if s.transfer.Message != nil {
+			s.transfer.Message.Transactions.Related = txid
+		}
+
 		op = core.NewOperation(
 			plugin,
 			s.mgr.namespace,

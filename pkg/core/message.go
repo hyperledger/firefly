@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -86,6 +86,11 @@ type MessageHeader struct {
 	DataHash  *fftypes.Bytes32      `ffstruct:"MessageHeader" json:"datahash,omitempty" ffexcludeinput:"true"`
 }
 
+type MessageTransactions struct {
+	Batch   *fftypes.UUID `ffstruct:"MessageTransactions" json:"batch,omitempty" ffexcludeinput:"true"`
+	Related *fftypes.UUID `ffstruct:"MessageTransactions" json:"related,omitempty" ffexcludeinput:"true"`
+}
+
 // Message is the envelope by which coordinated data exchange can happen between parties in the network
 // Data is passed by reference in these messages, and a chain of hashes covering the data and the
 // details of the message, provides a verification against tampering.
@@ -98,6 +103,7 @@ type Message struct {
 	Confirmed      *fftypes.FFTime       `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
 	Data           DataRefs              `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
 	Pins           fftypes.FFStringArray `ffstruct:"Message" json:"pins,omitempty" ffexcludeinput:"true"`
+	Transactions   MessageTransactions   `ffstruct:"Message" json:"transactions" ffexcludeinput:"true"`
 	IdempotencyKey IdempotencyKey        `ffstruct:"Message" json:"idempotencyKey,omitempty"`
 	Sequence       int64                 `ffstruct:"Message" json:"-"` // Local database sequence used internally for batch assembly
 }
@@ -110,9 +116,10 @@ type Message struct {
 // Fields such as the state/confirmed do NOT transfer, as these are calculated individually by each member.
 func (m *Message) BatchMessage() *Message {
 	return &Message{
-		Header: m.Header,
-		Hash:   m.Hash,
-		Data:   m.Data,
+		Header:       m.Header,
+		Hash:         m.Hash,
+		Data:         m.Data,
+		Transactions: m.Transactions,
 		// The pins are immutable once assigned by the sender, which happens before the batch is sealed
 		Pins: m.Pins,
 	}

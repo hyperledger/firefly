@@ -68,7 +68,12 @@ var (
 	MessageConfirmed      = ffm("Message.confirmed", "The timestamp of when the message was confirmed/rejected")
 	MessageData           = ffm("Message.data", "The list of data elements attached to the message")
 	MessagePins           = ffm("Message.pins", "For private messages, a unique pin hash:nonce is assigned for each topic")
+	MessageTransactions   = ffm("Message.transactions", "Identifiers for all transactions with which this message is associated")
 	MessageIdempotencyKey = ffm("Message.idempotencyKey", "An optional unique identifier for a message. Cannot be duplicated within a namespace, thus allowing idempotent submission of messages to the API. Local only - not transferred when the message is sent to other members of the network")
+
+	// MessageTransactions field descriptions
+	MessageTXBatch   = ffm("MessageTransactions.batch", "The transaction ID representing delivery of the message batch")
+	MessageTXRelated = ffm("MessageTransactions.related", "The transaction ID of another transaction related to this one, which must complete before the message is confirmed")
 
 	// MessageInOut field descriptions
 	MessageInOutData  = ffm("MessageInOut.data", "For input allows you to specify data in-line in the message, that will be turned into data attachments. For output when fetchdata is used on API calls, includes the in-line data payloads of all data attachments")

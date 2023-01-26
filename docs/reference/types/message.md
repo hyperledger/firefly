@@ -48,7 +48,8 @@ nav_order: 15
             "id": "fdf9f118-eb81-4086-a63d-b06715b3bb4e",
             "hash": "34cf848d896c83cdf433ea7bd9490c71800b316a96aac3c3a78a42a4c455d67d"
         }
-    ]
+    ],
+    "transactions": {}
 }
 ```
 
@@ -64,6 +65,7 @@ nav_order: 15
 | `confirmed` | The timestamp of when the message was confirmed/rejected | [`FFTime`](simpletypes#fftime) |
 | `data` | The list of data elements attached to the message | [`DataRef[]`](#dataref) |
 | `pins` | For private messages, a unique pin hash:nonce is assigned for each topic | `string[]` |
+| `transactions` | Identifiers for all transactions with which this message is associated | [`MessageTransactions`](#messagetransactions) |
 | `idempotencyKey` | An optional unique identifier for a message. Cannot be duplicated within a namespace, thus allowing idempotent submission of messages to the API. Local only - not transferred when the message is sent to other members of the network | `IdempotencyKey` |
 
 ## MessageHeader
@@ -89,5 +91,13 @@ nav_order: 15
 |------------|-------------|------|
 | `id` | The UUID of the referenced data resource | [`UUID`](simpletypes#uuid) |
 | `hash` | The hash of the referenced data | `Bytes32` |
+
+
+## MessageTransactions
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `batch` | The transaction ID representing delivery of the message batch | [`UUID`](simpletypes#uuid) |
+| `related` | The transaction ID of another transaction related to this one, which must complete before the message is confirmed | [`UUID`](simpletypes#uuid) |
 
 
