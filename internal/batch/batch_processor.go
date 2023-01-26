@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -614,6 +614,7 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 			for i, msg := range state.Messages {
 				msgIDs[i] = msg.Header.ID
 				msg.BatchID = state.Persisted.ID
+				msg.TransactionID = state.Persisted.TX.ID
 				if bp.conf.txType == core.TransactionTypeBatchPin {
 					msg.State = core.MessageStateSent
 				} else {
@@ -634,14 +635,16 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 			if bp.conf.txType == core.TransactionTypeBatchPin {
 				// Sent state waiting for confirm
 				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).
-					Set("batch", state.Persisted.ID).   // Mark the batch they are in
-					Set("state", core.MessageStateSent) // Set them sent, so they won't be picked up and re-sent after restart/rewind
+					Set("batch", state.Persisted.ID).    // Mark the batch they are in
+					Set("state", core.MessageStateSent). // Set them sent, so they won't be picked up and re-sent after restart/rewind
+					Set("txid", state.Persisted.TX.ID)
 			} else {
 				// Immediate confirmation if no batch pinning
 				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).
 					Set("batch", state.Persisted.ID).
 					Set("state", core.MessageStateConfirmed).
-					Set("confirmed", confirmTime)
+					Set("confirmed", confirmTime).
+					Set("txid", state.Persisted.TX.ID)
 			}
 
 			if err = bp.database.UpdateMessages(ctx, bp.bm.namespace, filter, allMsgsUpdate); err != nil {

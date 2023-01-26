@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -94,6 +94,8 @@ type Message struct {
 	LocalNamespace string                `ffstruct:"Message" json:"localNamespace,omitempty" ffexcludeinput:"true"`
 	Hash           *fftypes.Bytes32      `ffstruct:"Message" json:"hash,omitempty" ffexcludeinput:"true"`
 	BatchID        *fftypes.UUID         `ffstruct:"Message" json:"batch,omitempty" ffexcludeinput:"true"`
+	TransactionID  *fftypes.UUID         `ffstruct:"Message" json:"txid,omitempty" ffexcludeinput:"true"`
+	TxParent       *TransactionRef       `ffstruct:"Message" json:"txparent,omitempty"`
 	State          MessageState          `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate" ffexcludeinput:"true"`
 	Confirmed      *fftypes.FFTime       `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
 	Data           DataRefs              `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
@@ -110,9 +112,10 @@ type Message struct {
 // Fields such as the state/confirmed do NOT transfer, as these are calculated individually by each member.
 func (m *Message) BatchMessage() *Message {
 	return &Message{
-		Header: m.Header,
-		Hash:   m.Hash,
-		Data:   m.Data,
+		Header:   m.Header,
+		Hash:     m.Hash,
+		Data:     m.Data,
+		TxParent: m.TxParent, // TODO: this should really move inside Header
 		// The pins are immutable once assigned by the sender, which happens before the batch is sealed
 		Pins: m.Pins,
 	}

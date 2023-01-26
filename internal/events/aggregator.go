@@ -532,6 +532,18 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 	return nil
 }
 
+func needsTokenTransfer(msg *core.Message) bool {
+	return (msg.TxParent != nil && msg.TxParent.Type == core.TransactionTypeTokenTransfer) ||
+		msg.Header.Type == core.MessageTypeTransferBroadcast ||
+		msg.Header.Type == core.MessageTypeTransferPrivate
+}
+
+func needsTokenApproval(msg *core.Message) bool {
+	return (msg.TxParent != nil && msg.TxParent.Type == core.TransactionTypeTokenApproval) ||
+		msg.Header.Type == core.MessageTypeApprovalBroadcast ||
+		msg.Header.Type == core.MessageTypeApprovalPrivate
+}
+
 func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState, pin *core.Pin) (newState core.MessageState, dispatched bool, err error) {
 	var customCorrelator *fftypes.UUID
 
@@ -548,7 +560,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		}
 
 		// For transfers, verify the transfer has come through
-		if msg.Header.Type == core.MessageTypeTransferBroadcast || msg.Header.Type == core.MessageTypeTransferPrivate {
+		if needsTokenTransfer(msg) {
 			fb := database.TokenTransferQueryFactory.NewFilter(ctx)
 			filter := fb.And(
 				fb.Eq("message", msg.Header.ID),
@@ -563,7 +575,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		}
 
 		// For approvals, verify the approval has come through
-		if msg.Header.Type == core.MessageTypeApprovalBroadcast || msg.Header.Type == core.MessageTypeApprovalPrivate {
+		if needsTokenApproval(msg) {
 			fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
 			filter := fb.And(
 				fb.Eq("message", msg.Header.ID),

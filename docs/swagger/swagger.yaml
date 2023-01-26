@@ -5272,6 +5272,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -5529,6 +5544,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -5713,6 +5743,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -5816,6 +5863,21 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: topics
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -7966,6 +8028,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -8152,6 +8229,23 @@ paths:
                       - confirmed
                       - rejected
                       type: string
+                    txid:
+                      description: The ID of the transaction used to order/deliver
+                        this message
+                      format: uuid
+                      type: string
+                    txparent:
+                      description: The parent transaction that originally triggered
+                        this message
+                      properties:
+                        id:
+                          description: The UUID of the FireFly transaction
+                          format: uuid
+                          type: string
+                        type:
+                          description: The type of the FireFly transaction
+                          type: string
+                      type: object
                   type: object
                 type: array
           description: Success
@@ -8197,51 +8291,10 @@ paths:
                     format: date-time
                     type: string
                   data:
-                    description: For input allows you to specify data in-line in the
-                      message, that will be turned into data attachments. For output
-                      when fetchdata is used on API calls, includes the in-line data
-                      payloads of all data attachments
+                    description: The list of data elements attached to the message
                     items:
-                      description: For input allows you to specify data in-line in
-                        the message, that will be turned into data attachments. For
-                        output when fetchdata is used on API calls, includes the in-line
-                        data payloads of all data attachments
+                      description: The list of data elements attached to the message
                       properties:
-                        blob:
-                          description: An optional in-line hash reference to a previously
-                            uploaded binary data blob
-                          properties:
-                            hash:
-                              description: The hash of the binary blob data
-                              format: byte
-                              type: string
-                            name:
-                              description: The name field from the metadata attached
-                                to the blob, commonly used as a path/filename, and
-                                indexed for search
-                              type: string
-                            public:
-                              description: If the blob data has been published to
-                                shared storage, this field is the id of the data in
-                                the shared storage plugin (IPFS hash etc.)
-                              type: string
-                            size:
-                              description: The size of the binary data
-                              format: int64
-                              type: integer
-                          type: object
-                        datatype:
-                          description: The optional datatype to use for validation
-                            of the in-line data
-                          properties:
-                            name:
-                              description: The name of the datatype
-                              type: string
-                            version:
-                              description: The version of the datatype. Semantic versioning
-                                is encouraged, such as v1.0.1
-                              type: string
-                          type: object
                         hash:
                           description: The hash of the referenced data
                           format: byte
@@ -8250,13 +8303,6 @@ paths:
                           description: The UUID of the referenced data resource
                           format: uuid
                           type: string
-                        validator:
-                          description: The data validator type to use for in-line
-                            data
-                          type: string
-                        value:
-                          description: The in-line value for the data. Can be any
-                            JSON type - object, array, string, number or boolean
                       type: object
                     type: array
                   group:
@@ -8404,6 +8450,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -8878,6 +8941,18 @@ paths:
                     of messages to the API. Local only - not transferred when the
                     message is sent to other members of the network
                   type: string
+                txparent:
+                  description: The parent transaction that originally triggered this
+                    message
+                  properties:
+                    id:
+                      description: The UUID of the FireFly transaction
+                      format: uuid
+                      type: string
+                    type:
+                      description: The type of the FireFly transaction
+                      type: string
+                  type: object
               type: object
       responses:
         "200":
@@ -9015,6 +9090,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         "202":
@@ -9152,6 +9244,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -9316,6 +9425,18 @@ paths:
                     of messages to the API. Local only - not transferred when the
                     message is sent to other members of the network
                   type: string
+                txparent:
+                  description: The parent transaction that originally triggered this
+                    message
+                  properties:
+                    id:
+                      description: The UUID of the FireFly transaction
+                      format: uuid
+                      type: string
+                    type:
+                      description: The type of the FireFly transaction
+                      type: string
+                  type: object
               type: object
       responses:
         "200":
@@ -9459,6 +9580,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         "202":
@@ -9602,6 +9740,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -9762,6 +9917,18 @@ paths:
                     of messages to the API. Local only - not transferred when the
                     message is sent to other members of the network
                   type: string
+                txparent:
+                  description: The parent transaction that originally triggered this
+                    message
+                  properties:
+                    id:
+                      description: The UUID of the FireFly transaction
+                      format: uuid
+                      type: string
+                    type:
+                      description: The type of the FireFly transaction
+                      type: string
+                  type: object
               type: object
       responses:
         "200":
@@ -9778,51 +9945,10 @@ paths:
                     format: date-time
                     type: string
                   data:
-                    description: For input allows you to specify data in-line in the
-                      message, that will be turned into data attachments. For output
-                      when fetchdata is used on API calls, includes the in-line data
-                      payloads of all data attachments
+                    description: The list of data elements attached to the message
                     items:
-                      description: For input allows you to specify data in-line in
-                        the message, that will be turned into data attachments. For
-                        output when fetchdata is used on API calls, includes the in-line
-                        data payloads of all data attachments
+                      description: The list of data elements attached to the message
                       properties:
-                        blob:
-                          description: An optional in-line hash reference to a previously
-                            uploaded binary data blob
-                          properties:
-                            hash:
-                              description: The hash of the binary blob data
-                              format: byte
-                              type: string
-                            name:
-                              description: The name field from the metadata attached
-                                to the blob, commonly used as a path/filename, and
-                                indexed for search
-                              type: string
-                            public:
-                              description: If the blob data has been published to
-                                shared storage, this field is the id of the data in
-                                the shared storage plugin (IPFS hash etc.)
-                              type: string
-                            size:
-                              description: The size of the binary data
-                              format: int64
-                              type: integer
-                          type: object
-                        datatype:
-                          description: The optional datatype to use for validation
-                            of the in-line data
-                          properties:
-                            name:
-                              description: The name of the datatype
-                              type: string
-                            version:
-                              description: The version of the datatype. Semantic versioning
-                                is encouraged, such as v1.0.1
-                              type: string
-                          type: object
                         hash:
                           description: The hash of the referenced data
                           format: byte
@@ -9831,13 +9957,6 @@ paths:
                           description: The UUID of the referenced data resource
                           format: uuid
                           type: string
-                        validator:
-                          description: The data validator type to use for in-line
-                            data
-                          type: string
-                        value:
-                          description: The in-line value for the data. Can be any
-                            JSON type - object, array, string, number or boolean
                       type: object
                     type: array
                   group:
@@ -9985,6 +10104,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -15813,6 +15949,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -16084,6 +16235,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -16268,6 +16434,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -16378,6 +16561,21 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: topics
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -18640,6 +18838,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -18826,6 +19039,23 @@ paths:
                       - confirmed
                       - rejected
                       type: string
+                    txid:
+                      description: The ID of the transaction used to order/deliver
+                        this message
+                      format: uuid
+                      type: string
+                    txparent:
+                      description: The parent transaction that originally triggered
+                        this message
+                      properties:
+                        id:
+                          description: The UUID of the FireFly transaction
+                          format: uuid
+                          type: string
+                        type:
+                          description: The type of the FireFly transaction
+                          type: string
+                      type: object
                   type: object
                 type: array
           description: Success
@@ -18878,51 +19108,10 @@ paths:
                     format: date-time
                     type: string
                   data:
-                    description: For input allows you to specify data in-line in the
-                      message, that will be turned into data attachments. For output
-                      when fetchdata is used on API calls, includes the in-line data
-                      payloads of all data attachments
+                    description: The list of data elements attached to the message
                     items:
-                      description: For input allows you to specify data in-line in
-                        the message, that will be turned into data attachments. For
-                        output when fetchdata is used on API calls, includes the in-line
-                        data payloads of all data attachments
+                      description: The list of data elements attached to the message
                       properties:
-                        blob:
-                          description: An optional in-line hash reference to a previously
-                            uploaded binary data blob
-                          properties:
-                            hash:
-                              description: The hash of the binary blob data
-                              format: byte
-                              type: string
-                            name:
-                              description: The name field from the metadata attached
-                                to the blob, commonly used as a path/filename, and
-                                indexed for search
-                              type: string
-                            public:
-                              description: If the blob data has been published to
-                                shared storage, this field is the id of the data in
-                                the shared storage plugin (IPFS hash etc.)
-                              type: string
-                            size:
-                              description: The size of the binary data
-                              format: int64
-                              type: integer
-                          type: object
-                        datatype:
-                          description: The optional datatype to use for validation
-                            of the in-line data
-                          properties:
-                            name:
-                              description: The name of the datatype
-                              type: string
-                            version:
-                              description: The version of the datatype. Semantic versioning
-                                is encouraged, such as v1.0.1
-                              type: string
-                          type: object
                         hash:
                           description: The hash of the referenced data
                           format: byte
@@ -18931,13 +19120,6 @@ paths:
                           description: The UUID of the referenced data resource
                           format: uuid
                           type: string
-                        validator:
-                          description: The data validator type to use for in-line
-                            data
-                          type: string
-                        value:
-                          description: The in-line value for the data. Can be any
-                            JSON type - object, array, string, number or boolean
                       type: object
                     type: array
                   group:
@@ -19085,6 +19267,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -19625,6 +19824,18 @@ paths:
                     of messages to the API. Local only - not transferred when the
                     message is sent to other members of the network
                   type: string
+                txparent:
+                  description: The parent transaction that originally triggered this
+                    message
+                  properties:
+                    id:
+                      description: The UUID of the FireFly transaction
+                      format: uuid
+                      type: string
+                    type:
+                      description: The type of the FireFly transaction
+                      type: string
+                  type: object
               type: object
       responses:
         "200":
@@ -19768,6 +19979,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         "202":
@@ -19911,6 +20139,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -20082,6 +20327,18 @@ paths:
                     of messages to the API. Local only - not transferred when the
                     message is sent to other members of the network
                   type: string
+                txparent:
+                  description: The parent transaction that originally triggered this
+                    message
+                  properties:
+                    id:
+                      description: The UUID of the FireFly transaction
+                      format: uuid
+                      type: string
+                    type:
+                      description: The type of the FireFly transaction
+                      type: string
+                  type: object
               type: object
       responses:
         "200":
@@ -20225,6 +20482,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         "202":
@@ -20368,6 +20642,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -20535,6 +20826,18 @@ paths:
                     of messages to the API. Local only - not transferred when the
                     message is sent to other members of the network
                   type: string
+                txparent:
+                  description: The parent transaction that originally triggered this
+                    message
+                  properties:
+                    id:
+                      description: The UUID of the FireFly transaction
+                      format: uuid
+                      type: string
+                    type:
+                      description: The type of the FireFly transaction
+                      type: string
+                  type: object
               type: object
       responses:
         "200":
@@ -20551,51 +20854,10 @@ paths:
                     format: date-time
                     type: string
                   data:
-                    description: For input allows you to specify data in-line in the
-                      message, that will be turned into data attachments. For output
-                      when fetchdata is used on API calls, includes the in-line data
-                      payloads of all data attachments
+                    description: The list of data elements attached to the message
                     items:
-                      description: For input allows you to specify data in-line in
-                        the message, that will be turned into data attachments. For
-                        output when fetchdata is used on API calls, includes the in-line
-                        data payloads of all data attachments
+                      description: The list of data elements attached to the message
                       properties:
-                        blob:
-                          description: An optional in-line hash reference to a previously
-                            uploaded binary data blob
-                          properties:
-                            hash:
-                              description: The hash of the binary blob data
-                              format: byte
-                              type: string
-                            name:
-                              description: The name field from the metadata attached
-                                to the blob, commonly used as a path/filename, and
-                                indexed for search
-                              type: string
-                            public:
-                              description: If the blob data has been published to
-                                shared storage, this field is the id of the data in
-                                the shared storage plugin (IPFS hash etc.)
-                              type: string
-                            size:
-                              description: The size of the binary data
-                              format: int64
-                              type: integer
-                          type: object
-                        datatype:
-                          description: The optional datatype to use for validation
-                            of the in-line data
-                          properties:
-                            name:
-                              description: The name of the datatype
-                              type: string
-                            version:
-                              description: The version of the datatype. Semantic versioning
-                                is encouraged, such as v1.0.1
-                              type: string
-                          type: object
                         hash:
                           description: The hash of the referenced data
                           format: byte
@@ -20604,13 +20866,6 @@ paths:
                           description: The UUID of the referenced data resource
                           format: uuid
                           type: string
-                        validator:
-                          description: The data validator type to use for in-line
-                            data
-                          type: string
-                        value:
-                          description: The in-line value for the data. Can be any
-                            JSON type - object, array, string, number or boolean
                       type: object
                     type: array
                   group:
@@ -20758,6 +21013,23 @@ paths:
                     - confirmed
                     - rejected
                     type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
+                    type: string
+                  txparent:
+                    description: The parent transaction that originally triggered
+                      this message
+                    properties:
+                      id:
+                        description: The UUID of the FireFly transaction
+                        format: uuid
+                        type: string
+                      type:
+                        description: The type of the FireFly transaction
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:

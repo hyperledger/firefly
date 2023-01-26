@@ -698,6 +698,9 @@ var MessageQueryFactory = &ffapi.QueryFields{
 	"sequence":       &ffapi.Int64Field{},
 	"txtype":         &ffapi.StringField{},
 	"batch":          &ffapi.UUIDField{},
+	"txid":           &ffapi.UUIDField{},
+	"txparent.type":  &ffapi.StringField{},
+	"txparent.id":    &ffapi.UUIDField{},
 }
 
 // BatchQueryFactory filter fields for batches

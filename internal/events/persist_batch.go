@@ -108,7 +108,6 @@ func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batc
 		if valid = em.validateBatchMessage(ctx, batch, i, msg); !valid {
 			return false, nil
 		}
-		msg.LocalNamespace = em.namespace.Name
 	}
 
 	// We require that the batch contains exactly the set of data that is in the messages - no more or less.
@@ -198,7 +197,9 @@ func (em *eventManager) validateBatchMessage(ctx context.Context, batch *core.Ba
 		log.L(ctx).Errorf("Mismatched key/author '%s'/'%s' on message entry %d in batch '%s'", msg.Header.Key, msg.Header.Author, i, batch.ID)
 		return false
 	}
+	msg.LocalNamespace = em.namespace.Name
 	msg.BatchID = batch.ID
+	msg.TransactionID = batch.Payload.TX.ID
 
 	l.Tracef("Batch '%s' message %d: %+v", batch.ID, i, msg)
 

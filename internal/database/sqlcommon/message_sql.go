@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,6 +48,9 @@ var (
 		"datahash",
 		"hash",
 		"pins",
+		"tx_id",
+		"tx_parent_type",
+		"tx_parent_id",
 		"state",
 		"confirmed",
 		"tx_type",
@@ -57,6 +60,9 @@ var (
 	msgFilterFieldMap = map[string]string{
 		"type":           "mtype",
 		"txtype":         "tx_type",
+		"txid":           "tx_id",
+		"txparent.type":  "tx_parent_type",
+		"txparent.id":    "tx_parent_id",
 		"batch":          "batch_id",
 		"group":          "group_hash",
 		"idempotencykey": "idempotency_key",
@@ -67,6 +73,13 @@ const messagesTable = "messages"
 const messagesDataJoinTable = "messages_data"
 
 func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *dbsql.TXWrapper, message *core.Message) (int64, error) {
+	var txParentID *fftypes.UUID
+	var txParentType core.TransactionType
+	if message.TxParent != nil {
+		txParentID = message.TxParent.ID
+		txParentType = message.TxParent.Type
+	}
+
 	return s.UpdateTx(ctx, messagesTable, tx,
 		sq.Update(messagesTable).
 			Set("cid", message.Header.CID).
@@ -80,6 +93,9 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *dbsql.TXWrappe
 			Set("datahash", message.Header.DataHash).
 			Set("hash", message.Hash).
 			Set("pins", message.Pins).
+			Set("tx_id", message.TransactionID).
+			Set("tx_parent_type", txParentType).
+			Set("tx_parent_id", txParentID).
 			Set("state", message.State).
 			Set("confirmed", message.Confirmed).
 			Set("tx_type", message.Header.TxType).
@@ -97,6 +113,13 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *dbsql.TXWrappe
 }
 
 func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *core.Message) sq.InsertBuilder {
+	var txParentID *fftypes.UUID
+	var txParentType core.TransactionType
+	if message.TxParent != nil {
+		txParentID = message.TxParent.ID
+		txParentType = message.TxParent.Type
+	}
+
 	return query.Values(
 		message.Header.ID,
 		message.Header.CID,
@@ -112,6 +135,9 @@ func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *core
 		message.Header.DataHash,
 		message.Hash,
 		message.Pins,
+		message.TransactionID,
+		txParentType,
+		txParentID,
 		message.State,
 		message.Confirmed,
 		message.Header.TxType,
@@ -407,6 +433,7 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, namespace string, msgs []*
 
 func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message, error) {
 	var msg core.Message
+	var txParent core.TransactionRef
 	err := row.Scan(
 		&msg.Header.ID,
 		&msg.Header.CID,
@@ -422,6 +449,9 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message
 		&msg.Header.DataHash,
 		&msg.Hash,
 		&msg.Pins,
+		&msg.TransactionID,
+		&txParent.Type,
+		&txParent.ID,
 		&msg.State,
 		&msg.Confirmed,
 		&msg.Header.TxType,
@@ -432,6 +462,9 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, messagesTable)
+	}
+	if txParent.ID != nil {
+		msg.TxParent = &txParent
 	}
 	return &msg, nil
 }
