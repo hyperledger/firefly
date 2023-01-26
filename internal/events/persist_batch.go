@@ -40,8 +40,8 @@ func (em *eventManager) persistBatch(ctx context.Context, batch *core.Batch) (pe
 		return nil, false, nil // This is not retryable. skip this batch
 	}
 
-	if len(batch.Payload.Messages) == 0 || len(batch.Payload.Data) == 0 {
-		l.Errorf("Invalid batch '%s'. Missing messages (%d) or data (%d)", batch.ID, len(batch.Payload.Messages), len(batch.Payload.Data))
+	if len(batch.Payload.Messages) == 0 {
+		l.Errorf("Invalid batch '%s'. No messages in batch.", batch.ID)
 		return nil, false, nil // This is not retryable. skip this batch
 	}
 
