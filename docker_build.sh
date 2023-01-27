@@ -48,4 +48,4 @@ docker buildx build \
     --build-arg UI_RELEASE=$UI_RELEASE \
     $@ \
     .
-docker buildx rm firefly
+docker buildx rm firefly --keep-state
