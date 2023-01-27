@@ -267,19 +267,21 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 
 func (s *transferSender) buildTransferMessage(ctx context.Context, in *core.MessageInOut) (syncasync.Sender, error) {
 	allowedTypes := []fftypes.FFEnum{
-		core.MessageTypeTransferBroadcast,
-		core.MessageTypeTransferPrivate,
+		core.MessageTypeBroadcast,
+		core.MessageTypePrivate,
+		core.MessageTypeDeprecatedTransferBroadcast,
+		core.MessageTypeDeprecatedTransferPrivate,
 	}
 	if in.Header.Type == "" {
-		in.Header.Type = core.MessageTypeTransferBroadcast
+		in.Header.Type = core.MessageTypeBroadcast
 	}
 	switch in.Header.Type {
-	case core.MessageTypeTransferBroadcast:
+	case core.MessageTypeBroadcast, core.MessageTypeDeprecatedTransferBroadcast:
 		if s.mgr.broadcast == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
 		}
 		return s.mgr.broadcast.NewBroadcast(in), nil
-	case core.MessageTypeTransferPrivate:
+	case core.MessageTypePrivate, core.MessageTypeDeprecatedTransferPrivate:
 		if s.mgr.messaging == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
 		}

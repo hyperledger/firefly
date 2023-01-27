@@ -42,14 +42,14 @@ var (
 	MessageTypePrivate = fftypes.FFEnumValue("messagetype", "private")
 	// MessageTypeGroupInit is a special private message that contains the definition of the group
 	MessageTypeGroupInit = fftypes.FFEnumValue("messagetype", "groupinit")
-	// MessageTypeTransferBroadcast is a broadcast message to accompany/annotate a token transfer
-	MessageTypeTransferBroadcast = fftypes.FFEnumValue("messagetype", "transfer_broadcast")
-	// MessageTypeTransferPrivate is a private message to accompany/annotate a token transfer
-	MessageTypeTransferPrivate = fftypes.FFEnumValue("messagetype", "transfer_private")
-	// MessageTypeApprovalBroadcast is a broadcast message to accompany/annotate a token approval
-	MessageTypeApprovalBroadcast = fftypes.FFEnumValue("messagetype", "approval_broadcast")
-	// MessageTypeApprovalPrivate is a private message to accompany/annotate a token approval
-	MessageTypeApprovalPrivate = fftypes.FFEnumValue("messagetype", "approval_private")
+	// MessageTypeDeprecatedTransferBroadcast is deprecated - use MessageTypeBroadcast (and refer to TxParent.Type)
+	MessageTypeDeprecatedTransferBroadcast = fftypes.FFEnumValue("messagetype", "transfer_broadcast")
+	// MessageTypeDeprecatedTransferPrivate is deprecated - use MessageTypePrivate (and refer to TxParent.Type)
+	MessageTypeDeprecatedTransferPrivate = fftypes.FFEnumValue("messagetype", "transfer_private")
+	// MessageTypeDeprecatedApprovalBroadcast is deprecated - use MessageTypeBroadcast (and refer to TxParent.Type)
+	MessageTypeDeprecatedApprovalBroadcast = fftypes.FFEnumValue("messagetype", "approval_broadcast")
+	// MessageTypeDeprecatedApprovalPrivate is a deprecated - use MessageTypePrivate (and refer to TxParent.Type)
+	MessageTypeDeprecatedApprovalPrivate = fftypes.FFEnumValue("messagetype", "approval_private")
 )
 
 // MessageState is the current transmission/confirmation state of a message

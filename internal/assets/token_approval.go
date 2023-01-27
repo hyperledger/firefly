@@ -200,19 +200,21 @@ func (am *assetManager) validateApproval(ctx context.Context, approval *core.Tok
 
 func (s *approveSender) buildApprovalMessage(ctx context.Context, in *core.MessageInOut) (syncasync.Sender, error) {
 	allowedTypes := []fftypes.FFEnum{
-		core.MessageTypeApprovalBroadcast,
-		core.MessageTypeApprovalPrivate,
+		core.MessageTypeBroadcast,
+		core.MessageTypePrivate,
+		core.MessageTypeDeprecatedApprovalBroadcast,
+		core.MessageTypeDeprecatedApprovalPrivate,
 	}
 	if in.Header.Type == "" {
-		in.Header.Type = core.MessageTypeApprovalBroadcast
+		in.Header.Type = core.MessageTypeBroadcast
 	}
 	switch in.Header.Type {
-	case core.MessageTypeApprovalBroadcast:
+	case core.MessageTypeBroadcast, core.MessageTypeDeprecatedApprovalBroadcast:
 		if s.mgr.broadcast == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
 		}
 		return s.mgr.broadcast.NewBroadcast(in), nil
-	case core.MessageTypeApprovalPrivate:
+	case core.MessageTypePrivate, core.MessageTypeDeprecatedApprovalPrivate:
 		if s.mgr.messaging == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
 		}

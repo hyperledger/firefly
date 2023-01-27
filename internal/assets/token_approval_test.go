@@ -615,7 +615,7 @@ func TestApprovalWithPrivateMessage(t *testing.T) {
 			Message: core.Message{
 				Header: core.MessageHeader{
 					ID:   msgID,
-					Type: core.MessageTypeApprovalPrivate,
+					Type: core.MessageTypePrivate,
 				},
 				Hash: hash,
 			},
@@ -681,7 +681,7 @@ func TestApprovalWithPrivateMessageDisabled(t *testing.T) {
 			Message: core.Message{
 				Header: core.MessageHeader{
 					ID:   msgID,
-					Type: core.MessageTypeApprovalPrivate,
+					Type: core.MessageTypeDeprecatedApprovalPrivate,
 				},
 				Hash: hash,
 			},

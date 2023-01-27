@@ -534,14 +534,14 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 
 func needsTokenTransfer(msg *core.Message) bool {
 	return (msg.Header.TxParent != nil && msg.Header.TxParent.Type == core.TransactionTypeTokenTransfer) ||
-		msg.Header.Type == core.MessageTypeTransferBroadcast ||
-		msg.Header.Type == core.MessageTypeTransferPrivate
+		msg.Header.Type == core.MessageTypeDeprecatedTransferBroadcast ||
+		msg.Header.Type == core.MessageTypeDeprecatedTransferPrivate
 }
 
 func needsTokenApproval(msg *core.Message) bool {
 	return (msg.Header.TxParent != nil && msg.Header.TxParent.Type == core.TransactionTypeTokenApproval) ||
-		msg.Header.Type == core.MessageTypeApprovalBroadcast ||
-		msg.Header.Type == core.MessageTypeApprovalPrivate
+		msg.Header.Type == core.MessageTypeDeprecatedApprovalBroadcast ||
+		msg.Header.Type == core.MessageTypeDeprecatedApprovalPrivate
 }
 
 func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState, pin *core.Pin) (newState core.MessageState, dispatched bool, err error) {

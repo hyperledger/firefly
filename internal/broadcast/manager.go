@@ -109,8 +109,8 @@ func NewBroadcastManager(ctx context.Context, ns *core.Namespace, di database.Pl
 			[]core.MessageType{
 				core.MessageTypeBroadcast,
 				core.MessageTypeDefinition,
-				core.MessageTypeTransferBroadcast,
-				core.MessageTypeApprovalBroadcast,
+				core.MessageTypeDeprecatedTransferBroadcast,
+				core.MessageTypeDeprecatedApprovalBroadcast,
 			}, bm.dispatchBatch, bo)
 	}
 
