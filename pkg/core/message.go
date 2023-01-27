@@ -84,6 +84,7 @@ type MessageHeader struct {
 	Topics    fftypes.FFStringArray `ffstruct:"MessageHeader" json:"topics,omitempty"`
 	Tag       string                `ffstruct:"MessageHeader" json:"tag,omitempty"`
 	DataHash  *fftypes.Bytes32      `ffstruct:"MessageHeader" json:"datahash,omitempty" ffexcludeinput:"true"`
+	TxParent  *TransactionRef       `ffstruct:"MessageHeader" json:"txparent,omitempty" ffexcludeinput:"true"`
 }
 
 // Message is the envelope by which coordinated data exchange can happen between parties in the network
@@ -95,7 +96,6 @@ type Message struct {
 	Hash           *fftypes.Bytes32      `ffstruct:"Message" json:"hash,omitempty" ffexcludeinput:"true"`
 	BatchID        *fftypes.UUID         `ffstruct:"Message" json:"batch,omitempty" ffexcludeinput:"true"`
 	TransactionID  *fftypes.UUID         `ffstruct:"Message" json:"txid,omitempty" ffexcludeinput:"true"`
-	TxParent       *TransactionRef       `ffstruct:"Message" json:"txparent,omitempty"`
 	State          MessageState          `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate" ffexcludeinput:"true"`
 	Confirmed      *fftypes.FFTime       `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
 	Data           DataRefs              `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
@@ -112,10 +112,9 @@ type Message struct {
 // Fields such as the state/confirmed do NOT transfer, as these are calculated individually by each member.
 func (m *Message) BatchMessage() *Message {
 	return &Message{
-		Header:   m.Header,
-		Hash:     m.Hash,
-		Data:     m.Data,
-		TxParent: m.TxParent, // TODO: this should really move inside Header
+		Header: m.Header,
+		Hash:   m.Hash,
+		Data:   m.Data,
 		// The pins are immutable once assigned by the sender, which happens before the batch is sealed
 		Pins: m.Pins,
 	}

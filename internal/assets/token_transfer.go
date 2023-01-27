@@ -181,8 +181,20 @@ func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) 
 }
 
 func (s *transferSender) resolve(ctx context.Context) (err error) {
+	// Create a transaction and attach to the transfer
+	txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenTransfer, s.transfer.IdempotencyKey)
+	if err != nil {
+		return err
+	}
+	s.transfer.TX.ID = txid
+	s.transfer.TX.Type = core.TransactionTypeTokenTransfer
+
 	// Resolve the attached message
 	if s.transfer.Message != nil {
+		s.transfer.Message.Header.TxParent = &core.TransactionRef{
+			ID:   txid,
+			Type: core.TransactionTypeTokenTransfer,
+		}
 		s.msgSender, err = s.buildTransferMessage(ctx, s.transfer.Message)
 		if err != nil {
 			return err
@@ -225,23 +237,10 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 			return nil
 		}
 
-		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenTransfer, s.transfer.IdempotencyKey)
-		if err != nil {
-			return err
-		}
-		s.transfer.TX.ID = txid
-		s.transfer.TX.Type = core.TransactionTypeTokenTransfer
-		if s.transfer.Message != nil {
-			s.transfer.Message.TxParent = &core.TransactionRef{
-				ID:   txid,
-				Type: core.TransactionTypeTokenTransfer,
-			}
-		}
-
 		op = core.NewOperation(
 			plugin,
 			s.mgr.namespace,
-			txid,
+			s.transfer.TX.ID,
 			core.OpTypeTokenTransfer)
 		if err = txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer); err == nil {
 			err = s.mgr.operations.AddOrReuseOperation(ctx, op)

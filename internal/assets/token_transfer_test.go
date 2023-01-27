@@ -117,7 +117,8 @@ func TestMintTokensBadConnector(t *testing.T) {
 		TokenTransfer: core.TokenTransfer{
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Connector: "bad",
@@ -126,14 +127,17 @@ func TestMintTokensBadConnector(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.Regexp(t, "FF10272.*bad", err)
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestMintTokenDefaultPoolSuccess(t *testing.T) {
@@ -194,9 +198,11 @@ func TestMintTokenDefaultPoolNoPools(t *testing.T) {
 		TokenTransfer: core.TokenTransfer{
 			Amount: *fftypes.NewFFBigInt(5),
 		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	f.Limit(1).Count(true)
@@ -209,11 +215,13 @@ func TestMintTokenDefaultPoolNoPools(t *testing.T) {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.Regexp(t, "FF10292", err)
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestMintTokenDefaultPoolMultiplePools(t *testing.T) {
@@ -224,9 +232,11 @@ func TestMintTokenDefaultPoolMultiplePools(t *testing.T) {
 		TokenTransfer: core.TokenTransfer{
 			Amount: *fftypes.NewFFBigInt(5),
 		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	f.Limit(1).Count(true)
@@ -246,11 +256,13 @@ func TestMintTokenDefaultPoolMultiplePools(t *testing.T) {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.Regexp(t, "FF10292", err)
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestMintTokensGetPoolsError(t *testing.T) {
@@ -261,15 +273,19 @@ func TestMintTokensGetPoolsError(t *testing.T) {
 		TokenTransfer: core.TokenTransfer{
 			Amount: *fftypes.NewFFBigInt(5),
 		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mdi.On("GetTokenPools", context.Background(), "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestMintTokensBadPool(t *testing.T) {
@@ -280,16 +296,20 @@ func TestMintTokensBadPool(t *testing.T) {
 		TokenTransfer: core.TokenTransfer{
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, fmt.Errorf("pop"))
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestMintTokensIdentityFail(t *testing.T) {
@@ -300,7 +320,8 @@ func TestMintTokensIdentityFail(t *testing.T) {
 		TokenTransfer: core.TokenTransfer{
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -309,14 +330,17 @@ func TestMintTokensIdentityFail(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestMintTokensFail(t *testing.T) {
@@ -482,7 +506,8 @@ func TestBurnTokensIdentityFail(t *testing.T) {
 		TokenTransfer: core.TokenTransfer{
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -491,14 +516,17 @@ func TestBurnTokensIdentityFail(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.BurnTokens(context.Background(), burn, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestBurnTokensConfirm(t *testing.T) {
@@ -596,7 +624,8 @@ func TestTransferTokensUnconfirmedPool(t *testing.T) {
 			To:     "B",
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Locator:   "F1",
@@ -605,12 +634,15 @@ func TestTransferTokensUnconfirmedPool(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.Regexp(t, "FF10293", err)
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestTransferTokensIdentityFail(t *testing.T) {
@@ -623,7 +655,8 @@ func TestTransferTokensIdentityFail(t *testing.T) {
 			To:     "B",
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -632,14 +665,17 @@ func TestTransferTokensIdentityFail(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestTransferTokensNoFromOrTo(t *testing.T) {
@@ -647,7 +683,8 @@ func TestTransferTokensNoFromOrTo(t *testing.T) {
 	defer cancel()
 
 	transfer := &core.TokenTransferInput{
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -656,14 +693,17 @@ func TestTransferTokensNoFromOrTo(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.Regexp(t, "FF10280", err)
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestTransferTokensTransactionFail(t *testing.T) {
@@ -679,24 +719,13 @@ func TestTransferTokensTransactionFail(t *testing.T) {
 		Pool:           "pool1",
 		IdempotencyKey: "idem1",
 	}
-	pool := &core.TokenPool{
-		Locator:   "F1",
-		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
-	}
 
-	mdi := am.database.(*databasemocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.EqualError(t, err, "pop")
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
 }
 
@@ -777,7 +806,8 @@ func TestTransferTokensWithBroadcastMessageDisabled(t *testing.T) {
 			To:     "B",
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 		Message: &core.MessageInOut{
 			Message: core.Message{
 				Header: core.MessageHeader{
@@ -793,8 +823,13 @@ func TestTransferTokensWithBroadcastMessageDisabled(t *testing.T) {
 		},
 	}
 
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.Regexp(t, "FF10415", err)
+
+	mth.AssertExpectations(t)
 }
 
 func TestTransferTokensWithBroadcastMessageSendFail(t *testing.T) {
@@ -867,7 +902,8 @@ func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 			To:     "B",
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 		Message: &core.MessageInOut{
 			InlineData: core.InlineData{
 				{
@@ -879,14 +915,17 @@ func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 
 	mbm := am.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mbm.On("NewBroadcast", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.EqualError(t, err, "pop")
 
 	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestTransferTokensWithPrivateMessage(t *testing.T) {
@@ -967,7 +1006,8 @@ func TestTransferTokensWithPrivateMessageDisabled(t *testing.T) {
 			To:     "B",
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 		Message: &core.MessageInOut{
 			Message: core.Message{
 				Header: core.MessageHeader{
@@ -984,8 +1024,13 @@ func TestTransferTokensWithPrivateMessageDisabled(t *testing.T) {
 		},
 	}
 
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.Regexp(t, "FF10415", err)
+
+	mth.AssertExpectations(t)
 }
 
 func TestTransferTokensWithInvalidMessage(t *testing.T) {
@@ -998,7 +1043,8 @@ func TestTransferTokensWithInvalidMessage(t *testing.T) {
 			To:     "B",
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 		Message: &core.MessageInOut{
 			Message: core.Message{
 				Header: core.MessageHeader{
@@ -1013,8 +1059,13 @@ func TestTransferTokensWithInvalidMessage(t *testing.T) {
 		},
 	}
 
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.Regexp(t, "FF10287", err)
+
+	mth.AssertExpectations(t)
 }
 
 func TestTransferTokensConfirm(t *testing.T) {
@@ -1152,16 +1203,20 @@ func TestTransferTokensPoolNotFound(t *testing.T) {
 			To:     "B",
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.Regexp(t, "FF10109", err)
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestTransferPrepare(t *testing.T) {
@@ -1175,7 +1230,8 @@ func TestTransferPrepare(t *testing.T) {
 			To:     "B",
 			Amount: *fftypes.NewFFBigInt(5),
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -1186,12 +1242,15 @@ func TestTransferPrepare(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	err := sender.Prepare(context.Background())
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }

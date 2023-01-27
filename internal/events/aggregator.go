@@ -533,13 +533,13 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 }
 
 func needsTokenTransfer(msg *core.Message) bool {
-	return (msg.TxParent != nil && msg.TxParent.Type == core.TransactionTypeTokenTransfer) ||
+	return (msg.Header.TxParent != nil && msg.Header.TxParent.Type == core.TransactionTypeTokenTransfer) ||
 		msg.Header.Type == core.MessageTypeTransferBroadcast ||
 		msg.Header.Type == core.MessageTypeTransferPrivate
 }
 
 func needsTokenApproval(msg *core.Message) bool {
-	return (msg.TxParent != nil && msg.TxParent.Type == core.TransactionTypeTokenApproval) ||
+	return (msg.Header.TxParent != nil && msg.Header.TxParent.Type == core.TransactionTypeTokenApproval) ||
 		msg.Header.Type == core.MessageTypeApprovalBroadcast ||
 		msg.Header.Type == core.MessageTypeApprovalPrivate
 }

@@ -95,8 +95,20 @@ func (s *approveSender) resolveAndSend(ctx context.Context, method sendMethod) (
 }
 
 func (s *approveSender) resolve(ctx context.Context) (err error) {
+	// Create a transaction and attach to the approval
+	txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenApproval, s.approval.IdempotencyKey)
+	if err != nil {
+		return err
+	}
+	s.approval.TX.ID = txid
+	s.approval.TX.Type = core.TransactionTypeTokenApproval
+
 	// Resolve the attached message
 	if s.approval.Message != nil {
+		s.approval.Message.Header.TxParent = &core.TransactionRef{
+			ID:   txid,
+			Type: core.TransactionTypeTokenApproval,
+		}
 		s.msgSender, err = s.buildApprovalMessage(ctx, s.approval.Message)
 		if err != nil {
 			return err
@@ -136,23 +148,10 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 			return nil
 		}
 
-		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenApproval, s.approval.IdempotencyKey)
-		if err != nil {
-			return err
-		}
-		s.approval.TX.ID = txid
-		s.approval.TX.Type = core.TransactionTypeTokenApproval
-		if s.approval.Message != nil {
-			s.approval.Message.TxParent = &core.TransactionRef{
-				ID:   txid,
-				Type: core.TransactionTypeTokenApproval,
-			}
-		}
-
 		op = core.NewOperation(
 			plugin,
 			s.mgr.namespace,
-			txid,
+			s.approval.TX.ID,
 			core.TransactionTypeTokenApproval)
 		if err = txcommon.AddTokenApprovalInputs(op, &s.approval.TokenApproval); err == nil {
 			err = s.mgr.operations.AddOrReuseOperation(ctx, op)

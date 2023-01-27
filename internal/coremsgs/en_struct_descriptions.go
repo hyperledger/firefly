@@ -58,6 +58,7 @@ var (
 	MessageHeaderTopics    = ffm("MessageHeader.topics", "A message topic associates this message with an ordered stream of data. A custom topic should be assigned - using the default topic is discouraged")
 	MessageHeaderTag       = ffm("MessageHeader.tag", "The message tag indicates the purpose of the message to the applications that process it")
 	MessageHeaderDataHash  = ffm("MessageHeader.datahash", "A single hash representing all data in the message. Derived from the array of data ids+hashes attached to this message")
+	MessageTxParent        = ffm("MessageHeader.txparent", "The parent transaction that originally triggered this message")
 
 	// Message field descriptions
 	MessageHeader         = ffm("Message.header", "The message header contains all fields that are used to build the message hash")
@@ -69,7 +70,6 @@ var (
 	MessageData           = ffm("Message.data", "The list of data elements attached to the message")
 	MessagePins           = ffm("Message.pins", "For private messages, a unique pin hash:nonce is assigned for each topic")
 	MessageTransactionID  = ffm("Message.txid", "The ID of the transaction used to order/deliver this message")
-	MessageTxParent       = ffm("Message.txparent", "The parent transaction that originally triggered this message")
 	MessageIdempotencyKey = ffm("Message.idempotencyKey", "An optional unique identifier for a message. Cannot be duplicated within a namespace, thus allowing idempotent submission of messages to the API. Local only - not transferred when the message is sent to other members of the network")
 
 	// MessageInOut field descriptions

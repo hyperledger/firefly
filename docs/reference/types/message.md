@@ -61,7 +61,6 @@ nav_order: 15
 | `hash` | The hash of the message. Derived from the header, which includes the data hash | `Bytes32` |
 | `batch` | The UUID of the batch in which the message was pinned/transferred | [`UUID`](simpletypes#uuid) |
 | `txid` | The ID of the transaction used to order/deliver this message | [`UUID`](simpletypes#uuid) |
-| `txparent` | The parent transaction that originally triggered this message | [`TransactionRef`](#transactionref) |
 | `state` | The current state of the message | `FFEnum`:<br/>`"staged"`<br/>`"ready"`<br/>`"sent"`<br/>`"pending"`<br/>`"confirmed"`<br/>`"rejected"` |
 | `confirmed` | The timestamp of when the message was confirmed/rejected | [`FFTime`](simpletypes#fftime) |
 | `data` | The list of data elements attached to the message | [`DataRef[]`](#dataref) |
@@ -83,7 +82,7 @@ nav_order: 15
 | `topics` | A message topic associates this message with an ordered stream of data. A custom topic should be assigned - using the default topic is discouraged | `string[]` |
 | `tag` | The message tag indicates the purpose of the message to the applications that process it | `string` |
 | `datahash` | A single hash representing all data in the message. Derived from the array of data ids+hashes attached to this message | `Bytes32` |
-
+| `txparent` | The parent transaction that originally triggered this message | [`TransactionRef`](#transactionref) |
 
 ## TransactionRef
 
@@ -91,6 +90,7 @@ nav_order: 15
 |------------|-------------|------|
 | `type` | The type of the FireFly transaction | `FFEnum`: |
 | `id` | The UUID of the FireFly transaction | [`UUID`](simpletypes#uuid) |
+
 
 
 ## DataRef

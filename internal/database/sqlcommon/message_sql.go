@@ -48,12 +48,12 @@ var (
 		"datahash",
 		"hash",
 		"pins",
-		"tx_id",
-		"tx_parent_type",
-		"tx_parent_id",
 		"state",
 		"confirmed",
 		"tx_type",
+		"tx_id",
+		"tx_parent_type",
+		"tx_parent_id",
 		"batch_id",
 		"idempotency_key",
 	}
@@ -75,9 +75,9 @@ const messagesDataJoinTable = "messages_data"
 func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *dbsql.TXWrapper, message *core.Message) (int64, error) {
 	var txParentID *fftypes.UUID
 	var txParentType core.TransactionType
-	if message.TxParent != nil {
-		txParentID = message.TxParent.ID
-		txParentType = message.TxParent.Type
+	if message.Header.TxParent != nil {
+		txParentID = message.Header.TxParent.ID
+		txParentType = message.Header.TxParent.Type
 	}
 
 	return s.UpdateTx(ctx, messagesTable, tx,
@@ -93,12 +93,12 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *dbsql.TXWrappe
 			Set("datahash", message.Header.DataHash).
 			Set("hash", message.Hash).
 			Set("pins", message.Pins).
-			Set("tx_id", message.TransactionID).
-			Set("tx_parent_type", txParentType).
-			Set("tx_parent_id", txParentID).
 			Set("state", message.State).
 			Set("confirmed", message.Confirmed).
 			Set("tx_type", message.Header.TxType).
+			Set("tx_id", message.TransactionID).
+			Set("tx_parent_type", txParentType).
+			Set("tx_parent_id", txParentID).
 			Set("batch_id", message.BatchID).
 			Set("idempotency_key", message.IdempotencyKey).
 			Where(sq.Eq{
@@ -115,9 +115,9 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *dbsql.TXWrappe
 func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *core.Message) sq.InsertBuilder {
 	var txParentID *fftypes.UUID
 	var txParentType core.TransactionType
-	if message.TxParent != nil {
-		txParentID = message.TxParent.ID
-		txParentType = message.TxParent.Type
+	if message.Header.TxParent != nil {
+		txParentID = message.Header.TxParent.ID
+		txParentType = message.Header.TxParent.Type
 	}
 
 	return query.Values(
@@ -135,12 +135,12 @@ func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *core
 		message.Header.DataHash,
 		message.Hash,
 		message.Pins,
-		message.TransactionID,
-		txParentType,
-		txParentID,
 		message.State,
 		message.Confirmed,
 		message.Header.TxType,
+		message.TransactionID,
+		txParentType,
+		txParentID,
 		message.BatchID,
 		message.IdempotencyKey,
 	)
@@ -449,12 +449,12 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message
 		&msg.Header.DataHash,
 		&msg.Hash,
 		&msg.Pins,
-		&msg.TransactionID,
-		&txParent.Type,
-		&txParent.ID,
 		&msg.State,
 		&msg.Confirmed,
 		&msg.Header.TxType,
+		&msg.TransactionID,
+		&txParent.Type,
+		&txParent.ID,
 		&msg.BatchID,
 		&msg.IdempotencyKey,
 		// Must be added to the list of columns in all selects
@@ -464,7 +464,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, messagesTable)
 	}
 	if txParent.ID != nil {
-		msg.TxParent = &txParent
+		msg.Header.TxParent = &txParent
 	}
 	return &msg, nil
 }
