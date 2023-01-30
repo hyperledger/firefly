@@ -19,10 +19,10 @@ create_accounts() {
       # Create 4 new accounts for the first org for use in testing
       for i in {1..4}
       do
-          $CLI accounts create $STACK_NAME org_0 user_$(openssl rand -hex 10)
+          $CLI accounts create $STACK_NAME $($CLI accounts list $STACK_NAME | jq --raw-output '.[0].orgName') user_$(openssl rand -hex 3)
       done
       # Create one account for the second org
-      $CLI accounts create $STACK_NAME org_1 user_$(openssl rand -hex 10)
+      $CLI accounts create $STACK_NAME $($CLI accounts list $STACK_NAME | jq --raw-output '.[1].orgName') user_$(openssl rand -hex 3)
   fi
 }
 
