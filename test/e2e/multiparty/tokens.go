@@ -266,8 +266,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 
 	transfer := &core.TokenTransferInput{
 		TokenTransfer: core.TokenTransfer{
-			TokenIndex: "1",
-			Amount:     *fftypes.NewFFBigInt(1),
+			Amount: *fftypes.NewFFBigInt(1),
 		},
 		Pool: poolName,
 	}
