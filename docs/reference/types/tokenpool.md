@@ -3,7 +3,7 @@ layout: default
 title: TokenPool
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 10
+nav_order: 11
 ---
 
 # TokenPool

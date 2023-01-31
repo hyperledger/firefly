@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -155,6 +155,116 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 				"payloadRef": "QmWj3tr2aTHqnRYovhS2mQAjYneRtMWJSU4M4RdAJpJwEC",
 			},
 			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.OperationWithDetail{
+			Operation: core.Operation{
+				ID:          fftypes.MustParseUUID("04a8b0c4-03c2-4935-85a1-87d17cddc20a"),
+				Namespace:   "ns1",
+				Type:        core.OpTypeSharedStorageUploadBatch,
+				Transaction: fftypes.MustParseUUID("99543134-769b-42a8-8be4-a5f8873f969d"),
+				Status:      core.OpStatusSucceeded,
+				Plugin:      "ipfs",
+				Input: fftypes.JSONObject{
+					"id": "80d89712-57f3-48fe-b085-a8cba6e0667d",
+				},
+				Output: fftypes.JSONObject{
+					"payloadRef": "QmWj3tr2aTHqnRYovhS2mQAjYneRtMWJSU4M4RdAJpJwEC",
+				},
+				Created: fftypes.UnixTime(1652664195),
+			},
+			Detail: fftypes.JSONObject{
+				"status":          "Succeeded",
+				"sequenceId":      "0185f42f-fec8-93df-aeba-387417d477e0",
+				"created":         "2023-01-27T17:04:24.26406392Z",
+				"firstSubmit":     "2023-01-27T17:04:24.419913295Z",
+				"gas":             "4161076",
+				"gasPrice":        "0",
+				"transactionHash": "0xfb39178fee8e725c03647b8286e6f5cb13f982abf685479a9ee59e8e9d9e51d8",
+				"history": []*fftypes.JSONObject{
+					{
+						"subStatus": "Received",
+						"time":      "2023-01-27T17:11:41.122965803Z",
+						"actions": []*fftypes.JSONObject{
+							{
+								"action":         "AssignNonce",
+								"count":          1,
+								"time":           "",
+								"lastOccurrence": "",
+							},
+							{
+								"action":         "RetrieveGasPrice",
+								"count":          1,
+								"time":           "2023-01-27T17:11:41.161213303Z",
+								"lastOccurrence": "2023-01-27T17:11:41.161213303Z",
+							},
+							{
+								"action":         "Submit",
+								"count":          1,
+								"time":           "2023-01-27T17:11:41.222374636Z",
+								"lastOccurrence": "2023-01-27T17:11:41.222374636Z",
+							},
+						},
+					},
+					{
+						"subStatus": "Tracking",
+						"time":      "2023-01-27T17:11:41.222400219Z",
+						"actions": []*fftypes.JSONObject{
+							{
+								"action":         "ReceiveReceipt",
+								"count":          1,
+								"time":           "2023-01-27T17:11:47.930332625Z",
+								"lastOccurrence": "2023-01-27T17:11:47.930332625Z",
+							},
+							{
+								"action":         "Confirm",
+								"count":          1,
+								"time":           "2023-01-27T17:12:02.660275549Z",
+								"lastOccurrence": "2023-01-27T17:12:02.660275549Z",
+							},
+						},
+					},
+					{
+						"subStatus": "Confirmed",
+						"time":      "2023-01-27T17:12:02.660309382Z",
+						"actions":   []*fftypes.JSONObject{},
+					},
+				},
+				"historySummary": []*fftypes.JSONObject{
+					{
+						"subStatus": "Received",
+						"count":     1,
+					},
+					{
+						"action": "AssignNonce",
+						"count":  1,
+					},
+					{
+						"action": "RetrieveGasPrice",
+						"count":  1,
+					},
+					{
+						"action": "Submit",
+						"count":  1,
+					},
+					{
+						"subStatus": "Tracking",
+						"count":     1,
+					},
+					{
+						"action": "ReceiveReceipt",
+						"count":  1,
+					},
+					{
+						"action": "Confirm",
+						"count":  1,
+					},
+					{
+						"subStatus": "Confirmed",
+						"count":     1,
+					},
+				},
+			},
 		},
 
 		&fftypes.FFI{

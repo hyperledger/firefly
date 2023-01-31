@@ -2,7 +2,7 @@
 layout: default
 title: Event Bus
 parent: pages.reference
-nav_order: 5
+nav_order: 6
 ---
 
 # Event Bus
