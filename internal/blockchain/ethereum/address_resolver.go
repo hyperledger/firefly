@@ -126,7 +126,7 @@ func (ar *addressResolver) ResolveInputSigningKey(ctx context.Context, keyDescri
 		return "", i18n.NewError(ctx, coremsgs.MsgAddressResolveFailed, keyDescriptor, err)
 	}
 	if res.IsError() {
-		return "", i18n.NewError(ctx, coremsgs.MsgAddressResolveBadStatus, keyDescriptor, res.StatusCode(), jsonRes.String())
+		return "", i18n.NewError(ctx, coremsgs.MsgAddressResolveBadStatus(res.StatusCode()), keyDescriptor, res.StatusCode(), jsonRes.String())
 	}
 
 	address, err := formatEthAddress(ctx, jsonRes.GetString(ar.responseField))

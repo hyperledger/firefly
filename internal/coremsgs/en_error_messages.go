@@ -190,7 +190,6 @@ var (
 	MsgGoTemplateCompileFailed            = ffe("FF10337", "Go template compilation for '%s' failed: %s", 500)
 	MsgGoTemplateExecuteFailed            = ffe("FF10338", "Go template execution for '%s' failed: %s", 500)
 	MsgAddressResolveFailed               = ffe("FF10339", "Failed to resolve signing key string '%s': %s", 500)
-	MsgAddressResolveBadStatus            = ffe("FF10340", "Failed to resolve signing key string '%s' [%d]: %s", 500)
 	MsgAddressResolveBadResData           = ffe("FF10341", "Failed to resolve signing key string '%s' - invalid address returned '%s': %s", 500)
 	MsgDXNotInitialized                   = ffe("FF10342", "Data exchange is initializing")
 	MsgGroupRequired                      = ffe("FF10344", "Group must be set", 400)
@@ -279,3 +278,8 @@ var (
 	MsgDeprecatedResetWithAutoReload      = ffe("FF10438", "The deprecated reset API cannot be used when dynamic config reload is enabled", 409)
 	MsgConfigArrayVsRawConfigMismatch     = ffe("FF10439", "Error processing configuration - mismatch between raw and processed array lengths")
 )
+
+// function versions of error factories that allow status code to be parameterized
+var MsgAddressResolveBadStatus = func(status int) i18n.ErrorMessageKey {
+	return ffe("FF10340", "Failed to resolve signing key string '%s' [%d]: %s", status)
+}
