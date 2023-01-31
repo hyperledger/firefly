@@ -6,8 +6,8 @@
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.2.0",
-    "sha": "ffb61bcde6c3536c6c3a5a5f097e7ad02aec6365972c4674e271d1f1625828c5"
+    "tag": "v1.2.1",
+    "sha": "5f5ada5da90e7e49ba60f82737f7613d6759134248faa363210b74d89996d9b8"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
@@ -54,6 +54,6 @@
     "release": "v1.2.0-alpha.1"
   },
   "cli": {
-    "tag": "v1.2.0-alpha.1"
+    "tag": "v1.2.0-rc.1"
   }
 }
