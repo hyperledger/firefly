@@ -56,11 +56,13 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	suite.T().Logf("Test namespace: %s", testNamespace)
 
 	org := map[string]interface{}{}
+	node := map[string]interface{}{}
 	namespaceInfo := map[string]interface{}{
 		"name": testNamespace,
 		"multiparty": map[string]interface{}{
 			"enabled": true,
 			"org":     org,
+			"node":    node,
 			"contract": []map[string]interface{}{
 				{
 					"location": map[string]interface{}{"address": address1},
@@ -81,12 +83,14 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	data1 := e2e.ReadConfig(suite.T(), suite.testState.configFile1)
 	org["name"] = suite.testState.org1.Name
 	org["key"] = suite.testState.org1key.Value
+	node["name"] = fmt.Sprintf("%s_node", suite.testState.org1.Name)
 	e2e.AddNamespace(data1, namespaceInfo)
 	e2e.WriteConfig(suite.T(), suite.testState.configFile1, data1)
 
 	data2 := e2e.ReadConfig(suite.T(), suite.testState.configFile2)
 	org["name"] = suite.testState.org2.Name
 	org["key"] = suite.testState.org2key.Value
+	node["name"] = fmt.Sprintf("%s_node", suite.testState.org2.Name)
 	e2e.AddNamespace(data2, namespaceInfo)
 	e2e.WriteConfig(suite.T(), suite.testState.configFile2, data2)
 
