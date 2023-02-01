@@ -20,6 +20,7 @@ jobs:
             TestFabricGatewayE2ESuite,
             TestFabricMultipartyE2ESuite,
           ]
+        stack-type: [ethereum, fabric]
         blockchain-node: [geth, besu, fabric]
         database-type: [sqlite3, postgres]
         exclude:
@@ -38,6 +39,12 @@ jobs:
           - test-suite: TestFabricMultipartyE2ESuite
             blockchain-node: geth
           - test-suite: TestFabricMultipartyE2ESuite
+            blockchain-node: besu
+          - stack-type: ethereum
+            blockchain-node: fabric
+          - stack-type: fabric
+            blockchain-node: geth
+          - stack-type: fabric
             blockchain-node: besu
       fail-fast: false
     steps:
