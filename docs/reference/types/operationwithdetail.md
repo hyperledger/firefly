@@ -148,5 +148,5 @@ nav_order: 8
 | `created` | The time the operation was created | [`FFTime`](simpletypes#fftime) |
 | `updated` | The last update time of the operation | [`FFTime`](simpletypes#fftime) |
 | `retry` | If this operation was initiated as a retry to a previous operation, this field points to the UUID of the operation being retried | [`UUID`](simpletypes#uuid) |
-| `detail` | OperationWithDetail.detail | `` |
+| `detail` | Additional detailed information about an operation provided by the connector | `` |
 
