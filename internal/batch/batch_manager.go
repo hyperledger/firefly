@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -135,7 +135,7 @@ type dispatcher struct {
 }
 
 func (bm *batchManager) getProcessorKey(identity *core.SignerRef, groupID *fftypes.Bytes32) string {
-	return fmt.Sprintf("%s|%v", identity.Author, groupID)
+	return fmt.Sprintf("%s|%s|%v", identity.Author, identity.Key, groupID)
 }
 
 func (bm *batchManager) getDispatcherKey(txType core.TransactionType, msgType core.MessageType) string {
