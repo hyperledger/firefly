@@ -471,6 +471,71 @@ func TestRequestReplyEmptyData(t *testing.T) {
 	mcb.AssertExpectations(t)
 }
 
+func TestRequestReplyOneData(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	msgID := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
+
+	r := mux.NewRouter()
+	r.HandleFunc("/myapi", func(res http.ResponseWriter, req *http.Request) {
+		var body fftypes.JSONObject
+		err := json.NewDecoder(req.Body).Decode(&body)
+		assert.NoError(t, err)
+		res.WriteHeader(200)
+	}).Methods(http.MethodPost)
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	yes := true
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+				WithData: &yes,
+			},
+		},
+	}
+	to := sub.Options.TransportOptions()
+	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
+	to["reply"] = true
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &core.Message{
+				Header: core.MessageHeader{
+					ID:   msgID,
+					Type: core.MessageTypeBroadcast,
+				},
+				Data: core.DataRefs{
+					{ID: dataID},
+				},
+			},
+		},
+		Subscription: core.SubscriptionRef{
+			ID: sub.ID,
+		},
+	}
+
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
+		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
+		assert.Nil(t, response.Reply.Message.Header.Group)
+		assert.Equal(t, core.MessageTypeBroadcast, response.Reply.Message.Header.Type)
+		return true
+	})).Return(nil)
+
+	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{{ID: dataID, Value: fftypes.JSONAnyPtr("foo")}})
+	assert.NoError(t, err)
+
+	mcb.AssertExpectations(t)
+}
+
 func TestRequestReplyBadJSON(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
