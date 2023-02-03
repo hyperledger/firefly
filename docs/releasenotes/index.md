@@ -9,7 +9,7 @@ has_children: true
 
 [Full release notes](https://github.com/hyperledger/firefly/releases)
 
-## [v1.2.0 - January TBD, 2023](https://github.com/hyperledger/firefly/releases/tag/v1.2.0)
+## [v1.2.0 - February 6, 2023](https://github.com/hyperledger/firefly/releases/tag/v1.2.0)
 
 [Migration guide](1.2_migration_guide.md)
 
