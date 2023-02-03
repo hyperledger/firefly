@@ -126,203 +126,82 @@ You will need compile the contract yourself using [solc](https://docs.solidityla
 
 ```json
 {
-    "id": "f2cfd530-76f1-49ec-b1b3-02ab3034aa16",
-    "namespace": "default",
-    "tx": "dbbe508e-6229-461c-ad57-427461a25155",
-    "type": "blockchain_deploy",
-    "status": "Pending",
-    "plugin": "ethereum",
-    "input": {
-        "contract": "608060405234801561001057600080fd5b5061019e806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c806360fe47b11461003b5780636d4ce63c14610057575b600080fd5b61005560048036038101906100509190610111565b610075565b005b61005f6100cd565b60405161006c919061014d565b60405180910390f35b806000819055503373ffffffffffffffffffffffffffffffffffffffff167fb52dda022b6c1a1f40905a85f257f689aa5d69d850e49cf939d688fbe5af5946826040516100c2919061014d565b60405180910390a250565b60008054905090565b600080fd5b6000819050919050565b6100ee816100db565b81146100f957600080fd5b50565b60008135905061010b816100e5565b92915050565b600060208284031215610127576101266100d6565b5b6000610135848285016100fc565b91505092915050565b610147816100db565b82525050565b6000602082019050610162600083018461013e565b9291505056fea2646970667358221220e6cbd7725b98b234d07bc1823b60ac065b567c6645d15c8f8f6986e5fa5317c664736f6c634300080b0033",
-        "definition": [
-            {
-                "anonymous": false,
-                "inputs": [
-                    {
-                        "indexed": true,
-                        "internalType": "address",
-                        "name": "from",
-                        "type": "address"
-                    },
-                    {
-                        "indexed": false,
-                        "internalType": "uint256",
-                        "name": "value",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "Changed",
-                "type": "event"
-            },
-            {
-                "inputs": [],
-                "name": "get",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "newValue",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "set",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            }
+  "id": "aa155a3c-2591-410e-bc9d-68ae7de34689",
+  "namespace": "default",
+  "tx": "4712ffb3-cc1a-4a91-aef2-206ac068ba6f",
+  "type": "blockchain_deploy",
+  "status": "Succeeded",
+  "plugin": "ethereum",
+  "input": {
+    "contract": "608060405234801561001057600080fd5b5061019e806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c806360fe47b11461003b5780636d4ce63c14610057575b600080fd5b61005560048036038101906100509190610111565b610075565b005b61005f6100cd565b60405161006c919061014d565b60405180910390f35b806000819055503373ffffffffffffffffffffffffffffffffffffffff167fb52dda022b6c1a1f40905a85f257f689aa5d69d850e49cf939d688fbe5af5946826040516100c2919061014d565b60405180910390a250565b60008054905090565b600080fd5b6000819050919050565b6100ee816100db565b81146100f957600080fd5b50565b60008135905061010b816100e5565b92915050565b600060208284031215610127576101266100d6565b5b6000610135848285016100fc565b91505092915050565b610147816100db565b82525050565b6000602082019050610162600083018461013e565b9291505056fea2646970667358221220e6cbd7725b98b234d07bc1823b60ac065b567c6645d15c8f8f6986e5fa5317c664736f6c634300080b0033",
+    "definition": [
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "from",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          }
         ],
-        "input": [],
-        "key": "0xf80c46e1554ba717b958958b47c06926cc546df4",
-        "options": null
+        "name": "Changed",
+        "type": "event"
+      },
+      {
+        "inputs": [],
+        "name": "get",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "newValue",
+            "type": "uint256"
+          }
+        ],
+        "name": "set",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
+    "input": [],
+    "key": "0xddd93a452bfc8d3e62bbc60c243046e4d0cb971b",
+    "options": null
+  },
+  "output": {
+    "headers": {
+      "requestId": "default:aa155a3c-2591-410e-bc9d-68ae7de34689",
+      "type": "TransactionSuccess"
     },
-    "created": "2023-02-02T01:48:27.595543594Z",
-    "updated": "2023-02-02T01:48:27.595543594Z"
+    "contractLocation": {
+      "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+    },
+    "protocolId": "000000000024/000000",
+    "transactionHash": "0x32d1144091877266d7f0426e48db157e7d1a857c62e6f488319bb09243f0f851"
+  },
+  "created": "2023-02-03T15:42:52.750277Z",
+  "updated": "2023-02-03T15:42:52.750277Z"
 }
 ```
 
-In the response above, we received back an ID of `f2cfd530-76f1-49ec-b1b3-02ab3034aa16`. Blockchain transacitons happen asynchronously, so this is the operation ID for the contract deployment which we can use to look up the status of the transacaction.
-
-### Request
-
-Copy your operation ID returned in the previous response, and make a GET request to the `/operations` endpoint to look up the status of your transaction. Add the `?fetchstatus=true` query parameter to get full details.
-
-`GET` `http://localhost:5000/api/v1/namespaces/default/operations/f2cfd530-76f1-49ec-b1b3-02ab3034aa16?fetchstatus=true`
-
-### Response
-
-```json
-{
-    "id": "f2cfd530-76f1-49ec-b1b3-02ab3034aa16",
-    "namespace": "default",
-    "tx": "dbbe508e-6229-461c-ad57-427461a25155",
-    "type": "blockchain_deploy",
-    "status": "Succeeded",
-    "plugin": "ethereum",
-    "input": {
-        "contract": "608060405234801561001057600080fd5b5061019e806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c806360fe47b11461003b5780636d4ce63c14610057575b600080fd5b61005560048036038101906100509190610111565b610075565b005b61005f6100cd565b60405161006c919061014d565b60405180910390f35b806000819055503373ffffffffffffffffffffffffffffffffffffffff167fb52dda022b6c1a1f40905a85f257f689aa5d69d850e49cf939d688fbe5af5946826040516100c2919061014d565b60405180910390a250565b60008054905090565b600080fd5b6000819050919050565b6100ee816100db565b81146100f957600080fd5b50565b60008135905061010b816100e5565b92915050565b600060208284031215610127576101266100d6565b5b6000610135848285016100fc565b91505092915050565b610147816100db565b82525050565b6000602082019050610162600083018461013e565b9291505056fea2646970667358221220e6cbd7725b98b234d07bc1823b60ac065b567c6645d15c8f8f6986e5fa5317c664736f6c634300080b0033",
-        "definition": [
-            {
-                "anonymous": false,
-                "inputs": [
-                    {
-                        "indexed": true,
-                        "internalType": "address",
-                        "name": "from",
-                        "type": "address"
-                    },
-                    {
-                        "indexed": false,
-                        "internalType": "uint256",
-                        "name": "value",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "Changed",
-                "type": "event"
-            },
-            {
-                "inputs": [],
-                "name": "get",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "newValue",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "set",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            }
-        ],
-        "input": [],
-        "key": "0xf80c46e1554ba717b958958b47c06926cc546df4",
-        "options": null
-    },
-    "output": {
-        "Headers": {
-            "requestId": "default:f2cfd530-76f1-49ec-b1b3-02ab3034aa16",
-            "type": "TransactionSuccess"
-        },
-        "protocolId": "000000000005/000000",
-        "transactionHash": "0x0ea6a5f95166172d618b238ee3bf221e8033a0ca70a47b3daa4687329b0aa19f"
-    },
-    "created": "2023-02-02T01:48:27.595543594Z",
-    "updated": "2023-02-02T01:48:27.595543594Z",
-    "detail": {
-        "created": "2023-02-02T01:48:27.607830552Z",
-        "firstSubmit": "2023-02-02T01:48:27.612212469Z",
-        "gas": "213895",
-        "gasPrice": 0,
-        "history": [
-            {
-                "count": 1,
-                "info": "Success=true,Receipt=000000000005/000000,Confirmations=0,Hash=0x0ea6a5f95166172d618b238ee3bf221e8033a0ca70a47b3daa4687329b0aa19f",
-                "lastOccurrence": null,
-                "time": "2023-02-02T01:48:27.615983719Z"
-            },
-            {
-                "count": 1,
-                "info": "Submitted=true,Receipt=,Hash=0x0ea6a5f95166172d618b238ee3bf221e8033a0ca70a47b3daa4687329b0aa19f",
-                "lastOccurrence": null,
-                "time": "2023-02-02T01:48:27.612957219Z"
-            }
-        ],
-        "id": "default:f2cfd530-76f1-49ec-b1b3-02ab3034aa16",
-        "lastSubmit": "2023-02-02T01:48:27.612212469Z",
-        "nonce": "4",
-        "policyInfo": null,
-        "receipt": {
-            "blockHash": "0xffe58230ecc3269d82494258bf22330ed4105cc4afa8fdd6b25f452d4df94556",
-            "blockNumber": "5",
-            "extraInfo": {
-                "contractAddress": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1",
-                "cumulativeGasUsed": "142597",
-                "from": "0xf80c46e1554ba717b958958b47c06926cc546df4",
-                "gasUsed": "142597",
-                "status": "1",
-                "to": null
-            },
-            "protocolId": "000000000005/000000",
-            "success": true,
-            "transactionIndex": "0"
-        },
-        "sequenceId": "01860fcf-9457-f275-ce66-955eff5f6642",
-        "status": "Succeeded",
-        "transactionData": "0x608060405234801561001057600080fd5b5061019e806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c806360fe47b11461003b5780636d4ce63c14610057575b600080fd5b61005560048036038101906100509190610111565b610075565b005b61005f6100cd565b60405161006c919061014d565b60405180910390f35b806000819055503373ffffffffffffffffffffffffffffffffffffffff167fb52dda022b6c1a1f40905a85f257f689aa5d69d850e49cf939d688fbe5af5946826040516100c2919061014d565b60405180910390a250565b60008054905090565b600080fd5b6000819050919050565b6100ee816100db565b81146100f957600080fd5b50565b60008135905061010b816100e5565b92915050565b600060208284031215610127576101266100d6565b5b6000610135848285016100fc565b91505092915050565b610147816100db565b82525050565b6000602082019050610162600083018461013e565b9291505056fea2646970667358221220e6cbd7725b98b234d07bc1823b60ac065b567c6645d15c8f8f6986e5fa5317c664736f6c634300080b0033",
-        "transactionHash": "0x0ea6a5f95166172d618b238ee3bf221e8033a0ca70a47b3daa4687329b0aa19f",
-        "transactionHeaders": {
-            "from": "0xf80c46e1554ba717b958958b47c06926cc546df4",
-            "gas": "213895"
-        },
-        "updated": "2023-02-02T01:48:27.615983719Z"
-    }
-}
-```
-Here we can see in the response above under the `detail` field that our new contract address is `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1`. This is the address that we will reference in the rest of this guide.
-
+Here we can see in the response above under the `output` section that our new contract address is `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1`. This is the address that we will reference in the rest of this guide.
 
 ## The FireFly Interface Format
 
