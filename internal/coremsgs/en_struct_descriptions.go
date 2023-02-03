@@ -193,6 +193,9 @@ var (
 	OperationUpdated     = ffm("Operation.updated", "The last update time of the operation")
 	OperationRetry       = ffm("Operation.retry", "If this operation was initiated as a retry to a previous operation, this field points to the UUID of the operation being retried")
 
+	// OperationWithDetail field description
+	OperationWithDetail = ffm("OperationWithDetail.detail", "Additional detailed information about an operation provided by the connector")
+
 	// BlockchainEvent field descriptions
 	BlockchainEventID         = ffm("BlockchainEvent.id", "The UUID assigned to the event by FireFly")
 	BlockchainEventSource     = ffm("BlockchainEvent.source", "The blockchain plugin or token service that detected the event")

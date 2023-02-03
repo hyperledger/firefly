@@ -7,8 +7,8 @@ nav_order: 1
 ---
 
 # Work with Ethereum smart contracts
-{: .no_toc }
 
+{: .no_toc }
 This guide describes the steps to deploy a smart contract to an Ethereum blockchain and use FireFly to interact with it in order to submit transactions, query for states and listening for events.
 
 > **NOTE:** This guide assumes that you are running a local FireFly stack with at least 2 members and an Ethereum blockchain created by the FireFly CLI. If you need help getting that set up, please see the [Getting Started guide to Start your environment](https://nguyer.github.io/firefly/gettingstarted/setup_env.html).
@@ -53,48 +53,155 @@ contract SimpleStorage {
 
 ## Contract deployment
 
-For the this guide, we will assume that the SimpleStorage contract is deployed at the Ethereum address of: `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1`
+If you need to deploy an Ethereum smart contract with a signing key that FireFly will use for submitting future transactions it is recommended to use FireFly's built in contract deployment API. This is useful in many cases. For example, you may want to deploy a token contract and have FireFly mint some tokens. Many token contracts only allow the contract deployer to mint, so the contract would need to be deployed with a FireFly signing key.
 
-**Deployment of smart contracts is not currently within the scope of responsibility for FireFly.** You can use your standard blockchain specific tools to deploy your contract to whichever blockchain you are using. For Ethereum blockchains you could use [Truffle](https://trufflesuite.com/) or [Hardhat](https://hardhat.org/).
+You will need compile the contract yourself using [solc](https://docs.soliditylang.org/en/latest/installing-solidity.html) or some other tool. After you have compiled the contract, look in the JSON output file for the fields to build the request below.
 
-### Using Truffle
+### Request
 
-If you're using Truffle, you'll need to set your `truffle-config.js` file to point to the locally running blockchain node that the FireFly CLI created. Make sure your `networks` section looks like this:
+| Field        | Description                                                                                                             |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `key`        | The signing key to use to dpeloy the contract. If omitted, the namespaces's default signing key will be used.           |
+| `contract`   | The compiled bytecode for your smart contract. It should be either a hex encded string or Base64.                       |
+| `definition` | The full ABI JSON array from your compiled JSON file. Copy the entire value of the `abi` field from the `[` to the `]`. |
+| `input`      | An ordered list of constructor arguments. Some contracts may not require any (such as this example).                    |
 
-```javascript
-networks: {
-    development: {
-        host: "127.0.0.1",
-        port: 5100,
-        network_id: "*"
-    }
-}
-```
+`POST` `http://localhost:5000/api/v1/namespaces/default/contracts/deploy`
 
-### Using the FireFly CLI
-
-The FireFly CLI also has a function to deploy an already-compiled smart contract to a local FireFly stack.
-
-> **NOTE:** The contract deployment function of the FireFly CLI is a convenience function to speed up local development, and not intended for production applications
-
-We will use the `solc` compiler to compile our smart contract. For details on how to install `solc` on your system, please see the [Solidity Compiler Documentation](https://docs.soliditylang.org/en/v0.8.9/installing-solidity.html).
-
-If you take the smart contract source code in the example above, and save that to a file called `simple_storage.sol`, here is the command to compile the contract:
-
-```
-$ solc --combined-json abi,bin simple_storage.sol > simple_storage.json
-```
-
-Next, we'll tell the FireFly to deploy the compiled contract to a running stack named `dev` that is using an `ethereum` blockchain. If your stack name is different, update the command accordingly:
-
-```
-$ ff deploy ethereum dev simple_storage.json
+```json
 {
-  "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+  "contract": "608060405234801561001057600080fd5b5061019e806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c806360fe47b11461003b5780636d4ce63c14610057575b600080fd5b61005560048036038101906100509190610111565b610075565b005b61005f6100cd565b60405161006c919061014d565b60405180910390f35b806000819055503373ffffffffffffffffffffffffffffffffffffffff167fb52dda022b6c1a1f40905a85f257f689aa5d69d850e49cf939d688fbe5af5946826040516100c2919061014d565b60405180910390a250565b60008054905090565b600080fd5b6000819050919050565b6100ee816100db565b81146100f957600080fd5b50565b60008135905061010b816100e5565b92915050565b600060208284031215610127576101266100d6565b5b6000610135848285016100fc565b91505092915050565b610147816100db565b82525050565b6000602082019050610162600083018461013e565b9291505056fea2646970667358221220e6cbd7725b98b234d07bc1823b60ac065b567c6645d15c8f8f6986e5fa5317c664736f6c634300080b0033",
+  "definition": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Changed",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "get",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "newValue",
+          "type": "uint256"
+        }
+      ],
+      "name": "set",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "input": []
 }
 ```
 
-The FireFly CLI tells us that it has successfully deployed the contract with an address of `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1`. We will use this contract address for the rest of this guide.
+### Response
+
+```json
+{
+  "id": "aa155a3c-2591-410e-bc9d-68ae7de34689",
+  "namespace": "default",
+  "tx": "4712ffb3-cc1a-4a91-aef2-206ac068ba6f",
+  "type": "blockchain_deploy",
+  "status": "Succeeded",
+  "plugin": "ethereum",
+  "input": {
+    "contract": "608060405234801561001057600080fd5b5061019e806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c806360fe47b11461003b5780636d4ce63c14610057575b600080fd5b61005560048036038101906100509190610111565b610075565b005b61005f6100cd565b60405161006c919061014d565b60405180910390f35b806000819055503373ffffffffffffffffffffffffffffffffffffffff167fb52dda022b6c1a1f40905a85f257f689aa5d69d850e49cf939d688fbe5af5946826040516100c2919061014d565b60405180910390a250565b60008054905090565b600080fd5b6000819050919050565b6100ee816100db565b81146100f957600080fd5b50565b60008135905061010b816100e5565b92915050565b600060208284031215610127576101266100d6565b5b6000610135848285016100fc565b91505092915050565b610147816100db565b82525050565b6000602082019050610162600083018461013e565b9291505056fea2646970667358221220e6cbd7725b98b234d07bc1823b60ac065b567c6645d15c8f8f6986e5fa5317c664736f6c634300080b0033",
+    "definition": [
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "from",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          }
+        ],
+        "name": "Changed",
+        "type": "event"
+      },
+      {
+        "inputs": [],
+        "name": "get",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "newValue",
+            "type": "uint256"
+          }
+        ],
+        "name": "set",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
+    "input": [],
+    "key": "0xddd93a452bfc8d3e62bbc60c243046e4d0cb971b",
+    "options": null
+  },
+  "output": {
+    "headers": {
+      "requestId": "default:aa155a3c-2591-410e-bc9d-68ae7de34689",
+      "type": "TransactionSuccess"
+    },
+    "contractLocation": {
+      "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+    },
+    "protocolId": "000000000024/000000",
+    "transactionHash": "0x32d1144091877266d7f0426e48db157e7d1a857c62e6f488319bb09243f0f851"
+  },
+  "created": "2023-02-03T15:42:52.750277Z",
+  "updated": "2023-02-03T15:42:52.750277Z"
+}
+```
+
+Here we can see in the response above under the `output` section that our new contract address is `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1`. This is the address that we will reference in the rest of this guide.
 
 ## The FireFly Interface Format
 
@@ -620,7 +727,6 @@ If you look at the source code for the smart contract we're working with above, 
 
 We can see in the response, that FireFly pulls all the schema information from the FireFly Interface that we broadcasted earlier and creates the listener with that schema. This is useful so that we don't have to enter all of that data again.
 
-
 ### Querying listener status
 
 If you are interested in learning about the current state of a listener you have created, you can query with the `fetchstatus` parameter. For FireFly stacks with an EVM compatible blockchain connector, the response will include checkpoint information and if the listener is currently in catchup mode.
@@ -628,6 +734,7 @@ If you are interested in learning about the current state of a listener you have
 #### Request / Response
 
 `GET` `http://localhost:5000/api/v1/namespaces/default/contracts/listeners/1bfa3b0f-3d90-403e-94a4-af978d8c5b14?fetchstatus`
+
 ```json
 {
   "id": "1bfa3b0f-3d90-403e-94a4-af978d8c5b14",
@@ -670,9 +777,9 @@ If you are interested in learning about the current state of a listener you have
   },
   "status": {
     "checkpoint": {
-        "block": 0,
-        "transactionIndex": -1,
-        "logIndex": -1
+      "block": 0,
+      "transactionIndex": -1,
+      "logIndex": -1
     },
     "catchup": true
   },
@@ -681,7 +788,6 @@ If you are interested in learning about the current state of a listener you have
   }
 }
 ```
-
 
 ## Subscribe to events from our contract
 
@@ -811,9 +917,11 @@ You can see in the event received over the WebSocket connection, the blockchain 
 In the event, we can also see the `blockchainevent` itself, which has an `output` object. These are the `params` in our FireFly Interface, and the actual output of the event. Here we can see the `value` is `3` which is what we set the integer to in our original transaction.
 
 ### Subscription offset
+
 If you query by the ID of your subscription with the `fetchstatus` parameter, you can see its current `offset`.
 
 `GET` `http://localhost:5000/api/v1/namespaces/default/subscriptions/f826269c-65ed-4634-b24c-4f399ec53a32`
+
 ```json
 {
   "id": "f826269c-65ed-4634-b24c-4f399ec53a32",

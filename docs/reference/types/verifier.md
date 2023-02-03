@@ -3,7 +3,7 @@ layout: default
 title: Verifier
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 14
+nav_order: 15
 ---
 
 # Verifier

@@ -3,7 +3,7 @@ layout: default
 title: Datatype
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 17
+nav_order: 18
 ---
 
 # Datatype

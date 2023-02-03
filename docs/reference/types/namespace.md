@@ -3,7 +3,7 @@ layout: default
 title: Namespace
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 20
+nav_order: 21
 ---
 
 # Namespace

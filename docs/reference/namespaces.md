@@ -2,7 +2,7 @@
 layout: default
 title: Namespaces
 parent: pages.reference
-nav_order: 8
+nav_order: 9
 ---
 
 # Namespaces

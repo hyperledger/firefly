@@ -145,6 +145,10 @@ A reference implementation is provided that:
 
 The reference implementation is available [here](https://github.com/hyperledger/firefly-transaction-manager/blob/main/pkg/policyengines/simple/simple_policy_engine.go)
 
+FireFly 1.2 introduced a specification for policy engines to record more detailed information about transaction sub-status and lower-level actions it performs
+as part of progressing a transaction onto the chain. A policy engine might for example have a sub-status of `Received` and another sub-status of `Tracking`. For more information see [Blockchain Operation Status](../reference/blockchain_operation_status.html)
+
+
 ## Event Streams
 
 One of the largest pieces of heavy lifting code in the FFTM codebase, is the event stream
