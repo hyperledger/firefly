@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -78,10 +78,11 @@ type BlockchainReceiptHeaders struct {
 }
 
 type BlockchainReceiptNotification struct {
-	Headers    BlockchainReceiptHeaders
-	TxHash     string `json:"transactionHash,omitempty"`
-	Message    string `json:"errorMessage,omitempty"`
-	ProtocolID string `json:"protocolId,omitempty"`
+	Headers          BlockchainReceiptHeaders `json:"headers,omitempty"`
+	TxHash           string                   `json:"transactionHash,omitempty"`
+	Message          string                   `json:"errorMessage,omitempty"`
+	ProtocolID       string                   `json:"protocolId,omitempty"`
+	ContractLocation *fftypes.JSONAny         `json:"contractLocation,omitempty"`
 }
 
 func NewBlockchainCallbacks() BlockchainCallbacks {
@@ -297,6 +298,7 @@ func HandleReceipt(ctx context.Context, plugin core.Named, reply *BlockchainRece
 	if reply.Headers.ReceiptID == "" || reply.Headers.ReplyType == "" {
 		return fmt.Errorf("reply cannot be processed - missing fields: %+v", reply)
 	}
+
 	var updateType core.OpStatus
 	switch reply.Headers.ReplyType {
 	case "TransactionSuccess":
