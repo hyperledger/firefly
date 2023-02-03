@@ -50,10 +50,10 @@
     }
   },
   "ui": {
-    "tag": "v1.2.0-alpha.1",
-    "release": "v1.2.0-alpha.1"
+    "tag": "v1.2.0",
+    "release": "v1.2.0"
   },
   "cli": {
-    "tag": "v1.2.0-rc.1"
+    "tag": "v1.2.0"
   }
 }
