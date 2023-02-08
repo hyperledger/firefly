@@ -40,6 +40,9 @@ ARG UI_TAG
 ARG UI_RELEASE
 RUN apk add --update --no-cache sqlite postgresql-client curl jq
 WORKDIR /firefly
+RUN curl -sL "https://github.com/golang-migrate/migrate/releases/download/$(curl -sL https://api.github.com/repos/golang-migrate/migrate/releases/latest | jq -r '.name')/migrate.linux-amd64.tar.gz" | tar xz \
+    && chmod +x ./migrate \
+    && mv ./migrate /usr/bin/migrate
 COPY --from=firefly-builder /firefly/firefly ./firefly
 COPY --from=firefly-builder /firefly/db ./db
 COPY --from=solidity-builder /firefly/solidity_firefly/build/contracts ./contracts
@@ -47,8 +50,5 @@ COPY --from=fabric-builder /firefly/smart_contracts/fabric/firefly-go/firefly_fa
 ENV UI_RELEASE https://github.com/hyperledger/firefly-ui/releases/download/$UI_TAG/$UI_RELEASE.tgz
 RUN mkdir /firefly/frontend \
  && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
-RUN ln -s /firefly/firefly /usr/bin/firefly \
-    && curl -sL "https://github.com/golang-migrate/migrate/releases/download/$(curl -sL https://api.github.com/repos/golang-migrate/migrate/releases/latest | jq -r '.name')/migrate.linux-amd64.tar.gz" | tar xz \
-    && chmod +x ./migrate \
-    && mv ./migrate /usr/bin/migrate
+RUN ln -s /firefly/firefly /usr/bin/firefly
 ENTRYPOINT [ "firefly" ]
