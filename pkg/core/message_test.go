@@ -137,7 +137,7 @@ func TestVerifyNilDataHash(t *testing.T) {
 	assert.Regexp(t, "FF00128.*0", err)
 }
 
-func TestSeaDupDataID(t *testing.T) {
+func TestSealDupDataID(t *testing.T) {
 	id1 := fftypes.NewUUID()
 	hash1 := fftypes.NewRandB32()
 	hash2 := fftypes.NewRandB32()
@@ -148,23 +148,6 @@ func TestSeaDupDataID(t *testing.T) {
 		},
 	}
 	err := msg.Seal(context.Background())
-	assert.Regexp(t, "FF00129.*1", err)
-}
-
-func TestVerifylDupDataHash(t *testing.T) {
-	id1 := fftypes.NewUUID()
-	id2 := fftypes.NewUUID()
-	hash1 := fftypes.NewRandB32()
-	msg := Message{
-		Header: MessageHeader{
-			TxType: TransactionTypeBatchPin,
-		},
-		Data: DataRefs{
-			{ID: id1, Hash: hash1},
-			{ID: id2, Hash: hash1},
-		},
-	}
-	err := msg.Verify(context.Background())
 	assert.Regexp(t, "FF00129.*1", err)
 }
 

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -219,7 +219,7 @@ func (m *Message) DupDataCheck(ctx context.Context) (err error) {
 		if d.ID == nil || d.Hash == nil {
 			return i18n.NewError(ctx, i18n.MsgNilDataReferenceSealFail, i)
 		}
-		if dupCheck[d.ID.String()] || dupCheck[d.Hash.String()] {
+		if dupCheck[d.ID.String()] {
 			return i18n.NewError(ctx, i18n.MsgDupDataReferenceSealFail, i)
 		}
 		dupCheck[d.ID.String()] = true
