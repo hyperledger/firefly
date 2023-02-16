@@ -57,8 +57,10 @@ if [ -n "${BLOCKCHAIN_CONNECTOR}" ]; then
 fi
 
 BLOCKCHAIN_NODE_FLAG=""
-if [ -n "${BLOCKCHAIN_NODE}" ]; then
-  BLOCKCHAIN_CONNECTOR_FLAG="--blockchain-node ${BLOCKCHAIN_NODE}"
+if [ "${STACK_TYPE}" != "fabric" ]; then
+  if [ -n "${BLOCKCHAIN_NODE}" ]; then
+    BLOCKCHAIN_CONNECTOR_FLAG="--blockchain-node ${BLOCKCHAIN_NODE}"
+  fi
 fi
 
 if [ -z "${TEST_SUITE}" ]; then
