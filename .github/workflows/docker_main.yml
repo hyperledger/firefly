@@ -71,3 +71,5 @@ jobs:
             BASE_TAG=${{ steps.manifest.outputs.BASE_TAG }}
             UI_TAG=${{ steps.manifest.outputs.UI_TAG }}
             UI_RELEASE=${{ steps.manifest.outputs.UI_RELEASE }}
+            BUILD_VERSION=${{ steps.build_tag_generator.outputs.BUILD_TAG }}
+            GIT_REF=${{ github.ref }}
