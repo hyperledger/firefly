@@ -8,7 +8,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -52,19 +52,19 @@ jobs:
           RELEASE_TAG=$(curl https://api.github.com/repos/${{ github.repository_owner }}/firefly/releases/latest -s | jq .tag_name -r)
           BUILD_TAG=$RELEASE_TAG-$(date +"%Y%m%d")-$GITHUB_RUN_NUMBER
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          echo ::set-output name=BUILD_TAG::$BUILD_TAG
-          echo ::set-output name=BUILD_DATE::$BUILD_DATE
+          echo "name=BUILD_TAG=$BUILD_TAG" >> $GITHUB_OUTPUT
+          echo "name=BUILD_DATE=$BUILD_DATE" >> $GITHUB_OUTPUT
 
       - name: Read manifest.json
         id: manifest
         run: |
-          echo ::set-output name=FIREFLY_BUILDER_TAG::$(cat manifest.json | jq -r '.build."firefly-builder".image')
-          echo ::set-output name=FABRIC_BUILDER_TAG::$(cat manifest.json | jq -r '.build."fabric-builder".image')
-          echo ::set-output name=FABRIC_BUILDER_PLATFORM::$(cat manifest.json | jq -r '.build."fabric-builder".platform')
-          echo ::set-output name=SOLIDITY_BUILDER_TAG::$(cat manifest.json | jq -r '.build."solidity-builder".image')
-          echo ::set-output name=BASE_TAG::$(cat manifest.json | jq -r '.build.base.image')
-          echo ::set-output name=UI_TAG::$(cat manifest.json | jq -r '.ui.tag')
-          echo ::set-output name=UI_RELEASE::$(cat manifest.json | jq -r '.ui.release')
+          echo "name=FIREFLY_BUILDER_TAG=$(cat manifest.json | jq -r '.build."firefly-builder".image')" >> $GITHUB_OUTPUT
+          echo "name=FABRIC_BUILDER_TAG=$(cat manifest.json | jq -r '.build."fabric-builder".image')" >> $GITHUB_OUTPUT
+          echo "name=FABRIC_BUILDER_PLATFORM=$(cat manifest.json | jq -r '.build."fabric-builder".platform')" >> $GITHUB_OUTPUT
+          echo "name=SOLIDITY_BUILDER_TAG=$(cat manifest.json | jq -r '.build."solidity-builder".image')" >> $GITHUB_OUTPUT
+          echo "name=BASE_TAG=$(cat manifest.json | jq -r '.build.base.image')" >> $GITHUB_OUTPUT
+          echo "name=UI_TAG=$(cat manifest.json | jq -r '.ui.tag')" >> $GITHUB_OUTPUT
+          echo "name=UI_RELEASE=$(cat manifest.json | jq -r '.ui.release')" >> $GITHUB_OUTPUT
 
       - name: Build and push
         uses: docker/build-push-action@v4
