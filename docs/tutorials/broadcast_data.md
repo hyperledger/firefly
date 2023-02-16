@@ -137,7 +137,7 @@ on the vast majority of your messages.
 
 Here we make two API calls.
 
-1) Create the `data` object explicitly, using a multi-party form upload
+1) Create the `data` object explicitly, using a multi-part form upload
 
   - You can also just post JSON to this endpoint
 
