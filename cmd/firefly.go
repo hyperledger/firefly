@@ -87,6 +87,10 @@ func resetConfig() {
 	apiserver.InitConfig()
 }
 
+func reloadConfig() error {
+	resetConfig()
+	return config.ReadConfig(configSuffix, cfgFile)
+}
 func getRootManager() namespace.Manager {
 	if _utManager != nil {
 		return _utManager
@@ -102,8 +106,7 @@ func Execute() error {
 func run() error {
 
 	// Read the configuration
-	resetConfig()
-	err := config.ReadConfig(configSuffix, cfgFile)
+	err := reloadConfig()
 
 	// Setup logging after reading config (even if failed), to output header correctly
 	rootCtx, cancelRootCtx := context.WithCancel(context.Background())
@@ -153,7 +156,7 @@ func run() error {
 			<-ffDone
 			// Re-read the configuration
 			resetConfig()
-			if err = config.ReadConfig(configSuffix, cfgFile); err != nil {
+			if err = reloadConfig(); err != nil {
 				return err
 			}
 		case err := <-errChan:
@@ -190,7 +193,7 @@ func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespa
 		close(ffDone)
 	}()
 
-	if err = mgr.Init(ctx, cancelCtx, resetChan, resetConfig); err != nil {
+	if err = mgr.Init(ctx, cancelCtx, resetChan, reloadConfig); err != nil {
 		errChan <- err
 		return
 	}

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -49,8 +49,7 @@ func (nm *namespaceManager) configFileChanged() {
 	// the config when it changes and re-read it.
 	// We are passed this by our parent, as the config initialization of defaults and sections
 	// might include others than under the namespaces tree (API Server etc. etc.)
-	nm.resetConfig()
-	err := viper.ReadInConfig()
+	err := nm.reloadConfig()
 	if err != nil {
 		log.L(nm.ctx).Errorf("Failed to re-read configuration after config reload notification: %s", err)
 		nm.cancelCtx() // stop the world
