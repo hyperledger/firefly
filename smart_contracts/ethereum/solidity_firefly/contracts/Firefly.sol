@@ -32,7 +32,7 @@ contract Firefly is IBatchPin {
         bytes32[] memory contexts
     ) public override {
         emit BatchPin(
-            msg.sender,
+            tx.origin,
             block.timestamp,
             "firefly:batch_pin",
             uuids,
@@ -45,7 +45,7 @@ contract Firefly is IBatchPin {
     function networkAction(string memory action, string memory payload) public {
         bytes32[] memory contexts;
         emit BatchPin(
-            msg.sender,
+            tx.origin,
             block.timestamp,
             action,
             0,
