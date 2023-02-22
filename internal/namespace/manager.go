@@ -55,7 +55,7 @@ import (
 )
 
 type Manager interface {
-	Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool, resetConfig func()) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool, reloadConfig func() error) error
 	Start() error
 	WaitStop()
 	Reset(ctx context.Context) error
@@ -83,7 +83,7 @@ type namespace struct {
 
 type namespaceManager struct {
 	reset               chan bool
-	resetConfig         func()
+	reloadConfig        func() error
 	ctx                 context.Context
 	cancelCtx           context.CancelFunc
 	nsMux               sync.Mutex
@@ -172,9 +172,9 @@ func NewNamespaceManager() Manager {
 	return nm
 }
 
-func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool, resetConfig func()) (err error) {
-	nm.reset = reset             // channel to ask our parent to reload us
-	nm.resetConfig = resetConfig // function to cause our parent to call InitConfig on all components, including us
+func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool, reloadConfig func() error) (err error) {
+	nm.reset = reset               // channel to ask our parent to reload us
+	nm.reloadConfig = reloadConfig // function to cause our parent to call InitConfig on all components, including us
 	nm.ctx = ctx
 	nm.cancelCtx = cancelCtx
 

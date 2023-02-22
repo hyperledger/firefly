@@ -443,13 +443,13 @@ func mockInitConfig(nmm *nmMocks) {
 func TestConfigListenerE2E(t *testing.T) {
 
 	testDir := t.TempDir()
-	configFilename := fmt.Sprintf("%s/config.firefly.yaml", testDir)
+	configFilename := fmt.Sprintf("%s/firefly.core", testDir)
 	err := ioutil.WriteFile(configFilename, []byte(exampleConfig1base), 0664)
 	assert.NoError(t, err)
 
 	coreconfig.Reset()
 	InitConfig()
-	err = config.ReadConfig("firefly", configFilename)
+	err = config.ReadConfig("core", configFilename)
 	assert.NoError(t, err)
 	config.Set(coreconfig.ConfigAutoReload, true)
 
@@ -458,7 +458,10 @@ func TestConfigListenerE2E(t *testing.T) {
 	mockInitConfig(nmm)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx, make(chan bool), func() { coreconfig.Reset() })
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error {
+		coreconfig.Reset()
+		return config.ReadConfig("core", configFilename)
+	})
 	assert.NoError(t, err)
 	defer func() {
 		cancelCtx()
@@ -480,7 +483,7 @@ func TestConfigListenerE2E(t *testing.T) {
 func TestConfigListenerUnreadableYAML(t *testing.T) {
 
 	testDir := t.TempDir()
-	configFilename := fmt.Sprintf("%s/config.firefly.yaml", testDir)
+	configFilename := fmt.Sprintf("%s/firefly.core", testDir)
 	viper.SetConfigFile(configFilename)
 
 	coreconfig.Reset()
@@ -492,7 +495,10 @@ func TestConfigListenerUnreadableYAML(t *testing.T) {
 	mockInitConfig(nmm)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx, make(chan bool), func() { coreconfig.Reset() })
+	err := nm.Init(ctx, cancelCtx, make(chan bool), func() error {
+		coreconfig.Reset()
+		return config.ReadConfig("core", configFilename)
+	})
 	assert.NoError(t, err)
 
 	err = nm.Start()
@@ -522,7 +528,7 @@ func TestConfigReload1to2(t *testing.T) {
 
 	mockInitConfig(nmm)
 
-	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
@@ -593,7 +599,7 @@ func TestConfigReload1to3(t *testing.T) {
 
 	mockInitConfig(nmm)
 
-	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
@@ -659,7 +665,7 @@ func TestConfigReloadBadNewConfigPlugins(t *testing.T) {
 
 	mockInitConfig(nmm)
 
-	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	originalPlugins := nm.plugins
@@ -708,7 +714,7 @@ func TestConfigReloadBadNSMissingRequiredPlugins(t *testing.T) {
 
 	mockInitConfig(nmm)
 
-	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	originalPlugins := nm.plugins
@@ -767,7 +773,7 @@ func TestConfigDownToNothingOk(t *testing.T) {
 
 	mockInitConfig(nmm)
 
-	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
@@ -812,7 +818,7 @@ func TestConfigStartPluginsFails(t *testing.T) {
 
 	mockInitConfig(nmm)
 
-	err = nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
@@ -856,7 +862,7 @@ func TestConfigReloadInitPluginsFailOnReload(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
-	err := nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	err := nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
@@ -899,7 +905,7 @@ func TestConfigReloadInitNamespacesFailOnReload(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
-	err := nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	err := nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
@@ -949,7 +955,7 @@ func TestConfigReloadInitNamespacesFailOnStart(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
-	err := nm.Init(ctx, cancelCtx, make(chan bool), func() {})
+	err := nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
