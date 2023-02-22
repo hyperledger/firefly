@@ -2,27 +2,39 @@
 
 pragma solidity >=0.6.0 <0.9.0;
 
-contract Firefly {
-    event BatchPin(
-        address author,
-        uint timestamp,
-        string action,
-        bytes32 uuids,
-        bytes32 batchHash,
-        string payloadRef,
-        bytes32[] contexts
-    );
+import "./IBatchPin.sol";
+
+contract Firefly is IBatchPin {
+    function pinBatchData(bytes calldata data) public override {
+        bytes32 uuids;
+        bytes32 batchHash;
+        string memory payloadRef;
+        bytes32[] memory contexts;
+        (uuids, batchHash, payloadRef, contexts) = abi.decode(
+            data,
+            (bytes32, bytes32, string, bytes32[])
+        );
+        emit BatchPin(
+            tx.origin,
+            block.timestamp,
+            "firefly:contract_invoke_pin",
+            uuids,
+            batchHash,
+            payloadRef,
+            contexts
+        );
+    }
 
     function pinBatch(
         bytes32 uuids,
         bytes32 batchHash,
         string memory payloadRef,
         bytes32[] memory contexts
-    ) public {
+    ) public override {
         emit BatchPin(
             msg.sender,
             block.timestamp,
-            "",
+            "firefly:batch_pin",
             uuids,
             batchHash,
             payloadRef,
