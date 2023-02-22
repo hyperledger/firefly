@@ -155,7 +155,6 @@ func run() error {
 			// Must wait for the server to close before we restart
 			<-ffDone
 			// Re-read the configuration
-			resetConfig()
 			if err = reloadConfig(); err != nil {
 				return err
 			}
