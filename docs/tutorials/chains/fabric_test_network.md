@@ -91,7 +91,7 @@ Each FireFly Supernode (specifically the Fabconnect instance in each) will need 
 
 ### Organization 1 connection profile
 
-Create a new file at `~/org1_ccp.yml` with the contents below. Replace the string `FILL_IN_KEY_NAME_HERE` with the filename in your `/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/` directory.
+Create a new file at `~/org1_ccp.yml` with the contents below. Replace the string `FILL_IN_KEY_NAME_HERE` with the filename in your `fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore` directory.
 
 ```yml
 certificateAuthorities:
@@ -161,7 +161,7 @@ version: 1.1.0%
 
 ### Organization 2 connection profile
 
-Create a new file at `~/org2_ccp.yml` with the contents below. Replace the string `FILL_IN_KEY_NAME_HERE` with the filename in your `/fabric-samples/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/keystore/` directory.
+Create a new file at `~/org2_ccp.yml` with the contents below. Replace the string `FILL_IN_KEY_NAME_HERE` with the filename in your `fabric-samples/test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore` directory.
 
 ```yml
 certificateAuthorities:
