@@ -31,12 +31,14 @@
 <meta name="generator" content="Jekyll v3.9.2" />
 <meta property="og:title" content="pages.fabric_test_network" />
 <meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
 <meta property="og:site_name" content="Hyperledger FireFly Docs" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="pages.fabric_test_network" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","headline":"pages.fabric_test_network","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/tutorials/chains/fabric_test_network.html"}</script>
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"pages.fabric_test_network","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/tutorials/chains/fabric_test_network.html"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -416,7 +418,7 @@ peer lifecycle chaincode commit <span class="nt">-o</span> localhost:7050 <span 
       </h3>
     
 
-<p>Create a new file at <code class="language-plaintext highlighter-rouge">~/org1_ccp.yml</code> with the contents below. Replace the string <code class="language-plaintext highlighter-rouge">FILL_IN_KEY_NAME_HERE</code> with the filename in your <code class="language-plaintext highlighter-rouge">/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/</code> directory.</p>
+<p>Create a new file at <code class="language-plaintext highlighter-rouge">~/org1_ccp.yml</code> with the contents below. Replace the string <code class="language-plaintext highlighter-rouge">FILL_IN_KEY_NAME_HERE</code> with the filename in your <code class="language-plaintext highlighter-rouge">fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore</code> directory.</p>
 
 <div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">certificateAuthorities</span><span class="pi">:</span>
     <span class="s">org1.example.com</span><span class="pi">:</span>
@@ -491,7 +493,7 @@ peer lifecycle chaincode commit <span class="nt">-o</span> localhost:7050 <span 
       </h3>
     
 
-<p>Create a new file at <code class="language-plaintext highlighter-rouge">~/org2_ccp.yml</code> with the contents below. Replace the string <code class="language-plaintext highlighter-rouge">FILL_IN_KEY_NAME_HERE</code> with the filename in your <code class="language-plaintext highlighter-rouge">/fabric-samples/test-network/organizations/peerOrganizations/org2.example.com/users/User1@org2.example.com/msp/keystore/</code> directory.</p>
+<p>Create a new file at <code class="language-plaintext highlighter-rouge">~/org2_ccp.yml</code> with the contents below. Replace the string <code class="language-plaintext highlighter-rouge">FILL_IN_KEY_NAME_HERE</code> with the filename in your <code class="language-plaintext highlighter-rouge">fabric-samples/test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore</code> directory.</p>
 
 <div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">certificateAuthorities</span><span class="pi">:</span>
     <span class="s">org2.example.com</span><span class="pi">:</span>
