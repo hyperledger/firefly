@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -133,9 +133,10 @@ func TestInsertEventFailCommit(t *testing.T) {
 }
 
 func TestInsertEventsPreCommitMultiRowOK(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 
 	ev1 := &core.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
 	ev2 := &core.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
@@ -162,9 +163,10 @@ func TestInsertEventsPreCommitMultiRowOK(t *testing.T) {
 }
 
 func TestInsertEventsPreCommitMultiRowFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 	ev1 := &core.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
 	mock.ExpectBegin()
 	mock.ExpectExec("<acquire lock ns1>").WillReturnResult(driver.ResultNoRows)

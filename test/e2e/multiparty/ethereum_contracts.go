@@ -19,7 +19,7 @@ package multiparty
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"testing"
@@ -316,7 +316,7 @@ func readContractJSON(t *testing.T, contract string) fftypes.JSONObject {
 	jsonFile, err := os.Open(path)
 	assert.NoError(t, err)
 	defer jsonFile.Close()
-	byteValue, err := ioutil.ReadAll(jsonFile)
+	byteValue, err := io.ReadAll(jsonFile)
 	assert.NoError(t, err)
 	var jsonValue fftypes.JSONObject
 	err = json.Unmarshal(byteValue, &jsonValue)

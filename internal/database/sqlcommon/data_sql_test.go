@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -240,9 +240,10 @@ func TestInsertDataArrayBeginFail(t *testing.T) {
 }
 
 func TestInsertDataArrayMultiRowOK(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 
 	data1 := &core.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
 	data2 := &core.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
@@ -262,9 +263,10 @@ func TestInsertDataArrayMultiRowOK(t *testing.T) {
 }
 
 func TestInsertDataArrayMultiRowFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 	data1 := &core.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
 	mock.ExpectBegin()
 	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
