@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -45,6 +45,7 @@ type mockProvider struct {
 	openError               error
 	getMigrationDriverError error
 	individualSort          bool
+	multiRowInsert          bool
 }
 
 func newMockProvider() *mockProvider {
@@ -59,6 +60,7 @@ func newMockProvider() *mockProvider {
 	mp.SQLCommon.InitConfig(mp, mp.config)
 	mp.config.Set(SQLConfMaxConnections, 10)
 	mp.mockDB, mp.mdb, _ = sqlmock.New()
+	mp.multiRowInsert = false
 	return mp
 }
 
@@ -84,6 +86,7 @@ func (mp *mockProvider) MigrationsDir() string {
 func (psql *mockProvider) Features() dbsql.SQLFeatures {
 	features := dbsql.DefaultSQLProviderFeatures()
 	features.UseILIKE = true
+	features.MultiRowInsert = psql.multiRowInsert
 	features.AcquireLock = func(lockName string) string {
 		return fmt.Sprintf(`<acquire lock %s>`, lockName)
 	}
