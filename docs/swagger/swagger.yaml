@@ -5272,6 +5272,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -5529,6 +5544,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -5658,6 +5688,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -5712,6 +5754,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -5816,6 +5863,21 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: topics
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -7966,6 +8028,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -8097,6 +8174,18 @@ paths:
                               assigned - using the default topic is discouraged
                             type: string
                           type: array
+                        txparent:
+                          description: The parent transaction that originally triggered
+                            this message
+                          properties:
+                            id:
+                              description: The UUID of the FireFly transaction
+                              format: uuid
+                              type: string
+                            type:
+                              description: The type of the FireFly transaction
+                              type: string
+                          type: object
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
@@ -8151,6 +8240,11 @@ paths:
                       - pending
                       - confirmed
                       - rejected
+                      type: string
+                    txid:
+                      description: The ID of the transaction used to order/deliver
+                        this message
+                      format: uuid
                       type: string
                   type: object
                 type: array
@@ -8349,6 +8443,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -8403,6 +8509,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -8960,6 +9071,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -9014,6 +9137,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -9097,6 +9225,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -9151,6 +9291,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -9404,6 +9549,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -9458,6 +9615,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -9547,6 +9709,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -9601,6 +9775,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -9930,6 +10109,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -9984,6 +10175,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -15813,6 +16009,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -16084,6 +16295,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -16213,6 +16439,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -16267,6 +16505,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -16378,6 +16621,21 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: topics
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -18640,6 +18898,21 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: txid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: txparent.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: txtype
         schema:
           type: string
@@ -18771,6 +19044,18 @@ paths:
                               assigned - using the default topic is discouraged
                             type: string
                           type: array
+                        txparent:
+                          description: The parent transaction that originally triggered
+                            this message
+                          properties:
+                            id:
+                              description: The UUID of the FireFly transaction
+                              format: uuid
+                              type: string
+                            type:
+                              description: The type of the FireFly transaction
+                              type: string
+                          type: object
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
@@ -18825,6 +19110,11 @@ paths:
                       - pending
                       - confirmed
                       - rejected
+                      type: string
+                    txid:
+                      description: The ID of the transaction used to order/deliver
+                        this message
+                      format: uuid
                       type: string
                   type: object
                 type: array
@@ -19030,6 +19320,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -19084,6 +19386,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -19713,6 +20020,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -19767,6 +20086,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -19856,6 +20180,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -19910,6 +20246,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -20170,6 +20511,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -20224,6 +20577,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -20313,6 +20671,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -20367,6 +20737,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success
@@ -20703,6 +21078,18 @@ paths:
                             - using the default topic is discouraged
                           type: string
                         type: array
+                      txparent:
+                        description: The parent transaction that originally triggered
+                          this message
+                        properties:
+                          id:
+                            description: The UUID of the FireFly transaction
+                            format: uuid
+                            type: string
+                          type:
+                            description: The type of the FireFly transaction
+                            type: string
+                        type: object
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
@@ -20757,6 +21144,11 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    type: string
+                  txid:
+                    description: The ID of the transaction used to order/deliver this
+                      message
+                    format: uuid
                     type: string
                 type: object
           description: Success

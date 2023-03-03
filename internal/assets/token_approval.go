@@ -95,8 +95,20 @@ func (s *approveSender) resolveAndSend(ctx context.Context, method sendMethod) (
 }
 
 func (s *approveSender) resolve(ctx context.Context) (err error) {
+	// Create a transaction and attach to the approval
+	txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenApproval, s.approval.IdempotencyKey)
+	if err != nil {
+		return err
+	}
+	s.approval.TX.ID = txid
+	s.approval.TX.Type = core.TransactionTypeTokenApproval
+
 	// Resolve the attached message
 	if s.approval.Message != nil {
+		s.approval.Message.Header.TxParent = &core.TransactionRef{
+			ID:   txid,
+			Type: core.TransactionTypeTokenApproval,
+		}
 		s.msgSender, err = s.buildApprovalMessage(ctx, s.approval.Message)
 		if err != nil {
 			return err
@@ -136,17 +148,10 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 			return nil
 		}
 
-		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenApproval, s.approval.IdempotencyKey)
-		if err != nil {
-			return err
-		}
-		s.approval.TX.ID = txid
-		s.approval.TX.Type = core.TransactionTypeTokenApproval
-
 		op = core.NewOperation(
 			plugin,
 			s.mgr.namespace,
-			txid,
+			s.approval.TX.ID,
 			core.TransactionTypeTokenApproval)
 		if err = txcommon.AddTokenApprovalInputs(op, &s.approval.TokenApproval); err == nil {
 			err = s.mgr.operations.AddOrReuseOperation(ctx, op)
@@ -195,19 +200,21 @@ func (am *assetManager) validateApproval(ctx context.Context, approval *core.Tok
 
 func (s *approveSender) buildApprovalMessage(ctx context.Context, in *core.MessageInOut) (syncasync.Sender, error) {
 	allowedTypes := []fftypes.FFEnum{
-		core.MessageTypeApprovalBroadcast,
-		core.MessageTypeApprovalPrivate,
+		core.MessageTypeBroadcast,
+		core.MessageTypePrivate,
+		core.MessageTypeDeprecatedApprovalBroadcast,
+		core.MessageTypeDeprecatedApprovalPrivate,
 	}
 	if in.Header.Type == "" {
-		in.Header.Type = core.MessageTypeApprovalBroadcast
+		in.Header.Type = core.MessageTypeBroadcast
 	}
 	switch in.Header.Type {
-	case core.MessageTypeApprovalBroadcast:
+	case core.MessageTypeBroadcast, core.MessageTypeDeprecatedApprovalBroadcast:
 		if s.mgr.broadcast == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
 		}
 		return s.mgr.broadcast.NewBroadcast(in), nil
-	case core.MessageTypeApprovalPrivate:
+	case core.MessageTypePrivate, core.MessageTypeDeprecatedApprovalPrivate:
 		if s.mgr.messaging == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
 		}

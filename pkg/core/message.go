@@ -42,14 +42,14 @@ var (
 	MessageTypePrivate = fftypes.FFEnumValue("messagetype", "private")
 	// MessageTypeGroupInit is a special private message that contains the definition of the group
 	MessageTypeGroupInit = fftypes.FFEnumValue("messagetype", "groupinit")
-	// MessageTypeTransferBroadcast is a broadcast message to accompany/annotate a token transfer
-	MessageTypeTransferBroadcast = fftypes.FFEnumValue("messagetype", "transfer_broadcast")
-	// MessageTypeTransferPrivate is a private message to accompany/annotate a token transfer
-	MessageTypeTransferPrivate = fftypes.FFEnumValue("messagetype", "transfer_private")
-	// MessageTypeApprovalBroadcast is a broadcast message to accompany/annotate a token approval
-	MessageTypeApprovalBroadcast = fftypes.FFEnumValue("messagetype", "approval_broadcast")
-	// MessageTypeApprovalPrivate is a private message to accompany/annotate a token approval
-	MessageTypeApprovalPrivate = fftypes.FFEnumValue("messagetype", "approval_private")
+	// MessageTypeDeprecatedTransferBroadcast is deprecated - use MessageTypeBroadcast (and refer to TxParent.Type)
+	MessageTypeDeprecatedTransferBroadcast = fftypes.FFEnumValue("messagetype", "transfer_broadcast")
+	// MessageTypeDeprecatedTransferPrivate is deprecated - use MessageTypePrivate (and refer to TxParent.Type)
+	MessageTypeDeprecatedTransferPrivate = fftypes.FFEnumValue("messagetype", "transfer_private")
+	// MessageTypeDeprecatedApprovalBroadcast is deprecated - use MessageTypeBroadcast (and refer to TxParent.Type)
+	MessageTypeDeprecatedApprovalBroadcast = fftypes.FFEnumValue("messagetype", "approval_broadcast")
+	// MessageTypeDeprecatedApprovalPrivate is a deprecated - use MessageTypePrivate (and refer to TxParent.Type)
+	MessageTypeDeprecatedApprovalPrivate = fftypes.FFEnumValue("messagetype", "approval_private")
 )
 
 // MessageState is the current transmission/confirmation state of a message
@@ -84,6 +84,7 @@ type MessageHeader struct {
 	Topics    fftypes.FFStringArray `ffstruct:"MessageHeader" json:"topics,omitempty"`
 	Tag       string                `ffstruct:"MessageHeader" json:"tag,omitempty"`
 	DataHash  *fftypes.Bytes32      `ffstruct:"MessageHeader" json:"datahash,omitempty" ffexcludeinput:"true"`
+	TxParent  *TransactionRef       `ffstruct:"MessageHeader" json:"txparent,omitempty" ffexcludeinput:"true"`
 }
 
 // Message is the envelope by which coordinated data exchange can happen between parties in the network
@@ -94,6 +95,7 @@ type Message struct {
 	LocalNamespace string                `ffstruct:"Message" json:"localNamespace,omitempty" ffexcludeinput:"true"`
 	Hash           *fftypes.Bytes32      `ffstruct:"Message" json:"hash,omitempty" ffexcludeinput:"true"`
 	BatchID        *fftypes.UUID         `ffstruct:"Message" json:"batch,omitempty" ffexcludeinput:"true"`
+	TransactionID  *fftypes.UUID         `ffstruct:"Message" json:"txid,omitempty" ffexcludeinput:"true"`
 	State          MessageState          `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate" ffexcludeinput:"true"`
 	Confirmed      *fftypes.FFTime       `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
 	Data           DataRefs              `ffstruct:"Message" json:"data" ffexcludeinput:"true"`

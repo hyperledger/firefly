@@ -139,7 +139,8 @@ func TestApprovalBadConnector(t *testing.T) {
 			Operator: "operator",
 			Key:      "key",
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Locator:   "F1",
@@ -149,14 +150,17 @@ func TestApprovalBadConnector(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("ResolveInputSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.Regexp(t, "FF10272", err)
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestApprovalDefaultPoolSuccess(t *testing.T) {
@@ -222,9 +226,11 @@ func TestApprovalDefaultPoolNoPool(t *testing.T) {
 			Operator: "operator",
 			Key:      "key",
 		},
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	f.Limit(1).Count(true)
@@ -237,9 +243,13 @@ func TestApprovalDefaultPoolNoPool(t *testing.T) {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.Regexp(t, "FF10292", err)
+
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestApprovalBadPool(t *testing.T) {
@@ -252,16 +262,20 @@ func TestApprovalBadPool(t *testing.T) {
 			Operator: "operator",
 			Key:      "key",
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, fmt.Errorf("pop"))
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestApprovalUnconfirmedPool(t *testing.T) {
@@ -273,7 +287,8 @@ func TestApprovalUnconfirmedPool(t *testing.T) {
 			Approved: true,
 			Operator: "operator",
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Locator:   "F1",
@@ -282,12 +297,15 @@ func TestApprovalUnconfirmedPool(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.Regexp(t, "FF10293", err)
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestApprovalIdentityFail(t *testing.T) {
@@ -299,7 +317,8 @@ func TestApprovalIdentityFail(t *testing.T) {
 			Approved: true,
 			Operator: "operator",
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Locator:   "F1",
@@ -309,14 +328,17 @@ func TestApprovalIdentityFail(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestApprovalFail(t *testing.T) {
@@ -372,24 +394,14 @@ func TestApprovalTransactionFail(t *testing.T) {
 		Pool:           "pool1",
 		IdempotencyKey: "idem1",
 	}
-	pool := &core.TokenPool{
-		Locator:   "F1",
-		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
-	}
 
-	mdi := am.database.(*databasemocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.EqualError(t, err, "pop")
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestApprovalWithBroadcastMessage(t *testing.T) {
@@ -484,8 +496,13 @@ func TestApprovalWithBroadcastMessageDisabled(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.Regexp(t, "FF10415", err)
+
+	mth.AssertExpectations(t)
 }
 
 func TestApprovalWithBroadcastMessageSendFail(t *testing.T) {
@@ -556,7 +573,8 @@ func TestApprovalWithBroadcastPrepareFail(t *testing.T) {
 			Operator: "B",
 			Approved: true,
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 		Message: &core.MessageInOut{
 			InlineData: core.InlineData{
 				{
@@ -568,14 +586,17 @@ func TestApprovalWithBroadcastPrepareFail(t *testing.T) {
 
 	mbm := am.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mbm.On("NewBroadcast", approval.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.EqualError(t, err, "pop")
 
 	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestApprovalWithPrivateMessage(t *testing.T) {
@@ -594,7 +615,7 @@ func TestApprovalWithPrivateMessage(t *testing.T) {
 			Message: core.Message{
 				Header: core.MessageHeader{
 					ID:   msgID,
-					Type: core.MessageTypeApprovalPrivate,
+					Type: core.MessageTypePrivate,
 				},
 				Hash: hash,
 			},
@@ -654,12 +675,13 @@ func TestApprovalWithPrivateMessageDisabled(t *testing.T) {
 			Operator: "B",
 			Approved: true,
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 		Message: &core.MessageInOut{
 			Message: core.Message{
 				Header: core.MessageHeader{
 					ID:   msgID,
-					Type: core.MessageTypeApprovalPrivate,
+					Type: core.MessageTypeDeprecatedApprovalPrivate,
 				},
 				Hash: hash,
 			},
@@ -671,8 +693,13 @@ func TestApprovalWithPrivateMessageDisabled(t *testing.T) {
 		},
 	}
 
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.Regexp(t, "FF10415", err)
+
+	mth.AssertExpectations(t)
 }
 
 func TestApprovalWithInvalidMessage(t *testing.T) {
@@ -684,7 +711,8 @@ func TestApprovalWithInvalidMessage(t *testing.T) {
 			Operator: "B",
 			Approved: true,
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 		Message: &core.MessageInOut{
 			Message: core.Message{
 				Header: core.MessageHeader{
@@ -699,8 +727,13 @@ func TestApprovalWithInvalidMessage(t *testing.T) {
 		},
 	}
 
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.Regexp(t, "FF10287", err)
+
+	mth.AssertExpectations(t)
 }
 
 func TestApprovalOperationsFail(t *testing.T) {
@@ -878,7 +911,8 @@ func TestApprovalPrepare(t *testing.T) {
 			Operator: "operator",
 			Key:      "key",
 		},
-		Pool: "pool1",
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
 	}
 	pool := &core.TokenPool{
 		Locator:   "F1",
@@ -890,12 +924,15 @@ func TestApprovalPrepare(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("ResolveInputSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 
 	err := sender.Prepare(context.Background())
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
