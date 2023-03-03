@@ -599,12 +599,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 	return res, nil
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
-	ethLocation, err := e.parseContractLocation(ctx, location)
-	if err != nil {
-		return err
-	}
-
+func (e *Ethereum) buildBatchPinInput(ctx context.Context, version int, namespace string, batch *blockchain.BatchPin) (*abi.Entry, []interface{}) {
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -613,18 +608,13 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace,
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
 
-	version, err := e.GetNetworkVersion(ctx, location)
-	if err != nil {
-		return err
-	}
-
 	var input []interface{}
 	var method *abi.Entry
 
 	if version == 1 {
 		method = batchPinMethodABIV1
 		input = []interface{}{
-			networkNamespace,
+			namespace,
 			ethHexFormatB32(&uuids),
 			ethHexFormatB32(batch.BatchHash),
 			batch.BatchPayloadRef,
@@ -639,6 +629,23 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace,
 			ethHashes,
 		}
 	}
+
+	return method, input
+}
+
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+	ethLocation, err := e.parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	version, err := e.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	method, input := e.buildBatchPinInput(ctx, version, networkNamespace, batch)
+
 	var emptyErrors []*abi.Entry
 	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
 }
@@ -856,15 +863,12 @@ func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod
 		return abi, errorsAbi, orderedInput, err
 	}
 	for i, ffiError := range errors {
-
 		abi, err := ffi2abi.ConvertFFIErrorDefinitionToABI(ctx, &ffiError.FFIErrorDefinition)
 		if err == nil {
 			errorsAbi[i] = abi
 		}
-
 	}
 	for i, ffiParam := range method.Params {
-
 		orderedInput[i] = input[ffiParam.Name]
 	}
 	return abi, errorsAbi, orderedInput, nil
