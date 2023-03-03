@@ -307,6 +307,7 @@
     </ol>
   </li>
   <li><a href="#messageheader" id="markdown-toc-messageheader">MessageHeader</a></li>
+  <li><a href="#transactionref" id="markdown-toc-transactionref">TransactionRef</a></li>
   <li><a href="#dataref" id="markdown-toc-dataref">DataRef</a></li>
 </ol><hr />
       <h2 id="message-1">
@@ -575,6 +576,11 @@ both of those topics.</p>
       <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
     </tr>
     <tr>
+      <td><code class="language-plaintext highlighter-rouge">txid</code></td>
+      <td>The ID of the transaction used to order/deliver this message</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+    <tr>
       <td><code class="language-plaintext highlighter-rouge">state</code></td>
       <td>The current state of the message</td>
       <td><code class="language-plaintext highlighter-rouge">FFEnum</code>:<br /><code class="language-plaintext highlighter-rouge">"staged"</code><br /><code class="language-plaintext highlighter-rouge">"ready"</code><br /><code class="language-plaintext highlighter-rouge">"sent"</code><br /><code class="language-plaintext highlighter-rouge">"pending"</code><br /><code class="language-plaintext highlighter-rouge">"confirmed"</code><br /><code class="language-plaintext highlighter-rouge">"rejected"</code></td>
@@ -673,6 +679,41 @@ both of those topics.</p>
       <td><code class="language-plaintext highlighter-rouge">datahash</code></td>
       <td>A single hash representing all data in the message. Derived from the array of data ids+hashes attached to this message</td>
       <td><code class="language-plaintext highlighter-rouge">Bytes32</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">txparent</code></td>
+      <td>The parent transaction that originally triggered this message</td>
+      <td><a href="#transactionref"><code class="language-plaintext highlighter-rouge">TransactionRef</code></a></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="transactionref">
+        
+        
+          <a href="#transactionref" class="anchor-heading" aria-labelledby="transactionref"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> TransactionRef
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">type</code></td>
+      <td>The type of the FireFly transaction</td>
+      <td><code class="language-plaintext highlighter-rouge">FFEnum</code>:</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">id</code></td>
+      <td>The UUID of the FireFly transaction</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
     </tr>
   </tbody>
 </table>
