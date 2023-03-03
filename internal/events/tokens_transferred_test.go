@@ -126,7 +126,7 @@ func TestPersistTransferOpFail(t *testing.T) {
 
 	em.mdi.On("GetTokenTransferByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	em.mth.On("FindOperationInTransaction", em.ctx, transfer.TX.ID, core.OpTypeTokenTransfer).Return(nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
@@ -143,16 +143,16 @@ func TestPersistTransferBadOp(t *testing.T) {
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
-	ops := []*core.Operation{{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"localId": "bad",
 		},
 		Transaction: fftypes.NewUUID(),
-	}}
+	}
 
 	em.mdi.On("GetTokenTransferByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
+	em.mth.On("FindOperationInTransaction", em.ctx, transfer.TX.ID, core.OpTypeTokenTransfer).Return(op, nil)
 	em.mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
@@ -171,15 +171,15 @@ func TestPersistTransferTxFail(t *testing.T) {
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
-	ops := []*core.Operation{{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"localId": localID.String(),
 		},
-	}}
+	}
 
 	em.mdi.On("GetTokenTransferByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
+	em.mth.On("FindOperationInTransaction", em.ctx, transfer.TX.ID, core.OpTypeTokenTransfer).Return(op, nil)
 	em.mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
@@ -198,17 +198,17 @@ func TestPersistTransferGetTransferFail(t *testing.T) {
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
-	ops := []*core.Operation{{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"localId":   localID.String(),
 			"connector": transfer.Connector,
 			"pool":      pool.ID.String(),
 		},
-	}}
+	}
 
 	em.mdi.On("GetTokenTransferByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
+	em.mth.On("FindOperationInTransaction", em.ctx, transfer.TX.ID, core.OpTypeTokenTransfer).Return(op, nil)
 	em.mdi.On("GetTokenTransferByID", em.ctx, "ns1", localID).Return(nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
@@ -227,17 +227,17 @@ func TestPersistTransferBlockchainEventFail(t *testing.T) {
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
-	ops := []*core.Operation{{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"localId":   localID.String(),
 			"connector": transfer.Connector,
 			"pool":      pool.ID.String(),
 		},
-	}}
+	}
 
 	em.mdi.On("GetTokenTransferByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
+	em.mth.On("FindOperationInTransaction", em.ctx, transfer.TX.ID, core.OpTypeTokenTransfer).Return(op, nil)
 	em.mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
 	em.mdi.On("GetTokenTransferByID", em.ctx, "ns1", localID).Return(nil, nil)
 	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
@@ -262,17 +262,17 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
-	operations := []*core.Operation{{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"localId":   localID.String(),
 			"connector": transfer.Connector,
 			"pool":      pool.ID.String(),
 		},
-	}}
+	}
 
 	em.mdi.On("GetTokenTransferByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
+	em.mth.On("FindOperationInTransaction", em.ctx, transfer.TX.ID, core.OpTypeTokenTransfer).Return(op, nil)
 	em.mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
 	em.mdi.On("GetTokenTransferByID", em.ctx, "ns1", localID).Return(&core.TokenTransfer{}, nil)
 	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {

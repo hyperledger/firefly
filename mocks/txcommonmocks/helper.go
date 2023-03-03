@@ -30,6 +30,32 @@ func (_m *Helper) AddBlockchainTX(ctx context.Context, tx *core.Transaction, blo
 	return r0
 }
 
+// FindOperationInTransaction provides a mock function with given fields: ctx, tx, opType
+func (_m *Helper) FindOperationInTransaction(ctx context.Context, tx *fftypes.UUID, opType fftypes.FFEnum) (*core.Operation, error) {
+	ret := _m.Called(ctx, tx, opType)
+
+	var r0 *core.Operation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, fftypes.FFEnum) (*core.Operation, error)); ok {
+		return rf(ctx, tx, opType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, fftypes.FFEnum) *core.Operation); ok {
+		r0 = rf(ctx, tx, opType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.Operation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, fftypes.FFEnum) error); ok {
+		r1 = rf(ctx, tx, opType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetBlockchainEventByIDCached provides a mock function with given fields: ctx, id
 func (_m *Helper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
 	ret := _m.Called(ctx, id)
