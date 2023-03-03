@@ -176,7 +176,7 @@ func TestDispatchBatchBlobsFail(t *testing.T) {
 	defer cancel()
 
 	blobHash := fftypes.NewRandB32()
-	state := &batch.DispatchState{
+	state := &batch.DispatchPayload{
 		Data: []*core.Data{
 			{ID: fftypes.NewUUID(), Blob: &core.BlobRef{
 				Hash: blobHash,
@@ -202,7 +202,7 @@ func TestDispatchBatchInsertOpFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	state := &batch.DispatchState{
+	state := &batch.DispatchPayload{
 		Pins: []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -219,8 +219,8 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	state := &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	state := &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				ID: fftypes.NewUUID(),
 			},
@@ -232,7 +232,7 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
-		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
+		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Batch.ID)
 	}), operations.RemainPendingOnFailure).Return(nil, fmt.Errorf("pop"))
 
 	err := bm.dispatchBatch(context.Background(), state)
@@ -245,8 +245,8 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	state := &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	state := &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				ID: fftypes.NewUUID(),
 			},
@@ -261,7 +261,7 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	mmp.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
-		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
+		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Batch.ID)
 	}), operations.RemainPendingOnFailure).Return(getUploadBatchOutputs("payload1"), nil)
 
 	err := bm.dispatchBatch(context.Background(), state)
@@ -276,8 +276,8 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	state := &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	state := &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				ID:        fftypes.NewUUID(),
 				SignerRef: core.SignerRef{Author: "wrong", Key: "wrong"},
@@ -293,7 +293,7 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mmp.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(fmt.Errorf("pop"))
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
-		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
+		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Batch.ID)
 	}), operations.RemainPendingOnFailure).Return(getUploadBatchOutputs("payload1"), nil)
 
 	err := bm.dispatchBatch(context.Background(), state)

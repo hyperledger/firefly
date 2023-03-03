@@ -76,8 +76,8 @@ func TestUnfilledBatch(t *testing.T) {
 	log.SetLevel("debug")
 	coreconfig.Reset()
 
-	dispatched := make(chan *DispatchState)
-	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	dispatched := make(chan *DispatchPayload)
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		dispatched <- state
 		return nil
 	})
@@ -125,8 +125,8 @@ func TestBatchSizeOverflow(t *testing.T) {
 	log.SetLevel("debug")
 	coreconfig.Reset()
 
-	dispatched := make(chan *DispatchState)
-	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	dispatched := make(chan *DispatchPayload)
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		dispatched <- state
 		return nil
 	})
@@ -175,18 +175,18 @@ func TestBatchSizeOverflow(t *testing.T) {
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
-	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return fmt.Errorf("pop")
 	})
 	defer cancel()
 	bp.cancelCtx()
-	bp.dispatchBatch(&DispatchState{})
+	bp.dispatchBatch(&DispatchPayload{})
 	<-bp.done
 }
 
 func TestCloseToUnblockUpsertBatch(t *testing.T) {
 
-	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return nil
 	})
 	defer cancel()
@@ -227,7 +227,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 }
 
 func TestInsertNewNonceFail(t *testing.T) {
-	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return nil
 	})
 	defer cancel()
@@ -241,8 +241,8 @@ func TestInsertNewNonceFail(t *testing.T) {
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
 	gid := fftypes.NewRandB32()
-	err := bp.sealBatch(&DispatchState{
-		Persisted: core.BatchPersisted{
+	err := bp.sealBatch(&DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: gid,
 			},
@@ -263,7 +263,7 @@ func TestInsertNewNonceFail(t *testing.T) {
 }
 
 func TestUpdateExistingNonceFail(t *testing.T) {
-	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return nil
 	})
 	defer cancel()
@@ -281,8 +281,8 @@ func TestUpdateExistingNonceFail(t *testing.T) {
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
 	gid := fftypes.NewRandB32()
-	err := bp.sealBatch(&DispatchState{
-		Persisted: core.BatchPersisted{
+	err := bp.sealBatch(&DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: gid,
 			},
@@ -303,7 +303,7 @@ func TestUpdateExistingNonceFail(t *testing.T) {
 }
 
 func TestGetNonceFail(t *testing.T) {
-	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return nil
 	})
 	defer cancel()
@@ -316,8 +316,8 @@ func TestGetNonceFail(t *testing.T) {
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
 	gid := fftypes.NewRandB32()
-	err := bp.sealBatch(&DispatchState{
-		Persisted: core.BatchPersisted{
+	err := bp.sealBatch(&DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: gid,
 			},
@@ -338,7 +338,7 @@ func TestGetNonceFail(t *testing.T) {
 }
 
 func TestGetNonceMigrationFail(t *testing.T) {
-	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return nil
 	})
 	defer cancel()
@@ -352,8 +352,8 @@ func TestGetNonceMigrationFail(t *testing.T) {
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
 	gid := fftypes.NewRandB32()
-	err := bp.sealBatch(&DispatchState{
-		Persisted: core.BatchPersisted{
+	err := bp.sealBatch(&DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: gid,
 			},
@@ -374,7 +374,7 @@ func TestGetNonceMigrationFail(t *testing.T) {
 }
 
 func TestAddWorkInSort(t *testing.T) {
-	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return nil
 	})
 	defer cancel()
@@ -397,7 +397,7 @@ func TestAddWorkInSort(t *testing.T) {
 }
 
 func TestStartQuiesceNonBlocking(t *testing.T) {
-	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return nil
 	})
 	defer cancel()
@@ -409,8 +409,8 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	log.SetLevel("debug")
 	coreconfig.Reset()
 
-	dispatched := make(chan *DispatchState)
-	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	dispatched := make(chan *DispatchPayload)
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		dispatched <- state
 		return nil
 	})
@@ -461,8 +461,8 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 	log.SetLevel("debug")
 	coreconfig.Reset()
 
-	dispatched := make(chan *DispatchState)
-	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	dispatched := make(chan *DispatchPayload)
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		dispatched <- state
 		return nil
 	})
@@ -505,7 +505,7 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 		},
 	}
 
-	state := bp.initFlushState(fftypes.NewUUID(), []*batchWork{{msg: msg1}, {msg: msg2}})
+	state := bp.initPayload(fftypes.NewUUID(), []*batchWork{{msg: msg1}, {msg: msg2}})
 	err := bp.sealBatch(state)
 	assert.NoError(t, err)
 
@@ -527,8 +527,8 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 	log.SetLevel("debug")
 	coreconfig.Reset()
 
-	dispatched := make(chan *DispatchState)
-	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+	dispatched := make(chan *DispatchPayload)
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		dispatched <- state
 		return nil
 	})
@@ -551,7 +551,7 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 		},
 	}
 
-	state := bp.initFlushState(fftypes.NewUUID(), []*batchWork{{msg: msg}})
+	state := bp.initPayload(fftypes.NewUUID(), []*batchWork{{msg: msg}})
 	err := bp.sealBatch(state)
 	assert.Regexp(t, "FF00154", err)
 

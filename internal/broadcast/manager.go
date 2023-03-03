@@ -127,10 +127,10 @@ func (bm *broadcastManager) Name() string {
 	return "BroadcastManager"
 }
 
-func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.DispatchState) error {
+func (bm *broadcastManager) dispatchBatch(ctx context.Context, payload *batch.DispatchPayload) error {
 
 	// Ensure all the blobs are published
-	if err := bm.uploadBlobs(ctx, state.Persisted.TX.ID, state.Data); err != nil {
+	if err := bm.uploadBlobs(ctx, payload.Batch.TX.ID, payload.Data); err != nil {
 		return err
 	}
 
@@ -138,13 +138,13 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	op := core.NewOperation(
 		bm.sharedstorage,
 		bm.namespace.Name,
-		state.Persisted.TX.ID,
+		payload.Batch.TX.ID,
 		core.OpTypeSharedStorageUploadBatch)
-	addUploadBatchInputs(op, state.Persisted.ID)
+	addUploadBatchInputs(op, payload.Batch.ID)
 	if err := bm.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
 	}
-	batch := state.Persisted.GenInflight(state.Messages, state.Data)
+	batch := payload.Batch.GenInflight(payload.Messages, payload.Data)
 
 	// We are in an (indefinite) retry cycle from the batch processor to dispatch this batch, that is only
 	// terminated with shutdown. So we leave the operation pending on failure, as it is still being retried.
@@ -155,7 +155,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	}
 	payloadRef := outputs.GetString("payloadRef")
 	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payloadRef=%s", batch.ID, batch.Author, batch.Key, payloadRef)
-	return bm.multiparty.SubmitBatchPin(ctx, &state.Persisted, state.Pins, payloadRef)
+	return bm.multiparty.SubmitBatchPin(ctx, &payload.Batch, payload.Pins, payloadRef)
 }
 
 func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data core.DataArray) error {

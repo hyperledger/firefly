@@ -388,8 +388,8 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(nil, fmt.Errorf("pop")).Once()
 
-	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				ID:    fftypes.NewUUID(),
 				Group: groupID,
@@ -665,8 +665,8 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 		return op.Type == core.OpTypeDataExchangeSendBatch && *data.Node.ID == *node2.ID
 	})).Return(nil, nil)
 
-	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				ID:        fftypes.NewUUID(),
 				Group:     groupID,

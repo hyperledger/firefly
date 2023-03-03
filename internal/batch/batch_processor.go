@@ -97,13 +97,16 @@ type nonceState struct {
 	new    bool
 }
 
-type DispatchState struct {
-	Persisted      core.BatchPersisted
-	Messages       []*core.Message
-	Data           core.DataArray
-	Pins           []*fftypes.Bytes32
-	noncesAssigned map[fftypes.Bytes32]*nonceState
+type dispatchState struct {
 	msgPins        map[fftypes.UUID]fftypes.FFStringArray
+	noncesAssigned map[fftypes.Bytes32]*nonceState
+}
+
+type DispatchPayload struct {
+	Batch    core.BatchPersisted
+	Messages []*core.Message
+	Data     core.DataArray
+	Pins     []*fftypes.Bytes32
 }
 
 const batchSizeEstimateBase = int64(512)
@@ -157,9 +160,9 @@ func (bp *batchProcessor) status() *ProcessorStatus {
 	}
 }
 
-func (bp *batchProcessor) newAssembly(initalWork ...*batchWork) {
+func (bp *batchProcessor) newAssembly(initialWork ...*batchWork) {
 	bp.assemblyID = fftypes.NewUUID()
-	bp.assemblyQueue = append([]*batchWork{}, initalWork...)
+	bp.assemblyQueue = append([]*batchWork{}, initialWork...)
 	bp.assemblyQueueBytes = batchSizeEstimateBase
 }
 
@@ -221,7 +224,7 @@ func (bp *batchProcessor) notifyFlushComplete(flushWork []*batchWork) {
 	bp.bm.notifyFlushed(sequences)
 }
 
-func (bp *batchProcessor) updateFlushStats(state *DispatchState, byteSize int64) {
+func (bp *batchProcessor) updateFlushStats(payload *DispatchPayload, byteSize int64) {
 	bp.statusMux.Lock()
 	defer bp.statusMux.Unlock()
 	fs := &bp.flushStatus
@@ -237,10 +240,10 @@ func (bp *batchProcessor) updateFlushStats(state *DispatchState, byteSize int64)
 	fs.totalBytesFlushed += byteSize
 	fs.AverageBatchBytes = (fs.totalBytesFlushed / fs.TotalBatches)
 
-	fs.totalMessagesFlushed += int64(len(state.Messages))
+	fs.totalMessagesFlushed += int64(len(payload.Messages))
 	fs.AverageBatchMessages = math.Round((float64(fs.totalMessagesFlushed)/float64(fs.TotalBatches))*100) / 100
 
-	fs.totalDataFlushed += int64(len(state.Data))
+	fs.totalDataFlushed += int64(len(payload.Data))
 	fs.AverageBatchData = math.Round((float64(fs.totalDataFlushed)/float64(fs.TotalBatches))*100) / 100
 }
 
@@ -275,8 +278,8 @@ func (bp *batchProcessor) assemblyLoop() {
 
 	var batchTimeout = time.NewTimer(bp.conf.DisposeTimeout)
 	idle := true
-	quescing := false
-	for !quescing {
+	quiescing := false
+	for !quiescing {
 
 		var timedout, full, overflow bool
 		select {
@@ -294,7 +297,7 @@ func (bp *batchProcessor) assemblyLoop() {
 			}
 		case work, ok := <-bp.newWork:
 			if !ok {
-				quescing = true
+				quiescing = true
 			} else {
 				full, overflow = bp.addWork(work)
 				if idle {
@@ -305,7 +308,7 @@ func (bp *batchProcessor) assemblyLoop() {
 				}
 			}
 		}
-		if (full || timedout || quescing) && len(bp.assemblyQueue) > 0 {
+		if (full || timedout || quiescing) && len(bp.assemblyQueue) > 0 {
 			// Let Go GC the old timer
 			_ = batchTimeout.Stop()
 
@@ -324,7 +327,7 @@ func (bp *batchProcessor) assemblyLoop() {
 
 			// If we didn't overflow, then just go back to idle - we don't know if we have more work to come, so
 			// either we'll pop straight away (and move to the batch timeout) or wait for the dispose timeout
-			if !overflow && !quescing {
+			if !overflow && !quiescing {
 				batchTimeout = time.NewTimer(bp.conf.DisposeTimeout)
 				idle = true
 			}
@@ -336,7 +339,7 @@ func (bp *batchProcessor) flush(overflow bool) error {
 	id, flushWork, byteSize := bp.startFlush(overflow)
 
 	log.L(bp.ctx).Debugf("Flushing batch %s", id)
-	state := bp.initFlushState(id, flushWork)
+	state := bp.initPayload(id, flushWork)
 
 	// Sealing phase: assigns persisted pins to messages, and finalizes the manifest
 	err := bp.sealBatch(state)
@@ -370,9 +373,9 @@ func (bp *batchProcessor) flush(overflow bool) error {
 	return nil
 }
 
-func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWork) *DispatchState {
-	state := &DispatchState{
-		Persisted: core.BatchPersisted{
+func (bp *batchProcessor) initPayload(id *fftypes.UUID, flushWork []*batchWork) *DispatchPayload {
+	payload := &DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				ID:        id,
 				Type:      bp.conf.DispatcherOptions.BatchType,
@@ -385,22 +388,22 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 	}
 	localNode, err := bp.bm.identity.GetLocalNode(bp.ctx)
 	if err == nil && localNode != nil {
-		state.Persisted.BatchHeader.Node = localNode.ID
+		payload.Batch.BatchHeader.Node = localNode.ID
 	}
 	for _, w := range flushWork {
 		if w.msg != nil {
 			w.msg.BatchID = id
-			state.Messages = append(state.Messages, w.msg.BatchMessage())
+			payload.Messages = append(payload.Messages, w.msg.BatchMessage())
 		}
 		for _, d := range w.data {
 			log.L(bp.ctx).Debugf("Adding data '%s' to batch '%s' for message '%s'", d.ID, id, w.msg.Header.ID)
-			state.Data = append(state.Data, d.BatchData(state.Persisted.Type))
+			payload.Data = append(payload.Data, d.BatchData(payload.Batch.Type))
 		}
 	}
-	return state
+	return payload
 }
 
-func (bp *batchProcessor) getNextNonce(ctx context.Context, state *DispatchState, nonceKeyHash *fftypes.Bytes32, contextHash *fftypes.Bytes32) (int64, error) {
+func (bp *batchProcessor) getNextNonce(ctx context.Context, state *dispatchState, nonceKeyHash *fftypes.Bytes32, contextHash *fftypes.Bytes32) (int64, error) {
 
 	// See if the nonceKeyHash is in our cached state already
 	if cached, ok := state.noncesAssigned[*nonceKeyHash]; ok {
@@ -433,7 +436,7 @@ func (bp *batchProcessor) getNextNonce(ctx context.Context, state *DispatchState
 	return nonceState.latest, nil
 }
 
-func (bp *batchProcessor) maskContext(ctx context.Context, state *DispatchState, msg *core.Message, topic string) (msgPinString string, contextOrPin *fftypes.Bytes32, err error) {
+func (bp *batchProcessor) maskContext(ctx context.Context, state *dispatchState, msg *core.Message, topic string) (msgPinString string, contextOrPin *fftypes.Bytes32, err error) {
 
 	hashBuilder := sha256.New()
 	hashBuilder.Write([]byte(topic))
@@ -476,9 +479,11 @@ func (bp *batchProcessor) maskContext(ctx context.Context, state *DispatchState,
 	return pinStr, pin, err
 }
 
-func (bp *batchProcessor) maskContexts(ctx context.Context, state *DispatchState) (contextsOrPins []*fftypes.Bytes32, err error) {
-	// Calculate the sequence hashes
-	for _, msg := range state.Messages {
+// Calculate the contexts/pins for this batch payload
+func (bp *batchProcessor) calculateContexts(ctx context.Context, payload *DispatchPayload, state *dispatchState) error {
+	payload.Pins = make([]*fftypes.Bytes32, 0)
+
+	for _, msg := range payload.Messages {
 		isPrivate := msg.Header.Group != nil
 		if isPrivate && len(msg.Pins) > 0 {
 			// We have already allocated pins to this message, we cannot re-allocate.
@@ -493,18 +498,19 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, state *DispatchState
 		for i, topic := range msg.Header.Topics {
 			pinString, contextOrPin, err := bp.maskContext(ctx, state, msg, topic)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			contextsOrPins = append(contextsOrPins, contextOrPin)
+			payload.Pins = append(payload.Pins, contextOrPin)
 			if isPrivate {
 				pins[i] = pinString
 			}
 		}
 	}
-	return contextsOrPins, nil
+
+	return nil
 }
 
-func (bp *batchProcessor) flushNonceState(ctx context.Context, state *DispatchState) error {
+func (bp *batchProcessor) flushNonceState(ctx context.Context, state *dispatchState) error {
 
 	// Flush all the assigned nonces to the DB
 	for hash, nonceState := range state.noncesAssigned {
@@ -523,6 +529,10 @@ func (bp *batchProcessor) flushNonceState(ctx context.Context, state *DispatchSt
 		}
 	}
 
+	return nil
+}
+
+func (bp *batchProcessor) updateMessagePins(ctx context.Context, batchID *fftypes.UUID, messages []*core.Message, state *dispatchState) error {
 	// It's important we update the message pins at this phase, as we have "spent" a nonce
 	// on this topic from the database. So this message has grabbed a slot in our queue.
 	// If we fail the dispatch, and redo the batch sealing process, we must not allocate
@@ -530,7 +540,7 @@ func (bp *batchProcessor) flushNonceState(ctx context.Context, state *DispatchSt
 	//
 	// Note to consider database transactions, we do not update the msg.Pins array, or the
 	// message cache, until after the Retry/RunAsGroup has ended in sealBatch.
-	for _, msg := range state.Messages {
+	for _, msg := range messages {
 		if pins, ok := state.msgPins[*msg.Header.ID]; ok {
 			if err := bp.database.UpdateMessage(ctx, bp.bm.namespace, msg.Header.ID,
 				database.MessageQueryFactory.NewUpdate(ctx).Set("pins", pins),
@@ -539,45 +549,50 @@ func (bp *batchProcessor) flushNonceState(ctx context.Context, state *DispatchSt
 			}
 		}
 	}
-
 	return nil
 }
 
-func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
+func (bp *batchProcessor) sealBatch(payload *DispatchPayload) (err error) {
+	var state *dispatchState
+
 	err = bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
 
 			// Clear state from any previous retry. We need to do fresh queries against the DB for nonces.
-			state.noncesAssigned = make(map[fftypes.Bytes32]*nonceState)
-			state.msgPins = make(map[fftypes.UUID]fftypes.FFStringArray)
+			state = &dispatchState{
+				noncesAssigned: make(map[fftypes.Bytes32]*nonceState),
+				msgPins:        make(map[fftypes.UUID]fftypes.FFStringArray),
+			}
 
+			// Assign nonces and update nonces/messages in the database
 			if bp.conf.txType == core.TransactionTypeBatchPin {
-				// Generate a new Transaction, which will be used to record status of the associated transaction as it happens
-				if state.Pins, err = bp.maskContexts(ctx, state); err != nil {
+				if err = bp.calculateContexts(ctx, payload, state); err != nil {
 					return err
 				}
-				// Flush the state for all allocated nonces to the database
 				if err = bp.flushNonceState(ctx, state); err != nil {
 					return err
 				}
+				if err = bp.updateMessagePins(ctx, payload.Batch.ID, payload.Messages, state); err != nil {
+					return err
+				}
 			}
 
-			state.Persisted.TX.Type = bp.conf.txType
-			if state.Persisted.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, bp.conf.txType, "" /* no idempotency key for batch TX */); err != nil {
+			payload.Batch.TX.Type = bp.conf.txType
+			if payload.Batch.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, bp.conf.txType, "" /* no idempotency key for batch TX */); err != nil {
 				return err
 			}
-			manifest := state.Persisted.GenManifest(state.Messages, state.Data)
+			manifest := payload.Batch.GenManifest(payload.Messages, payload.Data)
 
 			// The hash of the batch, is the hash of the manifest to minimize the compute cost.
 			// Note in v0.13 and before, it was the hash of the payload - so the inbound route has a fallback to accepting the full payload hash
 			manifestString := manifest.String()
-			state.Persisted.Manifest = fftypes.JSONAnyPtr(manifestString)
-			state.Persisted.Hash = fftypes.HashString(manifestString)
+			payload.Batch.Manifest = fftypes.JSONAnyPtr(manifestString)
+			payload.Batch.Hash = fftypes.HashString(manifestString)
 
-			log.L(ctx).Debugf("Batch %s sealed. Hash=%s", state.Persisted.ID, state.Persisted.Hash)
+			log.L(ctx).Debugf("Batch %s sealed. Hash=%s", payload.Batch.ID, payload.Batch.Hash)
 
 			// At this point the manifest of the batch is finalized. We write it to the database
-			_, err = bp.database.InsertOrGetBatch(ctx, &state.Persisted)
+			_, err = bp.database.InsertOrGetBatch(ctx, &payload.Batch)
 			return err
 		})
 	})
@@ -588,34 +603,36 @@ func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 	// Once the DB transaction is done, we need to update the messages with the pins.
 	// We do this at this point, so the logic is re-entrant in a way that avoids re-allocating Pins to messages, but
 	// means the retry loops above using the batch state function correctly.
-	for _, msg := range state.Messages {
-		if pins, ok := state.msgPins[*msg.Header.ID]; ok {
-			msg.Pins = pins
-			bp.data.UpdateMessageIfCached(bp.ctx, msg)
+	if state != nil {
+		for _, msg := range payload.Messages {
+			if pins, ok := state.msgPins[*msg.Header.ID]; ok {
+				msg.Pins = pins
+				bp.data.UpdateMessageIfCached(bp.ctx, msg)
+			}
 		}
 	}
 	return nil
 }
 
-func (bp *batchProcessor) dispatchBatch(state *DispatchState) error {
+func (bp *batchProcessor) dispatchBatch(payload *DispatchPayload) error {
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
 	return operations.RunWithOperationContext(bp.ctx, func(ctx context.Context) error {
 		return bp.retry.Do(ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
-			return true, bp.conf.dispatch(ctx, state)
+			return true, bp.conf.dispatch(ctx, payload)
 		})
 	})
 }
 
-func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
+func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error {
 	return bp.retry.Do(bp.ctx, "mark dispatched messages", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
-			// Update all the messages in the batch with the batch ID
-			msgIDs := make([]driver.Value, len(state.Messages))
+			// Update the message state in the cache
+			msgIDs := make([]driver.Value, len(payload.Messages))
 			confirmTime := fftypes.Now()
-			for i, msg := range state.Messages {
+			for i, msg := range payload.Messages {
 				msgIDs[i] = msg.Header.ID
-				msg.BatchID = state.Persisted.ID
-				msg.TransactionID = state.Persisted.TX.ID
+				msg.BatchID = payload.Batch.ID
+				msg.TransactionID = payload.Batch.TX.ID
 				if bp.conf.txType == core.TransactionTypeBatchPin {
 					msg.State = core.MessageStateSent
 				} else {
@@ -636,16 +653,16 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 			if bp.conf.txType == core.TransactionTypeBatchPin {
 				// Sent state waiting for confirm
 				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).
-					Set("batch", state.Persisted.ID).    // Mark the batch they are in
+					Set("batch", payload.Batch.ID).      // Mark the batch they are in
 					Set("state", core.MessageStateSent). // Set them sent, so they won't be picked up and re-sent after restart/rewind
-					Set("txid", state.Persisted.TX.ID)
+					Set("txid", payload.Batch.TX.ID)
 			} else {
 				// Immediate confirmation if no batch pinning
 				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).
-					Set("batch", state.Persisted.ID).
+					Set("batch", payload.Batch.ID).
 					Set("state", core.MessageStateConfirmed).
 					Set("confirmed", confirmTime).
-					Set("txid", state.Persisted.TX.ID)
+					Set("txid", payload.Batch.TX.ID)
 			}
 
 			if err = bp.database.UpdateMessages(ctx, bp.bm.namespace, filter, allMsgsUpdate); err != nil {
@@ -653,11 +670,11 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 			}
 
 			if bp.conf.txType == core.TransactionTypeUnpinned {
-				for _, msg := range state.Messages {
+				for _, msg := range payload.Messages {
 					// Emit a confirmation event locally immediately
 					for _, topic := range msg.Header.Topics {
 						// One event per topic
-						event := core.NewEvent(core.EventTypeMessageConfirmed, state.Persisted.Namespace, msg.Header.ID, state.Persisted.TX.ID, topic)
+						event := core.NewEvent(core.EventTypeMessageConfirmed, payload.Batch.Namespace, msg.Header.ID, payload.Batch.TX.ID, topic)
 						event.Correlator = msg.Header.CID
 						if err := bp.database.InsertEvent(ctx, event); err != nil {
 							return err

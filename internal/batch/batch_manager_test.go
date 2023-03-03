@@ -71,8 +71,8 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 
 	readyForDispatch := make(chan bool)
-	waitForDispatch := make(chan *DispatchState)
-	handler := func(ctx context.Context, state *DispatchState) error {
+	waitForDispatch := make(chan *DispatchPayload)
+	handler := func(ctx context.Context, state *DispatchPayload) error {
 		_, ok := <-readyForDispatch
 		if !ok {
 			return nil
@@ -191,10 +191,10 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 
 	readyForDispatch := make(chan bool)
-	waitForDispatch := make(chan *DispatchState)
+	waitForDispatch := make(chan *DispatchPayload)
 	var groupID fftypes.Bytes32
 	_ = groupID.UnmarshalText([]byte("44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b"))
-	handler := func(ctx context.Context, state *DispatchState) error {
+	handler := func(ctx context.Context, state *DispatchPayload) error {
 		_, ok := <-readyForDispatch
 		if !ok {
 			return nil
@@ -371,7 +371,7 @@ func TestMessageSequencerMissingMessageData(t *testing.T) {
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bm, _ := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
 	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeNone, []core.MessageType{core.MessageTypeBroadcast},
-		func(c context.Context, state *DispatchState) error {
+		func(c context.Context, state *DispatchPayload) error {
 			return nil
 		},
 		DispatcherOptions{BatchType: core.BatchTypeBroadcast},
@@ -418,7 +418,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
 	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypeBroadcast},
-		func(c context.Context, state *DispatchState) error {
+		func(c context.Context, state *DispatchPayload) error {
 			return nil
 		},
 		DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
@@ -476,7 +476,7 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
 	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypeBroadcast},
-		func(c context.Context, state *DispatchState) error {
+		func(c context.Context, state *DispatchPayload) error {
 			cancelCtx()
 			return fmt.Errorf("fizzle")
 		}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
@@ -518,7 +518,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 	bm, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
 	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypeBroadcast},
-		func(c context.Context, state *DispatchState) error {
+		func(c context.Context, state *DispatchPayload) error {
 			return nil
 		},
 		DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},

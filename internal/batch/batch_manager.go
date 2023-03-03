@@ -117,7 +117,7 @@ type batchManager struct {
 	startupOffsetRetryAttempts int
 }
 
-type DispatchHandler func(context.Context, *DispatchState) error
+type DispatchHandler func(context.Context, *DispatchPayload) error
 
 type DispatcherOptions struct {
 	BatchType      core.BatchType
