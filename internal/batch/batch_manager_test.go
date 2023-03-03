@@ -653,3 +653,84 @@ func TestDoubleTap(t *testing.T) {
 		time.Sleep(1 * time.Microsecond)
 	}
 }
+
+func TestLoadContextsBroadcast(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	payload := &DispatchPayload{
+		Batch: core.BatchPersisted{},
+		Messages: []*core.Message{{
+			Header: core.MessageHeader{
+				Topics: fftypes.FFStringArray{"topic1"},
+			},
+		}},
+	}
+
+	err := bm.LoadContexts(context.Background(), payload)
+
+	expected := []*fftypes.Bytes32{
+		fftypes.MustParseBytes32("9e065a7cbddfc57be742bc32956674c3c389521ac2bbb1dce0500d5131fede75"),
+	}
+	assert.NoError(t, err)
+	assert.Equal(t, expected, payload.Pins)
+}
+
+func TestLoadContextsPrivate(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	pin := fftypes.NewRandB32()
+	payload := &DispatchPayload{
+		Batch: core.BatchPersisted{},
+		Messages: []*core.Message{{
+			Header: core.MessageHeader{
+				Group: fftypes.NewRandB32(),
+			},
+			Pins: fftypes.FFStringArray{pin.String()},
+		}},
+	}
+
+	err := bm.LoadContexts(context.Background(), payload)
+
+	expected := []*fftypes.Bytes32{pin}
+	assert.NoError(t, err)
+	assert.Equal(t, expected, payload.Pins)
+}
+
+func TestLoadContextsPrivateNoPins(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	payload := &DispatchPayload{
+		Batch: core.BatchPersisted{},
+		Messages: []*core.Message{{
+			Header: core.MessageHeader{
+				Group: fftypes.NewRandB32(),
+			},
+		}},
+	}
+
+	err := bm.LoadContexts(context.Background(), payload)
+
+	assert.Regexp(t, "FF10440", err)
+}
+
+func TestLoadContextsPrivateBadPin(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	payload := &DispatchPayload{
+		Batch: core.BatchPersisted{},
+		Messages: []*core.Message{{
+			Header: core.MessageHeader{
+				Group: fftypes.NewRandB32(),
+			},
+			Pins: fftypes.FFStringArray{"bad"},
+		}},
+	}
+
+	err := bm.LoadContexts(context.Background(), payload)
+
+	assert.Regexp(t, "FF00107", err)
+}

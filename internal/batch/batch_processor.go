@@ -28,8 +28,10 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -403,7 +405,7 @@ func (bp *batchProcessor) initPayload(id *fftypes.UUID, flushWork []*batchWork) 
 	return payload
 }
 
-func (bp *batchProcessor) getNextNonce(ctx context.Context, state *dispatchState, nonceKeyHash *fftypes.Bytes32, contextHash *fftypes.Bytes32) (int64, error) {
+func (bm *batchManager) getNextNonce(ctx context.Context, state *dispatchState, nonceKeyHash *fftypes.Bytes32, contextHash *fftypes.Bytes32) (int64, error) {
 
 	// See if the nonceKeyHash is in our cached state already
 	if cached, ok := state.noncesAssigned[*nonceKeyHash]; ok {
@@ -412,13 +414,13 @@ func (bp *batchProcessor) getNextNonce(ctx context.Context, state *dispatchState
 	}
 
 	// Query the database for an existing record
-	dbNonce, err := bp.database.GetNonce(ctx, nonceKeyHash)
+	dbNonce, err := bm.database.GetNonce(ctx, nonceKeyHash)
 	if err != nil {
 		return -1, err
 	}
 	if dbNonce == nil {
 		// For migration we need to query the base contextHash the first time we pass through this for a v0.14.1 or earlier migration
-		if dbNonce, err = bp.database.GetNonce(ctx, contextHash); err != nil {
+		if dbNonce, err = bm.database.GetNonce(ctx, contextHash); err != nil {
 			return -1, err
 		}
 	}
@@ -436,7 +438,7 @@ func (bp *batchProcessor) getNextNonce(ctx context.Context, state *dispatchState
 	return nonceState.latest, nil
 }
 
-func (bp *batchProcessor) maskContext(ctx context.Context, state *dispatchState, msg *core.Message, topic string) (msgPinString string, contextOrPin *fftypes.Bytes32, err error) {
+func (bm *batchManager) maskContext(ctx context.Context, state *dispatchState, msg *core.Message, topic string) (msgPinString string, contextOrPin *fftypes.Bytes32, err error) {
 
 	hashBuilder := sha256.New()
 	hashBuilder.Write([]byte(topic))
@@ -463,7 +465,7 @@ func (bp *batchProcessor) maskContext(ctx context.Context, state *dispatchState,
 	// Our DB of nonces we own, is keyed off of the hash at this point.
 	// However, before v0.14.2 we didn't include the Author - so we need to pass the contextHash as a fallback.
 	nonceKeyHash := fftypes.HashResult(hashBuilder)
-	nonce, err := bp.getNextNonce(ctx, state, nonceKeyHash, contextHash)
+	nonce, err := bm.getNextNonce(ctx, state, nonceKeyHash, contextHash)
 	if err != nil {
 		return "", nil, err
 	}
@@ -479,10 +481,47 @@ func (bp *batchProcessor) maskContext(ctx context.Context, state *dispatchState,
 	return pinStr, pin, err
 }
 
+func (bm *batchManager) loadContext(ctx context.Context, msg *core.Message) ([]*fftypes.Bytes32, error) {
+	pins := make([]*fftypes.Bytes32, 0)
+	isPrivate := msg.Header.Group != nil
+	if isPrivate {
+		if len(msg.Pins) == 0 {
+			return nil, i18n.NewError(ctx, coremsgs.MsgPinsNotAssigned)
+		}
+		for _, pinStr := range msg.Pins {
+			pin, err := fftypes.ParseBytes32(ctx, pinStr)
+			if err != nil {
+				return nil, err
+			}
+			pins = append(pins, pin)
+		}
+		return pins, nil
+	}
+
+	for _, topic := range msg.Header.Topics {
+		_, context, _ := bm.maskContext(ctx, nil, msg, topic) // no error checking (cannot fail)
+		pins = append(pins, context)
+	}
+	return pins, nil
+}
+
+// Reconstruct the contexts/pins that were assigned to this batch payload
+// Fails if pins have not been calculated
+func (bm *batchManager) LoadContexts(ctx context.Context, payload *DispatchPayload) error {
+	payload.Pins = make([]*fftypes.Bytes32, 0)
+	for _, msg := range payload.Messages {
+		pins, err := bm.loadContext(ctx, msg)
+		if err != nil {
+			return err
+		}
+		payload.Pins = append(payload.Pins, pins...)
+	}
+	return nil
+}
+
 // Calculate the contexts/pins for this batch payload
 func (bp *batchProcessor) calculateContexts(ctx context.Context, payload *DispatchPayload, state *dispatchState) error {
 	payload.Pins = make([]*fftypes.Bytes32, 0)
-
 	for _, msg := range payload.Messages {
 		isPrivate := msg.Header.Group != nil
 		if isPrivate && len(msg.Pins) > 0 {
@@ -496,7 +535,7 @@ func (bp *batchProcessor) calculateContexts(ctx context.Context, payload *Dispat
 			state.msgPins[*msg.Header.ID] = pins
 		}
 		for i, topic := range msg.Header.Topics {
-			pinString, contextOrPin, err := bp.maskContext(ctx, state, msg, topic)
+			pinString, contextOrPin, err := bp.bm.maskContext(ctx, state, msg, topic)
 			if err != nil {
 				return err
 			}
@@ -506,7 +545,6 @@ func (bp *batchProcessor) calculateContexts(ctx context.Context, payload *Dispat
 			}
 		}
 	}
-
 	return nil
 }
 

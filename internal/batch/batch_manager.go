@@ -73,6 +73,7 @@ func NewBatchManager(ctx context.Context, ns string, di database.Plugin, dm data
 
 type Manager interface {
 	RegisterDispatcher(name string, txType core.TransactionType, msgTypes []core.MessageType, handler DispatchHandler, batchOptions DispatcherOptions)
+	LoadContexts(ctx context.Context, payload *DispatchPayload) error
 	NewMessages() chan<- int64
 	Start() error
 	Close()

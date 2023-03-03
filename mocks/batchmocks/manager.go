@@ -3,8 +3,11 @@
 package batchmocks
 
 import (
-	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
+	context "context"
+
 	batch "github.com/hyperledger/firefly/internal/batch"
+
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -17,6 +20,20 @@ type Manager struct {
 // Close provides a mock function with given fields:
 func (_m *Manager) Close() {
 	_m.Called()
+}
+
+// LoadContexts provides a mock function with given fields: ctx, payload
+func (_m *Manager) LoadContexts(ctx context.Context, payload *batch.DispatchPayload) error {
+	ret := _m.Called(ctx, payload)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *batch.DispatchPayload) error); ok {
+		r0 = rf(ctx, payload)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // NewMessages provides a mock function with given fields:
