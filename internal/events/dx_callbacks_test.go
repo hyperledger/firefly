@@ -179,7 +179,6 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 
 	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, core.BatchTypePrivate, core.TransactionTypeBatchPin, core.DataArray{data})
-	batch.Payload.TX.Type = core.TransactionTypeTokenPool
 	b := &core.TransportWrapper{
 		Batch: batch,
 		Group: &core.Group{

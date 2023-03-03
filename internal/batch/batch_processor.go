@@ -565,7 +565,7 @@ func (bp *batchProcessor) sealBatch(payload *DispatchPayload) (err error) {
 			}
 
 			// Assign nonces and update nonces/messages in the database
-			if bp.conf.txType == core.TransactionTypeBatchPin {
+			if core.IsPinned(bp.conf.txType) {
 				if err = bp.calculateContexts(ctx, payload, state); err != nil {
 					return err
 				}
@@ -633,7 +633,7 @@ func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error 
 				msgIDs[i] = msg.Header.ID
 				msg.BatchID = payload.Batch.ID
 				msg.TransactionID = payload.Batch.TX.ID
-				if bp.conf.txType == core.TransactionTypeBatchPin {
+				if core.IsPinned(bp.conf.txType) {
 					msg.State = core.MessageStateSent
 				} else {
 					msg.State = core.MessageStateConfirmed
@@ -650,7 +650,7 @@ func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error 
 			)
 
 			var allMsgsUpdate ffapi.Update
-			if bp.conf.txType == core.TransactionTypeBatchPin {
+			if core.IsPinned(bp.conf.txType) {
 				// Sent state waiting for confirm
 				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).
 					Set("batch", payload.Batch.ID).      // Mark the batch they are in
@@ -669,7 +669,7 @@ func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error 
 				return err
 			}
 
-			if bp.conf.txType == core.TransactionTypeUnpinned {
+			if !core.IsPinned(bp.conf.txType) {
 				for _, msg := range payload.Messages {
 					// Emit a confirmation event locally immediately
 					for _, topic := range msg.Header.Topics {

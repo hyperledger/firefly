@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -97,4 +97,8 @@ type TransactionStatus struct {
 
 func (tx *Transaction) Size() int64 {
 	return transactionBaseSizeEstimate // currently a static size assessment for caching
+}
+
+func IsPinned(t TransactionType) bool {
+	return t.Equals(TransactionTypeBatchPin)
 }

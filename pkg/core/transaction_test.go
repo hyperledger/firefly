@@ -25,3 +25,8 @@ import (
 func TestTXSizeEstimate(t *testing.T) {
 	assert.Equal(t, transactionBaseSizeEstimate, (&Transaction{}).Size())
 }
+
+func TestIsPinned(t *testing.T) {
+	assert.True(t, IsPinned(TransactionTypeBatchPin))
+	assert.False(t, IsPinned(TransactionTypeUnpinned))
+}
