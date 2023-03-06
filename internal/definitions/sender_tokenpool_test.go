@@ -56,10 +56,10 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
-func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
+func TestBroadcastTokenPoolInvalidMultiparty(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	ds.multiparty = false
+	ds.multiparty = true
 
 	mdm := ds.data.(*datamocks.Manager)
 

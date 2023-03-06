@@ -18,7 +18,6 @@ package definitions
 
 import (
 	"context"
-
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -26,15 +25,16 @@ import (
 )
 
 func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
-	// Map token connector name -> broadcast name
-	if broadcastName, exists := bm.tokenBroadcastNames[pool.Pool.Connector]; exists {
-		pool.Pool.Connector = broadcastName
-	} else {
-		log.L(ctx).Infof("Could not find broadcast name for token connector: %s", pool.Pool.Connector)
-		return i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, broadcastName, "token")
-	}
 
 	if bm.multiparty {
+		// Map token connector name -> broadcast name
+		if broadcastName, exists := bm.tokenBroadcastNames[pool.Pool.Connector]; exists {
+			pool.Pool.Connector = broadcastName
+		} else {
+			log.L(ctx).Infof("Could not find broadcast name for token connector: %s", pool.Pool.Connector)
+			return i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, broadcastName, "token")
+		}
+
 		if err := pool.Pool.Validate(ctx); err != nil {
 			return err
 		}
