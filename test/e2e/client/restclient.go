@@ -836,8 +836,8 @@ func (client *FireFlyClient) GenerateFFIFromABI(t *testing.T, req *fftypes.FFIGe
 	return &res
 }
 
-func (client *FireFlyClient) CreateFFI(t *testing.T, ffi *fftypes.FFI) (interface{}, error) {
-	var res interface{}
+func (client *FireFlyClient) CreateFFI(t *testing.T, ffi *fftypes.FFI) (*fftypes.FFI, error) {
+	var res fftypes.FFI
 	path := client.namespaced(urlContractInterface)
 	resp, err := client.Client.R().
 		SetBody(ffi).
@@ -846,7 +846,7 @@ func (client *FireFlyClient) CreateFFI(t *testing.T, ffi *fftypes.FFI) (interfac
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
+	return &res, err
 }
 
 func (client *FireFlyClient) CreateContractAPI(t *testing.T, name string, ffiReference *fftypes.FFIReference, location *fftypes.JSONAny) (interface{}, error) {
