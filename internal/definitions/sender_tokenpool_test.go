@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -56,10 +56,10 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
-func TestBroadcastTokenPoolInvalidMultiparty(t *testing.T) {
+func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	ds.multiparty = true
+	ds.multiparty = false
 
 	mdm := ds.data.(*datamocks.Manager)
 
@@ -75,7 +75,32 @@ func TestBroadcastTokenPoolInvalidMultiparty(t *testing.T) {
 	}
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
-	assert.Regexp(t, "FF10420", err)
+	assert.Regexp(t, "FF10403", err)
+
+	mdm.AssertExpectations(t)
+}
+
+func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = true
+
+	mdm := ds.data.(*datamocks.Manager)
+
+	pool := &core.TokenPoolAnnouncement{
+		Pool: &core.TokenPool{
+			ID:        fftypes.NewUUID(),
+			Namespace: "",
+			Name:      "",
+			Type:      core.TokenTypeNonFungible,
+			Locator:   "N1",
+			Symbol:    "COIN",
+			Connector: "connector1",
+		},
+	}
+
+	err := ds.DefineTokenPool(context.Background(), pool, false)
+	assert.Regexp(t, "FF10403", err)
 
 	mdm.AssertExpectations(t)
 }

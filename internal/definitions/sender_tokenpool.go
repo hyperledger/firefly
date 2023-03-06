@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -36,7 +36,7 @@ func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 		}
 
 		if err := pool.Pool.Validate(ctx); err != nil {
-			return err
+			return i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.Pool.ID, err)
 		}
 
 		pool.Pool.Namespace = ""
