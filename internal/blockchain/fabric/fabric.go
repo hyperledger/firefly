@@ -709,6 +709,10 @@ func (f *Fabric) DeployContract(ctx context.Context, nsOpID, signingKey string, 
 	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
+func (f *Fabric) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
+	return nil
+}
+
 func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {

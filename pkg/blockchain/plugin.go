@@ -71,6 +71,9 @@ type Plugin interface {
 	// DeployContract submits a new transaction to deploy a new instance of a smart contract
 	DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error
 
+	// ValidateInvokeRequest performs pre-flight validation of a method call, e.g. to check that parameter formats are correct
+	ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error
+
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
 	InvokeContract(ctx context.Context, nsOpID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *BatchPin) error
 
@@ -83,6 +86,7 @@ type Plugin interface {
 	// DeleteContractListener deletes a previously-created subscription
 	DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error
 
+	// GetContractListenerStatus returns details about the specified blockchain listener, such as its current block/checkpoint
 	GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error)
 
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema

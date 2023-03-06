@@ -579,14 +579,20 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 		return err
 	}
 
-	lastParam := len(req.Method.Params)
+	// Validate that all parameters are specified and are of reasonable JSON types to match the FFI
+	lastIndex := len(req.Method.Params)
 	if req.Message != nil {
 		// If a message is included, skip validation of the last parameter
 		// (assume it will be used for sending the batch pin)
-		lastParam--
-	}
+		lastIndex--
 
-	for _, param := range req.Method.Params[:lastParam] {
+		// Also verify that the user didn't pass in a value for this last parameter
+		lastParam := req.Method.Params[lastIndex]
+		if _, ok := req.Input[lastParam.Name]; ok {
+			return i18n.NewError(ctx, coremsgs.MsgCannotSetParameterWithMessage, lastParam.Name)
+		}
+	}
+	for _, param := range req.Method.Params[:lastIndex] {
 		value, ok := req.Input[param.Name]
 		if !ok {
 			return i18n.NewError(ctx, coremsgs.MsgContractMissingInputArgument, param.Name)
@@ -596,7 +602,8 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 		}
 	}
 
-	return nil
+	// Allow the blockchain plugin to perform additional blockchain-specific parameter validation
+	return cm.blockchain.ValidateInvokeRequest(ctx, req.Method, req.Input, req.Errors, req.Message != nil)
 }
 
 func (cm *contractManager) resolveEvent(ctx context.Context, ffi *fftypes.FFIReference, eventPath string) (*core.FFISerializedEvent, error) {

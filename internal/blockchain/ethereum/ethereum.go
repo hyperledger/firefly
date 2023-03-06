@@ -727,12 +727,24 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 
 // Check if a method supports passing extra data via conformance to ERC5750.
 // That is, check if the last method input is a "bytes" parameter.
-func (e *Ethereum) supportsDataParam(method *abi.Entry) bool {
-	if len(method.Inputs) == 0 {
-		return false
+func (e *Ethereum) checkDataSupport(ctx context.Context, method *abi.Entry) error {
+	if len(method.Inputs) > 0 {
+		lastParam := method.Inputs[len(method.Inputs)-1]
+		if lastParam.Type == "bytes" {
+			return nil
+		}
 	}
-	lastParam := method.Inputs[len(method.Inputs)-1]
-	return lastParam.Type == "bytes"
+	return i18n.NewError(ctx, coremsgs.MsgMethodDoesNotSupportPinning)
+}
+
+func (e *Ethereum) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
+	abi, _, _, err := e.prepareRequest(ctx, method, errors, input)
+	if err == nil && hasMessage {
+		if err = e.checkDataSupport(ctx, abi); err != nil {
+			return err
+		}
+	}
+	return err
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
@@ -745,8 +757,8 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 		return err
 	}
 	if batch != nil {
-		if !e.supportsDataParam(abi) {
-			return i18n.NewError(ctx, coremsgs.MsgMethodDoesNotSupportPinning)
+		if err := e.checkDataSupport(ctx, abi); err != nil {
+			return err
 		}
 		method, inputs := e.buildBatchPinInput(ctx, 2, "", batch)
 		encoded, err := method.Inputs.EncodeABIDataValuesCtx(ctx, inputs)

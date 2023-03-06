@@ -280,4 +280,5 @@ var (
 	MsgPinsNotAssigned                    = ffe("FF10440", "Message cannot be sent because pins have not been assigned")
 	MsgMethodDoesNotSupportPinning        = ffe("FF10441", "This method does not support passing a payload for pinning")
 	MsgOperationNotFoundInTransaction     = ffe("FF10442", "No operation of type %s was found in transaction '%s'")
+	MsgCannotSetParameterWithMessage      = ffe("FF10443", "Cannot provide a value for '%s' when pinning a message", 400)
 )

@@ -250,8 +250,14 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 			"y": float64(2),
 		},
 	}
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ValidateInvokeRequest", context.Background(), req.Method, req.Input, req.Errors, false).Return(nil)
+
 	err := cm.validateInvokeContractRequest(context.Background(), req)
 	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
 }
 
 func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
@@ -1569,6 +1575,7 @@ func TestInvokeContract(t *testing.T) {
 	mdi := cm.database.(*databasemocks.Plugin)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -1592,6 +1599,7 @@ func TestInvokeContract(t *testing.T) {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
@@ -1601,6 +1609,7 @@ func TestInvokeContract(t *testing.T) {
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mom.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }
 
 func TestInvokeContractConfirm(t *testing.T) {
@@ -1610,6 +1619,7 @@ func TestInvokeContractConfirm(t *testing.T) {
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
 	msa := cm.syncasync.(*syncasyncmocks.Bridge)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -1639,6 +1649,7 @@ func TestInvokeContractConfirm(t *testing.T) {
 			send(context.Background())
 		}).
 		Return(&core.Operation{}, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, true)
 
@@ -1649,6 +1660,7 @@ func TestInvokeContractConfirm(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mom.AssertExpectations(t)
 	msa.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }
 
 func TestInvokeContractFail(t *testing.T) {
@@ -1657,6 +1669,7 @@ func TestInvokeContractFail(t *testing.T) {
 	mdi := cm.database.(*databasemocks.Plugin)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -1680,6 +1693,7 @@ func TestInvokeContractFail(t *testing.T) {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, fmt.Errorf("pop"))
+	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
@@ -1689,6 +1703,7 @@ func TestInvokeContractFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }
 
 func TestInvokeContractFailResolveInputSigningKey(t *testing.T) {
@@ -1731,6 +1746,7 @@ func TestInvokeContractTXFail(t *testing.T) {
 	cm := newTestContractManager()
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -1747,10 +1763,15 @@ func TestInvokeContractTXFail(t *testing.T) {
 
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(nil, fmt.Errorf("pop"))
+	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.EqualError(t, err, "pop")
+
+	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }
 
 func TestInvokeContractMethodNotFound(t *testing.T) {
@@ -1833,8 +1854,6 @@ func TestQueryContract(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
-	mth := cm.txHelper.(*txcommonmocks.Helper)
-	mom := cm.operations.(*operationmocks.Manager)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeQuery,
@@ -1850,22 +1869,22 @@ func TestQueryContract(t *testing.T) {
 	}
 
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
-		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
-	})).Return(nil)
 	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input, req.Errors, req.Options).Return(struct{}{}, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestCallContractInvalidType(t *testing.T) {
 	cm := newTestContractManager()
 	mim := cm.identity.(*identitymanagermocks.Manager)
-	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	req := &core.ContractCallRequest{
 		Interface: fftypes.NewUUID(),
@@ -1880,14 +1899,17 @@ func TestCallContractInvalidType(t *testing.T) {
 	}
 
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
 
 	assert.PanicsWithValue(t, "unknown call type: ", func() {
 		cm.InvokeContract(context.Background(), req, false)
 	})
+
+	mim.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }
 
 func TestGetContractListenerByNameOrID(t *testing.T) {
@@ -2141,6 +2163,7 @@ func TestInvokeContractAPI(t *testing.T) {
 	mdi := cm.database.(*databasemocks.Plugin)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2170,6 +2193,7 @@ func TestInvokeContractAPI(t *testing.T) {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
 
 	_, err := cm.InvokeContractAPI(context.Background(), "banana", "peel", req, false)
 
@@ -2180,6 +2204,7 @@ func TestInvokeContractAPI(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }
 
 func TestInvokeContractAPIFailContractLookup(t *testing.T) {

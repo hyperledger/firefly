@@ -475,6 +475,20 @@ func (_m *Plugin) SubmitNetworkAction(ctx context.Context, nsOpID string, signin
 	return r0
 }
 
+// ValidateInvokeRequest provides a mock function with given fields: ctx, method, input, errors, hasMessage
+func (_m *Plugin) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
+	ret := _m.Called(ctx, method, input, errors, hasMessage)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, bool) error); ok {
+		r0 = rf(ctx, method, input, errors, hasMessage)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // VerifierType provides a mock function with given fields:
 func (_m *Plugin) VerifierType() fftypes.FFEnum {
 	ret := _m.Called()
