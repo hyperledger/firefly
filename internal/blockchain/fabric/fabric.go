@@ -339,6 +339,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 		BatchHash:  event.Output.GetString("batchHash"),
 		PayloadRef: event.Output.GetString("payloadRef"),
 		Contexts:   event.Output.GetStringArray("contexts"),
+		NsOrAction: nsOrAction,
 	}
 
 	verifier := &core.VerifierRef{
@@ -346,7 +347,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 		Value: signer,
 	}
 
-	return f.callbacks.BatchPinOrNetworkAction(ctx, nsOrAction, subInfo, location, event, verifier, params)
+	return f.callbacks.BatchPinOrNetworkAction(ctx, subInfo, location, event, verifier, params)
 }
 
 func (f *Fabric) buildEventLocationString(chaincode string) string {
@@ -708,7 +709,7 @@ func (f *Fabric) DeployContract(ctx context.Context, nsOpID, signingKey string, 
 	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error {
+func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err

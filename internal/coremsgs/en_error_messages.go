@@ -278,4 +278,6 @@ var (
 	MsgDeprecatedResetWithAutoReload      = ffe("FF10438", "The deprecated reset API cannot be used when dynamic config reload is enabled", 409)
 	MsgConfigArrayVsRawConfigMismatch     = ffe("FF10439", "Error processing configuration - mismatch between raw and processed array lengths")
 	MsgPinsNotAssigned                    = ffe("FF10440", "Message cannot be sent because pins have not been assigned")
+	MsgMethodDoesNotSupportPinning        = ffe("FF10441", "This method does not support passing a payload for pinning")
+	MsgOperationNotFoundInTransaction     = ffe("FF10442", "No operation of type %s was found in transaction '%s'")
 )

@@ -228,7 +228,34 @@ func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey
 	return err
 }
 
+func (mm *multipartyManager) prepareInvokeOperation(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) (*core.PreparedOperation, error) {
+	op, err := mm.txHelper.FindOperationInTransaction(ctx, batch.TX.ID, core.OpTypeBlockchainInvoke)
+	if err != nil || op == nil {
+		return nil, err
+	}
+	req, err := txcommon.RetrieveBlockchainInvokeInputs(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+	return txcommon.OpBlockchainInvoke(op, req, &txcommon.BatchPinData{
+		Batch:      batch,
+		Contexts:   contexts,
+		PayloadRef: payloadRef,
+	}), nil
+}
+
 func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
+	if batch.TX.Type == core.TransactionTypeContractInvokePin {
+		preparedOp, err := mm.prepareInvokeOperation(ctx, batch, contexts, payloadRef)
+		if err != nil {
+			return err
+		} else if preparedOp != nil {
+			_, err = mm.operations.RunOperation(ctx, preparedOp)
+			return err
+		}
+		log.L(ctx).Warnf("No invoke operation found on transaction %s", batch.TX.ID)
+	}
+
 	op := core.NewOperation(
 		mm.blockchain,
 		mm.namespace.Name,

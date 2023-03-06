@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,8 +21,10 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -54,11 +56,11 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 		return loc.String() == req.Location.String()
 	}), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
 		return method.Name == req.Method.Name
-	}), req.Input, req.Errors, req.Options).Return(nil)
+	}), req.Input, req.Errors, req.Options, (*blockchain.BatchPin)(nil)).Return(nil)
 
 	po, err := cm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
-	assert.Equal(t, req, po.Data.(blockchainInvokeData).Request)
+	assert.Equal(t, req, po.Data.(txcommon.BlockchainInvokeData).Request)
 
 	_, complete, err := cm.RunOperation(context.Background(), po)
 

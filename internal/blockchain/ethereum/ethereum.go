@@ -325,6 +325,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 		BatchHash:  event.Output.GetString("batchHash"),
 		PayloadRef: event.Output.GetString("payloadRef"),
 		Contexts:   event.Output.GetStringArray("contexts"),
+		NsOrAction: nsOrAction,
 	}
 
 	// Validate the ethereum address - it must already be a valid address, we do not
@@ -339,7 +340,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 		Value: authorAddress,
 	}
 
-	return e.callbacks.BatchPinOrNetworkAction(ctx, nsOrAction, subInfo, location, event, verifier, params)
+	return e.callbacks.BatchPinOrNetworkAction(ctx, subInfo, location, event, verifier, params)
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -724,7 +725,17 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 	return nil
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error {
+// Check if a method supports passing extra data via conformance to ERC5750.
+// That is, check if the last method input is a "bytes" parameter.
+func (e *Ethereum) supportsDataParam(method *abi.Entry) bool {
+	if len(method.Inputs) == 0 {
+		return false
+	}
+	lastParam := method.Inputs[len(method.Inputs)-1]
+	return lastParam.Type == "bytes"
+}
+
+func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
 	ethereumLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -732,6 +743,17 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 	abi, errorsAbi, orderedInput, err := e.prepareRequest(ctx, method, errors, input)
 	if err != nil {
 		return err
+	}
+	if batch != nil {
+		if !e.supportsDataParam(abi) {
+			return i18n.NewError(ctx, coremsgs.MsgMethodDoesNotSupportPinning)
+		}
+		method, inputs := e.buildBatchPinInput(ctx, 2, "", batch)
+		encoded, err := method.Inputs.EncodeABIDataValuesCtx(ctx, inputs)
+		if err != nil {
+			return err
+		}
+		orderedInput[len(orderedInput)-1] = hex.EncodeToString(encoded)
 	}
 	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, nsOpID, orderedInput, errorsAbi, options)
 }

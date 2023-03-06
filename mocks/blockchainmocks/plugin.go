@@ -314,13 +314,13 @@ func (_m *Plugin) InitConfig(_a0 config.Section) {
 	_m.Called(_a0)
 }
 
-// InvokeContract provides a mock function with given fields: ctx, nsOpID, signingKey, location, method, input, errors, options
-func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error {
-	ret := _m.Called(ctx, nsOpID, signingKey, location, method, input, errors, options)
+// InvokeContract provides a mock function with given fields: ctx, nsOpID, signingKey, location, method, input, errors, options, batch
+func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
+	ret := _m.Called(ctx, nsOpID, signingKey, location, method, input, errors, options, batch)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) error); ok {
-		r0 = rf(ctx, nsOpID, signingKey, location, method, input, errors, options)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}, *blockchain.BatchPin) error); ok {
+		r0 = rf(ctx, nsOpID, signingKey, location, method, input, errors, options, batch)
 	} else {
 		r0 = ret.Error(0)
 	}

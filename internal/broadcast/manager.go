@@ -112,6 +112,12 @@ func NewBroadcastManager(ctx context.Context, ns *core.Namespace, di database.Pl
 				core.MessageTypeDeprecatedTransferBroadcast,
 				core.MessageTypeDeprecatedApprovalBroadcast,
 			}, bm.dispatchBatch, bo)
+
+		ba.RegisterDispatcher(broadcastDispatcherName,
+			core.TransactionTypeContractInvokePin,
+			[]core.MessageType{
+				core.MessageTypeBroadcast,
+			}, bm.dispatchBatch, bo)
 	}
 
 	om.RegisterHandler(ctx, bm, []core.OpType{

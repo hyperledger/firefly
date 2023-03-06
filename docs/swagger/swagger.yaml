@@ -665,6 +665,152 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                message:
+                  description: You can specify a message to correlate with the invocation,
+                    which can be of type broadcast or private. Your specified method
+                    must support on-chain/off-chain correlation by taking a data input
+                    on the call
+                  properties:
+                    data:
+                      description: For input allows you to specify data in-line in
+                        the message, that will be turned into data attachments. For
+                        output when fetchdata is used on API calls, includes the in-line
+                        data payloads of all data attachments
+                      items:
+                        description: For input allows you to specify data in-line
+                          in the message, that will be turned into data attachments.
+                          For output when fetchdata is used on API calls, includes
+                          the in-line data payloads of all data attachments
+                        properties:
+                          datatype:
+                            description: The optional datatype to use for validation
+                              of the in-line data
+                            properties:
+                              name:
+                                description: The name of the datatype
+                                type: string
+                              version:
+                                description: The version of the datatype. Semantic
+                                  versioning is encouraged, such as v1.0.1
+                                type: string
+                            type: object
+                          id:
+                            description: The UUID of the referenced data resource
+                            format: uuid
+                            type: string
+                          validator:
+                            description: The data validator type to use for in-line
+                              data
+                            type: string
+                          value:
+                            description: The in-line value for the data. Can be any
+                              JSON type - object, array, string, number or boolean
+                        type: object
+                      type: array
+                    group:
+                      description: Allows you to specify details of the private group
+                        of recipients in-line in the message. Alternative to using
+                        the header.group to specify the hash of a group that has been
+                        previously resolved
+                      properties:
+                        members:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
+                          items:
+                            description: An array of members of the group. If no identities
+                              local to the sending node are included, then the organization
+                              owner of the local node is added automatically
+                            properties:
+                              identity:
+                                description: The DID of the group member. On input
+                                  can be a UUID or org name, and will be resolved
+                                  to a DID
+                                type: string
+                              node:
+                                description: The UUID of the node that will receive
+                                  a copy of the off-chain message for the identity.
+                                  The first applicable node for the identity will
+                                  be picked automatically on input if not specified
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          description: Optional name for the group. Allows you to
+                            have multiple separate groups with the same list of participants
+                          type: string
+                      type: object
+                    header:
+                      description: The message header contains all fields that are
+                        used to build the message hash
+                      properties:
+                        author:
+                          description: The DID of identity of the submitter
+                          type: string
+                        cid:
+                          description: The correlation ID of the message. Set this
+                            when a message is a response to another message
+                          format: uuid
+                          type: string
+                        group:
+                          description: Private messages only - the identifier hash
+                            of the privacy group. Derived from the name and member
+                            list of the group
+                          format: byte
+                          type: string
+                        key:
+                          description: The on-chain signing key used to sign the transaction
+                          type: string
+                        tag:
+                          description: The message tag indicates the purpose of the
+                            message to the applications that process it
+                          type: string
+                        topics:
+                          description: A message topic associates this message with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
+                          items:
+                            description: A message topic associates this message with
+                              an ordered stream of data. A custom topic should be
+                              assigned - using the default topic is discouraged
+                            type: string
+                          type: array
+                        txtype:
+                          description: The type of transaction used to order/deliver
+                            this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - network_action
+                          - token_pool
+                          - token_transfer
+                          - contract_deploy
+                          - contract_invoke
+                          - contract_invoke_pin
+                          - token_approval
+                          - data_publish
+                          type: string
+                        type:
+                          description: The type of the message
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          - approval_broadcast
+                          - approval_private
+                          type: string
+                      type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
+                  type: object
                 options:
                   additionalProperties:
                     description: A map of named inputs that will be passed through
@@ -3779,6 +3925,152 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                message:
+                  description: You can specify a message to correlate with the invocation,
+                    which can be of type broadcast or private. Your specified method
+                    must support on-chain/off-chain correlation by taking a data input
+                    on the call
+                  properties:
+                    data:
+                      description: For input allows you to specify data in-line in
+                        the message, that will be turned into data attachments. For
+                        output when fetchdata is used on API calls, includes the in-line
+                        data payloads of all data attachments
+                      items:
+                        description: For input allows you to specify data in-line
+                          in the message, that will be turned into data attachments.
+                          For output when fetchdata is used on API calls, includes
+                          the in-line data payloads of all data attachments
+                        properties:
+                          datatype:
+                            description: The optional datatype to use for validation
+                              of the in-line data
+                            properties:
+                              name:
+                                description: The name of the datatype
+                                type: string
+                              version:
+                                description: The version of the datatype. Semantic
+                                  versioning is encouraged, such as v1.0.1
+                                type: string
+                            type: object
+                          id:
+                            description: The UUID of the referenced data resource
+                            format: uuid
+                            type: string
+                          validator:
+                            description: The data validator type to use for in-line
+                              data
+                            type: string
+                          value:
+                            description: The in-line value for the data. Can be any
+                              JSON type - object, array, string, number or boolean
+                        type: object
+                      type: array
+                    group:
+                      description: Allows you to specify details of the private group
+                        of recipients in-line in the message. Alternative to using
+                        the header.group to specify the hash of a group that has been
+                        previously resolved
+                      properties:
+                        members:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
+                          items:
+                            description: An array of members of the group. If no identities
+                              local to the sending node are included, then the organization
+                              owner of the local node is added automatically
+                            properties:
+                              identity:
+                                description: The DID of the group member. On input
+                                  can be a UUID or org name, and will be resolved
+                                  to a DID
+                                type: string
+                              node:
+                                description: The UUID of the node that will receive
+                                  a copy of the off-chain message for the identity.
+                                  The first applicable node for the identity will
+                                  be picked automatically on input if not specified
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          description: Optional name for the group. Allows you to
+                            have multiple separate groups with the same list of participants
+                          type: string
+                      type: object
+                    header:
+                      description: The message header contains all fields that are
+                        used to build the message hash
+                      properties:
+                        author:
+                          description: The DID of identity of the submitter
+                          type: string
+                        cid:
+                          description: The correlation ID of the message. Set this
+                            when a message is a response to another message
+                          format: uuid
+                          type: string
+                        group:
+                          description: Private messages only - the identifier hash
+                            of the privacy group. Derived from the name and member
+                            list of the group
+                          format: byte
+                          type: string
+                        key:
+                          description: The on-chain signing key used to sign the transaction
+                          type: string
+                        tag:
+                          description: The message tag indicates the purpose of the
+                            message to the applications that process it
+                          type: string
+                        topics:
+                          description: A message topic associates this message with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
+                          items:
+                            description: A message topic associates this message with
+                              an ordered stream of data. A custom topic should be
+                              assigned - using the default topic is discouraged
+                            type: string
+                          type: array
+                        txtype:
+                          description: The type of transaction used to order/deliver
+                            this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - network_action
+                          - token_pool
+                          - token_transfer
+                          - contract_deploy
+                          - contract_invoke
+                          - contract_invoke_pin
+                          - token_approval
+                          - data_publish
+                          type: string
+                        type:
+                          description: The type of the message
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          - approval_broadcast
+                          - approval_private
+                          type: string
+                      type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
+                  type: object
                 method:
                   description: An in-line FFI method definition for the method to
                     invoke. Required when FFI is not specified
@@ -11020,6 +11312,152 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                message:
+                  description: You can specify a message to correlate with the invocation,
+                    which can be of type broadcast or private. Your specified method
+                    must support on-chain/off-chain correlation by taking a data input
+                    on the call
+                  properties:
+                    data:
+                      description: For input allows you to specify data in-line in
+                        the message, that will be turned into data attachments. For
+                        output when fetchdata is used on API calls, includes the in-line
+                        data payloads of all data attachments
+                      items:
+                        description: For input allows you to specify data in-line
+                          in the message, that will be turned into data attachments.
+                          For output when fetchdata is used on API calls, includes
+                          the in-line data payloads of all data attachments
+                        properties:
+                          datatype:
+                            description: The optional datatype to use for validation
+                              of the in-line data
+                            properties:
+                              name:
+                                description: The name of the datatype
+                                type: string
+                              version:
+                                description: The version of the datatype. Semantic
+                                  versioning is encouraged, such as v1.0.1
+                                type: string
+                            type: object
+                          id:
+                            description: The UUID of the referenced data resource
+                            format: uuid
+                            type: string
+                          validator:
+                            description: The data validator type to use for in-line
+                              data
+                            type: string
+                          value:
+                            description: The in-line value for the data. Can be any
+                              JSON type - object, array, string, number or boolean
+                        type: object
+                      type: array
+                    group:
+                      description: Allows you to specify details of the private group
+                        of recipients in-line in the message. Alternative to using
+                        the header.group to specify the hash of a group that has been
+                        previously resolved
+                      properties:
+                        members:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
+                          items:
+                            description: An array of members of the group. If no identities
+                              local to the sending node are included, then the organization
+                              owner of the local node is added automatically
+                            properties:
+                              identity:
+                                description: The DID of the group member. On input
+                                  can be a UUID or org name, and will be resolved
+                                  to a DID
+                                type: string
+                              node:
+                                description: The UUID of the node that will receive
+                                  a copy of the off-chain message for the identity.
+                                  The first applicable node for the identity will
+                                  be picked automatically on input if not specified
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          description: Optional name for the group. Allows you to
+                            have multiple separate groups with the same list of participants
+                          type: string
+                      type: object
+                    header:
+                      description: The message header contains all fields that are
+                        used to build the message hash
+                      properties:
+                        author:
+                          description: The DID of identity of the submitter
+                          type: string
+                        cid:
+                          description: The correlation ID of the message. Set this
+                            when a message is a response to another message
+                          format: uuid
+                          type: string
+                        group:
+                          description: Private messages only - the identifier hash
+                            of the privacy group. Derived from the name and member
+                            list of the group
+                          format: byte
+                          type: string
+                        key:
+                          description: The on-chain signing key used to sign the transaction
+                          type: string
+                        tag:
+                          description: The message tag indicates the purpose of the
+                            message to the applications that process it
+                          type: string
+                        topics:
+                          description: A message topic associates this message with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
+                          items:
+                            description: A message topic associates this message with
+                              an ordered stream of data. A custom topic should be
+                              assigned - using the default topic is discouraged
+                            type: string
+                          type: array
+                        txtype:
+                          description: The type of transaction used to order/deliver
+                            this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - network_action
+                          - token_pool
+                          - token_transfer
+                          - contract_deploy
+                          - contract_invoke
+                          - contract_invoke_pin
+                          - token_approval
+                          - data_publish
+                          type: string
+                        type:
+                          description: The type of the message
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          - approval_broadcast
+                          - approval_private
+                          type: string
+                      type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
+                  type: object
                 method:
                   description: An in-line FFI method definition for the method to
                     invoke. Required when FFI is not specified
@@ -11794,6 +12232,152 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                message:
+                  description: You can specify a message to correlate with the invocation,
+                    which can be of type broadcast or private. Your specified method
+                    must support on-chain/off-chain correlation by taking a data input
+                    on the call
+                  properties:
+                    data:
+                      description: For input allows you to specify data in-line in
+                        the message, that will be turned into data attachments. For
+                        output when fetchdata is used on API calls, includes the in-line
+                        data payloads of all data attachments
+                      items:
+                        description: For input allows you to specify data in-line
+                          in the message, that will be turned into data attachments.
+                          For output when fetchdata is used on API calls, includes
+                          the in-line data payloads of all data attachments
+                        properties:
+                          datatype:
+                            description: The optional datatype to use for validation
+                              of the in-line data
+                            properties:
+                              name:
+                                description: The name of the datatype
+                                type: string
+                              version:
+                                description: The version of the datatype. Semantic
+                                  versioning is encouraged, such as v1.0.1
+                                type: string
+                            type: object
+                          id:
+                            description: The UUID of the referenced data resource
+                            format: uuid
+                            type: string
+                          validator:
+                            description: The data validator type to use for in-line
+                              data
+                            type: string
+                          value:
+                            description: The in-line value for the data. Can be any
+                              JSON type - object, array, string, number or boolean
+                        type: object
+                      type: array
+                    group:
+                      description: Allows you to specify details of the private group
+                        of recipients in-line in the message. Alternative to using
+                        the header.group to specify the hash of a group that has been
+                        previously resolved
+                      properties:
+                        members:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
+                          items:
+                            description: An array of members of the group. If no identities
+                              local to the sending node are included, then the organization
+                              owner of the local node is added automatically
+                            properties:
+                              identity:
+                                description: The DID of the group member. On input
+                                  can be a UUID or org name, and will be resolved
+                                  to a DID
+                                type: string
+                              node:
+                                description: The UUID of the node that will receive
+                                  a copy of the off-chain message for the identity.
+                                  The first applicable node for the identity will
+                                  be picked automatically on input if not specified
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          description: Optional name for the group. Allows you to
+                            have multiple separate groups with the same list of participants
+                          type: string
+                      type: object
+                    header:
+                      description: The message header contains all fields that are
+                        used to build the message hash
+                      properties:
+                        author:
+                          description: The DID of identity of the submitter
+                          type: string
+                        cid:
+                          description: The correlation ID of the message. Set this
+                            when a message is a response to another message
+                          format: uuid
+                          type: string
+                        group:
+                          description: Private messages only - the identifier hash
+                            of the privacy group. Derived from the name and member
+                            list of the group
+                          format: byte
+                          type: string
+                        key:
+                          description: The on-chain signing key used to sign the transaction
+                          type: string
+                        tag:
+                          description: The message tag indicates the purpose of the
+                            message to the applications that process it
+                          type: string
+                        topics:
+                          description: A message topic associates this message with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
+                          items:
+                            description: A message topic associates this message with
+                              an ordered stream of data. A custom topic should be
+                              assigned - using the default topic is discouraged
+                            type: string
+                          type: array
+                        txtype:
+                          description: The type of transaction used to order/deliver
+                            this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - network_action
+                          - token_pool
+                          - token_transfer
+                          - contract_deploy
+                          - contract_invoke
+                          - contract_invoke_pin
+                          - token_approval
+                          - data_publish
+                          type: string
+                        type:
+                          description: The type of the message
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          - approval_broadcast
+                          - approval_private
+                          type: string
+                      type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
+                  type: object
                 method:
                   description: An in-line FFI method definition for the method to
                     invoke. Required when FFI is not specified
@@ -14458,6 +15042,152 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                message:
+                  description: You can specify a message to correlate with the invocation,
+                    which can be of type broadcast or private. Your specified method
+                    must support on-chain/off-chain correlation by taking a data input
+                    on the call
+                  properties:
+                    data:
+                      description: For input allows you to specify data in-line in
+                        the message, that will be turned into data attachments. For
+                        output when fetchdata is used on API calls, includes the in-line
+                        data payloads of all data attachments
+                      items:
+                        description: For input allows you to specify data in-line
+                          in the message, that will be turned into data attachments.
+                          For output when fetchdata is used on API calls, includes
+                          the in-line data payloads of all data attachments
+                        properties:
+                          datatype:
+                            description: The optional datatype to use for validation
+                              of the in-line data
+                            properties:
+                              name:
+                                description: The name of the datatype
+                                type: string
+                              version:
+                                description: The version of the datatype. Semantic
+                                  versioning is encouraged, such as v1.0.1
+                                type: string
+                            type: object
+                          id:
+                            description: The UUID of the referenced data resource
+                            format: uuid
+                            type: string
+                          validator:
+                            description: The data validator type to use for in-line
+                              data
+                            type: string
+                          value:
+                            description: The in-line value for the data. Can be any
+                              JSON type - object, array, string, number or boolean
+                        type: object
+                      type: array
+                    group:
+                      description: Allows you to specify details of the private group
+                        of recipients in-line in the message. Alternative to using
+                        the header.group to specify the hash of a group that has been
+                        previously resolved
+                      properties:
+                        members:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
+                          items:
+                            description: An array of members of the group. If no identities
+                              local to the sending node are included, then the organization
+                              owner of the local node is added automatically
+                            properties:
+                              identity:
+                                description: The DID of the group member. On input
+                                  can be a UUID or org name, and will be resolved
+                                  to a DID
+                                type: string
+                              node:
+                                description: The UUID of the node that will receive
+                                  a copy of the off-chain message for the identity.
+                                  The first applicable node for the identity will
+                                  be picked automatically on input if not specified
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          description: Optional name for the group. Allows you to
+                            have multiple separate groups with the same list of participants
+                          type: string
+                      type: object
+                    header:
+                      description: The message header contains all fields that are
+                        used to build the message hash
+                      properties:
+                        author:
+                          description: The DID of identity of the submitter
+                          type: string
+                        cid:
+                          description: The correlation ID of the message. Set this
+                            when a message is a response to another message
+                          format: uuid
+                          type: string
+                        group:
+                          description: Private messages only - the identifier hash
+                            of the privacy group. Derived from the name and member
+                            list of the group
+                          format: byte
+                          type: string
+                        key:
+                          description: The on-chain signing key used to sign the transaction
+                          type: string
+                        tag:
+                          description: The message tag indicates the purpose of the
+                            message to the applications that process it
+                          type: string
+                        topics:
+                          description: A message topic associates this message with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
+                          items:
+                            description: A message topic associates this message with
+                              an ordered stream of data. A custom topic should be
+                              assigned - using the default topic is discouraged
+                            type: string
+                          type: array
+                        txtype:
+                          description: The type of transaction used to order/deliver
+                            this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - network_action
+                          - token_pool
+                          - token_transfer
+                          - contract_deploy
+                          - contract_invoke
+                          - contract_invoke_pin
+                          - token_approval
+                          - data_publish
+                          type: string
+                        type:
+                          description: The type of the message
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          - approval_broadcast
+                          - approval_private
+                          type: string
+                      type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
+                  type: object
                 method:
                   description: An in-line FFI method definition for the method to
                     invoke. Required when FFI is not specified
@@ -15372,6 +16102,152 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                message:
+                  description: You can specify a message to correlate with the invocation,
+                    which can be of type broadcast or private. Your specified method
+                    must support on-chain/off-chain correlation by taking a data input
+                    on the call
+                  properties:
+                    data:
+                      description: For input allows you to specify data in-line in
+                        the message, that will be turned into data attachments. For
+                        output when fetchdata is used on API calls, includes the in-line
+                        data payloads of all data attachments
+                      items:
+                        description: For input allows you to specify data in-line
+                          in the message, that will be turned into data attachments.
+                          For output when fetchdata is used on API calls, includes
+                          the in-line data payloads of all data attachments
+                        properties:
+                          datatype:
+                            description: The optional datatype to use for validation
+                              of the in-line data
+                            properties:
+                              name:
+                                description: The name of the datatype
+                                type: string
+                              version:
+                                description: The version of the datatype. Semantic
+                                  versioning is encouraged, such as v1.0.1
+                                type: string
+                            type: object
+                          id:
+                            description: The UUID of the referenced data resource
+                            format: uuid
+                            type: string
+                          validator:
+                            description: The data validator type to use for in-line
+                              data
+                            type: string
+                          value:
+                            description: The in-line value for the data. Can be any
+                              JSON type - object, array, string, number or boolean
+                        type: object
+                      type: array
+                    group:
+                      description: Allows you to specify details of the private group
+                        of recipients in-line in the message. Alternative to using
+                        the header.group to specify the hash of a group that has been
+                        previously resolved
+                      properties:
+                        members:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
+                          items:
+                            description: An array of members of the group. If no identities
+                              local to the sending node are included, then the organization
+                              owner of the local node is added automatically
+                            properties:
+                              identity:
+                                description: The DID of the group member. On input
+                                  can be a UUID or org name, and will be resolved
+                                  to a DID
+                                type: string
+                              node:
+                                description: The UUID of the node that will receive
+                                  a copy of the off-chain message for the identity.
+                                  The first applicable node for the identity will
+                                  be picked automatically on input if not specified
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          description: Optional name for the group. Allows you to
+                            have multiple separate groups with the same list of participants
+                          type: string
+                      type: object
+                    header:
+                      description: The message header contains all fields that are
+                        used to build the message hash
+                      properties:
+                        author:
+                          description: The DID of identity of the submitter
+                          type: string
+                        cid:
+                          description: The correlation ID of the message. Set this
+                            when a message is a response to another message
+                          format: uuid
+                          type: string
+                        group:
+                          description: Private messages only - the identifier hash
+                            of the privacy group. Derived from the name and member
+                            list of the group
+                          format: byte
+                          type: string
+                        key:
+                          description: The on-chain signing key used to sign the transaction
+                          type: string
+                        tag:
+                          description: The message tag indicates the purpose of the
+                            message to the applications that process it
+                          type: string
+                        topics:
+                          description: A message topic associates this message with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
+                          items:
+                            description: A message topic associates this message with
+                              an ordered stream of data. A custom topic should be
+                              assigned - using the default topic is discouraged
+                            type: string
+                          type: array
+                        txtype:
+                          description: The type of transaction used to order/deliver
+                            this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - network_action
+                          - token_pool
+                          - token_transfer
+                          - contract_deploy
+                          - contract_invoke
+                          - contract_invoke_pin
+                          - token_approval
+                          - data_publish
+                          type: string
+                        type:
+                          description: The type of the message
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          - approval_broadcast
+                          - approval_private
+                          type: string
+                      type: object
+                    idempotencyKey:
+                      description: An optional unique identifier for a message. Cannot
+                        be duplicated within a namespace, thus allowing idempotent
+                        submission of messages to the API. Local only - not transferred
+                        when the message is sent to other members of the network
+                      type: string
+                  type: object
                 method:
                   description: An in-line FFI method definition for the method to
                     invoke. Required when FFI is not specified

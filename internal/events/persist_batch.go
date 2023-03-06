@@ -48,6 +48,7 @@ func (em *eventManager) persistBatch(ctx context.Context, batch *core.Batch) (pe
 	switch batch.Payload.TX.Type {
 	case core.TransactionTypeBatchPin:
 	case core.TransactionTypeUnpinned:
+	case core.TransactionTypeContractInvokePin:
 	default:
 		l.Errorf("Invalid batch '%s'. Invalid transaction type: %s", batch.ID, batch.Payload.TX.Type)
 		return nil, false, nil // This is not retryable. skip this batch

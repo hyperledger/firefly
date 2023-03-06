@@ -146,6 +146,13 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 		},
 		pm.dispatchPinnedBatch, bo)
 
+	ba.RegisterDispatcher(pinnedPrivateDispatcherName,
+		core.TransactionTypeContractInvokePin,
+		[]core.MessageType{
+			core.MessageTypePrivate,
+		},
+		pm.dispatchPinnedBatch, bo)
+
 	ba.RegisterDispatcher(unpinnedPrivateDispatcherName,
 		core.TransactionTypeUnpinned,
 		[]core.MessageType{
@@ -192,7 +199,7 @@ func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, payload *ba
 		return err
 	}
 
-	if batch.Payload.TX.Type == core.TransactionTypeUnpinned {
+	if !core.IsPinned(batch.Payload.TX.Type) {
 		// In the case of an un-pinned message we cannot be sure the group has been broadcast via the blockchain.
 		// So we have to take the hit of sending it along with every message.
 		tw.Group = group

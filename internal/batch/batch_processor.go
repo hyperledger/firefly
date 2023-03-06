@@ -26,7 +26,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -176,6 +175,11 @@ func (bp *batchProcessor) newAssembly(initialWork ...*batchWork) {
 func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 	newQueue := make([]*batchWork, 0, len(bp.assemblyQueue)+1)
 	added := false
+
+	if newWork.msg.BatchID != nil {
+		log.L(bp.ctx).Warnf("Adding message to a new batch when one was already assigned. Old batch %s is likely abandoned.", newWork.msg.BatchID)
+	}
+
 	// Build the new sorted work list
 	for _, work := range bp.assemblyQueue {
 		if !added && newWork.msg.Sequence < work.msg.Sequence {
@@ -187,11 +191,15 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 	if !added {
 		newQueue = append(newQueue, newWork)
 	}
+
+	// Special handling for transactions that allow only one message per batch
+	batchOfOne := newWork.msg.Header.TxType == core.TransactionTypeContractInvokePin
+
 	log.L(bp.ctx).Debugf("Added message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
 	bp.assemblyQueueBytes += newWork.estimateSize()
 	bp.assemblyQueue = newQueue
-	full = len(bp.assemblyQueue) >= int(bp.conf.BatchMaxSize) || (bp.assemblyQueueBytes >= bp.conf.BatchMaxBytes)
-	overflow = len(bp.assemblyQueue) > 1 && (bp.assemblyQueueBytes > bp.conf.BatchMaxBytes)
+	full = batchOfOne || len(bp.assemblyQueue) >= int(bp.conf.BatchMaxSize) || (bp.assemblyQueueBytes >= bp.conf.BatchMaxBytes)
+	overflow = len(bp.assemblyQueue) > 1 && (batchOfOne || bp.assemblyQueueBytes > bp.conf.BatchMaxBytes)
 	return full, overflow
 }
 
@@ -394,7 +402,6 @@ func (bp *batchProcessor) initPayload(id *fftypes.UUID, flushWork []*batchWork) 
 	}
 	for _, w := range flushWork {
 		if w.msg != nil {
-			w.msg.BatchID = id
 			payload.Messages = append(payload.Messages, w.msg.BatchMessage())
 		}
 		for _, d := range w.data {
@@ -616,17 +623,24 @@ func (bp *batchProcessor) sealBatch(payload *DispatchPayload) (err error) {
 			}
 
 			payload.Batch.TX.Type = bp.conf.txType
-			if payload.Batch.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, bp.conf.txType, "" /* no idempotency key for batch TX */); err != nil {
-				return err
+			batchOfOne := bp.conf.txType == core.TransactionTypeContractInvokePin
+			if batchOfOne && payload.Messages[0].TransactionID != nil {
+				// For a batch-of-one with a pre-assigned transaction ID, propagate it to the batch
+				payload.Batch.TX.ID = payload.Messages[0].TransactionID
+			} else {
+				// For all others, generate a new transaction
+				payload.Batch.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, bp.conf.txType, "" /* no idempotency key */)
+				if err != nil {
+					return err
+				}
 			}
-			manifest := payload.Batch.GenManifest(payload.Messages, payload.Data)
 
 			// The hash of the batch, is the hash of the manifest to minimize the compute cost.
 			// Note in v0.13 and before, it was the hash of the payload - so the inbound route has a fallback to accepting the full payload hash
+			manifest := payload.Batch.GenManifest(payload.Messages, payload.Data)
 			manifestString := manifest.String()
 			payload.Batch.Manifest = fftypes.JSONAnyPtr(manifestString)
 			payload.Batch.Hash = fftypes.HashString(manifestString)
-
 			log.L(ctx).Debugf("Batch %s sealed. Hash=%s", payload.Batch.ID, payload.Batch.Hash)
 
 			// At this point the manifest of the batch is finalized. We write it to the database
@@ -641,7 +655,7 @@ func (bp *batchProcessor) sealBatch(payload *DispatchPayload) (err error) {
 	// Once the DB transaction is done, we need to update the messages with the pins.
 	// We do this at this point, so the logic is re-entrant in a way that avoids re-allocating Pins to messages, but
 	// means the retry loops above using the batch state function correctly.
-	if state != nil {
+	if state != nil && core.IsPinned(bp.conf.txType) {
 		for _, msg := range payload.Messages {
 			if pins, ok := state.msgPins[*msg.Header.ID]; ok {
 				msg.Pins = pins
@@ -677,32 +691,27 @@ func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error 
 					msg.State = core.MessageStateConfirmed
 					msg.Confirmed = confirmTime
 				}
-				// We don't want to have to read the DB again if we want to query for the batch ID, or pins,
-				// so ensure the copy in our cache gets updated.
 				bp.data.UpdateMessageIfCached(ctx, msg)
 			}
+
+			// Update the message state in the database
 			fb := database.MessageQueryFactory.NewFilter(ctx)
 			filter := fb.And(
 				fb.In("id", msgIDs),
 				fb.Eq("state", core.MessageStateReady), // In the outside chance the next state transition happens first (which supersedes this)
 			)
-
-			var allMsgsUpdate ffapi.Update
+			allMsgsUpdate := database.MessageQueryFactory.NewUpdate(ctx).
+				Set("batch", payload.Batch.ID).
+				Set("txid", payload.Batch.TX.ID)
 			if core.IsPinned(bp.conf.txType) {
-				// Sent state waiting for confirm
-				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).
-					Set("batch", payload.Batch.ID).      // Mark the batch they are in
-					Set("state", core.MessageStateSent). // Set them sent, so they won't be picked up and re-sent after restart/rewind
-					Set("txid", payload.Batch.TX.ID)
+				// Sent state, waiting for confirm
+				allMsgsUpdate.Set("state", core.MessageStateSent)
 			} else {
 				// Immediate confirmation if no batch pinning
-				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).
-					Set("batch", payload.Batch.ID).
+				allMsgsUpdate.
 					Set("state", core.MessageStateConfirmed).
-					Set("confirmed", confirmTime).
-					Set("txid", payload.Batch.TX.ID)
+					Set("confirmed", confirmTime)
 			}
-
 			if err = bp.database.UpdateMessages(ctx, bp.bm.namespace, filter, allMsgsUpdate); err != nil {
 				return err
 			}
@@ -720,7 +729,6 @@ func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error 
 					}
 				}
 			}
-
 			return nil
 		})
 	})

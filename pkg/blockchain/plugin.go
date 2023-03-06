@@ -72,7 +72,7 @@ type Plugin interface {
 	DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
-	InvokeContract(ctx context.Context, nsOpID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error
+	InvokeContract(ctx context.Context, nsOpID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *BatchPin) error
 
 	// QueryContract executes a method via custom on-chain logic and returns the result
 	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error)
@@ -153,8 +153,11 @@ type MultipartyContract struct {
 // BatchPin is the set of data pinned to the blockchain for a batch - whether it's private or broadcast.
 type BatchPin struct {
 
-	// TransactionID is the firefly transaction ID allocated before transaction submission for correlation with events (it's a UUID so no leakage)
+	// TransactionID is the FireFly transaction ID allocated before transaction submission for correlation with events (it's a UUID so no leakage)
 	TransactionID *fftypes.UUID
+
+	// TransactionType is the type of the FireFly transaction that initiated this BatchPin
+	TransactionType core.TransactionType
 
 	// BatchID is the id of the batch - not strictly required, but writing this in plain text to the blockchain makes for easy human correlation on-chain/off-chain (it's a UUID so no leakage)
 	BatchID *fftypes.UUID

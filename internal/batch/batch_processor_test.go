@@ -475,7 +475,6 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 	mdi.On("UpdateNonce", mock.Anything, mock.MatchedBy(func(dbNonce *core.Nonce) bool {
 		return dbNonce.Nonce == 12347 // twice incremented
 	})).Return(nil).Once()
-	mdi.On("UpdateMessage", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil).Twice()
 	mdi.On("InsertOrGetBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 
 	mdm := bp.data.(*datamocks.Manager)
@@ -504,6 +503,9 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 	}
+
+	mdi.On("UpdateMessage", mock.Anything, "ns1", msg1.Header.ID, mock.Anything).Return(nil).Once()
+	mdi.On("UpdateMessage", mock.Anything, "ns1", msg2.Header.ID, mock.Anything).Return(nil).Once()
 
 	state := bp.initPayload(fftypes.NewUUID(), []*batchWork{{msg: msg1}, {msg: msg2}})
 	err := bp.sealBatch(state)

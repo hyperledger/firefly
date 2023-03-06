@@ -75,11 +75,19 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 		}, mock.Anything, mock.Anything).Return()
 
 	mba.On("RegisterDispatcher",
+		pinnedPrivateDispatcherName,
+		core.TransactionTypeContractInvokePin,
+		[]core.MessageType{
+			core.MessageTypePrivate,
+		}, mock.Anything, mock.Anything).Return()
+
+	mba.On("RegisterDispatcher",
 		unpinnedPrivateDispatcherName,
 		core.TransactionTypeUnpinned,
 		[]core.MessageType{
 			core.MessageTypePrivate,
 		}, mock.Anything, mock.Anything).Return()
+
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 

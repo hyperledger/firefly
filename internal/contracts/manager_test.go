@@ -30,12 +30,15 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
+	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -48,6 +51,9 @@ import (
 func newTestContractManager() *contractManager {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mbp := &batchmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
@@ -67,13 +73,13 @@ func newTestContractManager() *contractManager {
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	cm, _ := NewContractManager(context.Background(), "ns1", mdi, mbi, mim, mom, txHelper, msa)
+	cm, _ := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, msa)
 	cm.(*contractManager).txHelper = &txcommonmocks.Helper{}
 	return cm.(*contractManager)
 }
 
 func TestNewContractManagerFail(t *testing.T) {
-	_, err := NewContractManager(context.Background(), "", nil, nil, nil, nil, nil, nil)
+	_, err := NewContractManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -85,6 +91,9 @@ func TestName(t *testing.T) {
 func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mbp := &batchmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
@@ -94,13 +103,16 @@ func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	msa := &syncasyncmocks.Bridge{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, fmt.Errorf("pop"))
-	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mim, mom, txHelper, msa)
+	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, msa)
 	assert.Regexp(t, "pop", err)
 }
 
 func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mbp := &batchmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
@@ -111,7 +123,7 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	msa := &syncasyncmocks.Bridge{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ffi2abi.ParamValidator{}, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
-	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mim, mom, txHelper, msa)
+	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, msa)
 	assert.NoError(t, err)
 }
 
@@ -1577,7 +1589,7 @@ func TestInvokeContract(t *testing.T) {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
-		data := op.Data.(blockchainInvokeData)
+		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
 
@@ -1618,7 +1630,7 @@ func TestInvokeContractConfirm(t *testing.T) {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
-		data := op.Data.(blockchainInvokeData)
+		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
 	msa.On("WaitForInvokeOperation", mock.Anything, mock.Anything, mock.Anything).
@@ -1665,7 +1677,7 @@ func TestInvokeContractFail(t *testing.T) {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
-		data := op.Data.(blockchainInvokeData)
+		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, fmt.Errorf("pop"))
 
@@ -2155,7 +2167,7 @@ func TestInvokeContractAPI(t *testing.T) {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
-		data := op.Data.(blockchainInvokeData)
+		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
 

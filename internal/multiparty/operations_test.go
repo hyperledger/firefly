@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -56,7 +57,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 
 	po, err := mp.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
-	assert.Equal(t, batch, po.Data.(batchPinData).Batch)
+	assert.Equal(t, batch, po.Data.(txcommon.BatchPinData).Batch)
 
 	_, complete, err := mp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
 

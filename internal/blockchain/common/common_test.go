@@ -89,7 +89,7 @@ func TestCallbackBatchPinBadBatch(t *testing.T) {
 		Version:     2,
 		V2Namespace: "ns1",
 	}
-	err := cb.BatchPinOrNetworkAction(context.Background(), "ns1", sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err := cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -117,22 +117,24 @@ func TestCallbackBatchPin(t *testing.T) {
 		V2Namespace: "ns1",
 	}
 	mcb.On("BatchPinComplete", "ns1", mock.Anything, verifier).Return(nil).Once()
-	err := cb.BatchPinOrNetworkAction(context.Background(), "", sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err := cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
 	assert.NoError(t, err)
 
 	mcb.On("BatchPinComplete", "ns1", mock.Anything, verifier).Return(fmt.Errorf("pop")).Once()
-	err = cb.BatchPinOrNetworkAction(context.Background(), "", sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err = cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
 	assert.EqualError(t, err, "pop")
 
 	sub = &SubscriptionInfo{
 		Version:     1,
 		V1Namespace: map[string][]string{"ns2": {"ns1", "ns"}},
 	}
+	params.NsOrAction = "ns2"
 	mcb.On("BatchPinComplete", "ns1", mock.Anything, verifier).Return(nil).Once()
-	err = cb.BatchPinOrNetworkAction(context.Background(), "ns2", sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err = cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
 	assert.NoError(t, err)
 
-	err = cb.BatchPinOrNetworkAction(context.Background(), "ns3", sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	params.NsOrAction = "ns3"
+	err = cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -141,7 +143,9 @@ func TestCallbackBatchPin(t *testing.T) {
 func TestCallbackNetworkAction(t *testing.T) {
 	event := &blockchain.Event{}
 	verifier := &core.VerifierRef{}
-	params := &BatchPinParams{}
+	params := &BatchPinParams{
+		NsOrAction: "firefly:terminate",
+	}
 
 	mcb := &blockchainmocks.Callbacks{}
 	cb := NewBlockchainCallbacks()
@@ -152,11 +156,11 @@ func TestCallbackNetworkAction(t *testing.T) {
 		V2Namespace: "ns1",
 	}
 	mcb.On("BlockchainNetworkAction", "terminate", mock.Anything, mock.Anything, verifier).Return(nil).Once()
-	err := cb.BatchPinOrNetworkAction(context.Background(), "firefly:terminate", sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err := cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
 	assert.NoError(t, err)
 
 	mcb.On("BlockchainNetworkAction", "terminate", mock.Anything, mock.Anything, verifier).Return(fmt.Errorf("pop")).Once()
-	err = cb.BatchPinOrNetworkAction(context.Background(), "firefly:terminate", sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err = cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
 	assert.EqualError(t, err, "pop")
 
 	sub = &SubscriptionInfo{
@@ -164,7 +168,7 @@ func TestCallbackNetworkAction(t *testing.T) {
 		V1Namespace: map[string][]string{"ns2": {"ns1", "ns"}},
 	}
 	mcb.On("BlockchainNetworkAction", "terminate", mock.Anything, mock.Anything, verifier).Return(nil).Once()
-	err = cb.BatchPinOrNetworkAction(context.Background(), "firefly:terminate", sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err = cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)

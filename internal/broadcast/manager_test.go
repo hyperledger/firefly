@@ -60,6 +60,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
 	mbi.On("Name").Return("ut_blockchain").Maybe()
 	mpi.On("Name").Return("ut_sharedstorage").Maybe()
+
 	mba.On("RegisterDispatcher",
 		broadcastDispatcherName,
 		core.TransactionTypeBatchPin,
@@ -69,6 +70,14 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 			core.MessageTypeDeprecatedTransferBroadcast,
 			core.MessageTypeDeprecatedApprovalBroadcast,
 		}, mock.Anything, mock.Anything).Return()
+
+	mba.On("RegisterDispatcher",
+		broadcastDispatcherName,
+		core.TransactionTypeContractInvokePin,
+		[]core.MessageType{
+			core.MessageTypeBroadcast,
+		}, mock.Anything, mock.Anything).Return()
+
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()

@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
@@ -407,7 +408,7 @@ func TestSubmitBatchPinOk(t *testing.T) {
 	})).Return(nil)
 	mp.mmi.On("IsMetricsEnabled").Return(false)
 	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
-		data := op.Data.(batchPinData)
+		data := op.Data.(txcommon.BatchPinData)
 		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
 	})).Return(nil, nil)
 
@@ -445,7 +446,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	mp.mmi.On("IsMetricsEnabled").Return(true)
 	mp.mmi.On("CountBatchPin").Return()
 	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
-		data := op.Data.(batchPinData)
+		data := op.Data.(txcommon.BatchPinData)
 		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
 	})).Return(nil, nil)
 
