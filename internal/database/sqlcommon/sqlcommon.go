@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,7 +33,6 @@ type SQLCommon struct {
 	dbsql.Database
 	capabilities *database.Capabilities
 	callbacks    callbacks
-	features     dbsql.SQLFeatures
 }
 
 type callbacks struct {

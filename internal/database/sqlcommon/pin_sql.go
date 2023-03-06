@@ -124,7 +124,7 @@ func (s *SQLCommon) InsertPins(ctx context.Context, pins []*core.Pin) error {
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	if s.features.MultiRowInsert {
+	if s.Features().MultiRowInsert {
 		query := sq.Insert(pinsTable).Columns(pinColumns...)
 		for _, pin := range pins {
 			query = s.setPinInsertValues(query, pin)

@@ -236,8 +236,7 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*core.Message
 		return err
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
-
-	if s.features.MultiRowInsert {
+	if s.Features().MultiRowInsert {
 		msgQuery := sq.Insert(messagesTable).Columns(msgColumns...)
 		dataRefQuery := sq.Insert(messagesDataJoinTable).Columns(
 			"namespace",

@@ -195,7 +195,7 @@ func (s *SQLCommon) InsertDataArray(ctx context.Context, dataArray core.DataArra
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	if s.features.MultiRowInsert {
+	if s.Features().MultiRowInsert {
 		query := sq.Insert(dataTable).Columns(dataColumnsWithValue...)
 		for _, data := range dataArray {
 			query = s.setDataInsertValues(query, data)

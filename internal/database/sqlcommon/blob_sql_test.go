@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -124,9 +124,10 @@ func TestInsertBlobsBeginFail(t *testing.T) {
 }
 
 func TestInsertBlobsMultiRowOK(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 
 	blob1 := &core.Blob{Hash: fftypes.NewRandB32(), PayloadRef: "pay1"}
 	blob2 := &core.Blob{Hash: fftypes.NewRandB32(), PayloadRef: "pay2"}
@@ -144,9 +145,10 @@ func TestInsertBlobsMultiRowOK(t *testing.T) {
 }
 
 func TestInsertBlobsMultiRowFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 	blob1 := &core.Blob{Hash: fftypes.NewRandB32(), PayloadRef: "pay1"}
 	mock.ExpectBegin()
 	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))

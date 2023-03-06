@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -318,9 +318,10 @@ func TestInsertMessagesBeginFail(t *testing.T) {
 }
 
 func TestInsertMessagesMultiRowOK(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 
 	msg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, LocalNamespace: "ns1", Data: core.DataRefs{{ID: fftypes.NewUUID()}}}
 	msg2 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, LocalNamespace: "ns1", Data: core.DataRefs{{ID: fftypes.NewUUID()}}}
@@ -348,9 +349,10 @@ func TestInsertMessagesMultiRowOK(t *testing.T) {
 }
 
 func TestInsertMessagesMultiRowDataRefsFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 
 	msg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: core.DataRefs{{ID: fftypes.NewUUID()}}}
 
@@ -364,9 +366,10 @@ func TestInsertMessagesMultiRowDataRefsFail(t *testing.T) {
 }
 
 func TestInsertMessagesMultiRowFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 	msg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}}
 	mock.ExpectBegin()
 	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
