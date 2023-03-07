@@ -55,5 +55,8 @@ The key points are:
     hash for each member to determine if it is a message on a known group - even without
     the private data (which might arrive later)
 
+> See [NextPin](./nextpin) for more information on the structure used for storing the next
+> expected masked context pin, for each member of the privacy group.
+
 [![FireFly Privacy Model](../../images/firefly_data_privacy_model.jpg)](../../images/firefly_data_privacy_model.jpg) 
 
