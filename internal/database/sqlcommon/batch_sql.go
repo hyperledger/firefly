@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -57,87 +57,49 @@ var (
 
 const batchesTable = "batches"
 
-func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *core.BatchPersisted) (err error) {
+func (s *SQLCommon) InsertOrGetBatch(ctx context.Context, batch *core.BatchPersisted) (existing *core.BatchPersisted, err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	batchRows, _, err := s.QueryTx(ctx, batchesTable, tx,
-		sq.Select("hash").
-			From(batchesTable).
-			Where(sq.Eq{"id": batch.ID, "namespace": batch.Namespace}),
+	// Try the insert first
+	_, insertErr := s.InsertTxExt(ctx, batchesTable, tx,
+		sq.Insert(batchesTable).
+			Columns(batchColumns...).
+			Values(
+				batch.ID,
+				string(batch.Type),
+				batch.Namespace,
+				batch.Author,
+				batch.Key,
+				batch.Group,
+				batch.Created,
+				batch.Hash,
+				batch.Manifest,
+				batch.Confirmed,
+				batch.TX.Type,
+				batch.TX.ID,
+				batch.Node,
+			),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, core.ChangeEventTypeCreated, batch.Namespace, batch.ID)
+		},
+		true, /* we want a failure here we can progress past */
 	)
-	if err != nil {
-		return err
+	if insertErr == nil {
+		return nil, s.CommitTx(ctx, tx, autoCommit)
 	}
 
-	existing := batchRows.Next()
-	if existing {
-		var hash *fftypes.Bytes32
-		_ = batchRows.Scan(&hash)
-		if !fftypes.SafeHashCompare(hash, batch.Hash) {
-			batchRows.Close()
-			log.L(ctx).Errorf("Existing=%s New=%s", hash, batch.Hash)
-			return database.HashMismatch
-		}
-	}
-	batchRows.Close()
-
-	if existing {
-
-		// Update the batch
-		if _, err = s.UpdateTx(ctx, batchesTable, tx,
-			sq.Update(batchesTable).
-				Set("btype", string(batch.Type)).
-				Set("author", batch.Author).
-				Set("key", batch.Key).
-				Set("group_hash", batch.Group).
-				Set("created", batch.Created).
-				Set("hash", batch.Hash).
-				Set("manifest", batch.Manifest).
-				Set("confirmed", batch.Confirmed).
-				Set("tx_type", batch.TX.Type).
-				Set("tx_id", batch.TX.ID).
-				Set("node_id", batch.Node).
-				Where(sq.Eq{"id": batch.ID, "namespace": batch.Namespace}),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, core.ChangeEventTypeUpdated, batch.Namespace, batch.ID)
-			},
-		); err != nil {
-			return err
-		}
-	} else {
-
-		if _, err = s.InsertTx(ctx, batchesTable, tx,
-			sq.Insert(batchesTable).
-				Columns(batchColumns...).
-				Values(
-					batch.ID,
-					string(batch.Type),
-					batch.Namespace,
-					batch.Author,
-					batch.Key,
-					batch.Group,
-					batch.Created,
-					batch.Hash,
-					batch.Manifest,
-					batch.Confirmed,
-					batch.TX.Type,
-					batch.TX.ID,
-					batch.Node,
-				),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, core.ChangeEventTypeCreated, batch.Namespace, batch.ID)
-			},
-		); err != nil {
-			return err
-		}
+	// Do a select within the transaction to determine if the batch already exists
+	existing, err = s.GetBatchByID(ctx, batch.Namespace, batch.ID)
+	if err != nil || existing != nil {
+		return existing, err
 	}
 
-	return s.CommitTx(ctx, tx, autoCommit)
+	// Error was apparently not an ID conflict - must have been something else
+	return nil, insertErr
 }
 
 func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*core.BatchPersisted, error) {

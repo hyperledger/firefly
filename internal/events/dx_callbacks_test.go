@@ -153,7 +153,7 @@ func TestPinnedReceiveOK(t *testing.T) {
 	em.mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 	em.mim.On("ValidateNodeOwner", em.ctx, mock.Anything, mock.Anything).Return(true, nil)
 
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
@@ -224,7 +224,7 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	}).Return(node1, nil)
 	em.mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	em.mim.On("ValidateNodeOwner", em.ctx, mock.Anything, mock.Anything).Return(true, nil)
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
 	mde := newMessageReceivedNoAck("peer1", b)
@@ -607,7 +607,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	em.mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 	em.mim.On("ValidateNodeOwner", em.ctx, mock.Anything, mock.Anything).Return(true, nil)
 
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	em.mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization fail"))
 	em.mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("pop"))
@@ -648,7 +648,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	em.mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 	em.mim.On("ValidateNodeOwner", em.ctx, mock.Anything, mock.Anything).Return(true, nil)
 
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(fmt.Errorf("optimization miss"))
 	em.mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
@@ -687,7 +687,7 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	em.mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 	em.mim.On("ValidateNodeOwner", em.ctx, mock.Anything, mock.Anything).Return(true, nil)
 
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	em.mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
@@ -730,7 +730,7 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	em.mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 	em.mim.On("ValidateNodeOwner", em.ctx, mock.Anything, mock.Anything).Return(true, nil)
 
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	em.mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
@@ -773,7 +773,7 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	em.mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 	em.mim.On("ValidateNodeOwner", em.ctx, mock.Anything, mock.Anything).Return(true, nil)
 
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	em.mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()

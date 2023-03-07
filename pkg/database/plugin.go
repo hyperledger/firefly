@@ -139,10 +139,10 @@ type iDataCollection interface {
 }
 
 type iBatchCollection interface {
-	// UpsertBatch - Upsert a batch - the hash cannot change
-	UpsertBatch(ctx context.Context, data *core.BatchPersisted) (err error)
+	// InsertBatch - Insert a new batch, or retrieve the existing one if it has already been recorded
+	InsertOrGetBatch(ctx context.Context, data *core.BatchPersisted) (existing *core.BatchPersisted, err error)
 
-	// UpdateBatch - Update data
+	// UpdateBatch - Update a batch
 	UpdateBatch(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) (err error)
 
 	// GetBatchByID - Get a batch by ID

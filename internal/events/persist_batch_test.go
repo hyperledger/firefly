@@ -33,7 +33,7 @@ func TestPersistBatch(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf(("pop")))
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, fmt.Errorf(("pop")))
 
 	org := newTestOrg("org1")
 	orgBytes, err := json.Marshal(&org)
@@ -88,12 +88,33 @@ func TestPersistBatch(t *testing.T) {
 
 }
 
+func TestPersistBatchAlreadyExisting(t *testing.T) {
+
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	existing := &core.BatchPersisted{}
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(existing, nil)
+	em.mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
+	em.mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
+	em.mdi.On("InsertMessages", em.ctx, mock.Anything, mock.Anything).Return(nil, nil)
+
+	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
+
+	result, valid, err := em.persistBatch(em.ctx, batch)
+	assert.True(t, valid)
+	assert.NoError(t, err)
+	assert.Equal(t, existing, result)
+
+}
+
 func TestPersistBatchNoCacheDataNotInBatch(t *testing.T) {
 
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil)
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, nil)
 
 	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
@@ -113,7 +134,7 @@ func TestPersistBatchExtraDataInBatch(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil)
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, nil)
 
 	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
