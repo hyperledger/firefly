@@ -280,12 +280,21 @@ func TestWaitForShoulderTapOrExitCloseBatch(t *testing.T) {
 	assert.False(t, ep.waitForShoulderTapOrPollTimeout(1))
 }
 
-func TestWaitForShoulderTapOrExitClosePoll(t *testing.T) {
+func TestWaitForShoulderTapImmediateRepollOnFullBatch(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
 	cancel()
 	ep.conf.eventBatchTimeout = 1 * time.Minute
 	ep.conf.eventBatchSize = 1
+	assert.True(t, ep.waitForShoulderTapOrPollTimeout(1))
+}
+
+func TestWaitForShoulderTapOrExitClosePoll(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	cancel()
+	ep.conf.eventBatchTimeout = 1 * time.Minute
+	ep.conf.eventBatchSize = 2
 	assert.False(t, ep.waitForShoulderTapOrPollTimeout(1))
 }
 
