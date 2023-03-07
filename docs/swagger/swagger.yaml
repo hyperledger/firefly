@@ -23385,7 +23385,8 @@ paths:
   /namespaces/{ns}/pins/rewind:
     post:
       description: Force a rewind of the event aggregator to a previous position,
-        to re-evaluate all unconfirmed pins since that point
+        to re-evaluate (and possibly dispatch) that pin and others after it. Only
+        accepts a sequence or batch ID for a currently undispatched pin
       operationId: postPinsRewindNamespace
       parameters:
       - description: The namespace which scopes this request
@@ -30931,7 +30932,8 @@ paths:
   /pins/rewind:
     post:
       description: Force a rewind of the event aggregator to a previous position,
-        to re-evaluate all unconfirmed pins since that point
+        to re-evaluate (and possibly dispatch) that pin and others after it. Only
+        accepts a sequence or batch ID for a currently undispatched pin
       operationId: postPinsRewind
       parameters:
       - description: Server-side request timeout (milliseconds, or set a custom suffix
