@@ -18,6 +18,7 @@ package definitions
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -37,7 +38,7 @@ func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 		}
 
 		if err := pool.Pool.Validate(ctx); err != nil {
-			return i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.Pool.ID, err)
+			return err
 		}
 
 		pool.Pool.Namespace = ""
@@ -50,6 +51,13 @@ func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 	}
 
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		return bm.handler.handleTokenPoolDefinition(ctx, state, pool.Pool)
+		hr, err := bm.handler.handleTokenPoolDefinition(ctx, state, pool.Pool)
+		if err != nil {
+			if innerErr := errors.Unwrap(err); innerErr != nil {
+				return HandlerResult{}, innerErr
+			}
+			return HandlerResult{}, err
+		}
+		return hr, nil
 	})
 }

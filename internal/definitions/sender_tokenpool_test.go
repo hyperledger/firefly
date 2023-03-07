@@ -75,7 +75,7 @@ func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
 	}
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
-	assert.Regexp(t, "FF10403", err)
+	assert.Regexp(t, "FF00140", err)
 
 	mdm.AssertExpectations(t)
 }
@@ -100,7 +100,7 @@ func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
 	}
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
-	assert.Regexp(t, "FF10403", err)
+	assert.Regexp(t, "FF00140", err)
 
 	mdm.AssertExpectations(t)
 }
