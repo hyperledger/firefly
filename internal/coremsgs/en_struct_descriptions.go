@@ -485,6 +485,13 @@ var (
 	PinRewindSequence = ffm("PinRewind.sequence", "The sequence of the pin to which the event aggregator should rewind. Either sequence or batch must be specified")
 	PinRewindBatch    = ffm("PinRewind.batch", "The ID of the batch to which the event aggregator should rewind. Either sequence or batch must be specified")
 
+	// NextPin field descriptions
+	NextPinNamespace = ffm("NextPin.namespace", "The namespace of the next-pin")
+	NextPinContext   = ffm("NextPin.context", "The un-masked context the next-pin applies to - the hash of the privacy group + topic")
+	NextPinIdentity  = ffm("NextPin.identity", "The member of the privacy group the next-pin applies to")
+	NextPinHash      = ffm("NextPin.hash", "The unique masked pin string")
+	NextPinNonce     = ffm("NextPin.nonce", "The numeric index - which is monotonically increasing for each member of the privacy group")
+
 	// Subscription field descriptions
 	SubscriptionID        = ffm("Subscription.id", "The UUID of the subscription")
 	SubscriptionNamespace = ffm("Subscription.namespace", "The namespace of the subscription. A subscription will only receive events generated in the namespace of the subscription")

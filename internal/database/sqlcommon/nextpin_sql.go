@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -108,6 +108,37 @@ func (s *SQLCommon) GetNextPinsForContext(ctx context.Context, namespace string,
 	}
 
 	return nextpin, err
+
+}
+
+func (s *SQLCommon) GetNextPins(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.NextPin, *ffapi.FilterResult, error) {
+
+	cols := append([]string{}, nextpinColumns...)
+	cols = append(cols, s.SequenceColumn())
+
+	query, fop, fi, err := s.FilterSelect(
+		ctx, "", sq.Select(cols...).From(nextpinsTable),
+		filter, pinFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows, tx, err := s.Query(ctx, pinsTable, query)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	nextpins := []*core.NextPin{}
+	for rows.Next() {
+		d, err := s.nextpinResult(ctx, rows)
+		if err != nil {
+			return nil, nil, err
+		}
+		nextpins = append(nextpins, d)
+	}
+
+	return nextpins, s.QueryRes(ctx, pinsTable, tx, fop, fi), err
 
 }
 

@@ -323,7 +323,10 @@ type iNextPinCollection interface {
 	// InsertNextPin - insert a nextpin
 	InsertNextPin(ctx context.Context, nextpin *core.NextPin) (err error)
 
-	// GetNextPins - get nextpins
+	// GetNextPins - get nextpins with generic filters
+	GetNextPins(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.NextPin, *ffapi.FilterResult, error)
+
+	// GetNextPins - get nextpins optimized for minimal processing getting by context
 	GetNextPinsForContext(ctx context.Context, namespace string, context *fftypes.Bytes32) (message []*core.NextPin, err error)
 
 	// UpdateNextPin - update a next hash using its local database ID

@@ -97,6 +97,7 @@ var routes = append(
 		getNetworkNodes,
 		getNetworkOrg,
 		getNetworkOrgs,
+		getNextPins,
 		getOpByID,
 		getOps,
 		getPins,
