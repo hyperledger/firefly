@@ -29,7 +29,7 @@ import (
 
 func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *fftypes.FFI) (retry bool, err error) {
 	if err = dh.contracts.ResolveFFI(ctx, ffi); err != nil {
-		return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID, err)
+		return false, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID)
 	}
 
 	err = dh.database.UpsertFFI(ctx, ffi)
@@ -58,7 +58,7 @@ func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *fftypes.FFI) (
 
 func (dh *definitionHandler) persistContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) (retry bool, err error) {
 	if err := dh.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
-		return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID, err)
+		return false, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID)
 	}
 
 	err = dh.database.UpsertContractAPI(ctx, api)
@@ -84,7 +84,7 @@ func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *cor
 	l := log.L(ctx)
 	ffi.Namespace = dh.namespace.Name
 	if err := ffi.Validate(ctx, true); err != nil {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID, err)
+		return HandlerResult{Action: ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID)
 	}
 
 	if retry, err := dh.persistFFI(ctx, ffi); err != nil {
@@ -115,7 +115,7 @@ func (dh *definitionHandler) handleContractAPIDefinition(ctx context.Context, st
 	l := log.L(ctx)
 	api.Namespace = dh.namespace.Name
 	if err := api.Validate(ctx, true); err != nil {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID, err)
+		return HandlerResult{Action: ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID)
 	}
 
 	if retry, err := dh.persistContractAPI(ctx, httpServerURL, api); err != nil {

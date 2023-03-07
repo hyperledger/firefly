@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -45,7 +45,7 @@ func (dh *definitionHandler) handleIdentityUpdateBroadcast(ctx context.Context, 
 
 func (dh *definitionHandler) handleIdentityUpdate(ctx context.Context, state *core.BatchState, msg *identityUpdateMsgInfo, update *core.IdentityUpdate) (HandlerResult, error) {
 	if err := update.Identity.Validate(ctx); err != nil {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "identity update", update.Identity.ID, err)
+		return HandlerResult{Action: ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "identity update", update.Identity.ID)
 	}
 
 	// Get the existing identity (must be a confirmed identity at the point an update is issued)

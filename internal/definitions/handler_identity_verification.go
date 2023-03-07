@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,7 +33,7 @@ func (dh *definitionHandler) handleIdentityVerificationBroadcast(ctx context.Con
 	verification.Identity.Namespace = dh.namespace.Name
 	err := verification.Identity.Validate(ctx)
 	if err != nil || verification.Identity.Parent == nil || verification.Claim.ID == nil || verification.Claim.Hash == nil {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "identity verification", verifyMsg.Header.ID, err)
+		return HandlerResult{Action: ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "identity verification", verifyMsg.Header.ID)
 	}
 
 	// Check the verification is signed by the correct org

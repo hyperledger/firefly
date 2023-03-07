@@ -54,9 +54,9 @@ func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 		hr, err := bm.handler.handleTokenPoolDefinition(ctx, state, pool.Pool)
 		if err != nil {
 			if innerErr := errors.Unwrap(err); innerErr != nil {
-				return HandlerResult{}, innerErr
+				return hr, innerErr
 			}
-			return HandlerResult{}, err
+			return hr, err
 		}
 		return hr, nil
 	})
