@@ -487,7 +487,7 @@ var (
 
 	// NextPin field descriptions
 	NextPinNamespace = ffm("NextPin.namespace", "The namespace of the next-pin")
-	NextPinContext   = ffm("NextPin.context", "The un-masked context the next-pin applies to - the hash of the privacy group + topic")
+	NextPinContext   = ffm("NextPin.context", "The context the next-pin applies to - the hash of the privacy group-hash + topic. The group-hash is only known to the participants (can itself contain a salt in the group-name). This context is combined with the member and nonce to determine the final hash that is written on-chain")
 	NextPinIdentity  = ffm("NextPin.identity", "The member of the privacy group the next-pin applies to")
 	NextPinHash      = ffm("NextPin.hash", "The unique masked pin string")
 	NextPinNonce     = ffm("NextPin.nonce", "The numeric index - which is monotonically increasing for each member of the privacy group")

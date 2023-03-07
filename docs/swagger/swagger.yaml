@@ -22822,7 +22822,7 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/nextpins:
     get:
-      description: Queries the list of next pins that determine the next masked message
+      description: Queries the list of next-pins that determine the next masked message
         sequence for each member of a privacy group, on each context/topic
       operationId: getNextPinsNamespace
       parameters:
@@ -22902,8 +22902,11 @@ paths:
                 items:
                   properties:
                     context:
-                      description: The un-masked context the next-pin applies to -
-                        the hash of the privacy group + topic
+                      description: The context the next-pin applies to - the hash
+                        of the privacy group-hash + topic. The group-hash is only
+                        known to the participants (can itself contain a salt in the
+                        group-name). This context is combined with the member and
+                        nonce to determine the final hash that is written on-chain
                       format: byte
                       type: string
                     hash:
@@ -30506,7 +30509,7 @@ paths:
       - Default Namespace
   /nextpins:
     get:
-      description: Queries the list of next pins that determine the next masked message
+      description: Queries the list of next-pins that determine the next masked message
         sequence for each member of a privacy group, on each context/topic
       operationId: getNextPins
       parameters:
@@ -30579,8 +30582,11 @@ paths:
                 items:
                   properties:
                     context:
-                      description: The un-masked context the next-pin applies to -
-                        the hash of the privacy group + topic
+                      description: The context the next-pin applies to - the hash
+                        of the privacy group-hash + topic. The group-hash is only
+                        known to the participants (can itself contain a salt in the
+                        group-name). This context is combined with the member and
+                        nonce to determine the final hash that is written on-chain
                       format: byte
                       type: string
                     hash:

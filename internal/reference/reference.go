@@ -586,6 +586,14 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			Created:        fftypes.UnixTime(1652664196),
 		},
 
+		&core.NextPin{
+			Namespace: "ns1",
+			Context:   fftypes.HashString("testnextpincontext"),
+			Identity:  "did:firefly:org/example",
+			Hash:      fftypes.HashString("testnextpinhash"),
+			Nonce:     12345,
+		},
+
 		&core.Batch{
 			BatchHeader: core.BatchHeader{
 				ID:        fftypes.MustParseUUID("894bc0ea-0c2e-4ca4-bbca-b4c39a816bbb"),
