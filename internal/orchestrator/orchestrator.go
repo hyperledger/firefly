@@ -114,6 +114,7 @@ type Orchestrator interface {
 	GetBlockchainEventByID(ctx context.Context, id string) (*core.BlockchainEvent, error)
 	GetBlockchainEvents(ctx context.Context, filter ffapi.AndFilter) ([]*core.BlockchainEvent, *ffapi.FilterResult, error)
 	GetPins(ctx context.Context, filter ffapi.AndFilter) ([]*core.Pin, *ffapi.FilterResult, error)
+	GetNextPins(ctx context.Context, filter ffapi.AndFilter) ([]*core.NextPin, *ffapi.FilterResult, error)
 	RewindPins(ctx context.Context, rewind *core.PinRewind) (*core.PinRewind, error)
 
 	// Charts
