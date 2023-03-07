@@ -2450,6 +2450,32 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *core.Operation
 	return r0
 }
 
+// InsertOrGetBatch provides a mock function with given fields: ctx, data
+func (_m *Plugin) InsertOrGetBatch(ctx context.Context, data *core.BatchPersisted) (*core.BatchPersisted, error) {
+	ret := _m.Called(ctx, data)
+
+	var r0 *core.BatchPersisted
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BatchPersisted) (*core.BatchPersisted, error)); ok {
+		return rf(ctx, data)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BatchPersisted) *core.BatchPersisted); ok {
+		r0 = rf(ctx, data)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.BatchPersisted)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *core.BatchPersisted) error); ok {
+		r1 = rf(ctx, data)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // InsertOrGetBlockchainEvent provides a mock function with given fields: ctx, event
 func (_m *Plugin) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (*core.BlockchainEvent, error) {
 	ret := _m.Called(ctx, event)
@@ -2726,20 +2752,6 @@ func (_m *Plugin) UpdateTransaction(ctx context.Context, namespace string, id *f
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, ffapi.Update) error); ok {
 		r0 = rf(ctx, namespace, id, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpsertBatch provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertBatch(ctx context.Context, data *core.BatchPersisted) error {
-	ret := _m.Called(ctx, data)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.BatchPersisted) error); ok {
-		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -69,13 +69,9 @@ func (em *eventManager) persistBatch(ctx context.Context, batch *core.Batch) (pe
 		}
 	}
 
-	// Upsert the batch
-	err = em.database.UpsertBatch(ctx, persistedBatch)
+	// Insert the batch
+	existing, err := em.database.InsertOrGetBatch(ctx, persistedBatch)
 	if err != nil {
-		if err == database.HashMismatch {
-			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)
-			return nil, false, nil // This is not retryable. skip this batch
-		}
 		l.Errorf("Failed to insert batch '%s': %s", batch.ID, err)
 		return nil, false, err // a persistence failure here is considered retryable (so returned)
 	}
@@ -83,6 +79,11 @@ func (em *eventManager) persistBatch(ctx context.Context, batch *core.Batch) (pe
 	valid, err = em.validateAndPersistBatchContent(ctx, batch)
 	if err != nil || !valid {
 		return nil, valid, err
+	}
+
+	if existing != nil {
+		l.Infof("Skipped insert of batch '%s' (already exists)", batch.ID)
+		return existing, true, nil
 	}
 	em.aggregator.cacheBatch(em.aggregator.getBatchCacheKey(persistedBatch.ID, persistedBatch.Hash), persistedBatch, manifest)
 	return persistedBatch, true, err

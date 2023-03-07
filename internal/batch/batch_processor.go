@@ -577,7 +577,8 @@ func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 			log.L(ctx).Debugf("Batch %s sealed. Hash=%s", state.Persisted.ID, state.Persisted.Hash)
 
 			// At this point the manifest of the batch is finalized. We write it to the database
-			return bp.database.UpsertBatch(ctx, &state.Persisted)
+			_, err = bp.database.InsertOrGetBatch(ctx, &state.Persisted)
+			return err
 		})
 	})
 	if err != nil {
