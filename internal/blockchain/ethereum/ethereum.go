@@ -760,8 +760,8 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 		if err := e.checkDataSupport(ctx, abi); err != nil {
 			return err
 		}
-		method, inputs := e.buildBatchPinInput(ctx, 2, "", batch)
-		encoded, err := method.Inputs.EncodeABIDataValuesCtx(ctx, inputs)
+		method, batchPin := e.buildBatchPinInput(ctx, 2, "", batch)
+		encoded, err := method.Inputs.EncodeABIDataValuesCtx(ctx, batchPin)
 		if err != nil {
 			return err
 		}

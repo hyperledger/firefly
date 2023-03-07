@@ -606,12 +606,7 @@ func hexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
-	fabricOnChainLocation, err := parseContractLocation(ctx, location)
-	if err != nil {
-		return err
-	}
-
+func (f *Fabric) buildBatchPinInput(ctx context.Context, version int, namespace string, batch *blockchain.BatchPin) (prefixItems []*PrefixItem, pinInput map[string]interface{}) {
 	hashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		hashes[i] = hexFormatB32(v)
@@ -620,18 +615,10 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, s
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
 
-	version, err := f.GetNetworkVersion(ctx, location)
-	if err != nil {
-		return err
-	}
-
-	var prefixItems []*PrefixItem
-	var pinInput map[string]interface{}
-
 	if version == 1 {
 		prefixItems = batchPinPrefixItemsV1
 		pinInput = map[string]interface{}{
-			"namespace":  networkNamespace,
+			"namespace":  namespace,
 			"uuids":      hexFormatB32(&uuids),
 			"batchHash":  hexFormatB32(batch.BatchHash),
 			"payloadRef": batch.BatchPayloadRef,
@@ -646,6 +633,21 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, s
 			"contexts":   hashes,
 		}
 	}
+	return prefixItems, pinInput
+}
+
+func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+	fabricOnChainLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	version, err := f.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	prefixItems, pinInput := f.buildBatchPinInput(ctx, version, networkNamespace, batch)
 
 	input, _ := jsonEncodeInput(pinInput)
 	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, prefixItems, input, nil)
@@ -725,6 +727,7 @@ func (f *Fabric) DeployContract(ctx context.Context, nsOpID, signingKey string, 
 }
 
 func (f *Fabric) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
+	// No additional validation beyond what is enforced by Contract Manager
 	return nil
 }
 
@@ -746,6 +749,19 @@ func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey s
 			Name: param.Name,
 			Type: paramSchema.Type,
 		}
+	}
+
+	if batch != nil {
+		_, batchPin := f.buildBatchPinInput(ctx, 2, "", batch)
+		if input == nil {
+			input = make(map[string]interface{})
+		}
+		batchPinBytes, err := json.Marshal(batchPin)
+		if err != nil {
+			return err
+		}
+		lastParam := method.Params[len(method.Params)-1]
+		input[lastParam.Name] = string(batchPinBytes)
 	}
 
 	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, nsOpID, prefixItems, input, options)

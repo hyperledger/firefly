@@ -585,6 +585,9 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 		// If a message is included, skip validation of the last parameter
 		// (assume it will be used for sending the batch pin)
 		lastIndex--
+		if lastIndex < 0 {
+			return i18n.NewError(ctx, coremsgs.MsgMethodDoesNotSupportPinning)
+		}
 
 		// Also verify that the user didn't pass in a value for this last parameter
 		lastParam := req.Method.Params[lastIndex]
