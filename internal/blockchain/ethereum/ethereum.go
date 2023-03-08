@@ -223,18 +223,18 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
-	ethLocation, err := e.parseContractLocation(ctx, location)
+func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+	ethLocation, err := e.parseContractLocation(ctx, contract.Location)
 	if err != nil {
 		return "", err
 	}
 
-	version, err := e.GetNetworkVersion(ctx, location)
+	version, err := e.GetNetworkVersion(ctx, contract.Location)
 	if err != nil {
 		return "", err
 	}
 
-	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, firstEvent, e.streamID, batchPinEventABI)
+	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, contract.FirstEvent, e.streamID, batchPinEventABI)
 	if err != nil {
 		return "", err
 	}

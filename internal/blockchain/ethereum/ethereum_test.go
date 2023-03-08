@@ -646,13 +646,17 @@ func TestInitAllExistingStreams(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
@@ -688,13 +692,17 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
@@ -730,13 +738,17 @@ func TestInitAllExistingStreamsOld(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
@@ -772,13 +784,17 @@ func TestInitAllExistingStreamsInvalidName(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10416", err)
 }
 
@@ -3374,9 +3390,13 @@ func TestAddSubBadLocation(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"bad": "bad",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err := e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err := e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -3419,9 +3439,13 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	subID, err := e.AddFireflySubscription(e.ctx, ns, location, "newest")
+	subID, err := e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 	assert.NotNil(t, e.subs.GetSubscription("sub1"))
 
@@ -3462,9 +3486,13 @@ func TestAddFireflySubscriptionV1(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 	assert.NotNil(t, e.subs.GetSubscription("sub1"))
 }
@@ -3500,9 +3528,13 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -3538,9 +3570,13 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -3575,9 +3611,13 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10111", err)
 }
 

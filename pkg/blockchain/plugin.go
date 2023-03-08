@@ -107,7 +107,7 @@ type Plugin interface {
 	GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error)
 
 	// AddFireflySubscription creates a FireFly BatchPin subscription for the provided location
-	AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (subID string, err error)
+	AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *MultipartyContract) (subID string, err error)
 
 	// RemoveFireFlySubscription removes the provided FireFly subscription
 	RemoveFireflySubscription(ctx context.Context, subID string)
@@ -142,6 +142,12 @@ type Callbacks interface {
 // Capabilities the supported featureset of the blockchain
 // interface implemented by the plugin, with the specified config
 type Capabilities struct {
+}
+
+// MultipartyContract represents the location and configuration of a FireFly multiparty contract for batch pinning of messages
+type MultipartyContract struct {
+	Location   *fftypes.JSONAny
+	FirstEvent string
 }
 
 // BatchPin is the set of data pinned to the blockchain for a batch - whether it's private or broadcast.

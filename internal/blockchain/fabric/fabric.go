@@ -369,18 +369,18 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	})
 }
 
-func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
-	fabricOnChainLocation, err := parseContractLocation(ctx, location)
+func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+	fabricOnChainLocation, err := parseContractLocation(ctx, contract.Location)
 	if err != nil {
 		return "", err
 	}
 
-	version, err := f.GetNetworkVersion(ctx, location)
+	version, err := f.GetNetworkVersion(ctx, contract.Location)
 	if err != nil {
 		return "", err
 	}
 
-	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
+	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, f.streamID, batchPinEvent)
 	if err != nil {
 		return "", err
 	}

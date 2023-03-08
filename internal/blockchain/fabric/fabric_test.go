@@ -302,13 +302,17 @@ func TestInitAllExistingStreams(t *testing.T) {
 		"channel":   "firefly",
 		"chaincode": "simplestorage",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 3, httpmock.GetTotalCallCount())
@@ -343,13 +347,17 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 		"channel":   "firefly",
 		"chaincode": "simplestorage",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 3, httpmock.GetTotalCallCount())
@@ -382,13 +390,17 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 		"channel":   "firefly",
 		"chaincode": "simplestorage",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -420,13 +432,17 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 		"channel":   "firefly",
 		"chaincode": "simplestorage",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -458,13 +474,17 @@ func TestAddAndRemoveFireflySubscriptionDeprecatedSubName(t *testing.T) {
 		"channel":   "firefly",
 		"chaincode": "simplestorage",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	subID, err := e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	subID, err := e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 3, httpmock.GetTotalCallCount())
@@ -503,13 +523,17 @@ func TestAddFireflySubscriptionInvalidSubName(t *testing.T) {
 		"channel":   "firefly",
 		"chaincode": "simplestorage",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10416", err)
 }
 
@@ -518,8 +542,12 @@ func TestAddFFSubscriptionBadLocation(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"bad": "bad",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err := e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err := e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "F10310", err)
 }
 
@@ -637,13 +665,17 @@ func TestSubQueryCreateError(t *testing.T) {
 		"channel":   "firefly",
 		"chaincode": "simplestorage",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10284.*pop", err)
 
 }
@@ -680,13 +712,17 @@ func TestSubQueryCreate(t *testing.T) {
 		"channel":   "firefly",
 		"chaincode": "simplestorage",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 }

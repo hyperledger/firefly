@@ -38,23 +38,23 @@ func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.Co
 	return r0
 }
 
-// AddFireflySubscription provides a mock function with given fields: ctx, namespace, location, firstEvent
-func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
-	ret := _m.Called(ctx, namespace, location, firstEvent)
+// AddFireflySubscription provides a mock function with given fields: ctx, namespace, contract
+func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+	ret := _m.Called(ctx, namespace, contract)
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *fftypes.JSONAny, string) (string, error)); ok {
-		return rf(ctx, namespace, location, firstEvent)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract) (string, error)); ok {
+		return rf(ctx, namespace, contract)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *fftypes.JSONAny, string) string); ok {
-		r0 = rf(ctx, namespace, location, firstEvent)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract) string); ok {
+		r0 = rf(ctx, namespace, contract)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *core.Namespace, *fftypes.JSONAny, string) error); ok {
-		r1 = rf(ctx, namespace, location, firstEvent)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract) error); ok {
+		r1 = rf(ctx, namespace, contract)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -84,7 +84,7 @@ func TestNewMultipartyManager(t *testing.T) {
 	config := Config{
 		Org:       RootOrg{Name: "org1"},
 		Node:      LocalNode{Name: "node1"},
-		Contracts: []Contract{},
+		Contracts: []blockchain.MultipartyContract{},
 	}
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, []core.OpType{
 		core.OpTypeBlockchainPinBatch,
@@ -100,7 +100,7 @@ func TestNewMultipartyManager(t *testing.T) {
 }
 
 func TestInitFail(t *testing.T) {
-	config := Config{Contracts: []Contract{}}
+	config := Config{Contracts: []blockchain.MultipartyContract{}}
 	_, err := NewMultipartyManager(context.Background(), &core.Namespace{}, config, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
@@ -117,7 +117,7 @@ func TestConfigureContract(t *testing.T) {
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -147,7 +147,7 @@ func TestConfigureContractLocationChanged(t *testing.T) {
 			Location: location,
 		},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location2,
 	}}
@@ -184,7 +184,7 @@ func TestResolveContractDeprecatedConfigError(t *testing.T) {
 
 	mp.mbi.On("GetAndConvertDeprecatedContractConfig", context.Background()).Return(nil, "", fmt.Errorf("pop"))
 
-	_, _, err := mp.resolveFireFlyContract(context.Background(), 0)
+	_, err := mp.resolveFireFlyContract(context.Background(), 0)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -196,7 +196,7 @@ func TestResolveContractDeprecatedConfigNewestBlock(t *testing.T) {
 		"address": "0x123",
 	}.String()), "newst", nil)
 
-	_, _, err := mp.resolveFireFlyContract(context.Background(), 0)
+	_, err := mp.resolveFireFlyContract(context.Background(), 0)
 	assert.NoError(t, err)
 }
 
@@ -211,7 +211,7 @@ func TestConfigureContractBadIndex(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 1},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -233,7 +233,7 @@ func TestConfigureContractNetworkVersionFail(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -254,7 +254,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -297,7 +297,7 @@ func TestSubmitNetworkActionTXFail(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -328,7 +328,7 @@ func TestSubmitNetworkActionOpFail(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -365,7 +365,7 @@ func TestSubmitNetworkActionBadType(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -493,7 +493,7 @@ func TestGetNetworkVersion(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -521,7 +521,7 @@ func TestConfgureAndTerminateContract(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}, {
