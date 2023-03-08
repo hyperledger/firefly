@@ -241,7 +241,7 @@ var (
 	MsgDefRejectedBadPayload              = ffe("FF10400", "Rejected %s message '%s' - invalid payload")
 	MsgDefRejectedAuthorBlank             = ffe("FF10401", "Rejected %s message '%s' - author is blank")
 	MsgDefRejectedSignatureMismatch       = ffe("FF10402", "Rejected %s message '%s' - signature mismatch")
-	MsgDefRejectedValidateFail            = ffe("FF10403", "Rejected %s '%s' - validate failed: %s")
+	MsgDefRejectedValidateFail            = ffe("FF10403", "Rejected %s '%s' - validate failed")
 	MsgDefRejectedIDMismatch              = ffe("FF10404", "Rejected %s '%s' - ID mismatch with existing record")
 	MsgDefRejectedLocationMismatch        = ffe("FF10405", "Rejected %s '%s' - location mismatch with existing record")
 	MsgDefRejectedSchemaFail              = ffe("FF10406", "Rejected %s '%s' - schema check: %s")

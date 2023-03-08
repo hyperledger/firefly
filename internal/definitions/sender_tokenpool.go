@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,6 +18,7 @@ package definitions
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -26,15 +27,16 @@ import (
 )
 
 func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
-	// Map token connector name -> broadcast name
-	if broadcastName, exists := bm.tokenBroadcastNames[pool.Pool.Connector]; exists {
-		pool.Pool.Connector = broadcastName
-	} else {
-		log.L(ctx).Infof("Could not find broadcast name for token connector: %s", pool.Pool.Connector)
-		return i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, broadcastName, "token")
-	}
 
 	if bm.multiparty {
+		// Map token connector name -> broadcast name
+		if broadcastName, exists := bm.tokenBroadcastNames[pool.Pool.Connector]; exists {
+			pool.Pool.Connector = broadcastName
+		} else {
+			log.L(ctx).Infof("Could not find broadcast name for token connector: %s", pool.Pool.Connector)
+			return i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, broadcastName, "token")
+		}
+
 		if err := pool.Pool.Validate(ctx); err != nil {
 			return err
 		}
@@ -49,6 +51,12 @@ func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 	}
 
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		return bm.handler.handleTokenPoolDefinition(ctx, state, pool.Pool)
+		hr, err := bm.handler.handleTokenPoolDefinition(ctx, state, pool.Pool)
+		if err != nil {
+			if innerErr := errors.Unwrap(err); innerErr != nil {
+				return hr, innerErr
+			}
+		}
+		return hr, err
 	})
 }

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -71,6 +71,7 @@ func (suite *TokensOnlyTestSuite) TestTokensOnlyNamespaces() {
 
 	// Add the new namespace
 	data1 := e2e.ReadConfig(suite.T(), suite.testState.configFile1)
+	e2e.AddPluginBroadcastName(data1, "tokens", "testremote")
 	e2e.AddNamespace(data1, namespaceInfo)
 	e2e.WriteConfig(suite.T(), suite.testState.configFile1, data1)
 

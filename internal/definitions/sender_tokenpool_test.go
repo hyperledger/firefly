@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -75,7 +75,32 @@ func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
 	}
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
-	assert.Regexp(t, "FF10420", err)
+	assert.Regexp(t, "FF00140", err)
+
+	mdm.AssertExpectations(t)
+}
+
+func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = true
+
+	mdm := ds.data.(*datamocks.Manager)
+
+	pool := &core.TokenPoolAnnouncement{
+		Pool: &core.TokenPool{
+			ID:        fftypes.NewUUID(),
+			Namespace: "",
+			Name:      "",
+			Type:      core.TokenTypeNonFungible,
+			Locator:   "N1",
+			Symbol:    "COIN",
+			Connector: "connector1",
+		},
+	}
+
+	err := ds.DefineTokenPool(context.Background(), pool, false)
+	assert.Regexp(t, "FF00140", err)
 
 	mdm.AssertExpectations(t)
 }
@@ -113,6 +138,37 @@ func TestDefineTokenPoolOk(t *testing.T) {
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
+}
+
+func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = false
+
+	mdm := ds.data.(*datamocks.Manager)
+	mdb := ds.database.(*databasemocks.Plugin)
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "mypool",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		State:     core.TokenPoolStateConfirmed,
+	}
+	poolAnnouncement := &core.TokenPoolAnnouncement{
+		Pool: pool,
+	}
+
+	mdb.On("GetTokenPoolByID", mock.Anything, mock.Anything, mock.Anything).Return(pool, nil)
+
+	err := ds.DefineTokenPool(context.Background(), poolAnnouncement, false)
+	assert.NoError(t, err)
+
+	mdm.AssertExpectations(t)
+	mdb.AssertExpectations(t)
 }
 
 func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {

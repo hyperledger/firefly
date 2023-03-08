@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -52,7 +52,7 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 
 	pool.Namespace = dh.namespace.Name
 	if err := pool.Validate(ctx); err != nil {
-		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID, err)
+		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID)
 	}
 
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
