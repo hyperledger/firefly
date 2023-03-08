@@ -140,6 +140,37 @@ func TestDefineTokenPoolOk(t *testing.T) {
 	mms.AssertExpectations(t)
 }
 
+func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = false
+
+	mdm := ds.data.(*datamocks.Manager)
+	mdb := ds.database.(*databasemocks.Plugin)
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "mypool",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		State:     core.TokenPoolStateConfirmed,
+	}
+	poolAnnouncement := &core.TokenPoolAnnouncement{
+		Pool: pool,
+	}
+
+	mdb.On("GetTokenPoolByID", mock.Anything, mock.Anything, mock.Anything).Return(pool, nil)
+
+	err := ds.DefineTokenPool(context.Background(), poolAnnouncement, false)
+	assert.NoError(t, err)
+
+	mdm.AssertExpectations(t)
+	mdb.AssertExpectations(t)
+}
+
 func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()

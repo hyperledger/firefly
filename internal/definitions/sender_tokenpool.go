@@ -56,8 +56,7 @@ func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 			if innerErr := errors.Unwrap(err); innerErr != nil {
 				return hr, innerErr
 			}
-			return hr, err
 		}
-		return hr, nil
+		return hr, err
 	})
 }
