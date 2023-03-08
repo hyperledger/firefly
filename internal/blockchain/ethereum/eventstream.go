@@ -175,18 +175,18 @@ func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (
 	return sub.Name, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, fromBlock string, abi *abi.Entry) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, firstEvent string, abi *abi.Entry) (*subscription, error) {
 	// Map FireFly "firstEvent" values to Ethereum "fromBlock" values
-	switch fromBlock {
+	switch firstEvent {
 	case string(core.SubOptsFirstEventOldest):
-		fromBlock = "0"
+		firstEvent = "0"
 	case string(core.SubOptsFirstEventNewest):
-		fromBlock = "latest"
+		firstEvent = "latest"
 	}
 	sub := subscription{
 		Name:           subName,
 		Stream:         stream,
-		FromBlock:      fromBlock,
+		FromBlock:      firstEvent,
 		EthCompatEvent: abi,
 	}
 
@@ -215,7 +215,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 	return nil
 }
 
-func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, instancePath, fromBlock, stream string, abi *abi.Entry) (sub *subscription, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, instancePath, firstEvent, stream string, abi *abi.Entry) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
@@ -257,7 +257,7 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 		name = v1Name
 	}
 	location := &Location{Address: instancePath}
-	if sub, err = s.createSubscription(ctx, location, stream, name, fromBlock, abi); err != nil {
+	if sub, err = s.createSubscription(ctx, location, stream, name, firstEvent, abi); err != nil {
 		return nil, err
 	}
 	log.L(ctx).Infof("%s subscription: %s", abi.Name, sub.ID)

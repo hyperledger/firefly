@@ -411,7 +411,7 @@ func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL st
 
 func (cm *contractManager) ResolveContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) (err error) {
 	if api.Location != nil {
-		if api.Location, err = cm.blockchain.NormalizeContractLocation(ctx, api.Location); err != nil {
+		if api.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeCall, api.Location); err != nil {
 			return err
 		}
 	}
@@ -633,7 +633,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 	}
 
 	if listener.Location != nil {
-		if listener.Location, err = cm.blockchain.NormalizeContractLocation(ctx, listener.Location); err != nil {
+		if listener.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeListener, listener.Location); err != nil {
 			return nil, err
 		}
 	}

@@ -416,7 +416,7 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 
 		// Matches one of the active FireFly BatchPin subscriptions
 		if subInfo := f.subs.GetSubscription(sub); subInfo != nil {
-			location, err := encodeContractLocation(ctx, &Location{
+			location, err := encodeContractLocation(ctx, blockchain.NormalizeCall, &Location{
 				Chaincode: msgJSON.GetString("chaincodeId"),
 				Channel:   subInfo.Extra.(string),
 			})
@@ -780,12 +780,12 @@ func jsonEncodeInput(params map[string]interface{}) (output map[string]interface
 	return
 }
 
-func (f *Fabric) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
+func (f *Fabric) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
 	parsed, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
-	return encodeContractLocation(ctx, parsed)
+	return encodeContractLocation(ctx, ntype, parsed)
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
@@ -802,11 +802,11 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &fabricLocation, nil
 }
 
-func encodeContractLocation(ctx context.Context, location *Location) (result *fftypes.JSONAny, err error) {
+func encodeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *Location) (result *fftypes.JSONAny, err error) {
 	if location.Channel == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'channel' not set")
 	}
-	if location.Chaincode == "" {
+	if ntype == blockchain.NormalizeCall && location.Chaincode == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'chaincode' not set")
 	}
 	normalized, err := json.Marshal(location)
@@ -911,7 +911,7 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 	}
 	fromBlock = string(core.SubOptsFirstEventOldest)
 
-	location, err = encodeContractLocation(ctx, &Location{
+	location, err = encodeContractLocation(ctx, blockchain.NormalizeListener, &Location{
 		Chaincode: chaincode,
 		Channel:   f.defaultChannel,
 	})

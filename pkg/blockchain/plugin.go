@@ -96,7 +96,7 @@ type Plugin interface {
 	GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error)
 
 	// NormalizeContractLocation validates and normalizes the formatting of the location JSON
-	NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (*fftypes.JSONAny, error)
+	NormalizeContractLocation(ctx context.Context, ntype NormalizeType, location *fftypes.JSONAny) (*fftypes.JSONAny, error)
 
 	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
 	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string
@@ -119,6 +119,13 @@ type Plugin interface {
 	// Get the latest status of the given transaction
 	GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error)
 }
+
+type NormalizeType int
+
+const (
+	NormalizeCall NormalizeType = iota
+	NormalizeListener
+)
 
 const FireFlyActionPrefix = "firefly:"
 

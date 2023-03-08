@@ -41,6 +41,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/santhosh-tekuri/jsonschema/v5"
@@ -715,7 +716,7 @@ func TestAddContractListenerInline(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
@@ -801,7 +802,7 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 		EventPath: "changed",
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
@@ -835,7 +836,7 @@ func TestAddContractListenerBadLocation(t *testing.T) {
 		EventPath: "changed",
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(nil, fmt.Errorf("pop"))
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.EqualError(t, err, "pop")
@@ -863,7 +864,7 @@ func TestAddContractListenerFFILookupFail(t *testing.T) {
 		EventPath: "changed",
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), sub)
@@ -893,7 +894,7 @@ func TestAddContractListenerEventLookupFail(t *testing.T) {
 		EventPath: "changed",
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(nil, fmt.Errorf("pop"))
 
@@ -924,7 +925,7 @@ func TestAddContractListenerEventLookupNotFound(t *testing.T) {
 		EventPath: "changed",
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(nil, nil)
 
@@ -948,7 +949,7 @@ func TestAddContractListenerMissingEventOrID(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 
 	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.Regexp(t, "FF10317", err)
@@ -994,7 +995,7 @@ func TestAddContractListenerNameConflict(t *testing.T) {
 		EventPath: "changed",
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(&core.ContractListener{}, nil)
 
 	_, err := cm.AddContractListener(context.Background(), sub)
@@ -1020,7 +1021,7 @@ func TestAddContractListenerNameError(t *testing.T) {
 		EventPath: "changed",
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), sub)
@@ -1045,7 +1046,7 @@ func TestAddContractListenerTopicConflict(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return([]*core.ContractListener{{}}, nil, nil)
 
@@ -1071,7 +1072,7 @@ func TestAddContractListenerTopicError(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
@@ -1107,7 +1108,7 @@ func TestAddContractListenerValidateFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 
@@ -1143,7 +1144,7 @@ func TestAddContractListenerBlockchainFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(fmt.Errorf("pop"))
@@ -1180,7 +1181,7 @@ func TestAddContractListenerUpsertSubFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
@@ -1217,7 +1218,7 @@ func TestAddContractAPIListener(t *testing.T) {
 	}
 
 	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(api, nil)
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(listener.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, api.Location).Return(listener.Location, nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, "changed").Return(event, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
@@ -2354,7 +2355,7 @@ func TestResolveContractAPI(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(&fftypes.FFI{}, nil)
 
@@ -2379,7 +2380,7 @@ func TestResolveContractAPIBadLocation(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, fmt.Errorf("pop"))
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, fmt.Errorf("pop"))
 
 	err := cm.ResolveContractAPI(context.Background(), "http://localhost/api", api)
 	assert.EqualError(t, err, "pop")
@@ -2412,7 +2413,7 @@ func TestResolveContractAPICannotChangeLocation(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
 
 	err := cm.ResolveContractAPI(context.Background(), "http://localhost/api", api)
@@ -2439,7 +2440,7 @@ func TestResolveContractAPIInterfaceName(t *testing.T) {
 	}
 	interfaceID := fftypes.NewUUID()
 
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(&fftypes.FFI{ID: interfaceID}, nil)
 
@@ -2462,7 +2463,7 @@ func TestResolveContractAPINoInterface(t *testing.T) {
 		Name:      "banana",
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 
 	err := cm.ResolveContractAPI(context.Background(), "http://localhost/api", api)
@@ -2487,7 +2488,7 @@ func TestResolveContractAPIInterfaceIDFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(nil, fmt.Errorf("pop"))
 
@@ -2513,7 +2514,7 @@ func TestResolveContractAPIInterfaceIDNotFound(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(nil, nil)
 
@@ -2540,7 +2541,7 @@ func TestResolveContractAPIInterfaceNameFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(nil, fmt.Errorf("pop"))
 
@@ -2567,7 +2568,7 @@ func TestResolveContractAPIInterfaceNameNotFound(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(nil, nil)
 
@@ -2593,7 +2594,7 @@ func TestResolveContractAPIInterfaceNoVersion(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 
 	err := cm.ResolveContractAPI(context.Background(), "http://localhost/api", api)

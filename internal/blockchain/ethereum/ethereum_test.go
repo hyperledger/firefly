@@ -2730,7 +2730,7 @@ func TestNormalizeContractLocation(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	result, err := e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	result, err := e.NormalizeContractLocation(context.Background(), blockchain.NormalizeCall, fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
 	assert.Equal(t, "0x3081d84fd367044f4ed453f2024709242470388c", result.JSONObject()["address"])
 }
@@ -2743,7 +2743,7 @@ func TestNormalizeContractLocationInvalid(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), blockchain.NormalizeCall, fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.Regexp(t, "FF10141", err)
 }
 
@@ -2753,7 +2753,7 @@ func TestNormalizeContractLocationBlank(t *testing.T) {
 	location := &Location{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), blockchain.NormalizeCall, fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.Regexp(t, "FF10310", err)
 }
 

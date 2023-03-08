@@ -790,7 +790,7 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	return output, nil
 }
 
-func (e *Ethereum) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
+func (e *Ethereum) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
 	parsed, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err

@@ -2317,7 +2317,7 @@ func TestNormalizeContractLocation(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), blockchain.NormalizeCall, fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
 }
 
@@ -2329,7 +2329,7 @@ func TestNormalizeContractLocationNoChannel(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), blockchain.NormalizeCall, fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.Regexp(t, "FF10310.*channel", err)
 }
 
@@ -2341,7 +2341,7 @@ func TestValidateNoContractLocationChaincode(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), blockchain.NormalizeCall, fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.Regexp(t, "FF10310", err)
 }
 

@@ -342,25 +342,25 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// NormalizeContractLocation provides a mock function with given fields: ctx, location
-func (_m *Plugin) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (*fftypes.JSONAny, error) {
-	ret := _m.Called(ctx, location)
+// NormalizeContractLocation provides a mock function with given fields: ctx, ntype, location
+func (_m *Plugin) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (*fftypes.JSONAny, error) {
+	ret := _m.Called(ctx, ntype, location)
 
 	var r0 *fftypes.JSONAny
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny) (*fftypes.JSONAny, error)); ok {
-		return rf(ctx, location)
+	if rf, ok := ret.Get(0).(func(context.Context, blockchain.NormalizeType, *fftypes.JSONAny) (*fftypes.JSONAny, error)); ok {
+		return rf(ctx, ntype, location)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny) *fftypes.JSONAny); ok {
-		r0 = rf(ctx, location)
+	if rf, ok := ret.Get(0).(func(context.Context, blockchain.NormalizeType, *fftypes.JSONAny) *fftypes.JSONAny); ok {
+		r0 = rf(ctx, ntype, location)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.JSONAny)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny) error); ok {
-		r1 = rf(ctx, location)
+	if rf, ok := ret.Get(1).(func(context.Context, blockchain.NormalizeType, *fftypes.JSONAny) error); ok {
+		r1 = rf(ctx, ntype, location)
 	} else {
 		r1 = ret.Error(1)
 	}
