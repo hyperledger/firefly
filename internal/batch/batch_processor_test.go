@@ -396,6 +396,16 @@ func TestAddWorkInSort(t *testing.T) {
 	}, bp.assemblyQueue)
 }
 
+func TestAddWorkAbandonedBatch(t *testing.T) {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
+		return nil
+	})
+	defer cancel()
+	msg := &core.Message{Sequence: 200, BatchID: fftypes.NewUUID()}
+	_, _ = bp.addWork(&batchWork{msg: msg})
+	assert.Equal(t, []*batchWork{{msg: msg}}, bp.assemblyQueue)
+}
+
 func TestStartQuiesceNonBlocking(t *testing.T) {
 	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return nil
@@ -562,6 +572,55 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+}
+
+func TestSealBatchTXAlreadyAssigned(t *testing.T) {
+	coreconfig.Reset()
+
+	dispatched := make(chan *DispatchPayload)
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
+		dispatched <- state
+		return nil
+	})
+	cancel()
+
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("InsertNonce", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessage", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertOrGetBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+
+	mim := bp.bm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
+
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
+
+	txID := fftypes.NewUUID()
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Type:   core.MessageTypePrivate,
+			Group:  fftypes.NewRandB32(),
+			Topics: fftypes.FFStringArray{"topic1"},
+			TxType: core.TransactionTypeContractInvokePin,
+		},
+		TransactionID: txID,
+	}
+
+	bp.conf.txType = core.TransactionTypeContractInvokePin
+	state := bp.initPayload(fftypes.NewUUID(), []*batchWork{{msg: msg}})
+	err := bp.sealBatch(state)
+	assert.NoError(t, err)
+	assert.Equal(t, core.TransactionTypeContractInvokePin, state.Batch.TX.Type)
+	assert.Equal(t, txID, state.Batch.TX.ID)
+
+	bp.cancelCtx()
+	<-bp.done
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestBigBatchEstimate(t *testing.T) {

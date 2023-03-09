@@ -757,15 +757,17 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 		return err
 	}
 	if batch != nil {
-		if err := e.checkDataSupport(ctx, abi); err != nil {
-			return err
+		err := e.checkDataSupport(ctx, abi)
+		if err == nil {
+			method, batchPin := e.buildBatchPinInput(ctx, 2, "", batch)
+			encoded, err := method.Inputs.EncodeABIDataValuesCtx(ctx, batchPin)
+			if err == nil {
+				orderedInput[len(orderedInput)-1] = hex.EncodeToString(encoded)
+			}
 		}
-		method, batchPin := e.buildBatchPinInput(ctx, 2, "", batch)
-		encoded, err := method.Inputs.EncodeABIDataValuesCtx(ctx, batchPin)
 		if err != nil {
 			return err
 		}
-		orderedInput[len(orderedInput)-1] = hex.EncodeToString(encoded)
 	}
 	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, nsOpID, orderedInput, errorsAbi, options)
 }

@@ -95,6 +95,39 @@ func TestCallbackBatchPinBadBatch(t *testing.T) {
 	mcb.AssertExpectations(t)
 }
 
+func TestBatchPinContractInvokePin(t *testing.T) {
+	event := &blockchain.Event{}
+	verifier := &core.VerifierRef{}
+	params := &BatchPinParams{
+		UUIDs:     "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
+		BatchHash: "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
+		Contexts: []string{
+			"0x68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a",
+			"0x19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771",
+		},
+		PayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		NsOrAction: "firefly:contract_invoke_pin",
+	}
+
+	mcb := &blockchainmocks.Callbacks{}
+	cb := NewBlockchainCallbacks()
+	cb.SetHandler("ns1", mcb)
+
+	mcb.On("BatchPinComplete", "ns1", mock.MatchedBy(func(batchPin *blockchain.BatchPin) bool {
+		assert.Equal(t, core.TransactionTypeContractInvokePin, batchPin.TransactionType)
+		return true
+	}), mock.Anything).Return(nil)
+
+	sub := &SubscriptionInfo{
+		Version:     2,
+		V2Namespace: "ns1",
+	}
+	err := cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	assert.NoError(t, err)
+
+	mcb.AssertExpectations(t)
+}
+
 func TestCallbackBatchPin(t *testing.T) {
 	event := &blockchain.Event{}
 	verifier := &core.VerifierRef{}

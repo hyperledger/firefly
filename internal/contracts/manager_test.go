@@ -1613,6 +1613,351 @@ func TestInvokeContract(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
+func TestInvokeContractWithBroadcast(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mom := cm.operations.(*operationmocks.Manager)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	sender := &syncasyncmocks.Sender{}
+
+	req := &core.ContractCallRequest{
+		Type:      core.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Location:  fftypes.JSONAnyPtr(""),
+		Method: &fftypes.FFIMethod{
+			Name: "doStuff",
+			ID:   fftypes.NewUUID(),
+			Params: fftypes.FFIParams{
+				{
+					Name:   "data",
+					Schema: fftypes.JSONAnyPtr(`{"type":"string"}`),
+				},
+			},
+			Returns: fftypes.FFIParams{},
+		},
+		IdempotencyKey: "idem1",
+		Message: &core.MessageInOut{
+			InlineData: core.InlineData{
+				&core.DataRefOrValue{Value: fftypes.JSONAnyPtr("\"test-message\"")},
+			},
+		},
+	}
+
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvokePin, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
+	})).Return(nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, true).Return(nil)
+	mbm.On("NewBroadcast", req.Message).Return(sender, nil)
+	sender.On("Prepare", mock.Anything).Return(nil)
+	sender.On("Send", mock.Anything).Return(nil)
+
+	_, err := cm.InvokeContract(context.Background(), req, false)
+
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	sender.AssertExpectations(t)
+}
+
+func TestInvokeContractWithBroadcastConfirm(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mom := cm.operations.(*operationmocks.Manager)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	sender := &syncasyncmocks.Sender{}
+
+	req := &core.ContractCallRequest{
+		Type:      core.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Location:  fftypes.JSONAnyPtr(""),
+		Method: &fftypes.FFIMethod{
+			Name: "doStuff",
+			ID:   fftypes.NewUUID(),
+			Params: fftypes.FFIParams{
+				{
+					Name:   "data",
+					Schema: fftypes.JSONAnyPtr(`{"type":"string"}`),
+				},
+			},
+			Returns: fftypes.FFIParams{},
+		},
+		IdempotencyKey: "idem1",
+		Message: &core.MessageInOut{
+			InlineData: core.InlineData{
+				&core.DataRefOrValue{Value: fftypes.JSONAnyPtr("\"test-message\"")},
+			},
+		},
+	}
+
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvokePin, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
+	})).Return(nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, true).Return(nil)
+	mbm.On("NewBroadcast", req.Message).Return(sender, nil)
+	sender.On("Prepare", mock.Anything).Return(nil)
+	sender.On("SendAndWait", mock.Anything).Return(nil)
+
+	_, err := cm.InvokeContract(context.Background(), req, true)
+
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	sender.AssertExpectations(t)
+}
+
+func TestInvokeContractWithBroadcastPrepareFail(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	sender := &syncasyncmocks.Sender{}
+
+	req := &core.ContractCallRequest{
+		Type:      core.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Location:  fftypes.JSONAnyPtr(""),
+		Method: &fftypes.FFIMethod{
+			Name: "doStuff",
+			ID:   fftypes.NewUUID(),
+			Params: fftypes.FFIParams{
+				{
+					Name:   "data",
+					Schema: fftypes.JSONAnyPtr(`{"type":"string"}`),
+				},
+			},
+			Returns: fftypes.FFIParams{},
+		},
+		IdempotencyKey: "idem1",
+		Message: &core.MessageInOut{
+			InlineData: core.InlineData{
+				&core.DataRefOrValue{Value: fftypes.JSONAnyPtr("\"test-message\"")},
+			},
+		},
+	}
+
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, true).Return(nil)
+	mbm.On("NewBroadcast", req.Message).Return(sender, nil)
+	sender.On("Prepare", mock.Anything).Return(fmt.Errorf("pop"))
+
+	_, err := cm.InvokeContract(context.Background(), req, true)
+
+	assert.EqualError(t, err, "pop")
+
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	sender.AssertExpectations(t)
+}
+
+func TestInvokeContractWithBroadcastBadRequest(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	sender := &syncasyncmocks.Sender{}
+
+	req := &core.ContractCallRequest{
+		Type:      core.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Location:  fftypes.JSONAnyPtr(""),
+		Method: &fftypes.FFIMethod{
+			Name: "doStuff",
+			ID:   fftypes.NewUUID(),
+			Params: fftypes.FFIParams{
+				{
+					Name:   "data",
+					Schema: fftypes.JSONAnyPtr(`{"type":"string"}`),
+				}},
+			Returns: fftypes.FFIParams{},
+		},
+		IdempotencyKey: "idem1",
+		Message: &core.MessageInOut{
+			InlineData: core.InlineData{
+				&core.DataRefOrValue{Value: fftypes.JSONAnyPtr("\"test-message\"")},
+			},
+		},
+		Input: map[string]interface{}{
+			"data": "should not be here",
+		},
+	}
+
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mbm.On("NewBroadcast", req.Message).Return(sender, nil)
+
+	_, err := cm.InvokeContract(context.Background(), req, false)
+
+	assert.Regexp(t, "FF10443", err)
+
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+}
+
+func TestInvokeContractWithBroadcastBadMethod(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	sender := &syncasyncmocks.Sender{}
+
+	req := &core.ContractCallRequest{
+		Type:      core.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Location:  fftypes.JSONAnyPtr(""),
+		Method: &fftypes.FFIMethod{
+			Name:    "doStuff",
+			ID:      fftypes.NewUUID(),
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
+		},
+		IdempotencyKey: "idem1",
+		Message: &core.MessageInOut{
+			InlineData: core.InlineData{
+				&core.DataRefOrValue{Value: fftypes.JSONAnyPtr("\"test-message\"")},
+			},
+		},
+	}
+
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mbm.On("NewBroadcast", req.Message).Return(sender, nil)
+
+	_, err := cm.InvokeContract(context.Background(), req, false)
+
+	assert.Regexp(t, "FF10441", err)
+
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+}
+
+func TestInvokeContractWithPrivateMessageBadMethod(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mpm := cm.messaging.(*privatemessagingmocks.Manager)
+	sender := &syncasyncmocks.Sender{}
+
+	req := &core.ContractCallRequest{
+		Type:      core.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Location:  fftypes.JSONAnyPtr(""),
+		Method: &fftypes.FFIMethod{
+			Name:    "doStuff",
+			ID:      fftypes.NewUUID(),
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
+		},
+		IdempotencyKey: "idem1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					Type: core.MessageTypePrivate,
+				},
+			},
+			InlineData: core.InlineData{
+				&core.DataRefOrValue{Value: fftypes.JSONAnyPtr("\"test-message\"")},
+			},
+		},
+	}
+
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mpm.On("NewMessage", req.Message).Return(sender, nil)
+
+	_, err := cm.InvokeContract(context.Background(), req, false)
+
+	assert.Regexp(t, "FF10441", err)
+
+	mim.AssertExpectations(t)
+	mpm.AssertExpectations(t)
+}
+
+func TestInvokeContractWithBroadcastUnsupported(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+
+	req := &core.ContractCallRequest{
+		Type:      core.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Location:  fftypes.JSONAnyPtr(""),
+		Method: &fftypes.FFIMethod{
+			Name:    "doStuff",
+			ID:      fftypes.NewUUID(),
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
+		},
+		IdempotencyKey: "idem1",
+		Message: &core.MessageInOut{
+			InlineData: core.InlineData{
+				&core.DataRefOrValue{Value: fftypes.JSONAnyPtr("\"test-message\"")},
+			},
+		},
+	}
+
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+
+	cm.broadcast = nil
+	_, err := cm.InvokeContract(context.Background(), req, false)
+
+	assert.Regexp(t, "FF10415", err)
+
+	mim.AssertExpectations(t)
+}
+
+func TestInvokeContractWithPrivateMessageUnsupported(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+
+	req := &core.ContractCallRequest{
+		Type:      core.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Location:  fftypes.JSONAnyPtr(""),
+		Method: &fftypes.FFIMethod{
+			Name:    "doStuff",
+			ID:      fftypes.NewUUID(),
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
+		},
+		IdempotencyKey: "idem1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					Type: core.MessageTypePrivate,
+				},
+			},
+			InlineData: core.InlineData{
+				&core.DataRefOrValue{Value: fftypes.JSONAnyPtr("\"test-message\"")},
+			},
+		},
+	}
+
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+
+	cm.messaging = nil
+	_, err := cm.InvokeContract(context.Background(), req, false)
+
+	assert.Regexp(t, "FF10415", err)
+
+	mim.AssertExpectations(t)
+}
+
 func TestInvokeContractConfirm(t *testing.T) {
 	cm := newTestContractManager()
 	mim := cm.identity.(*identitymanagermocks.Manager)
@@ -2669,4 +3014,16 @@ func (v *MockFFIParamValidator) GetMetaSchema() *jsonschema.Schema {
 
 func (v *MockFFIParamValidator) GetExtensionName() string {
 	return "ffi"
+}
+
+func TestBuildInvokeMessageInvalidType(t *testing.T) {
+	cm := newTestContractManager()
+	_, err := cm.buildInvokeMessage(context.Background(), &core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
+				Type: core.MessageTypeDefinition,
+			},
+		},
+	})
+	assert.Regexp(t, "FF10287", err)
 }

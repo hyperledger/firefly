@@ -112,6 +112,19 @@ func testFFIMethod() *fftypes.FFIMethod {
 	}
 }
 
+func testFFIPinMethod() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
+		Name: "customPin",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "data",
+				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{},
+	}
+}
+
 func mockNetworkVersion(t *testing.T, version float64) func(req *http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
 		var body map[string]interface{}
@@ -362,6 +375,97 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 
 	assert.Equal(t, 3, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.streamID)
+}
+
+func TestAddFireflySubscriptionGlobal(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "firefly", body["channel"])
+			assert.Equal(t, nil, body["chaincode"])
+			return httpmock.NewJsonResponderOrPanic(200, body)(req)
+		})
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"channel":   "firefly",
+		"chaincode": "simplestorage",
+	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+		Options:    fftypes.JSONAnyPtr(`{"globalListener":true}`),
+	}
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+	assert.NoError(t, err)
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	assert.NoError(t, err)
+}
+
+func TestAddFireflySubscriptionBadOptions(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(500, "pop"))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"channel":   "firefly",
+		"chaincode": "simplestorage",
+	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+		Options:    fftypes.JSONAnyPtr(`{"globalListener":"BAD"}`),
+	}
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+	assert.NoError(t, err)
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	assert.Regexp(t, "pop", err)
 }
 
 func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
@@ -2038,6 +2142,44 @@ func TestInvokeContractOK(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestInvokeContractWithBatchOK(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := fftypes.NewRandB32().String()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	method := testFFIPinMethod()
+	batch := &blockchain.BatchPin{
+		TransactionID:   fftypes.MustParseUUID("82281f91-6ba8-498a-9e68-c6c6a594b747"),
+		BatchID:         fftypes.MustParseUUID("f3cce875-b979-48be-99a6-1a64c780330d"),
+		BatchHash:       fftypes.MustParseBytes32("4529bffbf77984bfa4b83126f8b963e4da10d194e021f097a60d952d81783649"),
+		BatchPayloadRef: "test-payload",
+		Contexts:        []*fftypes.Bytes32{},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, signingKey, (body["headers"].(map[string]interface{}))["signer"])
+			assert.Equal(t, "firefly", (body["headers"].(map[string]interface{}))["channel"])
+			assert.Equal(t, "simplestorage", (body["headers"].(map[string]interface{}))["chaincode"])
+			assert.Equal(t,
+				"{\"batchHash\":\"0x4529bffbf77984bfa4b83126f8b963e4da10d194e021f097a60d952d81783649\",\"contexts\":[],\"payloadRef\":\"test-payload\",\"uuids\":\"0x82281f916ba8498a9e68c6c6a594b747f3cce875b97948be99a61a64c780330d\"}",
+				body["args"].(map[string]interface{})["data"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, nil, nil, nil, batch)
+	assert.NoError(t, err)
+}
+
 func TestDeployContractOK(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
@@ -2823,4 +2965,12 @@ func TestGetTransactionStatusBadResult(t *testing.T) {
 	status, err := e.GetTransactionStatus(context.Background(), op)
 	assert.Nil(t, status)
 	assert.NotNil(t, err)
+}
+
+func TestValidateInvokeRequest(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	err := e.ValidateInvokeRequest(context.Background(), nil, nil, nil, false)
+	assert.NoError(t, err)
 }

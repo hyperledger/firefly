@@ -117,7 +117,7 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOp
 	case txcommon.BlockchainInvokeData:
 		req := data.Request
 		var batchPin *blockchain.BatchPin
-		if data.BatchPin != nil {
+		if data.BatchPin != nil && data.BatchPin.Batch != nil {
 			batchPin = &blockchain.BatchPin{
 				TransactionID:   data.BatchPin.Batch.TX.ID,
 				BatchID:         data.BatchPin.Batch.ID,

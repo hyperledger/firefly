@@ -756,10 +756,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey s
 		if input == nil {
 			input = make(map[string]interface{})
 		}
-		batchPinBytes, err := json.Marshal(batchPin)
-		if err != nil {
-			return err
-		}
+		batchPinBytes, _ := json.Marshal(batchPin)
 		lastParam := method.Params[len(method.Params)-1]
 		input[lastParam.Name] = string(batchPinBytes)
 	}

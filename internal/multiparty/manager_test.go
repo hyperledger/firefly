@@ -454,6 +454,139 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestSubmitBatchPinWithBatchOk(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	ctx := context.Background()
+
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: core.TransactionTypeContractInvokePin,
+		},
+	}
+	contexts := []*fftypes.Bytes32{fftypes.NewRandB32()}
+	invokeOp := &core.Operation{
+		Type: core.OpTypeBlockchainInvoke,
+	}
+
+	mp.mth.On("FindOperationInTransaction", ctx, batch.TX.ID, core.OpTypeBlockchainInvoke).Return(invokeOp, nil)
+	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(txcommon.BlockchainInvokeData)
+		assert.Equal(t, contexts, data.BatchPin.Contexts)
+		assert.Equal(t, "payload1", data.BatchPin.PayloadRef)
+		return op.Type == core.OpTypeBlockchainInvoke && data.BatchPin.Batch == batch
+	})).Return(nil, nil)
+
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	assert.NoError(t, err)
+}
+
+func TestSubmitBatchPinWithBatchOpFailure(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	ctx := context.Background()
+
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: core.TransactionTypeContractInvokePin,
+		},
+	}
+	contexts := []*fftypes.Bytes32{fftypes.NewRandB32()}
+
+	mp.mth.On("FindOperationInTransaction", ctx, batch.TX.ID, core.OpTypeBlockchainInvoke).Return(nil, fmt.Errorf("pop"))
+
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	assert.EqualError(t, err, "pop")
+}
+
+func TestSubmitBatchPinWithBatchOpMalformed(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	ctx := context.Background()
+
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: core.TransactionTypeContractInvokePin,
+		},
+	}
+	contexts := []*fftypes.Bytes32{fftypes.NewRandB32()}
+	invokeOp := &core.Operation{
+		Type: core.OpTypeBlockchainInvoke,
+		Input: fftypes.JSONObject{
+			"interface": "NOT-A-UUID",
+		},
+	}
+
+	mp.mth.On("FindOperationInTransaction", ctx, batch.TX.ID, core.OpTypeBlockchainInvoke).Return(invokeOp, nil)
+
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	assert.Regexp(t, "FF00127", err)
+}
+
+func TestSubmitBatchPinWithBatchOpNotFound(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	ctx := context.Background()
+
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: core.TransactionTypeContractInvokePin,
+		},
+	}
+	contexts := []*fftypes.Bytes32{fftypes.NewRandB32()}
+
+	mp.mth.On("FindOperationInTransaction", ctx, batch.TX.ID, core.OpTypeBlockchainInvoke).Return(nil, nil)
+	mp.mbi.On("Name").Return("ut")
+	mp.mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *core.Operation) bool {
+		assert.Equal(t, core.OpTypeBlockchainPinBatch, op.Type)
+		assert.Equal(t, "ut", op.Plugin)
+		assert.Equal(t, *batch.TX.ID, *op.Transaction)
+		assert.Equal(t, "payload1", op.Input.GetString("payloadRef"))
+		return true
+	})).Return(nil)
+	mp.mmi.On("IsMetricsEnabled").Return(true)
+	mp.mmi.On("CountBatchPin").Return()
+	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(txcommon.BatchPinData)
+		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
+	})).Return(nil, nil)
+
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	assert.NoError(t, err)
+}
+
 func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
