@@ -120,6 +120,7 @@ type Location struct {
 }
 
 type ContractOptions struct {
+	GlobalListener bool `json:"globalListener"`
 }
 
 var batchPinEvent = "BatchPin"
@@ -390,6 +391,9 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Nam
 		if err = json.Unmarshal(optionBytes, &options); err != nil {
 			log.L(ctx).Warnf("Could not parse multiparty contract options (%s): %s", err, optionBytes)
 		}
+	}
+	if options.GlobalListener {
+		fabricOnChainLocation.Chaincode = ""
 	}
 
 	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, f.streamID, batchPinEvent)

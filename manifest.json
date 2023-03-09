@@ -11,8 +11,8 @@
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.17",
-    "sha": "7d4aa158f9dff31f200ae7a04f68665f32930f7739156b25a0da80e5353f3245"
+    "tag": "v0.9.17-20230308-31",
+    "sha": "fb84889f063477924320970dab8a2e6ad709e9dc0bf0ba8f1419bb05c37d93fe"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",

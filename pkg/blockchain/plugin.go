@@ -159,6 +159,7 @@ type Capabilities struct {
 type MultipartyContract struct {
 	Location   *fftypes.JSONAny
 	FirstEvent string
+	Options    *fftypes.JSONAny
 }
 
 // BatchPin is the set of data pinned to the blockchain for a batch - whether it's private or broadcast.
