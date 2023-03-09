@@ -23,13 +23,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestEthereumMultipartyE2ESuite(t *testing.T) {
-	suite.Run(t, new(multiparty.OnChainOffChainTestSuite))
-	suite.Run(t, new(multiparty.IdentityTestSuite))
-	suite.Run(t, new(multiparty.TokensTestSuite))
-	suite.Run(t, new(multiparty.EthereumContractTestSuite))
-	suite.Run(t, new(multiparty.EthereumTokenContractTestSuite))
-	suite.Run(t, new(multiparty.EthereumContractWithMessageTestSuite))
-	suite.Run(t, new(multiparty.ContractMigrationTestSuite))
-	suite.Run(t, new(multiparty.NamespaceAliasSuite))
+// This suite assumes a Fabric stack has been created with the --global-listener option
+func TestFabricMultipartyGlobalListenerE2ESuite(t *testing.T) {
+	suite.Run(t, new(multiparty.FabricContractWithMessageTestSuite))
 }

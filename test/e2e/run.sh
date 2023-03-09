@@ -63,6 +63,13 @@ if [ "${STACK_TYPE}" != "fabric" ]; then
   fi
 fi
 
+GLOBAL_LISTENER_FLAG=""
+if [ "${TEST_SUITE}" == "TestFabricMultipartyGlobalListenerE2ESuite" ]; then
+  # Special config for this one test suite
+  GLOBAL_LISTENER_FLAG="--global-listener"
+fi
+
+# Pick a default suite if none was explicitly set
 if [ -z "${TEST_SUITE}" ]; then
   if [ "${STACK_TYPE}" == "fabric" ]; then
     if [ "${MULTIPARTY_ENABLED}" == "true" ]; then
@@ -93,7 +100,7 @@ fi
 
 if [ "$CREATE_STACK" == "true" ]; then
   $CLI remove -f $STACK_NAME
-  $CLI init $STACK_TYPE --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 $BLOCKCHAIN_CONNECTOR_FLAG $BLOCKCHAIN_NODE_FLAG --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false --multiparty=$MULTIPARTY_ENABLED
+  $CLI init $STACK_TYPE --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 $BLOCKCHAIN_CONNECTOR_FLAG $BLOCKCHAIN_NODE_FLAG $GLOBAL_LISTENER_FLAG --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false --multiparty=$MULTIPARTY_ENABLED
   checkOk $?
 
   $CLI pull $STACK_NAME -r 3

@@ -6,8 +6,8 @@ import (
 	"github.com/hyperledger/fabric-chaincode-go/pkg/cid"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
-	"github.com/hyperledger/firefly/chaincode-go/chaincode"
-	"github.com/hyperledger/firefly/chaincode-go/chaincode/mocks"
+	"github.com/hyperledger/firefly/custompin_sample/chaincode"
+	"github.com/hyperledger/firefly/custompin_sample/chaincode/mocks"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,14 +31,15 @@ type stateQueryIterator interface {
 	shim.StateQueryIteratorInterface
 }
 
-func TestPinBatch(t *testing.T) {
+func TestHello(t *testing.T) {
 	chaincodeStub := &mocks.ChaincodeStub{}
 	clientIdentity := &mocks.ClientIdentity{}
 	transactionContext := &mocks.TransactionContext{}
 	transactionContext.GetStubReturns(chaincodeStub)
 	transactionContext.GetClientIdentityReturns(clientIdentity)
 
-	batchPin := chaincode.SmartContract{}
-	err := batchPin.PinBatch(transactionContext, "test-uuid", "test-hash", "test-ref", []string{"test-context"})
+	data := `{"payloadRef":"test"}`
+	custom := chaincode.SmartContract{}
+	err := custom.MyCustomPin(transactionContext, data)
 	require.NoError(t, err)
 }
