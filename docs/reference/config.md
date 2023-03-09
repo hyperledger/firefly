@@ -728,7 +728,8 @@ nav_order: 2
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |firstEvent|The first event the contract should process. Valid options are `oldest` or `newest`|`string`|`<nil>`
-|location|A blockchain-specific contract location. For example, an Ethereum contract address, or a Fabric chaincode name and channe|`string`|`<nil>`
+|location|A blockchain-specific contract location. For example, an Ethereum contract address, or a Fabric chaincode name and channel|`string`|`<nil>`
+|options|Blockchain-specific contract options|`string`|`<nil>`
 
 ## namespaces.predefined[].multiparty.node
 

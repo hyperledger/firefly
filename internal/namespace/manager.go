@@ -879,9 +879,11 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		for i := 0; i < contractConfArraySize; i++ {
 			conf := contractsConf.ArrayEntry(i)
 			location := fftypes.JSONAnyPtr(conf.GetObject(coreconfig.NamespaceMultipartyContractLocation).String())
+			options := fftypes.JSONAnyPtr(conf.GetObject(coreconfig.NamespaceMultipartyContractOptions).String())
 			contract := blockchain.MultipartyContract{
 				Location:   location,
 				FirstEvent: conf.GetString(coreconfig.NamespaceMultipartyContractFirstEvent),
+				Options:    options,
 			}
 			contracts[i] = contract
 		}

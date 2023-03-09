@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -76,6 +76,7 @@ func InitConfig() {
 	contractConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractFirstEvent, string(core.SubOptsFirstEventOldest))
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractLocation)
+	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractOptions)
 
 	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
 	bifactory.InitConfig(blockchainConfig)

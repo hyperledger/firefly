@@ -119,6 +119,9 @@ type Location struct {
 	Chaincode string `json:"chaincode"`
 }
 
+type ContractOptions struct {
+}
+
 var batchPinEvent = "BatchPin"
 var batchPinMethodName = "PinBatch"
 var networkActionMethodName = "NetworkAction"
@@ -379,6 +382,14 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Nam
 	version, err := f.GetNetworkVersion(ctx, contract.Location)
 	if err != nil {
 		return "", err
+	}
+
+	var options ContractOptions
+	optionBytes := contract.Options.Bytes()
+	if optionBytes != nil {
+		if err = json.Unmarshal(optionBytes, &options); err != nil {
+			log.L(ctx).Warnf("Could not parse multiparty contract options (%s): %s", err, optionBytes)
+		}
 	}
 
 	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, f.streamID, batchPinEvent)
