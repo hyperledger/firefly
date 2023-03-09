@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -75,7 +75,7 @@ func (s *SQLCommon) setBlockchainEventInsertValues(query sq.InsertBuilder, event
 }
 
 func (s *SQLCommon) attemptBlockchainEventInsert(ctx context.Context, tx *dbsql.TXWrapper, event *core.BlockchainEvent, requestConflictEmptyResult bool) (err error) {
-	_, err = s.InsertTxExt(ctx, messagesTable, tx,
+	_, err = s.InsertTxExt(ctx, blockchaineventsTable, tx,
 		s.setBlockchainEventInsertValues(sq.Insert(blockchaineventsTable).Columns(blockchainEventColumns...), event),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, event.Namespace, event.ID)
