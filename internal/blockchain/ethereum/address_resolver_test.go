@@ -93,6 +93,29 @@ func TestAddressResolverInEthereumOKCached(t *testing.T) {
 	resolved, err = e.ResolveInputSigningKey(ctx, "testkeystring") // cached
 	assert.NoError(t, err)
 	assert.Equal(t, strings.ToLower(addr), resolved)
+	assert.Equal(t, 1, count)
+}
+
+func TestAddressResolverURLEncode(t *testing.T) {
+	addr := "0xf1A9dB812D6710040185e9d981A0AB25003878ce"
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.Header().Set("Content-Type", "application/json")
+		assert.Equal(t, "GET", r.Method)
+		assert.Equal(t, "/resolve/uri%3A%2F%2Ftestkeystring", r.URL.String())
+		rw.WriteHeader(200)
+		rw.Write([]byte(fmt.Sprintf(`{"address":"%s"}`, addr)))
+	}))
+	defer server.Close()
+
+	config := utAddresResolverConfig()
+	config.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve/{{ urlquery .Key }}", server.URL))
+
+	ctx, e, cancel := newAddressResolverTestEth(t, config)
+	defer cancel()
+
+	resolved, err := e.ResolveInputSigningKey(ctx, "uri://testkeystring")
+	assert.NoError(t, err)
+	assert.Equal(t, strings.ToLower(addr), resolved)
 }
 
 func TestAddressResolverForceNoCacheAlwaysInvoke(t *testing.T) {
