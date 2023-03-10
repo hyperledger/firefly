@@ -845,3 +845,19 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 }
+
+func TestNewMessageContractInvoke(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	sender := pm.NewMessage(&core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
+				TxType: core.TransactionTypeContractInvokePin,
+			},
+		},
+	})
+	assert.NotNil(t, sender)
+
+}

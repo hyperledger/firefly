@@ -233,9 +233,9 @@ func (m *Message) DupDataCheck(ctx context.Context) (err error) {
 
 func (m *Message) VerifyFields(ctx context.Context) error {
 	switch m.Header.TxType {
-	case TransactionTypeBatchPin:
-	case TransactionTypeUnpinned:
-	case TransactionTypeContractInvokePin:
+	case TransactionTypeBatchPin,
+		TransactionTypeUnpinned,
+		TransactionTypeContractInvokePin:
 	default:
 		return i18n.NewError(ctx, i18n.MsgInvalidTXTypeForMessage, m.Header.TxType)
 	}
