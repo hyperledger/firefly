@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -138,12 +138,13 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, id *fftypes.
 			return false, nil
 		}
 
-		newBlockchainIDs, changed := tx.BlockchainIDs.AddToSortedSet(blockchainTXID)
+		var changed bool
+		tx.BlockchainIDs, changed = tx.BlockchainIDs.AddToSortedSet(blockchainTXID)
 		if !changed {
 			return true, nil
 		}
 
-		if err = t.database.UpdateTransaction(ctx, t.namespace, tx.ID, database.TransactionQueryFactory.NewUpdate(ctx).Set("blockchainids", newBlockchainIDs)); err != nil {
+		if err = t.database.UpdateTransaction(ctx, t.namespace, tx.ID, database.TransactionQueryFactory.NewUpdate(ctx).Set("blockchainids", tx.BlockchainIDs)); err != nil {
 			return false, err
 		}
 	} else {

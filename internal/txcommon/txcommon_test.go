@@ -178,7 +178,7 @@ func TestPersistTransactionNew(t *testing.T) {
 
 }
 
-func TestPersistTransactionNewInserTFail(t *testing.T) {
+func TestPersistTransactionNewInsertFail(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -205,7 +205,8 @@ func TestPersistTransactionExistingAddBlockchainID(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	ctx := context.Background()
 	cmi := &cachemocks.Manager{}
-	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	cache := cache.NewUmanagedCache(ctx, 100, 5*time.Minute)
+	cmi.On("GetCache", mock.Anything).Return(cache, nil)
 	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 
 	txid := fftypes.NewUUID()
@@ -221,6 +222,9 @@ func TestPersistTransactionExistingAddBlockchainID(t *testing.T) {
 	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "0x222222")
 	assert.NoError(t, err)
 	assert.True(t, valid)
+
+	cachedTX := cache.Get(txid.String()).(*core.Transaction)
+	assert.Equal(t, fftypes.FFStringArray{"0x111111", "0x222222"}, cachedTX.BlockchainIDs)
 
 	mdi.AssertExpectations(t)
 
