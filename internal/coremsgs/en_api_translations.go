@@ -123,6 +123,7 @@ var (
 	APIEndpointsGetOps                          = ffm("api.endpoints.getOps", "Gets a a list of operations")
 	APIEndpointsGetStatusBatchManager           = ffm("api.endpoints.getStatusBatchManager", "Gets the status of the batch manager")
 	APIEndpointsGetPins                         = ffm("api.endpoints.getPins", "Queries the list of pins received from the blockchain")
+	APIEndpointsGetNextPins                     = ffm("api.endpoints.getNextPins", "Queries the list of next-pins that determine the next masked message sequence for each member of a privacy group, on each context/topic")
 	APIEndpointsGetWebSockets                   = ffm("api.endpoints.getStatusWebSockets", "Gets a list of the current WebSocket connections to this node")
 	APIEndpointsGetStatus                       = ffm("api.endpoints.getStatus", "Gets the status of this namespace")
 	APIEndpointsGetSubscriptionByID             = ffm("api.endpoints.getSubscriptionByID", "Gets a subscription by its ID")
