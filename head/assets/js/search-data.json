@@ -3073,7 +3073,7 @@
   },"512": {
     "doc": "Group",
     "title": "Group",
-    "content": "A privacy group is a list of identities that should receive a private communication. When you send a private message, you can specify the list of participants in-line and it will be resolved to a group. Or you can reference the group using its identifying hash. The sender of a message must be included in the group along with the other participants. The sender receives an event confirming the message, just as any other participant would do. The sender is included automatically in the group when members are specified in-line, if it is omitted. Group identity hash . The identifying hash for a group is determined as follows: . | All identities are resolved to their DID. | An organization name or identity UUID can be used on input | . | The UUID of the node that should receive the data for each participant is determined (if not specified). | The first node found that is in the same identity hierarchy as the participant identity, will be chosen. | . | The list of participants is ordered by DID, with de-duplication of any identities. | The namespace, name, and members array are then serialized into a JSON object, without whitespace. | A SHA256 hash of the JSON object is calculated | . Private messaging architecture . The mechanism that keeps data private and ordered, without leaking data to the blockchain, is summarized in the below diagram. The key points are: . | Data is sent off-chain to all participants via the Data Exchange plugin . | The Data Exchange is responsible for encryption and off-chain identity verification | . | Only parties that are involved in the privacy group receive the data . | Other parties are only able to view the blockchain transaction | . | The hash and member list of the group are not shared outside of the privacy group . | The name of the group can be used as an additional salt in generation of the group hash | The member list must be known by all members of the group to verify the blockchain transactions, so the full group JSON structure is communicated privately with the first message sent on a group | . | The blockchain transaction is the source of truth for ordering . | All members are able to detect a blockchain transaction is part of a group they are a member of, from only the blockchain transaction - so they can block processing of subsequent messages until the off-chain data arrives (asynchronously) | . | The ordering context for messages is masked on the blockchain, so that two messages that are for same group do not contain the same context . | The ordering context (topic+group) is combined with a nonce that is incremented for each individual sender, to form a message-specific hash. | For each blockchain transaction, this hash can be compared against the expected next hash for each member to determine if it is a message on a known group - even without the private data (which might arrive later) | . | . Example . { \"namespace\": \"ns1\", \"name\": \"\", \"members\": [ { \"identity\": \"did:firefly:org/1111\", \"node\": \"4f563179-b4bd-4161-86e0-c2c1c0869c4f\" }, { \"identity\": \"did:firefly:org/2222\", \"node\": \"61a99af8-c1f7-48ea-8fcc-489e4822a0ed\" } ], \"localNamespace\": \"ns1\", \"message\": \"0b9dfb76-103d-443d-92fd-b114fe07c54d\", \"hash\": \"c52ad6c034cf5c7382d9a294f49297096a52eb55cc2da696c564b2a276633b95\", \"created\": \"2022-05-16T01:23:16Z\" } . Field Descriptions . | Field Name | Description | Type | . | namespace | The namespace of the group within the multiparty network | string | . | name | The optional name of the group, allowing multiple unique groups to exist with the same list of recipients | string | . | members | The list of members in this privacy group | Member[] | . | localNamespace | The local namespace of the group | string | . | message | The message used to broadcast this group privately to the members | UUID | . | hash | The identifier hash of this group. Derived from the name and group members | Bytes32 | . | created | The time when the group was first used to send a message in the network | FFTime | . ",
+    "content": "A privacy group is a list of identities that should receive a private communication. When you send a private message, you can specify the list of participants in-line and it will be resolved to a group. Or you can reference the group using its identifying hash. The sender of a message must be included in the group along with the other participants. The sender receives an event confirming the message, just as any other participant would do. The sender is included automatically in the group when members are specified in-line, if it is omitted. Group identity hash . The identifying hash for a group is determined as follows: . | All identities are resolved to their DID. | An organization name or identity UUID can be used on input | . | The UUID of the node that should receive the data for each participant is determined (if not specified). | The first node found that is in the same identity hierarchy as the participant identity, will be chosen. | . | The list of participants is ordered by DID, with de-duplication of any identities. | The namespace, name, and members array are then serialized into a JSON object, without whitespace. | A SHA256 hash of the JSON object is calculated | . Private messaging architecture . The mechanism that keeps data private and ordered, without leaking data to the blockchain, is summarized in the below diagram. The key points are: . | Data is sent off-chain to all participants via the Data Exchange plugin . | The Data Exchange is responsible for encryption and off-chain identity verification | . | Only parties that are involved in the privacy group receive the data . | Other parties are only able to view the blockchain transaction | . | The hash and member list of the group are not shared outside of the privacy group . | The name of the group can be used as an additional salt in generation of the group hash | The member list must be known by all members of the group to verify the blockchain transactions, so the full group JSON structure is communicated privately with the first message sent on a group | . | The blockchain transaction is the source of truth for ordering . | All members are able to detect a blockchain transaction is part of a group they are a member of, from only the blockchain transaction - so they can block processing of subsequent messages until the off-chain data arrives (asynchronously) | . | The ordering context for messages is masked on the blockchain, so that two messages that are for same group do not contain the same context . | The ordering context (topic+group) is combined with a nonce that is incremented for each individual sender, to form a message-specific hash. | For each blockchain transaction, this hash can be compared against the expected next hash for each member to determine if it is a message on a known group - even without the private data (which might arrive later) | . | . See NextPin for more information on the structure used for storing the next expected masked context pin, for each member of the privacy group. Example . { \"namespace\": \"ns1\", \"name\": \"\", \"members\": [ { \"identity\": \"did:firefly:org/1111\", \"node\": \"4f563179-b4bd-4161-86e0-c2c1c0869c4f\" }, { \"identity\": \"did:firefly:org/2222\", \"node\": \"61a99af8-c1f7-48ea-8fcc-489e4822a0ed\" } ], \"localNamespace\": \"ns1\", \"message\": \"0b9dfb76-103d-443d-92fd-b114fe07c54d\", \"hash\": \"c52ad6c034cf5c7382d9a294f49297096a52eb55cc2da696c564b2a276633b95\", \"created\": \"2022-05-16T01:23:16Z\" } . Field Descriptions . | Field Name | Description | Type | . | namespace | The namespace of the group within the multiparty network | string | . | name | The optional name of the group, allowing multiple unique groups to exist with the same list of recipients | string | . | members | The list of members in this privacy group | Member[] | . | localNamespace | The local namespace of the group | string | . | message | The message used to broadcast this group privately to the members | UUID | . | hash | The identifier hash of this group. Derived from the name and group members | Bytes32 | . | created | The time when the group was first used to send a message in the network | FFTime | . ",
     "url": "/firefly/head/reference/types/group.html",
     "relUrl": "/reference/types/group.html"
   },"513": {
@@ -3779,1110 +3779,1128 @@
     "url": "/firefly/head/reference/namespaces.html#local-definitions",
     "relUrl": "/reference/namespaces.html#local-definitions"
   },"630": {
+    "doc": "NextPin",
+    "title": "NextPin",
+    "content": " ",
+    "url": "/firefly/head/reference/types/nextpin.html",
+    "relUrl": "/reference/types/nextpin.html"
+  },"631": {
+    "doc": "NextPin",
+    "title": "Table of contents",
+    "content": ". | NextPin . | Example | Field Descriptions | . | . ",
+    "url": "/firefly/head/reference/types/nextpin.html#table-of-contents",
+    "relUrl": "/reference/types/nextpin.html#table-of-contents"
+  },"632": {
+    "doc": "NextPin",
+    "title": "NextPin",
+    "content": "Next-pins are maintained by each member of a privacy group, in order to detect if a on-chain transaction with a given “pin” for a message represents the next message for any member of the privacy group. This allows every member to maintain a global order of transactions within a topic in a privacy group, without leaking the same hash between the messages that are communicated in that group. See Group for more information on privacy groups. Example . { \"namespace\": \"ns1\", \"context\": \"a25b65cfe49e5ed78c256e85cf07c96da938144f12fcb02fe4b5243a4631bd5e\", \"identity\": \"did:firefly:org/example\", \"hash\": \"00e55c63905a59782d5bc466093ead980afc4a2825eb68445bcf1312cc3d6de2\", \"nonce\": 12345 } . Field Descriptions . | Field Name | Description | Type | . | namespace | The namespace of the next-pin | string | . | context | The context the next-pin applies to - the hash of the privacy group-hash + topic. The group-hash is only known to the participants (can itself contain a salt in the group-name). This context is combined with the member and nonce to determine the final hash that is written on-chain | Bytes32 | . | identity | The member of the privacy group the next-pin applies to | string | . | hash | The unique masked pin string | Bytes32 | . | nonce | The numeric index - which is monotonically increasing for each member of the privacy group | int64 | . ",
+    "url": "/firefly/head/reference/types/nextpin.html",
+    "relUrl": "/reference/types/nextpin.html"
+  },"633": {
     "doc": "Node Component Architecture",
     "title": "Node Component Architecture",
     "content": " ",
     "url": "/firefly/head/architecture/node_component_architecture.html",
     "relUrl": "/architecture/node_component_architecture.html"
-  },"631": {
+  },"634": {
     "doc": "Node Component Architecture",
     "title": "Table of contents",
     "content": ". | What is a FireFly Node? | Runtimes | Responsibilities &amp; Pluggable Elements | Code Structure | . ",
     "url": "/firefly/head/architecture/node_component_architecture.html#table-of-contents",
     "relUrl": "/architecture/node_component_architecture.html#table-of-contents"
-  },"632": {
+  },"635": {
     "doc": "Node Component Architecture",
     "title": "What is a FireFly Node?",
     "content": "The core architecture of a FireFly node can be broken down into the following three areas: . | The various runtimes encapsulating the node. | The core runtime responsibilities and pluggable elements. | The actual code running inside the node. | . ",
     "url": "/firefly/head/architecture/node_component_architecture.html#what-is-a-firefly-node",
     "relUrl": "/architecture/node_component_architecture.html#what-is-a-firefly-node"
-  },"633": {
+  },"636": {
     "doc": "Node Component Architecture",
     "title": "Runtimes",
     "content": "What fundamentally is a node - left side of the above diagram. | It is a collection of multiple runtimes with a single unified HTTPS/Websocket API (exposed by the Core). | It has a private database, containing your private data, and data received from others in the network. | It has connectivity out to other parties in the network, through runtimes (Blockchain, Shared Filesystems, Messaging etc.). | . ",
     "url": "/firefly/head/architecture/node_component_architecture.html#runtimes",
     "relUrl": "/architecture/node_component_architecture.html#runtimes"
-  },"634": {
+  },"637": {
     "doc": "Node Component Architecture",
     "title": "Responsibilities &amp; Pluggable Elements",
     "content": "What are the core runtime responsibilities, and pluggable elements - right side of the above diagram. | The core elements of function that FireFly performs, and which runtime is responsible. | This means some insight into core itself, and the jobs it performs, but not full code structure. | More importantly, what the split of responsibilities is between Connectors and Infrastructure Runtimes. | Connectors are the bridging runtimes, that know how to talk to a particular runtime. | They run separately to the core (like a microservice architecture of an app). | They can be written in any language (not just Go) - Java, TypeScript, Rust, Python, .NET etc. | They can use any network transport (not just HTTPS/Websockets) - GRPC, AMQP, UDP etc. | They connect to the core with a Golang shim - see separate Plugin Architecture discussion. | In some special cases (like the Database) the Golang shim does not need a connector runtime. | . | . | Infrastructure Runtimes are the core runtimes for multi-party system activities. | Blockchain nodes - Ethereum (Hyperledger Besu, Quorum, Geth), Hyperledger Fabric, Corda etc. | Shared strorage - IPFS etc. | Database - PostreSQL, CouchDB etc. | . | . | . | . ",
     "url": "/firefly/head/architecture/node_component_architecture.html#responsibilities--pluggable-elements",
     "relUrl": "/architecture/node_component_architecture.html#responsibilities--pluggable-elements"
-  },"635": {
+  },"638": {
     "doc": "Node Component Architecture",
     "title": "Code Structure",
     "content": "What is the code structure inside the core. | The README.md is the reference for this. | Developers contributing to FireFly, on the core, or building new plugins, need this level of detail. | A reconciliation is underway to ensure the medium-level view correlates well with this code structure. | . | . ",
     "url": "/firefly/head/architecture/node_component_architecture.html#code-structure",
     "relUrl": "/architecture/node_component_architecture.html#code-structure"
-  },"636": {
+  },"639": {
     "doc": "Operation",
     "title": "Operation",
     "content": " ",
     "url": "/firefly/head/reference/types/operation.html",
     "relUrl": "/reference/types/operation.html"
-  },"637": {
+  },"640": {
     "doc": "Operation",
     "title": "Table of contents",
     "content": ". | Operation . | Example | Field Descriptions | . | . ",
     "url": "/firefly/head/reference/types/operation.html#table-of-contents",
     "relUrl": "/reference/types/operation.html#table-of-contents"
-  },"638": {
+  },"641": {
     "doc": "Operation",
     "title": "Operation",
     "content": "Operations are stateful external actions that FireFly triggers via plugins. They can succeed or fail. They are grouped into Transactions in order to accomplish a single logical task. The diagram below shows the different types of operation that are performed by each FireFly plugin type. The color coding (and numbers) map those different types of operation to the Transaction types that include those operations. Example . { \"id\": \"04a8b0c4-03c2-4935-85a1-87d17cddc20a\", \"namespace\": \"ns1\", \"tx\": \"99543134-769b-42a8-8be4-a5f8873f969d\", \"type\": \"sharedstorage_upload_batch\", \"status\": \"Succeeded\", \"plugin\": \"ipfs\", \"input\": { \"id\": \"80d89712-57f3-48fe-b085-a8cba6e0667d\" }, \"output\": { \"payloadRef\": \"QmWj3tr2aTHqnRYovhS2mQAjYneRtMWJSU4M4RdAJpJwEC\" }, \"created\": \"2022-05-16T01:23:15Z\" } . Field Descriptions . | Field Name | Description | Type | . | id | The UUID of the operation | UUID | . | namespace | The namespace of the operation | string | . | tx | The UUID of the FireFly transaction the operation is part of | UUID | . | type | The type of the operation | FFEnum:\"blockchain_pin_batch\"\"blockchain_network_action\"\"blockchain_deploy\"\"blockchain_invoke\"\"sharedstorage_upload_batch\"\"sharedstorage_upload_blob\"\"sharedstorage_upload_value\"\"sharedstorage_download_batch\"\"sharedstorage_download_blob\"\"dataexchange_send_batch\"\"dataexchange_send_blob\"\"token_create_pool\"\"token_activate_pool\"\"token_transfer\"\"token_approval\" | . | status | The current status of the operation | OpStatus | . | plugin | The plugin responsible for performing the operation | string | . | input | The input to this operation | JSONObject | . | output | Any output reported back from the plugin for this operation | JSONObject | . | error | Any error reported back from the plugin for this operation | string | . | created | The time the operation was created | FFTime | . | updated | The last update time of the operation | FFTime | . | retry | If this operation was initiated as a retry to a previous operation, this field points to the UUID of the operation being retried | UUID | . ",
     "url": "/firefly/head/reference/types/operation.html",
     "relUrl": "/reference/types/operation.html"
-  },"639": {
+  },"642": {
     "doc": "OperationWithDetail",
     "title": "OperationWithDetail",
     "content": " ",
     "url": "/firefly/head/reference/types/operationwithdetail.html",
     "relUrl": "/reference/types/operationwithdetail.html"
-  },"640": {
+  },"643": {
     "doc": "OperationWithDetail",
     "title": "Table of contents",
     "content": ". | OperationWithDetail . | Example | Field Descriptions | . | . ",
     "url": "/firefly/head/reference/types/operationwithdetail.html#table-of-contents",
     "relUrl": "/reference/types/operationwithdetail.html#table-of-contents"
-  },"641": {
+  },"644": {
     "doc": "OperationWithDetail",
     "title": "OperationWithDetail",
     "content": "Operation with detail is an extension to operations that allow additional information to be encapsulated with an operation. An operation can be supplemented by a connector and that information will be returned in the detail field. Example . { \"id\": \"04a8b0c4-03c2-4935-85a1-87d17cddc20a\", \"namespace\": \"ns1\", \"tx\": \"99543134-769b-42a8-8be4-a5f8873f969d\", \"type\": \"sharedstorage_upload_batch\", \"status\": \"Succeeded\", \"plugin\": \"ipfs\", \"input\": { \"id\": \"80d89712-57f3-48fe-b085-a8cba6e0667d\" }, \"output\": { \"payloadRef\": \"QmWj3tr2aTHqnRYovhS2mQAjYneRtMWJSU4M4RdAJpJwEC\" }, \"created\": \"2022-05-16T01:23:15Z\", \"detail\": { \"created\": \"2023-01-27T17:04:24.26406392Z\", \"firstSubmit\": \"2023-01-27T17:04:24.419913295Z\", \"gas\": \"4161076\", \"gasPrice\": \"0\", \"history\": [ { \"actions\": [ { \"action\": \"AssignNonce\", \"count\": 1, \"lastOccurrence\": \"\", \"time\": \"\" }, { \"action\": \"RetrieveGasPrice\", \"count\": 1, \"lastOccurrence\": \"2023-01-27T17:11:41.161213303Z\", \"time\": \"2023-01-27T17:11:41.161213303Z\" }, { \"action\": \"Submit\", \"count\": 1, \"lastOccurrence\": \"2023-01-27T17:11:41.222374636Z\", \"time\": \"2023-01-27T17:11:41.222374636Z\" } ], \"subStatus\": \"Received\", \"time\": \"2023-01-27T17:11:41.122965803Z\" }, { \"actions\": [ { \"action\": \"ReceiveReceipt\", \"count\": 1, \"lastOccurrence\": \"2023-01-27T17:11:47.930332625Z\", \"time\": \"2023-01-27T17:11:47.930332625Z\" }, { \"action\": \"Confirm\", \"count\": 1, \"lastOccurrence\": \"2023-01-27T17:12:02.660275549Z\", \"time\": \"2023-01-27T17:12:02.660275549Z\" } ], \"subStatus\": \"Tracking\", \"time\": \"2023-01-27T17:11:41.222400219Z\" }, { \"actions\": [], \"subStatus\": \"Confirmed\", \"time\": \"2023-01-27T17:12:02.660309382Z\" } ], \"historySummary\": [ { \"count\": 1, \"subStatus\": \"Received\" }, { \"action\": \"AssignNonce\", \"count\": 1 }, { \"action\": \"RetrieveGasPrice\", \"count\": 1 }, { \"action\": \"Submit\", \"count\": 1 }, { \"count\": 1, \"subStatus\": \"Tracking\" }, { \"action\": \"ReceiveReceipt\", \"count\": 1 }, { \"action\": \"Confirm\", \"count\": 1 }, { \"count\": 1, \"subStatus\": \"Confirmed\" } ], \"sequenceId\": \"0185f42f-fec8-93df-aeba-387417d477e0\", \"status\": \"Succeeded\", \"transactionHash\": \"0xfb39178fee8e725c03647b8286e6f5cb13f982abf685479a9ee59e8e9d9e51d8\" } } . Field Descriptions . | Field Name | Description | Type | . | id | The UUID of the operation | UUID | . | namespace | The namespace of the operation | string | . | tx | The UUID of the FireFly transaction the operation is part of | UUID | . | type | The type of the operation | FFEnum:\"blockchain_pin_batch\"\"blockchain_network_action\"\"blockchain_deploy\"\"blockchain_invoke\"\"sharedstorage_upload_batch\"\"sharedstorage_upload_blob\"\"sharedstorage_upload_value\"\"sharedstorage_download_batch\"\"sharedstorage_download_blob\"\"dataexchange_send_batch\"\"dataexchange_send_blob\"\"token_create_pool\"\"token_activate_pool\"\"token_transfer\"\"token_approval\" | . | status | The current status of the operation | OpStatus | . | plugin | The plugin responsible for performing the operation | string | . | input | The input to this operation | JSONObject | . | output | Any output reported back from the plugin for this operation | JSONObject | . | error | Any error reported back from the plugin for this operation | string | . | created | The time the operation was created | FFTime | . | updated | The last update time of the operation | FFTime | . | retry | If this operation was initiated as a retry to a previous operation, this field points to the UUID of the operation being retried | UUID | . | detail | Additional detailed information about an operation provided by the connector | `` | . ",
     "url": "/firefly/head/reference/types/operationwithdetail.html",
     "relUrl": "/reference/types/operationwithdetail.html"
-  },"642": {
+  },"645": {
     "doc": "pages.optimism",
     "title": "Optimism Testnet",
     "content": " ",
     "url": "/firefly/head/tutorials/chains/optimism.html#optimism-testnet",
     "relUrl": "/tutorials/chains/optimism.html#optimism-testnet"
-  },"643": {
+  },"646": {
     "doc": "pages.optimism",
     "title": "Table of contents",
     "content": ". | Previous steps: Install the FireFly CLI | Create an evmconnect.yml config file | Creating a new stack | Start the stack | Get some Optimism . | Confirm the transaction on Blockcscout | . | Use the public testnet | . Starting with FireFly v1.1, it’s easy to connect to public Ethereum chains. This guide will walk you through the steps to create a local FireFly development environment and connect it to the Optimism Goerli testnet. ",
     "url": "/firefly/head/tutorials/chains/optimism.html#table-of-contents",
     "relUrl": "/tutorials/chains/optimism.html#table-of-contents"
-  },"644": {
+  },"647": {
     "doc": "pages.optimism",
     "title": "Previous steps: Install the FireFly CLI",
     "content": "If you haven’t set up the FireFly CLI already, please go back to the Getting Started guide and read the section on how to Install the FireFly CLI. ← ① Install the FireFly CLI . ",
     "url": "/firefly/head/tutorials/chains/optimism.html#previous-steps-install-the-firefly-cli",
     "relUrl": "/tutorials/chains/optimism.html#previous-steps-install-the-firefly-cli"
-  },"645": {
+  },"648": {
     "doc": "pages.optimism",
     "title": "Create an evmconnect.yml config file",
     "content": "In order to connect to the Optimism testnet, you will need to set a few configuration options for the evmconnect blockchain connector. Create a text file called evmconnect.yml with the following contents: . confirmations: required: 4 # choose the number of confirmations you require policyengine.simple: fixedGasPrice: null gasOracle: mode: connector . For this tutorial, we will assume this file is saved at ~/Desktop/evmconnect.yml. If your path is different, you will need to adjust the path in the next command below. ",
     "url": "/firefly/head/tutorials/chains/optimism.html#create-an-evmconnectyml-config-file",
     "relUrl": "/tutorials/chains/optimism.html#create-an-evmconnectyml-config-file"
-  },"646": {
+  },"649": {
     "doc": "pages.optimism",
     "title": "Creating a new stack",
     "content": "To create a local FireFly development stack and connect it to the Optimism testnet, we will use command line flags to customize the following settings: . | Create a new Ethereum based stack named optimism with 1 member | Disable multiparty mode. We are going to be using this FireFly node as a Web3 gateway, and we don’t need to communicate with a consortium here | Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine. | See the optimism docs and select an HTTPS RPC endpoint. | Set the chain ID to 420 (the correct ID for the Optimism testnet) | Merge the custom config created above with the generated evmconnect config file | . To do this, run the following command: . ff init ethereum optimism 1 \\ --multiparty=false \\ -n remote-rpc \\ --remote-node-url &lt;selected RPC endpoint&gt; \\ --chain-id 420 \\ --connector-config ~/Desktop/evmconnect.yml . ",
     "url": "/firefly/head/tutorials/chains/optimism.html#creating-a-new-stack",
     "relUrl": "/tutorials/chains/optimism.html#creating-a-new-stack"
-  },"647": {
+  },"650": {
     "doc": "pages.optimism",
     "title": "Start the stack",
     "content": "Now you should be able to start your stack by running: . ff start optimism . After some time it should print out the following: . Web UI for member '0': http://127.0.0.1:5000/ui Sandbox UI for member '0': http://127.0.0.1:5109 To see logs for your stack run: ff logs optimism . ",
     "url": "/firefly/head/tutorials/chains/optimism.html#start-the-stack",
     "relUrl": "/tutorials/chains/optimism.html#start-the-stack"
-  },"648": {
+  },"651": {
     "doc": "pages.optimism",
     "title": "Get some Optimism",
     "content": "At this point you should have a working FireFly stack, talking to a public chain. However, you won’t be able to run any transactions just yet, because you don’t have any way to pay for gas. A testnet faucet can give us some OP, the native token for Optimism. First, you will need to know what signing address your FireFly node is using. To check that, you can run: . ff accounts list optimism [ { \"address\": \"0x235461d246ab95d367925b4e91bd2755a921fdd8\", \"privateKey\": \"...\" } ] . Copy the address listed in the output from this command. Go to https://optimismfaucet.xyz/. You will need to login to your Github account and paste the address in the form. Confirm the transaction on Blockcscout . You should be able to go lookup your account on Blockscout for Optimism testnet https://blockscout.com/optimism/goerli and see that you now have a balance of 100 OP. Simply paste in your account address to search for it. ",
     "url": "/firefly/head/tutorials/chains/optimism.html#get-some-optimism",
     "relUrl": "/tutorials/chains/optimism.html#get-some-optimism"
-  },"649": {
+  },"652": {
     "doc": "pages.optimism",
     "title": "Use the public testnet",
     "content": "Now that you have everything set up, you can follow one of the other FireFly guides such as Using Tokens or Custom Smart Contracts. For detailed instructions on deploying a custom smart contract to Optimism, please see the Optimism docs for instructions using various tools. ",
     "url": "/firefly/head/tutorials/chains/optimism.html#use-the-public-testnet",
     "relUrl": "/tutorials/chains/optimism.html#use-the-public-testnet"
-  },"650": {
+  },"653": {
     "doc": "pages.optimism",
     "title": "pages.optimism",
     "content": " ",
     "url": "/firefly/head/tutorials/chains/optimism.html",
     "relUrl": "/tutorials/chains/optimism.html"
-  },"651": {
+  },"654": {
     "doc": "pages.orchestration_engine",
     "title": "Orchestration Engine",
     "content": ". ",
     "url": "/firefly/head/overview/key_components/orchestration_engine.html#orchestration-engine",
     "relUrl": "/overview/key_components/orchestration_engine.html#orchestration-engine"
-  },"652": {
+  },"655": {
     "doc": "pages.orchestration_engine",
     "title": "FireFly Core",
     "content": "At the core of Hyperledger FireFly is an event-driven engine that routes, indexed, aggregates, and sequences data to and from the blockchain, and other connectors. ",
     "url": "/firefly/head/overview/key_components/orchestration_engine.html#firefly-core",
     "relUrl": "/overview/key_components/orchestration_engine.html#firefly-core"
-  },"653": {
+  },"656": {
     "doc": "pages.orchestration_engine",
     "title": "Data Layer",
     "content": "Your own private view of the each network you connect: . | Indexes of all tokens and NFTs that you transact with | A consistent view across multiple blockchains | High performance rich query of transaction and data audit trail | Private data you have received from other parties | Local copies of data you have download from IPFS or other shared storage tech | . ",
     "url": "/firefly/head/overview/key_components/orchestration_engine.html#data-layer",
     "relUrl": "/overview/key_components/orchestration_engine.html#data-layer"
-  },"654": {
+  },"657": {
     "doc": "pages.orchestration_engine",
     "title": "Event Bus",
     "content": "Whether a few dozen companies in a private blockchain consortium, or millions of users connected to a public blockchain network - one thing is always true: . Decentralized applications are event-driven. In an enterprise context, you need to think not only about how those events are being handled and made consistent within the blockchain layer, but also how those events are being processed and integrated to your core systems. FireFly provides you with the reliable streams of events you need, as well as the interfaces to subscribe to those events and integrate them into your core systems. | Token transfer events, across multiple blockchains, and varied asset types | Custom smart contract events | Correlated on-chain and off-chain data events | . Learn more about the event bus and event-driven programming in this reference document . ",
     "url": "/firefly/head/overview/key_components/orchestration_engine.html#event-bus",
     "relUrl": "/overview/key_components/orchestration_engine.html#event-bus"
-  },"655": {
+  },"658": {
     "doc": "pages.orchestration_engine",
     "title": "pages.orchestration_engine",
     "content": " ",
     "url": "/firefly/head/overview/key_components/orchestration_engine.html",
     "relUrl": "/overview/key_components/orchestration_engine.html"
-  },"656": {
+  },"659": {
     "doc": "Example Transaction Flow",
     "title": "Example Transaction Flow (Ping Pong)",
     "content": " ",
     "url": "/firefly/head/architecture/ping_pong_txflow.html#example-transaction-flow-ping-pong",
     "relUrl": "/architecture/ping_pong_txflow.html#example-transaction-flow-ping-pong"
-  },"657": {
+  },"660": {
     "doc": "Example Transaction Flow",
     "title": "Table of contents",
     "content": ". | Overview | Broadcast Public Description of Binary Data Asset (Member 1) | Receive Public Description &amp; Request Asset Data (Member 2) | Authorize &amp; Transfer Data (Member 1) | Receive Data Asset (Member 2) | . ",
     "url": "/firefly/head/architecture/ping_pong_txflow.html#table-of-contents",
     "relUrl": "/architecture/ping_pong_txflow.html#table-of-contents"
-  },"658": {
+  },"661": {
     "doc": "Example Transaction Flow",
     "title": "Overview",
     "content": ". This demonstrates the problem that at its core FireFly is there to solve. The internal plumbing complexity of just a very simple set of Enterprise blockchain / multi-party system interactions. | Party A: Establish existence of a digital asset. | Nothing more than some binary data (an image, a document, a specification etc.). | . | Party A: Broadcast some information about that asset to everyone, using blockchain to record, sequence and propagate. | So people can find it, or part of a more sophisticated workflow. | . | Party B: Request the actual data - with evidence of that request tied to the blockchain. | Including some private data that’s sent to the Party A, reliably off-chain. | . | Party A: Authorize the request, and send the data privately to Party B. | In this example there’s no blockchain involved in this step. | . | . This is the kind of thing that enterprise projects have been solving ground-up since the dawn of enterprise blockchain, and the level of engineering required that is completely detached from business value, is very high. The “tramlines” view shows how FireFly’s pluggable model makes the job of the developer really simple: . | A few simple API calls from a modern web app. | Event triggered execution of application logic. | . This is deliberately a simple flow, and all kinds of additional layers might well layer on (and fit within the FireFly model): . | NFTs to track ownership etc. related to the digital asset. | Tokenized rewards/payments integrated with the authorization of the transfer of data. | Proof of deterministic execution of the logic to perform the authorization (on-chain, TEEs, ZKPs). | Human workflow, that is of course completely non-deterministic. | Multiple additional process steps, deterministic or not. | Inclusion of multiple additional parties (maybe it’s a request-for-tender, submit-tender flow for example). | etc. | . ",
     "url": "/firefly/head/architecture/ping_pong_txflow.html#overview",
     "relUrl": "/architecture/ping_pong_txflow.html#overview"
-  },"659": {
+  },"662": {
     "doc": "Example Transaction Flow",
     "title": "Broadcast Public Description of Binary Data Asset (Member 1)",
     "content": ". | Upload Blob of the actual data . | Returns a hash of the payload | . | Upload JSON containing the public index data . | Includes the hash of the full payload | . | Send a broadcast message with the public index data . | Agree upon a primary key of the data as the “context” | . | . ",
     "url": "/firefly/head/architecture/ping_pong_txflow.html#broadcast-public-description-of-binary-data-asset-member-1",
     "relUrl": "/architecture/ping_pong_txflow.html#broadcast-public-description-of-binary-data-asset-member-1"
-  },"660": {
+  },"663": {
     "doc": "Example Transaction Flow",
     "title": "Receive Public Description &amp; Request Asset Data (Member 2)",
     "content": ". | Store data in your own off-chain database for rich, efficient query | Run automated logic to decide if you want to request the full data | Upload JSON for data request | Send a private message . | Backed by blockchain in this flow | . | . ",
     "url": "/firefly/head/architecture/ping_pong_txflow.html#receive-public-description--request-asset-data-member-2",
     "relUrl": "/architecture/ping_pong_txflow.html#receive-public-description--request-asset-data-member-2"
-  },"661": {
+  },"664": {
     "doc": "Example Transaction Flow",
     "title": "Authorize &amp; Transfer Data (Member 1)",
     "content": ". | Inpsect the request data | Retrieve data asset by hash | Send the private data in a private message . | No blockchain in this flow | . | . ",
     "url": "/firefly/head/architecture/ping_pong_txflow.html#authorize--transfer-data-member-1",
     "relUrl": "/architecture/ping_pong_txflow.html#authorize--transfer-data-member-1"
-  },"662": {
+  },"665": {
     "doc": "Example Transaction Flow",
     "title": "Receive Data Asset (Member 2)",
     "content": ". | Receive a link to your local copy of the asset data | . ",
     "url": "/firefly/head/architecture/ping_pong_txflow.html#receive-data-asset-member-2",
     "relUrl": "/architecture/ping_pong_txflow.html#receive-data-asset-member-2"
-  },"663": {
+  },"666": {
     "doc": "Example Transaction Flow",
     "title": "Example Transaction Flow",
     "content": " ",
     "url": "/firefly/head/architecture/ping_pong_txflow.html",
     "relUrl": "/architecture/ping_pong_txflow.html"
-  },"664": {
+  },"667": {
     "doc": "Plugin Architecture",
     "title": "Plugin Architecture",
     "content": " ",
     "url": "/firefly/head/architecture/plugin_architecture.html",
     "relUrl": "/architecture/plugin_architecture.html"
-  },"665": {
+  },"668": {
     "doc": "Plugin Architecture",
     "title": "Table of contents",
     "content": ". | Overview | FireFly Core | Plugin for Connector | Connector | Infrastructure Runtime | . This diagram shows the various plugins that are currently in the codebase and the layers in each plugin . This diagram shows the details of what goes into each layer of a FireFly plugin . ",
     "url": "/firefly/head/architecture/plugin_architecture.html#table-of-contents",
     "relUrl": "/architecture/plugin_architecture.html#table-of-contents"
-  },"666": {
+  },"669": {
     "doc": "Plugin Architecture",
     "title": "Overview",
     "content": "The FireFly node is built for extensibility, with separate pluggable runtimes orchestrated into a common API for developers. The mechanics of that pluggability for developers of new connectors is explained below: . This architecture is designed to provide separations of concerns to account for: . | Differences in code language for the low-level connection to a backend (Java for Corda for example) | Differences in transports, particularly for delivery of events: . | Between FireFly Core and the Connector . | Different transports other than HTTPS/WebSockets (GRPC etc.), and different wire protocols (socket.io, etc.) | . | Between the Connector and the underlying Infrastructure Runtime . | Often this is heavy lifting engineering within the connector | . | . | Differences in High Availability (HA) / Scale architectures . | Between FireFly Core, and the Connector . | Often for event management, and active/passive connector runtime is sufficient | . | Between the Connector and the Infrastructure Runtime . | The infrastructure runtimes have all kinds of variation here… think of the potential landscape here from PostreSQL through Besu/Fabric/Corda, to Hyperledger Avalon and even Main-net ethereum | . | . | . ",
     "url": "/firefly/head/architecture/plugin_architecture.html#overview",
     "relUrl": "/architecture/plugin_architecture.html#overview"
-  },"667": {
+  },"670": {
     "doc": "Plugin Architecture",
     "title": "FireFly Core",
     "content": ". | Golang | N-way scalable cluster . | Database is also pluggable via this architecture | . | No long lived in-memory processing . | All micro-batching must be recoverable | . | Driven by single configuration set . | Viper semantics - file, env var, cmdline flags | . | . ",
     "url": "/firefly/head/architecture/plugin_architecture.html#firefly-core",
     "relUrl": "/architecture/plugin_architecture.html#firefly-core"
-  },"668": {
+  },"671": {
     "doc": "Plugin Architecture",
     "title": "Plugin for Connector",
     "content": ". | Golang | Statically compiled in support at runtime . | Go dynamic plugin support too immature | . | Must be 100% FLOSS code (no GPL/LGPL etc.) | Contributed via PR to FF Core | Intended to be lightweight binding/mapping | Must adhere to FF Core Coding Standards | Scrutiny on addition of new frameworks/transports | . ",
     "url": "/firefly/head/architecture/plugin_architecture.html#plugin-for-connector",
     "relUrl": "/architecture/plugin_architecture.html#plugin-for-connector"
-  },"669": {
+  },"672": {
     "doc": "Plugin Architecture",
     "title": "Connector",
     "content": ". | Node.js / Java / Golang, etc. | Runs/scales independently from FF core | Coded in any language, OSS or proprietary | One runtime or multiple | HA model can be active/passive or active/active | Expectation is all plugins need a connector . | Some exceptions exist (e.g. database plugin) | . | . ",
     "url": "/firefly/head/architecture/plugin_architecture.html#connector",
     "relUrl": "/architecture/plugin_architecture.html#connector"
-  },"670": {
+  },"673": {
     "doc": "Plugin Architecture",
     "title": "Infrastructure Runtime",
     "content": ". | Besu, Quorum, Corda, Fabric, IPFS, Kafka, etc. | Runs/scales independently from FF Core | Coded in any language, OSS or proprietary | Not specific to FireFly | HA model can be active/passive or active/active | . ",
     "url": "/firefly/head/architecture/plugin_architecture.html#infrastructure-runtime",
     "relUrl": "/architecture/plugin_architecture.html#infrastructure-runtime"
-  },"671": {
+  },"674": {
     "doc": "pages.polygon_testnet",
     "title": "Polygon Testnet",
     "content": " ",
     "url": "/firefly/head/tutorials/chains/polygon_testnet.html#polygon-testnet",
     "relUrl": "/tutorials/chains/polygon_testnet.html#polygon-testnet"
-  },"672": {
+  },"675": {
     "doc": "pages.polygon_testnet",
     "title": "Table of contents",
     "content": ". | Previous steps: Install the FireFly CLI | Create an evmconnect.yml config file | Creating a new stack | Start the stack | Get some MATIC . | Confirm the transaction on Polygonscan | . | Use the public testnet | . Starting with FireFly v1.1, it’s easy to connect to public Ethereum chains. This guide will walk you through the steps to create a local FireFly development environment and connect it to the public Polygon Mumbai testnet. ",
     "url": "/firefly/head/tutorials/chains/polygon_testnet.html#table-of-contents",
     "relUrl": "/tutorials/chains/polygon_testnet.html#table-of-contents"
-  },"673": {
+  },"676": {
     "doc": "pages.polygon_testnet",
     "title": "Previous steps: Install the FireFly CLI",
     "content": "If you haven’t set up the FireFly CLI already, please go back to the Getting Started guide and read the section on how to Install the FireFly CLI. ← ① Install the FireFly CLI . ",
     "url": "/firefly/head/tutorials/chains/polygon_testnet.html#previous-steps-install-the-firefly-cli",
     "relUrl": "/tutorials/chains/polygon_testnet.html#previous-steps-install-the-firefly-cli"
-  },"674": {
+  },"677": {
     "doc": "pages.polygon_testnet",
     "title": "Create an evmconnect.yml config file",
     "content": "In order to connect to the Polygon testnet, you will need to set a few configuration options for the evmconnect blockchain connector. Create a text file called evmconnect.yml with the following contents: . confirmations: required: 4 # choose the number of confirmations you require policyengine.simple: fixedGasPrice: null gasOracle: mode: connector . For more info about confirmations, see Public vs. Permissioned . For this tutorial, we will assume this file is saved at ~/Desktop/evmconnect.yml. If your path is different, you will need to adjust the path in the next command below. ",
     "url": "/firefly/head/tutorials/chains/polygon_testnet.html#create-an-evmconnectyml-config-file",
     "relUrl": "/tutorials/chains/polygon_testnet.html#create-an-evmconnectyml-config-file"
-  },"675": {
+  },"678": {
     "doc": "pages.polygon_testnet",
     "title": "Creating a new stack",
     "content": "To create a local FireFly development stack and connect it to the Polygon Mumbai testnet, we will use command line flags to customize the following settings: . | Create a new Ethereum based stack named polygon with 1 member | Disable multiparty mode. We are going to be using this FireFly node as a Web3 gateway, and we don’t need to communicate with a consortium here | Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine. | See the list of Polygon RPC endpoints and select an HTTPS RPC endpoint. | Set the chain ID to 80001 (the correct ID for the Polygon Mumbai testnet) | Merge the custom config created above with the generated evmconnect config file | . To do this, run the following command: . ff init ethereum polygon 1 \\ --multiparty=false \\ -n remote-rpc \\ --remote-node-url &lt;selected RPC endpoint&gt; \\ --chain-id 80001 \\ --connector-config ~/Desktop/evmconnect.yml . ",
     "url": "/firefly/head/tutorials/chains/polygon_testnet.html#creating-a-new-stack",
     "relUrl": "/tutorials/chains/polygon_testnet.html#creating-a-new-stack"
-  },"676": {
+  },"679": {
     "doc": "pages.polygon_testnet",
     "title": "Start the stack",
     "content": "Now you should be able to start your stack by running: . ff start polygon . After some time it should print out the following: . Web UI for member '0': http://127.0.0.1:5000/ui Sandbox UI for member '0': http://127.0.0.1:5109 To see logs for your stack run: ff logs polygon . ",
     "url": "/firefly/head/tutorials/chains/polygon_testnet.html#start-the-stack",
     "relUrl": "/tutorials/chains/polygon_testnet.html#start-the-stack"
-  },"677": {
+  },"680": {
     "doc": "pages.polygon_testnet",
     "title": "Get some MATIC",
     "content": "At this point you should have a working FireFly stack, talking to a public chain. However, you won’t be able to run any transactions just yet, because you don’t have any way to pay for gas. A testnet faucet can give us some MATIC, the native token for Polygon. First, you will need to know what signing address your FireFly node is using. To check that, you can run: . ff accounts list polygon [ { \"address\": \"0x02d42c32a97c894486afbc7b717edff50c70b292\", \"privateKey\": \"...\" } ] . Copy the address listed in the output from this command. Go to https://faucet.polygon.technology/ and paste the address in the form. Click the Submit button, and then Confirm. Confirm the transaction on Polygonscan . You should be able to go lookup your account on Polygonscan for the Mumbai testnet and see that you now have a balance of 0.2 MATIC. Simply paste in your account address to search for it. You can also click on the Internal Txns tab from you account page to see the actual transfer of the MATIC from the faucet. ",
     "url": "/firefly/head/tutorials/chains/polygon_testnet.html#get-some-matic",
     "relUrl": "/tutorials/chains/polygon_testnet.html#get-some-matic"
-  },"678": {
+  },"681": {
     "doc": "pages.polygon_testnet",
     "title": "Use the public testnet",
     "content": "Now that you have everything set up, you can follow one of the other FireFly guides such as Using Tokens or Custom Smart Contracts. For detailed instructions on deploying a custom smart contract to Polygon, please see the Polygon docs for instructions using various tools. ",
     "url": "/firefly/head/tutorials/chains/polygon_testnet.html#use-the-public-testnet",
     "relUrl": "/tutorials/chains/polygon_testnet.html#use-the-public-testnet"
-  },"679": {
+  },"682": {
     "doc": "pages.polygon_testnet",
     "title": "pages.polygon_testnet",
     "content": " ",
     "url": "/firefly/head/tutorials/chains/polygon_testnet.html",
     "relUrl": "/tutorials/chains/polygon_testnet.html"
-  },"680": {
+  },"683": {
     "doc": "Privately send data",
     "title": "Privately send data",
     "content": " ",
     "url": "/firefly/head/tutorials/private_send.html",
     "relUrl": "/tutorials/private_send.html"
-  },"681": {
+  },"684": {
     "doc": "Privately send data",
     "title": "Table of contents",
     "content": ". | Quick reference | Additional info | Example 1: Pinned private send of in-line string data | Example message response | Example 2: Unpinned private send of in-line string data | Example 3: Inline object data to a topic (no datatype verification) | Notes on why setting a topic is important | Example 3: Upload a blob with metadata and send privately . | Multipart form post of a file | Example data response from Blob upload | Send the uploaded data privately | . | Sending Private Messages using the Sandbox | . ",
     "url": "/firefly/head/tutorials/private_send.html#table-of-contents",
     "relUrl": "/tutorials/private_send.html#table-of-contents"
-  },"682": {
+  },"685": {
     "doc": "Privately send data",
     "title": "Quick reference",
     "content": ". | Sends a message to a restricted set of parties . | The message describes who sent it, to whom, and exactly what data was sent | . | A message has one or more attached pieces of business data . | Can be sent in-line, uploaded in advanced, or received from other parties | Can include smaller JSON payloads suitable for database storage . | These can be verified against a datatype | . | Can include references to large (multi megabyte/gigabyte) Blob data | . | A group specifies who has visibility to the data . | The author must be included in the group - auto-added if omitted | Can be specified in-line in the message by listing recipients directly | Can be referred to by hash | . | Private sends are optionally sequenced via pinning to the blockchain . | If the send is pinned: . | The blockchain does not contain any data, just a hash pin . | Even the ordering context (topic) is obscured in the on-chain data | This is true regardless of whether a restricted set of participants are maintaining the ledger, such as in the case of a Fabric Channel. | . | The message should not be considered confirmed (even by the sender) until it has been sequenced via the blockchain and a message_confirmed event occurs | Batched for efficiency . | One batch can pin hundreds of private message sends | The batch flows privately off-chain from the sender to each recipient | . | . | If the send is unpinned: . | No data is written to the blockchain at all | The message is marked confirmed immediately . | The sender receives a message_confirmed event immediately | . | The other parties in the group get message_confirmed events as soon as the data arrives | . | . | . ",
     "url": "/firefly/head/tutorials/private_send.html#quick-reference",
     "relUrl": "/tutorials/private_send.html#quick-reference"
-  },"683": {
+  },"686": {
     "doc": "Privately send data",
     "title": "Additional info",
     "content": ". | Key Concepts: Private data exchange | Swagger: POST /api/v1/namespaces/{ns}/messages/private | . ",
     "url": "/firefly/head/tutorials/private_send.html#additional-info",
     "relUrl": "/tutorials/private_send.html#additional-info"
-  },"684": {
+  },"687": {
     "doc": "Privately send data",
     "title": "Example 1: Pinned private send of in-line string data",
     "content": "POST /api/v1/namespaces/default/messages/private . { \"data\": [ { \"value\": \"a string\" } ], \"group\": { \"members\": [ { \"identity\": \"org_1\" } ] } } . ",
     "url": "/firefly/head/tutorials/private_send.html#example-1-pinned-private-send-of-in-line-string-data",
     "relUrl": "/tutorials/private_send.html#example-1-pinned-private-send-of-in-line-string-data"
-  },"685": {
+  },"688": {
     "doc": "Privately send data",
     "title": "Example message response",
     "content": "Status: 202 Accepted - the message is on it’s way, but has not yet been confirmed. { \"header\": { \"id\": \"c387e9d2-bdac-44cc-9dd5-5e7f0b6b0e58\", // uniquely identifies this private message \"type\": \"private\", // set automatically \"txtype\": \"batch_pin\", // message will be batched, and sequenced via the blockchain \"author\": \"0x0a65365587a65ce44938eab5a765fe8bc6532bdf\", // set automatically in this example to the node org \"created\": \"2021-07-02T02:37:13.4642085Z\", // set automatically \"namespace\": \"default\", // the 'default' namespace was set in the URL // The group hash is calculated from the resolved list of group participants. // The first time a group is used, the participant list is sent privately along with the // batch of messages in a `groupinit` message. \"group\": \"2aa5297b5eed0c3a612a667c727ca38b54fb3b5cc245ebac4c2c7abe490bdf6c\", \"topics\": [ \"default\" // the default topic that the message is published on, if no topic is set ], // datahash is calculated from the data array below \"datahash\": \"24b2d583b87eda952fa00e02c6de4f78110df63218eddf568f0240be3d02c866\" }, \"hash\": \"423ad7d99fd30ff679270ad2b6b35cdd85d48db30bafb71464ca1527ce114a60\", // hash of the header \"state\": \"ready\", // this message is stored locally but not yet confirmed \"data\": [ // one item of data was stored { \"id\": \"8d8635e2-7c90-4963-99cc-794c98a68b1d\", // can be used to query the data in the future \"hash\": \"c95d6352f524a770a787c16509237baf7eb59967699fb9a6d825270e7ec0eacf\" // sha256 hash of `\"a string\"` } ] } . ",
     "url": "/firefly/head/tutorials/private_send.html#example-message-response",
     "relUrl": "/tutorials/private_send.html#example-message-response"
-  },"686": {
+  },"689": {
     "doc": "Privately send data",
     "title": "Example 2: Unpinned private send of in-line string data",
     "content": "Set header.txtype: \"none\" to disable pinning of the private message send to the blockchain. The message is sent immediately (no batching) over the private data exchange. POST /api/v1/namespaces/default/messages/private . { \"header\": { \"txtype\": \"none\" }, \"data\": [ { \"value\": \"a string\" } ], \"group\": { \"members\": [ { \"identity\": \"org_1\" } ] } } . ",
     "url": "/firefly/head/tutorials/private_send.html#example-2-unpinned-private-send-of-in-line-string-data",
     "relUrl": "/tutorials/private_send.html#example-2-unpinned-private-send-of-in-line-string-data"
-  },"687": {
+  },"690": {
     "doc": "Privately send data",
     "title": "Example 3: Inline object data to a topic (no datatype verification)",
     "content": "It is very good practice to set a tag and topic in each of your messages: . | tag should tell the apps receiving the private send (including the local app), what to do when it receives the message. Its the reason for the send - an application specific type for the message. | topic should be something like a well known identifier that relates to the information you are publishing. It is used as an ordering context, so all sends on a given topic are assured to be processed in order. | . POST /api/v1/namespaces/default/messages/private . { \"header\": { \"tag\": \"new_widget_created\", \"topics\": [\"widget_id_12345\"] }, \"group\": { \"members\": [ { \"identity\": \"org_1\" } ] }, \"data\": [ { \"value\": { \"id\": \"widget_id_12345\", \"name\": \"superwidget\" } } ] } . ",
     "url": "/firefly/head/tutorials/private_send.html#example-3-inline-object-data-to-a-topic-no-datatype-verification",
     "relUrl": "/tutorials/private_send.html#example-3-inline-object-data-to-a-topic-no-datatype-verification"
-  },"688": {
+  },"691": {
     "doc": "Privately send data",
     "title": "Notes on why setting a topic is important",
     "content": "The FireFly aggregator uses the topic (obfuscated on chain) to determine if a message is the next message in an in-flight sequence for any groups the node is involved in. If it is, then that message must receive all off-chain private data and be confirmed before any subsequent messages can be confirmed on the same sequence. So if you use the same topic in every message, then a single failed send on one topic blocks delivery of all messages between those parties, until the missing data arrives. Instead it is best practice to set the topic on your messages to value that identifies an ordered stream of business processing. Some examples: . | A long-running business process instance identifier assigned at initiation | A real-world business transaction identifier used off-chain | The agreed identifier of an asset you are attaching a stream of evidence to | An NFT identifier that is assigned to an asset (digital twin scenarios) | An agreed primary key for a data resource being reconciled between multiple parties | . The topic field is an array, because there are cases (such as merging two identifiers) where you need a message to be deterministically ordered across multiple sequences. However, this is an advanced use case and you are likely to set a single topic on the vast majority of your messages. ",
     "url": "/firefly/head/tutorials/private_send.html#notes-on-why-setting-a-topic-is-important",
     "relUrl": "/tutorials/private_send.html#notes-on-why-setting-a-topic-is-important"
-  },"689": {
+  },"692": {
     "doc": "Privately send data",
     "title": "Example 3: Upload a blob with metadata and send privately",
     "content": "Here we make two API calls. 1) Create the data object explicitly, using a multi-part form upload . | You can also just post JSON to this endpoint | . 2) Privately send a message referring to that data . | The Blob is sent privately to each party | A pin goes to the blockchain | The metadata goes into a batch with the message | . Multipart form post of a file . Example curl command (Linux/Mac) to grab an image from the internet, and pipe it into a multi-part form post to FireFly. Note we use autometa to cause FireFly to automatically add the filename, and size, to the JSON part of the data object for us. curl -sLo - https://github.com/hyperledger/firefly/raw/main/docs/firefly_logo.png \\ | curl --form autometa=true --form file=@- \\ http://localhost:5000/api/v1/namespaces/default/data . Example data response from Blob upload . Status: 200 OK - your data is uploaded to your local FireFly node . At this point the data has not be shared with anyone else in the network . { // A uniquely generated ID, we can refer to when sending this data to other parties \"id\": \"97eb750f-0d0b-4c1d-9e37-1e92d1a22bb8\", \"validator\": \"json\", // the \"value\" part is JSON \"namespace\": \"default\", // from the URL // The hash is a combination of the hash of the \"value\" metadata, and the // hash of the blob \"hash\": \"997af6a9a19f06cc8a46872617b8bf974b106f744b2e407e94cc6959aa8cf0b8\", \"created\": \"2021-07-01T20:20:35.5462306Z\", \"value\": { \"filename\": \"-\", // dash is how curl represents the filename for stdin \"size\": 31185 // the size of the blob data }, \"blob\": { // A hash reference to the blob \"hash\": \"86e6b39b04b605dd1b03f70932976775962509d29ae1ad2628e684faabe48136\" } } . Send the uploaded data privately . Just include a reference to the id returned from the upload. POST /api/v1/namespaces/default/messages/private . { \"data\": [ { \"id\": \"97eb750f-0d0b-4c1d-9e37-1e92d1a22bb8\" } ], \"group\":{ \"members\": [ { \"identity\":\"org_1\" } ] } } . ",
     "url": "/firefly/head/tutorials/private_send.html#example-3-upload-a-blob-with-metadata-and-send-privately",
     "relUrl": "/tutorials/private_send.html#example-3-upload-a-blob-with-metadata-and-send-privately"
-  },"690": {
+  },"693": {
     "doc": "Privately send data",
     "title": "Sending Private Messages using the Sandbox",
     "content": "All of the functionality discussed above can be done through the FireFly Sandbox. To get started, open up the Web UI and Sanbox UI for at least one of your members. The URLs for these were printed in your terminal when you started your FireFly stack. Make sure to expand the “Send a Private Message” section. Enter your message into the message field as seen in the screenshot below. Because we are sending a private message, make sure you’re in the “Send a Private Message” section and that you choose a message recipient . Notice how the data field in the center panel updates in real time as you update the message you wish to send. Click the blue Run button. This should return a 202 response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds. Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you’ll see your successful blockchain transaction. Compare the “Recent Network Changes” widget With private messages, your . ",
     "url": "/firefly/head/tutorials/private_send.html#sending-private-messages-using-the-sandbox",
     "relUrl": "/tutorials/private_send.html#sending-private-messages-using-the-sandbox"
-  },"691": {
+  },"694": {
     "doc": "Public and Permissioned",
     "title": "Public and Permissioned Blockchain",
     "content": " ",
     "url": "/firefly/head/overview/public_vs_permissioned.html#public-and-permissioned-blockchain",
     "relUrl": "/overview/public_vs_permissioned.html#public-and-permissioned-blockchain"
-  },"692": {
+  },"695": {
     "doc": "Public and Permissioned",
     "title": "Table of contents",
     "content": ". | Public and Permissioned Blockchains | Public blockchain variations | Common public considerations | FireFly architecture for public chains | . ",
     "url": "/firefly/head/overview/public_vs_permissioned.html#table-of-contents",
     "relUrl": "/overview/public_vs_permissioned.html#table-of-contents"
-  },"693": {
+  },"696": {
     "doc": "Public and Permissioned",
     "title": "Public and Permissioned Blockchains",
     "content": "A separate choice to the technology for your blockchain, is what combination of blockchain ecosystems you will integrate with. There are a huge variety of options, and increasingly you might find yourself integrating with multiple ecosystems in your solutions. A rough (and incomplete) high level classification of the blockchains available is as follows: . | Layer 1 public blockchains . | This is where most token ecosystems are rooted | . | Layer 2 public scaling solutions backed by a Layer 1 blockchain . | These are increasing where transaction execution takes place that needs to be reflected eventually back to a Layer 1 blockchain (due to cost/congestion in the Layer 1 chains) | . | Permissioned side-chains . | Historically this has been where the majority of production adoption of enterprise blockchain has focussed, due to the predictable cost, performance, and ability to manage the validator set and boundary API security alongside a business network governance policy | These might have their state check-pointed/rolled-up to a Layer 2 or Layer 1 chain | . | . The lines are blurring between these categorizations as the technologies and ecosystems evolve. ",
     "url": "/firefly/head/overview/public_vs_permissioned.html#public-and-permissioned-blockchains",
     "relUrl": "/overview/public_vs_permissioned.html#public-and-permissioned-blockchains"
-  },"694": {
+  },"697": {
     "doc": "Public and Permissioned",
     "title": "Public blockchain variations",
     "content": "For the public Layer 1 and 2 solutions, there are too many subclassifications to go into in detail here: . | Whether ecosystems supports custom smart contract execution (EVM based is most common, where contracts are supported) | What types of token standards are supported, or other chain specific embedded smart contracts | Whether the chain follows an unspent transaction output (UTXO) or Account model | How value is bridged in-to / out-of the ecosystem | How the validator set of the chain is established - most common is Proof of Stake (PoS) | How data availability is maintained - to check the working of the validators ensure the historical state is not lost | The consensus algorithm, and how it interacts with the consensus of other blockchains | How state in a Layer 2 is provable in a parent Layer 1 chain (rollup technologies etc.) | . ",
     "url": "/firefly/head/overview/public_vs_permissioned.html#public-blockchain-variations",
     "relUrl": "/overview/public_vs_permissioned.html#public-blockchain-variations"
-  },"695": {
+  },"698": {
     "doc": "Public and Permissioned",
     "title": "Common public considerations",
     "content": "The thing most consistent across public blockchain technologies, is that the technical decisions are backed by token economics. Put simply, creating a system where it’s more financially rewarding to behave honestly, than it is to subvert and cheat the system. This means that participation costs, and that the mechanisms needed to reliably get your transactions into these systems are complex. Also that the time it might take to get a transaction onto the chain can be much longer than for a permissioned blockchain, with the potential to have to make a number of adjustments/resubmissions. The choice of whether to run your own node, or use a managed API, to access these blockchain ecosystems is also a factor in the behavior of the transaction submission and event streaming. ",
     "url": "/firefly/head/overview/public_vs_permissioned.html#common-public-considerations",
     "relUrl": "/overview/public_vs_permissioned.html#common-public-considerations"
-  },"696": {
+  },"699": {
     "doc": "Public and Permissioned",
     "title": "FireFly architecture for public chains",
     "content": "One of the fastest evolving aspects of the Hyperledger FireFly ecosystem, is how it facilitates enterprises to participate in these. The architecture is summarized as follows: . | New FireFly Transaction Manager runtime . | Operates as a microservice extension of the FireFly Core | Uses the operation resource within FireFly Core to store and update state | Runs as a singleton and is responsible for nonce assignment | Takes as much heavy lifting away from blockchain specific connectors as possible | . | Lightweight FireFly Connector API (ffcapi) . | Simple synchronous RPC operations that map to the most common operations supported across public blockchain technologies | Examples: . | Find the next nonce for a given signing key | Serialize a transaction from a set of JSON inputs and an interface definition | Submit an un-signed transaction with a given gas price to the blockchain, via a signing wallet | Establish a new block listener | Poll for new blocks | Establish a new event log listener | Poll for new events | . | . | Pluggable Policy Engine . | Invoked to make decisions on transaction submission | Responsible for gas price calculation | Able to intervene and adjust the characteristics of signing/submission | OSS reference implementation provided with Gas Station REST API integration | . | Confirmation Manager . | Extracted from the Ethconnect codebase | Coupled to both transaction submission and event confirmation | Embeds an efficient block cache | . | Event Streams . | Extracted from the Ethconnect codebase | Checkpoint restart based reliable at-least-once delivery of events | WebSockets interface upstream to FireFly Core | . | . This evolution involves a significant refactoring of components used for production solutions in the FireFly Ethconnect microservice since mid 2018. This was summarized in firefly-ethconnect#149, and cumulated in the creation of a new repository in 2022. You can follow the progress and contribute in this repo: https://github.com/hyperledger/firefly-transaction-manager . ",
     "url": "/firefly/head/overview/public_vs_permissioned.html#firefly-architecture-for-public-chains",
     "relUrl": "/overview/public_vs_permissioned.html#firefly-architecture-for-public-chains"
-  },"697": {
+  },"700": {
     "doc": "Public and Permissioned",
     "title": "Public and Permissioned",
     "content": " ",
     "url": "/firefly/head/overview/public_vs_permissioned.html",
     "relUrl": "/overview/public_vs_permissioned.html"
-  },"698": {
+  },"701": {
     "doc": "Explore messages",
     "title": "Explore messages",
     "content": " ",
     "url": "/firefly/head/tutorials/query_messages.html",
     "relUrl": "/tutorials/query_messages.html"
-  },"699": {
+  },"702": {
     "doc": "Explore messages",
     "title": "Table of contents",
     "content": ". | Quick reference | Additional info . | Example 1: Query confirmed messages | . | Example response . | Example 2: Query all messages | . | . ",
     "url": "/firefly/head/tutorials/query_messages.html#table-of-contents",
     "relUrl": "/tutorials/query_messages.html#table-of-contents"
-  },"700": {
+  },"703": {
     "doc": "Explore messages",
     "title": "Quick reference",
     "content": "The FireFly Explorer is a great way to view the messages sent and received by your node. Just open /ui on your FireFly node to access it. This builds on the APIs to query and filter messages, described below . ",
     "url": "/firefly/head/tutorials/query_messages.html#quick-reference",
     "relUrl": "/tutorials/query_messages.html#quick-reference"
-  },"701": {
+  },"704": {
     "doc": "Explore messages",
     "title": "Additional info",
     "content": ". | Reference: API Query Syntax | Swagger: GET /api/v1/namespaces/{ns}/messages | . Example 1: Query confirmed messages . These are the messages ready to be processed in your application. All data associated with the message (including Blob attachments) is available, and if they are sequenced by the blockchain, then those blockchain transactions are complete. The order in which you process messages should be determined by absolute order of message_confirmed events - queryable via the events collection, or through event listeners (discussed next in the getting started guide). That is because messages are ordered by timestamp, which is potentially subject to adjustments of the clock. Whereas events are ordered by the insertion order into the database, and as such changes in the clock do not affect the order. GET /api/v1/namespaces/{ns}/messages?pending=false&amp;limit=100 . ",
     "url": "/firefly/head/tutorials/query_messages.html#additional-info",
     "relUrl": "/tutorials/query_messages.html#additional-info"
-  },"702": {
+  },"705": {
     "doc": "Explore messages",
     "title": "Example response",
     "content": "[ { \"header\": { \"id\": \"423302bb-abfc-4d64-892d-38b2fdfe1549\", \"type\": \"private\", // this was a private send \"txtype\": \"batch_pin\", // pinned in a batch to the blockchain \"author\": \"0x1d14b65d2dd5c13f6cb6d3dc4aa13c795a8f3b28\", \"created\": \"2021-07-02T03:09:40.2606238Z\", \"namespace\": \"default\", \"group\": \"2aa5297b5eed0c3a612a667c727ca38b54fb3b5cc245ebac4c2c7abe490bdf6c\", // sent to this group \"topic\": [ \"widget_id_12345\" ], \"tag\": \"new_widget_created\", \"datahash\": \"551dd261e80ce76b1908c031cff8a707bd76376d6eddfdc1040c2ed6481ec8dd\" }, \"hash\": \"bf2ca94db8c31bae3cae974bb626fa822c6eee5f572d274d72281e72537b30b3\", \"batch\": \"f7ac773d-885a-4d73-ac6b-c09f5346a051\", // the batch ID that pinned this message to the chain \"state\": \"confirmed\", // message is now confirmed \"confirmed\": \"2021-07-02T03:09:49.9207211Z\", // timestamp when this node confirmed the message \"data\": [ { \"id\": \"914eed77-8789-451c-b55f-ba9570a71eba\", \"hash\": \"9541cabc750c692e553a421a6c5c07ebcae820774d2d8d0b88fac2a231c10bf2\" } ], \"pins\": [ // A \"pin\" is an identifier that is used by FireFly for sequencing messages. // // For private messages, it is an obfuscated representation of the sequence of this message, // on a topic, within this group, from this sender. There will be one pin per topic. You will find these // pins in the blockchain transaction, as well as the off-chain data. // Each one is unqiue, and without the group hash, very difficult to correlate - meaning // the data on-chain provides a high level of privacy. // // Note for broadcast (which does not require obfuscation), it is simply a hash of the topic. // So you will see the same pin for all messages on the same topic. \"ee56de6241522ab0ad8266faebf2c0f1dc11be7bd0c41d847998135b45685b77\" ] } ] . Example 2: Query all messages . The natural sort order the API will return for messages is: . | Pending messages first . | In descending created timestamp order | . | Confirmed messages . | In descending confirmed timestamp order | . | . GET /api/v1/namespaces/{ns}/messages . ",
     "url": "/firefly/head/tutorials/query_messages.html#example-response",
     "relUrl": "/tutorials/query_messages.html#example-response"
-  },"703": {
+  },"706": {
     "doc": "Release Guide",
     "title": "Release Guide",
     "content": " ",
     "url": "/firefly/head/contributors/release_guide.html",
     "relUrl": "/contributors/release_guide.html"
-  },"704": {
+  },"707": {
     "doc": "Release Guide",
     "title": "Table of contents",
     "content": ". | Release Guide . | Versioning scheme | The manifest.json file | Creating a new release . | 1) Navigate to the release page for the repo | 2) Click the Draft a new release button | 3) Fill out the form for your release | . | Automatic Docker builds | . | . This guide will walk you through creating a release. ",
     "url": "/firefly/head/contributors/release_guide.html#table-of-contents",
     "relUrl": "/contributors/release_guide.html#table-of-contents"
-  },"705": {
+  },"708": {
     "doc": "Release Guide",
     "title": "Versioning scheme",
     "content": "FireFly follows semantic versioning. For more details on how we determine which version to use please see the Versioning Scheme guide. ",
     "url": "/firefly/head/contributors/release_guide.html#versioning-scheme",
     "relUrl": "/contributors/release_guide.html#versioning-scheme"
-  },"706": {
+  },"709": {
     "doc": "Release Guide",
     "title": "The manifest.json file",
     "content": "FireFly has a manifest.json file in the root of the repo. This file contains a list of versions (both tag and sha) for each of the microservices that should be used with this specific commit. If you need FireFly to use a newer version of a microservice listed in this file, you should update the manifest.json file, commit it, and include it in your PR. This will trigger an end-to-end test run, using the specified versions. Here is an example of what the manifest.json looks like: . { \"ethconnect\": { \"image\": \"ghcr.io/hyperledger/firefly-ethconnect\", \"tag\": \"v3.0.4\", \"sha\": \"0b7ce0fb175b5910f401ff576ced809fe6f0b83894277c1cc86a73a2d61c6f41\" }, \"fabconnect\": { \"image\": \"ghcr.io/hyperledger/firefly-fabconnect\", \"tag\": \"v0.9.0\", \"sha\": \"a79a4c66b0a2551d5122d019c15c6426e8cdadd6566ce3cbcb36e008fb7861ca\" }, \"dataexchange-https\": { \"image\": \"ghcr.io/hyperledger/firefly-dataexchange-https\", \"tag\": \"v0.9.0\", \"sha\": \"0de5b1db891a02871505ba5e0507821416d9fa93c96ccb4b1ba2fac45eb37214\" }, \"tokens-erc1155\": { \"image\": \"ghcr.io/hyperledger/firefly-tokens-erc1155\", \"tag\": \"v0.9.0-20211019-01\", \"sha\": \"aabc6c483db408896838329dab5f4b9e3c16d1e9fa9fffdb7e1ff05b7b2bbdd4\" } } . NOTE: You can run make manifest in the FireFly core source directory, and a script will run to automatically get the latests non-pre-release version of each of FireFly’s microservices. If you need to use a snapshot or pre-release version you should edit manifest.json file manually, as this script will not fetch those versions. ",
     "url": "/firefly/head/contributors/release_guide.html#the-manifestjson-file",
     "relUrl": "/contributors/release_guide.html#the-manifestjson-file"
-  },"707": {
+  },"710": {
     "doc": "Release Guide",
     "title": "Creating a new release",
     "content": "Releases and builds are managed by GitHub. New binaries and/or Docker images will automatically be created when a new release is published. The easiest way to create a release is through the web UI for the repo that you wish to release. 1) Navigate to the release page for the repo . 2) Click the Draft a new release button . 3) Fill out the form for your release . It is recommended to start with the auto-generated release notes. Additional notes can be added as-needed. ",
     "url": "/firefly/head/contributors/release_guide.html#creating-a-new-release",
     "relUrl": "/contributors/release_guide.html#creating-a-new-release"
-  },"708": {
+  },"711": {
     "doc": "Release Guide",
     "title": "Automatic Docker builds",
     "content": "After cutting a new release, a GitHub Action will automatically start a new Docker build, if the repo has a Docker image associated with it. You can check the status of the build by clicking the “Actions” tab along the top of the page, for that repo. ",
     "url": "/firefly/head/contributors/release_guide.html#automatic-docker-builds",
     "relUrl": "/contributors/release_guide.html#automatic-docker-builds"
-  },"709": {
+  },"712": {
     "doc": "③ Use the Sandbox",
     "title": "Use the Sandbox",
     "content": " ",
     "url": "/firefly/head/gettingstarted/sandbox.html#use-the-sandbox",
     "relUrl": "/gettingstarted/sandbox.html#use-the-sandbox"
-  },"710": {
+  },"713": {
     "doc": "③ Use the Sandbox",
     "title": "Table of contents",
     "content": ". | Previous steps: Start your environment | Video walkthrough | Open the FireFly Sandbox for the first member | Sandbox Layout . | Left column: Prepare your request | Middle column: Preview server code and see response | Right column: Events received on the WebSocket | . | Messages . | Things to try out | . | Tokens . | Things to try out | . | Contracts . | Things to try out | . | Go forth and build! | . ",
     "url": "/firefly/head/gettingstarted/sandbox.html#table-of-contents",
     "relUrl": "/gettingstarted/sandbox.html#table-of-contents"
-  },"711": {
+  },"714": {
     "doc": "③ Use the Sandbox",
     "title": "Previous steps: Start your environment",
     "content": "If you haven’t started a FireFly stack already, please go back to the previous step and read the guide on how to Start your environment. ← ② Start your environment . Now that you have a full network of three Supernodes running on your machine, let’s look at the first two components that you will interact with: the FireFly Sandbox and the FireFly Explorer. ",
     "url": "/firefly/head/gettingstarted/sandbox.html#previous-steps-start-your-environment",
     "relUrl": "/gettingstarted/sandbox.html#previous-steps-start-your-environment"
-  },"712": {
+  },"715": {
     "doc": "③ Use the Sandbox",
     "title": "Video walkthrough",
     "content": "This video is a walkthrough of the FireFly Sandbox and FireFly Explorer from the FireFly 1.0 launch webinar. At this point you should be able to follow along and try all these same things on your own machine. ",
     "url": "/firefly/head/gettingstarted/sandbox.html#video-walkthrough",
     "relUrl": "/gettingstarted/sandbox.html#video-walkthrough"
-  },"713": {
+  },"716": {
     "doc": "③ Use the Sandbox",
     "title": "Open the FireFly Sandbox for the first member",
     "content": "When you set up your FireFly stack in the previous section, it should have printed some URLs like the following. Open the link in a browser for the `Sandbox UI for member ‘0’. It should be: http://127.0.0.1:5109 . ff start demo this will take a few seconds longer since this is the first time you're running this stack... done Web UI for member '0': http://127.0.0.1:5000/ui Sandbox UI for member '0': http://127.0.0.1:5109 Web UI for member '1': http://127.0.0.1:5001/ui Sandbox UI for member '1': http://127.0.0.1:5209 Web UI for member '2': http://127.0.0.1:5002/ui Sandbox UI for member '2': http://127.0.0.1:5309 To see logs for your stack run: ff logs demo . ",
     "url": "/firefly/head/gettingstarted/sandbox.html#open-the-firefly-sandbox-for-the-first-member",
     "relUrl": "/gettingstarted/sandbox.html#open-the-firefly-sandbox-for-the-first-member"
-  },"714": {
+  },"717": {
     "doc": "③ Use the Sandbox",
     "title": "Sandbox Layout",
     "content": ". The Sandbox is split up into three columns: . Left column: Prepare your request . On the left-hand side of the page, you can fill out simple form fields to construct messages and more. Some tabs have more types of requests on them in sections that can be expanded or collapsed. Across the top of this column there are three tabs that switch between the three main sets of functionality in the Sandbox. The next three sections of this guide will walk you through each one of these. The first tab we will explore is the MESSAGING tab. This is where we can send broadcasts and private messages. Middle column: Preview server code and see response . As you type in the form on the left side of the page, you may notice that the source code in the top middle of the page updates automatically. If you were building a backend app, this is an example of code that your app could use to call the FireFly SDK. The middle column also contains a RUN button to actually send the request. Right column: Events received on the WebSocket . On the right-hand side of the page you can see a stream of events being received on a WebSocket connection that the backend has open to FireFly. For example, as you make requests to send messages, you can see when the messages are asynchronously confirmed. ",
     "url": "/firefly/head/gettingstarted/sandbox.html#sandbox-layout",
     "relUrl": "/gettingstarted/sandbox.html#sandbox-layout"
-  },"715": {
+  },"718": {
     "doc": "③ Use the Sandbox",
     "title": "Messages",
     "content": "The Messages tab is where we can send broadcast and private messages to other members and nodes in the FireFly network. Messages can be a string, any arbitrary JSON object, or a binary file. For more details, please see the tutorial on Broadcasting data and Privately sending data. Things to try out . | Send a broadcast message and view the data payload in every member’s FireFly Explorer | Send a private message to one member, and verify that the data payload is not visible in the third member’s FireFly Explorer | Send an image file and download it from another member’s FireFly Explorer | . ",
     "url": "/firefly/head/gettingstarted/sandbox.html#messages",
     "relUrl": "/gettingstarted/sandbox.html#messages"
-  },"716": {
+  },"719": {
     "doc": "③ Use the Sandbox",
     "title": "Tokens",
     "content": "The Tokens tab is where you can create token pools, and mint, burn, or transfer tokens. This works with both fungible and non-fungible tokens (NFTs). For more details, please see the Tokens tutorials. Things to try out . | Create a fungible token pool and mint some tokens and view your balance in the FireFly Explorer | Transfer some amount of those tokens to another member and view the transfer transaction in the FireFly Explorer | Burn some amount of tokens and view the transaction and updated balances in the FireFly Explorer | Create a non-fungible token pool and mint some NFTs | Transfer an NFT to another member and verify the account balances in the FireFly Explorer | . ",
     "url": "/firefly/head/gettingstarted/sandbox.html#tokens",
     "relUrl": "/gettingstarted/sandbox.html#tokens"
-  },"717": {
+  },"720": {
     "doc": "③ Use the Sandbox",
     "title": "Contracts",
     "content": "The Contracts section of the Sandbox lets you interact with custom smart contracts, right from your web browser! The Sandbox also provides some helpful tips on deploying your smart contract to the blockchain. For more details, please see the tutorial on Working with custom smart contracts. Things to try out . | Create a contract interface and API, then view the Swagger UI for your new API | Create an event listener | Use the Swagger UI to call a smart contract function that emits an event. Verify that the event is received in the Sandbox and shows up in the FireFly Explorer. | . ",
     "url": "/firefly/head/gettingstarted/sandbox.html#contracts",
     "relUrl": "/gettingstarted/sandbox.html#contracts"
-  },"718": {
+  },"721": {
     "doc": "③ Use the Sandbox",
     "title": "Go forth and build!",
     "content": "At this point you should have a pretty good understanding of some of the major features of Hyperledger FireFly. Now, using what you’ve learned, you can go and build your own Web3 app! Don’t forget to join the Hyperledger Discord server and come chat with us in the #firefly channel. ",
     "url": "/firefly/head/gettingstarted/sandbox.html#go-forth-and-build",
     "relUrl": "/gettingstarted/sandbox.html#go-forth-and-build"
-  },"719": {
+  },"722": {
     "doc": "③ Use the Sandbox",
     "title": "③ Use the Sandbox",
     "content": " ",
     "url": "/firefly/head/gettingstarted/sandbox.html",
     "relUrl": "/gettingstarted/sandbox.html"
-  },"720": {
+  },"723": {
     "doc": "pages.security",
     "title": "Security",
     "content": ". ",
     "url": "/firefly/head/overview/key_components/security.html#security",
     "relUrl": "/overview/key_components/security.html#security"
-  },"721": {
+  },"724": {
     "doc": "pages.security",
     "title": "API Security",
     "content": "Hyperledger FireFly provides a pluggable infrastructure for authenticating API requests. Each namespace can be configured with a different authentication plugin, such that different teams can have different access to resources on the same FireFly server. A reference plugin implementation is provided for HTTP Basic Auth, combined with a htpasswd verification of passwords with a bcrypt encoding. See this config section for details, and the reference implementation in Github . Pre-packaged vendor extensions to Hyperledger FireFly are known to be available, addressing more comprehensive role-based access control (RBAC) and JWT/OAuth based security models. ",
     "url": "/firefly/head/overview/key_components/security.html#api-security",
     "relUrl": "/overview/key_components/security.html#api-security"
-  },"722": {
+  },"725": {
     "doc": "pages.security",
     "title": "Data Partitioning and Tenancy",
     "content": "Namespaces also provide a data isolation system for different applications / teams / tenants sharing a Hyperledger FireFly node. Data is partitioned within the FireFly database by namespace. It is also possible to increase the separation between namespaces, by using separate database configurations. For example to different databases or table spaces within a single database server, or even to different database servers. ",
     "url": "/firefly/head/overview/key_components/security.html#data-partitioning-and-tenancy",
     "relUrl": "/overview/key_components/security.html#data-partitioning-and-tenancy"
-  },"723": {
+  },"726": {
     "doc": "pages.security",
     "title": "Private Data Exchange",
     "content": "FireFly has a pluggable implementation of a private data transfer bus. This transport supports both structured data (conforming to agreed data formats), and large unstructured data &amp; documents. A reference microservice implementation is provided for HTTPS point-to-point connectivity with mutual TLS encryption. See the reference implementation in Github . Pre-packaged vendor extensions to Hyperledger FireFly are known to be available, addressing message queue based reliable delivery of messages, hub-and-spoke connectivity models, chunking of very large file payloads, and end-to-end encryption. Learn more about these private data flows in Multiparty Process Flows. ",
     "url": "/firefly/head/overview/key_components/security.html#private-data-exchange",
     "relUrl": "/overview/key_components/security.html#private-data-exchange"
-  },"724": {
+  },"727": {
     "doc": "pages.security",
     "title": "pages.security",
     "content": " ",
     "url": "/firefly/head/overview/key_components/security.html",
     "relUrl": "/overview/key_components/security.html"
-  },"725": {
+  },"728": {
     "doc": "② Start your environment",
     "title": "Start your environment",
     "content": " ",
     "url": "/firefly/head/gettingstarted/setup_env.html#start-your-environment",
     "relUrl": "/gettingstarted/setup_env.html#start-your-environment"
-  },"726": {
+  },"729": {
     "doc": "② Start your environment",
     "title": "Table of contents",
     "content": ". | Previous steps: Install the FireFly CLI | A FireFly Stack | System Resources | Creating a new stack . | Stack initialization options | Start your stack | . | Next steps: Use in the Sandbox | . ",
     "url": "/firefly/head/gettingstarted/setup_env.html#table-of-contents",
     "relUrl": "/gettingstarted/setup_env.html#table-of-contents"
-  },"727": {
+  },"730": {
     "doc": "② Start your environment",
     "title": "Previous steps: Install the FireFly CLI",
     "content": "If you haven’t set up the FireFly CLI already, please go back to the previous step and read the guide on how to Install the FireFly CLI. ← ① Install the FireFly CLI . Now that you have the FireFly CLI installed, you are ready to run some Supernodes on your machine! . ",
     "url": "/firefly/head/gettingstarted/setup_env.html#previous-steps-install-the-firefly-cli",
     "relUrl": "/gettingstarted/setup_env.html#previous-steps-install-the-firefly-cli"
-  },"728": {
+  },"731": {
     "doc": "② Start your environment",
     "title": "A FireFly Stack",
     "content": "A FireFly stack is a collection of Supernodes with networking and configuration that are designed to work together on a single development machine. A stack has multiple members (also referred to organizations). Each member has their own Supernode within the stack. This allows developers to build and test data flows with a mix of public and private data between various parties, all within a single development environment. The stack also contains an instance of the FireFly Sandbox for each member. This is an example of an end-user application that uses FireFly’s API. It has a backend and a frontend which are designed to walk developers through the features of FireFly, and provides code snippets as examples of how to build those features into their own application. The next section in this guide will walk you through using the Sandbox. ",
     "url": "/firefly/head/gettingstarted/setup_env.html#a-firefly-stack",
     "relUrl": "/gettingstarted/setup_env.html#a-firefly-stack"
-  },"729": {
+  },"732": {
     "doc": "② Start your environment",
     "title": "System Resources",
     "content": "The FireFly stack will run in a docker-compose project. For systems that run Docker containers inside a virtual machine, like macOS, you need to make sure that you’ve allocated enough memory to the Docker virtual machine. We recommend allocating 1GB per member. In this case, we’re going to set up a stack with 3 members, so please make sure you have at least 3 GB of RAM allocated in your Docker Desktop settings. ",
     "url": "/firefly/head/gettingstarted/setup_env.html#system-resources",
     "relUrl": "/gettingstarted/setup_env.html#system-resources"
-  },"730": {
+  },"733": {
     "doc": "② Start your environment",
     "title": "Creating a new stack",
     "content": "It’s really easy to create a new FireFly stack. The ff init command can create a new stack for you, and will prompt you for a few details such as the name, and how many members you want in your stack. To create an Ethereum based stack, run: . ff init ethereum . To create an Fabric based stack, run: . ff init fabric . Choose a stack name. For this guide, I will choose the name dev, but you can pick whatever you want: . stack name: dev . Chose the number of members for your stack. For this guide, we should pick 3 members, so we can try out both public and private messaging use cases: . number of members: 3 . Stack initialization options . There are quite a few options that you can choose from when creating a new stack. For now, we’ll just stick with the defaults. To see the full list of Ethereum options, just run ff init ethereum --help or to see the full list of Fabric options run ff init fabric --help . ff init ethereum --help Create a new FireFly local dev stack using an Ethereum blockchain Usage: ff init ethereum [stack_name] [member_count] [flags] Flags: --block-period int Block period in seconds. Default is variable based on selected blockchain provider. (default -1) -c, --blockchain-connector string Blockchain connector to use. Options are: [evmconnect ethconnect] (default \"evmconnect\") -n, --blockchain-node string Blockchain node type to use. Options are: [geth besu remote-rpc] (default \"geth\") --chain-id int The chain ID - also used as the network ID (default 2021) --contract-address string Do not automatically deploy a contract, instead use a pre-configured address -h, --help help for ethereum --remote-node-url string For cases where the node is pre-existing and running remotely Global Flags: --ansi string control when to print ANSI control characters (\"never\"|\"always\"|\"auto\") (default \"auto\") --channel string Select the FireFly release channel to use. Options are: [stable head alpha beta rc] (default \"stable\") --connector-config string The path to a yaml file containing extra config for the blockchain connector --core-config string The path to a yaml file containing extra config for FireFly Core -d, --database string Database type to use. Options are: [sqlite3 postgres] (default \"sqlite3\") -e, --external int Manage a number of FireFly core processes outside of the docker-compose stack - useful for development and debugging -p, --firefly-base-port int Mapped port base of FireFly core API (1 added for each member) (default 5000) --ipfs-mode string Set the mode in which IFPS operates. Options are: [private public] (default \"private\") -m, --manifest string Path to a manifest.json file containing the versions of each FireFly microservice to use. Overrides the --release flag. --multiparty Enable or disable multiparty mode (default true) --node-name stringArray Node name --org-name stringArray Organization name --prometheus-enabled Enables Prometheus metrics exposition and aggregation to a shared Prometheus server --prometheus-port int Port for the shared Prometheus server (default 9090) --prompt-names Prompt for org and node names instead of using the defaults -r, --release string Select the FireFly release version to use. Options are: [stable head alpha beta rc] (default \"latest\") --request-timeout int Custom request timeout (in seconds) - useful for registration to public chains --sandbox-enabled Enables the FireFly Sandbox to be started with your FireFly stack (default true) -s, --services-base-port int Mapped port base of services (100 added for each member) (default 5100) -t, --token-providers stringArray Token providers to use. Options are: [none erc1155 erc20_erc721] (default [erc20_erc721]) -v, --verbose verbose log output . Start your stack . To start your stack simply run: . ff start dev . This may take a minute or two and in the background the FireFly CLI will do the following for you: . | Download Docker images for all of the components of the Supernode | Initialize a new blockchain and blockchain node running inside a container | Set up configuration between all the components | Deploy FireFly’s BatchPin smart contract | Deploy an ERC-1155 token smart contract | Register an identity for each member and node | . After your stack finishes starting it will print out the links to each member’s UI and the Sandbox for that node: . ff start dev this will take a few seconds longer since this is the first time you're running this stack... done Web UI for member '0': http://127.0.0.1:5000/ui Sandbox UI for member '0': http://127.0.0.1:5109 Web UI for member '1': http://127.0.0.1:5001/ui Sandbox UI for member '1': http://127.0.0.1:5209 Web UI for member '2': http://127.0.0.1:5002/ui Sandbox UI for member '2': http://127.0.0.1:5309 To see logs for your stack run: ff logs dev . ",
     "url": "/firefly/head/gettingstarted/setup_env.html#creating-a-new-stack",
     "relUrl": "/gettingstarted/setup_env.html#creating-a-new-stack"
-  },"731": {
+  },"734": {
     "doc": "② Start your environment",
     "title": "Next steps: Use in the Sandbox",
     "content": "Now that you have some Supernodes running, it’s time to start playing: in the Sandbox! . ③ Use the Sandbox → . ",
     "url": "/firefly/head/gettingstarted/setup_env.html#next-steps-use-in-the-sandbox",
     "relUrl": "/gettingstarted/setup_env.html#next-steps-use-in-the-sandbox"
-  },"732": {
+  },"735": {
     "doc": "② Start your environment",
     "title": "② Start your environment",
     "content": " ",
     "url": "/firefly/head/gettingstarted/setup_env.html",
     "relUrl": "/gettingstarted/setup_env.html"
-  },"733": {
+  },"736": {
     "doc": "Simple Types",
     "title": "Simple Types",
     "content": " ",
     "url": "/firefly/head/reference/types/simpletypes.html",
     "relUrl": "/reference/types/simpletypes.html"
-  },"734": {
+  },"737": {
     "doc": "Simple Types",
     "title": "Table of contents",
     "content": ". | UUID | FFTime | FFBigInt | JSONAny | JSONObject | . ",
     "url": "/firefly/head/reference/types/simpletypes.html#table-of-contents",
     "relUrl": "/reference/types/simpletypes.html#table-of-contents"
-  },"735": {
+  },"738": {
     "doc": "Simple Types",
     "title": "UUID",
     "content": "IDs are generated as UUID V4 globally unique identifiers . ",
     "url": "/firefly/head/reference/types/simpletypes.html#uuid",
     "relUrl": "/reference/types/simpletypes.html#uuid"
-  },"736": {
+  },"739": {
     "doc": "Simple Types",
     "title": "FFTime",
     "content": "Times are serialized to JSON on the API in RFC 3339 / ISO 8601 nanosecond UTC time for example 2022-05-05T21:19:27.454767543Z. Note that JavaScript can parse this format happily into millisecond time with Date.parse(). Times are persisted as a nanosecond resolution timestamps in the database. On input, and in queries, times can be parsed from RFC3339, or unix timestamps (second, millisecond or nanosecond resolution). ",
     "url": "/firefly/head/reference/types/simpletypes.html#fftime",
     "relUrl": "/reference/types/simpletypes.html#fftime"
-  },"737": {
+  },"740": {
     "doc": "Simple Types",
     "title": "FFBigInt",
     "content": "Large integers of up to 256bits in size are common in blockchain, and handled in FireFly. In JSON output payloads in FireFly, including events, they are serialized as strings (with base 10). On input you can provide JSON string (string with an 0x prefix are parsed at base 16), or a JSON number. Be careful when using JSON numbers, that the largest number that is safe to transfer using a JSON number is 2^53 - 1. ",
     "url": "/firefly/head/reference/types/simpletypes.html#ffbigint",
     "relUrl": "/reference/types/simpletypes.html#ffbigint"
-  },"738": {
+  },"741": {
     "doc": "Simple Types",
     "title": "JSONAny",
     "content": "Any JSON type. An object, array, string, number, boolean or null. FireFly stores object data with the same field order as was provided on the input, but with any whitespace removed. ",
     "url": "/firefly/head/reference/types/simpletypes.html#jsonany",
     "relUrl": "/reference/types/simpletypes.html#jsonany"
-  },"739": {
+  },"742": {
     "doc": "Simple Types",
     "title": "JSONObject",
     "content": "Any JSON Object. Must be an object, rather than an array or a simple type. ",
     "url": "/firefly/head/reference/types/simpletypes.html#jsonobject",
     "relUrl": "/reference/types/simpletypes.html#jsonobject"
-  },"740": {
+  },"743": {
     "doc": "Subscription",
     "title": "Subscription",
     "content": " ",
     "url": "/firefly/head/reference/types/subscription.html",
     "relUrl": "/reference/types/subscription.html"
-  },"741": {
+  },"744": {
     "doc": "Subscription",
     "title": "Table of contents",
     "content": ". | Subscription . | Creating a subscription | Subscriptions and workload balancing | Pluggable Transports | WebSockets . | WebSocket protocol | Using start and ack explicitly | Auto-starting via URL query and autoack | Ephemeral WebSocket subscriptions | . | Webhooks | Example | Field Descriptions | . | SubscriptionFilter | MessageFilter | TransactionFilter | BlockchainEventFilter | SubscriptionOptions | WebhookInputOptions | . ",
     "url": "/firefly/head/reference/types/subscription.html#table-of-contents",
     "relUrl": "/reference/types/subscription.html#table-of-contents"
-  },"742": {
+  },"745": {
     "doc": "Subscription",
     "title": "Subscription",
     "content": "Each Subscription tracks delivery of events to a particular application, and allows FireFly to ensure that messages are delivered reliably to that application. Creating a subscription . Before you can connect to a subscription, you must create it via the REST API. One special case where you do not need to do this, is Ephemeral WebSocket connections (described below). For these you can just connect and immediately start receiving events. When creating a new subscription, you give it a name which is how you will refer to it when you connect. You are also able to specify server-side filtering that should be performed against the event stream, to limit the set of events that are sent to your application. All subscriptions are created within a namespace, and automatically filter events to only those emitted within that namespace. You can create multiple subscriptions for your application, to request different sets of server-side filtering for events. You can then request FireFly to deliver events for both subscriptions over the same WebSocket (if you are using the WebSocket transport). However, delivery order is not assured between two subscriptions. Subscriptions and workload balancing . You can have multiple scaled runtime instances of a single application, all running in parallel. These instances of the application all share a single subscription. Each event is only delivered once to the subscription, regardless of how many instances of your application connect to FireFly. With multiple WebSocket connections active on a single subscription, each event might be delivered to different instance of your application. This means workload is balanced across your instances. However, each event still needs to be acknowledged, so delivery processing order can still be maintained within your application database state. If you have multiple different applications all needing their own copy of the same event, then you need to configure a separate subscription for each application. Pluggable Transports . Hyperledger FireFly has two built-in transports for delivery of events to applications - WebSockets and Webhooks. The event interface is fully pluggable, so you can extend connectivity over an external event bus - such as NATS, Apache Kafka, Rabbit MQ, Redis etc. WebSockets . If your application has a back-end server runtime, then WebSockets are the most popular option for listening to events. WebSockets are well supported by all popular application development frameworks, and are very firewall friendly for connecting applications into your FireFly server. Check out the @hyperledger/firefly-sdk SDK for Node.js applications, and the hyperledger/firefly-common module for Golang applications. These both contain reliable WebSocket clients for your event listeners. A Java SDK is a roadmap item for the community. WebSocket protocol . FireFly has a simple protocol on top of WebSockets: . | Each time you connect/reconnect you need to tell FireFly to start sending you events on a particular subscription. You can do this in two ways (described in detail below): . | Send a WSStart JSON payload | Include a namespace and name query parameter in the URL when you connect, along with query params for other fields of WSStart | . | One you have started your subscription, each event flows from the server, to your application as a JSON Event payload | For each event you receive, you need to send a WSAck payload. | Unless you specified autoack in step (1) | . | . The SDK libraries for FireFly help you ensure you send the start payload each time your WebSocket reconnects. Using start and ack explicitly . Here’s an example websocat command showing an explicit start and ack. $ websocat ws://localhost:5000/ws {\"type\":\"start\",\"namespace\":\"default\",\"name\":\"docexample\"} # ... for each event that arrives here, you send an ack ... {\"type\":\"ack\",\"id\":\"70ed4411-57cf-4ba1-bedb-fe3b4b5fd6b6\"} . When creating your subscription, you can set readahead in order to ask FireFly to stream a number of messages to your application, ahead of receiving the acknowledgements. readahead can be a powerful tool to increase performance, but does require your application to ensure it processes events in the correct order and sends exactly one ack for each event. Auto-starting via URL query and autoack . Here’s an example websocat where we use URL query parameters to avoid the need to send a start JSON payload. We also use autoack so that events just keep flowing from the server. $ websocat \"ws://localhost:5000/ws?namespace=default&amp;name=docexample&amp;autoack\" # ... events just keep arriving here, as the server-side auto-acknowledges # the events as it delivers them to you. Note using autoack means you can miss events in the case of a disconnection, so should not be used for production applications that require at-least-once delivery. Ephemeral WebSocket subscriptions . FireFly WebSockets provide a special option to create a subscription dynamically, that only lasts for as long as you are connected to the server. We call these ephemeral subscriptions. Here’s an example websocat command showing an an ephemeral subscription - notice we don’t specify a name for the subscription, and there is no need to have already created the subscription beforehand. Here we also include an extra query parameter to set a server-side filter, to only include message events. $ websocat \"ws://localhost:5000/ws?namespace=default&amp;ephemeral&amp;autoack&amp;filter.events=message_.*\" {\"type\":\"start\",\"namespace\":\"default\",\"name\":\"docexample\"} # ... for each event that arrives here, you send an ack ... {\"type\":\"ack\",\"id\":\"70ed4411-57cf-4ba1-bedb-fe3b4b5fd6b6\"} . Ephemeral subscriptions are very convenient for experimentation, debugging and monitoring. However, they do not give reliable delivery because you only receive events that occur while you are connected. If you disconnect and reconnect, you will miss all events that happened while your application was not listening. Webhooks . The Webhook transport allows FireFly to make HTTP calls against your application’s API when events matching your subscription are emitted. This means the direction of network connection is from the FireFly server, to the application (the reverse of WebSockets). Conversely it means you don’t need to add any connection management code to your application - just expose and API that FireFly can call to process the events. Webhooks are great for serverless functions (AWS Lambda etc.), integrations with SaaS applications, and calling existing APIs. The FireFly configuration options for a Webhook subscription are very flexible, allowing you to customize your HTTP requests as follows: . | Set the HTTP request details: . | Method, URL, query, headers and input body | . | Wait for a invocation of the back-end service, before acknowledging . | To retry requests to your Webhook on a non-2xx HTTP status code or other error, then you should enable and configure events.webhooks.retry | The event is acknowledged once the request (with any retries), is completed - regardless of whether the outcome was a success or failure. | . | Use fastack to acknowledge against FireFly immediately and make multiple parallel calls to the HTTP API in a fire-and-forget fashion. | Set the HTTP request details dynamically from message_confirmed events: . | Map data out of the first data element in message events | Requires withData to be set on the subscription, in addition to the input.* configuration options | . | Can automatically generate a “reply” message for message_confirmed events: . | Maps the response body of the HTTP call to data in the reply message | Sets the cid and topic in the reply message to match the request | Sets a tag in the reply message, per the configuration, or dynamically based on a field in the input request data. | . | . Example . { \"id\": \"c38d69fd-442e-4d6f-b5a4-bab1411c7fe8\", \"namespace\": \"ns1\", \"name\": \"app1\", \"transport\": \"websockets\", \"filter\": { \"events\": \"^(message_.*|token_.*)$\", \"message\": { \"tag\": \"^(red|blue)$\" }, \"transaction\": {}, \"blockchainevent\": {} }, \"options\": { \"firstEvent\": \"newest\", \"readAhead\": 50 }, \"created\": \"2022-05-16T01:23:15Z\", \"updated\": null } . Field Descriptions . | Field Name | Description | Type | . | id | The UUID of the subscription | UUID | . | namespace | The namespace of the subscription. A subscription will only receive events generated in the namespace of the subscription | string | . | name | The name of the subscription. The application specifies this name when it connects, in order to attach to the subscription and receive events that arrived while it was disconnected. If multiple apps connect to the same subscription, events are workload balanced across the connected application instances | string | . | transport | The transport plugin responsible for event delivery (WebSockets, Webhooks, JMS, NATS etc.) | string | . | filter | Server-side filter to apply to events | SubscriptionFilter | . | options | Subscription options | SubscriptionOptions | . | ephemeral | Ephemeral subscriptions only exist as long as the application is connected, and as such will miss events that occur while the application is disconnected, and cannot be created administratively. You can create one over over a connected WebSocket connection | bool | . | created | Creation time of the subscription | FFTime | . | updated | Last time the subscription was updated | FFTime | . ",
     "url": "/firefly/head/reference/types/subscription.html",
     "relUrl": "/reference/types/subscription.html"
-  },"743": {
+  },"746": {
     "doc": "Subscription",
     "title": "SubscriptionFilter",
     "content": "| Field Name | Description | Type | . | events | Regular expression to apply to the event type, to subscribe to a subset of event types | string | . | message | Filters specific to message events. If an event is not a message event, these filters are ignored | MessageFilter | . | transaction | Filters specific to events with a transaction. If an event is not associated with a transaction, this filter is ignored | TransactionFilter | . | blockchainevent | Filters specific to blockchain events. If an event is not a blockchain event, these filters are ignored | BlockchainEventFilter | . | topic | Regular expression to apply to the topic of the event, to subscribe to a subset of topics. Note for messages sent with multiple topics, a separate event is emitted for each topic | string | . | topics | Deprecated: Please use ‘topic’ instead | string | . | tag | Deprecated: Please use ‘message.tag’ instead | string | . | group | Deprecated: Please use ‘message.group’ instead | string | . | author | Deprecated: Please use ‘message.author’ instead | string | . ",
     "url": "/firefly/head/reference/types/subscription.html#subscriptionfilter",
     "relUrl": "/reference/types/subscription.html#subscriptionfilter"
-  },"744": {
+  },"747": {
     "doc": "Subscription",
     "title": "MessageFilter",
     "content": "| Field Name | Description | Type | . | tag | Regular expression to apply to the message ‘header.tag’ field | string | . | group | Regular expression to apply to the message ‘header.group’ field | string | . | author | Regular expression to apply to the message ‘header.author’ field | string | . ",
     "url": "/firefly/head/reference/types/subscription.html#messagefilter",
     "relUrl": "/reference/types/subscription.html#messagefilter"
-  },"745": {
+  },"748": {
     "doc": "Subscription",
     "title": "TransactionFilter",
     "content": "| Field Name | Description | Type | . | type | Regular expression to apply to the transaction ‘type’ field | string | . ",
     "url": "/firefly/head/reference/types/subscription.html#transactionfilter",
     "relUrl": "/reference/types/subscription.html#transactionfilter"
-  },"746": {
+  },"749": {
     "doc": "Subscription",
     "title": "BlockchainEventFilter",
     "content": "| Field Name | Description | Type | . | name | Regular expression to apply to the blockchain event ‘name’ field, which is the name of the event in the underlying blockchain smart contract | string | . | listener | Regular expression to apply to the blockchain event ‘listener’ field, which is the UUID of the event listener. So you can restrict your subscription to certain blockchain listeners. Alternatively to avoid your application need to know listener UUIDs you can set the ‘topic’ field of blockchain event listeners, and use a topic filter on your subscriptions | string | . ",
     "url": "/firefly/head/reference/types/subscription.html#blockchaineventfilter",
     "relUrl": "/reference/types/subscription.html#blockchaineventfilter"
-  },"747": {
+  },"750": {
     "doc": "Subscription",
     "title": "SubscriptionOptions",
     "content": "| Field Name | Description | Type | . | firstEvent | Whether your appplication would like to receive events from the ‘oldest’ event emitted by your FireFly node (from the beginning of time), or the ‘newest’ event (from now), or a specific event sequence. Default is ‘newest’ | SubOptsFirstEvent | . | readAhead | The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts | uint16 | . | withData | Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data. May not be supported on some transports. | bool | . | fastack | Webhooks only: When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations | bool | . | url | Webhooks only: HTTP url to invoke. Can be relative if a base URL is set in the webhook plugin config | string | . | method | Webhooks only: HTTP method to invoke. Default=POST | string | . | json | Webhooks only: Whether to assume the response body is JSON, regardless of the returned Content-Type | bool | . | reply | Webhooks only: Whether to automatically send a reply event, using the body returned by the webhook | bool | . | replytag | Webhooks only: The tag to set on the reply message | string | . | replytx | Webhooks only: The transaction type to set on the reply message | string | . | headers | Webhooks only: Static headers to set on the webhook request | `` | . | query | Webhooks only: Static query params to set on the webhook request | `` | . | input | Webhooks only: A set of options to extract data from the first JSON input data in the incoming message. Only applies if withData=true | WebhookInputOptions | . ",
     "url": "/firefly/head/reference/types/subscription.html#subscriptionoptions",
     "relUrl": "/reference/types/subscription.html#subscriptionoptions"
-  },"748": {
+  },"751": {
     "doc": "Subscription",
     "title": "WebhookInputOptions",
     "content": "| Field Name | Description | Type | . | query | A top-level property of the first data input, to use for query parameters | string | . | headers | A top-level property of the first data input, to use for headers | string | . | body | A top-level property of the first data input, to use for the request body. Default is the whole first body | string | . | path | A top-level property of the first data input, to use for a path to append with escaping to the webhook path | string | . | replytx | A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose) | string | . ",
     "url": "/firefly/head/reference/types/subscription.html#webhookinputoptions",
     "relUrl": "/reference/types/subscription.html#webhookinputoptions"
-  },"749": {
+  },"752": {
     "doc": "pages.introduction",
     "title": "Introduction to Hyperledger FireFly",
     "content": " ",
     "url": "/firefly/head/overview/supernode_concept.html#introduction-to-hyperledger-firefly",
     "relUrl": "/overview/supernode_concept.html#introduction-to-hyperledger-firefly"
-  },"750": {
+  },"753": {
     "doc": "pages.introduction",
     "title": "Table of contents",
     "content": ". | Your Gateway to Web3 Technologies | An Open Source Supernode for Web3 Apps | . ",
     "url": "/firefly/head/overview/supernode_concept.html#table-of-contents",
     "relUrl": "/overview/supernode_concept.html#table-of-contents"
-  },"751": {
+  },"754": {
     "doc": "pages.introduction",
     "title": "Your Gateway to Web3 Technologies",
     "content": ". Hyperledger FireFly is an organization’s gateway to Web3, including all the blockchain ecosystems that they participate in. Multiple blockchains, multiple token economies, and multiple business networks. FireFly is not another blockchain implementation, rather it is a pluggable API Orchestration and Data layer, integrating into all of the different types of decentralized technologies that exist in Web3: . | Public Blockchains, Layer 2 scaling solutions, Side chains, and App chains | Permissioned Blockchains and Distributed Ledger Technologies (DLTs) | Decentralized storage solutions | Token ecosystems and standards | Smart Contracts, DeFi solutions and DAOs | Private off-chain encrypted communication rails | Advanced cryptography solutions | Identity frameworks | . ",
     "url": "/firefly/head/overview/supernode_concept.html#your-gateway-to-web3-technologies",
     "relUrl": "/overview/supernode_concept.html#your-gateway-to-web3-technologies"
-  },"752": {
+  },"755": {
     "doc": "pages.introduction",
     "title": "An Open Source Supernode for Web3 Apps",
     "content": "Hyperledger FireFly is a toolkit for building and connecting new full-stack decentralized applications (dapps), as well as integrating your existing core systems to the world of Web3. It has a runtime engine, and it provides a data layer that synchronizes state from the blockchain and other Web3 technologies. It exposes an API and Event Bus to your business logic, that is reliable, developer friendly and ready for enterprise use. We call this a Supernode - it sits between the application and the underlying infrastructure nodes, providing layers of additional function. The concept of a Supernode has evolved over the last decade of enterprise blockchain projects, as developers realized that they need much more than a blockchain node for their projects to be successful. Without a technology like Hyperledger FireFly, the application layer becomes extremely complex and fragile. Tens of thousands of lines of complex low-level “plumbing” / “middleware” code is required to integrate the web3 infrastructure into the application. This code provides zero unique business value to the solution, but can consume a huge proportion of the engineering budget and maintenance cost if built bespoke within a solution. ",
     "url": "/firefly/head/overview/supernode_concept.html#an-open-source-supernode-for-web3-apps",
     "relUrl": "/overview/supernode_concept.html#an-open-source-supernode-for-web3-apps"
-  },"753": {
+  },"756": {
     "doc": "pages.introduction",
     "title": "pages.introduction",
     "content": " ",
     "url": "/firefly/head/overview/supernode_concept.html",
     "relUrl": "/overview/supernode_concept.html"
-  },"754": {
+  },"757": {
     "doc": "pages.api_spec",
     "title": "API Spec",
     "content": "This is the FireFly OpenAPI Specification document generated by FireFly . Note: The ‘Try it out’ buttons will not work on this page because it’s not running against a live version of FireFly. To actually try it out, we recommend using the FireFly CLI to start an instance on your local machine (which will start the FireFly core on port 5000 by default) and then open the Swagger UI associated with your local node by opening a new tab and visiting http://localhost:5000/api . | ",
     "url": "/firefly/head/swagger/swagger.html#api-spec",
     "relUrl": "/swagger/swagger.html#api-spec"
-  },"755": {
+  },"758": {
     "doc": "pages.api_spec",
     "title": "pages.api_spec",
     "content": " ",
     "url": "/firefly/head/swagger/swagger.html",
     "relUrl": "/swagger/swagger.html"
-  },"756": {
+  },"759": {
     "doc": "TokenApproval",
     "title": "TokenApproval",
     "content": " ",
     "url": "/firefly/head/reference/types/tokenapproval.html",
     "relUrl": "/reference/types/tokenapproval.html"
-  },"757": {
+  },"760": {
     "doc": "TokenApproval",
     "title": "Table of contents",
     "content": ". | TokenApproval . | Example | Field Descriptions | . | TransactionRef | . ",
     "url": "/firefly/head/reference/types/tokenapproval.html#table-of-contents",
     "relUrl": "/reference/types/tokenapproval.html#table-of-contents"
-  },"758": {
+  },"761": {
     "doc": "TokenApproval",
     "title": "TokenApproval",
     "content": "A token approval is a record that an address other than the owner of a token balance, has been granted authority to transfer tokens on the owners behalf. The approved “operator” (or “spender”) account might be a smart contract, or another individual. FireFly provides APIs for initiating and tracking approvals, which token connectors integrate with the implementation of the underlying token. The off-chain index maintained in FireFly for allowance allows you to quickly find the most recent allowance event associated with a pair of keys, using the subject field, combined with the active field. When a new Token Approval event is delivered to FireFly Core by the Token Connector, any previous approval for the same subject is marked \"active\": false, and the new approval is marked with \"active\": true . The token connector is responsible for the format of the subject field to reflect the owner / operator (spender) relationship. Example . { \"localId\": \"1cd3e2e2-dd6a-441d-94c5-02439de9897b\", \"pool\": \"1244ecbe-5862-41c3-99ec-4666a18b9dd5\", \"connector\": \"erc20_erc721\", \"key\": \"0x55860105d6a675dbe6e4d83f67b834377ba677ad\", \"operator\": \"0x30017fd084715e41aa6536ab777a8f3a2b11a5a1\", \"approved\": true, \"info\": { \"owner\": \"0x55860105d6a675dbe6e4d83f67b834377ba677ad\", \"spender\": \"0x30017fd084715e41aa6536ab777a8f3a2b11a5a1\", \"value\": \"115792089237316195423570985008687907853269984665640564039457584007913129639935\" }, \"namespace\": \"ns1\", \"protocolId\": \"000000000032/000000/000000\", \"subject\": \"0x55860105d6a675dbe6e4d83f67b834377ba677ad:0x30017fd084715e41aa6536ab777a8f3a2b11a5a1\", \"active\": true, \"created\": \"2022-05-16T01:23:15Z\", \"tx\": { \"type\": \"token_approval\", \"id\": \"4b6e086d-0e31-482d-9683-cd18b2045031\" } } . Field Descriptions . | Field Name | Description | Type | . | localId | The UUID of this token approval, in the local FireFly node | UUID | . | pool | The UUID the token pool this approval applies to | UUID | . | connector | The name of the token connector, as specified in the FireFly core configuration file. Required on input when there are more than one token connectors configured | string | . | key | The blockchain signing key for the approval request. On input defaults to the first signing key of the organization that operates the node | string | . | operator | The blockchain identity that is granted the approval | string | . | approved | Whether this record grants permission for an operator to perform actions on the token balance (true), or revokes permission (false) | bool | . | info | Token connector specific information about the approval operation, such as whether it applied to a limited balance of a fungible token. See your chosen token connector documentation for details | JSONObject | . | namespace | The namespace for the approval, which must match the namespace of the token pool | string | . | protocolId | An alphanumerically sortable string that represents this event uniquely with respect to the blockchain | string | . | subject | A string identifying the parties and entities in the scope of this approval, as provided by the token connector | string | . | active | Indicates if this approval is currently active (only one approval can be active per subject) | bool | . | message | The UUID of a message that has been correlated with this approval using the data field of the approval in a compatible token connector | UUID | . | messageHash | The hash of a message that has been correlated with this approval using the data field of the approval in a compatible token connector | Bytes32 | . | created | The creation time of the token approval | FFTime | . | tx | If submitted via FireFly, this will reference the UUID of the FireFly transaction (if the token connector in use supports attaching data) | TransactionRef | . | blockchainEvent | The UUID of the blockchain event | UUID | . | config | Input only field, with token connector specific configuration of the approval. See your chosen token connector documentation for details | JSONObject | . ",
     "url": "/firefly/head/reference/types/tokenapproval.html",
     "relUrl": "/reference/types/tokenapproval.html"
-  },"759": {
+  },"762": {
     "doc": "TokenApproval",
     "title": "TransactionRef",
     "content": "| Field Name | Description | Type | . | type | The type of the FireFly transaction | FFEnum: | . | id | The UUID of the FireFly transaction | UUID | . ",
     "url": "/firefly/head/reference/types/tokenapproval.html#transactionref",
     "relUrl": "/reference/types/tokenapproval.html#transactionref"
-  },"760": {
+  },"763": {
     "doc": "TokenPool",
     "title": "TokenPool",
     "content": " ",
     "url": "/firefly/head/reference/types/tokenpool.html",
     "relUrl": "/reference/types/tokenpool.html"
-  },"761": {
+  },"764": {
     "doc": "TokenPool",
     "title": "Table of contents",
     "content": ". | TokenPool . | Example token pool types | Example | Field Descriptions | . | TransactionRef | FFIReference | . ",
     "url": "/firefly/head/reference/types/tokenpool.html#table-of-contents",
     "relUrl": "/reference/types/tokenpool.html#table-of-contents"
-  },"762": {
+  },"765": {
     "doc": "TokenPool",
     "title": "TokenPool",
     "content": "Token pools are a FireFly construct for describing a set of tokens. The total supply of a particular fungible token, or a group of related non-fungible tokens. The exact definition of a token pool is dependent on the token connector implementation. Check the documentation for your chosen connector implementation to see the detailed options for configuring a new Token Pool. Note that it is very common to use a Token Pool to teach Hyperledger FireFly about an existing token, so that you can start interacting with a token that already exists. Example token pool types . Some examples of how the generic concept of a Token Pool maps to various well-defined Ethereum standards: . | ERC-1155: a single contract instance can efficiently allocate many isolated pools of fungible or non-fungible tokens | ERC-20 / ERC-777: each contract instance represents a single fungible pool of value, e.g. “a coin” | ERC-721: each contract instance represents a single pool of NFTs, each with unique identities within the pool | ERC-1400 / ERC-1410: partially supported in the same manner as ERC-20/ERC-777, but would require new features for working with partitions | . These are provided as examples only - a custom token connector could be backed by any token technology (Ethereum or otherwise) as long as it can support the basic operations described here (create pool, mint, burn, transfer). Other FireFly repos include a sample implementation of a token connector for ERC-20 and ERC-721 as well as ERC-1155. Example . { \"id\": \"90ebefdf-4230-48a5-9d07-c59751545859\", \"type\": \"fungible\", \"namespace\": \"ns1\", \"name\": \"my_token\", \"standard\": \"ERC-20\", \"locator\": \"address=0x056df1c53c3c00b0e13d37543f46930b42f71db0\\u0026schema=ERC20WithData\\u0026type=fungible\", \"decimals\": 18, \"connector\": \"erc20_erc721\", \"message\": \"43923040-b1e5-4164-aa20-47636c7177ee\", \"state\": \"confirmed\", \"created\": \"2022-05-16T01:23:15Z\", \"info\": { \"address\": \"0x056df1c53c3c00b0e13d37543f46930b42f71db0\", \"name\": \"pool8197\", \"schema\": \"ERC20WithData\" }, \"tx\": { \"type\": \"token_pool\", \"id\": \"a23ffc87-81a2-4cbc-97d6-f53d320c36cd\" } } . Field Descriptions . | Field Name | Description | Type | . | id | The UUID of the token pool | UUID | . | type | The type of token the pool contains, such as fungible/non-fungible | FFEnum:\"fungible\"\"nonfungible\" | . | namespace | The namespace for the token pool | string | . | name | The name of the token pool. Note the name is not validated against the description of the token on the blockchain | string | . | standard | The ERC standard the token pool conforms to, as reported by the token connector | string | . | locator | A unique identifier for the pool, as provided by the token connector | string | . | key | The signing key used to create the token pool. On input for token connectors that support on-chain deployment of new tokens (vs. only index existing ones) this determines the signing key used to create the token on-chain | string | . | symbol | The token symbol. If supplied on input for an existing on-chain token, this must match the on-chain information | string | . | decimals | Number of decimal places that this token has | int | . | connector | The name of the token connector, as specified in the FireFly core configuration file that is responsible for the token pool. Required on input when multiple token connectors are configured | string | . | message | The UUID of the broadcast message used to inform the network to index this pool | UUID | . | state | The current state of the token pool | FFEnum:\"pending\"\"confirmed\" | . | created | The creation time of the pool | FFTime | . | config | Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details | JSONObject | . | info | Token connector specific information about the pool. See your chosen token connector documentation for details | JSONObject | . | tx | Reference to the FireFly transaction used to create and broadcast this pool to the network | TransactionRef | . | interface | A reference to an existing FFI, containing pre-registered type information for the token contract | FFIReference | . | interfaceFormat | The interface encoding format supported by the connector for this token pool | FFEnum:\"abi\"\"ffi\" | . | methods | The method definitions resolved by the token connector to be used by each token operation | JSONAny | . ",
     "url": "/firefly/head/reference/types/tokenpool.html",
     "relUrl": "/reference/types/tokenpool.html"
-  },"763": {
+  },"766": {
     "doc": "TokenPool",
     "title": "TransactionRef",
     "content": "| Field Name | Description | Type | . | type | The type of the FireFly transaction | FFEnum: | . | id | The UUID of the FireFly transaction | UUID | . ",
     "url": "/firefly/head/reference/types/tokenpool.html#transactionref",
     "relUrl": "/reference/types/tokenpool.html#transactionref"
-  },"764": {
+  },"767": {
     "doc": "TokenPool",
     "title": "FFIReference",
     "content": "| Field Name | Description | Type | . | id | The UUID of the FireFly interface | UUID | . | name | The name of the FireFly interface | string | . | version | The version of the FireFly interface | string | . ",
     "url": "/firefly/head/reference/types/tokenpool.html#ffireference",
     "relUrl": "/reference/types/tokenpool.html#ffireference"
-  },"765": {
+  },"768": {
     "doc": "TokenTransfer",
     "title": "TokenTransfer",
     "content": " ",
     "url": "/firefly/head/reference/types/tokentransfer.html",
     "relUrl": "/reference/types/tokentransfer.html"
-  },"766": {
+  },"769": {
     "doc": "TokenTransfer",
     "title": "Table of contents",
     "content": ". | TokenTransfer . | FireFly initiated vs. non-FireFly initiated transfers | Message coordinated transfers | Transfer types | Example | Field Descriptions | . | TransactionRef | . ",
     "url": "/firefly/head/reference/types/tokentransfer.html#table-of-contents",
     "relUrl": "/reference/types/tokentransfer.html#table-of-contents"
-  },"767": {
+  },"770": {
     "doc": "TokenTransfer",
     "title": "TokenTransfer",
     "content": "A Token Transfer is created for each transfer of value that happens under a token pool. The transfers form an off-chain audit history (an “index”) of the transactions that have been performed on the blockchain. This historical information cannot be queried directly from the blockchain for most token implementations, because it is inefficient to use the blockchain to store complex data structures like this. So the blockchain simply emits events when state changes, and if you want to be able to query this historical information you need to track it in your own off-chain database. Hyperledger FireFly maintains this index automatically for all Token Pools that are configured. FireFly initiated vs. non-FireFly initiated transfers . There is no requirement at all to use FireFly to initiate transfers in Token Pools that Hyperledger FireFly is aware of. FireFly will listen to and update its audit history and balances for all transfers, regardless of whether they were initiated using a FireFly Supernode or not. So you could for example use Metamask to initiate a transfer directly against an ERC-20/ERC-721 contract directly on your blockchain, and you will see it appear as a transfer. Or initiate a transfer on-chain via another Smart Contract, such as a Hashed Timelock Contract (HTLC) releasing funds held in digital escrow. Message coordinated transfers . One special feature enabled when using FireFly to initiate transfers, is to coordinate an off-chain data transfer (private or broadcast) with the on-chain transfer of value. This is a powerful tool to allow transfers to have rich metadata associated that is too sensitive (or too large) to include on the blockchain itself. These transfers have a message associated with them, and require a compatible Token Connector and on-chain Smart Contract that allows a data payload to be included as part of the transfer, and to be emitted as part of the transfer event. Examples of how to do this are included in the ERC-20, ERC-721 and ERC-1155 Token Connector sample smart contracts. Transfer types . There are three primary types of transfer: . | Mint - new tokens come into existence, increasing the total supply of tokens within the pool. The from address will be unset for these transfer types. | Burn - existing tokens are taken out of circulation. The to address will be unset for these transfer types. | Transfer - tokens move from ownership by one account, to another account. The from and to addresses are both set for these type of transfers. | . Note that the key that signed the Transfer transaction might be different to the from account that is the owner of the tokens before the transfer. The Approval resource is used to track which signing accounts (other than the owner) have approval to transfer tokens on the owner’s behalf. Example . { \"type\": \"transfer\", \"pool\": \"1244ecbe-5862-41c3-99ec-4666a18b9dd5\", \"uri\": \"firefly://token/1\", \"connector\": \"erc20_erc721\", \"namespace\": \"ns1\", \"key\": \"0x55860105D6A675dBE6e4d83F67b834377Ba677AD\", \"from\": \"0x55860105D6A675dBE6e4d83F67b834377Ba677AD\", \"to\": \"0x55860105D6A675dBE6e4d83F67b834377Ba677AD\", \"amount\": \"1000000000000000000\", \"protocolId\": \"000000000041/000000/000000\", \"message\": \"780b9b90-e3b0-4510-afac-b4b1f2940b36\", \"messageHash\": \"780204e634364c42779920eddc8d9fecccb33e3607eeac9f53abd1b31184ae4e\", \"created\": \"2022-05-16T01:23:15Z\", \"tx\": { \"type\": \"token_transfer\", \"id\": \"62767ca8-99f9-439c-9deb-d80c6672c158\" }, \"blockchainEvent\": \"b57fcaa2-156e-4c3f-9b0b-ddec9ee25933\" } . Field Descriptions . | Field Name | Description | Type | . | type | The type of transfer such as mint/burn/transfer | FFEnum:\"mint\"\"burn\"\"transfer\" | . | localId | The UUID of this token transfer, in the local FireFly node | UUID | . | pool | The UUID the token pool this transfer applies to | UUID | . | tokenIndex | The index of the token within the pool that this transfer applies to | string | . | uri | The URI of the token this transfer applies to | string | . | connector | The name of the token connector, as specified in the FireFly core configuration file. Required on input when there are more than one token connectors configured | string | . | namespace | The namespace for the transfer, which must match the namespace of the token pool | string | . | key | The blockchain signing key for the transfer. On input defaults to the first signing key of the organization that operates the node | string | . | from | The source account for the transfer. On input defaults to the value of ‘key’ | string | . | to | The target account for the transfer. On input defaults to the value of ‘key’ | string | . | amount | The amount for the transfer. For non-fungible tokens will always be 1. For fungible tokens, the number of decimals for the token pool should be considered when inputting the amount. For example, with 18 decimals a fractional balance of 10.234 will be specified as 10,234,000,000,000,000,000 | FFBigInt | . | protocolId | An alphanumerically sortable string that represents this event uniquely with respect to the blockchain | string | . | message | The UUID of a message that has been correlated with this transfer using the data field of the transfer in a compatible token connector | UUID | . | messageHash | The hash of a message that has been correlated with this transfer using the data field of the transfer in a compatible token connector | Bytes32 | . | created | The creation time of the transfer | FFTime | . | tx | If submitted via FireFly, this will reference the UUID of the FireFly transaction (if the token connector in use supports attaching data) | TransactionRef | . | blockchainEvent | The UUID of the blockchain event | UUID | . | config | Input only field, with token connector specific configuration of the transfer. See your chosen token connector documentation for details | JSONObject | . ",
     "url": "/firefly/head/reference/types/tokentransfer.html",
     "relUrl": "/reference/types/tokentransfer.html"
-  },"768": {
+  },"771": {
     "doc": "TokenTransfer",
     "title": "TransactionRef",
     "content": "| Field Name | Description | Type | . | type | The type of the FireFly transaction | FFEnum: | . | id | The UUID of the FireFly transaction | UUID | . ",
     "url": "/firefly/head/reference/types/tokentransfer.html#transactionref",
     "relUrl": "/reference/types/tokentransfer.html#transactionref"
-  },"769": {
+  },"772": {
     "doc": "pages.tools",
     "title": "Tools",
     "content": ". ",
     "url": "/firefly/head/overview/key_components/tools.html#tools",
     "relUrl": "/overview/key_components/tools.html#tools"
-  },"770": {
+  },"773": {
     "doc": "pages.tools",
     "title": "FireFly CLI",
     "content": ". The FireFly CLI can be used to create local FireFly stacks for offline development of blockchain apps. This allows developers to rapidly iterate on their idea without needing to set up a bunch of infrastructure before they can write the first line of code. ",
     "url": "/firefly/head/overview/key_components/tools.html#firefly-cli",
     "relUrl": "/overview/key_components/tools.html#firefly-cli"
-  },"771": {
+  },"774": {
     "doc": "pages.tools",
     "title": "FireFly Sandbox",
     "content": ". The FireFly Sandbox sits logically outside the Supernode, and it acts like an “end-user” application written to use FireFly’s API. In your setup, you have one Sandbox per member, each talking to their own FireFly API. The purpose of the Sandbox is to provide a quick and easy way to try out all of the fundamental building blocks that FireFly provides. It also shows developers, through example code snippets, how they would implement the same functionality in their own app’s backend. 🗒 Technical details: The FireFly Sandbox is an example “full-stack” web app. It has a backend written in TypeScript / Node.js, and a frontend in TypeScript / React. When you click a button in your browser, the frontend makes a request to the backend, which then uses the FireFly Node.js SDK to make requests to FireFly’s API. ",
     "url": "/firefly/head/overview/key_components/tools.html#firefly-sandbox",
     "relUrl": "/overview/key_components/tools.html#firefly-sandbox"
-  },"772": {
+  },"775": {
     "doc": "pages.tools",
     "title": "FireFly Explorer",
     "content": "The FireFly explorer is a part of FireFly Core itself. It is a view into the system that allows operators to monitor the current state of the system and investigate specific transactions, messages, and events. It is also a great way for developers to see the results of running their code against FireFly’s API. ",
     "url": "/firefly/head/overview/key_components/tools.html#firefly-explorer",
     "relUrl": "/overview/key_components/tools.html#firefly-explorer"
-  },"773": {
+  },"776": {
     "doc": "pages.tools",
     "title": "pages.tools",
     "content": " ",
     "url": "/firefly/head/overview/key_components/tools.html",
     "relUrl": "/overview/key_components/tools.html"
-  },"774": {
+  },"777": {
     "doc": "Transaction",
     "title": "Transaction",
     "content": " ",
     "url": "/firefly/head/reference/types/transaction.html",
     "relUrl": "/reference/types/transaction.html"
-  },"775": {
+  },"778": {
     "doc": "Transaction",
     "title": "Table of contents",
     "content": ". | Transaction . | Example | Field Descriptions | . | . ",
     "url": "/firefly/head/reference/types/transaction.html#table-of-contents",
     "relUrl": "/reference/types/transaction.html#table-of-contents"
-  },"776": {
+  },"779": {
     "doc": "Transaction",
     "title": "Transaction",
     "content": "FireFly Transactions are a grouping construct for a number of Operations and Events that need to complete or fail as unit. FireFly Transactions are not themselves Blockchain transactions, but in many cases there is exactly one Blockchain transaction associated with each FireFly transaction. Exceptions include unpinned transactions, where there is no blockchain transaction at all. The Blockchain native transaction ID is stored in the FireFly transaction object when it is known. However, the FireFly transaction starts before a Blockchain transaction exists - because reliably submitting the blockchain transaction is one of the operations that is performed inside of the FireFly transaction. The below screenshot from the FireFly Explorer nicely illustrates how multiple operations and events are associated with a FireFly transaction. In this example, the transaction tracking is pinning of a batch of messages stored in IPFS to the blockchain. So there is a Blockchain ID for the transaction - as there is just one Blockchain transaction regardless of how many messages in the batch. There are operations for the submission of that transaction, and the upload of the data to IPFS. Then a corresponding Blockchain Event Received event for the detection of the event from the blockchain smart contract when the transaction was mined, and a Message Confirmed event for each message in the batch (in this case 1). Then here the message was a special Definition message that advertised a new Contract API to all members of the network - so there is a Contract API Confirmed event as well. Each FireFly transaction has a UUID. This UUID is propagated through to all participants in a FireFly transaction. For example in a Token Transfer that is coordinated with an off-chain private Message, the transaction ID is propagated to all parties who are part of that transaction. So the same UUID can be used to find the transaction in the FireFly Explorer of any member who has access to the message. This is possible because hash-pinned off-chain data is associated with that on-chain transfer. However, in the case of a raw ERC-20/ERC-721 transfer (without data), or any other raw Blockchain transaction, the FireFly transaction UUID cannot be propagated - so it will be local on the node that initiated the transaction. Example . { \"id\": \"4e7e0943-4230-4f67-89b6-181adf471edc\", \"namespace\": \"ns1\", \"type\": \"contract_invoke\", \"created\": \"2022-05-16T01:23:15Z\", \"blockchainIds\": [ \"0x34b0327567fefed09ac7b4429549bc609302b08a9cbd8f019a078ec44447593d\" ] } . Field Descriptions . | Field Name | Description | Type | . | id | The UUID of the FireFly transaction | UUID | . | namespace | The namespace of the FireFly transaction | string | . | type | The type of the FireFly transaction | FFEnum:\"none\"\"unpinned\"\"batch_pin\"\"network_action\"\"token_pool\"\"token_transfer\"\"contract_deploy\"\"contract_invoke\"\"token_approval\"\"data_publish\" | . | created | The time the transaction was created on this node. Note the transaction is individually created with the same UUID on each participant in the FireFly transaction | FFTime | . | idempotencyKey | An optional unique identifier for a transaction. Cannot be duplicated within a namespace, thus allowing idempotent submission of transactions to the API | IdempotencyKey | . | blockchainIds | The blockchain transaction ID, in the format specific to the blockchain involved in the transaction. Not all FireFly transactions include a blockchain. FireFly transactions are extensible to support multiple blockchain transactions | string[] | . ",
     "url": "/firefly/head/reference/types/transaction.html",
     "relUrl": "/reference/types/transaction.html"
-  },"777": {
+  },"780": {
     "doc": "pages.usage_patterns",
     "title": "Usage Patterns",
     "content": " ",
     "url": "/firefly/head/overview/usage_patterns.html#usage-patterns",
     "relUrl": "/overview/usage_patterns.html#usage-patterns"
-  },"778": {
+  },"781": {
     "doc": "pages.usage_patterns",
     "title": "Table of contents",
     "content": ". | Web3 Gateway Mode | Multiparty Mode | . There are two modes of usage for Hyperledger Firefly: Web3 Gateway and Multiparty . A single runtime can operate in both of these modes, using different namespaces. ",
     "url": "/firefly/head/overview/usage_patterns.html#table-of-contents",
     "relUrl": "/overview/usage_patterns.html#table-of-contents"
-  },"779": {
+  },"782": {
     "doc": "pages.usage_patterns",
     "title": "Web3 Gateway Mode",
     "content": ". Web3 Gateway mode lets you interact with any Web3 application, regardless of whether Hyperledger FireFly is being used by other members of your business network. In this mode you can: . | Transfer tokenized value | Invoke any other type of smart contract | Index data from the blockchain | Reliably trigger events in your applications and back-office core systems | Manage decentralized data (NFTs etc.) | Use a private address book to manage signing identities and relationships | … and much more | . Learn more about Web3 Gateway Mode. ",
     "url": "/firefly/head/overview/usage_patterns.html#web3-gateway-mode",
     "relUrl": "/overview/usage_patterns.html#web3-gateway-mode"
-  },"780": {
+  },"783": {
     "doc": "pages.usage_patterns",
     "title": "Multiparty Mode",
     "content": "Multiparty mode is used to build multi-party systems, with a common application runtime deployed by each enterprise participant. This allows sophisticated applications to be built, that all use the pluggable APIs of Hyperledger FireFly to achieve end-to-end business value in an enterprise context. In this mode you can do everything you could do in Web3 Gateway mode, plus: . | Share and enforce common data formats | Exchange data privately, via an encrypted data bus . | Structured JSON data payloads | Large documents | . | Coordinate on-chain and off-chain data exchange . | Private data | Broadcast data | . | Mask on-chain activities using hashes | Use a shared address book to manage signing identities and relationships | … and much more | . Learn more about Multiparty Mode. ",
     "url": "/firefly/head/overview/usage_patterns.html#multiparty-mode",
     "relUrl": "/overview/usage_patterns.html#multiparty-mode"
-  },"781": {
+  },"784": {
     "doc": "pages.usage_patterns",
     "title": "pages.usage_patterns",
     "content": " ",
     "url": "/firefly/head/overview/usage_patterns.html",
     "relUrl": "/overview/usage_patterns.html"
-  },"782": {
+  },"785": {
     "doc": "Verifier",
     "title": "Verifier",
     "content": " ",
     "url": "/firefly/head/reference/types/verifier.html",
     "relUrl": "/reference/types/verifier.html"
-  },"783": {
+  },"786": {
     "doc": "Verifier",
     "title": "Table of contents",
     "content": ". | Verifier . | Example | Field Descriptions | . | . ",
     "url": "/firefly/head/reference/types/verifier.html#table-of-contents",
     "relUrl": "/reference/types/verifier.html#table-of-contents"
-  },"784": {
+  },"787": {
     "doc": "Verifier",
     "title": "Verifier",
     "content": "A verifier is a cryptographic verification mechanism for an identity in FireFly. FireFly generally defers verification of these keys to the lower layers of technologies in the stack - the blockchain (Fabric, Ethereum etc.) or Data Exchange technology. As such the details of the public key cryptography scheme are not represented in the FireFly verifiers. Only the string identifier of the verifier that is appropriate to the technology. | Ethereum blockchains: The Ethereum address hex string | Hyperledger Fabric: The fully qualified MSP Identifier string | Data exchange: The data exchange “Peer ID”, as determined by the DX plugin | . Example . { \"hash\": \"6818c41093590b862b781082d4df5d4abda6d2a4b71d737779edf6d2375d810b\", \"identity\": \"114f5857-9983-46fb-b1fc-8c8f0a20846c\", \"type\": \"ethereum_address\", \"value\": \"0x30017fd084715e41aa6536ab777a8f3a2b11a5a1\", \"created\": \"2022-05-16T01:23:15Z\" } . Field Descriptions . | Field Name | Description | Type | . | hash | Hash used as a globally consistent identifier for this namespace + type + value combination on every node in the network | Bytes32 | . | identity | The UUID of the parent identity that has claimed this verifier | UUID | . | namespace | The namespace of the verifier | string | . | type | The type of the verifier | FFEnum:\"ethereum_address\"\"fabric_msp_id\"\"dx_peer_id\" | . | value | The verifier string, such as an Ethereum address, or Fabric MSP identifier | string | . | created | The time this verifier was created on this node | FFTime | . ",
     "url": "/firefly/head/reference/types/verifier.html",
     "relUrl": "/reference/types/verifier.html"
-  },"785": {
+  },"788": {
     "doc": "Versioning Scheme",
     "title": "Versioning Scheme",
     "content": " ",
     "url": "/firefly/head/contributors/version_scheme.html",
     "relUrl": "/contributors/version_scheme.html"
-  },"786": {
+  },"789": {
     "doc": "Versioning Scheme",
     "title": "Table of contents",
     "content": ". | Versioning Scheme . | Semantic versioning | Pre-release test versions | Candidate releases | . | . This page describes FireFly’s versioning scheme . ",
     "url": "/firefly/head/contributors/version_scheme.html#table-of-contents",
     "relUrl": "/contributors/version_scheme.html#table-of-contents"
-  },"787": {
+  },"790": {
     "doc": "Versioning Scheme",
     "title": "Semantic versioning",
     "content": "FireFly follows semantic versioning. In summary, this means: . Given a version number MAJOR.MINOR.PATCH, increment the: . | MAJOR version when you make incompatible API changes, | MINOR version when you add functionality in a backwards compatible manner, and | PATCH version when you make backwards compatible bug fixes. | Additional labels for pre-release and build metadata are available as extensions to the MAJOR.MINOR.PATCH format. | . When creating a new release, the release name and tag should be the semantic version should be prefixed with a v . For example, a certain release name/tag could be v0.9.0. ",
     "url": "/firefly/head/contributors/version_scheme.html#semantic-versioning",
     "relUrl": "/contributors/version_scheme.html#semantic-versioning"
-  },"788": {
+  },"791": {
     "doc": "Versioning Scheme",
     "title": "Pre-release test versions",
     "content": "For pre-release versions for testing, we append a date and index to the end of the most recently released version. For example, if we needed to create a pre-release based on v0.9.0 and today’s date is October 22, 2021, the version name/tag would be: v0.9.0-20211022-01. If for some reason you needed to create another pre-release version in the same day (hey, stuff happens), the name/tag for that one would be v0.9.0-20211022-02. ",
     "url": "/firefly/head/contributors/version_scheme.html#pre-release-test-versions",
     "relUrl": "/contributors/version_scheme.html#pre-release-test-versions"
-  },"789": {
+  },"792": {
     "doc": "Versioning Scheme",
     "title": "Candidate releases",
     "content": "For pre-releases that are candidates to become a new major or minor release, the release name/tag will be based on the release that the candidate will become (as opposed to the test releases above, which are based on the previous release). For example, if the current latest release is v0.9.0 but we want to create an alpha release for 1.0, the release name/tag would be v1.0.0-alpha.1. ",
     "url": "/firefly/head/contributors/version_scheme.html#candidate-releases",
     "relUrl": "/contributors/version_scheme.html#candidate-releases"
-  },"790": {
+  },"793": {
     "doc": "WSAck",
     "title": "WSAck",
     "content": " ",
     "url": "/firefly/head/reference/types/wsack.html",
     "relUrl": "/reference/types/wsack.html"
-  },"791": {
+  },"794": {
     "doc": "WSAck",
     "title": "Table of contents",
     "content": ". | WSAck . | Example | Field Descriptions | . | SubscriptionRef | . ",
     "url": "/firefly/head/reference/types/wsack.html#table-of-contents",
     "relUrl": "/reference/types/wsack.html#table-of-contents"
-  },"792": {
+  },"795": {
     "doc": "WSAck",
     "title": "WSAck",
     "content": "An ack must be sent on a WebSocket for each event delivered to an application. Unless autoack is set in the WSStart payload/URL parameters to cause automatic acknowledgement. Your application should specify the id of each event that it acknowledges. If the id is omitted, then FireFly will assume the oldest message delivered to the application that has not been acknowledged is the one the ack is associated with. If multiple subscriptions are started on a WebSocket, then you need to specify the subscription namespace+name as part of each ack. If you send an acknowledgement that cannot be correlated, then a WSError payload will be sent to the application. Example . { \"type\": \"ack\", \"id\": \"f78bf82b-1292-4c86-8a08-e53d855f1a64\", \"subscription\": { \"namespace\": \"ns1\", \"name\": \"app1_subscription\" } } . Field Descriptions . | Field Name | Description | Type | . | type | WSActionBase.type | FFEnum:\"start\"\"ack\"\"protocol_error\" | . | id | WSAck.id | UUID | . | subscription | WSAck.subscription | SubscriptionRef | . ",
     "url": "/firefly/head/reference/types/wsack.html",
     "relUrl": "/reference/types/wsack.html"
-  },"793": {
+  },"796": {
     "doc": "WSAck",
     "title": "SubscriptionRef",
     "content": "| Field Name | Description | Type | . | id | The UUID of the subscription | UUID | . | namespace | The namespace of the subscription. A subscription will only receive events generated in the namespace of the subscription | string | . | name | The name of the subscription. The application specifies this name when it connects, in order to attach to the subscription and receive events that arrived while it was disconnected. If multiple apps connect to the same subscription, events are workload balanced across the connected application instances | string | . ",
     "url": "/firefly/head/reference/types/wsack.html#subscriptionref",
     "relUrl": "/reference/types/wsack.html#subscriptionref"
-  },"794": {
+  },"797": {
     "doc": "WSError",
     "title": "WSError",
     "content": " ",
     "url": "/firefly/head/reference/types/wserror.html",
     "relUrl": "/reference/types/wserror.html"
-  },"795": {
+  },"798": {
     "doc": "WSError",
     "title": "Table of contents",
     "content": ". | WSError . | Example | Field Descriptions | . | . ",
     "url": "/firefly/head/reference/types/wserror.html#table-of-contents",
     "relUrl": "/reference/types/wserror.html#table-of-contents"
-  },"796": {
+  },"799": {
     "doc": "WSError",
     "title": "WSError",
     "content": "Example . { \"type\": \"protocol_error\", \"error\": \"FF10175: Acknowledgment does not match an inflight event + subscription\" } . Field Descriptions . | Field Name | Description | Type | . | type | WSAck.type | FFEnum:\"start\"\"ack\"\"protocol_error\" | . | error | WSAck.error | string | . ",
     "url": "/firefly/head/reference/types/wserror.html",
     "relUrl": "/reference/types/wserror.html"
-  },"797": {
+  },"800": {
     "doc": "WSStart",
     "title": "WSStart",
     "content": " ",
     "url": "/firefly/head/reference/types/wsstart.html",
     "relUrl": "/reference/types/wsstart.html"
-  },"798": {
+  },"801": {
     "doc": "WSStart",
     "title": "Table of contents",
     "content": ". | WSStart . | Example | Field Descriptions | . | SubscriptionFilter | MessageFilter | TransactionFilter | BlockchainEventFilter | SubscriptionOptions | WebhookInputOptions | . ",
     "url": "/firefly/head/reference/types/wsstart.html#table-of-contents",
     "relUrl": "/reference/types/wsstart.html#table-of-contents"
-  },"799": {
+  },"802": {
     "doc": "WSStart",
     "title": "WSStart",
     "content": "The start payload is sent after an application connects to a WebSocket, to start delivery of events over that connection. The start command can refer to a subscription by name in order to reliably receive all matching events for that subscription, including those that were emitted when the application was disconnected. Alternatively the start command can request \"ephemeral\": true in order to dynamically create a new subscription that lasts only for the duration that the connection is active. Example . { \"type\": \"start\", \"autoack\": false, \"namespace\": \"ns1\", \"name\": \"app1_subscription\", \"ephemeral\": false, \"filter\": { \"message\": {}, \"transaction\": {}, \"blockchainevent\": {} }, \"options\": {} } . Field Descriptions . | Field Name | Description | Type | . | type | WSActionBase.type | FFEnum:\"start\"\"ack\"\"protocol_error\" | . | autoack | WSStart.autoack | bool | . | namespace | WSStart.namespace | string | . | name | WSStart.name | string | . | ephemeral | WSStart.ephemeral | bool | . | filter | WSStart.filter | SubscriptionFilter | . | options | WSStart.options | SubscriptionOptions | . ",
     "url": "/firefly/head/reference/types/wsstart.html",
     "relUrl": "/reference/types/wsstart.html"
-  },"800": {
+  },"803": {
     "doc": "WSStart",
     "title": "SubscriptionFilter",
     "content": "| Field Name | Description | Type | . | events | Regular expression to apply to the event type, to subscribe to a subset of event types | string | . | message | Filters specific to message events. If an event is not a message event, these filters are ignored | MessageFilter | . | transaction | Filters specific to events with a transaction. If an event is not associated with a transaction, this filter is ignored | TransactionFilter | . | blockchainevent | Filters specific to blockchain events. If an event is not a blockchain event, these filters are ignored | BlockchainEventFilter | . | topic | Regular expression to apply to the topic of the event, to subscribe to a subset of topics. Note for messages sent with multiple topics, a separate event is emitted for each topic | string | . | topics | Deprecated: Please use ‘topic’ instead | string | . | tag | Deprecated: Please use ‘message.tag’ instead | string | . | group | Deprecated: Please use ‘message.group’ instead | string | . | author | Deprecated: Please use ‘message.author’ instead | string | . ",
     "url": "/firefly/head/reference/types/wsstart.html#subscriptionfilter",
     "relUrl": "/reference/types/wsstart.html#subscriptionfilter"
-  },"801": {
+  },"804": {
     "doc": "WSStart",
     "title": "MessageFilter",
     "content": "| Field Name | Description | Type | . | tag | Regular expression to apply to the message ‘header.tag’ field | string | . | group | Regular expression to apply to the message ‘header.group’ field | string | . | author | Regular expression to apply to the message ‘header.author’ field | string | . ",
     "url": "/firefly/head/reference/types/wsstart.html#messagefilter",
     "relUrl": "/reference/types/wsstart.html#messagefilter"
-  },"802": {
+  },"805": {
     "doc": "WSStart",
     "title": "TransactionFilter",
     "content": "| Field Name | Description | Type | . | type | Regular expression to apply to the transaction ‘type’ field | string | . ",
     "url": "/firefly/head/reference/types/wsstart.html#transactionfilter",
     "relUrl": "/reference/types/wsstart.html#transactionfilter"
-  },"803": {
+  },"806": {
     "doc": "WSStart",
     "title": "BlockchainEventFilter",
     "content": "| Field Name | Description | Type | . | name | Regular expression to apply to the blockchain event ‘name’ field, which is the name of the event in the underlying blockchain smart contract | string | . | listener | Regular expression to apply to the blockchain event ‘listener’ field, which is the UUID of the event listener. So you can restrict your subscription to certain blockchain listeners. Alternatively to avoid your application need to know listener UUIDs you can set the ‘topic’ field of blockchain event listeners, and use a topic filter on your subscriptions | string | . ",
     "url": "/firefly/head/reference/types/wsstart.html#blockchaineventfilter",
     "relUrl": "/reference/types/wsstart.html#blockchaineventfilter"
-  },"804": {
+  },"807": {
     "doc": "WSStart",
     "title": "SubscriptionOptions",
     "content": "| Field Name | Description | Type | . | firstEvent | Whether your appplication would like to receive events from the ‘oldest’ event emitted by your FireFly node (from the beginning of time), or the ‘newest’ event (from now), or a specific event sequence. Default is ‘newest’ | SubOptsFirstEvent | . | readAhead | The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts | uint16 | . | withData | Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data. May not be supported on some transports. | bool | . | fastack | Webhooks only: When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations | bool | . | url | Webhooks only: HTTP url to invoke. Can be relative if a base URL is set in the webhook plugin config | string | . | method | Webhooks only: HTTP method to invoke. Default=POST | string | . | json | Webhooks only: Whether to assume the response body is JSON, regardless of the returned Content-Type | bool | . | reply | Webhooks only: Whether to automatically send a reply event, using the body returned by the webhook | bool | . | replytag | Webhooks only: The tag to set on the reply message | string | . | replytx | Webhooks only: The transaction type to set on the reply message | string | . | headers | Webhooks only: Static headers to set on the webhook request | `` | . | query | Webhooks only: Static query params to set on the webhook request | `` | . | input | Webhooks only: A set of options to extract data from the first JSON input data in the incoming message. Only applies if withData=true | WebhookInputOptions | . ",
     "url": "/firefly/head/reference/types/wsstart.html#subscriptionoptions",
     "relUrl": "/reference/types/wsstart.html#subscriptionoptions"
-  },"805": {
+  },"808": {
     "doc": "WSStart",
     "title": "WebhookInputOptions",
     "content": "| Field Name | Description | Type | . | query | A top-level property of the first data input, to use for query parameters | string | . | headers | A top-level property of the first data input, to use for headers | string | . | body | A top-level property of the first data input, to use for the request body. Default is the whole first body | string | . | path | A top-level property of the first data input, to use for a path to append with escaping to the webhook path | string | . | replytx | A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose) | string | . ",
     "url": "/firefly/head/reference/types/wsstart.html#webhookinputoptions",
     "relUrl": "/reference/types/wsstart.html#webhookinputoptions"
-  },"806": {
+  },"809": {
     "doc": "pages.zksync_testnet",
     "title": "zkSync Testnet",
     "content": " ",
     "url": "/firefly/head/tutorials/chains/zksync_testnet.html#zksync-testnet",
     "relUrl": "/tutorials/chains/zksync_testnet.html#zksync-testnet"
-  },"807": {
+  },"810": {
     "doc": "pages.zksync_testnet",
     "title": "Table of contents",
     "content": ". | Previous steps: Install the FireFly CLI | Create an evmconnect.yml config file | Creating a new stack | Start the stack | Get some ETH . | Confirm the transaction on the Etherscan Explorer | . | Use the public testnet | . Starting with FireFly v1.1, it’s easy to connect to public Ethereum chains. This guide will walk you through the steps to create a local FireFly development environment and connect it to the zkSync testnet. ",
     "url": "/firefly/head/tutorials/chains/zksync_testnet.html#table-of-contents",
     "relUrl": "/tutorials/chains/zksync_testnet.html#table-of-contents"
-  },"808": {
+  },"811": {
     "doc": "pages.zksync_testnet",
     "title": "Previous steps: Install the FireFly CLI",
     "content": "If you haven’t set up the FireFly CLI already, please go back to the Getting Started guide and read the section on how to Install the FireFly CLI. ← ① Install the FireFly CLI . ",
     "url": "/firefly/head/tutorials/chains/zksync_testnet.html#previous-steps-install-the-firefly-cli",
     "relUrl": "/tutorials/chains/zksync_testnet.html#previous-steps-install-the-firefly-cli"
-  },"809": {
+  },"812": {
     "doc": "pages.zksync_testnet",
     "title": "Create an evmconnect.yml config file",
     "content": "In order to connect to the zkSync testnet, you will need to set a few configuration options for the evmconnect blockchain connector. Create a text file called evmconnect.yml with the following contents: . confirmations: required: 4 # choose the number of confirmations you require policyengine.simple: fixedGasPrice: null gasOracle: mode: connector . For this tutorial, we will assume this file is saved at ~/Desktop/evmconnect.yml. If your path is different, you will need to adjust the path in the next command below. ",
     "url": "/firefly/head/tutorials/chains/zksync_testnet.html#create-an-evmconnectyml-config-file",
     "relUrl": "/tutorials/chains/zksync_testnet.html#create-an-evmconnectyml-config-file"
-  },"810": {
+  },"813": {
     "doc": "pages.zksync_testnet",
     "title": "Creating a new stack",
     "content": "To create a local FireFly development stack and connect it to the zkSync testnet, we will use command line flags to customize the following settings: . | Create a new stack named zkSync with 1 member | Disable multiparty mode. We are going to be using this FireFly node as a Web3 gateway, and we don’t need to communicate with a consortium here | Connect to an ethereum network | Use the evmconnect blockchain connector | Use an remote RPC node. This will create a signer locally, so that our signing key never leaves the development machine. | See the list of providers for zkSync docs. For this tutorial we will use https://zksync2-testnet.zksync.dev | Set the chain ID to 280 (the correct ID for the zkSync testnet) | Merge the custom config created above with the generated evmconnect config file | . To do this, run the following command: . ff init zksync 1\\ --multiparty=false \\ -b ethereum \\ -c evmconnect \\ -n remote-rpc \\ --remote-node-url https://zksync2-testnet.zksync.dev\\ --chain-id 280 \\ --connector-config ~/Desktop/evmconnect.yml . ",
     "url": "/firefly/head/tutorials/chains/zksync_testnet.html#creating-a-new-stack",
     "relUrl": "/tutorials/chains/zksync_testnet.html#creating-a-new-stack"
-  },"811": {
+  },"814": {
     "doc": "pages.zksync_testnet",
     "title": "Start the stack",
     "content": "Now you should be able to start your stack by running: . ff start zksync . After some time it should print out the following: . Web UI for member '0': http://127.0.0.1:5000/ui Sandbox UI for member '0': http://127.0.0.1:5109 To see logs for your stack run: ff logs zksync . ",
     "url": "/firefly/head/tutorials/chains/zksync_testnet.html#start-the-stack",
     "relUrl": "/tutorials/chains/zksync_testnet.html#start-the-stack"
-  },"812": {
+  },"815": {
     "doc": "pages.zksync_testnet",
     "title": "Get some ETH",
     "content": "At this point you should have a working FireFly stack, talking to a public chain. However, you won’t be able to run any transactions just yet, because you don’t have any way to pay for gas. zkSync does not currently have its own native token and instead uses Ethereum for transaction. A testnet faucet can give us some ETH. First, you will need to know what signing address your FireFly node is using. To check that, you can run: . ff accounts list zkSync [ { \"address\": \"0x8cf4fd38b2d56a905113d23b5a7131f0269d8611\", \"privateKey\": \"...\" } ] . Copy your zkSync address and go to the Goerli Ethereum faucet and paste the address in the form. Click the Request Tokens button. Note that any Goerli Ethereum faucet will work. Confirm the transaction on the Etherscan Explorer . You should be able to go lookup your account at https://etherscan.io/ and see that you now have a balance of 0.025 ETH. Simply paste in your account address to search for it. ",
     "url": "/firefly/head/tutorials/chains/zksync_testnet.html#get-some-eth",
     "relUrl": "/tutorials/chains/zksync_testnet.html#get-some-eth"
-  },"813": {
+  },"816": {
     "doc": "pages.zksync_testnet",
     "title": "Use the public testnet",
     "content": "Now that you have everything set up, you can follow one of the other FireFly guides such as Using Tokens or Custom Smart Contracts. For detailed instructions on deploying a custom smart contract to zkSync, please see the zkSync docs for instructions using various tools. ",
     "url": "/firefly/head/tutorials/chains/zksync_testnet.html#use-the-public-testnet",
     "relUrl": "/tutorials/chains/zksync_testnet.html#use-the-public-testnet"
-  },"814": {
+  },"817": {
     "doc": "pages.zksync_testnet",
     "title": "pages.zksync_testnet",
     "content": " ",
