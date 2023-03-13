@@ -38,7 +38,7 @@ This is exactly the same as listening for any other events from FireFly. For mor
 
 ## Custom onchain logic async programming in FireFly
 
-Like the rest of FireFly, custom onchin logic support are implemented with an asynchronous programming model. The key concepts here are:
+Like the rest of FireFly, custom onchain logic support are implemented with an asynchronous programming model. The key concepts here are:
 
 - Transactions are submitted to FireFly and an ID is returned. This is the **Operation ID**.
 - The transaction itself happens asynchronously from the HTTP request that initiated it
