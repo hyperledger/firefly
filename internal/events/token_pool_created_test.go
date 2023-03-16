@@ -55,7 +55,7 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil, nil)
 	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
 
-	err := em.TokenPoolCreated(mti, pool)
+	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)
 
 }
@@ -79,7 +79,7 @@ func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
 
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil, nil)
 
-	err := em.TokenPoolCreated(mti, pool)
+	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)
 }
 
@@ -134,7 +134,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 		return e.Type == core.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
 	})).Return(nil).Once()
 
-	err := em.TokenPoolCreated(mti, chainPool)
+	err := em.TokenPoolCreated(em.ctx, mti, chainPool)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "ERC1155", storedPool.Standard)
@@ -176,7 +176,7 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(storedPool, nil)
 
-	err := em.TokenPoolCreated(mti, chainPool)
+	err := em.TokenPoolCreated(em.ctx, mti, chainPool)
 	assert.NoError(t, err)
 
 }
@@ -220,7 +220,7 @@ func TestTokenPoolCreatedConfirmFailBadSymbol(t *testing.T) {
 		ID: opID,
 	}}, nil, nil)
 
-	err := em.TokenPoolCreated(mti, chainPool)
+	err := em.TokenPoolCreated(em.ctx, mti, chainPool)
 	assert.NoError(t, err)
 
 }
@@ -364,7 +364,7 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 		return pool.Pool.Namespace == "ns1" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
 	}), false).Return(nil, nil)
 
-	err := em.TokenPoolCreated(mti, pool)
+	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -415,7 +415,7 @@ func TestTokenPoolCreatedAnnounceBadInterface(t *testing.T) {
 		return pool.Locator == "123" && pool.Name == "my-pool"
 	})).Return(fmt.Errorf("pop"))
 
-	err := em.TokenPoolCreated(mti, pool)
+	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.EqualError(t, err, "pop")
 
 	mti.AssertExpectations(t)
@@ -453,7 +453,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
 	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
 
-	err := em.TokenPoolCreated(mti, pool)
+	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)
 
 }
@@ -492,7 +492,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
 	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
 
-	err := em.TokenPoolCreated(mti, pool)
+	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)
 
 }
@@ -536,7 +536,7 @@ func TestTokenPoolCreatedAnnounceBadSymbol(t *testing.T) {
 	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
 	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil).Once()
 
-	err := em.TokenPoolCreated(mti, pool)
+	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
