@@ -1891,16 +1891,9 @@ func TestDefinitionBroadcastRootUnregistered(t *testing.T) {
 
 	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil)
 
-	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(ev *core.Event) bool {
-		return ev.Type == core.EventTypeMessageRejected
-	})).Return(nil)
-
 	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, bs, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
-	assert.True(t, valid)
-
-	err = bs.RunFinalize(ag.ctx)
-	assert.NoError(t, err)
+	assert.False(t, valid)
 
 }
 

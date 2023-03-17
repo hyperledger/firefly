@@ -406,7 +406,7 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*core.Pin, state *
 	return nil
 }
 
-func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Message, pin *core.Pin) (valid bool, err error) {
+func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Message, pin *core.Pin) (action core.MessageAction, err error) {
 	l := log.L(ctx)
 
 	verifierRef := &core.VerifierRef{
@@ -416,7 +416,7 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 
 	if msg.Header.Key == "" || msg.Header.Key != pin.Signer {
 		l.Errorf("Invalid message '%s'. Key '%s' does not match the signer of the pin: %s", msg.Header.ID, msg.Header.Key, pin.Signer)
-		return false, nil // This is not retryable. skip this message
+		return core.ActionReject, nil // This is not retryable. Reject this message
 	}
 
 	// Verify that we can resolve the signing key back to the identity that is claimed in the batch.
@@ -425,25 +425,25 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 		core.IdentityTypeCustom,
 	}, verifierRef)
 	if err != nil {
-		return false, err
+		return core.ActionRetry, err
 	}
 	if resolvedAuthor == nil {
 		if msg.Header.Type == core.MessageTypeDefinition &&
 			(msg.Header.Tag == core.SystemTagIdentityClaim || msg.Header.Tag == core.DeprecatedSystemTagDefineNode || msg.Header.Tag == core.DeprecatedSystemTagDefineOrganization) {
 			// We defer detailed checking of this identity to the system handler
-			return true, nil
+			return core.ActionConfirm, nil
 		} else if msg.Header.Type != core.MessageTypePrivate {
-			// Only private messages, or root org broadcasts can have an unregistered key
-			l.Errorf("Invalid message '%s'. Author '%s' cound not be resolved: %s", msg.Header.ID, msg.Header.Author, err)
-			return false, nil // This is not retryable. skip this batch
+			// Only private messages, or root org broadcasts can have an unregistered identity
+			l.Warnf("Skipping message '%s'. Author '%s' could not be resolved: %s", msg.Header.ID, msg.Header.Author, err)
+			return core.ActionWait, nil // Wait in case the identity is resolved later
 		}
 	} else if msg.Header.Author == "" || resolvedAuthor.DID != msg.Header.Author {
 		l.Errorf("Invalid message '%s'. Author '%s' does not match identity registered to %s: %s (%s)", msg.Header.ID, msg.Header.Author, verifierRef.Value, resolvedAuthor.DID, resolvedAuthor.ID)
-		return false, nil // This is not retryable. skip this batch
+		return core.ActionReject, nil // This is not retryable. Reject this message
 
 	}
 
-	return true, nil
+	return core.ActionConfirm, nil
 }
 
 func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchManifest, pin *core.Pin, msgBaseIndex int64, msgEntry *core.MessageManifestEntry, batch *core.BatchPersisted, state *batchState) (err error) {
@@ -548,12 +548,8 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 	var customCorrelator *fftypes.UUID
 
 	// Check the pin signer is valid for the message
-	valid, err := ag.checkOnchainConsistency(ctx, msg, pin)
-	if err != nil {
-		return "", false, err
-	}
-
-	if valid {
+	action, err := ag.checkOnchainConsistency(ctx, msg, pin)
+	if action == core.ActionConfirm {
 		// Verify we have all the blobs for the data
 		if resolved, err := ag.resolveBlobs(ctx, data); err != nil || !resolved {
 			return "", false, err
@@ -594,34 +590,35 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		case msg.Header.Type == core.MessageTypeDefinition:
 			// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
 			// dispatched subsequent events before we have processed the definition events they depend on.
-			handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
+			var handlerResult definitions.HandlerResult
+			handlerResult, err = ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
 			log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
-			if handlerResult.Action == core.ActionRetry {
-				return "", false, err
-			}
-			if handlerResult.Action == core.ActionWait {
-				return "", false, nil
-			}
-			if handlerResult.Action == core.ActionReject {
-				log.L(ctx).Warnf("Definition broadcast rejected: %s", err)
-			}
 			customCorrelator = handlerResult.CustomCorrelator
-			valid = handlerResult.Action == core.ActionConfirm
+			action = handlerResult.Action
 
 		case msg.Header.Type == core.MessageTypeGroupInit:
 			// Already handled as part of resolving the context - do nothing.
 
 		case len(msg.Data) > 0:
-			valid, err = ag.data.ValidateAll(ctx, data)
+			action = core.ActionReject
+			valid, err := ag.data.ValidateAll(ctx, data)
 			if err != nil {
 				return "", false, err
+			} else if valid {
+				action = core.ActionConfirm
 			}
 		}
 	}
 
+	if action == core.ActionRetry {
+		return "", false, err
+	} else if action == core.ActionWait {
+		return "", false, nil
+	}
+
 	newState = core.MessageStateConfirmed
 	eventType := core.EventTypeMessageConfirmed
-	if valid {
+	if action == core.ActionConfirm {
 		state.AddPendingConfirm(msg.Header.ID, msg)
 	} else {
 		newState = core.MessageStateRejected
