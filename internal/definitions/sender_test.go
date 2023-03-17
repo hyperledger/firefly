@@ -73,6 +73,11 @@ func TestCreateDefinitionConfirm(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
+	mim.On("GetMultipartyRootOrg", ds.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", mock.Anything).Return(nil)
@@ -94,6 +99,11 @@ func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
+	mim.On("GetMultipartyRootOrg", ds.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", mock.Anything).Return(nil)

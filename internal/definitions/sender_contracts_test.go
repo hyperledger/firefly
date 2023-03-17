@@ -62,7 +62,7 @@ func TestDefineFFIFail(t *testing.T) {
 	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 
 	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.EqualError(t, err, "pop")
@@ -82,6 +82,11 @@ func TestDefineFFIOk(t *testing.T) {
 	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
 	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
 
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
@@ -137,7 +142,7 @@ func TestDefineContractAPIFail(t *testing.T) {
 	mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 
 	err := ds.DefineContractAPI(context.Background(), url, api, false)
 	assert.EqualError(t, err, "pop")
@@ -158,6 +163,11 @@ func TestDefineContractAPIOk(t *testing.T) {
 	mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
 	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
 
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
