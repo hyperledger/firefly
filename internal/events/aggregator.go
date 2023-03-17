@@ -596,17 +596,17 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 			// dispatched subsequent events before we have processed the definition events they depend on.
 			handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
 			log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
-			if handlerResult.Action == definitions.ActionRetry {
+			if handlerResult.Action == core.ActionRetry {
 				return "", false, err
 			}
-			if handlerResult.Action == definitions.ActionWait {
+			if handlerResult.Action == core.ActionWait {
 				return "", false, nil
 			}
-			if handlerResult.Action == definitions.ActionReject {
+			if handlerResult.Action == core.ActionReject {
 				log.L(ctx).Warnf("Definition broadcast rejected: %s", err)
 			}
 			customCorrelator = handlerResult.CustomCorrelator
-			valid = handlerResult.Action == definitions.ActionConfirm
+			valid = handlerResult.Action == core.ActionConfirm
 
 		case msg.Header.Type == core.MessageTypeGroupInit:
 			// Already handled as part of resolving the context - do nothing.

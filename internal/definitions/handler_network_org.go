@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -29,7 +29,7 @@ func (dh *definitionHandler) handleDeprecatedOrganizationBroadcast(ctx context.C
 	var orgOld core.DeprecatedOrganization
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &orgOld)
 	if !valid {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "org", msg.Header.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "org", msg.Header.ID)
 	}
 
 	return dh.handleIdentityClaim(ctx, state, buildIdentityMsgInfo(msg, nil), orgOld.Migrated())

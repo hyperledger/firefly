@@ -1646,7 +1646,7 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 
 	customCorrelator := fftypes.NewUUID()
 	ag.mdh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-		Return(definitions.HandlerResult{Action: definitions.ActionReject, CustomCorrelator: customCorrelator}, nil)
+		Return(definitions.HandlerResult{Action: core.ActionReject, CustomCorrelator: customCorrelator}, nil)
 
 	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(event *core.Event) bool {
 		return event.Correlator.Equals(customCorrelator)
@@ -1709,9 +1709,9 @@ func TestDispatchBroadcastQueuesLaterDispatch(t *testing.T) {
 
 	ag.mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 
-	result1 := definitions.HandlerResult{Action: definitions.ActionConfirm}
+	result1 := definitions.HandlerResult{Action: core.ActionConfirm}
 	ag.mdh.On("HandleDefinitionBroadcast", ag.ctx, mock.Anything, msg1, data1, manifest.TX.ID).Return(result1, nil).Once()
-	result2 := definitions.HandlerResult{Action: definitions.ActionWait}
+	result2 := definitions.HandlerResult{Action: core.ActionWait}
 	ag.mdh.On("HandleDefinitionBroadcast", ag.ctx, mock.Anything, msg2, data2, manifest.TX.ID).Return(result2, nil).Once()
 
 	// First message should dispatch
@@ -1821,7 +1821,7 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	ag.mdh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-		Return(definitions.HandlerResult{Action: definitions.ActionRetry}, fmt.Errorf("pop"))
+		Return(definitions.HandlerResult{Action: core.ActionRetry}, fmt.Errorf("pop"))
 
 	_, _, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.EqualError(t, err, "pop")
@@ -1873,7 +1873,7 @@ func TestDefinitionBroadcastParkUnregisteredSignerIdentityClaim(t *testing.T) {
 
 	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil)
 
-	ag.mdh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
+	ag.mdh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: core.ActionWait}, nil)
 
 	newState, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
@@ -1912,7 +1912,7 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 
 	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
-	ag.mdh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
+	ag.mdh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: core.ActionWait}, nil)
 
 	_, _, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)

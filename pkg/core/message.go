@@ -267,3 +267,35 @@ func (m *Message) Verify(ctx context.Context) error {
 func (m *Message) LocalSequence() int64 {
 	return m.Sequence
 }
+
+// MessageAction is an action to be taken on a message during processing
+type MessageAction int
+
+const (
+	// ActionReject the message was successfully processed, but was malformed/invalid and should be marked as rejected
+	ActionReject MessageAction = iota
+
+	// ActionConfirm the message was valid and should be confirmed
+	ActionConfirm
+
+	// ActionRetry a recoverable error was encountered - batch should be halted and then re-processed from the start
+	ActionRetry
+
+	// ActionWait the message is still awaiting further pieces for aggregation and should be held in pending state
+	ActionWait
+)
+
+func (dma MessageAction) String() string {
+	switch dma {
+	case ActionReject:
+		return "reject"
+	case ActionConfirm:
+		return "confirm"
+	case ActionRetry:
+		return "retry"
+	case ActionWait:
+		return "wait"
+	default:
+		return "unknown"
+	}
+}
