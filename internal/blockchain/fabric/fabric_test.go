@@ -2731,6 +2731,10 @@ func TestGetTransactionStatus(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
+	resetConf(e)
+
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigDefaultChannel, "firefly")
 
 	op := &core.Operation{
 		Namespace: "ns1",
@@ -2752,6 +2756,10 @@ func TestGetTransactionStatusNoResult(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
+	resetConf(e)
+
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigDefaultChannel, "firefly")
 
 	op := &core.Operation{
 		Namespace: "ns1",
@@ -2773,6 +2781,10 @@ func TestGetTransactionStatusBadResult(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
+	resetConf(e)
+
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigDefaultChannel, "firefly")
 
 	op := &core.Operation{
 		Namespace: "ns1",

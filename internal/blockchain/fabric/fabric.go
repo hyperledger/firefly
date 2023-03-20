@@ -916,6 +916,15 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
 	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
 
+	defaultChannel := f.fabconnectConf.GetString(FabconnectConfigDefaultChannel)
+	if defaultChannel == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgDefaultChannelNotConfigured)
+	}
+	defaultSigner := f.fabconnectConf.GetString(FabconnectConfigSigner)
+	if defaultSigner == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+	}
+
 	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
 	client := f.client
 	var resErr fabError
@@ -924,6 +933,8 @@ func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Opera
 		SetContext(ctx).
 		SetError(&resErr).
 		SetResult(&statusResponse).
+		SetQueryParam("fly-channel", defaultChannel).
+		SetQueryParam("fly-signer", defaultSigner).
 		Get(transactionRequestPath)
 	if err != nil || !res.IsSuccess() {
 		if res.StatusCode() == 404 {
