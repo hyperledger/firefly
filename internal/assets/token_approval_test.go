@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
@@ -212,6 +213,35 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestOpResubmit(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
+			Approved: true,
+			Operator: "operator",
+			Key:      "key",
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{ExistingTXID: id})
+	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+
+	_, err := am.TokenApproval(context.Background(), approval, false)
+	assert.NoError(t, err)
+
 	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }

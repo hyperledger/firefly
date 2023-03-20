@@ -112,7 +112,9 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType cor
 		IdempotencyKey: idempotencyKey,
 	}
 
-	// Note that InsertTransaction is responsible for idempotency key duplicate detection and helpful error creation
+	// Note that InsertTransaction is responsible for idempotency key duplicate detection and helpful error creation.
+	// (In cases where one or more operations have not yet left 'initialized' state then we need to resubmit them even if
+	// we've seen this idempotency key before.)
 	if err := t.database.InsertTransaction(ctx, tx); err != nil {
 		return nil, err
 	}

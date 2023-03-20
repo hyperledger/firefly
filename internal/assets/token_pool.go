@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -79,6 +80,17 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		txid, err := am.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenPool, pool.IdempotencyKey)
 		if err != nil {
+			var idemErr *sqlcommon.IdempotencyError
+
+			// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+			// submitting to their handlers.
+			if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+				_, err = am.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			}
+
+			if err == nil {
+				return idemErr
+			}
 			return err
 		}
 
@@ -96,6 +108,12 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 		return err
 	})
 	if err != nil {
+		if _, ok := err.(*sqlcommon.IdempotencyError); ok {
+			// Idempotency key clash but no other operation resubmit error? Resubmit was successful,
+			// return 20x, not 409
+			return &pool.TokenPool, nil
+		}
+		// Any other error? Return the error unchanged
 		return nil, err
 	}
 

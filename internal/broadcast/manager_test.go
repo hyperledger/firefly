@@ -22,9 +22,12 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -352,6 +355,40 @@ func TestUploadBlobPublishFail(t *testing.T) {
 
 }
 
+func TestUploadBlobPublishIdempotentResubmitOperation(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	var id = fftypes.NewUUID()
+	defer cancel()
+	mdi := bm.database.(*databasemocks.Plugin)
+	mom := bm.operations.(*operationmocks.Manager)
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+
+	blob := &core.Blob{
+		Hash:       fftypes.NewRandB32(),
+		PayloadRef: "blob/1",
+	}
+	d := &core.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &core.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
+
+	ctx := context.Background()
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
+
+	d, err := bm.PublishDataBlob(ctx, d.ID.String(), "idem1")
+	assert.NotNil(t, d)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+
+}
+
 func TestUploadBlobsGetBlobFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
@@ -556,6 +593,35 @@ func TestUploadValueOK(t *testing.T) {
 	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
 	d1, err := bm.PublishDataValue(bm.ctx, d.ID.String(), "")
+	assert.NoError(t, err)
+	assert.Equal(t, d.ID, d1.ID)
+
+	mom.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestUploadValueIdempotentResubmitOperation(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	var id = fftypes.NewUUID()
+	defer cancel()
+
+	d := &core.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtr(`{"some": "value"}`),
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", mock.Anything, "ns1", d.ID, true).Return(d, nil)
+
+	mom := bm.operations.(*operationmocks.Manager)
+
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+	mtx.On("SubmitNewTransaction", context.Background(), core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+
+	d1, err := bm.PublishDataValue(context.Background(), d.ID.String(), "idem1")
 	assert.NoError(t, err)
 	assert.Equal(t, d.ID, d1.ID)
 

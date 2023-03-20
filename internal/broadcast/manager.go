@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/multiparty"
@@ -230,7 +231,16 @@ func (bm *broadcastManager) PublishDataValue(ctx context.Context, id string, ide
 
 	txid, err := bm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeDataPublish, idempotencyKey)
 	if err != nil {
-		return nil, err
+		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+		// submitting to their handlers
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			_, err = bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+
+			if err == nil {
+				return d, nil
+			}
+		}
+		return d, err
 	}
 
 	op := core.NewOperation(
@@ -259,7 +269,16 @@ func (bm *broadcastManager) PublishDataBlob(ctx context.Context, id string, idem
 
 	txid, err := bm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeDataPublish, idempotencyKey)
 	if err != nil {
-		return nil, err
+		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+		// submitting to their handlers
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			_, err = bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+
+			if err == nil {
+				return d, nil
+			}
+		}
+		return d, err
 	}
 
 	if err = bm.uploadDataBlob(ctx, txid, d); err != nil {

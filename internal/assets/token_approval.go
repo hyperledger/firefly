@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -76,10 +77,16 @@ func (am *assetManager) TokenApproval(ctx context.Context, approval *core.TokenA
 
 func (s *approveSender) resolveAndSend(ctx context.Context, method sendMethod) (err error) {
 	if !s.resolved {
-		if err = s.resolve(ctx); err != nil {
+		var opResubmit bool
+		if opResubmit, err = s.resolve(ctx); err != nil {
 			return err
 		}
 		s.resolved = true
+		if opResubmit {
+			// Operation had already been created on a previous call but never got submitted. We've resubmitted
+			// it now so no need to carry on
+			return nil
+		}
 	}
 
 	if method == methodSendAndWait && s.approval.Message != nil {
@@ -94,11 +101,16 @@ func (s *approveSender) resolveAndSend(ctx context.Context, method sendMethod) (
 	return s.sendInternal(ctx, method)
 }
 
-func (s *approveSender) resolve(ctx context.Context) (err error) {
+func (s *approveSender) resolve(ctx context.Context) (opResubmitted bool, err error) {
 	// Create a transaction and attach to the approval
 	txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenApproval, s.approval.IdempotencyKey)
 	if err != nil {
-		return err
+		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+		// submitting to their handlers
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			_, err = s.mgr.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+		}
+		return true, err
 	}
 	s.approval.TX.ID = txid
 	s.approval.TX.Type = core.TransactionTypeTokenApproval
@@ -111,15 +123,15 @@ func (s *approveSender) resolve(ctx context.Context) (err error) {
 		}
 		s.msgSender, err = s.buildApprovalMessage(ctx, s.approval.Message)
 		if err != nil {
-			return err
+			return false, err
 		}
 		if err = s.msgSender.Prepare(ctx); err != nil {
-			return err
+			return false, err
 		}
 		s.approval.TokenApproval.Message = s.approval.Message.Header.ID
 		s.approval.TokenApproval.MessageHash = s.approval.Message.Hash
 	}
-	return nil
+	return false, err
 }
 
 func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (err error) {

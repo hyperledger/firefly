@@ -26,8 +26,11 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
 	"github.com/hyperledger/firefly/internal/cache"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -1628,6 +1631,36 @@ func TestDeployContract(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
+func TestDeployContractIdempotentResubmitOperation(t *testing.T) {
+	cm := newTestContractManager()
+	var id = fftypes.NewUUID()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mom := cm.operations.(*operationmocks.Manager)
+	signingKey := "0x2468"
+	req := &core.ContractDeployRequest{
+		Key:            signingKey,
+		Definition:     fftypes.JSONAnyPtr("[]"),
+		Contract:       fftypes.JSONAnyPtr("\"0x123456\""),
+		Input:          []interface{}{"one", "two", "three"},
+		IdempotencyKey: "idem1",
+	}
+
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(&core.Operation{}, nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+
+	_, err := cm.DeployContract(context.Background(), req, false)
+
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
 func TestDeployContractSync(t *testing.T) {
 	cm := newTestContractManager()
 	mim := cm.identity.(*identitymanagermocks.Manager)
@@ -2101,6 +2134,41 @@ func TestInvokeContractWithPrivateMessageUnsupported(t *testing.T) {
 	assert.Regexp(t, "FF10415", err)
 
 	mim.AssertExpectations(t)
+}
+
+func TestInvokeContractIdempotentResubmitOperation(t *testing.T) {
+	cm := newTestContractManager()
+	var id = fftypes.NewUUID()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mom := cm.operations.(*operationmocks.Manager)
+
+	req := &core.ContractCallRequest{
+		Type:      core.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Location:  fftypes.JSONAnyPtr(""),
+		Method: &fftypes.FFIMethod{
+			Name:    "doStuff",
+			ID:      fftypes.NewUUID(),
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(&core.Operation{}, nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+
+	_, err := cm.InvokeContract(context.Background(), req, false)
+
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestInvokeContractConfirm(t *testing.T) {

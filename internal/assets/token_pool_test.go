@@ -20,6 +20,9 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
@@ -107,6 +110,39 @@ func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
 	})).Return(nil, nil)
+
+	_, err := am.CreateTokenPool(context.Background(), pool, false)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestCreateTokenPoolIdempotentResubmit(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).
+		Return(id, &sqlcommon.IdempotencyError{
+			ExistingTXID:  id,
+			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem3", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
