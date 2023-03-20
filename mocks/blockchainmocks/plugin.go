@@ -399,23 +399,23 @@ func (_m *Plugin) RemoveFireflySubscription(ctx context.Context, subID string) {
 	_m.Called(ctx, subID)
 }
 
-// ResolveInputSigningKey provides a mock function with given fields: ctx, keyRef
-func (_m *Plugin) ResolveInputSigningKey(ctx context.Context, keyRef string) (string, error) {
-	ret := _m.Called(ctx, keyRef)
+// ResolveSigningKey provides a mock function with given fields: ctx, keyRef, intent
+func (_m *Plugin) ResolveSigningKey(ctx context.Context, keyRef string, intent blockchain.ResolveKeyIntent) (string, error) {
+	ret := _m.Called(ctx, keyRef, intent)
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return rf(ctx, keyRef)
+	if rf, ok := ret.Get(0).(func(context.Context, string, blockchain.ResolveKeyIntent) (string, error)); ok {
+		return rf(ctx, keyRef, intent)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, keyRef)
+	if rf, ok := ret.Get(0).(func(context.Context, string, blockchain.ResolveKeyIntent) string); ok {
+		r0 = rf(ctx, keyRef, intent)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, keyRef)
+	if rf, ok := ret.Get(1).(func(context.Context, string, blockchain.ResolveKeyIntent) error); ok {
+		r1 = rf(ctx, keyRef, intent)
 	} else {
 		r1 = ret.Error(1)
 	}

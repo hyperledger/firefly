@@ -499,7 +499,11 @@ func (f *Fabric) eventLoop() {
 	}
 }
 
-func (f *Fabric) ResolveInputSigningKey(ctx context.Context, signingKeyInput string) (string, error) {
+func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string, intent blockchain.ResolveKeyIntent) (string, error) {
+	// Note: "intent" is not currently used for Fabric, as the identity resolution is not
+	//       currently pluggable to external identity resolution systems (as is the case for
+	//       ethereum blockchain connectors).
+
 	// we expand the short user name into the fully qualified onchain identity:
 	// mspid::x509::{ecert DN}::{CA DN}	return signingKeyInput, nil
 	if !fullIdentityPattern.MatchString(signingKeyInput) {

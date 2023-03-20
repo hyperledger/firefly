@@ -26,6 +26,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
+// ResolveKeyIntent allows us to distinguish between resolving a key just for a lookup, vs. accepting in an action to sign
+type ResolveKeyIntent string
+
+const (
+	ResolveKeyIntentSign   ResolveKeyIntent = "sign"   // used everywhere we accept an signing action (messages, tokens, custom invoke)
+	ResolveKeyIntentLookup ResolveKeyIntent = "lookup" // used only on the /api/v1/resolve API
+)
+
 // Plugin is the interface implemented by each blockchain plugin
 type Plugin interface {
 	core.Named
@@ -53,14 +61,14 @@ type Plugin interface {
 	// VerifierType returns the verifier (key) type that is used by this blockchain
 	VerifierType() core.VerifierType
 
-	// ResolveInputSigningKey allows blockchain specific processing of keys supplied by users
+	// ResolveSigningKey allows blockchain specific processing of keys supplied by users
 	// of this FireFly core API before a transaction is accepted using that signing key.
 	// May perform sophisticated checks and resolution as determined by the blockchain connector,
 	// and associated resolution plugins:
 	// - Such as resolving a Fabric shortname to a MSP ID
 	// - Such using an external REST API plugin to resolve a HD wallet address, or other key alias
 	// - Results in a string that can be stored/compared consistently with the key emitted on events signed by this key
-	ResolveInputSigningKey(ctx context.Context, keyRef string) (string, error)
+	ResolveSigningKey(ctx context.Context, keyRef string, intent ResolveKeyIntent) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *BatchPin, location *fftypes.JSONAny) error

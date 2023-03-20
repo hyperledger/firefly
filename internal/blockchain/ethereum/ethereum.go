@@ -498,7 +498,7 @@ func formatEthAddress(ctx context.Context, key string) (string, error) {
 	return "", i18n.NewError(ctx, coremsgs.MsgInvalidEthAddress)
 }
 
-func (e *Ethereum) ResolveInputSigningKey(ctx context.Context, key string) (resolved string, err error) {
+func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string, intent blockchain.ResolveKeyIntent) (resolved string, err error) {
 	if !e.addressResolveAlways {
 		// If there's no address resolver plugin, or addressResolveAlways is false,
 		// we check if it's already an ethereum address - in which case we can just return it.
@@ -507,7 +507,7 @@ func (e *Ethereum) ResolveInputSigningKey(ctx context.Context, key string) (reso
 	if e.addressResolveAlways || (err != nil && e.addressResolver != nil) {
 		// Either it's not a valid ethereum address,
 		// or we've been configured to invoke the address resolver on every call
-		resolved, err = e.addressResolver.ResolveInputSigningKey(ctx, key)
+		resolved, err = e.addressResolver.ResolveSigningKey(ctx, key, intent)
 		if err == nil {
 			log.L(ctx).Infof("Key '%s' resolved to '%s'", key, resolved)
 			return resolved, nil
