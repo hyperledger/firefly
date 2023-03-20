@@ -914,7 +914,7 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 }
 
 func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
-	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
+	txHash := operation.Output.GetString("transactionHash")
 
 	defaultChannel := f.fabconnectConf.GetString(FabconnectConfigDefaultChannel)
 	if defaultChannel == "" {
@@ -925,7 +925,7 @@ func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Opera
 		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 	}
 
-	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
+	transactionRequestPath := fmt.Sprintf("/transactions/%s", txHash)
 	client := f.client
 	var resErr fabError
 	var statusResponse fftypes.JSONObject
