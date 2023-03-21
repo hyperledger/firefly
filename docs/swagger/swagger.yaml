@@ -10192,6 +10192,14 @@ paths:
       description: Gets a list of namespaces
       operationId: getNamespaces
       parameters:
+      - description: When set, the API will return namespaces even if they are not
+          yet initialized, including in error cases where an initializationError is
+          included
+        in: query
+        name: includeinitializing
+        schema:
+          example: "true"
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -10213,6 +10221,13 @@ paths:
                     description:
                       description: A description of the namespace
                       type: string
+                    initializationError:
+                      description: Set to a non-empty string in the case that the
+                        namespace is currently failing to initialize
+                      type: string
+                    initializing:
+                      description: Set to true if the namespace is still initializing
+                      type: boolean
                     name:
                       description: The local namespace name
                       type: string

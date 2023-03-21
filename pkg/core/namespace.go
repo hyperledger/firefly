@@ -35,6 +35,12 @@ type Namespace struct {
 	Contracts   *MultipartyContracts `ffstruct:"Namespace" json:"-"`
 }
 
+type NamespaceWithInitStatus struct {
+	*Namespace
+	Initializing        bool   `ffstruct:"NamespaceWithInitStatus" json:"initializing,omitempty"`
+	InitializationError string `ffstruct:"NamespaceWithInitStatus" json:"initializationError,omitempty"`
+}
+
 // MultipartyContracts represent the currently active and any terminated FireFly multiparty contract(s)
 type MultipartyContracts struct {
 	Active     *MultipartyContract   `ffstruct:"MultipartyContracts" json:"active"`

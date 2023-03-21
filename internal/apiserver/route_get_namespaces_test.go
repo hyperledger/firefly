@@ -29,12 +29,12 @@ import (
 func TestGetNamespaces(t *testing.T) {
 	mgr, _, as := newTestServer()
 	r := as.createMuxRouter(context.Background(), mgr)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces?includeinitializing", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mgr.On("GetNamespaces", mock.Anything).
-		Return([]*core.Namespace{}, nil)
+	mgr.On("GetNamespaces", mock.Anything, true).
+		Return([]*core.NamespaceWithInitStatus{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

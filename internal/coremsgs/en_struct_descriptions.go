@@ -411,6 +411,10 @@ var (
 	MultipartyContractInfo         = ffm("MultipartyContract.info", "Additional info about the current status of the multi-party contract")
 	NetworkActionType              = ffm("NetworkAction.type", "The action to be performed")
 
+	// NamespaceWithInitStatus field descriptions
+	NamespaceWithInitStatusInitializing        = ffm("NamespaceWithInitStatus.initializing", "Set to true if the namespace is still initializing")
+	NamespaceWithInitStatusInitializationError = ffm("NamespaceWithInitStatus.initializationError", "Set to a non-empty string in the case that the namespace is currently failing to initialize")
+
 	// NamespaceStatus field descriptions
 	NodeNamespace       = ffm("NamespaceStatus.namespace", "The namespace that this status applies to")
 	NamespaceStatusNode = ffm("NamespaceStatus.node", "Details of the local node")

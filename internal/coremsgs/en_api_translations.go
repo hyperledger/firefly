@@ -36,6 +36,7 @@ var (
 	APIParamsContractInterfaceVersion       = ffm("api.params.contractInterfaceVersion", "The version of the contract interface")
 	APIParamsContractInterfaceID            = ffm("api.params.contractInterfaceID", "The ID of the contract interface")
 	APIParamsContractInterfaceFetchChildren = ffm("api.params.contractInterfaceFetchChildren", "When set, the API will return the full FireFly Interface document including all methods, events, and parameters")
+	APIParamsNSIncludeInitializing          = ffm("api.params.nsIncludeInitializing", "When set, the API will return namespaces even if they are not yet initialized, including in error cases where an initializationError is included")
 	APIParamsBlobID                         = ffm("api.params.blobID", "The blob ID")
 	APIParamsDataID                         = ffm("api.params.dataID", "The data item ID")
 	APIParamsDatatypeName                   = ffm("api.params.datatypeName", "The name of the datatype")

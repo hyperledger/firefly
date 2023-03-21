@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -25,19 +26,21 @@ import (
 )
 
 var getNamespaces = &ffapi.Route{
-	Name:            "getNamespaces",
-	Path:            "namespaces",
-	Method:          http.MethodGet,
-	PathParams:      nil,
-	QueryParams:     nil,
+	Name:       "getNamespaces",
+	Path:       "namespaces",
+	Method:     http.MethodGet,
+	PathParams: nil,
+	QueryParams: []*ffapi.QueryParam{
+		{Name: "includeinitializing", Example: "true", Description: coremsgs.APIParamsNSIncludeInitializing, IsBool: true},
+	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetNamespaces,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*core.Namespace{} },
+	JSONOutputValue: func() interface{} { return []*core.NamespaceWithInitStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.mgr.GetNamespaces(cr.ctx)
+			return cr.mgr.GetNamespaces(cr.ctx, strings.EqualFold(r.QP["includeinitializing"], "true"))
 		},
 	},
 }

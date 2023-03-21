@@ -1907,7 +1907,7 @@ func TestGetNamespaces(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	results, err := nm.GetNamespaces(context.Background())
+	results, err := nm.GetNamespaces(context.Background(), true)
 	assert.Nil(t, err)
 	assert.Len(t, results, 1)
 }

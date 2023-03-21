@@ -61,10 +61,10 @@ type Manager interface {
 	WaitStop()
 	Reset(ctx context.Context) error
 
-	Orchestrator(ctx context.Context, ns string) (orchestrator.Orchestrator, error)
+	Orchestrator(ctx context.Context, ns string, includeInitializing bool) (orchestrator.Orchestrator, error)
 	MustOrchestrator(ns string) orchestrator.Orchestrator
 	SPIEvents() spievents.Manager
-	GetNamespaces(ctx context.Context) ([]*core.Namespace, error)
+	GetNamespaces(ctx context.Context, includeInitializing bool) ([]*core.NamespaceWithInitStatus, error)
 	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
 	ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error
 	Authorize(ctx context.Context, authReq *fftypes.AuthReq) error
@@ -80,6 +80,8 @@ type namespace struct {
 	configHash   *fftypes.Bytes32
 	pluginNames  []string
 	plugins      *orchestrator.Plugins
+	started      bool
+	initError    string
 }
 
 type namespaceManager struct {
@@ -291,10 +293,17 @@ func (nm *namespaceManager) namespaceStarter(ns *namespace) {
 		// If we started successfully, then all is good
 		if err == nil {
 			log.L(nm.ctx).Infof("Namespace %s started", ns.Name)
+			nm.nsMux.Lock()
+			ns.started = true
+			ns.initError = ""
+			nm.nsMux.Unlock()
 			return false, nil
 		}
 		// Otherwise the back-off retry should retry indefinitely (until the context is closed, which is
 		// the responsibility of the retry library to check)
+		nm.nsMux.Lock()
+		ns.initError = err.Error()
+		nm.nsMux.Unlock()
 		return true, err
 	})
 }
@@ -1061,10 +1070,11 @@ func (nm *namespaceManager) SPIEvents() spievents.Manager {
 	return nm.adminEvents
 }
 
-func (nm *namespaceManager) Orchestrator(ctx context.Context, ns string) (orchestrator.Orchestrator, error) {
+func (nm *namespaceManager) Orchestrator(ctx context.Context, ns string, includeInitializing bool) (orchestrator.Orchestrator, error) {
 	nm.nsMux.Lock()
 	defer nm.nsMux.Unlock()
-	if namespace, ok := nm.namespaces[ns]; ok && namespace != nil {
+	// Only return started namespaces from this call
+	if namespace, ok := nm.namespaces[ns]; ok && namespace != nil && (includeInitializing || namespace.started) {
 		return namespace.orchestrator, nil
 	}
 	return nil, i18n.NewError(ctx, coremsgs.MsgUnknownNamespace, ns)
@@ -1072,19 +1082,25 @@ func (nm *namespaceManager) Orchestrator(ctx context.Context, ns string) (orches
 
 // MustOrchestrator must only be called by code that is absolutely sure the orchestrator exists
 func (nm *namespaceManager) MustOrchestrator(ns string) orchestrator.Orchestrator {
-	or, err := nm.Orchestrator(context.Background(), ns)
+	or, err := nm.Orchestrator(context.Background(), ns, true)
 	if err != nil {
 		panic(err)
 	}
 	return or
 }
 
-func (nm *namespaceManager) GetNamespaces(ctx context.Context) ([]*core.Namespace, error) {
+func (nm *namespaceManager) GetNamespaces(ctx context.Context, includeInitializing bool) ([]*core.NamespaceWithInitStatus, error) {
 	nm.nsMux.Lock()
 	defer nm.nsMux.Unlock()
-	results := make([]*core.Namespace, 0, len(nm.namespaces))
+	results := make([]*core.NamespaceWithInitStatus, 0, len(nm.namespaces))
 	for _, ns := range nm.namespaces {
-		results = append(results, &ns.Namespace)
+		if includeInitializing || ns.started {
+			results = append(results, &core.NamespaceWithInitStatus{
+				Namespace:           &ns.Namespace,
+				Initializing:        !ns.started,
+				InitializationError: ns.initError,
+			})
+		}
 	}
 	return results, nil
 }
@@ -1094,7 +1110,7 @@ func (nm *namespaceManager) GetOperationByNamespacedID(ctx context.Context, nsOp
 	if err != nil {
 		return nil, err
 	}
-	or, err := nm.Orchestrator(ctx, ns)
+	or, err := nm.Orchestrator(ctx, ns, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1106,7 +1122,7 @@ func (nm *namespaceManager) ResolveOperationByNamespacedID(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	or, err := nm.Orchestrator(ctx, ns)
+	or, err := nm.Orchestrator(ctx, ns, true)
 	if err != nil {
 		return err
 	}
@@ -1166,7 +1182,7 @@ func (nm *namespaceManager) getAuthPlugin(ctx context.Context, plugins map[strin
 }
 
 func (nm *namespaceManager) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
-	or, err := nm.Orchestrator(ctx, authReq.Namespace)
+	or, err := nm.Orchestrator(ctx, authReq.Namespace, true)
 	if err != nil {
 		return err
 	}
