@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -36,7 +37,9 @@ var postVerifiersResolve = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.Identity().ResolveInputVerifierRef(cr.ctx, r.Input.(*core.VerifierRef))
+			return cr.or.Identity().ResolveInputVerifierRef(cr.ctx, r.Input.(*core.VerifierRef),
+				blockchain.ResolveKeyIntentLookup, /* This is special - as we are not actually submitting a signing request */
+			)
 		},
 	},
 }

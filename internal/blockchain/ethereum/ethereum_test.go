@@ -1113,10 +1113,10 @@ func TestVerifyEthAddress(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
-	_, err := e.ResolveInputSigningKey(context.Background(), "0x12345")
+	_, err := e.ResolveSigningKey(context.Background(), "0x12345", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10141", err)
 
-	key, err := e.ResolveInputSigningKey(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
+	key, err := e.ResolveSigningKey(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6", blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
 	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", key)
 
