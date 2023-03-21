@@ -276,6 +276,12 @@ var (
 	NamespacesDefault = ffc("namespaces.default")
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
 	NamespacesPredefined = ffc("namespaces.predefined")
+	// NamespacesRetryFactor is the retry backoff factor for starting/restarting individual namespaces
+	NamespacesRetryFactor = ffc("namespaces.retry.factor")
+	// NamespacesRetryInitDelay is the retry initial delay for starting/restarting individual namespaces
+	NamespacesRetryInitDelay = ffc("namespaces.retry.initDelay")
+	// NamespacesRetryMaxDelay is the maximum delay between retry attempts
+	NamespacesRetryMaxDelay = ffc("namespaces.retry.maxDelay")
 	// NodeName is the short name for the node
 	NodeName = ffc("node.name")
 	// NodeDescription is a description for the node

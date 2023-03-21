@@ -745,6 +745,14 @@ nav_order: 2
 |key|The signing key allocated to the root organization within this namespace|`string`|`<nil>`
 |name|A short name for the local root organization within this namespace|`string`|`<nil>`
 
+## namespaces.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|factor|The retry backoff factor|`float32`|`<nil>`
+|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+
 ## node
 
 |Key|Description|Type|Default Value|

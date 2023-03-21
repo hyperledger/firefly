@@ -106,13 +106,6 @@ func (nm *namespaceManager) configReloaded(ctx context.Context) {
 		return
 	}
 
-	// Only initialize the updated namespaces (which includes all that depend on above plugins)
-	if err = nm.initNamespaces(ctx, updatedNamespaces); err != nil {
-		log.L(ctx).Errorf("Failed to initialize namespaces after config reload: %s", err)
-		nm.cancelCtx() // stop the world
-		return
-	}
-
 	// Now finally we can start all the new things
 	if err = nm.startNamespacesAndPlugins(updatedNamespaces, updatedPlugins); err != nil {
 		log.L(ctx).Errorf("Failed to initialize namespaces after config reload: %s", err)

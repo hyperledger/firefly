@@ -259,7 +259,7 @@ var (
 	MsgInvalidBatchPinEvent               = ffe("FF10418", "BatchPin event is not valid - %s (%s): %s")
 	MsgDuplicatePluginBroadcastName       = ffe("FF10419", "Invalid %s plugin broadcast name: %s - broadcast names must be unique", 409)
 	MsgInvalidConnectorName               = ffe("FF10420", "Could not find name %s for %s connector")
-	MsgCannotInitLegacyNS                 = ffe("FF10421", "could not initialize legacy '%s' namespace - found conflicting V1 multi-party config in %s and %s")
+	MsgCannotInitLegacyNS                 = ffe("FF10421", "could not initialize legacy '%s' namespace - found conflicting V1 multi-party config in %s")
 	MsgInvalidGroupMember                 = ffe("FF10422", "invalid group member - node '%s' is not owned by '%s' or any of its ancestors")
 	MsgContractListenerStatusInvalid      = ffe("FF10423", "Failed to validate contract listener status: %v", 400)
 	MsgCacheMissSizeLimitKeyInternal      = ffe("FF10424", "could not initialize cache - size limit config key is not provided")
