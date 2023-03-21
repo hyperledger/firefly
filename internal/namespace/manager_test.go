@@ -2056,3 +2056,11 @@ func TestValidateNonMultipartyConfig(t *testing.T) {
 	_, err = nm.loadNamespaces(context.Background(), nm.dumpRootConfig(), nm.plugins)
 	assert.NoError(t, err)
 }
+
+func TestOrchestratorWhileInitializing(t *testing.T) {
+	nm, _, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	_, err := nm.Orchestrator(nm.ctx, "default", false)
+	assert.Regexp(t, "FF10440", err)
+}

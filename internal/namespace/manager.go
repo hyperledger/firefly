@@ -1074,7 +1074,10 @@ func (nm *namespaceManager) Orchestrator(ctx context.Context, ns string, include
 	nm.nsMux.Lock()
 	defer nm.nsMux.Unlock()
 	// Only return started namespaces from this call
-	if namespace, ok := nm.namespaces[ns]; ok && namespace != nil && (includeInitializing || namespace.started) {
+	if namespace, ok := nm.namespaces[ns]; ok && namespace != nil {
+		if !includeInitializing && !namespace.started {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceInitializing, ns)
+		}
 		return namespace.orchestrator, nil
 	}
 	return nil, i18n.NewError(ctx, coremsgs.MsgUnknownNamespace, ns)
