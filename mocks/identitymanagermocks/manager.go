@@ -5,8 +5,11 @@ package identitymanagermocks
 import (
 	context "context"
 
-	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
+	blockchain "github.com/hyperledger/firefly/pkg/blockchain"
+
 	core "github.com/hyperledger/firefly/pkg/core"
+
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -276,25 +279,25 @@ func (_m *Manager) ResolveInputSigningKey(ctx context.Context, inputKey string, 
 	return r0, r1
 }
 
-// ResolveInputVerifierRef provides a mock function with given fields: ctx, inputKey
-func (_m *Manager) ResolveInputVerifierRef(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
-	ret := _m.Called(ctx, inputKey)
+// ResolveInputVerifierRef provides a mock function with given fields: ctx, inputKey, intent
+func (_m *Manager) ResolveInputVerifierRef(ctx context.Context, inputKey *core.VerifierRef, intent blockchain.ResolveKeyIntent) (*core.VerifierRef, error) {
+	ret := _m.Called(ctx, inputKey, intent)
 
 	var r0 *core.VerifierRef
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.VerifierRef) (*core.VerifierRef, error)); ok {
-		return rf(ctx, inputKey)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.VerifierRef, blockchain.ResolveKeyIntent) (*core.VerifierRef, error)); ok {
+		return rf(ctx, inputKey, intent)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *core.VerifierRef) *core.VerifierRef); ok {
-		r0 = rf(ctx, inputKey)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.VerifierRef, blockchain.ResolveKeyIntent) *core.VerifierRef); ok {
+		r0 = rf(ctx, inputKey, intent)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.VerifierRef)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *core.VerifierRef) error); ok {
-		r1 = rf(ctx, inputKey)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.VerifierRef, blockchain.ResolveKeyIntent) error); ok {
+		r1 = rf(ctx, inputKey, intent)
 	} else {
 		r1 = ret.Error(1)
 	}

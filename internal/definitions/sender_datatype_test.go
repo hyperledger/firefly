@@ -48,6 +48,11 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	mdm := ds.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mim := ds.identity.(*identitymanagermocks.Manager)
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	err := ds.DefineDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
@@ -91,6 +96,11 @@ func TestBroadcastOk(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)

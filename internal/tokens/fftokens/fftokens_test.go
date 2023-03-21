@@ -267,11 +267,13 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 	mcb := &tokenmocks.Callbacks{}
 	h.SetHandler("ns1", mcb)
 
-	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	mcb.On("TokenPoolCreated", ctx /* important this gets through */, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && *p.TX.ID == *pool.TX.ID
 	})).Return(nil)
 
-	complete, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
+	complete, err := h.CreateTokenPool(ctx, nsOpID, pool)
 	assert.True(t, complete)
 	assert.NoError(t, err)
 }
@@ -425,7 +427,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 
 	mcb := &tokenmocks.Callbacks{}
 	h.SetHandler("ns1", mcb)
-	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
+	mcb.On("TokenPoolCreated", mock.Anything, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event == nil
 	})).Return(nil)
 
@@ -473,7 +475,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 
 	mcb := &tokenmocks.Callbacks{}
 	h.SetHandler("ns1", mcb)
-	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
+	mcb.On("TokenPoolCreated", mock.Anything, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil
 	})).Return(nil)
 
@@ -993,7 +995,7 @@ func TestPoolEvents(t *testing.T) {
 	assert.Equal(t, `{"data":{"id":"6"},"event":"ack"}`, string(msg))
 
 	// token-pool: invalid uuid (success)
-	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
+	mcb.On("TokenPoolCreated", mock.Anything, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
@@ -1017,7 +1019,7 @@ func TestPoolEvents(t *testing.T) {
 	assert.Equal(t, `{"data":{"id":"7"},"event":"ack"}`, string(msg))
 
 	// token-pool: success
-	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
+	mcb.On("TokenPoolCreated", mock.Anything, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && txID.Equals(p.TX.ID) && p.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
@@ -1042,7 +1044,7 @@ func TestPoolEvents(t *testing.T) {
 	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
 
 	// token-pool: batch + callback fail
-	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
+	mcb.On("TokenPoolCreated", mock.Anything, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && txID.Equals(p.TX.ID) && p.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(fmt.Errorf("pop")).Once()
 	fromServer <- fftypes.JSONObject{

@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/cachemocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/net/context"
@@ -86,11 +87,11 @@ func TestAddressResolverInEthereumOKCached(t *testing.T) {
 	ctx, e, cancel := newAddressResolverTestEth(t, config)
 	defer cancel()
 
-	resolved, err := e.ResolveInputSigningKey(ctx, "testkeystring")
+	resolved, err := e.ResolveSigningKey(ctx, "testkeystring", blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
 	assert.Equal(t, strings.ToLower(addr), resolved)
 
-	resolved, err = e.ResolveInputSigningKey(ctx, "testkeystring") // cached
+	resolved, err = e.ResolveSigningKey(ctx, "testkeystring", blockchain.ResolveKeyIntentSign) // cached
 	assert.NoError(t, err)
 	assert.Equal(t, strings.ToLower(addr), resolved)
 	assert.Equal(t, 1, count)
@@ -113,7 +114,7 @@ func TestAddressResolverURLEncode(t *testing.T) {
 	ctx, e, cancel := newAddressResolverTestEth(t, config)
 	defer cancel()
 
-	resolved, err := e.ResolveInputSigningKey(ctx, "uri://testkeystring")
+	resolved, err := e.ResolveSigningKey(ctx, "uri://testkeystring", blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
 	assert.Equal(t, strings.ToLower(addr), resolved)
 }
@@ -148,11 +149,11 @@ func TestAddressResolverForceNoCacheAlwaysInvoke(t *testing.T) {
 	e.addressResolver, err = newAddressResolver(ctx, config, nil, false)
 	assert.NoError(t, err)
 
-	resolved, err := e.ResolveInputSigningKey(ctx, addr1)
+	resolved, err := e.ResolveSigningKey(ctx, addr1, blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
 	assert.Equal(t, strings.ToLower(addr2), resolved)
 
-	resolved, err = e.ResolveInputSigningKey(ctx, addr1)
+	resolved, err = e.ResolveSigningKey(ctx, addr1, blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
 	assert.Equal(t, strings.ToLower(addr2), resolved)
 
@@ -166,6 +167,7 @@ func TestAddressResolverPOSTOk(t *testing.T) {
 		var jo fftypes.JSONObject
 		json.NewDecoder(r.Body).Decode(&jo)
 		assert.Equal(t, "testkeystring", jo.GetString("key"))
+		assert.Equal(t, "lookup", jo.GetString("intent"))
 		rw.Header().Set("Content-Type", "application/json")
 		rw.WriteHeader(200)
 		rw.Write([]byte(fmt.Sprintf(`{"Addr":"%s"}`, addr)))
@@ -176,13 +178,13 @@ func TestAddressResolverPOSTOk(t *testing.T) {
 	config.Set(AddressResolverRetainOriginal, true)
 	config.Set(AddressResolverMethod, "POST")
 	config.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve", server.URL))
-	config.Set(AddressResolverBodyTemplate, `{"key":"{{.Key}}"}`)
+	config.Set(AddressResolverBodyTemplate, `{"key":"{{.Key}}","intent":"{{.Intent}}"}`)
 	config.Set(AddressResolverResponseField, "Addr")
 
 	ctx, e, cancel := newAddressResolverTestEth(t, config)
 	defer cancel()
 
-	resolved, err := e.addressResolver.ResolveInputSigningKey(ctx, "testkeystring")
+	resolved, err := e.addressResolver.ResolveSigningKey(ctx, "testkeystring", blockchain.ResolveKeyIntentLookup)
 	assert.NoError(t, err)
 
 	assert.Equal(t, strings.ToLower(addr), resolved)
@@ -194,19 +196,19 @@ func TestAddressResolverPOSTBadKey(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "application/json")
 		rw.WriteHeader(200)
-		rw.Write([]byte(`{"address":"badness"}`))
+		rw.Write([]byte(`{"address":"badness","intent":"sign"}`))
 	}))
 	defer server.Close()
 
 	config := utAddresResolverConfig()
 	config.Set(AddressResolverMethod, "POST")
 	config.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve", server.URL))
-	config.Set(AddressResolverBodyTemplate, `{"key":"{{.Key}}"}`)
+	config.Set(AddressResolverBodyTemplate, `{"key":"{{.Key}}","intent":"{{.Intent}}"}`)
 
 	ctx, e, cancel := newAddressResolverTestEth(t, config)
 	defer cancel()
 
-	_, err := e.addressResolver.ResolveInputSigningKey(ctx, "testkeystring")
+	_, err := e.addressResolver.ResolveSigningKey(ctx, "testkeystring", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10341", err)
 
 }
@@ -226,7 +228,7 @@ func TestAddressResolverPOSTResponse(t *testing.T) {
 	ctx, e, cancel := newAddressResolverTestEth(t, config)
 	defer cancel()
 
-	_, err := e.addressResolver.ResolveInputSigningKey(ctx, "testkeystring")
+	_, err := e.addressResolver.ResolveSigningKey(ctx, "testkeystring", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10341", err)
 
 }
@@ -244,7 +246,7 @@ func TestAddressResolverFailureResponse(t *testing.T) {
 	ctx, e, cancel := newAddressResolverTestEth(t, config)
 	defer cancel()
 
-	_, err := e.addressResolver.ResolveInputSigningKey(ctx, "testkeystring")
+	_, err := e.addressResolver.ResolveSigningKey(ctx, "testkeystring", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10340", err)
 
 }
@@ -262,7 +264,7 @@ func TestAddressResolverErrorResponse(t *testing.T) {
 	ctx, e, cancel := newAddressResolverTestEth(t, config)
 	defer cancel()
 
-	_, err := e.addressResolver.ResolveInputSigningKey(ctx, "testkeystring")
+	_, err := e.addressResolver.ResolveSigningKey(ctx, "testkeystring", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10339", err)
 
 }
@@ -290,7 +292,7 @@ func TestAddressResolverErrorURLTemplate(t *testing.T) {
 	ctx, e, cancel := newAddressResolverTestEth(t, config)
 	defer cancel()
 
-	_, err := e.addressResolver.ResolveInputSigningKey(ctx, "testkeystring")
+	_, err := e.addressResolver.ResolveSigningKey(ctx, "testkeystring", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10338.*urlTemplate", err)
 
 }
@@ -314,7 +316,7 @@ func TestAddressResolverErrorBodyTemplate(t *testing.T) {
 	))
 	assert.NoError(t, err)
 
-	_, err = ar.ResolveInputSigningKey(ctx, "testkeystring")
+	_, err = ar.ResolveSigningKey(ctx, "testkeystring", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10338.*bodyTemplate", err)
 
 }

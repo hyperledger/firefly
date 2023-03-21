@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -40,7 +41,7 @@ func TestPostVerifiersResolve(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	im.On("ResolveInputVerifierRef", mock.Anything, mock.AnythingOfType("*core.VerifierRef")).
+	im.On("ResolveInputVerifierRef", mock.Anything, mock.AnythingOfType("*core.VerifierRef"), blockchain.ResolveKeyIntentLookup).
 		Return(&core.VerifierRef{}, nil)
 	r.ServeHTTP(res, req)
 

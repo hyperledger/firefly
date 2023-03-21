@@ -81,7 +81,11 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should only be returned in shutdown scenarios
-	TokenPoolCreated(plugin Plugin, pool *TokenPool) error
+	//
+	// Note: The context is passed on this callback (unlike most callbacks), as it might be
+	//       involved in-line with the original REST API call in the special case of the
+	//       submitter.
+	TokenPoolCreated(ctx context.Context, plugin Plugin, pool *TokenPool) error
 
 	// TokensTransferred notifies on a transfer between token accounts.
 	//

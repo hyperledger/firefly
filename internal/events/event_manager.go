@@ -78,7 +78,7 @@ type EventManager interface {
 	SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID)
 
 	// Bound token callbacks
-	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) error
+	TokenPoolCreated(ctx context.Context /* allows security context to be propagated when called in-line with the send TX */, ti tokens.Plugin, pool *tokens.TokenPool) error
 	TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error
 	TokensApproved(ti tokens.Plugin, approval *tokens.TokenApproval) error
 

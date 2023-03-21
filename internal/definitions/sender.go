@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -105,7 +105,14 @@ func (bm *definitionSender) Name() string {
 }
 
 func (bm *definitionSender) sendDefinitionDefault(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
-	return bm.sendDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
+	org, err := bm.identity.GetMultipartyRootOrg(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return bm.sendDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */
+		Author: org.DID,
+	}, tag, waitConfirm)
 }
 
 func (bm *definitionSender) sendDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {

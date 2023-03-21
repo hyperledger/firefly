@@ -51,7 +51,7 @@ func addPoolDetailsFromPlugin(ffPool *core.TokenPool, pluginPool *tokens.TokenPo
 }
 
 func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, ev *blockchain.Event) error {
-	log.L(em.ctx).Debugf("Confirming pool ID=%s Locator='%s'", pool.ID, pool.Locator)
+	log.L(ctx).Debugf("Confirming pool ID=%s Locator='%s'", pool.ID, pool.Locator)
 	var blockchainID string
 	if ev != nil {
 		// Some pools will not include a blockchain event for creation (such as when indexing a pre-existing pool)
@@ -132,12 +132,16 @@ func (em *eventManager) loadFromOperation(ctx context.Context, pool *tokens.Toke
 // It will be at least invoked on the submitter when the pool is first created, to trigger the submitter to announce it.
 // It will be invoked on every node (including the submitter) after the pool is announced+activated, to trigger confirmation of the pool.
 // When received in any other scenario, it should be ignored.
-func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) (err error) {
+//
+// The context passed to this callback is dependent on what phase it is called in.
+// In the case that it is called synchronously on the submitter, in order to trigger the announcement, the original context
+// of the REST API will be propagated (so it can be used for the resolution of the org signing key).
+func (em *eventManager) TokenPoolCreated(ctx context.Context, ti tokens.Plugin, pool *tokens.TokenPool) (err error) {
 	var msgIDforRewind *fftypes.UUID
 	var announcePool *core.TokenPool
 
-	err = em.retry.Do(em.ctx, "persist token pool transaction", func(attempt int) (bool, error) {
-		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+	err = em.retry.Do(ctx, "persist token pool transaction", func(attempt int) (bool, error) {
+		err := em.database.RunAsGroup(ctx, func(ctx context.Context) error {
 			// See if this is a confirmation of an unconfirmed pool
 			existingPool, err := em.loadExisting(ctx, pool)
 			if err != nil {
@@ -145,7 +149,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			}
 			if existingPool != nil {
 				if existingPool.State == core.TokenPoolStateConfirmed {
-					log.L(em.ctx).Debugf("Token pool ID=%s Locator='%s' already confirmed", existingPool.ID, pool.PoolLocator)
+					log.L(ctx).Debugf("Token pool ID=%s Locator='%s' already confirmed", existingPool.ID, pool.PoolLocator)
 					return nil // already confirmed
 				}
 				msgIDforRewind = existingPool.Message
@@ -153,7 +157,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			} else if pool.TX.ID == nil {
 				// TransactionID is required if the pool doesn't exist yet
 				// (but it may be omitted when activating a pool that was received via definition broadcast)
-				log.L(em.ctx).Errorf("Invalid token pool transaction - ID is nil")
+				log.L(ctx).Errorf("Invalid token pool transaction - ID is nil")
 				return nil // move on
 			}
 
@@ -184,16 +188,16 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 		if announcePool != nil {
 			// If the pool is tied to a contract interface, resolve the methods to be used for later operations
 			if announcePool.Interface != nil && announcePool.Interface.ID != nil && announcePool.InterfaceFormat != "" {
-				log.L(em.ctx).Infof("Querying token connector interface, id=%s", announcePool.ID)
-				if err := em.assets.ResolvePoolMethods(em.ctx, announcePool); err != nil {
+				log.L(ctx).Infof("Querying token connector interface, id=%s", announcePool.ID)
+				if err := em.assets.ResolvePoolMethods(ctx, announcePool); err != nil {
 					return err
 				}
 			}
 
 			// Announce the details of the new token pool
 			// Other nodes will pass these details to their own token connector for validation/activation of the pool
-			log.L(em.ctx).Infof("Announcing token pool, id=%s", announcePool.ID)
-			err = em.defsender.DefineTokenPool(em.ctx, &core.TokenPoolAnnouncement{
+			log.L(ctx).Infof("Announcing token pool, id=%s", announcePool.ID)
+			err = em.defsender.DefineTokenPool(ctx, &core.TokenPoolAnnouncement{
 				Pool: announcePool,
 			}, false)
 		}

@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 )
 
 // addressResolver is a REST-pluggable interface to allow arbitrary strings that reference
@@ -49,7 +50,8 @@ type addressResolver struct {
 }
 
 type addressResolverInserts struct {
-	Key string
+	Key    string
+	Intent blockchain.ResolveKeyIntent
 }
 
 func newAddressResolver(ctx context.Context, localConfig config.Section, cacheManager cache.Manager, enableCache bool) (ar *addressResolver, err error) {
@@ -90,7 +92,7 @@ func newAddressResolver(ctx context.Context, localConfig config.Section, cacheMa
 	return ar, nil
 }
 
-func (ar *addressResolver) ResolveInputSigningKey(ctx context.Context, keyDescriptor string) (string, error) {
+func (ar *addressResolver) ResolveSigningKey(ctx context.Context, keyDescriptor string, intent blockchain.ResolveKeyIntent) (string, error) {
 
 	if ar.cache != nil {
 		if cached := ar.cache.GetString(keyDescriptor); cached != "" {
@@ -99,7 +101,8 @@ func (ar *addressResolver) ResolveInputSigningKey(ctx context.Context, keyDescri
 	}
 
 	inserts := &addressResolverInserts{
-		Key: keyDescriptor,
+		Key:    keyDescriptor,
+		Intent: intent,
 	}
 
 	urlStr := &strings.Builder{}
