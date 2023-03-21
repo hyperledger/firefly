@@ -2736,12 +2736,13 @@ func TestGetTransactionStatus(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigDefaultChannel, "firefly")
 
+	output := make(map[string]interface{}, 0)
+	output["transactionHash"] = "7cd2549e310898ceb5f8d15112e74e0395c2f7ccd434293cd29cdb6bc358e85a"
 	op := &core.Operation{
-		Namespace: "ns1",
-		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		Output: output,
 	}
 
-	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/7cd2549e310898ceb5f8d15112e74e0395c2f7ccd434293cd29cdb6bc358e85a?fly-channel=firefly&fly-signer=signer001`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(200, make(map[string]interface{}))(req)
 		})
@@ -2761,12 +2762,13 @@ func TestGetTransactionStatusNoResult(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigDefaultChannel, "firefly")
 
+	output := make(map[string]interface{}, 0)
+	output["transactionHash"] = "7cd2549e310898ceb5f8d15112e74e0395c2f7ccd434293cd29cdb6bc358e85a"
 	op := &core.Operation{
-		Namespace: "ns1",
-		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		Output: output,
 	}
 
-	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/7cd2549e310898ceb5f8d15112e74e0395c2f7ccd434293cd29cdb6bc358e85a?fly-channel=firefly&fly-signer=signer001`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(404, make(map[string]interface{}))(req)
 		})
