@@ -29,7 +29,7 @@ import (
 func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 	var announce core.TokenPoolAnnouncement
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "token pool", msg.Header.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "token pool", msg.Header.ID)
 	}
 
 	pool := announce.Pool
@@ -38,7 +38,7 @@ func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state
 		pool.Connector = localName
 	} else {
 		log.L(ctx).Infof("Could not find local name for token connector: %s", pool.Connector)
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, pool.Connector, "token")
+		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, pool.Connector, "token")
 	}
 
 	pool.Message = msg.Header.ID
@@ -52,23 +52,23 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 
 	pool.Namespace = dh.namespace.Name
 	if err := pool.Validate(ctx); err != nil {
-		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID)
+		return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID)
 	}
 
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
 	if existingPool, err := dh.database.GetTokenPoolByID(ctx, dh.namespace.Name, pool.ID); err != nil {
-		return HandlerResult{Action: ActionRetry}, err
+		return HandlerResult{Action: core.ActionRetry}, err
 	} else if existingPool != nil && existingPool.State == core.TokenPoolStateConfirmed {
-		return HandlerResult{Action: ActionConfirm, CustomCorrelator: correlator}, nil
+		return HandlerResult{Action: core.ActionConfirm, CustomCorrelator: correlator}, nil
 	}
 
 	// Create the pool in pending state
 	pool.State = core.TokenPoolStatePending
 	if err := dh.database.UpsertTokenPool(ctx, pool); err != nil {
 		if err == database.IDMismatch {
-			return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIDMismatch, "token pool", pool.ID)
+			return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIDMismatch, "token pool", pool.ID)
 		}
-		return HandlerResult{Action: ActionRetry}, err
+		return HandlerResult{Action: core.ActionRetry}, err
 	}
 
 	// Message will remain unconfirmed, but plugin will be notified to activate the pool
@@ -80,5 +80,5 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 		}
 		return nil
 	})
-	return HandlerResult{Action: ActionWait, CustomCorrelator: correlator}, nil
+	return HandlerResult{Action: core.ActionWait, CustomCorrelator: correlator}, nil
 }

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -51,7 +51,7 @@ func buildIdentityMsgInfo(msg *core.Message, verifyMsgID *fftypes.UUID) *identit
 func (dh *definitionHandler) handleIdentityClaimBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, verifyMsgID *fftypes.UUID) (HandlerResult, error) {
 	var claim core.IdentityClaim
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim); !valid {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity claim", msg.Header.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity claim", msg.Header.ID)
 	}
 	claim.Identity.Messages.Claim = msg.Header.ID
 	return dh.handleIdentityClaim(ctx, state, buildIdentityMsgInfo(msg, verifyMsgID), &claim)
@@ -159,20 +159,20 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 	parent, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
 	if err != nil {
 		if retryable {
-			return HandlerResult{Action: ActionRetry}, err
+			return HandlerResult{Action: core.ActionRetry}, err
 		}
 		// This cannot be processed as something in the identity chain is invalid.
 		// We treat this as a park - because we don't know if the parent identity
 		// will be processed after this message and generate a rewind.
 		// They are on separate topics, so there is not ordering assurance between the two messages.
 		l.Infof("Unable to process identity claim (parked) %s: %s", msg.claimMsg.ID, err)
-		return HandlerResult{Action: ActionWait}, nil
+		return HandlerResult{Action: core.ActionWait}, nil
 	}
 
 	// For multi-party namespaces, check that the claim message was appropriately signed
 	if dh.multiparty {
 		if err := dh.verifyClaimSignature(ctx, msg, identity, parent); err != nil {
-			return HandlerResult{Action: ActionReject}, err
+			return HandlerResult{Action: core.ActionReject}, err
 		}
 	}
 
@@ -181,23 +181,23 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 		existingIdentity, err = dh.database.GetIdentityByID(ctx, dh.namespace.Name, identity.ID)
 	}
 	if err != nil {
-		return HandlerResult{Action: ActionRetry}, err // retry database errors
+		return HandlerResult{Action: core.ActionRetry}, err // retry database errors
 	}
 	if existingIdentity != nil && !existingIdentity.IdentityBase.Equals(ctx, &identity.IdentityBase) {
 		// If the existing one matches - this is just idempotent replay. No action needed, just confirm
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "identity claim", identity.ID, existingIdentity.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "identity claim", identity.ID, existingIdentity.ID)
 	}
 
 	// Check uniqueness of verifier
 	verifier := dh.getClaimVerifier(msg, identity)
 	existingVerifier, err := dh.database.GetVerifierByValue(ctx, verifier.Type, identity.Namespace, verifier.Value)
 	if err != nil {
-		return HandlerResult{Action: ActionRetry}, err // retry database errors
+		return HandlerResult{Action: core.ActionRetry}, err // retry database errors
 	}
 	if existingVerifier != nil && !existingVerifier.Identity.Equals(identity.ID) {
 		verifierLabel := fmt.Sprintf("%s:%s", verifier.Type, verifier.Value)
 		existingVerifierLabel := fmt.Sprintf("%s:%s", verifier.Type, verifier.Value)
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "identity verifier", verifierLabel, existingVerifierLabel)
+		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "identity verifier", verifierLabel, existingVerifierLabel)
 	}
 
 	// For child identities in multi-party namespaces, check that the parent signed a verification message
@@ -208,14 +208,14 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 			// Search for a corresponding verification message on the same topic
 			msg.verifyMsg.ID, err = dh.confirmVerificationForClaim(ctx, state, msg, identity, parent)
 			if err != nil {
-				return HandlerResult{Action: ActionRetry}, err // retry database errors
+				return HandlerResult{Action: core.ActionRetry}, err // retry database errors
 			}
 		}
 		if msg.verifyMsg.ID == nil {
 			// Ok, we still confirm the message as it's valid, and we do not want to block the context.
 			// But we do NOT go on to create the identity - we will be called back
 			log.L(ctx).Infof("Identity %s (%s) awaiting verification claim='%s'", identity.DID, identity.ID, msg.claimMsg.ID)
-			return HandlerResult{Action: ActionConfirm}, nil
+			return HandlerResult{Action: core.ActionConfirm}, nil
 		}
 		log.L(ctx).Infof("Identity %s (%s) verified claim='%s' verification='%s'", identity.DID, identity.ID, msg.claimMsg.ID, msg.verifyMsg.ID)
 		identity.Messages.Verification = msg.verifyMsg.ID
@@ -223,12 +223,12 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 
 	if existingVerifier == nil {
 		if err = dh.database.UpsertVerifier(ctx, verifier, database.UpsertOptimizationNew); err != nil {
-			return HandlerResult{Action: ActionRetry}, err
+			return HandlerResult{Action: core.ActionRetry}, err
 		}
 	}
 	if existingIdentity == nil {
 		if err = dh.database.UpsertIdentity(ctx, identity, database.UpsertOptimizationNew); err != nil {
-			return HandlerResult{Action: ActionRetry}, err
+			return HandlerResult{Action: core.ActionRetry}, err
 		}
 	}
 
@@ -246,5 +246,5 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 		event := core.NewEvent(core.EventTypeIdentityConfirmed, identity.Namespace, identity.ID, nil, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
-	return HandlerResult{Action: ActionConfirm}, nil
+	return HandlerResult{Action: core.ActionConfirm}, nil
 }
