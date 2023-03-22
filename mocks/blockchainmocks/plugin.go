@@ -194,29 +194,36 @@ func (_m *Plugin) GetAndConvertDeprecatedContractConfig(ctx context.Context) (*f
 }
 
 // GetContractListenerStatus provides a mock function with given fields: ctx, subID, okNotFound
-func (_m *Plugin) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (interface{}, error) {
+func (_m *Plugin) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (bool, interface{}, error) {
 	ret := _m.Called(ctx, subID, okNotFound)
 
-	var r0 interface{}
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, bool) (interface{}, error)); ok {
+	var r0 bool
+	var r1 interface{}
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) (bool, interface{}, error)); ok {
 		return rf(ctx, subID, okNotFound)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, bool) interface{}); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) bool); ok {
 		r0 = rf(ctx, subID, okNotFound)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, bool) interface{}); ok {
+		r1 = rf(ctx, subID, okNotFound)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
-		r1 = rf(ctx, subID, okNotFound)
+	if rf, ok := ret.Get(2).(func(context.Context, string, bool) error); ok {
+		r2 = rf(ctx, subID, okNotFound)
 	} else {
-		r1 = ret.Error(1)
+		r2 = ret.Error(2)
 	}
 
-	return r0, r1
+	return r0, r1, r2
 }
 
 // GetFFIParamValidator provides a mock function with given fields: ctx

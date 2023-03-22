@@ -595,12 +595,12 @@ func (cm *contractManager) resolveEvent(ctx context.Context, ffi *fftypes.FFIRef
 }
 
 func (cm *contractManager) checkContractListenerExists(ctx context.Context, listener *core.ContractListener) error {
-	existing, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID, true)
+	found, _, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID, true)
 	if err != nil {
 		log.L(ctx).Errorf("Validating listener %s:%s (BackendID=%s) failed: %s", listener.Signature, listener.ID, listener.BackendID, err)
 		return err
 	}
-	if existing != nil {
+	if found {
 		log.L(ctx).Debugf("Validated listener %s:%s (BackendID=%s)", listener.Signature, listener.ID, listener.BackendID)
 		return nil
 	}
@@ -663,7 +663,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
 			fb.Eq("topic", listener.Topic),
-			fb.Eq("location", listener.Location.Bytes()),
+			fb.Eq("location", listener.Location.String()),
 			fb.Eq("signature", listener.Signature),
 		)); err != nil {
 			return err
@@ -733,7 +733,7 @@ func (cm *contractManager) GetContractListenerByNameOrIDWithStatus(ctx context.C
 	if err != nil {
 		return nil, err
 	}
-	status, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID, false)
+	_, status, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID, false)
 	if err != nil {
 		status = core.ListenerStatusError{
 			StatusError: err.Error(),
