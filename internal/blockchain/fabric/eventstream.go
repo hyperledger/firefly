@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -185,11 +185,14 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 	return &sub, nil
 }
 
-func (s *streamManager) deleteSubscription(ctx context.Context, subID string) error {
+func (s *streamManager) deleteSubscription(ctx context.Context, subID string, okNotFound bool) error {
 	res, err := s.client.R().
 		SetContext(ctx).
 		Delete("/subscriptions/" + subID)
 	if err != nil || !res.IsSuccess() {
+		if okNotFound && res.StatusCode() == 404 {
+			return nil
+		}
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return nil

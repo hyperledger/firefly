@@ -2088,7 +2088,7 @@ func TestDeleteContractListener(t *testing.T) {
 	}
 
 	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(sub, nil)
-	mbi.On("DeleteContractListener", context.Background(), sub).Return(nil)
+	mbi.On("DeleteContractListener", context.Background(), sub, true).Return(nil)
 	mdi.On("DeleteContractListenerByID", context.Background(), "ns1", sub.ID).Return(nil)
 
 	err := cm.DeleteContractListenerByNameOrID(context.Background(), "sub1")
@@ -2105,7 +2105,7 @@ func TestDeleteContractListenerBlockchainFail(t *testing.T) {
 	}
 
 	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(sub, nil)
-	mbi.On("DeleteContractListener", context.Background(), sub).Return(fmt.Errorf("pop"))
+	mbi.On("DeleteContractListener", context.Background(), sub, true).Return(fmt.Errorf("pop"))
 	mdi.On("DeleteContractListenerByID", context.Background(), "ns1", sub.ID).Return(nil)
 
 	err := cm.DeleteContractListenerByNameOrID(context.Background(), "sub1")

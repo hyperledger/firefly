@@ -78,13 +78,13 @@ func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 	return r0
 }
 
-// DeleteContractListener provides a mock function with given fields: ctx, subscription
-func (_m *Plugin) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
-	ret := _m.Called(ctx, subscription)
+// DeleteContractListener provides a mock function with given fields: ctx, subscription, okNotFound
+func (_m *Plugin) DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error {
+	ret := _m.Called(ctx, subscription, okNotFound)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListener) error); ok {
-		r0 = rf(ctx, subscription)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListener, bool) error); ok {
+		r0 = rf(ctx, subscription, okNotFound)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -830,8 +830,8 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *core.Contrac
 	return nil
 }
 
-func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
-	return f.streams.deleteSubscription(ctx, subscription.BackendID)
+func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error {
+	return f.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
 func (f *Fabric) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {

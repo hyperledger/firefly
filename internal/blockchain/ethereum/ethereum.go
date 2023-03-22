@@ -806,8 +806,8 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	return nil
 }
 
-func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
-	return e.streams.deleteSubscription(ctx, subscription.BackendID)
+func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error {
+	return e.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
 func (e *Ethereum) GetContractListenerStatus(ctx context.Context, subID string) (status interface{}, err error) {

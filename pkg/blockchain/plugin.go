@@ -89,7 +89,7 @@ type Plugin interface {
 	AddContractListener(ctx context.Context, subscription *core.ContractListenerInput) error
 
 	// DeleteContractListener deletes a previously-created subscription
-	DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error
+	DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error
 
 	GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error)
 

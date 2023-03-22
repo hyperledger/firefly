@@ -733,7 +733,7 @@ func (cm *contractManager) DeleteContractListenerByNameOrID(ctx context.Context,
 		if err != nil {
 			return err
 		}
-		if err = cm.blockchain.DeleteContractListener(ctx, listener); err != nil {
+		if err = cm.blockchain.DeleteContractListener(ctx, listener, true /* ok if not found */); err != nil {
 			return err
 		}
 		return cm.database.DeleteContractListenerByID(ctx, cm.namespace, listener.ID)

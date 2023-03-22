@@ -1861,7 +1861,7 @@ func TestDeleteSubscription(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(204, ""))
 
-	err := e.DeleteContractListener(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub, true)
 
 	assert.NoError(t, err)
 }
@@ -1884,9 +1884,32 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(500, ""))
 
-	err := e.DeleteContractListener(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub, true)
 
 	assert.Regexp(t, "FF10111", err)
+}
+
+func TestDeleteSubscriptionNotFound(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.streamID = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		BackendID: "sb-1",
+	}
+
+	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
+		httpmock.NewStringResponder(404, ""))
+
+	err := e.DeleteContractListener(context.Background(), sub, true)
+
+	assert.NoError(t, err)
 }
 
 func TestHandleMessageContractEventOldSubscription(t *testing.T) {
