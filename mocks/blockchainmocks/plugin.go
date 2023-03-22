@@ -25,11 +25,11 @@ type Plugin struct {
 }
 
 // AddContractListener provides a mock function with given fields: ctx, subscription
-func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.ContractListenerInput) error {
+func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.ContractListener) error {
 	ret := _m.Called(ctx, subscription)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListenerInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListener) error); ok {
 		r0 = rf(ctx, subscription)
 	} else {
 		r0 = ret.Error(0)
@@ -193,25 +193,25 @@ func (_m *Plugin) GetAndConvertDeprecatedContractConfig(ctx context.Context) (*f
 	return r0, r1, r2
 }
 
-// GetContractListenerStatus provides a mock function with given fields: ctx, subID
-func (_m *Plugin) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {
-	ret := _m.Called(ctx, subID)
+// GetContractListenerStatus provides a mock function with given fields: ctx, subID, okNotFound
+func (_m *Plugin) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (interface{}, error) {
+	ret := _m.Called(ctx, subID, okNotFound)
 
 	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (interface{}, error)); ok {
-		return rf(ctx, subID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) (interface{}, error)); ok {
+		return rf(ctx, subID, okNotFound)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) interface{}); ok {
-		r0 = rf(ctx, subID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) interface{}); ok {
+		r0 = rf(ctx, subID, okNotFound)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, subID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
+		r1 = rf(ctx, subID, okNotFound)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -1425,16 +1425,14 @@ func TestAddSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"channel":   "firefly",
-				"chaincode": "mycode",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"channel":   "firefly",
+			"chaincode": "mycode",
+		}.String()),
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1462,15 +1460,13 @@ func TestAddSubscriptionNoChannel(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"chaincode": "mycode",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"chaincode": "mycode",
+		}.String()),
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1498,12 +1494,10 @@ func TestAddSubscriptionNoLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+	sub := &core.ContractListener{
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1523,11 +1517,9 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(""),
-			Event:    &core.FFISerializedEvent{},
-		},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(""),
+		Event:    &core.FFISerializedEvent{},
 	}
 
 	err := e.AddContractListener(context.Background(), sub)
@@ -1546,16 +1538,14 @@ func TestAddSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"channel":   "firefly",
-				"chaincode": "mycode",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventNewest),
-			},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"channel":   "firefly",
+			"chaincode": "mycode",
+		}.String()),
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventNewest),
 		},
 	}
 
@@ -2744,8 +2734,8 @@ func TestGetContractListenerStatus(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	status, err := e.GetContractListenerStatus(context.Background(), "id")
-	assert.Nil(t, status)
+	status, err := e.GetContractListenerStatus(context.Background(), "id", true)
+	assert.NotNil(t, status)
 	assert.NoError(t, err)
 }
 
