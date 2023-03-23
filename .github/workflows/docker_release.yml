@@ -8,7 +8,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -29,42 +29,43 @@ jobs:
       - name: Set latest tag
         if: github.event.action == 'released'
         run: |
-          echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},ghcr.io/${{ github.repository_owner }}/firefly:latest" >> $GITHUB_ENV
+          echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},ghcr.io/${{ github.repository }}:latest" >> $GITHUB_ENV
 
       - name: Set alpha tag
         if: github.event.action == 'prereleased' && contains(github.ref, 'alpha')
         run: |
-          echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},ghcr.io/${{ github.repository_owner }}/firefly:alpha" >> $GITHUB_ENV
+          echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},ghcr.io/${{ github.repository }}:alpha" >> $GITHUB_ENV
 
       - name: Set beta tag
         if: github.event.action == 'prereleased' && contains(github.ref, 'beta')
         run: |
-          echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},ghcr.io/${{ github.repository_owner }}/firefly:beta" >> $GITHUB_ENV
+          echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},ghcr.io/${{ github.repository }}:beta" >> $GITHUB_ENV
 
       - name: Set rc tag
         if: github.event.action == 'prereleased' && contains(github.ref, 'rc')
         run: |
-          echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},ghcr.io/${{ github.repository_owner }}/firefly:rc" >> $GITHUB_ENV
+          echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},ghcr.io/${{ github.repository }}:rc" >> $GITHUB_ENV
 
       - name: Set build tag
         id: build_tag_generator
         run: |
-          RELEASE_TAG=$(curl https://api.github.com/repos/${{ github.repository_owner }}/firefly/releases/latest -s | jq .tag_name -r)
+          RELEASE_TAG=$(curl https://api.github.com/repos/${{ github.repository }}/releases/latest -s | jq .tag_name -r)
           BUILD_TAG=$RELEASE_TAG-$(date +"%Y%m%d")-$GITHUB_RUN_NUMBER
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          echo ::set-output name=BUILD_TAG::$BUILD_TAG
-          echo ::set-output name=BUILD_DATE::$BUILD_DATE
+          echo "BUILD_TAG=$BUILD_TAG" >> $GITHUB_OUTPUT
+          echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Read manifest.json
         id: manifest
         run: |
-          echo ::set-output name=FIREFLY_BUILDER_TAG::$(cat manifest.json | jq -r '.build."firefly-builder".image')
-          echo ::set-output name=FABRIC_BUILDER_TAG::$(cat manifest.json | jq -r '.build."fabric-builder".image')
-          echo ::set-output name=FABRIC_BUILDER_PLATFORM::$(cat manifest.json | jq -r '.build."fabric-builder".platform')
-          echo ::set-output name=SOLIDITY_BUILDER_TAG::$(cat manifest.json | jq -r '.build."solidity-builder".image')
-          echo ::set-output name=BASE_TAG::$(cat manifest.json | jq -r '.build.base.image')
-          echo ::set-output name=UI_TAG::$(cat manifest.json | jq -r '.ui.tag')
-          echo ::set-output name=UI_RELEASE::$(cat manifest.json | jq -r '.ui.release')
+          echo "FIREFLY_BUILDER_TAG=$(cat manifest.json | jq -r '.build."firefly-builder".image')" >> $GITHUB_OUTPUT
+          echo "FABRIC_BUILDER_TAG=$(cat manifest.json | jq -r '.build."fabric-builder".image')" >> $GITHUB_OUTPUT
+          echo "FABRIC_BUILDER_PLATFORM=$(cat manifest.json | jq -r '.build."fabric-builder".platform')" >> $GITHUB_OUTPUT
+          echo "SOLIDITY_BUILDER_TAG=$(cat manifest.json | jq -r '.build."solidity-builder".image')" >> $GITHUB_OUTPUT
+          echo "BASE_TAG=$(cat manifest.json | jq -r '.build.base.image')" >> $GITHUB_OUTPUT
+          echo "UI_TAG=$(cat manifest.json | jq -r '.ui.tag')" >> $GITHUB_OUTPUT
+          echo "UI_RELEASE=$(cat manifest.json | jq -r '.ui.release')" >> $GITHUB_OUTPUT
 
       - name: Build and push
         uses: docker/build-push-action@v4
@@ -75,13 +76,13 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/${{ github.repository_owner }}/firefly:${{ github.ref_name }},ghcr.io/${{ github.repository_owner }}/firefly:head,${{ env.DOCKER_TAGS }}
+          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }},ghcr.io/${{ github.repository }}:head,${{ env.DOCKER_TAGS }}
           labels: |
             commit=${{ github.sha }}
             build_date=${{ steps.build_tag_generator.outputs.BUILD_DATE }}
-            tag=${{ steps.build_tag_generator.outputs.BUILD_TAG }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/firefly:buildcache
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/firefly:buildcache,mode=max
+            tag=${{ steps.build_tag_generator.outputs.RELEASE_TAG }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
           build-args: |
             FIREFLY_BUILDER_TAG=${{ steps.manifest.outputs.FIREFLY_BUILDER_TAG }}
             FABRIC_BUILDER_TAG=${{ steps.manifest.outputs.FABRIC_BUILDER_TAG }}
@@ -90,3 +91,5 @@ jobs:
             BASE_TAG=${{ steps.manifest.outputs.BASE_TAG }}
             UI_TAG=${{ steps.manifest.outputs.UI_TAG }}
             UI_RELEASE=${{ steps.manifest.outputs.UI_RELEASE }}
+            BUILD_VERSION=${{ steps.build_tag_generator.outputs.RELEASE_TAG }}
+            GIT_REF=${{ github.ref }}
