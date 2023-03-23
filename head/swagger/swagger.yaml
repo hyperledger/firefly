@@ -24141,7 +24141,7 @@ paths:
                             invocations'
                           type: boolean
                         firstEvent:
-                          description: Whether your appplication would like to receive
+                          description: Whether your application would like to receive
                             events from the 'oldest' event emitted by your FireFly
                             node (from the beginning of time), or the 'newest' event
                             (from now), or a specific event sequence. Default is 'newest'
@@ -24362,7 +24362,7 @@ paths:
                         before the webhook is invoked, allowing parallel invocations'
                       type: boolean
                     firstEvent:
-                      description: Whether your appplication would like to receive
+                      description: Whether your application would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
@@ -24568,7 +24568,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
@@ -24786,7 +24786,7 @@ paths:
                         before the webhook is invoked, allowing parallel invocations'
                       type: boolean
                     firstEvent:
-                      description: Whether your appplication would like to receive
+                      description: Whether your application would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
@@ -24992,7 +24992,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
@@ -25272,7 +25272,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
@@ -31765,7 +31765,7 @@ paths:
                             invocations'
                           type: boolean
                         firstEvent:
-                          description: Whether your appplication would like to receive
+                          description: Whether your application would like to receive
                             events from the 'oldest' event emitted by your FireFly
                             node (from the beginning of time), or the 'newest' event
                             (from now), or a specific event sequence. Default is 'newest'
@@ -31979,7 +31979,7 @@ paths:
                         before the webhook is invoked, allowing parallel invocations'
                       type: boolean
                     firstEvent:
-                      description: Whether your appplication would like to receive
+                      description: Whether your application would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
@@ -32185,7 +32185,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
@@ -32396,7 +32396,7 @@ paths:
                         before the webhook is invoked, allowing parallel invocations'
                       type: boolean
                     firstEvent:
-                      description: Whether your appplication would like to receive
+                      description: Whether your application would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
@@ -32602,7 +32602,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
@@ -32868,7 +32868,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
