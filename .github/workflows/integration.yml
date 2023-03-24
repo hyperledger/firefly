@@ -79,7 +79,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-provider }}-${{ matrix.database-type }}
+          name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-node }}-${{ matrix.database-type }}
           path: containerlogs/logs.txt
 
   migration-test:
