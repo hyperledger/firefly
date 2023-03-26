@@ -259,3 +259,11 @@ func TestMessageImmutable(t *testing.T) {
 	}
 	assert.True(t, msg.Hash.Equals(msg.BatchMessage().Hash))
 }
+
+func TestMessageActions(t *testing.T) {
+	assert.Equal(t, "reject", ActionReject.String())
+	assert.Equal(t, "confirm", ActionConfirm.String())
+	assert.Equal(t, "retry", ActionRetry.String())
+	assert.Equal(t, "wait", ActionWait.String())
+	assert.Equal(t, "unknown", MessageAction(99999).String())
+}

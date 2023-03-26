@@ -115,6 +115,7 @@ var (
 	BlobRefHash   = ffm("BlobRef.hash", "The hash of the binary blob data")
 	BlobRefSize   = ffm("BlobRef.size", "The size of the binary data")
 	BlobRefName   = ffm("BlobRef.name", "The name field from the metadata attached to the blob, commonly used as a path/filename, and indexed for search")
+	BlobRefPath   = ffm("BlobRef.path", "If a name is specified, this field stores the '/' prefixed and separated path extracted from the full name")
 	BlobRefPublic = ffm("BlobRef.public", "If the blob data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)")
 
 	// Data field descriptions

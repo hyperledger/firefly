@@ -110,6 +110,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.Equal(t, database.HashMismatch, err)
 	err = s.UpsertData(context.Background(), dataUpdated, database.UpsertOptimizationExisting)
 	assert.Equal(t, database.HashMismatch, err)
+	assert.Equal(t, "/path/to", dataUpdated.Blob.Path)
 
 	dataUpdated.Hash = data.Hash
 	err = s.UpsertData(context.Background(), dataUpdated, database.UpsertOptimizationSkip)
@@ -172,6 +173,55 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataRes, res, err = s.GetData(ctx, "ns1", filter.Count(true))
 	assert.NoError(t, err)
 	assert.Len(t, dataRes, 0)
+}
+
+func TestDataSubPaths(t *testing.T) {
+	log.SetLevel("trace")
+
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	newData := func(blobName string) *core.Data {
+		return &core.Data{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Hash:      fftypes.NewRandB32(),
+			Created:   fftypes.Now(),
+			Blob: &core.BlobRef{
+				Name: blobName,
+				Hash: fftypes.NewRandB32(),
+			},
+		}
+	}
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, core.ChangeEventTypeCreated, "ns1", mock.Anything, mock.Anything).Return()
+
+	err := s.UpsertData(ctx, newData("dir1/file1.txt"), database.UpsertOptimizationSkip)
+	assert.NoError(t, err)
+	err = s.UpsertData(ctx, newData("/dir1/dir2/file2.txt"), database.UpsertOptimizationSkip)
+	assert.NoError(t, err)
+	err = s.UpsertData(ctx, newData("/dir1/dir2/file3.txt"), database.UpsertOptimizationSkip)
+	assert.NoError(t, err)
+	err = s.UpsertData(ctx, newData("dir1/dir3/file4.txt"), database.UpsertOptimizationSkip)
+	assert.NoError(t, err)
+	err = s.UpsertData(ctx, newData("dir2/dir3/file5.txt"), database.UpsertOptimizationSkip)
+	assert.NoError(t, err)
+	err = s.UpsertData(ctx, newData("dir2/dir3/dir4/file6.txt"), database.UpsertOptimizationSkip)
+	assert.NoError(t, err)
+	err = s.UpsertData(ctx, newData("dir2/file7.txt"), database.UpsertOptimizationSkip)
+	assert.NoError(t, err)
+
+	subPaths, err := s.GetDataSubPaths(ctx, "ns1", "dir1")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{
+		"/dir1/dir2",
+		"/dir1/dir3",
+	}, subPaths)
+
+	subPaths2, err := s.GetDataSubPaths(ctx, "ns1", "/dir1")
+	assert.NoError(t, err)
+	assert.Equal(t, subPaths, subPaths2)
+
 }
 
 func TestUpsertDataFailBegin(t *testing.T) {
@@ -406,4 +456,20 @@ func TestDataDeleteFail(t *testing.T) {
 	mock.ExpectRollback()
 	err := s.DeleteData(context.Background(), "ns1", fftypes.NewUUID())
 	assert.Regexp(t, "FF00179", err)
+}
+
+func TestGetDataSubPathsSelectFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	_, err := s.GetDataSubPaths(context.Background(), "ns1", "/any/path")
+	assert.Regexp(t, "FF00176", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetDataSubPathsReadFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}).AddRow())
+	_, err := s.GetDataSubPaths(context.Background(), "ns1", "/any/path")
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

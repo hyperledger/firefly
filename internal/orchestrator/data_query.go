@@ -279,6 +279,10 @@ func (or *orchestrator) GetData(ctx context.Context, filter ffapi.AndFilter) (co
 	return or.database().GetData(ctx, or.namespace.Name, filter)
 }
 
+func (or *orchestrator) GetDataSubPaths(ctx context.Context, path string) ([]string, error) {
+	return or.database().GetDataSubPaths(ctx, or.namespace.Name, path)
+}
+
 func (or *orchestrator) GetMessagesForData(ctx context.Context, id string, filter ffapi.AndFilter) ([]*core.Message, *ffapi.FilterResult, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
