@@ -361,14 +361,20 @@ func (s *SQLCommon) GetDataRefs(ctx context.Context, namespace string, filter ff
 func (s *SQLCommon) GetDataSubPaths(ctx context.Context, namespace, path string) (subPaths []string, err error) {
 
 	// Find all distinct path entries, which are sub-paths of the specified path
+	searchPath := strings.Trim(path, "/")
+	if searchPath == "" {
+		searchPath = "/"
+	} else {
+		searchPath = "/" + searchPath + "/"
+	}
 	sel := sq.Select("blob_path").From(dataTable).Distinct().Where(
 		sq.And{
 			sq.Eq{"namespace": namespace},
 			sq.Like{
-				"blob_path": "/" + strings.Trim(path, "/") + "/%",
+				"blob_path": searchPath + "%",
 			},
 			sq.NotLike{
-				"blob_path": "/" + strings.Trim(path, "/") + "/%/%",
+				"blob_path": searchPath + "%/%",
 			},
 		},
 	).OrderBy("blob_path")

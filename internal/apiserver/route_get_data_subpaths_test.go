@@ -40,3 +40,19 @@ func TestGetDataSubPaths(t *testing.T) {
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 }
+
+func TestGetDataSubPathsRoot(t *testing.T) {
+	o, r := newTestAPIServer()
+	mdm := &datamocks.Manager{}
+	o.On("Data").Return(mdm)
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/datasubpaths/", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	o.On("GetDataSubPaths", mock.Anything, "").
+		Return([]string{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
+}

@@ -211,14 +211,25 @@ func TestDataSubPaths(t *testing.T) {
 	err = s.UpsertData(ctx, newData("dir2/file7.txt"), database.UpsertOptimizationSkip)
 	assert.NoError(t, err)
 
-	subPaths, err := s.GetDataSubPaths(ctx, "ns1", "dir1")
+	subPaths, err := s.GetDataSubPaths(ctx, "ns1", "")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{
+		"/dir1",
+		"/dir2",
+	}, subPaths)
+
+	subPaths2, err := s.GetDataSubPaths(ctx, "ns1", "/")
+	assert.NoError(t, err)
+	assert.Equal(t, subPaths, subPaths2)
+
+	subPaths, err = s.GetDataSubPaths(ctx, "ns1", "dir1")
 	assert.NoError(t, err)
 	assert.Equal(t, []string{
 		"/dir1/dir2",
 		"/dir1/dir3",
 	}, subPaths)
 
-	subPaths2, err := s.GetDataSubPaths(ctx, "ns1", "/dir1")
+	subPaths2, err = s.GetDataSubPaths(ctx, "ns1", "/dir1")
 	assert.NoError(t, err)
 	assert.Equal(t, subPaths, subPaths2)
 
