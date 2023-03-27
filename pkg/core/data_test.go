@@ -254,3 +254,51 @@ func TestDataArryToRefs(t *testing.T) {
 	})
 
 }
+
+func TestPath(t *testing.T) {
+
+	var d *Data
+	d.CalcPath() // data nil
+
+	d = &Data{}
+	d.CalcPath() // blob nil
+
+	d = &Data{
+		Blob: &BlobRef{},
+	}
+	d.CalcPath()
+	assert.Empty(t, d.Blob.Path)
+
+	d = &Data{
+		Blob: &BlobRef{
+			Name: "root.file",
+		},
+	}
+	d.CalcPath()
+	assert.Equal(t, "/", d.Blob.Path)
+
+	d = &Data{
+		Blob: &BlobRef{
+			Name: "/root.file",
+		},
+	}
+	d.CalcPath()
+	assert.Equal(t, "/", d.Blob.Path)
+
+	d = &Data{
+		Blob: &BlobRef{
+			Name: "/sub/path/to/file",
+		},
+	}
+	d.CalcPath()
+	assert.Equal(t, "/sub/path/to", d.Blob.Path)
+
+	d = &Data{
+		Blob: &BlobRef{
+			Name: "sub/path/to/file",
+		},
+	}
+	d.CalcPath()
+	assert.Equal(t, "/sub/path/to", d.Blob.Path)
+
+}

@@ -131,6 +131,10 @@ type iDataCollection interface {
 	// GetData - Get data
 	GetData(ctx context.Context, namespace string, filter ffapi.Filter) (message core.DataArray, res *ffapi.FilterResult, err error)
 
+	// GetDataSubPaths - returns unique paths that have files in them, under the specified path.
+	// Requires DB specific processing of the blob.path field.
+	GetDataSubPaths(ctx context.Context, namespace, path string) (subPaths []string, err error)
+
 	// GetDataRefs - Get data references only (no data)
 	GetDataRefs(ctx context.Context, namespace string, filter ffapi.Filter) (message core.DataRefs, res *ffapi.FilterResult, err error)
 
@@ -741,6 +745,7 @@ var DataQueryFactory = &ffapi.QueryFields{
 	"blob.hash":        &ffapi.Bytes32Field{},
 	"blob.public":      &ffapi.StringField{},
 	"blob.name":        &ffapi.StringField{},
+	"blob.path":        &ffapi.StringField{},
 	"blob.size":        &ffapi.Int64Field{},
 	"created":          &ffapi.TimeField{},
 	"value":            &ffapi.JSONField{},

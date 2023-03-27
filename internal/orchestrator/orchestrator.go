@@ -101,6 +101,7 @@ type Orchestrator interface {
 	GetBatches(ctx context.Context, filter ffapi.AndFilter) ([]*core.BatchPersisted, *ffapi.FilterResult, error)
 	GetDataByID(ctx context.Context, id string) (*core.Data, error)
 	GetData(ctx context.Context, filter ffapi.AndFilter) (core.DataArray, *ffapi.FilterResult, error)
+	GetDataSubPaths(ctx context.Context, path string) ([]string, error)
 	GetDatatypeByID(ctx context.Context, id string) (*core.Datatype, error)
 	GetDatatypeByName(ctx context.Context, name, version string) (*core.Datatype, error)
 	GetDatatypes(ctx context.Context, filter ffapi.AndFilter) ([]*core.Datatype, *ffapi.FilterResult, error)
