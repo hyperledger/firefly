@@ -1425,16 +1425,14 @@ func TestAddSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"channel":   "firefly",
-				"chaincode": "mycode",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"channel":   "firefly",
+			"chaincode": "mycode",
+		}.String()),
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1462,15 +1460,13 @@ func TestAddSubscriptionNoChannel(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"chaincode": "mycode",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"chaincode": "mycode",
+		}.String()),
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1498,12 +1494,10 @@ func TestAddSubscriptionNoLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+	sub := &core.ContractListener{
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1523,11 +1517,9 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(""),
-			Event:    &core.FFISerializedEvent{},
-		},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(""),
+		Event:    &core.FFISerializedEvent{},
 	}
 
 	err := e.AddContractListener(context.Background(), sub)
@@ -1546,16 +1538,14 @@ func TestAddSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"channel":   "firefly",
-				"chaincode": "mycode",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventNewest),
-			},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"channel":   "firefly",
+			"chaincode": "mycode",
+		}.String()),
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventNewest),
 		},
 	}
 
@@ -1585,7 +1575,7 @@ func TestDeleteSubscription(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(204, ""))
 
-	err := e.DeleteContractListener(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub, true)
 
 	assert.NoError(t, err)
 }
@@ -1608,9 +1598,32 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.DeleteContractListener(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub, true)
 
 	assert.Regexp(t, "FF10284.*pop", err)
+}
+
+func TestDeleteSubscriptionNotFound(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.streamID = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		BackendID: "sb-1",
+	}
+
+	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
+		httpmock.NewStringResponder(404, "pop"))
+
+	err := e.DeleteContractListener(context.Background(), sub, true)
+
+	assert.NoError(t, err)
 }
 
 func TestHandleMessageContractEventOldSubscription(t *testing.T) {
@@ -2721,7 +2734,7 @@ func TestGetContractListenerStatus(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	status, err := e.GetContractListenerStatus(context.Background(), "id")
+	_, status, err := e.GetContractListenerStatus(context.Background(), "id", true)
 	assert.Nil(t, status)
 	assert.NoError(t, err)
 }

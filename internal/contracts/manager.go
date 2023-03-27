@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/operations"
@@ -106,7 +107,12 @@ func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi b
 		core.OpTypeBlockchainContractDeploy,
 	})
 
-	return cm, nil
+	// Validate all our listeners exist on startup - consistent with the multi-party manager.
+	// This means if EVMConnect is cleared, simply a restart of the namespace on core will
+	// cause recreation of all the listeners (noting that listeners that were specified to start
+	// from latest, will start from the new latest rather than replaying from the block they
+	// started from before they were deleted).
+	return cm, cm.verifyListeners(ctx)
 }
 
 func (cm *contractManager) Name() string {
@@ -194,6 +200,32 @@ func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id *fftyp
 
 func (cm *contractManager) GetFFIs(ctx context.Context, filter ffapi.AndFilter) ([]*fftypes.FFI, *ffapi.FilterResult, error) {
 	return cm.database.GetFFIs(ctx, cm.namespace, filter)
+}
+
+func (cm *contractManager) verifyListeners(ctx context.Context) error {
+
+	var page uint64
+	var pageSize uint64 = 50
+	verifyCount := 0
+	for {
+		f := database.ContractListenerQueryFactory.NewFilterLimit(ctx, pageSize).And().Skip(page * pageSize)
+		listeners, _, err := cm.database.GetContractListeners(ctx, cm.namespace, f)
+		if err != nil {
+			return err
+		}
+		if len(listeners) == 0 {
+			log.L(ctx).Infof("Listener restore complete. Verified=%d", verifyCount)
+			return nil
+		}
+		for _, l := range listeners {
+			if err := cm.checkContractListenerExists(ctx, l); err != nil {
+				return err
+			}
+			verifyCount++
+		}
+		page++
+	}
+
 }
 
 func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core.ContractCallRequest) (*core.Operation, error) {
@@ -563,6 +595,23 @@ func (cm *contractManager) resolveEvent(ctx context.Context, ffi *fftypes.FFIRef
 	return &core.FFISerializedEvent{FFIEventDefinition: event.FFIEventDefinition}, nil
 }
 
+func (cm *contractManager) checkContractListenerExists(ctx context.Context, listener *core.ContractListener) error {
+	found, _, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID, true)
+	if err != nil {
+		log.L(ctx).Errorf("Validating listener %s:%s (BackendID=%s) failed: %s", listener.Signature, listener.ID, listener.BackendID, err)
+		return err
+	}
+	if found {
+		log.L(ctx).Debugf("Validated listener %s:%s (BackendID=%s)", listener.Signature, listener.ID, listener.BackendID)
+		return nil
+	}
+	if err = cm.blockchain.AddContractListener(ctx, listener); err != nil {
+		return err
+	}
+	return cm.database.UpdateContractListener(ctx, cm.namespace, listener.ID,
+		database.ContractListenerQueryFactory.NewUpdate(ctx).Set("backendid", listener.BackendID))
+}
+
 func (cm *contractManager) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error) {
 	listener.ID = fftypes.NewUUID()
 	listener.Namespace = cm.namespace
@@ -615,7 +664,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
 			fb.Eq("topic", listener.Topic),
-			fb.Eq("location", listener.Location.Bytes()),
+			fb.Eq("location", listener.Location.String()),
 			fb.Eq("signature", listener.Signature),
 		)); err != nil {
 			return err
@@ -631,7 +680,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 	if err := cm.validateFFIEvent(ctx, &listener.Event.FFIEventDefinition); err != nil {
 		return nil, err
 	}
-	if err = cm.blockchain.AddContractListener(ctx, listener); err != nil {
+	if err = cm.blockchain.AddContractListener(ctx, &listener.ContractListener); err != nil {
 		return nil, err
 	}
 	if listener.Name == "" {
@@ -685,7 +734,7 @@ func (cm *contractManager) GetContractListenerByNameOrIDWithStatus(ctx context.C
 	if err != nil {
 		return nil, err
 	}
-	status, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID)
+	_, status, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID, false)
 	if err != nil {
 		status = core.ListenerStatusError{
 			StatusError: err.Error(),
@@ -733,7 +782,7 @@ func (cm *contractManager) DeleteContractListenerByNameOrID(ctx context.Context,
 		if err != nil {
 			return err
 		}
-		if err = cm.blockchain.DeleteContractListener(ctx, listener); err != nil {
+		if err = cm.blockchain.DeleteContractListener(ctx, listener, true /* ok if not found */); err != nil {
 			return err
 		}
 		return cm.database.DeleteContractListenerByID(ctx, cm.namespace, listener.ID)

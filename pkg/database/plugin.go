@@ -478,6 +478,9 @@ type iContractListenerCollection interface {
 	// InsertContractListener - upsert a listener to an external smart contract
 	InsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
 
+	// UpdateContractListener - update contract listener by id
+	UpdateContractListener(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) (err error)
+
 	// GetContractListener - get contract listener by name
 	GetContractListener(ctx context.Context, namespace, name string) (sub *core.ContractListener, err error)
 

@@ -2652,6 +2652,20 @@ func (_m *Plugin) UpdateBatch(ctx context.Context, namespace string, id *fftypes
 	return r0
 }
 
+// UpdateContractListener provides a mock function with given fields: ctx, namespace, id, update
+func (_m *Plugin) UpdateContractListener(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) error {
+	ret := _m.Called(ctx, namespace, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, ffapi.Update) error); ok {
+		r0 = rf(ctx, namespace, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateData provides a mock function with given fields: ctx, namespace, id, update
 func (_m *Plugin) UpdateData(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) error {
 	ret := _m.Called(ctx, namespace, id, update)

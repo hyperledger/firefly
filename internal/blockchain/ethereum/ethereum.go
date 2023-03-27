@@ -780,7 +780,7 @@ func (e *Ethereum) encodeContractLocation(ctx context.Context, location *Locatio
 	return result, err
 }
 
-func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (err error) {
+func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
 	var location *Location
 	if listener.Location != nil {
 		location, err = e.parseContractLocation(ctx, listener.Location)
@@ -806,14 +806,14 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	return nil
 }
 
-func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
-	return e.streams.deleteSubscription(ctx, subscription.BackendID)
+func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error {
+	return e.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
-func (e *Ethereum) GetContractListenerStatus(ctx context.Context, subID string) (status interface{}, err error) {
-	sub, err := e.streams.getSubscription(ctx, subID)
-	if err != nil {
-		return nil, err
+func (e *Ethereum) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (found bool, status interface{}, err error) {
+	sub, err := e.streams.getSubscription(ctx, subID, okNotFound)
+	if err != nil || sub == nil {
+		return false, nil, err
 	}
 
 	checkpoint := &ListenerStatus{
@@ -825,7 +825,7 @@ func (e *Ethereum) GetContractListenerStatus(ctx context.Context, subID string) 
 		},
 	}
 
-	return checkpoint, nil
+	return true, checkpoint, nil
 }
 
 func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {

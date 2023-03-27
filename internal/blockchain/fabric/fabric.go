@@ -815,7 +815,7 @@ func encodeContractLocation(ctx context.Context, location *Location) (result *ff
 	return result, err
 }
 
-func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) error {
+func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListener) error {
 	location, err := parseContractLocation(ctx, listener.Location)
 	if err != nil {
 		return err
@@ -830,13 +830,13 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *core.Contrac
 	return nil
 }
 
-func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
-	return f.streams.deleteSubscription(ctx, subscription.BackendID)
+func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error {
+	return f.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
-func (f *Fabric) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {
-	// Fabconnect does not currently provide any additional status info for listener subscriptions
-	return nil, nil
+func (f *Fabric) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (bool, interface{}, error) {
+	// Fabconnect does not currently provide any additional status info for listener subscriptions.
+	return true, nil, nil
 }
 
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {

@@ -86,12 +86,13 @@ type Plugin interface {
 	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error)
 
 	// AddContractListener adds a new subscription to a user-specified contract and event
-	AddContractListener(ctx context.Context, subscription *core.ContractListenerInput) error
+	AddContractListener(ctx context.Context, subscription *core.ContractListener) error
 
 	// DeleteContractListener deletes a previously-created subscription
-	DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error
+	DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error
 
-	GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error)
+	// GetContractListenerStatus gets the status of a contract listener from the backend connector. Returns false if not found
+	GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (bool, interface{}, error)
 
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
 	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)
