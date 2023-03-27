@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -242,6 +243,7 @@ func newTestNamespaceManager(t *testing.T, initConfig bool) (*namespaceManager, 
 		namespaces:          make(map[string]*namespace),
 		plugins:             make(map[string]*plugin),
 		tokenBroadcastNames: make(map[string]string),
+		nsStartupRetry:      &retry.Retry{},
 	}
 	nmm := mockPluginFactories(nm)
 	nmm.nm.watchConfig = func() {
@@ -255,17 +257,6 @@ func newTestNamespaceManager(t *testing.T, initConfig bool) (*namespaceManager, 
 		err := viper.ReadConfig(strings.NewReader(testBaseConfig))
 		assert.NoError(t, err)
 
-		nmm.mo.On("Init", mock.Anything, mock.Anything).
-			Run(func(args mock.Arguments) {
-				nm.namespaces["default"].Contracts.Active = &core.MultipartyContract{
-					Info: core.MultipartyContractInfo{
-						Version: 2,
-					},
-				}
-			}).
-			Return(nil).
-			Once()
-
 		nmm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 		nmm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return().Once()
 		nmm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nmm.mmi, mock.Anything).Return(nil).Once()
@@ -276,8 +267,6 @@ func newTestNamespaceManager(t *testing.T, initConfig bool) (*namespaceManager, 
 		nmm.mei[0].On("Init", mock.Anything, mock.Anything).Return(nil)
 		nmm.mei[1].On("Init", mock.Anything, mock.Anything).Return(nil)
 		nmm.mei[2].On("Init", mock.Anything, mock.Anything).Return(nil)
-		nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil).Once()
-		nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil).Once()
 		nmm.mai.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 		err = nmm.nm.Init(nmm.nm.ctx, nmm.nm.cancelCtx, nmm.nm.reset, nmm.nm.reloadConfig)
@@ -394,14 +383,15 @@ func TestInitTokensFail(t *testing.T) {
 }
 
 func TestInitEventsFail(t *testing.T) {
-	nm, nmm, cleanup := newTestNamespaceManager(t, false)
+	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	for _, mei := range nmm.mei {
-		mei.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Maybe()
-	}
-
-	err := nm.Init(nm.ctx, nm.cancelCtx, nm.reset, nm.reloadConfig)
+	mei := &eventsmocks.Plugin{}
+	mei.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Maybe()
+	nm.plugins["websockets"].events = mei
+	err := nm.initPlugins(map[string]*plugin{
+		"websockets": nm.plugins["websockets"],
+	})
 	assert.EqualError(t, err, "pop")
 }
 
@@ -428,6 +418,9 @@ func TestInitOrchestratorFail(t *testing.T) {
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
 	err := nm.initComponents(nm.ctx)
+	assert.NoError(t, err)
+
+	err = nm.initNamespace(nm.namespaces["default"])
 	assert.Regexp(t, "pop", err)
 }
 
@@ -452,6 +445,7 @@ func TestInitVersion1(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
+	nmm.mo.On("Start", mock.Anything).Return(nil)
 	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			nm.namespaces["default"].config.Multiparty.Enabled = true
@@ -467,7 +461,7 @@ func TestInitVersion1(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	err := nm.initNamespaces(nm.ctx, nm.namespaces)
+	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.NoError(t, err)
 
 	assert.Equal(t, nmm.mo, nm.MustOrchestrator("default"))
@@ -481,6 +475,7 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 	defer cleanup()
 	nm.metricsEnabled = true
 
+	nmm.mo.On("Start", mock.Anything).Return(nil)
 	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			nm.namespaces["default"].config.Multiparty.Enabled = true
@@ -504,7 +499,7 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	err := nm.initNamespaces(nm.ctx, nm.namespaces)
+	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.NoError(t, err)
 
 	assert.Equal(t, nmm.mo, nm.MustOrchestrator("default"))
@@ -517,35 +512,24 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 	defer cleanup()
 	nm.metricsEnabled = true
 
-	coreconfig.Reset()
-	viper.SetConfigType("yaml")
-	err := viper.ReadConfig(strings.NewReader(`
-  namespaces:
-    default: default
-    predefined:
-    - name: default
-      plugins: [ethereum, postgres, erc721, ipfs, ffdx]
-      multiparty:
-        enabled: true
-        networkNamespace: default
-    - name: ns2
-      plugins: [ethereum, postgres, erc1155, ipfs, ffdx]
-      multiparty:
-        enabled: true
-  `))
-	assert.NoError(t, err)
-
 	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			nm.namespaces["default"].Contracts = &core.MultipartyContracts{
-				Active: &core.MultipartyContract{
-					Location: fftypes.JSONAnyPtr("{}"),
-					Info: core.MultipartyContractInfo{
-						Version: 1,
+			nm.namespaces["ff_system"] = &namespace{
+				Namespace: core.Namespace{
+					Contracts: &core.MultipartyContracts{
+						Active: &core.MultipartyContract{
+							Location: fftypes.JSONAnyPtr("{}"),
+							Info: core.MultipartyContractInfo{
+								Version: 1,
+							},
+						},
 					},
 				},
 			}
-			nm.namespaces["ns2"].Contracts = &core.MultipartyContracts{
+			for range nm.namespaces["default"].pluginNames {
+				nm.namespaces["ff_system"].pluginNames = append(nm.namespaces["ff_system"].pluginNames, "something_else")
+			}
+			nm.namespaces["default"].Contracts = &core.MultipartyContracts{
 				Active: &core.MultipartyContract{
 					Location: fftypes.JSONAnyPtr("{}"),
 					Info: core.MultipartyContractInfo{
@@ -557,19 +541,10 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 		Return(nil)
 
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
-	nmm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	nm.namespaces, err = nm.loadNamespaces(nm.ctx, nm.dumpRootConfig(), nm.plugins)
-	assert.Len(t, nm.namespaces, 2)
-	assert.NoError(t, err)
-
-	err = nm.initNamespaces(nm.ctx, nm.namespaces)
+	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.Regexp(t, "FF10421", err)
-
-	assert.Equal(t, nmm.mo, nm.MustOrchestrator("default"))
-	assert.Panics(t, func() { nm.MustOrchestrator("unknown") })
-
 }
 
 func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
@@ -577,34 +552,22 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 	defer cleanup()
 	nm.metricsEnabled = true
 
-	coreconfig.Reset()
-	viper.SetConfigType("yaml")
-	err := viper.ReadConfig(strings.NewReader(`
-  namespaces:
-    default: default
-    predefined:
-    - name: default
-      plugins: [ethereum, postgres, erc721, ipfs, ffdx]
-      multiparty:
-        enabled: true
-    - name: ns2
-      plugins: [ethereum, postgres, erc1155, erc721, ipfs, ffdx]
-      multiparty:
-        enabled: true
-  `))
-	assert.NoError(t, err)
-
 	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			nm.namespaces["default"].Contracts = &core.MultipartyContracts{
-				Active: &core.MultipartyContract{
-					Location: fftypes.JSONAnyPtr("{}"),
-					Info: core.MultipartyContractInfo{
-						Version: 1,
+			nm.namespaces["ff_system"] = &namespace{
+				pluginNames: []string{},
+				Namespace: core.Namespace{
+					Contracts: &core.MultipartyContracts{
+						Active: &core.MultipartyContract{
+							Location: fftypes.JSONAnyPtr("{}"),
+							Info: core.MultipartyContractInfo{
+								Version: 1,
+							},
+						},
 					},
 				},
 			}
-			nm.namespaces["ns2"].Contracts = &core.MultipartyContracts{
+			nm.namespaces["default"].Contracts = &core.MultipartyContracts{
 				Active: &core.MultipartyContract{
 					Location: fftypes.JSONAnyPtr("{}"),
 					Info: core.MultipartyContractInfo{
@@ -616,14 +579,9 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 		Return(nil)
 
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
-	nmm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	nm.namespaces, err = nm.loadNamespaces(nm.ctx, nm.dumpRootConfig(), nm.plugins)
-	assert.Len(t, nm.namespaces, 2)
-	assert.NoError(t, err)
-
-	err = nm.initNamespaces(nm.ctx, nm.namespaces)
+	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.Regexp(t, "FF10421", err)
 
 	assert.Equal(t, nmm.mo, nm.MustOrchestrator("default"))
@@ -636,34 +594,23 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 	defer cleanup()
 	nm.metricsEnabled = true
 
-	coreconfig.Reset()
-	viper.SetConfigType("yaml")
-	err := viper.ReadConfig(strings.NewReader(`
-  namespaces:
-    default: default
-    predefined:
-    - name: default
-      plugins: [ethereum, postgres, erc721, ipfs, ffdx]
-      multiparty:
-        enabled: true
-    - name: ns2
-      plugins: [ethereum, postgres, erc721, ipfs, ffdx]
-      multiparty:
-        enabled: true
-  `))
-	assert.NoError(t, err)
-
+	nmm.mo.On("Start", mock.Anything).Return(nil)
 	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			nm.namespaces["default"].Contracts = &core.MultipartyContracts{
-				Active: &core.MultipartyContract{
-					Location: fftypes.JSONAnyPtr("{}"),
-					Info: core.MultipartyContractInfo{
-						Version: 1,
+			nm.namespaces["ff_system"] = &namespace{
+				pluginNames: []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "erc1155", "basicauth"},
+				Namespace: core.Namespace{
+					Contracts: &core.MultipartyContracts{
+						Active: &core.MultipartyContract{
+							Location: fftypes.JSONAnyPtr("{}"),
+							Info: core.MultipartyContractInfo{
+								Version: 1,
+							},
+						},
 					},
 				},
 			}
-			nm.namespaces["ns2"].Contracts = &core.MultipartyContracts{
+			nm.namespaces["default"].Contracts = &core.MultipartyContracts{
 				Active: &core.MultipartyContract{
 					Location: fftypes.JSONAnyPtr("{}"),
 					Info: core.MultipartyContractInfo{
@@ -675,15 +622,10 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 		Return(nil)
 
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
-	nmm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
 	nmm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	nm.namespaces, err = nm.loadNamespaces(nm.ctx, nm.dumpRootConfig(), nm.plugins)
-	assert.Len(t, nm.namespaces, 2)
-	assert.NoError(t, err)
-
-	err = nm.initNamespaces(nm.ctx, nm.namespaces)
+	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.NoError(t, err)
 
 	assert.Equal(t, nmm.mo, nm.MustOrchestrator("default"))
@@ -712,7 +654,7 @@ func TestInitVersion1Fail(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	err := nm.initNamespaces(nm.ctx, nm.namespaces)
+	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.EqualError(t, err, "pop")
 
 }
@@ -723,7 +665,7 @@ func TestInitNamespaceQueryFail(t *testing.T) {
 
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, fmt.Errorf("pop"))
 
-	err := nm.initNamespace(context.Background(), nm.namespaces["default"])
+	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.EqualError(t, err, "pop")
 }
 
@@ -738,7 +680,7 @@ func TestInitNamespaceExistingUpsertFail(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(existing, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
 
-	err := nm.initNamespace(context.Background(), nm.namespaces["default"])
+	err := nm.initNamespace(nm.namespaces["default"])
 	assert.EqualError(t, err, "pop")
 }
 
@@ -1345,6 +1287,29 @@ func TestLoadNamespacesReservedName(t *testing.T) {
 	assert.Regexp(t, "FF10388", err)
 }
 
+func TestLoadNamespacesNetworkName(t *testing.T) {
+	nm, _, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	coreconfig.Reset()
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      multiparty:
+        enabled: true
+        networknamespace: default
+    `))
+	assert.NoError(t, err)
+
+	newNS, err := nm.loadNamespaces(context.Background(), nm.dumpRootConfig(), nm.plugins)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "default", newNS["ns1"].NetworkName)
+}
+
 func TestLoadNamespacesReservedNetworkName(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
@@ -1786,21 +1751,31 @@ func TestStart(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
+	nsStarted := make(chan struct{})
+
 	nmm.mbi.On("Start", mock.Anything).Return(nil)
 	nmm.mdx.On("Start", mock.Anything).Return(nil)
 	nmm.mti[0].On("Start", mock.Anything).Return(nil)
 	nmm.mti[1].On("Start", mock.Anything).Return(nil)
-	nmm.mo.On("Start", mock.Anything).Return(nil)
+	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mo.On("Start", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		nm.cancelCtx()
+		close(nsStarted) // this is async
+	})
 
 	err := nm.Start()
 	assert.NoError(t, err)
+
+	<-nsStarted
 }
 
 func TestStartBlockchainFail(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	nmm.mo.On("Start", mock.Anything).Return(nil)
+	nm.namespaces = nil
 	nmm.mbi.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{
@@ -1814,7 +1789,7 @@ func TestStartDataExchangeFail(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	nmm.mo.On("Start", mock.Anything).Return(nil)
+	nm.namespaces = nil
 	nmm.mdx.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{
@@ -1828,7 +1803,7 @@ func TestStartTokensFail(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	nmm.mo.On("Start", mock.Anything).Return(nil)
+	nm.namespaces = nil
 	nmm.mti[0].On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{
@@ -1842,18 +1817,41 @@ func TestStartOrchestratorFail(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	nmm.mo.On("Start", mock.Anything).Return(fmt.Errorf("pop"))
+	nsStarted := make(chan struct{})
+	nmm.mo.On("Start", mock.Anything).Return(fmt.Errorf("pop")).Run(func(args mock.Arguments) {
+		nm.cancelCtx()
+		close(nsStarted)
+	})
 
+	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
 	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{})
-	assert.EqualError(t, err, "pop")
+	assert.NoError(t, err)
+
+	<-nsStarted
 }
 
 func TestWaitStop(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
+	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nsStarted := make(chan struct{})
+	nmm.mo.On("Start", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		nm.cancelCtx()
+		close(nsStarted)
+	})
+
 	nmm.mo.On("WaitStop").Return()
 	nmm.mae.On("WaitStop").Return()
+
+	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{})
+	assert.NoError(t, err)
+
+	<-nsStarted
 
 	nm.WaitStop()
 
@@ -1909,7 +1907,7 @@ func TestGetNamespaces(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	results, err := nm.GetNamespaces(context.Background())
+	results, err := nm.GetNamespaces(context.Background(), true)
 	assert.Nil(t, err)
 	assert.Len(t, results, 1)
 }
@@ -2057,4 +2055,12 @@ func TestValidateNonMultipartyConfig(t *testing.T) {
 
 	_, err = nm.loadNamespaces(context.Background(), nm.dumpRootConfig(), nm.plugins)
 	assert.NoError(t, err)
+}
+
+func TestOrchestratorWhileInitializing(t *testing.T) {
+	nm, _, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	_, err := nm.Orchestrator(nm.ctx, "default", false)
+	assert.Regexp(t, "FF10441", err)
 }

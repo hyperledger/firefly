@@ -49,7 +49,7 @@ func TestGetNamespaceInvalid(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mgr.On("Orchestrator", mock.Anything, "BAD").Return(nil, fmt.Errorf("pop"))
+	mgr.On("Orchestrator", mock.Anything, "BAD", false).Return(nil, fmt.Errorf("pop"))
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 500, res.Result().StatusCode)
