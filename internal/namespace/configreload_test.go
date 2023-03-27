@@ -972,14 +972,17 @@ namespaces:
 	assert.NoError(t, err)
 
 	// Drive the config reload
+	testDone := make(chan struct{})
 	nmm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nmm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, fmt.Errorf("pop")).Run(func(args mock.Arguments) {
+		close(testDone)
 		cancelCtx() // only once
 	})
 	nm.configReloaded(nm.ctx)
 
 	// Should terminate
+	<-testDone
 	<-nm.ctx.Done()
 	nmm.mae.On("WaitStop").Return(nil).Maybe()
 	nmm.mo.On("WaitStop").Return(nil).Maybe()
