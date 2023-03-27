@@ -445,6 +445,32 @@ func (_m *Orchestrator) GetDataByID(ctx context.Context, id string) (*core.Data,
 	return r0, r1
 }
 
+// GetDataSubPaths provides a mock function with given fields: ctx, path
+func (_m *Orchestrator) GetDataSubPaths(ctx context.Context, path string) ([]string, error) {
+	ret := _m.Called(ctx, path)
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]string, error)); ok {
+		return rf(ctx, path)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []string); ok {
+		r0 = rf(ctx, path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, path)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetDatatypeByID provides a mock function with given fields: ctx, id
 func (_m *Orchestrator) GetDatatypeByID(ctx context.Context, id string) (*core.Datatype, error) {
 	ret := _m.Called(ctx, id)

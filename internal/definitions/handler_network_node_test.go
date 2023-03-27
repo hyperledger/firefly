@@ -134,7 +134,7 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	dh.multiparty = true
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, msg, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action)
 	assert.NoError(t, err)
 
 	err = bs.RunPreFinalize(ctx)
@@ -153,7 +153,7 @@ func TestHandleDeprecatedNodeDefinitionBadData(t *testing.T) {
 	ctx := context.Background()
 
 	action, err := dh.handleDeprecatedNodeBroadcast(ctx, &bs.BatchState, &core.Message{}, core.DataArray{})
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
 	bs.assertNoFinalizers()
@@ -172,7 +172,7 @@ func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
 	}).Return(nil, fmt.Errorf("pop"))
 
 	action, err := dh.handleDeprecatedNodeBroadcast(ctx, &bs.BatchState, msg, core.DataArray{data})
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -193,7 +193,7 @@ func TestHandleDeprecatedNodeDefinitionOrgNotFound(t *testing.T) {
 	}).Return(nil, nil)
 
 	action, err := dh.handleDeprecatedNodeBroadcast(ctx, &bs.BatchState, msg, core.DataArray{data})
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
 	mim.AssertExpectations(t)

@@ -84,7 +84,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	err = bs.RunPreFinalize(context.Background())
@@ -106,7 +106,7 @@ func TestHandleDefinitionBroadcastTokenPoolBadConnector(t *testing.T) {
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject, CustomCorrelator: pool.ID}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject, CustomCorrelator: pool.ID}, action)
 	assert.Regexp(t, "FF10403", err)
 
 	err = bs.RunPreFinalize(context.Background())
@@ -125,7 +125,7 @@ func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(nil, fmt.Errorf("pop"))
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -149,7 +149,7 @@ func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	err = bs.RunPreFinalize(context.Background())
@@ -172,7 +172,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(existing, nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionConfirm, CustomCorrelator: pool.ID}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -193,7 +193,7 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 	})).Return(database.IDMismatch)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject, CustomCorrelator: pool.ID}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject, CustomCorrelator: pool.ID}, action)
 	assert.Error(t, err)
 
 	mdi.AssertExpectations(t)
@@ -215,7 +215,7 @@ func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 	})).Return(fmt.Errorf("pop"))
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -239,7 +239,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(fmt.Errorf("pop"))
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	err = bs.RunPreFinalize(context.Background())
@@ -258,7 +258,7 @@ func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
@@ -274,7 +274,7 @@ func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {
 	}
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, nil, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }

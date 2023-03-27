@@ -4761,6 +4761,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: blob.path
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: blob.public
         schema:
           type: string
@@ -4861,6 +4866,11 @@ paths:
                           description: The name field from the metadata attached to
                             the blob, commonly used as a path/filename, and indexed
                             for search
+                          type: string
+                        path:
+                          description: If a name is specified, this field stores the
+                            '/' prefixed and separated path extracted from the full
+                            name
                           type: string
                         public:
                           description: If the blob data has been published to shared
@@ -4998,6 +5008,11 @@ paths:
                           the blob, commonly used as a path/filename, and indexed
                           for search
                         type: string
+                      path:
+                        description: If a name is specified, this field stores the
+                          '/' prefixed and separated path extracted from the full
+                          name
+                        type: string
                       public:
                         description: If the blob data has been published to shared
                           storage, this field is the id of the data in the shared
@@ -5115,6 +5130,11 @@ paths:
                         description: The name field from the metadata attached to
                           the blob, commonly used as a path/filename, and indexed
                           for search
+                        type: string
+                      path:
+                        description: If a name is specified, this field stores the
+                          '/' prefixed and separated path extracted from the full
+                          name
                         type: string
                       public:
                         description: If the blob data has been published to shared
@@ -5387,6 +5407,11 @@ paths:
                         description: The name field from the metadata attached to
                           the blob, commonly used as a path/filename, and indexed
                           for search
+                        type: string
+                      path:
+                        description: If a name is specified, this field stores the
+                          '/' prefixed and separated path extracted from the full
+                          name
                         type: string
                       public:
                         description: If the blob data has been published to shared
@@ -5983,6 +6008,11 @@ paths:
                           the blob, commonly used as a path/filename, and indexed
                           for search
                         type: string
+                      path:
+                        description: If a name is specified, this field stores the
+                          '/' prefixed and separated path extracted from the full
+                          name
+                        type: string
                       public:
                         description: If the blob data has been published to shared
                           storage, this field is the id of the data in the shared
@@ -6034,6 +6064,38 @@ paths:
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
                 type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /datasubpaths/{parent}:
+    get:
+      description: Gets a list of path names of named blob data, underneath a given
+        parent path ('/' path prefixes are automatically pre-prepended)
+      operationId: getDataSubPaths
+      parameters:
+      - description: The parent path to query
+        in: path
+        name: parent
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
           description: Success
         default:
           description: ""
@@ -8314,6 +8376,11 @@ paths:
                                 to the blob, commonly used as a path/filename, and
                                 indexed for search
                               type: string
+                            path:
+                              description: If a name is specified, this field stores
+                                the '/' prefixed and separated path extracted from
+                                the full name
+                              type: string
                             public:
                               description: If the blob data has been published to
                                 shared storage, this field is the id of the data in
@@ -8557,6 +8624,11 @@ paths:
                           description: The name field from the metadata attached to
                             the blob, commonly used as a path/filename, and indexed
                             for search
+                          type: string
+                        path:
+                          description: If a name is specified, this field stores the
+                            '/' prefixed and separated path extracted from the full
+                            name
                           type: string
                         public:
                           description: If the blob data has been published to shared
@@ -9979,6 +10051,11 @@ paths:
                               description: The name field from the metadata attached
                                 to the blob, commonly used as a path/filename, and
                                 indexed for search
+                              type: string
+                            path:
+                              description: If a name is specified, this field stores
+                                the '/' prefixed and separated path extracted from
+                                the full name
                               type: string
                             public:
                               description: If the blob data has been published to
@@ -15485,6 +15562,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: blob.path
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: blob.public
         schema:
           type: string
@@ -15585,6 +15667,11 @@ paths:
                           description: The name field from the metadata attached to
                             the blob, commonly used as a path/filename, and indexed
                             for search
+                          type: string
+                        path:
+                          description: If a name is specified, this field stores the
+                            '/' prefixed and separated path extracted from the full
+                            name
                           type: string
                         public:
                           description: If the blob data has been published to shared
@@ -15729,6 +15816,11 @@ paths:
                           the blob, commonly used as a path/filename, and indexed
                           for search
                         type: string
+                      path:
+                        description: If a name is specified, this field stores the
+                          '/' prefixed and separated path extracted from the full
+                          name
+                        type: string
                       public:
                         description: If the blob data has been published to shared
                           storage, this field is the id of the data in the shared
@@ -15860,6 +15952,11 @@ paths:
                         description: The name field from the metadata attached to
                           the blob, commonly used as a path/filename, and indexed
                           for search
+                        type: string
+                      path:
+                        description: If a name is specified, this field stores the
+                          '/' prefixed and separated path extracted from the full
+                          name
                         type: string
                       public:
                         description: If the blob data has been published to shared
@@ -16146,6 +16243,11 @@ paths:
                         description: The name field from the metadata attached to
                           the blob, commonly used as a path/filename, and indexed
                           for search
+                        type: string
+                      path:
+                        description: If a name is specified, this field stores the
+                          '/' prefixed and separated path extracted from the full
+                          name
                         type: string
                       public:
                         description: If the blob data has been published to shared
@@ -16763,6 +16865,11 @@ paths:
                           the blob, commonly used as a path/filename, and indexed
                           for search
                         type: string
+                      path:
+                        description: If a name is specified, this field stores the
+                          '/' prefixed and separated path extracted from the full
+                          name
+                        type: string
                       public:
                         description: If the blob data has been published to shared
                           storage, this field is the id of the data in the shared
@@ -16814,6 +16921,45 @@ paths:
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
                 type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/datasubpaths/{parent}:
+    get:
+      description: Gets a list of path names of named blob data, underneath a given
+        parent path ('/' path prefixes are automatically pre-prepended)
+      operationId: getDataSubPathsNamespace
+      parameters:
+      - description: The parent path to query
+        in: path
+        name: parent
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
           description: Success
         default:
           description: ""
@@ -19206,6 +19352,11 @@ paths:
                                 to the blob, commonly used as a path/filename, and
                                 indexed for search
                               type: string
+                            path:
+                              description: If a name is specified, this field stores
+                                the '/' prefixed and separated path extracted from
+                                the full name
+                              type: string
                             public:
                               description: If the blob data has been published to
                                 shared storage, this field is the id of the data in
@@ -19456,6 +19607,11 @@ paths:
                           description: The name field from the metadata attached to
                             the blob, commonly used as a path/filename, and indexed
                             for search
+                          type: string
+                        path:
+                          description: If a name is specified, this field stores the
+                            '/' prefixed and separated path extracted from the full
+                            name
                           type: string
                         public:
                           description: If the blob data has been published to shared
@@ -20963,6 +21119,11 @@ paths:
                               description: The name field from the metadata attached
                                 to the blob, commonly used as a path/filename, and
                                 indexed for search
+                              type: string
+                            path:
+                              description: If a name is specified, this field stores
+                                the '/' prefixed and separated path extracted from
+                                the full name
                               type: string
                             public:
                               description: If the blob data has been published to
@@ -24156,7 +24317,7 @@ paths:
                             invocations'
                           type: boolean
                         firstEvent:
-                          description: Whether your appplication would like to receive
+                          description: Whether your application would like to receive
                             events from the 'oldest' event emitted by your FireFly
                             node (from the beginning of time), or the 'newest' event
                             (from now), or a specific event sequence. Default is 'newest'
@@ -24377,7 +24538,7 @@ paths:
                         before the webhook is invoked, allowing parallel invocations'
                       type: boolean
                     firstEvent:
-                      description: Whether your appplication would like to receive
+                      description: Whether your application would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
@@ -24583,7 +24744,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
@@ -24801,7 +24962,7 @@ paths:
                         before the webhook is invoked, allowing parallel invocations'
                       type: boolean
                     firstEvent:
-                      description: Whether your appplication would like to receive
+                      description: Whether your application would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
@@ -25007,7 +25168,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
@@ -25287,7 +25448,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
@@ -31780,7 +31941,7 @@ paths:
                             invocations'
                           type: boolean
                         firstEvent:
-                          description: Whether your appplication would like to receive
+                          description: Whether your application would like to receive
                             events from the 'oldest' event emitted by your FireFly
                             node (from the beginning of time), or the 'newest' event
                             (from now), or a specific event sequence. Default is 'newest'
@@ -31994,7 +32155,7 @@ paths:
                         before the webhook is invoked, allowing parallel invocations'
                       type: boolean
                     firstEvent:
-                      description: Whether your appplication would like to receive
+                      description: Whether your application would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
@@ -32200,7 +32361,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
@@ -32411,7 +32572,7 @@ paths:
                         before the webhook is invoked, allowing parallel invocations'
                       type: boolean
                     firstEvent:
-                      description: Whether your appplication would like to receive
+                      description: Whether your application would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
@@ -32617,7 +32778,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
@@ -32883,7 +33044,7 @@ paths:
                           before the webhook is invoked, allowing parallel invocations'
                         type: boolean
                       firstEvent:
-                        description: Whether your appplication would like to receive
+                        description: Whether your application would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'

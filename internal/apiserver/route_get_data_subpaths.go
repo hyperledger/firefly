@@ -14,24 +14,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package definitions
+package apiserver
 
 import (
-	"context"
+	"net/http"
 
-	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandler) handleDeprecatedOrganizationBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
-
-	var orgOld core.DeprecatedOrganization
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &orgOld)
-	if !valid {
-		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "org", msg.Header.ID)
-	}
-
-	return dh.handleIdentityClaim(ctx, state, buildIdentityMsgInfo(msg, nil), orgOld.Migrated())
-
+var getDataSubPaths = &ffapi.Route{
+	Name:   "getDataSubPaths",
+	Path:   "datasubpaths/{parent:.*}",
+	Method: http.MethodGet,
+	PathParams: []*ffapi.PathParam{
+		{Name: "parent", Description: coremsgs.APIParamsDataParentPath},
+	},
+	QueryParams:     nil,
+	Description:     coremsgs.APIEndpointsGetDataSubPaths,
+	JSONInputValue:  nil,
+	JSONOutputValue: func() interface{} { return []string{} },
+	JSONOutputCodes: []int{http.StatusOK},
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return cr.or.GetDataSubPaths(cr.ctx, r.PP["parent"])
+		},
+	},
 }

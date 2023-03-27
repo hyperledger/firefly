@@ -35,7 +35,7 @@ type identityUpdateMsgInfo struct {
 func (dh *definitionHandler) handleIdentityUpdateBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 	var update core.IdentityUpdate
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &update); !valid {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity update", msg.Header.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity update", msg.Header.ID)
 	}
 	return dh.handleIdentityUpdate(ctx, state, &identityUpdateMsgInfo{
 		ID:     msg.Header.ID,
@@ -45,32 +45,32 @@ func (dh *definitionHandler) handleIdentityUpdateBroadcast(ctx context.Context, 
 
 func (dh *definitionHandler) handleIdentityUpdate(ctx context.Context, state *core.BatchState, msg *identityUpdateMsgInfo, update *core.IdentityUpdate) (HandlerResult, error) {
 	if err := update.Identity.Validate(ctx); err != nil {
-		return HandlerResult{Action: ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "identity update", update.Identity.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "identity update", update.Identity.ID)
 	}
 
 	// Get the existing identity (must be a confirmed identity at the point an update is issued)
 	identity, err := dh.identity.CachedIdentityLookupByID(ctx, update.Identity.ID)
 	if err != nil {
-		return HandlerResult{Action: ActionRetry}, err
+		return HandlerResult{Action: core.ActionRetry}, err
 	}
 	if identity == nil {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIdentityNotFound, "identity update", update.Identity.ID, update.Identity.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIdentityNotFound, "identity update", update.Identity.ID, update.Identity.ID)
 	}
 
 	if dh.multiparty {
 
 		parent, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
 		if err != nil && retryable {
-			return HandlerResult{Action: ActionRetry}, err
+			return HandlerResult{Action: core.ActionRetry}, err
 		} else if err != nil {
 			log.L(ctx).Infof("Unable to process identity update (parked) %s: %s", msg.ID, err)
-			return HandlerResult{Action: ActionWait}, nil
+			return HandlerResult{Action: core.ActionWait}, nil
 		}
 
 		// Check the author matches
 		expectedSigner := dh.getExpectedSigner(identity, parent)
 		if expectedSigner.DID != msg.Author {
-			return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedWrongAuthor, "identity update", update.Identity.ID, msg.Author)
+			return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedWrongAuthor, "identity update", update.Identity.ID, msg.Author)
 		}
 
 	}
@@ -80,13 +80,13 @@ func (dh *definitionHandler) handleIdentityUpdate(ctx context.Context, state *co
 	identity.Messages.Update = msg.ID
 	err = dh.database.UpsertIdentity(ctx, identity, database.UpsertOptimizationExisting)
 	if err != nil {
-		return HandlerResult{Action: ActionRetry}, err
+		return HandlerResult{Action: core.ActionRetry}, err
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
 		event := core.NewEvent(core.EventTypeIdentityUpdated, identity.Namespace, identity.ID, nil, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
-	return HandlerResult{Action: ActionConfirm}, err
+	return HandlerResult{Action: core.ActionConfirm}, err
 
 }

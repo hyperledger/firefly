@@ -278,5 +278,6 @@ var (
 	MsgMissingNamespace                   = ffe("FF10437", "Missing namespace in request", 400)
 	MsgDeprecatedResetWithAutoReload      = ffe("FF10438", "The deprecated reset API cannot be used when dynamic config reload is enabled", 409)
 	MsgConfigArrayVsRawConfigMismatch     = ffe("FF10439", "Error processing configuration - mismatch between raw and processed array lengths")
-	MsgNamespaceInitializing              = ffe("FF10440", "Namespace '%s' is initializing", 412)
+	MsgDefaultChannelNotConfigured        = ffe("FF10440", "No default channel configured for this namespace", 400)
+	MsgNamespaceInitializing              = ffe("FF10441", "Namespace '%s' is initializing", 412)
 )

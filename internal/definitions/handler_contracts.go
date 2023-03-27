@@ -74,7 +74,7 @@ func (dh *definitionHandler) persistContractAPI(ctx context.Context, httpServerU
 func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	var ffi fftypes.FFI
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ffi); !valid {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
 	}
 	ffi.Message = msg.Header.ID
 	return dh.handleFFIDefinition(ctx, state, &ffi, tx)
@@ -84,14 +84,14 @@ func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *cor
 	l := log.L(ctx)
 	ffi.Namespace = dh.namespace.Name
 	if err := ffi.Validate(ctx, true); err != nil {
-		return HandlerResult{Action: ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID)
 	}
 
 	if retry, err := dh.persistFFI(ctx, ffi); err != nil {
 		if retry {
-			return HandlerResult{Action: ActionRetry}, err
+			return HandlerResult{Action: core.ActionRetry}, err
 		}
-		return HandlerResult{Action: ActionReject}, err
+		return HandlerResult{Action: core.ActionReject}, err
 	}
 
 	l.Infof("Contract interface created id=%s", ffi.ID)
@@ -99,13 +99,13 @@ func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *cor
 		event := core.NewEvent(core.EventTypeContractInterfaceConfirmed, ffi.Namespace, ffi.ID, tx, ffi.Topic())
 		return dh.database.InsertEvent(ctx, event)
 	})
-	return HandlerResult{Action: ActionConfirm}, nil
+	return HandlerResult{Action: core.ActionConfirm}, nil
 }
 
 func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	var api core.ContractAPI
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &api); !valid {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract API", msg.Header.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract API", msg.Header.ID)
 	}
 	api.Message = msg.Header.ID
 	return dh.handleContractAPIDefinition(ctx, state, "", &api, tx)
@@ -115,14 +115,14 @@ func (dh *definitionHandler) handleContractAPIDefinition(ctx context.Context, st
 	l := log.L(ctx)
 	api.Namespace = dh.namespace.Name
 	if err := api.Validate(ctx, true); err != nil {
-		return HandlerResult{Action: ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID)
+		return HandlerResult{Action: core.ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID)
 	}
 
 	if retry, err := dh.persistContractAPI(ctx, httpServerURL, api); err != nil {
 		if retry {
-			return HandlerResult{Action: ActionRetry}, err
+			return HandlerResult{Action: core.ActionRetry}, err
 		}
-		return HandlerResult{Action: ActionReject}, err
+		return HandlerResult{Action: core.ActionReject}, err
 	}
 
 	l.Infof("Contract API created id=%s", api.ID)
@@ -130,5 +130,5 @@ func (dh *definitionHandler) handleContractAPIDefinition(ctx context.Context, st
 		event := core.NewEvent(core.EventTypeContractAPIConfirmed, api.Namespace, api.ID, tx, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
-	return HandlerResult{Action: ActionConfirm}, nil
+	return HandlerResult{Action: core.ActionConfirm}, nil
 }

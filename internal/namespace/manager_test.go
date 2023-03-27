@@ -2062,5 +2062,5 @@ func TestOrchestratorWhileInitializing(t *testing.T) {
 	defer cleanup()
 
 	_, err := nm.Orchestrator(nm.ctx, "default", false)
-	assert.Regexp(t, "FF10440", err)
+	assert.Regexp(t, "FF10441", err)
 }

@@ -7,12 +7,14 @@ ARG BUILD_VERSION
 ARG GIT_REF
 
 FROM $FIREFLY_BUILDER_TAG AS firefly-builder
+ARG BUILD_VERSION
+ARG GIT_REF
 RUN apk add make gcc build-base curl git
 WORKDIR /firefly
 ADD go.mod go.sum ./
 RUN go mod download
 ADD . .
-RUN make build BUILD_VERSION=$BUILD_VERSION GIT_REF=$GIT_REF
+RUN make build
 
 FROM --platform=$FABRIC_BUILDER_PLATFORM $FABRIC_BUILDER_TAG AS fabric-builder
 RUN apk add libc6-compat
@@ -29,11 +31,11 @@ FROM $SOLIDITY_BUILDER_TAG AS solidity-builder
 WORKDIR /firefly/solidity_firefly
 ADD smart_contracts/ethereum/solidity_firefly/ .
 RUN apk add jq \
- && mkdir -p build/contracts \
- && cd contracts \
- && solc --combined-json abi,bin,devdoc -o ../build/contracts Firefly.sol \
- && cd ../build/contracts \
- && mv combined.json Firefly.json
+    && mkdir -p build/contracts \
+    && cd contracts \
+    && solc --combined-json abi,bin,devdoc -o ../build/contracts Firefly.sol \
+    && cd ../build/contracts \
+    && mv combined.json Firefly.json
 
 FROM $BASE_TAG
 ARG UI_TAG
@@ -49,6 +51,6 @@ COPY --from=solidity-builder /firefly/solidity_firefly/build/contracts ./contrac
 COPY --from=fabric-builder /firefly/smart_contracts/fabric/firefly-go/firefly_fabric.tar.gz ./contracts/firefly_fabric.tar.gz
 ENV UI_RELEASE https://github.com/hyperledger/firefly-ui/releases/download/$UI_TAG/$UI_RELEASE.tgz
 RUN mkdir /firefly/frontend \
- && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
+    && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
 RUN ln -s /firefly/firefly /usr/bin/firefly
 ENTRYPOINT [ "firefly" ]
