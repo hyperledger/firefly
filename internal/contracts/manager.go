@@ -221,6 +221,7 @@ func (cm *contractManager) verifyListeners(ctx context.Context) error {
 			if err := cm.checkContractListenerExists(ctx, l); err != nil {
 				return err
 			}
+			verifyCount++
 		}
 		page++
 	}
