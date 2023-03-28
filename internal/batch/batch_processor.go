@@ -187,14 +187,19 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 		newQueue = append(newQueue, newWork)
 	}
 
-	// Special handling for transactions that allow only one message per batch
-	batchOfOne := newWork.msg.Header.TxType == core.TransactionTypeContractInvokePin
-
 	log.L(bp.ctx).Debugf("Added message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
 	bp.assemblyQueueBytes += newWork.estimateSize()
 	bp.assemblyQueue = newQueue
-	full = batchOfOne || len(bp.assemblyQueue) >= int(bp.conf.BatchMaxSize) || (bp.assemblyQueueBytes >= bp.conf.BatchMaxBytes)
-	overflow = len(bp.assemblyQueue) > 1 && (batchOfOne || bp.assemblyQueueBytes > bp.conf.BatchMaxBytes)
+
+	batchOfOne := bp.conf.txType == core.TransactionTypeContractInvokePin
+	if batchOfOne {
+		// Special handling for processors that allow only one message per batch
+		full = true
+		overflow = len(bp.assemblyQueue) > 1
+	} else {
+		full = len(bp.assemblyQueue) >= int(bp.conf.BatchMaxSize) || (bp.assemblyQueueBytes >= bp.conf.BatchMaxBytes)
+		overflow = len(bp.assemblyQueue) > 1 && (bp.assemblyQueueBytes > bp.conf.BatchMaxBytes)
+	}
 	return full, overflow
 }
 

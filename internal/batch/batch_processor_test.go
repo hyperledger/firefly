@@ -396,6 +396,33 @@ func TestAddWorkInSort(t *testing.T) {
 	}, bp.assemblyQueue)
 }
 
+func TestAddWorkBatchOfOne(t *testing.T) {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
+		return nil
+	})
+	defer cancel()
+	bp.conf.txType = core.TransactionTypeContractInvokePin
+
+	full, overflow := bp.addWork(&batchWork{
+		msg: &core.Message{Sequence: 200},
+	})
+	assert.True(t, full)
+	assert.False(t, overflow)
+	assert.Equal(t, []*batchWork{
+		{msg: &core.Message{Sequence: 200}},
+	}, bp.assemblyQueue)
+
+	full, overflow = bp.addWork(&batchWork{
+		msg: &core.Message{Sequence: 201},
+	})
+	assert.True(t, full)
+	assert.True(t, overflow)
+	assert.Equal(t, []*batchWork{
+		{msg: &core.Message{Sequence: 200}},
+		{msg: &core.Message{Sequence: 201}},
+	}, bp.assemblyQueue)
+}
+
 func TestAddWorkAbandonedBatch(t *testing.T) {
 	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return nil
