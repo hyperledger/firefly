@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/mocks/authmocks"
 	"github.com/hyperledger/firefly-common/pkg/auth"
@@ -243,7 +244,9 @@ func newTestNamespaceManager(t *testing.T, initConfig bool) (*namespaceManager, 
 		namespaces:          make(map[string]*namespace),
 		plugins:             make(map[string]*plugin),
 		tokenBroadcastNames: make(map[string]string),
-		nsStartupRetry:      &retry.Retry{},
+		nsStartupRetry: &retry.Retry{
+			InitialDelay: 1 * time.Second,
+		},
 	}
 	nmm := mockPluginFactories(nm)
 	nmm.nm.watchConfig = func() {
@@ -1751,7 +1754,7 @@ func TestStart(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	nsStarted := make(chan struct{})
+	waitInit := namespaceInitWaiter(t, nmm, []string{"default"})
 
 	nmm.mbi.On("Start", mock.Anything).Return(nil)
 	nmm.mdx.On("Start", mock.Anything).Return(nil)
@@ -1762,13 +1765,12 @@ func TestStart(t *testing.T) {
 	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nmm.mo.On("Start", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		nm.cancelCtx()
-		close(nsStarted) // this is async
 	})
 
 	err := nm.Start()
 	assert.NoError(t, err)
 
-	<-nsStarted
+	waitInit.Wait()
 }
 
 func TestStartBlockchainFail(t *testing.T) {
@@ -1836,13 +1838,13 @@ func TestWaitStop(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
+	waitInit := namespaceInitWaiter(t, nmm, []string{"default"})
+
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nsStarted := make(chan struct{})
 	nmm.mo.On("Start", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		nm.cancelCtx()
-		close(nsStarted)
 	})
 
 	nmm.mo.On("WaitStop").Return()
@@ -1851,7 +1853,7 @@ func TestWaitStop(t *testing.T) {
 	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{})
 	assert.NoError(t, err)
 
-	<-nsStarted
+	waitInit.Wait()
 
 	nm.WaitStop()
 

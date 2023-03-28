@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/auth"
 	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
@@ -289,6 +290,7 @@ func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContra
 // Note that plugins have a separate lifecycle, independent from namespace orchestrators.
 func (nm *namespaceManager) namespaceStarter(ns *namespace) {
 	_ = nm.nsStartupRetry.Do(nm.ctx, fmt.Sprintf("namespace %s", ns.Name), func(attempt int) (retry bool, err error) {
+		startTime := time.Now()
 		err = nm.initAndStartNamespace(ns)
 		// If we started successfully, then all is good
 		if err == nil {
@@ -297,6 +299,11 @@ func (nm *namespaceManager) namespaceStarter(ns *namespace) {
 			ns.started = true
 			ns.initError = ""
 			nm.nsMux.Unlock()
+
+			// Notify all the event plugins of the start, so they can re-register their subs.
+			for _, ep := range ns.plugins.Events {
+				ep.NamespaceRestarted(ns.Name, startTime)
+			}
 			return false, nil
 		}
 		// Otherwise the back-off retry should retry indefinitely (until the context is closed, which is
