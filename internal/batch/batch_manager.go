@@ -18,6 +18,8 @@ package batch
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"sync"
 	"time"
@@ -471,4 +473,118 @@ func (bm *batchManager) WaitStop() {
 	for _, p := range processors {
 		<-p.done
 	}
+}
+
+func (bm *batchManager) getNextNonce(ctx context.Context, state *dispatchState, nonceKeyHash *fftypes.Bytes32, contextHash *fftypes.Bytes32) (int64, error) {
+
+	// See if the nonceKeyHash is in our cached state already
+	if cached, ok := state.noncesAssigned[*nonceKeyHash]; ok {
+		cached.latest++
+		return cached.latest, nil
+	}
+
+	// Query the database for an existing record
+	dbNonce, err := bm.database.GetNonce(ctx, nonceKeyHash)
+	if err != nil {
+		return -1, err
+	}
+	if dbNonce == nil {
+		// For migration we need to query the base contextHash the first time we pass through this for a v0.14.1 or earlier migration
+		if dbNonce, err = bm.database.GetNonce(ctx, contextHash); err != nil {
+			return -1, err
+		}
+	}
+
+	// Determine if we're the first - so get nonce zero - or if we need to add one to the DB nonce
+	nonceState := &nonceState{}
+	if dbNonce == nil {
+		nonceState.new = true
+	} else {
+		nonceState.latest = dbNonce.Nonce + 1
+	}
+
+	// Cache it either way for additional messages in this batch to the same nonceKeyHash
+	state.noncesAssigned[*nonceKeyHash] = nonceState
+	return nonceState.latest, nil
+}
+
+func (bm *batchManager) maskContext(ctx context.Context, state *dispatchState, msg *core.Message, topic string) (msgPinString string, contextOrPin *fftypes.Bytes32, err error) {
+
+	hashBuilder := sha256.New()
+	hashBuilder.Write([]byte(topic))
+
+	// For broadcast we do not need to mask the context, which is just the hash
+	// of the topic. There would be no way to unmask it if we did, because we don't have
+	// the full list of senders to know what their next hashes should be.
+	if msg.Header.Group == nil {
+		return "", fftypes.HashResult(hashBuilder), nil
+	}
+
+	// For private groups, we need to make the topic specific to the group (which is
+	// a salt for the hash as it is not on chain)
+	hashBuilder.Write((*msg.Header.Group)[:])
+
+	// The combination of the topic and group is the context
+	contextHash := fftypes.HashResult(hashBuilder)
+
+	// Now combine our sending identity, and this nonce, to produce the hash that should
+	// be expected by all members of the group as the next nonce from us on this topic.
+	// Note we use our identity DID (not signing key) for this.
+	hashBuilder.Write([]byte(msg.Header.Author))
+
+	// Our DB of nonces we own, is keyed off of the hash at this point.
+	// However, before v0.14.2 we didn't include the Author - so we need to pass the contextHash as a fallback.
+	nonceKeyHash := fftypes.HashResult(hashBuilder)
+	nonce, err := bm.getNextNonce(ctx, state, nonceKeyHash, contextHash)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Now we have the nonce, add that at the end of the hash to make it unqiue to this message
+	nonceBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(nonceBytes, uint64(nonce))
+	hashBuilder.Write(nonceBytes)
+
+	pin := fftypes.HashResult(hashBuilder)
+	pinStr := fmt.Sprintf("%s:%.16d", pin, nonce)
+	log.L(ctx).Debugf("Assigned pin '%s' to message %s for topic '%s'", pinStr, msg.Header.ID, topic)
+	return pinStr, pin, err
+}
+
+func (bm *batchManager) loadContext(ctx context.Context, msg *core.Message) ([]*fftypes.Bytes32, error) {
+	pins := make([]*fftypes.Bytes32, 0)
+	isPrivate := msg.Header.Group != nil
+	if isPrivate {
+		if len(msg.Pins) == 0 {
+			return nil, i18n.NewError(ctx, coremsgs.MsgPinsNotAssigned)
+		}
+		for _, pinStr := range msg.Pins {
+			pin, err := fftypes.ParseBytes32(ctx, pinStr)
+			if err != nil {
+				return nil, err
+			}
+			pins = append(pins, pin)
+		}
+		return pins, nil
+	}
+
+	for _, topic := range msg.Header.Topics {
+		_, context, _ := bm.maskContext(ctx, nil, msg, topic) // no error checking (cannot fail)
+		pins = append(pins, context)
+	}
+	return pins, nil
+}
+
+// Reconstruct the contexts/pins that were assigned to this batch payload
+// Fails if pins have not been calculated
+func (bm *batchManager) LoadContexts(ctx context.Context, payload *DispatchPayload) error {
+	payload.Pins = make([]*fftypes.Bytes32, 0)
+	for _, msg := range payload.Messages {
+		pins, err := bm.loadContext(ctx, msg)
+		if err != nil {
+			return err
+		}
+		payload.Pins = append(payload.Pins, pins...)
+	}
+	return nil
 }
