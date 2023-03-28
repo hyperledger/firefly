@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,6 +20,7 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -152,6 +153,21 @@ func (ws *WebSockets) WaitClosed() {
 	}
 }
 
+func (ws *WebSockets) NamespaceRestarted(ns string, startTime time.Time) {
+
+	ws.connMux.Lock()
+	connections := make([]*websocketConnection, 0, len(ws.connections))
+	for _, c := range ws.connections {
+		connections = append(connections, c)
+	}
+	ws.connMux.Unlock()
+
+	for _, wc := range connections {
+		wc.restartForNamespace(ns, startTime)
+	}
+
+}
+
 func (ws *WebSockets) GetStatus() *core.WebSocketStatus {
 	status := &core.WebSocketStatus{
 		Enabled:     true,
@@ -176,9 +192,11 @@ func (ws *WebSockets) GetStatus() *core.WebSocketStatus {
 		status.Connections = append(status.Connections, conn)
 		for _, s := range wc.started {
 			sub := &core.WSSubscriptionStatus{
-				Name:      s.name,
-				Namespace: s.namespace,
-				Ephemeral: s.ephemeral,
+				StartTime: s.startTime,
+				Name:      s.Name,
+				Namespace: s.Namespace,
+				Ephemeral: s.Ephemeral,
+				Filter:    s.Filter,
 			}
 			conn.Subscriptions = append(conn.Subscriptions, sub)
 		}

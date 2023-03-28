@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -130,4 +131,11 @@ func TestAddListenerFail(t *testing.T) {
 	err := se.AddListener("ns1", func(event *core.EventDelivery) error { return nil })
 	assert.EqualError(t, err, "pop")
 
+}
+
+func TestNamespaceRestarted(t *testing.T) {
+	se, cancel := newTestEvents(t)
+	defer cancel()
+
+	se.NamespaceRestarted("ns1", time.Now())
 }

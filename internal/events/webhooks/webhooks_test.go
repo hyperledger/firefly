@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -854,4 +855,11 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
+}
+
+func TestNamespaceRestarted(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	wh.NamespaceRestarted("ns1", time.Now())
 }

@@ -16,10 +16,14 @@
 
 package core
 
+import "github.com/hyperledger/firefly-common/pkg/fftypes"
+
 type WSSubscriptionStatus struct {
-	Ephemeral bool   `ffstruct:"WSSubscriptionStatus" json:"ephemeral"`
-	Namespace string `ffstruct:"WSSubscriptionStatus" json:"namespace"`
-	Name      string `ffstruct:"WSSubscriptionStatus" json:"name,omitempty"`
+	StartTime *fftypes.FFTime    `ffstruct:"WSSubscriptionStatus" json:"startTime"`
+	Ephemeral bool               `ffstruct:"WSSubscriptionStatus" json:"ephemeral"`
+	Namespace string             `ffstruct:"WSSubscriptionStatus" json:"namespace"`
+	Name      string             `ffstruct:"WSSubscriptionStatus" json:"name,omitempty"`
+	Filter    SubscriptionFilter `ffstruct:"WSSubscriptionStatus" json:"filter"`
 }
 
 type WSConnectionStatus struct {

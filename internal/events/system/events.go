@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,6 +19,7 @@ package system
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -118,4 +119,8 @@ func (se *Events) DeliveryRequest(connID string, sub *core.Subscription, event *
 		})
 	}
 	return nil
+}
+
+func (se *Events) NamespaceRestarted(ns string, startTime time.Time) {
+	// no-op
 }

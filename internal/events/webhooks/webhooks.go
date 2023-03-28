@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -366,4 +367,8 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event
 
 	wh.doDelivery(connID, reply, sub, event, data, false)
 	return nil
+}
+
+func (wh *WebHooks) NamespaceRestarted(ns string, startTime time.Time) {
+	// no-op
 }

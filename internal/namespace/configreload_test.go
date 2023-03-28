@@ -416,6 +416,9 @@ func mockInitConfig(nmm *nmMocks) {
 	nmm.mei[0].On("Init", mock.Anything, mock.Anything).Return(nil)
 	nmm.mei[1].On("Init", mock.Anything, mock.Anything).Return(nil)
 	nmm.mei[2].On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mei[0].On("NamespaceRestarted", mock.Anything, mock.Anything).Return(nil).Maybe()
+	nmm.mei[1].On("NamespaceRestarted", mock.Anything, mock.Anything).Return(nil).Maybe()
+	nmm.mei[2].On("NamespaceRestarted", mock.Anything, mock.Anything).Return(nil).Maybe()
 	nmm.mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	nmm.mdi.On("GetNamespace", mock.Anything, "ns2").Return(nil, nil)
 	nmm.mdi.On("GetNamespace", mock.Anything, "ns3").Return(nil, nil).Maybe()
@@ -979,6 +982,9 @@ namespaces:
 		close(testDone)
 		cancelCtx() // only once
 	})
+	for _, m := range nmm.mei {
+		m.On("NamespaceRestarted", "default", mock.Anything)
+	}
 	nm.configReloaded(nm.ctx)
 
 	// Should terminate
@@ -1035,6 +1041,9 @@ namespaces:
 	nmm.mo.On("Start", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Run(func(args mock.Arguments) {
 		cancelCtx() // only once
 	})
+	for _, m := range nmm.mei {
+		m.On("NamespaceRestarted", "default", mock.Anything)
+	}
 	nm.configReloaded(nm.ctx)
 
 	// Should terminate

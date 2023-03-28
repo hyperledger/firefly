@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -106,11 +107,20 @@ func (nm *namespaceManager) configReloaded(ctx context.Context) {
 		return
 	}
 
-	// Now finally we can start all the new things
+	// Now we can start all the new things
+	restartTime := time.Now()
 	if err = nm.startNamespacesAndPlugins(updatedNamespaces, updatedPlugins); err != nil {
 		log.L(ctx).Errorf("Failed to initialize namespaces after config reload: %s", err)
 		nm.cancelCtx() // stop the world
 		return
+	}
+
+	// Finally we need to tell all the event plugins when we restarted the namespace,
+	// so they can re-register their connections with the new namespace orchestrator.
+	for _, ns := range updatedNamespaces {
+		for _, ep := range ns.plugins.Events {
+			ep.NamespaceRestarted(ns.Name, restartTime)
+		}
 	}
 
 }
