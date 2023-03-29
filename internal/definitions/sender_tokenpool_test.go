@@ -127,11 +127,16 @@ func TestDefineTokenPoolOk(t *testing.T) {
 		},
 	}
 
+	mim.On("GetMultipartyRootOrg", ds.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
-	mms.On("Send", context.Background()).Return(nil)
+	mms.On("Send", ds.ctx).Return(nil)
 
-	err := ds.DefineTokenPool(context.Background(), pool, false)
+	err := ds.DefineTokenPool(ds.ctx, pool, false)
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)

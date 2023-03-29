@@ -891,6 +891,50 @@ plugins:
 
 }
 
+func TestConfigReloadStartPluginsFailOnReload(t *testing.T) {
+	logrus.SetLevel(logrus.TraceLevel)
+
+	nm, nmm, cleanup := newTestNamespaceManager(t, false)
+	defer cleanup()
+
+	// Start with empty config
+	for _, mei := range nmm.mei {
+		mei.On("Init", mock.Anything, mock.Anything).Return(nil).Maybe()
+	}
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	err := nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
+	assert.NoError(t, err)
+
+	err = nm.Start()
+	assert.NoError(t, err)
+
+	coreconfig.Reset()
+	InitConfig()
+	viper.SetConfigType("yaml")
+	err = viper.ReadConfig(strings.NewReader(`
+plugins:
+  blockchain:
+  - name: "badness"
+    type: "ethereum"
+`))
+	assert.NoError(t, err)
+
+	// Drive the config reload
+	nmm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nmm.mbi.On("Start", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	nm.configReloaded(nm.ctx)
+
+	// Should terminate
+	<-nm.ctx.Done()
+	nmm.mae.On("WaitStop").Return(nil).Maybe()
+	nmm.mo.On("WaitStop").Return(nil).Maybe()
+	nm.WaitStop()
+
+}
+
 func TestConfigReloadInitNamespacesFailOnReload(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel)
 
@@ -928,12 +972,17 @@ namespaces:
 	assert.NoError(t, err)
 
 	// Drive the config reload
+	testDone := make(chan struct{})
 	nmm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nmm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, fmt.Errorf("pop"))
+	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, fmt.Errorf("pop")).Run(func(args mock.Arguments) {
+		close(testDone)
+		cancelCtx() // only once
+	})
 	nm.configReloaded(nm.ctx)
 
 	// Should terminate
+	<-testDone
 	<-nm.ctx.Done()
 	nmm.mae.On("WaitStop").Return(nil).Maybe()
 	nmm.mo.On("WaitStop").Return(nil).Maybe()
@@ -983,7 +1032,9 @@ namespaces:
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nmm.mo.On("Start", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	nmm.mo.On("Start", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Run(func(args mock.Arguments) {
+		cancelCtx() // only once
+	})
 	nm.configReloaded(nm.ctx)
 
 	// Should terminate

@@ -263,6 +263,10 @@ func (or *orchestrator) GetData(ctx context.Context, filter ffapi.AndFilter) (co
 	return or.database().GetData(ctx, or.namespace.Name, filter)
 }
 
+func (or *orchestrator) GetDataSubPaths(ctx context.Context, path string) ([]string, error) {
+	return or.database().GetDataSubPaths(ctx, or.namespace.Name, path)
+}
+
 func (or *orchestrator) GetMessagesForData(ctx context.Context, id string, filter ffapi.AndFilter) ([]*core.Message, *ffapi.FilterResult, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
@@ -306,6 +310,10 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id s
 
 func (or *orchestrator) GetPins(ctx context.Context, filter ffapi.AndFilter) ([]*core.Pin, *ffapi.FilterResult, error) {
 	return or.database().GetPins(ctx, or.namespace.Name, filter)
+}
+
+func (or *orchestrator) GetNextPins(ctx context.Context, filter ffapi.AndFilter) ([]*core.NextPin, *ffapi.FilterResult, error) {
+	return or.database().GetNextPins(ctx, or.namespace.Name, filter)
 }
 
 func (or *orchestrator) GetEventsWithReferences(ctx context.Context, filter ffapi.AndFilter) ([]*core.EnrichedEvent, *ffapi.FilterResult, error) {

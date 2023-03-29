@@ -1099,7 +1099,7 @@ func TestResolveFullIDSigner(t *testing.T) {
 	defer cancel()
 
 	id := "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server"
-	signKey, err := e.ResolveInputSigningKey(context.Background(), id)
+	signKey, err := e.ResolveSigningKey(context.Background(), id, blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
 	assert.Equal(t, "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server", signKey)
 
@@ -1119,7 +1119,7 @@ func TestResolveSigner(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	resolved, err := e.ResolveInputSigningKey(context.Background(), "signer001")
+	resolved, err := e.ResolveSigningKey(context.Background(), "signer001", blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
 	assert.Equal(t, "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server", resolved)
 }
@@ -1134,7 +1134,7 @@ func TestResolveSignerFailedFabricCARequest(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(503, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.ResolveInputSigningKey(context.Background(), "signer001")
+	_, err := e.ResolveSigningKey(context.Background(), "signer001", blockchain.ResolveKeyIntentSign)
 	assert.EqualError(t, err, "FF10284: Error from fabconnect: %!!(MISSING)s(<nil>)")
 }
 
@@ -1152,7 +1152,7 @@ func TestResolveSignerBadECertReturned(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.ResolveInputSigningKey(context.Background(), "signer001")
+	_, err := e.ResolveSigningKey(context.Background(), "signer001", blockchain.ResolveKeyIntentSign)
 	assert.Contains(t, err.Error(), "FF10286: Failed to decode certificate:")
 }
 
@@ -1170,7 +1170,7 @@ func TestResolveSignerBadCACertReturned(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.ResolveInputSigningKey(context.Background(), "signer001")
+	_, err := e.ResolveSigningKey(context.Background(), "signer001", blockchain.ResolveKeyIntentSign)
 	assert.Contains(t, err.Error(), "FF10286: Failed to decode certificate:")
 }
 
@@ -1565,16 +1565,14 @@ func TestAddSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"channel":   "firefly",
-				"chaincode": "mycode",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"channel":   "firefly",
+			"chaincode": "mycode",
+		}.String()),
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1602,15 +1600,13 @@ func TestAddSubscriptionNoChannel(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"chaincode": "mycode",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"chaincode": "mycode",
+		}.String()),
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1638,12 +1634,10 @@ func TestAddSubscriptionNoLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+	sub := &core.ContractListener{
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1663,11 +1657,9 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(""),
-			Event:    &core.FFISerializedEvent{},
-		},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(""),
+		Event:    &core.FFISerializedEvent{},
 	}
 
 	err := e.AddContractListener(context.Background(), sub)
@@ -1686,16 +1678,14 @@ func TestAddSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"channel":   "firefly",
-				"chaincode": "mycode",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventNewest),
-			},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"channel":   "firefly",
+			"chaincode": "mycode",
+		}.String()),
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventNewest),
 		},
 	}
 
@@ -1725,7 +1715,7 @@ func TestDeleteSubscription(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(204, ""))
 
-	err := e.DeleteContractListener(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub, true)
 
 	assert.NoError(t, err)
 }
@@ -1748,9 +1738,32 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.DeleteContractListener(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub, true)
 
 	assert.Regexp(t, "FF10284.*pop", err)
+}
+
+func TestDeleteSubscriptionNotFound(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.streamID = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		BackendID: "sb-1",
+	}
+
+	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
+		httpmock.NewStringResponder(404, "pop"))
+
+	err := e.DeleteContractListener(context.Background(), sub, true)
+
+	assert.NoError(t, err)
 }
 
 func TestHandleMessageContractEventOldSubscription(t *testing.T) {
@@ -2899,7 +2912,7 @@ func TestGetContractListenerStatus(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	status, err := e.GetContractListenerStatus(context.Background(), "id")
+	_, status, err := e.GetContractListenerStatus(context.Background(), "id", true)
 	assert.Nil(t, status)
 	assert.NoError(t, err)
 }
@@ -2909,13 +2922,18 @@ func TestGetTransactionStatus(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
+	resetConf(e)
 
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigDefaultChannel, "firefly")
+
+	output := make(map[string]interface{}, 0)
+	output["transactionHash"] = "7cd2549e310898ceb5f8d15112e74e0395c2f7ccd434293cd29cdb6bc358e85a"
 	op := &core.Operation{
-		Namespace: "ns1",
-		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		Output: output,
 	}
 
-	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/7cd2549e310898ceb5f8d15112e74e0395c2f7ccd434293cd29cdb6bc358e85a?fly-channel=firefly&fly-signer=signer001`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(200, make(map[string]interface{}))(req)
 		})
@@ -2930,13 +2948,18 @@ func TestGetTransactionStatusNoResult(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
+	resetConf(e)
 
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigDefaultChannel, "firefly")
+
+	output := make(map[string]interface{}, 0)
+	output["transactionHash"] = "7cd2549e310898ceb5f8d15112e74e0395c2f7ccd434293cd29cdb6bc358e85a"
 	op := &core.Operation{
-		Namespace: "ns1",
-		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		Output: output,
 	}
 
-	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059`,
+	httpmock.RegisterResponder("GET", `http://localhost:12345/transactions/7cd2549e310898ceb5f8d15112e74e0395c2f7ccd434293cd29cdb6bc358e85a?fly-channel=firefly&fly-signer=signer001`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(404, make(map[string]interface{}))(req)
 		})
@@ -2951,6 +2974,10 @@ func TestGetTransactionStatusBadResult(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
+	resetConf(e)
+
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigDefaultChannel, "firefly")
 
 	op := &core.Operation{
 		Namespace: "ns1",

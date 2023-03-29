@@ -151,12 +151,15 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 	return subs, nil
 }
 
-func (s *streamManager) getSubscription(ctx context.Context, subID string) (sub *subscription, err error) {
+func (s *streamManager) getSubscription(ctx context.Context, subID string, okNotFound bool) (sub *subscription, err error) {
 	res, err := s.client.R().
 		SetContext(ctx).
 		SetResult(&sub).
 		Get(fmt.Sprintf("/subscriptions/%s", subID))
 	if err != nil || !res.IsSuccess() {
+		if okNotFound && res.StatusCode() == 404 {
+			return nil, nil
+		}
 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return sub, nil
@@ -167,7 +170,7 @@ func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (
 		return cachedValue, nil
 	}
 
-	sub, err := s.getSubscription(ctx, subID)
+	sub, err := s.getSubscription(ctx, subID, false)
 	if err != nil {
 		return "", err
 	}
@@ -205,11 +208,14 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 	return &sub, nil
 }
 
-func (s *streamManager) deleteSubscription(ctx context.Context, subID string) error {
+func (s *streamManager) deleteSubscription(ctx context.Context, subID string, okNotFound bool) error {
 	res, err := s.client.R().
 		SetContext(ctx).
 		Delete("/subscriptions/" + subID)
 	if err != nil || !res.IsSuccess() {
+		if okNotFound && res.StatusCode() == 404 {
+			return nil
+		}
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return nil

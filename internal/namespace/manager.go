@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -59,10 +60,10 @@ type Manager interface {
 	WaitStop()
 	Reset(ctx context.Context) error
 
-	Orchestrator(ctx context.Context, ns string) (orchestrator.Orchestrator, error)
+	Orchestrator(ctx context.Context, ns string, includeInitializing bool) (orchestrator.Orchestrator, error)
 	MustOrchestrator(ns string) orchestrator.Orchestrator
 	SPIEvents() spievents.Manager
-	GetNamespaces(ctx context.Context) ([]*core.Namespace, error)
+	GetNamespaces(ctx context.Context, includeInitializing bool) ([]*core.NamespaceWithInitStatus, error)
 	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
 	ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error
 	Authorize(ctx context.Context, authReq *fftypes.AuthReq) error
@@ -78,6 +79,8 @@ type namespace struct {
 	configHash   *fftypes.Bytes32
 	pluginNames  []string
 	plugins      *orchestrator.Plugins
+	started      bool
+	initError    string
 }
 
 type namespaceManager struct {
@@ -94,6 +97,7 @@ type namespaceManager struct {
 	adminEvents         spievents.Manager
 	tokenBroadcastNames map[string]string
 	watchConfig         func() // indirect from viper.WatchConfig for testing
+	nsStartupRetry      *retry.Retry
 
 	orchestratorFactory  func(ns *core.Namespace, config orchestrator.Config, plugins *orchestrator.Plugins, metrics metrics.Manager, cacheManager cache.Manager) orchestrator.Orchestrator
 	blockchainFactory    func(ctx context.Context, pluginType string) (blockchain.Plugin, error)
@@ -167,6 +171,11 @@ func NewNamespaceManager() Manager {
 		identityFactory:      iifactory.GetPlugin,
 		eventsFactory:        eifactory.GetPlugin,
 		authFactory:          authfactory.GetPlugin,
+		nsStartupRetry: &retry.Retry{
+			InitialDelay: config.GetDuration(coreconfig.NamespacesRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.NamespacesRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.NamespacesRetryFactor),
+		},
 	}
 	return nm
 }
@@ -200,11 +209,6 @@ func (nm *namespaceManager) initComponents(ctx context.Context) (err error) {
 		return err
 	}
 
-	// Initialize all the namespaces on initial startup
-	if err = nm.initNamespaces(ctx, nm.namespaces); err != nil {
-		return err
-	}
-
 	if err := nm.startConfigListener(); err != nil {
 		return err
 	}
@@ -212,59 +216,55 @@ func (nm *namespaceManager) initComponents(ctx context.Context) (err error) {
 	return nil
 }
 
-func (nm *namespaceManager) initNamespaces(ctx context.Context, newNamespaces map[string]*namespace) error {
+func (nm *namespaceManager) startV1NamespaceIfRequired(nsToCheck *namespace) error {
 	// In network version 1, the blockchain plugin and multiparty contract were global and singular.
 	// Therefore, if any namespace was EVER pointed at a V1 contract, that contract and that namespace's plugins
 	// become the de facto configuration for ff_system as well. There can only be one V1 contract in the history
 	// of a given FireFly node, because it's impossible to re-create ff_system against a different contract
 	// or different set of plugins.
-	var v1Namespace *namespace
 	var v1Contract *core.MultipartyContract
-
-	for _, ns := range newNamespaces {
-		if err := nm.initNamespace(ctx, ns); err != nil {
-			return err
-		}
-		multiparty := ns.config.Multiparty.Enabled
-		version := "n/a"
-		if multiparty {
-			version = fmt.Sprintf("%d", ns.Namespace.Contracts.Active.Info.Version)
-		}
-		log.L(ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.Name, strconv.FormatBool(multiparty), version)
-		if multiparty {
-			contract := nm.findV1Contract(ns)
-			if contract != nil {
-				if v1Namespace == nil {
-					v1Namespace = ns
-					v1Contract = contract
-				} else if !stringSlicesEqual(v1Namespace.pluginNames, ns.pluginNames) ||
-					v1Contract.Location.String() != contract.Location.String() ||
-					v1Contract.FirstEvent != contract.FirstEvent {
-					return i18n.NewError(ctx, coremsgs.MsgCannotInitLegacyNS, core.LegacySystemNamespace, v1Namespace.Name, ns.Name)
-				}
-			}
-		}
+	if nsToCheck.config.Multiparty.Enabled {
+		v1Contract = nm.findV1Contract(nsToCheck)
 	}
 
-	if v1Namespace != nil {
+	if v1Contract != nil {
+		nm.nsMux.Lock()
+		defer nm.nsMux.Unlock()
+
+		existingFFSystemNamespace := nm.namespaces[core.LegacySystemNamespace]
+		if existingFFSystemNamespace != nil {
+			existingV1Contract := nm.findV1Contract(existingFFSystemNamespace)
+			if !stringSlicesEqual(existingFFSystemNamespace.pluginNames, nsToCheck.pluginNames) ||
+				v1Contract.Location.String() != existingV1Contract.Location.String() ||
+				v1Contract.FirstEvent != existingV1Contract.FirstEvent {
+				return i18n.NewError(nm.ctx, coremsgs.MsgCannotInitLegacyNS, core.LegacySystemNamespace, nsToCheck.Name)
+			}
+		}
+
 		systemNS := &namespace{
-			Namespace:   v1Namespace.Namespace,
-			loadTime:    v1Namespace.loadTime,
-			config:      v1Namespace.config,
-			pluginNames: v1Namespace.pluginNames,
-			plugins:     v1Namespace.plugins,
-			configHash:  v1Namespace.configHash,
+			Namespace:   nsToCheck.Namespace,
+			loadTime:    nsToCheck.loadTime,
+			config:      nsToCheck.config,
+			pluginNames: nsToCheck.pluginNames,
+			plugins:     nsToCheck.plugins,
+			configHash:  nsToCheck.configHash,
 		}
 		systemNS.Name = core.LegacySystemNamespace
 		systemNS.NetworkName = core.LegacySystemNamespace
-		newNamespaces[core.LegacySystemNamespace] = systemNS
-		if err := nm.initNamespace(ctx, systemNS); err != nil {
+
+		// Start the namespace synchronously, while holding the nsMux (but without retry), so that
+		// all namespaces can do the above ^^^ check ok
+		if err := nm.initNamespace(systemNS); err != nil {
 			return err
 		}
-		log.L(ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, v1Namespace.Name)
+
+		// Ok - we've now initialized the system NS
+		nm.namespaces[core.LegacySystemNamespace] = systemNS
+		log.L(nm.ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, nsToCheck.Name)
 	}
 
 	return nil
+
 }
 
 func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContract {
@@ -279,10 +279,59 @@ func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContra
 	return nil
 }
 
-func (nm *namespaceManager) initNamespace(ctx context.Context, ns *namespace) (err error) {
+// namespaceStarter is a routine that attempts to init+start namespace.
+//
+// If it fails initialization, then it will log a suitable error message and exponential backoff retry.
+//
+// This means that an individual namespace, does prevent the whole server from starting successfully.
+//
+// Note that plugins have a separate lifecycle, independent from namespace orchestrators.
+func (nm *namespaceManager) namespaceStarter(ns *namespace) {
+	_ = nm.nsStartupRetry.Do(nm.ctx, fmt.Sprintf("namespace %s", ns.Name), func(attempt int) (retry bool, err error) {
+		err = nm.initAndStartNamespace(ns)
+		// If we started successfully, then all is good
+		if err == nil {
+			log.L(nm.ctx).Infof("Namespace %s started", ns.Name)
+			nm.nsMux.Lock()
+			ns.started = true
+			ns.initError = ""
+			nm.nsMux.Unlock()
+			return false, nil
+		}
+		// Otherwise the back-off retry should retry indefinitely (until the context is closed, which is
+		// the responsibility of the retry library to check)
+		nm.nsMux.Lock()
+		ns.initError = err.Error()
+		nm.nsMux.Unlock()
+		return true, err
+	})
+}
+
+func (nm *namespaceManager) initAndStartNamespace(ns *namespace) error {
+	if err := nm.initNamespace(ns); err != nil {
+		return err
+	}
+	version := "n/a"
+	multiparty := ns.config.Multiparty.Enabled
+	if multiparty {
+		version = fmt.Sprintf("%d", ns.Namespace.Contracts.Active.Info.Version)
+	}
+	log.L(nm.ctx).Infof("Initialized namespace '%s' multiparty=%s version=%s", ns.Name, strconv.FormatBool(multiparty), version)
+
+	// Check if we need to start up a V1 system namespace as a side effect of having initialized this namespace
+	// Note we do that start synchronous to this namespace starting.
+	if err := nm.startV1NamespaceIfRequired(ns); err != nil {
+		return err
+	}
+	// Start this namespace
+	return ns.orchestrator.Start()
+}
+
+func (nm *namespaceManager) initNamespace(ns *namespace) error {
+	bgCtx := nm.ctx
 
 	database := ns.plugins.Database.Plugin
-	existing, err := database.GetNamespace(ctx, ns.Name)
+	existing, err := database.GetNamespace(bgCtx, ns.Name)
 	switch {
 	case err != nil:
 		return err
@@ -290,7 +339,7 @@ func (nm *namespaceManager) initNamespace(ctx context.Context, ns *namespace) (e
 		ns.Created = existing.Created
 		ns.Contracts = existing.Contracts
 		if ns.NetworkName != existing.NetworkName {
-			log.L(ctx).Warnf("Namespace '%s' - network name unexpectedly changed from '%s' to '%s'", ns.Name, existing.NetworkName, ns.NetworkName)
+			log.L(bgCtx).Warnf("Namespace '%s' - network name unexpectedly changed from '%s' to '%s'", ns.Name, existing.NetworkName, ns.NetworkName)
 		}
 	default:
 		ns.Created = fftypes.Now()
@@ -298,12 +347,12 @@ func (nm *namespaceManager) initNamespace(ctx context.Context, ns *namespace) (e
 			Active: &core.MultipartyContract{},
 		}
 	}
-	if err = database.UpsertNamespace(ctx, &ns.Namespace, true); err != nil {
+	if err = database.UpsertNamespace(bgCtx, &ns.Namespace, true); err != nil {
 		return err
 	}
 
 	ns.orchestrator = nm.orchestratorFactory(&ns.Namespace, ns.config, ns.plugins, nm.metrics, nm.cacheManager)
-	ns.ctx, ns.cancelCtx = context.WithCancel(ctx)
+	ns.ctx, ns.cancelCtx = context.WithCancel(bgCtx)
 	if err := ns.orchestrator.Init(ns.ctx, ns.cancelCtx); err != nil {
 		return err
 	}
@@ -327,9 +376,7 @@ func (nm *namespaceManager) Start() error {
 func (nm *namespaceManager) startNamespacesAndPlugins(namespacesToStart map[string]*namespace, pluginsToStart map[string]*plugin) error {
 	// Orchestrators must be started before plugins so as not to miss events
 	for _, ns := range namespacesToStart {
-		if err := ns.orchestrator.Start(); err != nil {
-			return err
-		}
+		go nm.namespaceStarter(ns)
 	}
 	for _, plugin := range pluginsToStart {
 		switch plugin.category {
@@ -1024,10 +1071,14 @@ func (nm *namespaceManager) SPIEvents() spievents.Manager {
 	return nm.adminEvents
 }
 
-func (nm *namespaceManager) Orchestrator(ctx context.Context, ns string) (orchestrator.Orchestrator, error) {
+func (nm *namespaceManager) Orchestrator(ctx context.Context, ns string, includeInitializing bool) (orchestrator.Orchestrator, error) {
 	nm.nsMux.Lock()
 	defer nm.nsMux.Unlock()
+	// Only return started namespaces from this call
 	if namespace, ok := nm.namespaces[ns]; ok && namespace != nil {
+		if !includeInitializing && !namespace.started {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceInitializing, ns)
+		}
 		return namespace.orchestrator, nil
 	}
 	return nil, i18n.NewError(ctx, coremsgs.MsgUnknownNamespace, ns)
@@ -1035,19 +1086,25 @@ func (nm *namespaceManager) Orchestrator(ctx context.Context, ns string) (orches
 
 // MustOrchestrator must only be called by code that is absolutely sure the orchestrator exists
 func (nm *namespaceManager) MustOrchestrator(ns string) orchestrator.Orchestrator {
-	or, err := nm.Orchestrator(context.Background(), ns)
+	or, err := nm.Orchestrator(context.Background(), ns, true)
 	if err != nil {
 		panic(err)
 	}
 	return or
 }
 
-func (nm *namespaceManager) GetNamespaces(ctx context.Context) ([]*core.Namespace, error) {
+func (nm *namespaceManager) GetNamespaces(ctx context.Context, includeInitializing bool) ([]*core.NamespaceWithInitStatus, error) {
 	nm.nsMux.Lock()
 	defer nm.nsMux.Unlock()
-	results := make([]*core.Namespace, 0, len(nm.namespaces))
+	results := make([]*core.NamespaceWithInitStatus, 0, len(nm.namespaces))
 	for _, ns := range nm.namespaces {
-		results = append(results, &ns.Namespace)
+		if includeInitializing || ns.started {
+			results = append(results, &core.NamespaceWithInitStatus{
+				Namespace:           &ns.Namespace,
+				Initializing:        !ns.started,
+				InitializationError: ns.initError,
+			})
+		}
 	}
 	return results, nil
 }
@@ -1057,7 +1114,7 @@ func (nm *namespaceManager) GetOperationByNamespacedID(ctx context.Context, nsOp
 	if err != nil {
 		return nil, err
 	}
-	or, err := nm.Orchestrator(ctx, ns)
+	or, err := nm.Orchestrator(ctx, ns, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1069,7 +1126,7 @@ func (nm *namespaceManager) ResolveOperationByNamespacedID(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	or, err := nm.Orchestrator(ctx, ns)
+	or, err := nm.Orchestrator(ctx, ns, true)
 	if err != nil {
 		return err
 	}
@@ -1129,7 +1186,7 @@ func (nm *namespaceManager) getAuthPlugin(ctx context.Context, plugins map[strin
 }
 
 func (nm *namespaceManager) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
-	or, err := nm.Orchestrator(ctx, authReq.Namespace)
+	or, err := nm.Orchestrator(ctx, authReq.Namespace, true)
 	if err != nil {
 		return err
 	}

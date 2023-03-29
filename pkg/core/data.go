@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -37,6 +38,7 @@ type BlobRef struct {
 	Hash   *fftypes.Bytes32 `ffstruct:"BlobRef" json:"hash"`
 	Size   int64            `ffstruct:"BlobRef" json:"size"`
 	Name   string           `ffstruct:"BlobRef" json:"name"`
+	Path   string           `ffstruct:"BlobRef" json:"path,omitempty"`
 	Public string           `ffstruct:"BlobRef" json:"public,omitempty"`
 }
 
@@ -213,4 +215,30 @@ func (d *Data) Seal(ctx context.Context, blob *Blob) (err error) {
 		err = CheckValidatorType(ctx, d.Validator)
 	}
 	return err
+}
+
+// Path processes any non-empty "blob.name" to create a '/' prefixed/separated
+// path, to the last segment of the path.
+// - ""                   -> ""
+// - "file.name"          -> "/"
+// - "/file.name"         -> "/"
+// - "path/to/file.name"  -> "/path/to"
+// - "/path/to/file.name" -> "/path/to"
+// The path is stored for query.
+func (d *Data) CalcPath() {
+	if d == nil || d.Blob == nil || d.Blob.Name == "" {
+		return
+	}
+	segments := strings.Split(strings.TrimPrefix(d.Blob.Name, "/"), "/")
+	sb := &strings.Builder{}
+	sb.WriteRune('/')
+	for i, segment := range segments {
+		if i < len(segments)-1 {
+			if i > 0 {
+				sb.WriteRune('/')
+			}
+			sb.WriteString(segment)
+		}
+	}
+	d.Blob.Path = sb.String()
 }

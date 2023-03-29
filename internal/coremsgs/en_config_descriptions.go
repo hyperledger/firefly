@@ -70,7 +70,7 @@ var (
 	ConfigBlockchainEthereumAddressResolverResponseField  = ffc("config.blockchain.ethereum.addressResolver.responseField", "The name of a JSON field that is provided in the response, that contains the ethereum address (default `address`)", i18n.StringType)
 	ConfigBlockchainEthereumAddressResolverRetainOriginal = ffc("config.blockchain.ethereum.addressResolver.retainOriginal", "When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address", i18n.BooleanType)
 	ConfigBlockchainEthereumAddressResolverURL            = ffc("config.blockchain.ethereum.addressResolver.url", "The URL of the Address Resolver", i18n.StringType)
-	ConfigBlockchainEthereumAddressResolverURLTemplate    = ffc("config.blockchain.ethereum.addressResolver.urlTemplate", "The URL Go template string to use when calling the Address Resolver", i18n.GoTemplateType)
+	ConfigBlockchainEthereumAddressResolverURLTemplate    = ffc("config.blockchain.ethereum.addressResolver.urlTemplate", "The URL Go template string to use when calling the Address Resolver. The template input contains '.Key' and '.Intent' string variables", i18n.GoTemplateType)
 	ConfigBlockchainEthereumAddressResolverProxyURL       = ffc("config.blockchain.ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", "URL "+i18n.StringType)
 
 	ConfigBlockchainEthereumEthconnectBatchSize    = ffc("config.blockchain.ethereum.ethconnect.batchSize", "The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
@@ -145,7 +145,7 @@ var (
 	ConfigPluginBlockchainType = ffc("config.plugins.blockchain[].type", "The type of the configured Blockchain Connector plugin", i18n.StringType)
 
 	ConfigPluginBlockchainEthereumAddressResolverAlwaysResolve         = ffc("config.plugins.blockchain[].ethereum.addressResolver.alwaysResolve", "Causes the address resolver to be invoked on every API call that submits a signing key, regardless of whether the input string conforms to an 0x address. Also disables any result caching", i18n.BooleanType)
-	ConfigPluginBlockchainEthereumAddressResolverBodyTemplate          = ffc("config.plugins.blockchain[].ethereum.addressResolver.bodyTemplate", "The body go template string to use when making HTTP requests", i18n.GoTemplateType)
+	ConfigPluginBlockchainEthereumAddressResolverBodyTemplate          = ffc("config.plugins.blockchain[].ethereum.addressResolver.bodyTemplate", "The body go template string to use when making HTTP requests. The template input contains '.Key' and '.Intent' string variables.", i18n.GoTemplateType)
 	ConfigPluginBlockchainEthereumAddressResolverCustomClient          = ffc("config.plugins.blockchain[].ethereum.addressResolver.customClient", "Used for testing purposes only", i18n.IgnoredType)
 	ConfigPluginBlockchainEthereumAddressResolverExpectContinueTimeout = ffc("config.plugins.blockchain[].ethereum.addressResolver.expectContinueTimeout", "See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)", i18n.TimeDurationType)
 	ConfigPluginBlockchainEthereumAddressResolverHeaders               = ffc("config.plugins.blockchain[].ethereum.addressResolver.headers", "Adds custom headers to HTTP requests", i18n.StringType)
@@ -156,7 +156,7 @@ var (
 	ConfigPluginBlockchainEthereumAddressResolverResponseField  = ffc("config.plugins.blockchain[].ethereum.addressResolver.responseField", "The name of a JSON field that is provided in the response, that contains the ethereum address (default `address`)", i18n.StringType)
 	ConfigPluginBlockchainEthereumAddressResolverRetainOriginal = ffc("config.plugins.blockchain[].ethereum.addressResolver.retainOriginal", "When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address", i18n.BooleanType)
 	ConfigPluginBlockchainEthereumAddressResolverURL            = ffc("config.plugins.blockchain[].ethereum.addressResolver.url", "The URL of the Address Resolver", i18n.StringType)
-	ConfigPluginBlockchainEthereumAddressResolverURLTemplate    = ffc("config.plugins.blockchain[].ethereum.addressResolver.urlTemplate", "The URL Go template string to use when calling the Address Resolver", i18n.GoTemplateType)
+	ConfigPluginBlockchainEthereumAddressResolverURLTemplate    = ffc("config.plugins.blockchain[].ethereum.addressResolver.urlTemplate", "The URL Go template string to use when calling the Address Resolver. The template input contains '.Key' and '.Intent' string variables.", i18n.GoTemplateType)
 
 	ConfigPluginBlockchainEthereumAddressResolverProxyURL = ffc("config.plugins.blockchain[].ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", "URL "+i18n.StringType)
 

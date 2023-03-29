@@ -70,7 +70,7 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, nsOpID string, status 
 func (cb *callbacks) TokenPoolCreated(ctx context.Context, pool *tokens.TokenPool) error {
 	// Deliver token pool creation events to every handler
 	for _, handler := range cb.handlers {
-		if err := handler.TokenPoolCreated(cb.plugin, pool); err != nil {
+		if err := handler.TokenPoolCreated(ctx, cb.plugin, pool); err != nil {
 			return err
 		}
 	}

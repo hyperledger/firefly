@@ -713,7 +713,7 @@ func TestLoadContextsPrivateNoPins(t *testing.T) {
 
 	err := bm.LoadContexts(context.Background(), payload)
 
-	assert.Regexp(t, "FF10440", err)
+	assert.Regexp(t, "FF10442", err)
 }
 
 func TestLoadContextsPrivateBadPin(t *testing.T) {

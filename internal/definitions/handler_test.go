@@ -82,7 +82,7 @@ func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 			Tag: "unknown",
 		},
 	}, core.DataArray{}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
@@ -108,9 +108,9 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 }
 
 func TestActionEnum(t *testing.T) {
-	assert.Equal(t, "confirm", fmt.Sprintf("%s", ActionConfirm))
-	assert.Equal(t, "reject", fmt.Sprintf("%s", ActionReject))
-	assert.Equal(t, "retry", fmt.Sprintf("%s", ActionRetry))
-	assert.Equal(t, "wait", fmt.Sprintf("%s", ActionWait))
-	assert.Equal(t, "unknown", fmt.Sprintf("%s", DefinitionMessageAction(999)))
+	assert.Equal(t, "confirm", fmt.Sprintf("%s", core.ActionConfirm))
+	assert.Equal(t, "reject", fmt.Sprintf("%s", core.ActionReject))
+	assert.Equal(t, "retry", fmt.Sprintf("%s", core.ActionRetry))
+	assert.Equal(t, "wait", fmt.Sprintf("%s", core.ActionWait))
+	assert.Equal(t, "unknown", fmt.Sprintf("%s", core.MessageAction(999)))
 }

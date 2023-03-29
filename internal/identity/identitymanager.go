@@ -40,7 +40,7 @@ const (
 
 type Manager interface {
 	ResolveInputSigningIdentity(ctx context.Context, signerRef *core.SignerRef) (err error)
-	ResolveInputVerifierRef(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error)
+	ResolveInputVerifierRef(ctx context.Context, inputKey *core.VerifierRef, intent blockchain.ResolveKeyIntent) (*core.VerifierRef, error)
 	ResolveInputSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error)
 
@@ -140,7 +140,7 @@ func (im *identityManager) ResolveInputSigningKey(ctx context.Context, inputKey 
 	return signer.Value, nil
 }
 
-func (im *identityManager) ResolveInputVerifierRef(ctx context.Context, inputKey *core.VerifierRef) (*core.VerifierRef, error) {
+func (im *identityManager) ResolveInputVerifierRef(ctx context.Context, inputKey *core.VerifierRef, intent blockchain.ResolveKeyIntent) (*core.VerifierRef, error) {
 	log.L(ctx).Debugf("Resolving input signing key: type='%s' value='%s'", inputKey.Type, inputKey.Value)
 
 	if im.blockchain == nil {
@@ -157,7 +157,7 @@ func (im *identityManager) ResolveInputVerifierRef(ctx context.Context, inputKey
 		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownVerifierType)
 	}
 
-	signingKey, err := im.blockchain.ResolveInputSigningKey(ctx, inputKey.Value)
+	signingKey, err := im.blockchain.ResolveSigningKey(ctx, inputKey.Value, intent)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func (im *identityManager) resolveInputKeyViaBlockchainPlugin(ctx context.Contex
 		return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainNotConfigured)
 	}
 
-	keyString, err := im.blockchain.ResolveInputSigningKey(ctx, inputKey)
+	keyString, err := im.blockchain.ResolveSigningKey(ctx, inputKey, blockchain.ResolveKeyIntentSign)
 	if err != nil {
 		return nil, err
 	}

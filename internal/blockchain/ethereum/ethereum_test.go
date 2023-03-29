@@ -1142,10 +1142,10 @@ func TestVerifyEthAddress(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
-	_, err := e.ResolveInputSigningKey(context.Background(), "0x12345")
+	_, err := e.ResolveSigningKey(context.Background(), "0x12345", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10141", err)
 
-	key, err := e.ResolveInputSigningKey(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
+	key, err := e.ResolveSigningKey(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6", blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
 	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", key)
 
@@ -1713,25 +1713,23 @@ func TestAddSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"address": "0x123",
-			}.String()),
-			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
-					Name: "Changed",
-					Params: fftypes.FFIParams{
-						{
-							Name:   "value",
-							Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
-						},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"address": "0x123",
+		}.String()),
+		Event: &core.FFISerializedEvent{
+			FFIEventDefinition: fftypes.FFIEventDefinition{
+				Name: "Changed",
+				Params: fftypes.FFIParams{
+					{
+						Name:   "value",
+						Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
 					},
 				},
 			},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+		},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1753,22 +1751,20 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
-					Name: "Changed",
-					Params: fftypes.FFIParams{
-						{
-							Name:   "value",
-							Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
-						},
+	sub := &core.ContractListener{
+		Event: &core.FFISerializedEvent{
+			FFIEventDefinition: fftypes.FFIEventDefinition{
+				Name: "Changed",
+				Params: fftypes.FFIParams{
+					{
+						Name:   "value",
+						Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
 					},
 				},
 			},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventOldest),
-			},
+		},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
@@ -1790,19 +1786,17 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"address": "0x123",
-			}.String()),
-			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
-					Name: "Changed",
-					Params: fftypes.FFIParams{
-						{
-							Name:   "value",
-							Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": ""}}`),
-						},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"address": "0x123",
+		}.String()),
+		Event: &core.FFISerializedEvent{
+			FFIEventDefinition: fftypes.FFIEventDefinition{
+				Name: "Changed",
+				Params: fftypes.FFIParams{
+					{
+						Name:   "value",
+						Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": ""}}`),
 					},
 				},
 			},
@@ -1828,11 +1822,9 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(""),
-			Event:    &core.FFISerializedEvent{},
-		},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(""),
+		Event:    &core.FFISerializedEvent{},
 	}
 
 	err := e.AddContractListener(context.Background(), sub)
@@ -1851,15 +1843,13 @@ func TestAddSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"address": "0x123",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Options: &core.ContractListenerOptions{
-				FirstEvent: string(core.SubOptsFirstEventNewest),
-			},
+	sub := &core.ContractListener{
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"address": "0x123",
+		}.String()),
+		Event: &core.FFISerializedEvent{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventNewest),
 		},
 	}
 
@@ -1890,7 +1880,7 @@ func TestDeleteSubscription(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(204, ""))
 
-	err := e.DeleteContractListener(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub, true)
 
 	assert.NoError(t, err)
 }
@@ -1913,9 +1903,32 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(500, ""))
 
-	err := e.DeleteContractListener(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub, true)
 
 	assert.Regexp(t, "FF10111", err)
+}
+
+func TestDeleteSubscriptionNotFound(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.streamID = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		BackendID: "sb-1",
+	}
+
+	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
+		httpmock.NewStringResponder(404, ""))
+
+	err := e.DeleteContractListener(context.Background(), sub, true)
+
+	assert.NoError(t, err)
 }
 
 func TestHandleMessageContractEventOldSubscription(t *testing.T) {
@@ -2487,7 +2500,7 @@ func TestInvokeContractWithBatchUnsupported(t *testing.T) {
 	errors := testFFIErrors()
 	batch := &blockchain.BatchPin{}
 	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, nil, errors, nil, batch)
-	assert.Regexp(t, "FF10441", err)
+	assert.Regexp(t, "FF10443", err)
 }
 
 func TestInvokeContractInvalidOption(t *testing.T) {
@@ -3727,9 +3740,10 @@ func TestGetContractListenerStatus(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
-	status, err := e.GetContractListenerStatus(context.Background(), "sub1")
+	found, status, err := e.GetContractListenerStatus(context.Background(), "sub1", true)
 	assert.NotNil(t, status)
 	assert.NoError(t, err)
+	assert.True(t, found)
 }
 
 func TestGetContractListenerStatusGetSubFail(t *testing.T) {
@@ -3759,9 +3773,43 @@ func TestGetContractListenerStatusGetSubFail(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
-	status, err := e.GetContractListenerStatus(context.Background(), "sub1")
+	found, status, err := e.GetContractListenerStatus(context.Background(), "sub1", true)
 	assert.Nil(t, status)
 	assert.Regexp(t, "FF10111", err)
+	assert.False(t, found)
+}
+
+func TestGetContractListenerStatusGetSubNotFound(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sub1",
+		httpmock.NewJsonResponderOrPanic(404, `not found`))
+
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	found, status, err := e.GetContractListenerStatus(context.Background(), "sub1", true)
+	assert.Nil(t, status)
+	assert.Nil(t, err)
+	assert.False(t, found)
 }
 
 func TestGetTransactionStatusSuccess(t *testing.T) {
@@ -3884,5 +3932,5 @@ func TestValidateInvokeRequest(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = e.ValidateInvokeRequest(context.Background(), testFFIMethod(), nil, nil, true)
-	assert.Regexp(t, "FF10441", err)
+	assert.Regexp(t, "FF10443", err)
 }

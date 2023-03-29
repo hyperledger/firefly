@@ -115,6 +115,7 @@ var (
 	BlobRefHash   = ffm("BlobRef.hash", "The hash of the binary blob data")
 	BlobRefSize   = ffm("BlobRef.size", "The size of the binary data")
 	BlobRefName   = ffm("BlobRef.name", "The name field from the metadata attached to the blob, commonly used as a path/filename, and indexed for search")
+	BlobRefPath   = ffm("BlobRef.path", "If a name is specified, this field stores the '/' prefixed and separated path extracted from the full name")
 	BlobRefPublic = ffm("BlobRef.public", "If the blob data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)")
 
 	// Data field descriptions
@@ -411,6 +412,10 @@ var (
 	MultipartyContractInfo         = ffm("MultipartyContract.info", "Additional info about the current status of the multi-party contract")
 	NetworkActionType              = ffm("NetworkAction.type", "The action to be performed")
 
+	// NamespaceWithInitStatus field descriptions
+	NamespaceWithInitStatusInitializing        = ffm("NamespaceWithInitStatus.initializing", "Set to true if the namespace is still initializing")
+	NamespaceWithInitStatusInitializationError = ffm("NamespaceWithInitStatus.initializationError", "Set to a non-empty string in the case that the namespace is currently failing to initialize")
+
 	// NamespaceStatus field descriptions
 	NodeNamespace       = ffm("NamespaceStatus.namespace", "The namespace that this status applies to")
 	NamespaceStatusNode = ffm("NamespaceStatus.node", "Details of the local node")
@@ -485,6 +490,13 @@ var (
 	PinRewindSequence = ffm("PinRewind.sequence", "The sequence of the pin to which the event aggregator should rewind. Either sequence or batch must be specified")
 	PinRewindBatch    = ffm("PinRewind.batch", "The ID of the batch to which the event aggregator should rewind. Either sequence or batch must be specified")
 
+	// NextPin field descriptions
+	NextPinNamespace = ffm("NextPin.namespace", "The namespace of the next-pin")
+	NextPinContext   = ffm("NextPin.context", "The context the next-pin applies to - the hash of the privacy group-hash + topic. The group-hash is only known to the participants (can itself contain a salt in the group-name). This context is combined with the member and nonce to determine the final hash that is written on-chain")
+	NextPinIdentity  = ffm("NextPin.identity", "The member of the privacy group the next-pin applies to")
+	NextPinHash      = ffm("NextPin.hash", "The unique masked pin string")
+	NextPinNonce     = ffm("NextPin.nonce", "The numeric index - which is monotonically increasing for each member of the privacy group")
+
 	// Subscription field descriptions
 	SubscriptionID        = ffm("Subscription.id", "The UUID of the subscription")
 	SubscriptionNamespace = ffm("Subscription.namespace", "The namespace of the subscription. A subscription will only receive events generated in the namespace of the subscription")
@@ -520,7 +532,7 @@ var (
 	SubscriptionBlockchainEventFilterListener = ffm("SubscriptionBlockchainEventFilter.listener", "Regular expression to apply to the blockchain event 'listener' field, which is the UUID of the event listener. So you can restrict your subscription to certain blockchain listeners. Alternatively to avoid your application need to know listener UUIDs you can set the 'topic' field of blockchain event listeners, and use a topic filter on your subscriptions")
 
 	// SubscriptionCoreOptions field descriptions
-	SubscriptionCoreOptionsFirstEvent = ffm("SubscriptionCoreOptions.firstEvent", "Whether your appplication would like to receive events from the 'oldest' event emitted by your FireFly node (from the beginning of time), or the 'newest' event (from now), or a specific event sequence. Default is 'newest'")
+	SubscriptionCoreOptionsFirstEvent = ffm("SubscriptionCoreOptions.firstEvent", "Whether your application would like to receive events from the 'oldest' event emitted by your FireFly node (from the beginning of time), or the 'newest' event (from now), or a specific event sequence. Default is 'newest'")
 	SubscriptionCoreOptionsReadAhead  = ffm("SubscriptionCoreOptions.readAhead", "The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts")
 	SubscriptionCoreOptionsWithData   = ffm("SubscriptionCoreOptions.withData", "Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data. May not be supported on some transports.")
 

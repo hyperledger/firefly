@@ -457,7 +457,7 @@ func TestPrepareOperationBlockchainInvokeGetUploadNotFound(t *testing.T) {
 	mth.On("FindOperationInTransaction", context.Background(), storedBatch.TX.ID, core.OpTypeSharedStorageUploadBatch).Return(nil, nil)
 
 	_, err = cm.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10442", err)
+	assert.Regexp(t, "FF10444", err)
 
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)

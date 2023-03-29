@@ -60,9 +60,9 @@ const (
 	AddressResolverRetainOriginal = "retainOriginal"
 	// AddressResolverMethod the HTTP method to use to call the address resolver (default GET)
 	AddressResolverMethod = "method"
-	// AddressResolverURLTemplate the URL go template string to use when calling the address resolver
+	// AddressResolverURLTemplate the URL go template string to use when calling the address resolver - a ".intent" string can be used in the go template
 	AddressResolverURLTemplate = "urlTemplate"
-	// AddressResolverBodyTemplate the body go template string to use when calling the address resolver
+	// AddressResolverBodyTemplate the body go template string to use when calling the address resolver - a ".intent" string can be used in the go template
 	AddressResolverBodyTemplate = "bodyTemplate"
 	// AddressResolverResponseField the name of a JSON field that is provided in the response, that contains the ethereum address (default "address")
 	AddressResolverResponseField = "responseField"

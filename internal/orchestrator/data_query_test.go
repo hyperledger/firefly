@@ -438,6 +438,14 @@ func TestGetData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetDataSubPaths(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.mdi.On("GetDataSubPaths", mock.Anything, "ns", "/parent").Return([]string{}, nil)
+	_, err := or.GetDataSubPaths(context.Background(), "/parent")
+	assert.NoError(t, err)
+}
+
 func TestGetDatatypeByID(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
@@ -827,5 +835,16 @@ func TestGetPins(t *testing.T) {
 	fb := database.PinQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("hash", u))
 	_, _, err := or.GetPins(context.Background(), f)
+	assert.NoError(t, err)
+}
+
+func TestGetNextPins(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	u := fftypes.NewUUID()
+	or.mdi.On("GetNextPins", mock.Anything, "ns", mock.Anything).Return([]*core.NextPin{}, nil, nil)
+	fb := database.NextPinQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("hash", u))
+	_, _, err := or.GetNextPins(context.Background(), f)
 	assert.NoError(t, err)
 }

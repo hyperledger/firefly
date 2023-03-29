@@ -515,7 +515,11 @@ func (f *Fabric) eventLoop() {
 	}
 }
 
-func (f *Fabric) ResolveInputSigningKey(ctx context.Context, signingKeyInput string) (string, error) {
+func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string, intent blockchain.ResolveKeyIntent) (string, error) {
+	// Note: "intent" is not currently used for Fabric, as the identity resolution is not
+	//       currently pluggable to external identity resolution systems (as is the case for
+	//       ethereum blockchain connectors).
+
 	// we expand the short user name into the fully qualified onchain identity:
 	// mspid::x509::{ecert DN}::{CA DN}	return signingKeyInput, nil
 	if !fullIdentityPattern.MatchString(signingKeyInput) {
@@ -844,7 +848,7 @@ func encodeContractLocation(ctx context.Context, ntype blockchain.NormalizeType,
 	return result, err
 }
 
-func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) error {
+func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListener) error {
 	location, err := parseContractLocation(ctx, listener.Location)
 	if err != nil {
 		return err
@@ -859,13 +863,13 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *core.Contrac
 	return nil
 }
 
-func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
-	return f.streams.deleteSubscription(ctx, subscription.BackendID)
+func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error {
+	return f.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
-func (f *Fabric) GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error) {
-	// Fabconnect does not currently provide any additional status info for listener subscriptions
-	return nil, nil
+func (f *Fabric) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (bool, interface{}, error) {
+	// Fabconnect does not currently provide any additional status info for listener subscriptions.
+	return true, nil, nil
 }
 
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
@@ -947,9 +951,18 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 }
 
 func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
-	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
+	txHash := operation.Output.GetString("transactionHash")
 
-	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
+	defaultChannel := f.fabconnectConf.GetString(FabconnectConfigDefaultChannel)
+	if defaultChannel == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgDefaultChannelNotConfigured)
+	}
+	defaultSigner := f.fabconnectConf.GetString(FabconnectConfigSigner)
+	if defaultSigner == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+	}
+
+	transactionRequestPath := fmt.Sprintf("/transactions/%s", txHash)
 	client := f.client
 	var resErr fabError
 	var statusResponse fftypes.JSONObject
@@ -957,6 +970,8 @@ func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Opera
 		SetContext(ctx).
 		SetError(&resErr).
 		SetResult(&statusResponse).
+		SetQueryParam("fly-channel", defaultChannel).
+		SetQueryParam("fly-signer", defaultSigner).
 		Get(transactionRequestPath)
 	if err != nil || !res.IsSuccess() {
 		if res.StatusCode() == 404 {

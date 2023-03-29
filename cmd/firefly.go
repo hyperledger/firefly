@@ -23,6 +23,7 @@ import (
 	"net/http/pprof"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -112,9 +113,27 @@ func run() error {
 	rootCtx, cancelRootCtx := context.WithCancel(context.Background())
 	rootCtx = log.WithLogger(rootCtx, logrus.WithField("pid", fmt.Sprintf("%d", os.Getpid())))
 
+	info := &Info{
+		Date:    BuildDate,
+		Commit:  BuildCommit,
+		Version: BuildVersionOverride,
+		License: "Apache-2.0",
+	}
+	// Where you are using go install, we will get good version information usefully from Go
+	// When we're in go-releaser in a Github action, we will have the version passed in explicitly
+	if info.Version == "" {
+		buildInfo, ok := debug.ReadBuildInfo()
+		setBuildInfo(info, buildInfo, ok)
+	}
+
 	config.SetupLogging(rootCtx)
 	log.L(rootCtx).Infof("Hyperledger FireFly")
-	log.L(rootCtx).Infof("© Copyright 2022 Kaleido, Inc.")
+	log.L(rootCtx).Infof("© Copyright 2023 Kaleido, Inc.")
+	_, ok := debug.ReadBuildInfo()
+	if ok {
+		log.L(rootCtx).Infof("Version: %s", info.Version)
+		log.L(rootCtx).Infof("Build date: %s", info.Date)
+	}
 
 	// Deferred error return from reading config
 	if err != nil {

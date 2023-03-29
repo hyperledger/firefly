@@ -73,6 +73,15 @@ func TestNextPinsE2EWithDB(t *testing.T) {
 	nextpinReadJson, _ = json.Marshal(nextpinRead[0])
 	assert.Equal(t, string(nextpinJson), string(nextpinReadJson))
 
+	// Check we get the exact same data back querying with filter
+	nextpinRead, _, err = s.GetNextPins(ctx, "ns", database.NextPinQueryFactory.NewFilter(ctx).Eq(
+		"identity", "0x12345",
+	))
+	assert.NoError(t, err)
+	assert.Len(t, nextpinRead, 1)
+	nextpinReadJson, _ = json.Marshal(nextpinRead[0])
+	assert.Equal(t, string(nextpinJson), string(nextpinReadJson))
+
 }
 
 func TestUpsertNextPinFailBegin(t *testing.T) {
@@ -103,7 +112,7 @@ func TestUpsertNextPinFailCommit(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetNextPinQueryFail(t *testing.T) {
+func TestGetNextPinsForContextQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetNextPinsForContext(context.Background(), "ns", fftypes.NewRandB32())
@@ -111,10 +120,30 @@ func TestGetNextPinQueryFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetNextPinReadMessageFail(t *testing.T) {
+func TestGetNextPinsForContextReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context"}).AddRow("only one"))
 	_, err := s.GetNextPinsForContext(context.Background(), "ns", fftypes.NewRandB32())
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetNextPinQueryFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	_, _, err := s.GetNextPins(context.Background(), "ns", database.NextPinQueryFactory.NewFilter(context.Background()).Eq(
+		"identity", "0x12345",
+	))
+	assert.Regexp(t, "FF00176", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetNextPinReadMessageFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context"}).AddRow("only one"))
+	_, _, err := s.GetNextPins(context.Background(), "ns", database.NextPinQueryFactory.NewFilter(context.Background()).Eq(
+		"identity", "0x12345",
+	))
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
