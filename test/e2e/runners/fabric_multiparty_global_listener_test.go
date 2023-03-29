@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// This suite assumes a Fabric stack has been created with the --global-listener option
-func TestFabricMultipartyGlobalListenerE2ESuite(t *testing.T) {
+// This suite assumes a Fabric stack has been created with the --custom-pin-support option
+func TestFabricMultipartyCustomPinE2ESuite(t *testing.T) {
 	suite.Run(t, new(multiparty.FabricContractWithMessageTestSuite))
 }

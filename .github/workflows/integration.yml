@@ -19,7 +19,7 @@ jobs:
             TestEthereumMultipartyTokensRemoteNameE2ESuite,
             TestFabricGatewayE2ESuite,
             TestFabricMultipartyE2ESuite,
-            TestFabricMultipartyGlobalListenerE2ESuite,
+            TestFabricMultipartyCustomPinE2ESuite,
           ]
         stack-type: [ethereum, fabric]
         blockchain-node: [geth, besu, fabric]
@@ -37,7 +37,7 @@ jobs:
             stack-type: ethereum
           - test-suite: TestFabricMultipartyE2ESuite
             stack-type: ethereum
-          - test-suite: TestFabricMultipartyGlobalListenerE2ESuite
+          - test-suite: TestFabricMultipartyCustomPinE2ESuite
             stack-type: ethereum
           - stack-type: ethereum
             blockchain-node: fabric

@@ -415,7 +415,7 @@ func TestAddFireflySubscriptionGlobal(t *testing.T) {
 	contract := &blockchain.MultipartyContract{
 		Location:   location,
 		FirstEvent: "newest",
-		Options:    fftypes.JSONAnyPtr(`{"globalListener":true}`),
+		Options:    fftypes.JSONAnyPtr(`{"customPinSupport":true}`),
 	}
 
 	cmi := &cachemocks.Manager{}
@@ -456,7 +456,7 @@ func TestAddFireflySubscriptionBadOptions(t *testing.T) {
 	contract := &blockchain.MultipartyContract{
 		Location:   location,
 		FirstEvent: "newest",
-		Options:    fftypes.JSONAnyPtr(`{"globalListener":"BAD"}`),
+		Options:    fftypes.JSONAnyPtr(`{"customPinSupport":"BAD"}`),
 	}
 
 	cmi := &cachemocks.Manager{}
