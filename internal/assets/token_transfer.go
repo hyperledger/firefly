@@ -194,7 +194,14 @@ func (s *transferSender) resolve(ctx context.Context) (opResubmitted bool, err e
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers. Note that we'll return the result of resubmitting the operation, not a 409 Conflict error
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			_, err = s.mgr.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			operation, resubmitErr := s.mgr.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			if resubmitErr != nil {
+				// Error doing resubmit, return the new error
+				err = resubmitErr
+			} else if operation != nil {
+				// We successfully resubmitted an initialized operation, return 2xx not 409
+				return true, nil
+			}
 		}
 		return true, err
 	}

@@ -249,14 +249,18 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 	txid, err := cm.txHelper.SubmitNewTransaction(ctx, txtype, req.IdempotencyKey)
 	var op *core.Operation
 	if err != nil {
-		var idemErr *sqlcommon.IdempotencyError
-		var ok bool
+		var resubmitErr error
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
-		if idemErr, ok = err.(*sqlcommon.IdempotencyError); ok {
-			op, err = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			op, resubmitErr = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
-			if err == nil {
+			if resubmitErr != nil {
+				// Error doing resubmit, return the new error
+				err = resubmitErr
+			} else if op != nil {
+				// We successfully resubmitted an initialized operation, return the operation
+				// and the idempotent error. The caller will revert the 409 to 2xx
 				err = idemErr
 			}
 		}
@@ -282,14 +286,18 @@ func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core
 	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractDeploy, req.IdempotencyKey)
 	var op *core.Operation
 	if err != nil {
-		var idemErr *sqlcommon.IdempotencyError
-		var ok bool
+		var resubmitErr error
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
-		if idemErr, ok = err.(*sqlcommon.IdempotencyError); ok {
-			op, err = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			op, resubmitErr = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
-			if err == nil {
+			if resubmitErr != nil {
+				// Error doing resubmit, return the new error
+				err = resubmitErr
+			} else if op != nil {
+				// We successfully resubmitted an initialized operation, return the operation
+				// and the idempotent error. The caller will revert the 409 to 2xx
 				err = idemErr
 			}
 		}
@@ -316,16 +324,14 @@ func (cm *contractManager) DeployContract(ctx context.Context, req *core.Contrac
 	var op *core.Operation
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		op, err = cm.writeDeployTransaction(ctx, req)
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	})
 	if err != nil {
 		if _, ok := err.(*sqlcommon.IdempotencyError); ok {
-			// Idempotency key clash but no other operation resubmit error? Resubmit was successful,
-			// return 20x, not 409
-			return op, nil
+			if op != nil {
+				// Idempotency key clash but we resubmitted an initialized operation? Return 20x, not 409
+				return op, nil
+			}
 		}
 		// Any other error? Return the error unchanged
 		return nil, err
@@ -381,9 +387,10 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 	})
 	if err != nil {
 		if _, ok := err.(*sqlcommon.IdempotencyError); ok {
-			// Idempotency key clash but no other operation resubmit error? Resubmit was successful,
-			// return 20x, not 409
-			return op, nil
+			if op != nil {
+				// Idempotency key clash but we resubmitted an initialized operation? Return 20x, not 409
+				return op, nil
+			}
 		}
 		// Any other error? Return the error unchanged
 		return nil, err
