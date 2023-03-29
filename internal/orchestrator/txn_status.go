@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -95,7 +95,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 	}
 
 	switch tx.Type {
-	case core.TransactionTypeBatchPin:
+	case core.TransactionTypeBatchPin, core.TransactionTypeContractInvokePin:
 		if len(events) == 0 {
 			result.Details = append(result.Details, pendingPlaceholder(core.TransactionStatusTypeBlockchainEvent))
 			updateStatus(result, core.OpStatusPending)

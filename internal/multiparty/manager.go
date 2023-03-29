@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -70,7 +70,7 @@ type Config struct {
 	Enabled   bool
 	Org       RootOrg
 	Node      LocalNode
-	Contracts []Contract
+	Contracts []blockchain.MultipartyContract
 }
 
 type RootOrg struct {
@@ -82,11 +82,6 @@ type RootOrg struct {
 type LocalNode struct {
 	Name        string
 	Description string
-}
-
-type Contract struct {
-	Location   *fftypes.JSONAny
-	FirstEvent string
 }
 
 type multipartyManager struct {
@@ -144,26 +139,26 @@ func (mm *multipartyManager) configureContractCommon(ctx context.Context, migrat
 	}
 	active := mm.namespace.Contracts.Active
 	log.L(ctx).Infof("Resolving FireFly contract at index %d", active.Index)
-	location, firstEvent, err := mm.resolveFireFlyContract(ctx, active.Index)
+	current, err := mm.resolveFireFlyContract(ctx, active.Index)
 	if err != nil {
 		return err
 	}
 
-	version, err := mm.blockchain.GetNetworkVersion(ctx, location)
+	version, err := mm.blockchain.GetNetworkVersion(ctx, current.Location)
 	if err != nil {
 		return err
 	}
 
 	if !migration {
-		if !active.Location.IsNil() && active.Location.String() != location.String() {
-			log.L(ctx).Warnf("FireFly contract location changed from %s to %s", active.Location, location)
+		if !active.Location.IsNil() && active.Location.String() != current.Location.String() {
+			log.L(ctx).Warnf("FireFly contract location changed from %s to %s", active.Location, current.Location)
 		}
 	}
 
-	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace, location, firstEvent)
+	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace, current)
 	if err == nil {
-		active.Location = location
-		active.FirstEvent = firstEvent
+		active.Location = current.Location
+		active.FirstEvent = current.FirstEvent
 		active.Info.Subscription = subID
 		active.Info.Version = version
 		err = mm.database.UpsertNamespace(ctx, mm.namespace, true)
@@ -171,24 +166,24 @@ func (mm *multipartyManager) configureContractCommon(ctx context.Context, migrat
 	return err
 }
 
-func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contractIndex int) (location *fftypes.JSONAny, firstEvent string, err error) {
+func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contractIndex int) (contract *blockchain.MultipartyContract, err error) {
 	if len(mm.config.Contracts) > 0 || contractIndex > 0 {
 		if contractIndex >= len(mm.config.Contracts) {
-			return nil, "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex,
+			return nil, i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex,
 				fmt.Sprintf("%s.multiparty.contracts[%d]", mm.namespace.Name, contractIndex))
 		}
-		active := mm.config.Contracts[contractIndex]
-		location = active.Location
-		firstEvent = active.FirstEvent
-	} else {
-		// handle deprecated config here
-		location, firstEvent, err = mm.blockchain.GetAndConvertDeprecatedContractConfig(ctx)
-		if err != nil {
-			return nil, "", err
-		}
+		return &mm.config.Contracts[contractIndex], nil
 	}
 
-	return location, firstEvent, err
+	// handle deprecated config here
+	location, firstEvent, err := mm.blockchain.GetAndConvertDeprecatedContractConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: firstEvent,
+	}, err
 }
 
 func (mm *multipartyManager) TerminateContract(ctx context.Context, location *fftypes.JSONAny, termination *blockchain.Event) (err error) {
@@ -233,7 +228,34 @@ func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey
 	return err
 }
 
+func (mm *multipartyManager) prepareInvokeOperation(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) (*core.PreparedOperation, error) {
+	op, err := mm.txHelper.FindOperationInTransaction(ctx, batch.TX.ID, core.OpTypeBlockchainInvoke)
+	if err != nil || op == nil {
+		return nil, err
+	}
+	req, err := txcommon.RetrieveBlockchainInvokeInputs(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+	return txcommon.OpBlockchainInvoke(op, req, &txcommon.BatchPinData{
+		Batch:      batch,
+		Contexts:   contexts,
+		PayloadRef: payloadRef,
+	}), nil
+}
+
 func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
+	if batch.TX.Type == core.TransactionTypeContractInvokePin {
+		preparedOp, err := mm.prepareInvokeOperation(ctx, batch, contexts, payloadRef)
+		if err != nil {
+			return err
+		} else if preparedOp != nil {
+			_, err = mm.operations.RunOperation(ctx, preparedOp)
+			return err
+		}
+		log.L(ctx).Warnf("No invoke operation found on transaction %s", batch.TX.ID)
+	}
+
 	op := core.NewOperation(
 		mm.blockchain,
 		mm.namespace.Name,

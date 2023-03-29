@@ -26,7 +26,6 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, pool *core.TokenPoolInput, waitConfirm bool) (*core.TokenPool, error) {
@@ -112,14 +111,9 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenP
 
 	var op *core.Operation
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		fb := database.OperationQueryFactory.NewFilter(ctx)
-		filter := fb.And(
-			fb.Eq("tx", pool.TX.ID),
-			fb.Eq("type", core.OpTypeTokenActivatePool),
-		)
-		if existing, _, err := am.database.GetOperations(ctx, am.namespace, filter); err != nil {
+		if existing, err := am.txHelper.FindOperationInTransaction(ctx, pool.TX.ID, core.OpTypeTokenActivatePool); err != nil {
 			return err
-		} else if len(existing) > 0 {
+		} else if existing != nil {
 			log.L(ctx).Debugf("Dropping duplicate token pool activation request for pool %s", pool.ID)
 			return nil
 		}

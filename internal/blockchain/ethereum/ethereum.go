@@ -223,18 +223,18 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
-	ethLocation, err := e.parseContractLocation(ctx, location)
+func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+	ethLocation, err := e.parseContractLocation(ctx, contract.Location)
 	if err != nil {
 		return "", err
 	}
 
-	version, err := e.GetNetworkVersion(ctx, location)
+	version, err := e.GetNetworkVersion(ctx, contract.Location)
 	if err != nil {
 		return "", err
 	}
 
-	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, firstEvent, e.streamID, batchPinEventABI)
+	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, contract.FirstEvent, e.streamID, batchPinEventABI)
 	if err != nil {
 		return "", err
 	}
@@ -325,6 +325,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 		BatchHash:  event.Output.GetString("batchHash"),
 		PayloadRef: event.Output.GetString("payloadRef"),
 		Contexts:   event.Output.GetStringArray("contexts"),
+		NsOrAction: nsOrAction,
 	}
 
 	// Validate the ethereum address - it must already be a valid address, we do not
@@ -339,7 +340,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 		Value: authorAddress,
 	}
 
-	return e.callbacks.BatchPinOrNetworkAction(ctx, nsOrAction, subInfo, location, event, verifier, params)
+	return e.callbacks.BatchPinOrNetworkAction(ctx, subInfo, location, event, verifier, params)
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -599,12 +600,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 	return res, nil
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
-	ethLocation, err := e.parseContractLocation(ctx, location)
-	if err != nil {
-		return err
-	}
-
+func (e *Ethereum) buildBatchPinInput(ctx context.Context, version int, namespace string, batch *blockchain.BatchPin) (*abi.Entry, []interface{}) {
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -613,18 +609,13 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace,
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
 
-	version, err := e.GetNetworkVersion(ctx, location)
-	if err != nil {
-		return err
-	}
-
 	var input []interface{}
 	var method *abi.Entry
 
 	if version == 1 {
 		method = batchPinMethodABIV1
 		input = []interface{}{
-			networkNamespace,
+			namespace,
 			ethHexFormatB32(&uuids),
 			ethHexFormatB32(batch.BatchHash),
 			batch.BatchPayloadRef,
@@ -639,6 +630,23 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace,
 			ethHashes,
 		}
 	}
+
+	return method, input
+}
+
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+	ethLocation, err := e.parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	version, err := e.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	method, input := e.buildBatchPinInput(ctx, version, networkNamespace, batch)
+
 	var emptyErrors []*abi.Entry
 	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
 }
@@ -717,7 +725,29 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 	return nil
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error {
+// Check if a method supports passing extra data via conformance to ERC5750.
+// That is, check if the last method input is a "bytes" parameter.
+func (e *Ethereum) checkDataSupport(ctx context.Context, method *abi.Entry) error {
+	if len(method.Inputs) > 0 {
+		lastParam := method.Inputs[len(method.Inputs)-1]
+		if lastParam.Type == "bytes" {
+			return nil
+		}
+	}
+	return i18n.NewError(ctx, coremsgs.MsgMethodDoesNotSupportPinning)
+}
+
+func (e *Ethereum) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
+	abi, _, _, err := e.prepareRequest(ctx, method, errors, input)
+	if err == nil && hasMessage {
+		if err = e.checkDataSupport(ctx, abi); err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
 	ethereumLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -725,6 +755,19 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 	abi, errorsAbi, orderedInput, err := e.prepareRequest(ctx, method, errors, input)
 	if err != nil {
 		return err
+	}
+	if batch != nil {
+		err := e.checkDataSupport(ctx, abi)
+		if err == nil {
+			method, batchPin := e.buildBatchPinInput(ctx, 2, "", batch)
+			encoded, err := method.Inputs.EncodeABIDataValuesCtx(ctx, batchPin)
+			if err == nil {
+				orderedInput[len(orderedInput)-1] = hex.EncodeToString(encoded)
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, nsOpID, orderedInput, errorsAbi, options)
 }
@@ -749,7 +792,7 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	return output, nil
 }
 
-func (e *Ethereum) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
+func (e *Ethereum) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
 	parsed, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -856,15 +899,12 @@ func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod
 		return abi, errorsAbi, orderedInput, err
 	}
 	for i, ffiError := range errors {
-
 		abi, err := ffi2abi.ConvertFFIErrorDefinitionToABI(ctx, &ffiError.FFIErrorDefinition)
 		if err == nil {
 			errorsAbi[i] = abi
 		}
-
 	}
 	for i, ffiParam := range method.Params {
-
 		orderedInput[i] = input[ffiParam.Name]
 	}
 	return abi, errorsAbi, orderedInput, nil

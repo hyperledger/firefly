@@ -36,6 +36,7 @@ type Helper interface {
 	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
 	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error)
 	GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
+	FindOperationInTransaction(ctx context.Context, tx *fftypes.UUID, opType core.OpType) (*core.Operation, error)
 }
 
 type transactionHelper struct {
@@ -210,4 +211,17 @@ func (t *transactionHelper) InsertOrGetBlockchainEvent(ctx context.Context, even
 	}
 	t.addBlockchainEventToCache(event)
 	return nil, nil
+}
+
+func (t *transactionHelper) FindOperationInTransaction(ctx context.Context, tx *fftypes.UUID, opType core.OpType) (*core.Operation, error) {
+	fb := database.OperationQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("tx", tx),
+		fb.Eq("type", opType),
+	)
+	ops, _, err := t.database.GetOperations(ctx, t.namespace, filter)
+	if err != nil || len(ops) == 0 {
+		return nil, err
+	}
+	return ops[0], nil
 }

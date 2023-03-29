@@ -5,13 +5,17 @@ if [ -z "$STACK_NAME" ]; then
   exit 1
 fi
 
+if [ -z "$CHAINCODE" ]; then
+  echo "Error: CHAINCODE must be set"
+  exit 1
+fi
+
 if [ -z "$CHAINCODE_NAME" ]; then
   echo "Error: CHAINCODE_NAME must be set"
   exit 1
 fi
 
-TEST_DIR="$(cd "$(dirname $0)/.." && pwd)"
-CHAINCODE="$TEST_DIR/data/contracts/assetcreator"
+ROOT_DIR="$(cd "$(dirname $0)/../.." && pwd)"
 CHAINCODE_VERSION=1.0
 
 CHANNEL=firefly
@@ -29,7 +33,8 @@ ENV_VARS="\
 "
 
 VOLUMES="\
-  -v ${CHAINCODE}:/chaincode-go \
+  -v ${ROOT_DIR}/smart_contracts/fabric:/contracts \
+  -v ${ROOT_DIR}/test/data/contracts:/testcontracts \
   -v ${STACK_NAME}_firefly_fabric:/etc/firefly \
 "
 
@@ -39,7 +44,7 @@ RUN="docker run --rm --network=${NETWORK} ${ENV_VARS} ${VOLUMES} hyperledger/fab
 echo "Using name ${CHAINCODE_NAME}"
 echo "Installing chaincode from ${CHAINCODE}..."
 ${RUN} /bin/bash -c "\
-  peer lifecycle chaincode package /root/pkg.tar.gz --path /chaincode-go --lang golang --label ${CHAINCODE_NAME} && \
+  peer lifecycle chaincode package /root/pkg.tar.gz --path ${CHAINCODE} --lang golang --label ${CHAINCODE_NAME} && \
   peer lifecycle chaincode install /root/pkg.tar.gz \
 "
 

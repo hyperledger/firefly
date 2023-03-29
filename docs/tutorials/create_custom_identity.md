@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Create a Custom Identity
+title: Create a custom identity
 parent: pages.tutorials
 nav_order: 8
 ---

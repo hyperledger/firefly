@@ -19,27 +19,26 @@ jobs:
             TestEthereumMultipartyTokensRemoteNameE2ESuite,
             TestFabricGatewayE2ESuite,
             TestFabricMultipartyE2ESuite,
+            TestFabricMultipartyCustomPinE2ESuite,
           ]
         stack-type: [ethereum, fabric]
         blockchain-node: [geth, besu, fabric]
         database-type: [sqlite3, postgres]
         exclude:
           - test-suite: TestEthereumGatewayE2ESuite
-            blockchain-node: fabric
+            stack-type: fabric
           - test-suite: TestEthereumMultipartyE2ESuite
-            blockchain-node: fabric
+            stack-type: fabric
           - test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
-            blockchain-node: fabric
+            stack-type: fabric
           - test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
-            blockchain-node: fabric
+            stack-type: fabric
           - test-suite: TestFabricGatewayE2ESuite
-            blockchain-node: geth
-          - test-suite: TestFabricGatewayE2ESuite
-            blockchain-node: besu
+            stack-type: ethereum
           - test-suite: TestFabricMultipartyE2ESuite
-            blockchain-node: geth
-          - test-suite: TestFabricMultipartyE2ESuite
-            blockchain-node: besu
+            stack-type: ethereum
+          - test-suite: TestFabricMultipartyCustomPinE2ESuite
+            stack-type: ethereum
           - stack-type: ethereum
             blockchain-node: fabric
           - stack-type: fabric

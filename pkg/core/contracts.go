@@ -41,6 +41,7 @@ type ContractCallRequest struct {
 	Input          map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
 	Errors         []*fftypes.FFIError    `ffstruct:"ContractCallRequest" json:"errors,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
 	Options        map[string]interface{} `ffstruct:"ContractCallRequest" json:"options"`
+	Message        *MessageInOut          `ffstruct:"ContractCallRequest" json:"message,omitempty" ffexcludeinput:"postContractQuery,postContractAPIQuery"`
 	IdempotencyKey IdempotencyKey         `ffstruct:"ContractCallRequest" json:"idempotencyKey,omitempty" ffexcludeoutput:"true"`
 }
 

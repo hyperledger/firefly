@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -45,6 +45,10 @@ func (em *eventManager) BatchPinComplete(namespace string, batchPin *blockchain.
 		return nil // move on
 	}
 
+	if batchPin.TransactionType == "" {
+		batchPin.TransactionType = core.TransactionTypeBatchPin
+	}
+
 	log.L(em.ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, signingKey.Value)
 	defer func() {
 		log.L(em.ctx).Infof("<- BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, signingKey.Value)
@@ -61,7 +65,7 @@ func (em *eventManager) BatchPinComplete(namespace string, batchPin *blockchain.
 				return err
 			}
 			chainEvent := buildBlockchainEvent(em.namespace.Name, nil, &batchPin.Event, &core.BlockchainTransactionRef{
-				Type:         core.TransactionTypeBatchPin,
+				Type:         batchPin.TransactionType,
 				ID:           batchPin.TransactionID,
 				BlockchainID: batchPin.Event.BlockchainTXID,
 			})
@@ -94,7 +98,7 @@ func (em *eventManager) BatchPinComplete(namespace string, batchPin *blockchain.
 }
 
 func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin) error {
-	_, err := em.txHelper.PersistTransaction(ctx, batchPin.TransactionID, core.TransactionTypeBatchPin, batchPin.Event.BlockchainTXID)
+	_, err := em.txHelper.PersistTransaction(ctx, batchPin.TransactionID, batchPin.TransactionType, batchPin.Event.BlockchainTXID)
 	return err
 }
 

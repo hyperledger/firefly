@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -23,7 +23,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -37,21 +36,14 @@ import (
 //   - The LocalID must not have been used yet. Connectors are allowed to emit multiple events in response to a single operation,
 //     but only the first of them can use the original LocalID.
 func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, transfer *core.TokenTransfer) (*fftypes.UUID, error) {
-	// Find a matching operation within the transaction
-	fb := database.OperationQueryFactory.NewFilter(ctx)
-	filter := fb.And(
-		fb.Eq("tx", tx),
-		fb.Eq("type", core.OpTypeTokenTransfer),
-	)
-	operations, _, err := em.database.GetOperations(ctx, em.namespace.Name, filter)
+	op, err := em.txHelper.FindOperationInTransaction(ctx, tx, core.OpTypeTokenTransfer)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(operations) > 0 {
+	if op != nil {
 		// This transfer matches a transfer transaction+operation submitted by this node.
 		// Check the operation inputs to see if they match the connector and pool on this event.
-		if input, err := txcommon.RetrieveTokenTransferInputs(ctx, operations[0]); err != nil {
+		if input, err := txcommon.RetrieveTokenTransferInputs(ctx, op); err != nil {
 			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
 		} else if input != nil && input.Connector == transfer.Connector && input.Pool.Equals(transfer.Pool) {
 			// Check if the LocalID has already been used

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -105,8 +105,10 @@ func (s *messageSender) setDefaults() {
 		msg.Header.Type = core.MessageTypePrivate
 	}
 	switch msg.Header.TxType {
+	case core.TransactionTypeContractInvokePin:
+		// valid
 	case core.TransactionTypeUnpinned, core.TransactionTypeNone:
-		// "unpinned" used to be called "none" (before we introduced batching + a TX on unppinned sends)
+		// "unpinned" used to be called "none" (before we introduced batching + a TX on unpinned sends)
 		msg.Header.TxType = core.TransactionTypeUnpinned
 	default:
 		// the only other valid option is "batch_pin"

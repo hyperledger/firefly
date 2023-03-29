@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,12 +21,40 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/batch"
+	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func reqWithMessage(msgType core.MessageType) *core.ContractCallRequest {
+	return &core.ContractCallRequest{
+		Key:      "0x123",
+		Location: fftypes.JSONAnyPtr(`{"address":"0x1111"}`),
+		Method: &fftypes.FFIMethod{
+			Name: "set",
+		},
+		Input: map[string]interface{}{
+			"value": "1",
+		},
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					ID:   fftypes.NewUUID(),
+					Type: msgType,
+				},
+			},
+		},
+	}
+}
 
 func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	cm := newTestContractManager()
@@ -54,11 +82,11 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 		return loc.String() == req.Location.String()
 	}), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
 		return method.Name == req.Method.Name
-	}), req.Input, req.Errors, req.Options).Return(nil)
+	}), req.Input, req.Errors, req.Options, (*blockchain.BatchPin)(nil)).Return(nil)
 
 	po, err := cm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
-	assert.Equal(t, req, po.Data.(blockchainInvokeData).Request)
+	assert.Equal(t, req, po.Data.(txcommon.BlockchainInvokeData).Request)
 
 	_, complete, err := cm.RunOperation(context.Background(), po)
 
@@ -132,6 +160,402 @@ func TestPrepareOperationBlockchainInvokeBadInput(t *testing.T) {
 
 	_, err := cm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF00127", err)
+}
+
+func TestPrepareOperationBlockchainInvokeWithPrivateBatch(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := reqWithMessage(core.MessageTypePrivate)
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		BatchID: fftypes.NewUUID(),
+	}
+	storedBatch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			Type: core.BatchTypePrivate,
+		},
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	pin := fftypes.NewRandB32()
+
+	mdm := cm.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", context.Background(), req.Message.Header.ID, data.CRORequireBatchID, data.CRORequirePins).Return(msg, nil, true, nil)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", context.Background(), "ns1", msg.BatchID).Return(storedBatch, nil)
+	mbp := cm.batch.(*batchmocks.Manager)
+	mbp.On("LoadContexts", context.Background(), mock.MatchedBy(func(b *batch.DispatchPayload) bool {
+		assert.Equal(t, storedBatch, &b.Batch)
+		assert.Equal(t, []*core.Message{msg}, b.Messages)
+		return true
+	})).Run(func(args mock.Arguments) {
+		payload := args[1].(*batch.DispatchPayload)
+		payload.Pins = []*fftypes.Bytes32{pin}
+	}).Return(nil)
+
+	po, err := cm.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+
+	opData := po.Data.(txcommon.BlockchainInvokeData)
+	assert.Equal(t, req, opData.Request)
+	assert.Equal(t, storedBatch, opData.BatchPin.Batch)
+	assert.Equal(t, []*fftypes.Bytes32{pin}, opData.BatchPin.Contexts)
+	assert.Equal(t, "", opData.BatchPin.PayloadRef)
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mbp.AssertExpectations(t)
+}
+
+func TestPrepareOperationBlockchainInvokeWithBroadcastBatch(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := reqWithMessage(core.MessageTypeBroadcast)
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		BatchID: fftypes.NewUUID(),
+	}
+	storedBatch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			Type: core.BatchTypeBroadcast,
+		},
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	pin := fftypes.NewRandB32()
+	uploadOp := &core.Operation{
+		Output: fftypes.JSONObject{
+			"payloadRef": "test-payload",
+		},
+	}
+
+	mdm := cm.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", context.Background(), req.Message.Header.ID, data.CRORequireBatchID, data.CRORequirePins).Return(msg, nil, true, nil)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", context.Background(), "ns1", msg.BatchID).Return(storedBatch, nil)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mth.On("FindOperationInTransaction", context.Background(), storedBatch.TX.ID, core.OpTypeSharedStorageUploadBatch).Return(uploadOp, nil)
+	mbp := cm.batch.(*batchmocks.Manager)
+	mbp.On("LoadContexts", context.Background(), mock.MatchedBy(func(b *batch.DispatchPayload) bool {
+		assert.Equal(t, storedBatch, &b.Batch)
+		assert.Equal(t, []*core.Message{msg}, b.Messages)
+		return true
+	})).Run(func(args mock.Arguments) {
+		payload := args[1].(*batch.DispatchPayload)
+		payload.Pins = []*fftypes.Bytes32{pin}
+	}).Return(nil)
+
+	po, err := cm.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+
+	opData := po.Data.(txcommon.BlockchainInvokeData)
+	assert.Equal(t, req, opData.Request)
+	assert.Equal(t, storedBatch, opData.BatchPin.Batch)
+	assert.Equal(t, []*fftypes.Bytes32{pin}, opData.BatchPin.Contexts)
+	assert.Equal(t, "test-payload", opData.BatchPin.PayloadRef)
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mbp.AssertExpectations(t)
+	mth.AssertExpectations(t)
+}
+
+func TestPrepareOperationBlockchainInvokeMessageFailure(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := reqWithMessage(core.MessageTypeBroadcast)
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+
+	mdm := cm.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", context.Background(), req.Message.Header.ID, data.CRORequireBatchID, data.CRORequirePins).Return(nil, nil, false, fmt.Errorf("pop"))
+
+	_, err = cm.PrepareOperation(context.Background(), op)
+	assert.EqualError(t, err, "pop")
+
+	mdm.AssertExpectations(t)
+}
+
+func TestPrepareOperationBlockchainInvokeMessageNotFound(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := reqWithMessage(core.MessageTypeBroadcast)
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+
+	mdm := cm.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", context.Background(), req.Message.Header.ID, data.CRORequireBatchID, data.CRORequirePins).Return(nil, nil, false, nil)
+
+	_, err = cm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF10207", err)
+
+	mdm.AssertExpectations(t)
+}
+
+func TestPrepareOperationBlockchainInvokeBatchFailure(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := reqWithMessage(core.MessageTypeBroadcast)
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		BatchID: fftypes.NewUUID(),
+	}
+
+	mdm := cm.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", context.Background(), req.Message.Header.ID, data.CRORequireBatchID, data.CRORequirePins).Return(msg, nil, true, nil)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", context.Background(), "ns1", msg.BatchID).Return(nil, fmt.Errorf("pop"))
+
+	_, err = cm.PrepareOperation(context.Background(), op)
+	assert.EqualError(t, err, "pop")
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestPrepareOperationBlockchainInvokeBatchNotFound(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := reqWithMessage(core.MessageTypeBroadcast)
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		BatchID: fftypes.NewUUID(),
+	}
+
+	mdm := cm.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", context.Background(), req.Message.Header.ID, data.CRORequireBatchID, data.CRORequirePins).Return(msg, nil, true, nil)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", context.Background(), "ns1", msg.BatchID).Return(nil, nil)
+
+	_, err = cm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF10209", err)
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestPrepareOperationBlockchainInvokeGetUploadFailure(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := reqWithMessage(core.MessageTypeBroadcast)
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		BatchID: fftypes.NewUUID(),
+	}
+	storedBatch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			Type: core.BatchTypeBroadcast,
+		},
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdm := cm.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", context.Background(), req.Message.Header.ID, data.CRORequireBatchID, data.CRORequirePins).Return(msg, nil, true, nil)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", context.Background(), "ns1", msg.BatchID).Return(storedBatch, nil)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mth.On("FindOperationInTransaction", context.Background(), storedBatch.TX.ID, core.OpTypeSharedStorageUploadBatch).Return(nil, fmt.Errorf("pop"))
+
+	_, err = cm.PrepareOperation(context.Background(), op)
+	assert.EqualError(t, err, "pop")
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
+}
+
+func TestPrepareOperationBlockchainInvokeGetUploadNotFound(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := reqWithMessage(core.MessageTypeBroadcast)
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		BatchID: fftypes.NewUUID(),
+	}
+	storedBatch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			Type: core.BatchTypeBroadcast,
+		},
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdm := cm.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", context.Background(), req.Message.Header.ID, data.CRORequireBatchID, data.CRORequirePins).Return(msg, nil, true, nil)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", context.Background(), "ns1", msg.BatchID).Return(storedBatch, nil)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mth.On("FindOperationInTransaction", context.Background(), storedBatch.TX.ID, core.OpTypeSharedStorageUploadBatch).Return(nil, nil)
+
+	_, err = cm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF10444", err)
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
+}
+
+func TestPrepareOperationBlockchainInvokeLoadContextsFail(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := reqWithMessage(core.MessageTypePrivate)
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		BatchID: fftypes.NewUUID(),
+	}
+	storedBatch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			Type: core.BatchTypePrivate,
+		},
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdm := cm.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", context.Background(), req.Message.Header.ID, data.CRORequireBatchID, data.CRORequirePins).Return(msg, nil, true, nil)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", context.Background(), "ns1", msg.BatchID).Return(storedBatch, nil)
+	mbp := cm.batch.(*batchmocks.Manager)
+	mbp.On("LoadContexts", context.Background(), mock.MatchedBy(func(b *batch.DispatchPayload) bool {
+		assert.Equal(t, storedBatch, &b.Batch)
+		assert.Equal(t, []*core.Message{msg}, b.Messages)
+		return true
+	})).Return(fmt.Errorf("pop"))
+
+	_, err = cm.PrepareOperation(context.Background(), op)
+	assert.EqualError(t, err, "pop")
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mbp.AssertExpectations(t)
+}
+
+func TestRunBlockchainInvokeWithBatch(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := reqWithMessage(core.MessageTypePrivate)
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+	storedBatch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
+		Hash: fftypes.NewRandB32(),
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	pin := fftypes.NewRandB32()
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("InvokeContract", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
+		return loc.String() == req.Location.String()
+	}), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
+		return method.Name == req.Method.Name
+	}), req.Input, req.Errors, req.Options, mock.MatchedBy(func(batchPin *blockchain.BatchPin) bool {
+		assert.Equal(t, storedBatch.ID, batchPin.BatchID)
+		assert.Equal(t, storedBatch.Hash, batchPin.BatchHash)
+		assert.Equal(t, storedBatch.TX.ID, batchPin.TransactionID)
+		assert.Equal(t, []*fftypes.Bytes32{pin}, batchPin.Contexts)
+		assert.Equal(t, "test-payload", batchPin.BatchPayloadRef)
+		return true
+	})).Return(nil)
+
+	po := txcommon.OpBlockchainInvoke(op, req, &txcommon.BatchPinData{
+		Batch:      storedBatch,
+		Contexts:   []*fftypes.Bytes32{pin},
+		PayloadRef: "test-payload",
+	})
+	_, complete, err := cm.RunOperation(context.Background(), po)
+
+	assert.False(t, complete)
+	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
 }
 
 func TestRunOperationNotSupported(t *testing.T) {

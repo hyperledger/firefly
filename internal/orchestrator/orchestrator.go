@@ -477,7 +477,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.blockchain() != nil {
 		if or.contracts == nil {
-			or.contracts, err = contracts.NewContractManager(ctx, or.namespace.Name, or.database(), or.blockchain(), or.identity, or.operations, or.txHelper, or.syncasync)
+			or.contracts, err = contracts.NewContractManager(ctx, or.namespace.Name, or.database(), or.blockchain(), or.data, or.broadcast, or.messaging, or.batch, or.identity, or.operations, or.txHelper, or.syncasync)
 			if err != nil {
 				return err
 			}

@@ -119,6 +119,10 @@ type Location struct {
 	Chaincode string `json:"chaincode"`
 }
 
+type ContractOptions struct {
+	CustomPinSupport bool `json:"customPinSupport"`
+}
+
 var batchPinEvent = "BatchPin"
 var batchPinMethodName = "PinBatch"
 var networkActionMethodName = "NetworkAction"
@@ -339,6 +343,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 		BatchHash:  event.Output.GetString("batchHash"),
 		PayloadRef: event.Output.GetString("payloadRef"),
 		Contexts:   event.Output.GetStringArray("contexts"),
+		NsOrAction: nsOrAction,
 	}
 
 	verifier := &core.VerifierRef{
@@ -346,7 +351,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 		Value: signer,
 	}
 
-	return f.callbacks.BatchPinOrNetworkAction(ctx, nsOrAction, subInfo, location, event, verifier, params)
+	return f.callbacks.BatchPinOrNetworkAction(ctx, subInfo, location, event, verifier, params)
 }
 
 func (f *Fabric) buildEventLocationString(chaincode string) string {
@@ -369,18 +374,29 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	})
 }
 
-func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
-	fabricOnChainLocation, err := parseContractLocation(ctx, location)
+func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+	fabricOnChainLocation, err := parseContractLocation(ctx, contract.Location)
 	if err != nil {
 		return "", err
 	}
 
-	version, err := f.GetNetworkVersion(ctx, location)
+	version, err := f.GetNetworkVersion(ctx, contract.Location)
 	if err != nil {
 		return "", err
 	}
 
-	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
+	var options ContractOptions
+	optionBytes := contract.Options.Bytes()
+	if optionBytes != nil {
+		if err = json.Unmarshal(optionBytes, &options); err != nil {
+			log.L(ctx).Warnf("Could not parse multiparty contract options (%s): %s", err, optionBytes)
+		}
+	}
+	if options.CustomPinSupport {
+		fabricOnChainLocation.Chaincode = ""
+	}
+
+	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, f.streamID, batchPinEvent)
 	if err != nil {
 		return "", err
 	}
@@ -415,7 +431,7 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 
 		// Matches one of the active FireFly BatchPin subscriptions
 		if subInfo := f.subs.GetSubscription(sub); subInfo != nil {
-			location, err := encodeContractLocation(ctx, &Location{
+			location, err := encodeContractLocation(ctx, blockchain.NormalizeCall, &Location{
 				Chaincode: msgJSON.GetString("chaincodeId"),
 				Channel:   subInfo.Extra.(string),
 			})
@@ -594,12 +610,7 @@ func hexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
-	fabricOnChainLocation, err := parseContractLocation(ctx, location)
-	if err != nil {
-		return err
-	}
-
+func (f *Fabric) buildBatchPinInput(ctx context.Context, version int, namespace string, batch *blockchain.BatchPin) (prefixItems []*PrefixItem, pinInput map[string]interface{}) {
 	hashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		hashes[i] = hexFormatB32(v)
@@ -608,18 +619,10 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, s
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
 
-	version, err := f.GetNetworkVersion(ctx, location)
-	if err != nil {
-		return err
-	}
-
-	var prefixItems []*PrefixItem
-	var pinInput map[string]interface{}
-
 	if version == 1 {
 		prefixItems = batchPinPrefixItemsV1
 		pinInput = map[string]interface{}{
-			"namespace":  networkNamespace,
+			"namespace":  namespace,
 			"uuids":      hexFormatB32(&uuids),
 			"batchHash":  hexFormatB32(batch.BatchHash),
 			"payloadRef": batch.BatchPayloadRef,
@@ -634,6 +637,21 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, s
 			"contexts":   hashes,
 		}
 	}
+	return prefixItems, pinInput
+}
+
+func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+	fabricOnChainLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	version, err := f.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	prefixItems, pinInput := f.buildBatchPinInput(ctx, version, networkNamespace, batch)
 
 	input, _ := jsonEncodeInput(pinInput)
 	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, prefixItems, input, nil)
@@ -712,7 +730,12 @@ func (f *Fabric) DeployContract(ctx context.Context, nsOpID, signingKey string, 
 	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error {
+func (f *Fabric) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
+	// No additional validation beyond what is enforced by Contract Manager
+	return nil
+}
+
+func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -730,6 +753,16 @@ func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey s
 			Name: param.Name,
 			Type: paramSchema.Type,
 		}
+	}
+
+	if batch != nil {
+		_, batchPin := f.buildBatchPinInput(ctx, 2, "", batch)
+		if input == nil {
+			input = make(map[string]interface{})
+		}
+		batchPinBytes, _ := json.Marshal(batchPin)
+		lastParam := method.Params[len(method.Params)-1]
+		input[lastParam.Name] = string(batchPinBytes)
 	}
 
 	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, nsOpID, prefixItems, input, options)
@@ -779,12 +812,12 @@ func jsonEncodeInput(params map[string]interface{}) (output map[string]interface
 	return
 }
 
-func (f *Fabric) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
+func (f *Fabric) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
 	parsed, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
-	return encodeContractLocation(ctx, parsed)
+	return encodeContractLocation(ctx, ntype, parsed)
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
@@ -801,11 +834,11 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &fabricLocation, nil
 }
 
-func encodeContractLocation(ctx context.Context, location *Location) (result *fftypes.JSONAny, err error) {
+func encodeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *Location) (result *fftypes.JSONAny, err error) {
 	if location.Channel == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'channel' not set")
 	}
-	if location.Chaincode == "" {
+	if ntype == blockchain.NormalizeCall && location.Chaincode == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'chaincode' not set")
 	}
 	normalized, err := json.Marshal(location)
@@ -910,7 +943,7 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 	}
 	fromBlock = string(core.SubOptsFirstEventOldest)
 
-	location, err = encodeContractLocation(ctx, &Location{
+	location, err = encodeContractLocation(ctx, blockchain.NormalizeListener, &Location{
 		Chaincode: chaincode,
 		Channel:   f.defaultChannel,
 	})

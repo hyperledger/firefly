@@ -296,7 +296,8 @@ var (
 	ConfigNamespacesMultipartyNodeDescription    = ffc("config.namespaces.predefined[].multiparty.node.description", "A description for the node in this namespace", i18n.StringType)
 	ConfigNamespacesMultipartyContract           = ffc("config.namespaces.predefined[].contract", "A list containing configuration for the multi-party blockchain contract", i18n.StringType)
 	ConfigNamespacesMultipartyContractFirstEvent = ffc("config.namespaces.predefined[].multiparty.contract[].firstEvent", "The first event the contract should process. Valid options are `oldest` or `newest`", i18n.StringType)
-	ConfigNamespacesMultipartyContractLocation   = ffc("config.namespaces.predefined[].multiparty.contract[].location", "A blockchain-specific contract location. For example, an Ethereum contract address, or a Fabric chaincode name and channe", i18n.StringType)
+	ConfigNamespacesMultipartyContractLocation   = ffc("config.namespaces.predefined[].multiparty.contract[].location", "A blockchain-specific contract location. For example, an Ethereum contract address, or a Fabric chaincode name and channel", i18n.StringType)
+	ConfigNamespacesMultipartyContractOptions    = ffc("config.namespaces.predefined[].multiparty.contract[].options", "Blockchain-specific contract options", i18n.StringType)
 
 	ConfigNodeDescription = ffc("config.node.description", "The description of this FireFly node", i18n.StringType)
 	ConfigNodeName        = ffc("config.node.name", "The name of this FireFly node", i18n.StringType)

@@ -61,8 +61,10 @@ const (
 	NamespaceMultipartyContract = "contract"
 	// NamespaceMultipartyContractFirstEvent is the first event to process for this contract
 	NamespaceMultipartyContractFirstEvent = "firstEvent"
-	// NamespaceMultipartyContractLocation is an object containing blockchain specific configuration
+	// NamespaceMultipartyContractLocation is an object specifying the blockchain-specific location of the contract
 	NamespaceMultipartyContractLocation = "location"
+	// NamespaceMultipartyContractOptions is an object of additional blockchain-specific configuration
+	NamespaceMultipartyContractOptions = "options"
 )
 
 // The following keys can be access from the root configuration.
