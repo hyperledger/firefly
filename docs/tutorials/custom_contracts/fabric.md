@@ -7,17 +7,19 @@ nav_order: 2
 ---
 
 # Work with Hyperledger Fabric chaincodes
+
 {: .no_toc }
 
 This guide describes the steps to deploy a chaincode to a Hyperledger Fabric blockchain and use FireFly to interact with it in order to submit transactions, query for states and listening for events.
 
-> **NOTE:** This guide assumes that you are running a local FireFly stack with at least 2 members and a Fabric blockchain created by the FireFly CLI. If you need help getting that set up, please see the [Getting Started guide to Start your environment](https://nguyer.github.io/firefly/gettingstarted/setup_env.html).
+> **NOTE:** This guide assumes that you are running a local FireFly stack with at least 2 members and a Fabric blockchain created by the FireFly CLI. If you need help getting that set up, please see the [Getting Started guide to Start your environment](../../gettingstarted/setup_env.html).
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
