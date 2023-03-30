@@ -58,6 +58,7 @@ func TestGroupInitWriteGroupFail(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(node, nil)
 	mim.On("CachedIdentityLookupMustExist", mock.Anything, member.Identity).Return(org, false, nil)
 	mim.On("ValidateNodeOwner", mock.Anything, node, org).Return(true, nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
@@ -90,6 +91,7 @@ func TestGroupInitWriteMessageFail(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(node, nil)
 	mim.On("CachedIdentityLookupMustExist", mock.Anything, member.Identity).Return(org, false, nil)
 	mim.On("ValidateNodeOwner", mock.Anything, node, org).Return(true, nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
@@ -121,6 +123,7 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(node, nil)
 	mim.On("CachedIdentityLookupMustExist", mock.Anything, member.Identity).Return(org, false, nil)
 	mim.On("ValidateNodeOwner", mock.Anything, node, org).Return(true, nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 
 	group := &core.Group{
 		GroupIdentity: core.GroupIdentity{
@@ -133,6 +136,34 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+}
+
+func TestGroupInitResolveKeyFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	member := &core.Member{Identity: "id1", Node: fftypes.NewUUID()}
+	node := &core.Identity{}
+	org := &core.Identity{}
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", mock.Anything, member.Node).Return(node, nil)
+	mim.On("CachedIdentityLookupMustExist", mock.Anything, member.Identity).Return(org, false, nil)
+	mim.On("ValidateNodeOwner", mock.Anything, node, org).Return(true, nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Namespace: "ns1",
+			Members:   core.Members{member},
+		},
+	}
+	group.Seal()
+	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
+	assert.Regexp(t, "pop", err)
+
 	mim.AssertExpectations(t)
 }
 

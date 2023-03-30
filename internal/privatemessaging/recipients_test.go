@@ -56,6 +56,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("ValidateNodeOwner", pm.ctx, localNode, localOrg).Return(true, nil)
 	mim.On("ValidateNodeOwner", pm.ctx, remoteNode, remoteOrg).Return(true, nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	ud := mdi.On("UpsertData", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	ud.RunFn = func(a mock.Arguments) {

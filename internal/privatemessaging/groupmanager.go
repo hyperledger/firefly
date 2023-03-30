@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -133,14 +133,19 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *core.SignerRef, g
 			Group:     group.Hash,
 			Namespace: gm.namespace.NetworkName,
 			Type:      core.MessageTypeGroupInit,
-			SignerRef: *signer,
 			Tag:       core.SystemTagDefineGroup,
 			Topics:    fftypes.FFStringArray{group.Topic()},
 			TxType:    core.TransactionTypeBatchPin,
+			SignerRef: core.SignerRef{
+				Author: signer.Author, // Use the author's registered key (even if the message uses another key)
+			},
 		},
 		Data: core.DataRefs{
 			{ID: data.ID, Hash: data.Hash},
 		},
+	}
+	if err = gm.identity.ResolveInputSigningIdentity(ctx, &msg.Header.SignerRef); err != nil {
+		return err
 	}
 	if err = msg.Seal(ctx); err == nil {
 		err = gm.database.RunAsGroup(ctx, func(ctx context.Context) error {
