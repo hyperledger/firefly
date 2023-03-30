@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -69,7 +69,7 @@ func PollForUp(t *testing.T, client *client.FireFlyClient) {
 		time.Sleep(5 * time.Second)
 	}
 	require.NoError(t, err)
-	assert.Equal(t, 200, resp.StatusCode())
+	require.Equal(t, 200, resp.StatusCode())
 }
 
 func ValidateAccountBalances(t *testing.T, client *client.FireFlyClient, poolID *fftypes.UUID, tokenIndex string, balances map[string]int64) {

@@ -262,6 +262,12 @@ func (nm *namespaceManager) startV1NamespaceIfRequired(nsToCheck *namespace) err
 		// Ok - we've now initialized the system NS
 		nm.namespaces[core.LegacySystemNamespace] = systemNS
 		log.L(nm.ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, nsToCheck.Name)
+		err := systemNS.orchestrator.Start()
+		if err == nil {
+			log.L(nm.ctx).Infof("Namespace %s started", core.LegacySystemNamespace)
+			systemNS.started = true
+		}
+		return err
 	}
 
 	return nil

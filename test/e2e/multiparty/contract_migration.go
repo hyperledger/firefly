@@ -102,11 +102,11 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	// Reset both nodes to pick up the new namespace
 	e2e.ResetFireFly(suite.T(), admin1)
 	e2e.ResetFireFly(suite.T(), admin2)
-	e2e.PollForUp(suite.T(), suite.testState.client1)
-	e2e.PollForUp(suite.T(), suite.testState.client2)
 
 	client1 := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, testNamespace)
 	client2 := client.NewFireFly(suite.T(), suite.testState.client2.Hostname, testNamespace)
+	e2e.PollForUp(suite.T(), client1)
+	e2e.PollForUp(suite.T(), client2)
 
 	eventNames := "message_confirmed|blockchain_event_received"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s", testNamespace, eventNames)
@@ -116,6 +116,8 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	if startOnV1 {
 		systemClient1 := client.NewFireFly(suite.T(), suite.testState.client1.Hostname, "ff_system")
 		systemClient2 := client.NewFireFly(suite.T(), suite.testState.client2.Hostname, "ff_system")
+		e2e.PollForUp(suite.T(), systemClient1)
+		e2e.PollForUp(suite.T(), systemClient2)
 
 		// Register org/node identities on ff_system if not registered (but not on the new namespace)
 		if systemClient1.GetOrganization(suite.T(), suite.testState.org1.Name) == nil {
