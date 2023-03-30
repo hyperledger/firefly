@@ -192,7 +192,6 @@ var (
 	MsgAddressResolveBadStatus            = ffe("FF10340", "Failed to resolve signing key string '%s' [%d]: %s", 500)
 	MsgAddressResolveBadResData           = ffe("FF10341", "Failed to resolve signing key string '%s' - invalid address returned '%s': %s", 500)
 	MsgDXNotInitialized                   = ffe("FF10342", "Data exchange is initializing")
-	MsgGroupRequired                      = ffe("FF10344", "Group must be set", 400)
 	MsgDBLockFailed                       = ffe("FF10345", "Database lock failed")
 	MsgFFIGenerationFailed                = ffe("FF10346", "Error generating smart contract interface: %s", 400)
 	MsgFFIGenerationUnsupported           = ffe("FF10347", "Smart contract interface generation is not supported by this blockchain plugin", 400)
