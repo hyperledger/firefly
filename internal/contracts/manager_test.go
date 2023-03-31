@@ -2203,6 +2203,7 @@ func TestInvokeContractIdempotentResubmitOperation(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	mbm := cm.blockchain.(*blockchainmocks.Plugin)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2222,6 +2223,7 @@ func TestInvokeContractIdempotentResubmitOperation(t *testing.T) {
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(&core.Operation{}, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mbm.On("ValidateInvokeRequest", context.Background(), req.Method, req.Input, req.Errors, false).Return(nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
 	_, err := cm.InvokeContract(context.Background(), req, false)
@@ -2230,6 +2232,7 @@ func TestInvokeContractIdempotentResubmitOperation(t *testing.T) {
 	mth.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mom.AssertExpectations(t)
+	mbm.AssertExpectations(t)
 }
 
 func TestInvokeContractIdempotentNoOperationToResubmit(t *testing.T) {
@@ -2238,6 +2241,7 @@ func TestInvokeContractIdempotentNoOperationToResubmit(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	mbm := cm.blockchain.(*blockchainmocks.Plugin)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2257,6 +2261,7 @@ func TestInvokeContractIdempotentNoOperationToResubmit(t *testing.T) {
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mbm.On("ValidateInvokeRequest", context.Background(), req.Method, req.Input, req.Errors, false).Return(nil)
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
 	_, err := cm.InvokeContract(context.Background(), req, false)
@@ -2266,6 +2271,7 @@ func TestInvokeContractIdempotentNoOperationToResubmit(t *testing.T) {
 	mth.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mom.AssertExpectations(t)
+	mbm.AssertExpectations(t)
 }
 
 func TestInvokeContractIdempotentErrorOnOperationResubmit(t *testing.T) {
@@ -2274,6 +2280,7 @@ func TestInvokeContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	mbm := cm.blockchain.(*blockchainmocks.Plugin)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2293,6 +2300,7 @@ func TestInvokeContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mbm.On("ValidateInvokeRequest", context.Background(), req.Method, req.Input, req.Errors, false).Return(nil)
 
 	// If ResubmitOperations returns an error trying to resubmit an operation we expect that back, not a 409 conflict
 	_, err := cm.InvokeContract(context.Background(), req, false)
@@ -2302,6 +2310,7 @@ func TestInvokeContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 	mth.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mom.AssertExpectations(t)
+	mbm.AssertExpectations(t)
 }
 
 func TestInvokeContractConfirm(t *testing.T) {
