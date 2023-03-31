@@ -199,7 +199,7 @@ func (om *operationsManager) RetryOperation(ctx context.Context, opID *fftypes.U
 
 		// Create a copy of the operation with a new ID
 		op.ID = fftypes.NewUUID()
-		op.Status = core.OpStatusPending
+		op.Status = core.OpStatusInitialized
 		op.Error = ""
 		op.Output = nil
 		op.Created = fftypes.Now()

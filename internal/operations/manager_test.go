@@ -260,7 +260,7 @@ func TestRetryOperationSuccess(t *testing.T) {
 	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(newOp *core.Operation) bool {
 		assert.NotEqual(t, opID, newOp.ID)
 		assert.Equal(t, "blockchain", newOp.Plugin)
-		assert.Equal(t, core.OpStatusPending, newOp.Status)
+		assert.Equal(t, core.OpStatusInitialized, newOp.Status)
 		assert.Equal(t, core.OpTypeBlockchainPinBatch, newOp.Type)
 		return true
 	})).Return(nil)

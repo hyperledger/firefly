@@ -1041,7 +1041,7 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 		}
 		// If the status has changed, mock up blockchain receipt as if we'd received it
 		// as a web socket notification
-		if operation.Status == core.OpStatusPending && txStatus != ethTxStatusPending {
+		if (operation.Status == core.OpStatusPending || operation.Status == core.OpStatusInitialized) && txStatus != ethTxStatusPending {
 			receipt := &common.BlockchainReceiptNotification{
 				Headers: common.BlockchainReceiptHeaders{
 					ReceiptID: statusResponse.GetString("id"),
