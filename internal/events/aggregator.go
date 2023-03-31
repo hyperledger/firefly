@@ -451,8 +451,8 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 
 	unmaskedContexts := make([]*fftypes.Bytes32, 0)
 	nextPins := make([]*nextPinState, 0)
-	var newState core.MessageState
-	var dispatched bool
+	action := core.ActionWait
+	var correlator *fftypes.UUID
 
 	var cro data.CacheReadOption
 	if pin.Masked {
@@ -469,6 +469,12 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 	case !dataAvailable:
 		l.Errorf("Message '%s' in batch '%s' is missing data", msgEntry.ID, manifest.ID)
 	default:
+		// Check the pin signer is valid for the message
+		action, err = ag.checkOnchainConsistency(ctx, msg, pin)
+		if action != core.ActionConfirm {
+			break
+		}
+
 		// Check if it's ready to be processed
 		if pin.Masked {
 			// Private messages have one or more masked "pin" hashes that allow us to work
@@ -509,27 +515,28 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		}
 
 		l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
-		newState, dispatched, err = ag.attemptMessageDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
-		if err != nil {
-			return err
-		}
+		action, correlator, err = ag.readyForDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
 	}
 
-	// Mark all message pins dispatched true/false
-	// - dispatched=true: we need to write them dispatched in the DB at the end of the batch, and increment all nextPins
-	// - dispatched=false: we need to prevent dispatch of any subsequent messages on the same topic in the batch
-	if dispatched {
-		for _, np := range nextPins {
-			np.IncrementNextPin(ctx, ag.namespace)
-		}
-		state.markMessageDispatched(manifest.ID, msg, msgBaseIndex, newState)
-	} else {
+	if action == core.ActionRetry {
+		return err
+	} else if action == core.ActionWait {
+		// We need to prevent dispatch of any subsequent messages on the same topic in the batch
 		for _, unmaskedContext := range unmaskedContexts {
 			state.SetContextBlockedBy(ctx, *unmaskedContext, pin.Sequence)
 		}
+		return nil
 	}
 
-	return nil
+	newState := ag.completeDispatch(action, correlator, msg, manifest.TX.ID, state)
+
+	// Mark all message pins dispatched, and increment all nextPins
+	for _, np := range nextPins {
+		np.IncrementNextPin(ctx, ag.namespace)
+	}
+	state.markMessageDispatched(manifest.ID, msg, msgBaseIndex, newState)
+
+	return err
 }
 
 func needsTokenTransfer(msg *core.Message) bool {
@@ -544,79 +551,84 @@ func needsTokenApproval(msg *core.Message) bool {
 		msg.Header.Type == core.MessageTypeDeprecatedApprovalPrivate
 }
 
-func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState, pin *core.Pin) (newState core.MessageState, dispatched bool, err error) {
-	var customCorrelator *fftypes.UUID
+func (ag *aggregator) readyForDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState, pin *core.Pin) (action core.MessageAction, correlator *fftypes.UUID, err error) {
+	// Verify we have all the blobs for the data
+	if resolved, err := ag.resolveBlobs(ctx, data); err != nil {
+		return core.ActionRetry, nil, err
+	} else if !resolved {
+		return core.ActionWait, nil, nil
+	}
 
-	// Check the pin signer is valid for the message
-	action, err := ag.checkOnchainConsistency(ctx, msg, pin)
-	if action == core.ActionConfirm {
-		// Verify we have all the blobs for the data
-		if resolved, err := ag.resolveBlobs(ctx, data); err != nil || !resolved {
-			return "", false, err
+	// For transfers, verify the transfer has come through
+	if needsTokenTransfer(msg) {
+		fb := database.TokenTransferQueryFactory.NewFilter(ctx)
+		filter := fb.And(
+			fb.Eq("message", msg.Header.ID),
+		)
+		transfers, _, err := ag.database.GetTokenTransfers(ctx, ag.namespace, filter)
+		if err != nil {
+			return core.ActionRetry, nil, err
 		}
-
-		// For transfers, verify the transfer has come through
-		if needsTokenTransfer(msg) {
-			fb := database.TokenTransferQueryFactory.NewFilter(ctx)
-			filter := fb.And(
-				fb.Eq("message", msg.Header.ID),
-			)
-			if transfers, _, err := ag.database.GetTokenTransfers(ctx, ag.namespace, filter); err != nil || len(transfers) == 0 {
-				log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
-				return "", false, err
-			} else if !msg.Hash.Equals(transfers[0].MessageHash) {
-				log.L(ctx).Errorf("Message hash %s does not match hash recorded in transfer: %s", msg.Hash, transfers[0].MessageHash)
-				return "", false, nil
-			}
+		if len(transfers) == 0 {
+			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
+			return core.ActionWait, nil, nil
 		}
-
-		// For approvals, verify the approval has come through
-		if needsTokenApproval(msg) {
-			fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
-			filter := fb.And(
-				fb.Eq("message", msg.Header.ID),
-			)
-			if approvals, _, err := ag.database.GetTokenApprovals(ctx, ag.namespace, filter); err != nil || len(approvals) == 0 {
-				log.L(ctx).Debugf("Approval for message %s not yet available", msg.Header.ID)
-				return "", false, err
-			} else if !msg.Hash.Equals(approvals[0].MessageHash) {
-				log.L(ctx).Errorf("Message hash %s does not match hash recorded in approval: %s", msg.Hash, approvals[0].MessageHash)
-				return "", false, nil
-			}
-		}
-
-		// Validate the message data
-		switch {
-		case msg.Header.Type == core.MessageTypeDefinition:
-			// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
-			// dispatched subsequent events before we have processed the definition events they depend on.
-			var handlerResult definitions.HandlerResult
-			handlerResult, err = ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
-			log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
-			customCorrelator = handlerResult.CustomCorrelator
-			action = handlerResult.Action
-
-		case msg.Header.Type == core.MessageTypeGroupInit:
-			// Already handled as part of resolving the context - do nothing.
-
-		case len(msg.Data) > 0:
-			action = core.ActionReject
-			valid, err := ag.data.ValidateAll(ctx, data)
-			if err != nil {
-				return "", false, err
-			} else if valid {
-				action = core.ActionConfirm
-			}
+		if !msg.Hash.Equals(transfers[0].MessageHash) {
+			log.L(ctx).Errorf("Message hash %s does not match hash recorded in transfer: %s", msg.Hash, transfers[0].MessageHash)
+			return core.ActionWait, nil, nil
 		}
 	}
 
-	if action == core.ActionRetry {
-		return "", false, err
-	} else if action == core.ActionWait {
-		return "", false, nil
+	// For approvals, verify the approval has come through
+	if needsTokenApproval(msg) {
+		fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
+		filter := fb.And(
+			fb.Eq("message", msg.Header.ID),
+		)
+		approvals, _, err := ag.database.GetTokenApprovals(ctx, ag.namespace, filter)
+		if err != nil {
+			return core.ActionRetry, nil, err
+		}
+		if len(approvals) == 0 {
+			log.L(ctx).Debugf("Approval for message %s not yet available", msg.Header.ID)
+			return core.ActionWait, nil, nil
+		}
+		if !msg.Hash.Equals(approvals[0].MessageHash) {
+			log.L(ctx).Errorf("Message hash %s does not match hash recorded in approval: %s", msg.Hash, approvals[0].MessageHash)
+			return core.ActionWait, nil, nil
+		}
 	}
 
-	newState = core.MessageStateConfirmed
+	// Validate the message data
+	switch {
+	case msg.Header.Type == core.MessageTypeDefinition:
+		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
+		// dispatched subsequent events before we have processed the definition events they depend on.
+		var handlerResult definitions.HandlerResult
+		handlerResult, err = ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
+		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
+		correlator = handlerResult.CustomCorrelator
+		action = handlerResult.Action
+
+	case msg.Header.Type == core.MessageTypeGroupInit:
+		// Already handled as part of resolving the context - do nothing.
+
+	case len(msg.Data) > 0:
+		var valid bool
+		valid, err = ag.data.ValidateAll(ctx, data)
+		action = core.ActionReject
+		if err != nil {
+			action = core.ActionRetry
+		} else if valid {
+			action = core.ActionConfirm
+		}
+	}
+
+	return action, correlator, err
+}
+
+func (ag *aggregator) completeDispatch(action core.MessageAction, correlator *fftypes.UUID, msg *core.Message, tx *fftypes.UUID, state *batchState) core.MessageState {
+	newState := core.MessageStateConfirmed
 	eventType := core.EventTypeMessageConfirmed
 	if action == core.ActionConfirm {
 		state.AddPendingConfirm(msg.Header.ID, msg)
@@ -630,11 +642,11 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		for _, topic := range msg.Header.Topics {
 			event := core.NewEvent(eventType, ag.namespace, msg.Header.ID, tx, topic)
 			event.Correlator = msg.Header.CID
-			if customCorrelator != nil {
+			if correlator != nil {
 				// Definition handlers can set a custom event correlator (such as a token pool ID)
-				event.Correlator = customCorrelator
+				event.Correlator = correlator
 			}
-			if err = ag.database.InsertEvent(ctx, event); err != nil {
+			if err := ag.database.InsertEvent(ctx, event); err != nil {
 				return err
 			}
 		}
@@ -643,8 +655,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 	if ag.metrics.IsMetricsEnabled() {
 		ag.metrics.MessageConfirmed(msg, eventType)
 	}
-
-	return newState, true, nil
+	return newState
 }
 
 // resolveBlobs ensures that the blobs for all the attachments in the data array, have been received into the
