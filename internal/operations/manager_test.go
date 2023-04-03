@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -264,7 +264,7 @@ func TestRetryOperationSuccess(t *testing.T) {
 		assert.Equal(t, core.OpTypeBlockchainPinBatch, newOp.Type)
 		return true
 	})).Return(nil)
-	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.MatchedBy(func(update ffapi.Update) bool {
+	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.Anything, mock.MatchedBy(func(update ffapi.Update) bool {
 		info, err := update.Finalize()
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(info.SetOperations))
@@ -273,7 +273,7 @@ func TestRetryOperationSuccess(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, op.ID.String(), val)
 		return true
-	})).Return(nil)
+	})).Return(true, nil)
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	newOp, err := om.RetryOperation(ctx, op.ID)
@@ -400,7 +400,7 @@ func TestRetryOperationUpdateFail(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, nil)
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(nil)
-	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RetryOperation(ctx, op.ID)
@@ -426,11 +426,11 @@ func TestResolveOperationByNamespacedIDOk(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("UpdateOperation", ctx, "ns1", opID, mock.MatchedBy(updateMatcher([][]string{
+	mdi.On("UpdateOperation", ctx, "ns1", opID, mock.Anything, mock.MatchedBy(updateMatcher([][]string{
 		{"status", "Succeeded"},
 		{"error", errStr},
 		{"output", opUpdate.Output.String()},
-	}))).Return(nil)
+	}))).Return(true, nil)
 
 	err := om.ResolveOperationByID(ctx, opID, opUpdate)
 

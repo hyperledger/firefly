@@ -2750,18 +2750,28 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, rowID int64, update ffapi.Up
 	return r0
 }
 
-// UpdateOperation provides a mock function with given fields: ctx, namespace, id, update
-func (_m *Plugin) UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) error {
-	ret := _m.Called(ctx, namespace, id, update)
+// UpdateOperation provides a mock function with given fields: ctx, namespace, id, filter, update
+func (_m *Plugin) UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, filter ffapi.Filter, update ffapi.Update) (bool, error) {
+	ret := _m.Called(ctx, namespace, id, filter, update)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, ffapi.Update) error); ok {
-		r0 = rf(ctx, namespace, id, update)
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, ffapi.Filter, ffapi.Update) (bool, error)); ok {
+		return rf(ctx, namespace, id, filter, update)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, ffapi.Filter, ffapi.Update) bool); ok {
+		r0 = rf(ctx, namespace, id, filter, update)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, ffapi.Filter, ffapi.Update) error); ok {
+		r1 = rf(ctx, namespace, id, filter, update)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // UpdatePins provides a mock function with given fields: ctx, namespace, filter, update
