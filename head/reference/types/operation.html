@@ -298,6 +298,7 @@
 
 <ol id="markdown-toc">
   <li><a href="#operation-1" id="markdown-toc-operation-1">Operation</a>    <ol>
+      <li><a href="#operation-status" id="markdown-toc-operation-status">Operation status</a></li>
       <li><a href="#example" id="markdown-toc-example">Example</a></li>
       <li><a href="#field-descriptions" id="markdown-toc-field-descriptions">Field Descriptions</a></li>
     </ol>
@@ -320,6 +321,22 @@ FireFly plugin type. The color coding (and numbers) map those different types of
 to the <a href="./transaction.html">Transaction</a> types that include those operations.</p>
 
 <p><a href="../../images/operations_by_transaction_type.jpg"><img src="../../images/operations_by_transaction_type.jpg" alt="FireFly operations by transaction type" /></a></p>
+      <h3 id="operation-status">
+        
+        
+          <a href="#operation-status" class="anchor-heading" aria-labelledby="operation-status"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Operation status
+        
+        
+      </h3>
+    
+
+<p>When initially created an operation is in <code class="language-plaintext highlighter-rouge">Initialized</code> state. Once the operation has been successfully sent to its respective plugin to be processed its
+status moves to <code class="language-plaintext highlighter-rouge">Pending</code> state. This indicates that the plugin is processing the operation. The operation will then move to <code class="language-plaintext highlighter-rouge">Succeeded</code> or <code class="language-plaintext highlighter-rouge">Failed</code>
+state depending on the outcome.</p>
+
+<p>In the event that an operation could not be submitted to the plugin for processing, for example because the plugin’s microservice was temporarily
+unavailable, the operation will remain in <code class="language-plaintext highlighter-rouge">Initialized</code> state. Re-submitting the same FireFly API call using the same idempotency key will cause FireFly
+to re-submit the operation to its plugin.</p>
       <h3 id="example">
         
         
