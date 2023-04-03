@@ -6,8 +6,8 @@
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.2.2",
-    "sha": "9032e45ea9cee7d881ce88eaea720f450d2ed176e96137feb495c5e7850fab45"
+    "tag": "v1.2.6-20230403-44",
+    "sha": "7181937056fc056cace8e2797e51ad5809a4dde93ea1f075a8ad258dde22a1d1"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
