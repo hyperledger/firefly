@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -44,6 +44,7 @@ type Manager interface {
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
 	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
+	ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (*core.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
 	SubmitOperationUpdate(update *core.OperationUpdate)
 	GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
@@ -111,6 +112,30 @@ func (om *operationsManager) PrepareOperation(ctx context.Context, op *core.Oper
 	return handler.PrepareOperation(ctx, op)
 }
 
+func (om *operationsManager) ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (*core.Operation, error) {
+	var resubmitErr error
+	var operation *core.Operation
+	fb := database.OperationQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("tx", txID),
+		fb.Eq("status", core.OpStatusInitialized),
+	)
+	initializedOperations, _, opErr := om.database.GetOperations(ctx, om.namespace, filter)
+
+	if opErr != nil {
+		// Couldn't query operations. Log and return the original error
+		log.L(ctx).Errorf("Failed to lookup initialized operations for TX %v: %v", txID, opErr)
+		return nil, opErr
+	}
+
+	for _, nextInitializedOp := range initializedOperations {
+		operation = nextInitializedOp
+		prepOp, _ := om.PrepareOperation(ctx, nextInitializedOp)
+		_, resubmitErr = om.RunOperation(ctx, prepOp)
+	}
+	return operation, resubmitErr
+}
+
 func (om *operationsManager) RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error) {
 	failState := core.OpStatusFailed
 	for _, o := range options {
@@ -134,11 +159,19 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 			ErrorMessage:   err.Error(),
 			Output:         outputs,
 		})
-	} else if complete {
+	} else {
+		// No error so move us from "Initialized" to "Pending"
+		newState := core.OpStatusPending
+
+		if complete {
+			// If the operation is actually completed synchronously skip "Pending" state and go to "Succeeded"
+			newState = core.OpStatusSucceeded
+		}
+
 		om.SubmitOperationUpdate(&core.OperationUpdate{
 			NamespacedOpID: op.NamespacedIDString(),
 			Plugin:         op.Plugin,
-			Status:         core.OpStatusSucceeded,
+			Status:         newState,
 			Output:         outputs,
 		})
 	}
@@ -166,7 +199,7 @@ func (om *operationsManager) RetryOperation(ctx context.Context, opID *fftypes.U
 
 		// Create a copy of the operation with a new ID
 		op.ID = fftypes.NewUUID()
-		op.Status = core.OpStatusPending
+		op.Status = core.OpStatusInitialized
 		op.Error = ""
 		op.Output = nil
 		op.Created = fftypes.Now()

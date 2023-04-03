@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
@@ -246,15 +247,31 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 		txtype = core.TransactionTypeContractInvokePin
 	}
 	txid, err := cm.txHelper.SubmitNewTransaction(ctx, txtype, req.IdempotencyKey)
+	var op *core.Operation
 	if err != nil {
-		return nil, err
+		var resubmitErr error
+		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+		// submitting to their handlers
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			op, resubmitErr = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+
+			if resubmitErr != nil {
+				// Error doing resubmit, return the new error
+				err = resubmitErr
+			} else if op != nil {
+				// We successfully resubmitted an initialized operation, return the operation
+				// and the idempotent error. The caller will revert the 409 to 2xx
+				err = idemErr
+			}
+		}
+		return op, err
 	}
 	if req.Message != nil {
 		req.Message.Header.TxType = txtype
 		req.Message.TransactionID = txid
 	}
 
-	op := core.NewOperation(
+	op = core.NewOperation(
 		cm.blockchain,
 		cm.namespace,
 		txid,
@@ -267,11 +284,27 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 
 func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core.ContractDeployRequest) (*core.Operation, error) {
 	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractDeploy, req.IdempotencyKey)
+	var op *core.Operation
 	if err != nil {
-		return nil, err
+		var resubmitErr error
+		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+		// submitting to their handlers
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			op, resubmitErr = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+
+			if resubmitErr != nil {
+				// Error doing resubmit, return the new error
+				err = resubmitErr
+			} else if op != nil {
+				// We successfully resubmitted an initialized operation, return the operation
+				// and the idempotent error. The caller will revert the 409 to 2xx
+				err = idemErr
+			}
+		}
+		return op, err
 	}
 
-	op := core.NewOperation(
+	op = core.NewOperation(
 		cm.blockchain,
 		cm.namespace,
 		txid,
@@ -291,12 +324,16 @@ func (cm *contractManager) DeployContract(ctx context.Context, req *core.Contrac
 	var op *core.Operation
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		op, err = cm.writeDeployTransaction(ctx, req)
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	})
 	if err != nil {
+		if _, ok := err.(*sqlcommon.IdempotencyError); ok {
+			if op != nil {
+				// Idempotency key clash but we resubmitted an initialized operation? Return 20x, not 409
+				return op, nil
+			}
+		}
+		// Any other error? Return the error unchanged
 		return nil, err
 	}
 
@@ -349,6 +386,13 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 		return nil
 	})
 	if err != nil {
+		if _, ok := err.(*sqlcommon.IdempotencyError); ok {
+			if op != nil {
+				// Idempotency key clash but we resubmitted an initialized operation? Return 20x, not 409
+				return op, nil
+			}
+		}
+		// Any other error? Return the error unchanged
 		return nil, err
 	}
 

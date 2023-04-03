@@ -2943,6 +2943,47 @@ func TestGetTransactionStatus(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetTransactionStatusNoDefaultChannel(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	resetConf(e)
+
+	utFabconnectConf.Set(FabconnectConfigDefaultChannel, "")
+
+	output := make(map[string]interface{}, 0)
+	output["transactionHash"] = "7cd2549e310898ceb5f8d15112e74e0395c2f7ccd434293cd29cdb6bc358e85a"
+	op := &core.Operation{
+		Output: output,
+	}
+
+	_, err := e.GetTransactionStatus(context.Background(), op)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "FF10440")
+}
+
+func TestGetTransactionStatusNoDefaultSigner(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	resetConf(e)
+
+	utFabconnectConf.Set(FabconnectConfigSigner, "")
+	utFabconnectConf.Set(FabconnectConfigDefaultChannel, "firefly")
+
+	output := make(map[string]interface{}, 0)
+	output["transactionHash"] = "7cd2549e310898ceb5f8d15112e74e0395c2f7ccd434293cd29cdb6bc358e85a"
+	op := &core.Operation{
+		Output: output,
+	}
+
+	_, err := e.GetTransactionStatus(context.Background(), op)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "FF10354")
+}
+
 func TestGetTransactionStatusNoResult(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
