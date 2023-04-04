@@ -212,7 +212,7 @@ func (om *operationsManager) RetryOperation(ctx context.Context, opID *fftypes.U
 		// Update the old operation to point to the new one
 		update := database.OperationQueryFactory.NewUpdate(ctx).Set("retry", op.ID)
 		om.updateCachedOperation(opID, "", nil, nil, op.ID)
-		if err = om.database.UpdateOperation(ctx, om.namespace, opID, update); err != nil {
+		if _, err := om.database.UpdateOperation(ctx, om.namespace, opID, nil, update); err != nil {
 			return err
 		}
 

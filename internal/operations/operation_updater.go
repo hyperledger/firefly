@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -342,6 +342,13 @@ func (ou *operationUpdater) close() {
 }
 
 func (ou *operationUpdater) resolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error) {
+	// Update the operation as long as it has not already entered a "final" state
+	fb := database.OperationQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Neq("status", core.OpStatusSucceeded),
+		fb.Neq("status", core.OpStatusFailed),
+	)
+
 	update := database.OperationQueryFactory.NewUpdate(ctx).S()
 	if status != "" {
 		update = update.Set("status", status)
@@ -352,6 +359,9 @@ func (ou *operationUpdater) resolveOperation(ctx context.Context, ns string, id 
 	if output != nil {
 		update = update.Set("output", output)
 	}
-	ou.manager.updateCachedOperation(id, status, errorMsg, output, nil)
-	return ou.database.UpdateOperation(ctx, ns, id, update)
+	ok, err := ou.database.UpdateOperation(ctx, ns, id, filter, update)
+	if ok && err == nil {
+		ou.manager.updateCachedOperation(id, status, errorMsg, output, nil)
+	}
+	return err
 }
