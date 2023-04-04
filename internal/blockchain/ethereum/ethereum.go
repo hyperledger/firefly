@@ -959,7 +959,7 @@ func (e *Ethereum) queryNetworkVersion(ctx context.Context, address string) (ver
 	res, err := e.queryContractMethod(ctx, address, networkVersionMethodABI, []interface{}{}, emptyErrors, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Call failed" is interpreted as "method does not exist, default to version 1"
-		if strings.Contains(err.Error(), "FFEC100148") {
+		if strings.Contains(err.Error(), "FFEC100148") || strings.Contains(err.Error(), "FF23021") {
 			return 1, nil
 		}
 		return 0, err
