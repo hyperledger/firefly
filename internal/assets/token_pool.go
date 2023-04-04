@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -75,31 +76,48 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 		})
 	}
 
-	var op *core.Operation
+	var newOperation *core.Operation
+	var resubmittedOperation *core.Operation
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		txid, err := am.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenPool, pool.IdempotencyKey)
 		if err != nil {
+			var resubmitErr error
+
+			// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+			// submitting to their handlers.
+			if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+				resubmittedOperation, resubmitErr = am.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+				if resubmitErr != nil {
+					// Error doing resubmit, return the new error
+					return resubmitErr
+				}
+			}
 			return err
 		}
 
 		pool.TX.ID = txid
 		pool.TX.Type = core.TransactionTypeTokenPool
 
-		op = core.NewOperation(
+		newOperation = core.NewOperation(
 			plugin,
 			am.namespace,
 			txid,
 			core.OpTypeTokenCreatePool)
-		if err = txcommon.AddTokenPoolCreateInputs(op, &pool.TokenPool); err == nil {
-			err = am.operations.AddOrReuseOperation(ctx, op)
+		if err = txcommon.AddTokenPoolCreateInputs(newOperation, &pool.TokenPool); err == nil {
+			err = am.operations.AddOrReuseOperation(ctx, newOperation)
 		}
 		return err
 	})
+	if resubmittedOperation != nil {
+		// We resubmitted a previously initialized operation, don't run a new one
+		return &pool.TokenPool, nil
+	}
 	if err != nil {
+		// Any other error? Return the error unchanged
 		return nil, err
 	}
 
-	_, err = am.operations.RunOperation(ctx, opCreatePool(op, &pool.TokenPool))
+	_, err = am.operations.RunOperation(ctx, opCreatePool(newOperation, &pool.TokenPool))
 	return &pool.TokenPool, err
 }
 

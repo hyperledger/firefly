@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -164,18 +164,26 @@ func (s *SQLCommon) GetOperations(ctx context.Context, namespace string, filter 
 	return ops, s.QueryRes(ctx, operationsTable, tx, fop, fi), err
 }
 
-func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update ffapi.Update) (err error) {
+func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, filter ffapi.Filter, update ffapi.Update) (updated bool, err error) {
 
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
 
 	query, err := s.BuildUpdate(sq.Update(operationsTable), update, opFilterFieldMap)
 	if err != nil {
-		return err
+		return false, err
 	}
+
+	if filter != nil {
+		query, err = s.FilterUpdate(ctx, query, filter, opFilterFieldMap)
+		if err != nil {
+			return false, err
+		}
+	}
+
 	query = query.Set("updated", fftypes.Now())
 	query = query.Where(sq.And{
 		sq.Eq{"id": id},
@@ -186,11 +194,7 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.
 		s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, core.ChangeEventTypeUpdated, ns, id)
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
-	if ra < 1 {
-		return i18n.NewError(ctx, coremsgs.Msg404NoResult)
-	}
-
-	return s.CommitTx(ctx, tx, autoCommit)
+	return ra > 0, s.CommitTx(ctx, tx, autoCommit)
 }

@@ -220,7 +220,7 @@ type iOperationCollection interface {
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
 
 	// UpdateOperation - Update an operation
-	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) (err error)
+	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, filter ffapi.Filter, update ffapi.Update) (updated bool, err error)
 
 	// GetOperationByID - Get an operation by ID
 	GetOperationByID(ctx context.Context, namespace string, id *fftypes.UUID) (operation *core.Operation, err error)
