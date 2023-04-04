@@ -26,7 +26,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (ds *definitionSender) PublishTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
+func (ds *definitionSender) PublishTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error {
 	// Map token connector name -> broadcast name
 	if broadcastName, exists := ds.tokenBroadcastNames[pool.Pool.Connector]; exists {
 		pool.Pool.Connector = broadcastName
@@ -48,7 +48,7 @@ func (ds *definitionSender) PublishTokenPool(ctx context.Context, pool *core.Tok
 	return err
 }
 
-func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
+func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error {
 	if pool.Pool.Published {
 		if !ds.multiparty {
 			return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)

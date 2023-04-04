@@ -74,11 +74,11 @@ func (_m *Sender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm b
 }
 
 // DefineTokenPool provides a mock function with given fields: ctx, pool, waitConfirm
-func (_m *Sender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
+func (_m *Sender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error {
 	ret := _m.Called(ctx, pool, waitConfirm)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPoolAnnouncement, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPoolDefinition, bool) error); ok {
 		r0 = rf(ctx, pool, waitConfirm)
 	} else {
 		r0 = ret.Error(0)

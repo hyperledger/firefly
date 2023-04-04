@@ -27,12 +27,12 @@ import (
 )
 
 func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
-	var announce core.TokenPoolAnnouncement
-	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
+	var definition core.TokenPoolDefinition
+	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &definition); !valid {
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "token pool", msg.Header.ID)
 	}
 
-	pool := announce.Pool
+	pool := definition.Pool
 	// Map remote connector name -> local name
 	if localName, ok := dh.tokenNames[pool.Connector]; ok {
 		pool.Connector = localName

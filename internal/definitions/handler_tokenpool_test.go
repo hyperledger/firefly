@@ -31,7 +31,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newPoolAnnouncement() *core.TokenPoolAnnouncement {
+func newPoolDefinition() *core.TokenPoolDefinition {
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
@@ -45,19 +45,19 @@ func newPoolAnnouncement() *core.TokenPoolAnnouncement {
 		},
 		Connector: "remote1",
 	}
-	return &core.TokenPoolAnnouncement{
+	return &core.TokenPoolDefinition{
 		Pool: pool,
 	}
 }
 
-func buildPoolDefinitionMessage(announce *core.TokenPoolAnnouncement) (*core.Message, core.DataArray, error) {
+func buildPoolDefinitionMessage(definition *core.TokenPoolDefinition) (*core.Message, core.DataArray, error) {
 	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID:  fftypes.NewUUID(),
 			Tag: core.SystemTagDefinePool,
 		},
 	}
-	b, err := json.Marshal(announce)
+	b, err := json.Marshal(definition)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -70,9 +70,9 @@ func buildPoolDefinitionMessage(announce *core.TokenPoolAnnouncement) (*core.Mes
 func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	announce := newPoolAnnouncement()
-	pool := announce.Pool
-	msg, data, err := buildPoolDefinitionMessage(announce)
+	definition := newPoolDefinition()
+	pool := definition.Pool
+	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
 	mdi := sh.database.(*databasemocks.Plugin)
@@ -96,10 +96,10 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 func TestHandleDefinitionBroadcastTokenPoolBadConnector(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	announce := newPoolAnnouncement()
-	pool := announce.Pool
+	definition := newPoolDefinition()
+	pool := definition.Pool
 	pool.Name = "//bad"
-	msg, data, err := buildPoolDefinitionMessage(announce)
+	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
 	mam := sh.assets.(*assetmocks.Manager)
@@ -116,9 +116,9 @@ func TestHandleDefinitionBroadcastTokenPoolBadConnector(t *testing.T) {
 func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	announce := newPoolAnnouncement()
-	pool := announce.Pool
-	msg, data, err := buildPoolDefinitionMessage(announce)
+	definition := newPoolDefinition()
+	pool := definition.Pool
+	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
 	mdi := sh.database.(*databasemocks.Plugin)
@@ -135,9 +135,9 @@ func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {
 func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	announce := newPoolAnnouncement()
-	pool := announce.Pool
-	msg, data, err := buildPoolDefinitionMessage(announce)
+	definition := newPoolDefinition()
+	pool := definition.Pool
+	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
 	mdi := sh.database.(*databasemocks.Plugin)
@@ -160,9 +160,9 @@ func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
 func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	announce := newPoolAnnouncement()
-	pool := announce.Pool
-	msg, data, err := buildPoolDefinitionMessage(announce)
+	definition := newPoolDefinition()
+	pool := definition.Pool
+	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 	existing := &core.TokenPool{
 		State: core.TokenPoolStateConfirmed,
@@ -181,9 +181,9 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	announce := newPoolAnnouncement()
-	pool := announce.Pool
-	msg, data, err := buildPoolDefinitionMessage(announce)
+	definition := newPoolDefinition()
+	pool := definition.Pool
+	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
 	mdi := sh.database.(*databasemocks.Plugin)
@@ -203,9 +203,9 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	announce := newPoolAnnouncement()
-	pool := announce.Pool
-	msg, data, err := buildPoolDefinitionMessage(announce)
+	definition := newPoolDefinition()
+	pool := definition.Pool
+	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
 	mdi := sh.database.(*databasemocks.Plugin)
@@ -225,9 +225,9 @@ func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	announce := newPoolAnnouncement()
-	pool := announce.Pool
-	msg, data, err := buildPoolDefinitionMessage(announce)
+	definition := newPoolDefinition()
+	pool := definition.Pool
+	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
 	mdi := sh.database.(*databasemocks.Plugin)
@@ -251,10 +251,10 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	announce := &core.TokenPoolAnnouncement{
+	definition := &core.TokenPoolDefinition{
 		Pool: &core.TokenPool{},
 	}
-	msg, data, err := buildPoolDefinitionMessage(announce)
+	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())

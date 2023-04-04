@@ -33,7 +33,7 @@ var (
 type TokenPoolState = fftypes.FFEnum
 
 var (
-	// TokenPoolStatePending is a token pool that has been announced but not yet confirmed
+	// TokenPoolStatePending is a token pool that has been defined but not yet confirmed
 	TokenPoolStatePending = fftypes.FFEnumValue("tokenpoolstate", "pending")
 	// TokenPoolStateConfirmed is a token pool that has been confirmed on chain
 	TokenPoolStateConfirmed = fftypes.FFEnumValue("tokenpoolstate", "confirmed")
@@ -74,7 +74,7 @@ type TokenPool struct {
 	Published       bool                  `ffstruct:"TokenPool" json:"published" ffexcludeinput:"true"`
 }
 
-type TokenPoolAnnouncement struct {
+type TokenPoolDefinition struct {
 	Pool *TokenPool `json:"pool"`
 }
 
@@ -85,10 +85,10 @@ func (t *TokenPool) Validate(ctx context.Context) (err error) {
 	return nil
 }
 
-func (t *TokenPoolAnnouncement) Topic() string {
+func (t *TokenPoolDefinition) Topic() string {
 	return fftypes.TypeNamespaceNameTopicHash("tokenpool", t.Pool.Namespace, t.Pool.Name)
 }
 
-func (t *TokenPoolAnnouncement) SetBroadcastMessage(msgID *fftypes.UUID) {
+func (t *TokenPoolDefinition) SetBroadcastMessage(msgID *fftypes.UUID) {
 	t.Pool.Message = msgID
 }

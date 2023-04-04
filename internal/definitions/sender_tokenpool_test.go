@@ -39,7 +39,7 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 
 	mdm := ds.data.(*datamocks.Manager)
 
-	pool := &core.TokenPoolAnnouncement{
+	pool := &core.TokenPoolDefinition{
 		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "",
@@ -64,7 +64,7 @@ func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
 
 	mdm := ds.data.(*datamocks.Manager)
 
-	pool := &core.TokenPoolAnnouncement{
+	pool := &core.TokenPoolDefinition{
 		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "",
@@ -89,7 +89,7 @@ func TestBroadcastTokenPoolPublishNonMultiparty(t *testing.T) {
 
 	mdm := ds.data.(*datamocks.Manager)
 
-	pool := &core.TokenPoolAnnouncement{
+	pool := &core.TokenPoolDefinition{
 		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "",
@@ -114,7 +114,7 @@ func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
 
 	mdm := ds.data.(*datamocks.Manager)
 
-	pool := &core.TokenPoolAnnouncement{
+	pool := &core.TokenPoolDefinition{
 		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "",
@@ -143,7 +143,7 @@ func TestDefineTokenPoolOk(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	pool := &core.TokenPoolAnnouncement{
+	pool := &core.TokenPoolDefinition{
 		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -193,13 +193,13 @@ func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 		State:     core.TokenPoolStateConfirmed,
 		Published: false,
 	}
-	poolAnnouncement := &core.TokenPoolAnnouncement{
+	definition := &core.TokenPoolDefinition{
 		Pool: pool,
 	}
 
 	mdb.On("GetTokenPoolByID", mock.Anything, mock.Anything, mock.Anything).Return(pool, nil)
 
-	err := ds.DefineTokenPool(context.Background(), poolAnnouncement, false)
+	err := ds.DefineTokenPool(context.Background(), definition, false)
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)
@@ -214,7 +214,7 @@ func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mdi := ds.database.(*databasemocks.Plugin)
 
-	pool := &core.TokenPoolAnnouncement{
+	pool := &core.TokenPoolDefinition{
 		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -245,7 +245,7 @@ func TestDefineTokenPoolBadName(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	pool := &core.TokenPoolAnnouncement{
+	pool := &core.TokenPoolDefinition{
 		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",

@@ -323,7 +323,7 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 
 }
 
-func TestTokenPoolCreatedAnnounce(t *testing.T) {
+func TestTokenPoolCreatedPublish(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	mti := &tokenmocks.Plugin{}
@@ -357,7 +357,7 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(nil, fmt.Errorf("pop")).Once()
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil).Once()
-	em.mds.On("DefineTokenPool", em.ctx, mock.MatchedBy(func(pool *core.TokenPoolAnnouncement) bool {
+	em.mds.On("DefineTokenPool", em.ctx, mock.MatchedBy(func(pool *core.TokenPoolDefinition) bool {
 		return pool.Pool.Namespace == "ns1" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
 	}), false).Return(nil, nil)
 
@@ -367,7 +367,7 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
-func TestTokenPoolCreatedAnnounceBadInterface(t *testing.T) {
+func TestTokenPoolCreatedPublishBadInterface(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	mti := &tokenmocks.Plugin{}
@@ -416,7 +416,7 @@ func TestTokenPoolCreatedAnnounceBadInterface(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
-func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
+func TestTokenPoolCreatedPublishBadOpInputID(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	mti := &tokenmocks.Plugin{}
@@ -451,7 +451,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 
 }
 
-func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
+func TestTokenPoolCreatedPublishBadOpInputNS(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	mti := &tokenmocks.Plugin{}
@@ -488,7 +488,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 
 }
 
-func TestTokenPoolCreatedAnnounceBadSymbol(t *testing.T) {
+func TestTokenPoolCreatedPublishBadSymbol(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	mti := &tokenmocks.Plugin{}
