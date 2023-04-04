@@ -152,6 +152,7 @@ var routes = append(
 		postTokenBurn,
 		postTokenMint,
 		postTokenPool,
+		postTokenPoolPublish,
 		postTokenTransfer,
 		putContractAPI,
 		putSubscription,

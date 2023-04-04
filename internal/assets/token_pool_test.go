@@ -745,58 +745,6 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
-func TestGetTokenPool(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(&core.TokenPool{}, nil)
-	_, err := am.GetTokenPool(context.Background(), "magic-tokens", "abc")
-	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-}
-
-func TestGetTokenPoolNotFound(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(nil, nil)
-	_, err := am.GetTokenPool(context.Background(), "magic-tokens", "abc")
-	assert.Regexp(t, "FF10109", err)
-
-	mdi.AssertExpectations(t)
-}
-
-func TestGetTokenPoolFailed(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(nil, fmt.Errorf("pop"))
-	_, err := am.GetTokenPool(context.Background(), "magic-tokens", "abc")
-	assert.Regexp(t, "pop", err)
-
-	mdi.AssertExpectations(t)
-}
-
-func TestGetTokenPoolBadPlugin(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	_, err := am.GetTokenPool(context.Background(), "", "")
-	assert.Regexp(t, "FF10272", err)
-}
-
-func TestGetTokenPoolBadName(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	_, err := am.GetTokenPool(context.Background(), "magic-tokens", "")
-	assert.Regexp(t, "FF00140", err)
-}
-
 func TestGetTokenPoolByID(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()

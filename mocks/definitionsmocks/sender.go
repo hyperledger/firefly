@@ -101,6 +101,20 @@ func (_m *Sender) Name() string {
 	return r0
 }
 
+// PublishTokenPool provides a mock function with given fields: ctx, pool, waitConfirm
+func (_m *Sender) PublishTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error {
+	ret := _m.Called(ctx, pool, waitConfirm)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPoolDefinition, bool) error); ok {
+		r0 = rf(ctx, pool, waitConfirm)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateIdentity provides a mock function with given fields: ctx, identity, def, signingIdentity, waitConfirm
 func (_m *Sender) UpdateIdentity(ctx context.Context, identity *core.Identity, def *core.IdentityUpdate, signingIdentity *core.SignerRef, waitConfirm bool) error {
 	ret := _m.Called(ctx, identity, def, signingIdentity, waitConfirm)

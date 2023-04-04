@@ -242,32 +242,6 @@ func (_m *Manager) GetTokenConnectors(ctx context.Context) []*core.TokenConnecto
 	return r0
 }
 
-// GetTokenPool provides a mock function with given fields: ctx, connector, poolName
-func (_m *Manager) GetTokenPool(ctx context.Context, connector string, poolName string) (*core.TokenPool, error) {
-	ret := _m.Called(ctx, connector, poolName)
-
-	var r0 *core.TokenPool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*core.TokenPool, error)); ok {
-		return rf(ctx, connector, poolName)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenPool); ok {
-		r0 = rf(ctx, connector, poolName)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.TokenPool)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, connector, poolName)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetTokenPoolByNameOrID provides a mock function with given fields: ctx, poolNameOrID
 func (_m *Manager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error) {
 	ret := _m.Called(ctx, poolNameOrID)

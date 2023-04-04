@@ -156,23 +156,6 @@ func (am *assetManager) GetTokenPools(ctx context.Context, filter ffapi.AndFilte
 	return am.database.GetTokenPools(ctx, am.namespace, filter)
 }
 
-func (am *assetManager) GetTokenPool(ctx context.Context, connector, poolName string) (*core.TokenPool, error) {
-	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
-		return nil, err
-	}
-	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, poolName, "name"); err != nil {
-		return nil, err
-	}
-	pool, err := am.database.GetTokenPool(ctx, am.namespace, poolName)
-	if err != nil {
-		return nil, err
-	}
-	if pool == nil {
-		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
-	}
-	return pool, nil
-}
-
 func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error) {
 	var pool *core.TokenPool
 
