@@ -42,6 +42,7 @@ func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state
 	}
 
 	pool.Message = msg.Header.ID
+	pool.Published = true
 	return dh.handleTokenPoolDefinition(ctx, state, pool)
 }
 

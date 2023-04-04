@@ -47,6 +47,7 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 			Type:      core.TokenTypeNonFungible,
 			Locator:   "N1",
 			Symbol:    "COIN",
+			Published: true,
 		},
 	}
 
@@ -71,11 +72,37 @@ func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
 			Type:      core.TokenTypeNonFungible,
 			Locator:   "N1",
 			Symbol:    "COIN",
+			Published: false,
 		},
 	}
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "FF00140", err)
+
+	mdm.AssertExpectations(t)
+}
+
+func TestBroadcastTokenPoolPublishNonMultiparty(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = false
+
+	mdm := ds.data.(*datamocks.Manager)
+
+	pool := &core.TokenPoolAnnouncement{
+		Pool: &core.TokenPool{
+			ID:        fftypes.NewUUID(),
+			Namespace: "",
+			Name:      "",
+			Type:      core.TokenTypeNonFungible,
+			Locator:   "N1",
+			Symbol:    "COIN",
+			Published: true,
+		},
+	}
+
+	err := ds.DefineTokenPool(context.Background(), pool, false)
+	assert.Regexp(t, "FF10414", err)
 
 	mdm.AssertExpectations(t)
 }
@@ -96,6 +123,7 @@ func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
 			Locator:   "N1",
 			Symbol:    "COIN",
 			Connector: "connector1",
+			Published: true,
 		},
 	}
 
@@ -124,6 +152,7 @@ func TestDefineTokenPoolOk(t *testing.T) {
 			Locator:   "N1",
 			Symbol:    "COIN",
 			Connector: "connector1",
+			Published: true,
 		},
 	}
 
@@ -162,6 +191,7 @@ func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 		Symbol:    "COIN",
 		Connector: "connector1",
 		State:     core.TokenPoolStateConfirmed,
+		Published: false,
 	}
 	poolAnnouncement := &core.TokenPoolAnnouncement{
 		Pool: pool,
@@ -193,6 +223,7 @@ func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 			Locator:   "N1",
 			Symbol:    "COIN",
 			Connector: "connector1",
+			Published: false,
 		},
 	}
 
@@ -223,6 +254,7 @@ func TestDefineTokenPoolBadName(t *testing.T) {
 			Locator:   "N1",
 			Symbol:    "COIN",
 			Connector: "connector1",
+			Published: false,
 		},
 	}
 

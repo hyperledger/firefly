@@ -194,6 +194,7 @@ var (
 	APIFilterCountDesc         = ffm("api.filterCount", "Return a total count as well as items (adds extra database processing)")
 	APIFetchDataDesc           = ffm("api.fetchData", "Fetch the data and include it in the messages returned")
 	APIConfirmQueryParam       = ffm("api.confirmQueryParam", "When true the HTTP request blocks until the message is confirmed")
+	APIPublishQueryParam       = ffm("api.publishQueryParam", "When true the definition will be published to all other members of the multiparty network")
 	APIHistogramStartTimeParam = ffm("api.histogramStartTime", "Start time of the data to be fetched")
 	APIHistogramEndTimeParam   = ffm("api.histogramEndTime", "End time of the data to be fetched")
 	APIHistogramBucketsParam   = ffm("api.histogramBuckets", "Number of buckets between start time and end time")

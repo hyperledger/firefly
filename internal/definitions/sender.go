@@ -100,32 +100,32 @@ func reverseMap(orderedMap map[string]string) map[string]string {
 	return reverseMap
 }
 
-func (bm *definitionSender) Name() string {
+func (ds *definitionSender) Name() string {
 	return "DefinitionSender"
 }
 
-func (bm *definitionSender) sendDefinitionDefault(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
-	org, err := bm.identity.GetMultipartyRootOrg(ctx)
+func (ds *definitionSender) sendDefinitionDefault(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
+	org, err := ds.identity.GetMultipartyRootOrg(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return bm.sendDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */
+	return ds.sendDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */
 		Author: org.DID,
 	}, tag, waitConfirm)
 }
 
-func (bm *definitionSender) sendDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
+func (ds *definitionSender) sendDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
-	err = bm.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
+	err = ds.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
 	if err != nil {
 		return nil, err
 	}
 
-	return bm.sendDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
+	return ds.sendDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
 }
 
-func (bm *definitionSender) sendDefinitionCommon(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
+func (ds *definitionSender) sendDefinitionCommon(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
 
 	b, err := json.Marshal(&def)
 	if err != nil {
@@ -147,7 +147,7 @@ func (bm *definitionSender) sendDefinitionCommon(ctx context.Context, def core.D
 		},
 	}
 
-	sender := bm.broadcast.NewBroadcast(message)
+	sender := ds.broadcast.NewBroadcast(message)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {

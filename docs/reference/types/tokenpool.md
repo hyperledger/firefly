@@ -43,7 +43,8 @@ nav_order: 11
     "tx": {
         "type": "token_pool",
         "id": "a23ffc87-81a2-4cbc-97d6-f53d320c36cd"
-    }
+    },
+    "published": false
 }
 ```
 
@@ -70,6 +71,7 @@ nav_order: 11
 | `interface` | A reference to an existing FFI, containing pre-registered type information for the token contract | [`FFIReference`](#ffireference) |
 | `interfaceFormat` | The interface encoding format supported by the connector for this token pool | `FFEnum`:<br/>`"abi"`<br/>`"ffi"` |
 | `methods` | The method definitions resolved by the token connector to be used by each token operation | [`JSONAny`](simpletypes#jsonany) |
+| `published` | Indicates if the token pool is published to other members of the multiparty network | `bool` |
 
 ## TransactionRef
 

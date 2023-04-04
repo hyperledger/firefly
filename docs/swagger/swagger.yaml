@@ -28046,6 +28046,10 @@ paths:
                     namespace:
                       description: The namespace for the token pool
                       type: string
+                    published:
+                      description: Indicates if the token pool is published to other
+                        members of the multiparty network
+                      type: boolean
                     standard:
                       description: The ERC standard the token pool conforms to, as
                         reported by the token connector
@@ -28099,6 +28103,12 @@ paths:
       - description: When true the HTTP request blocks until the message is confirmed
         in: query
         name: confirm
+        schema:
+          type: string
+      - description: When true the definition will be published to all other members
+          of the multiparty network
+        in: query
+        name: publish
         schema:
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
@@ -28246,6 +28256,10 @@ paths:
                   namespace:
                     description: The namespace for the token pool
                     type: string
+                  published:
+                    description: Indicates if the token pool is published to other
+                      members of the multiparty network
+                    type: boolean
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
@@ -28356,6 +28370,10 @@ paths:
                   namespace:
                     description: The namespace for the token pool
                     type: string
+                  published:
+                    description: Indicates if the token pool is published to other
+                      members of the multiparty network
+                    type: boolean
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
@@ -28496,6 +28514,10 @@ paths:
                   namespace:
                     description: The namespace for the token pool
                     type: string
+                  published:
+                    description: Indicates if the token pool is published to other
+                      members of the multiparty network
+                    type: boolean
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
@@ -35573,6 +35595,10 @@ paths:
                     namespace:
                       description: The namespace for the token pool
                       type: string
+                    published:
+                      description: Indicates if the token pool is published to other
+                        members of the multiparty network
+                      type: boolean
                     standard:
                       description: The ERC standard the token pool conforms to, as
                         reported by the token connector
@@ -35619,6 +35645,12 @@ paths:
       - description: When true the HTTP request blocks until the message is confirmed
         in: query
         name: confirm
+        schema:
+          type: string
+      - description: When true the definition will be published to all other members
+          of the multiparty network
+        in: query
+        name: publish
         schema:
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
@@ -35766,6 +35798,10 @@ paths:
                   namespace:
                     description: The namespace for the token pool
                     type: string
+                  published:
+                    description: Indicates if the token pool is published to other
+                      members of the multiparty network
+                    type: boolean
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
@@ -35876,6 +35912,10 @@ paths:
                   namespace:
                     description: The namespace for the token pool
                     type: string
+                  published:
+                    description: Indicates if the token pool is published to other
+                      members of the multiparty network
+                    type: boolean
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
@@ -36009,6 +36049,10 @@ paths:
                   namespace:
                     description: The namespace for the token pool
                     type: string
+                  published:
+                    description: Indicates if the token pool is published to other
+                      members of the multiparty network
+                    type: boolean
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector

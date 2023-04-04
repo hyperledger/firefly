@@ -145,7 +145,7 @@ func (em *eventManager) TokenPoolCreated(ctx context.Context, ti tokens.Plugin, 
 				return nil // move on
 			}
 
-			// See if this pool was submitted locally and needs to be announced
+			// See if this pool was submitted locally and needs to be published
 			if announcePool, err = em.loadFromOperation(ctx, pool); err != nil {
 				return err
 			} else if announcePool != nil {
@@ -180,7 +180,7 @@ func (em *eventManager) TokenPoolCreated(ctx context.Context, ti tokens.Plugin, 
 
 			// Announce the details of the new token pool
 			// Other nodes will pass these details to their own token connector for validation/activation of the pool
-			log.L(ctx).Infof("Announcing token pool, id=%s", announcePool.ID)
+			log.L(ctx).Infof("Defining token pool, id=%s", announcePool.ID)
 			err = em.defsender.DefineTokenPool(ctx, &core.TokenPoolAnnouncement{
 				Pool: announcePool,
 			}, false)

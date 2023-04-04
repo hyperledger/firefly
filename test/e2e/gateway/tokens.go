@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -65,7 +65,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		Config: fftypes.JSONObject{},
 	}
 
-	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, false)
+	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, false, false)
 	poolID := poolResp.ID
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolID)

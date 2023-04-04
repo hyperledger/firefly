@@ -549,12 +549,13 @@ func (client *FireFlyClient) CreateDatatype(t *testing.T, datatype *core.Datatyp
 	return &dtReturn
 }
 
-func (client *FireFlyClient) CreateTokenPool(t *testing.T, pool *core.TokenPool, confirm bool) *core.TokenPool {
+func (client *FireFlyClient) CreateTokenPool(t *testing.T, pool *core.TokenPool, publish, confirm bool) *core.TokenPool {
 	var poolOut core.TokenPool
 	path := client.namespaced(urlTokenPools)
 	resp, err := client.Client.R().
 		SetBody(pool).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetQueryParam("publish", strconv.FormatBool(publish)).
 		SetResult(&poolOut).
 		Post(path)
 	require.NoError(t, err)

@@ -61,7 +61,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		Config: fftypes.JSONObject{},
 	}
 
-	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, false)
+	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, true, false)
 	poolID := poolResp.ID
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolID)
@@ -231,7 +231,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		Config: fftypes.JSONObject{},
 	}
 
-	poolOut := suite.testState.client1.CreateTokenPool(suite.T(), pool, true)
+	poolOut := suite.testState.client1.CreateTokenPool(suite.T(), pool, true, true)
 	assert.Equal(suite.T(), suite.testState.namespace, poolOut.Namespace)
 	assert.Equal(suite.T(), poolName, poolOut.Name)
 	assert.Equal(suite.T(), core.TokenTypeNonFungible, poolOut.Type)

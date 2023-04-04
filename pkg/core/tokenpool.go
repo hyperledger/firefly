@@ -71,6 +71,7 @@ type TokenPool struct {
 	Interface       *fftypes.FFIReference `ffstruct:"TokenPool" json:"interface,omitempty"`
 	InterfaceFormat TokenInterfaceFormat  `ffstruct:"TokenPool" json:"interfaceFormat,omitempty" ffenum:"tokeninterfaceformat" ffexcludeinput:"true"`
 	Methods         *fftypes.JSONAny      `ffstruct:"TokenPool" json:"methods,omitempty" ffexcludeinput:"true"`
+	Published       bool                  `ffstruct:"TokenPool" json:"published" ffexcludeinput:"true"`
 }
 
 type TokenPoolAnnouncement struct {
