@@ -425,6 +425,8 @@ func TestResolveOperationByNamespacedIDOk(t *testing.T) {
 		},
 	}
 
+	om.cache.Set(opID.String(), &core.Operation{})
+
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("UpdateOperation", ctx, "ns1", opID, mock.Anything, mock.MatchedBy(updateMatcher([][]string{
 		{"status", "Succeeded"},
@@ -433,8 +435,45 @@ func TestResolveOperationByNamespacedIDOk(t *testing.T) {
 	}))).Return(true, nil)
 
 	err := om.ResolveOperationByID(ctx, opID, opUpdate)
-
 	assert.NoError(t, err)
+
+	// cache should have been updated
+	cached := om.cache.Get(opID.String())
+	assert.Equal(t, core.OpStatusSucceeded, cached.(*core.Operation).Status)
+	assert.Equal(t, errStr, cached.(*core.Operation).Error)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestResolveOperationAlreadyResolved(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	opID := fftypes.NewUUID()
+	errStr := "my error"
+	opUpdate := &core.OperationUpdateDTO{
+		Status: core.OpStatusSucceeded,
+		Error:  &errStr,
+		Output: fftypes.JSONObject{
+			"my": "data",
+		},
+	}
+
+	om.cache.Set(opID.String(), &core.Operation{
+		Status: core.OpStatusFailed,
+	})
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("UpdateOperation", ctx, "ns1", opID, mock.Anything, mock.Anything).Return(false, nil)
+
+	err := om.ResolveOperationByID(ctx, opID, opUpdate)
+	assert.NoError(t, err)
+
+	// cache should not have been updated
+	cached := om.cache.Get(opID.String())
+	assert.Equal(t, core.OpStatusFailed, cached.(*core.Operation).Status)
+	assert.Equal(t, "", cached.(*core.Operation).Error)
 
 	mdi.AssertExpectations(t)
 }
