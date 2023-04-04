@@ -100,7 +100,14 @@ func TestOperationE2EWithDB(t *testing.T) {
 	update := database.OperationQueryFactory.NewUpdate(ctx).S()
 	update.Set("status", core.OpStatusFailed)
 	update.Set("error", errMsg)
-	_, err = s.UpdateOperation(ctx, operation.Namespace, operation.ID, nil, update)
+	updated, err := s.UpdateOperation(ctx, operation.Namespace, operation.ID, nil, update)
+	assert.True(t, updated)
+	assert.NoError(t, err)
+
+	// Update not found
+	updateFilter := fb.And(fb.Eq("status", core.OpStatusPending))
+	updated, err = s.UpdateOperation(ctx, operation.Namespace, operation.ID, updateFilter, update)
+	assert.False(t, updated)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -223,4 +230,14 @@ func TestOperationUpdateFail(t *testing.T) {
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
 	_, err := s.UpdateOperation(context.Background(), "ns1", fftypes.NewUUID(), nil, u)
 	assert.Regexp(t, "FF00178", err)
+}
+
+func TestOperationUpdateFilterFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectRollback()
+	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
+	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
+	_, err := s.UpdateOperation(context.Background(), "ns1", fftypes.NewUUID(), f, u)
+	assert.Regexp(t, "FF00143", err)
 }
