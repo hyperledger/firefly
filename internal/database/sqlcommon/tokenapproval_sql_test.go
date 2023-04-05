@@ -119,6 +119,10 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	approvalJson, _ = json.Marshal(&approval)
 	approvalReadJson, _ = json.Marshal(&approvalRead)
 	assert.Equal(t, string(approvalJson), string(approvalReadJson))
+
+	// Delete the token approval
+	err = s.DeleteTokenApprovals(ctx, "ns1", approval.Pool)
+	assert.NoError(t, err)
 }
 
 func TestUpsertApprovalFailBegin(t *testing.T) {
@@ -258,4 +262,22 @@ func TestUpdateApprovalsUpdateFail(t *testing.T) {
 	u := database.TokenApprovalQueryFactory.NewUpdate(context.Background()).Set("active", false)
 	err := s.UpdateTokenApprovals(context.Background(), f, u)
 	assert.Regexp(t, "FF00178", err)
+}
+
+func TestDeleteTokenApprovalsFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteTokenApprovals(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteTokenApprovalsFailDelete(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteTokenApprovals(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00179", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

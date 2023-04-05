@@ -28429,6 +28429,39 @@ paths:
       tags:
       - Non-Default Namespace
   /namespaces/{ns}/tokens/pools/{nameOrId}:
+    delete:
+      description: Delete a token pool
+      operationId: deleteTokenPoolNamespace
+      parameters:
+      - description: The token pool name or ID
+        in: path
+        name: nameOrId
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
     get:
       description: Gets a token pool by its name or its ID
       operationId: getTokenPoolByNameOrIDNamespace
@@ -36272,6 +36305,32 @@ paths:
       tags:
       - Default Namespace
   /tokens/pools/{nameOrId}:
+    delete:
+      description: Delete a token pool
+      operationId: deleteTokenPool
+      parameters:
+      - description: The token pool name or ID
+        in: path
+        name: nameOrId
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
     get:
       description: Gets a token pool by its name or its ID
       operationId: getTokenPoolByNameOrID

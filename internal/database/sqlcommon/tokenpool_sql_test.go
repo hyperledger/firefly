@@ -66,6 +66,8 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		Return().Once()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, core.ChangeEventTypeUpdated, "ns1", poolID, mock.Anything).
 		Return().Once()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, core.ChangeEventTypeDeleted, "ns1", poolID, mock.Anything).
+		Return().Once()
 
 	// Insert the pool
 	_, err := s.InsertOrGetTokenPool(ctx, pool)
@@ -130,6 +132,10 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolJson, _ = json.Marshal(&pool)
 	poolReadJson, _ = json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
+
+	// Delete the token pool
+	err = s.DeleteTokenPool(ctx, "ns1", pool.ID)
+	assert.NoError(t, err)
 }
 
 func TestUpsertTokenPoolFailBegin(t *testing.T) {
@@ -262,5 +268,23 @@ func TestGetTokenPoolsScanFail(t *testing.T) {
 	f := database.TokenPoolQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, _, err := s.GetTokenPools(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteTokenPoolFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteTokenPool(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteTokenPoolFailDelete(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteTokenPool(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00179", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

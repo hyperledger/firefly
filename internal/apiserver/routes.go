@@ -55,6 +55,7 @@ var routes = append(
 		deleteContractListener,
 		deleteData,
 		deleteSubscription,
+		deleteTokenPool,
 		getBatchByID,
 		getBatches,
 		getBlockchainEventByID,

@@ -187,3 +187,22 @@ func (am *assetManager) ResolvePoolMethods(ctx context.Context, pool *core.Token
 	}
 	return err
 }
+
+func (am *assetManager) DeleteTokenPool(ctx context.Context, poolNameOrID string) error {
+	return am.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		pool, err := am.GetTokenPoolByNameOrID(ctx, poolNameOrID)
+		if err != nil {
+			return err
+		}
+		if err = am.database.DeleteTokenPool(ctx, am.namespace, pool.ID); err != nil {
+			return err
+		}
+		if err = am.database.DeleteTokenTransfers(ctx, am.namespace, pool.ID); err != nil {
+			return err
+		}
+		if err = am.database.DeleteTokenApprovals(ctx, am.namespace, pool.ID); err != nil {
+			return err
+		}
+		return am.database.DeleteTokenBalances(ctx, am.namespace, pool.ID)
+	})
+}

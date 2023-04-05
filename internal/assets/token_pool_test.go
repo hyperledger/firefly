@@ -865,3 +865,135 @@ func TestResolvePoolMethods(t *testing.T) {
 	mcm.AssertExpectations(t)
 	mti.AssertExpectations(t)
 }
+
+func TestDeletePoolNotFound(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, nil)
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.Regexp(t, "FF10109", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mdi.On("DeleteTokenPool", context.Background(), "ns1", pool.ID).Return(fmt.Errorf("pop"))
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolTransfersFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mdi.On("DeleteTokenPool", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenTransfers", context.Background(), "ns1", pool.ID).Return(fmt.Errorf("pop"))
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolApprovalsFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mdi.On("DeleteTokenPool", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenTransfers", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenApprovals", context.Background(), "ns1", pool.ID).Return(fmt.Errorf("pop"))
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolBalancesFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mdi.On("DeleteTokenPool", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenTransfers", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenApprovals", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenBalances", context.Background(), "ns1", pool.ID).Return(fmt.Errorf("pop"))
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolSuccess(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mdi.On("DeleteTokenPool", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenTransfers", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenApprovals", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenBalances", context.Background(), "ns1", pool.ID).Return(nil)
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}

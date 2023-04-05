@@ -370,6 +370,9 @@ type iTokenPoolCollection interface {
 
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenPool, *ffapi.FilterResult, error)
+
+	// DeleteTokenPool - delete a token pool
+	DeleteTokenPool(ctx context.Context, namespace string, id *fftypes.UUID) error
 }
 
 type iTokenBalanceCollection interface {
@@ -387,6 +390,9 @@ type iTokenBalanceCollection interface {
 
 	// GetTokenAccountPools - Get the list of pools referenced by a given account
 	GetTokenAccountPools(ctx context.Context, namespace, key string, filter ffapi.Filter) ([]*core.TokenAccountPool, *ffapi.FilterResult, error)
+
+	// DeleteTokenBalances - Delete token balances from a particular pool
+	DeleteTokenBalances(ctx context.Context, namespace string, poolID *fftypes.UUID) error
 }
 
 type iTokenTransferCollection interface {
@@ -401,6 +407,9 @@ type iTokenTransferCollection interface {
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenTransfer, *ffapi.FilterResult, error)
+
+	// DeleteTokenTransfers - Delete token transfers from a particular pool
+	DeleteTokenTransfers(ctx context.Context, namespace string, poolID *fftypes.UUID) error
 }
 
 type iTokenApprovalCollection interface {
@@ -418,6 +427,9 @@ type iTokenApprovalCollection interface {
 
 	// GetTokenApprovals - Get token approvals
 	GetTokenApprovals(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenApproval, *ffapi.FilterResult, error)
+
+	// DeleteTokenApprovals - Delete token approvals from a particular pool
+	DeleteTokenApprovals(ctx context.Context, namespace string, poolID *fftypes.UUID) error
 }
 
 type iFFICollection interface {

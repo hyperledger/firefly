@@ -86,6 +86,20 @@ func (_m *Manager) CreateTokenPool(ctx context.Context, pool *core.TokenPoolInpu
 	return r0, r1
 }
 
+// DeleteTokenPool provides a mock function with given fields: ctx, poolNameOrID
+func (_m *Manager) DeleteTokenPool(ctx context.Context, poolNameOrID string) error {
+	ret := _m.Called(ctx, poolNameOrID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, poolNameOrID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetTokenAccountPools provides a mock function with given fields: ctx, key, filter
 func (_m *Manager) GetTokenAccountPools(ctx context.Context, key string, filter ffapi.AndFilter) ([]*core.TokenAccountPool, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, key, filter)

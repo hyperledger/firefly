@@ -314,3 +314,22 @@ func (s *SQLCommon) GetTokenPools(ctx context.Context, namespace string, filter 
 
 	return pools, s.QueryRes(ctx, tokenpoolTable, tx, fop, fi), err
 }
+
+func (s *SQLCommon) DeleteTokenPool(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	err = s.DeleteTx(ctx, "tokenpool", tx, sq.Delete("tokenpool").Where(sq.Eq{
+		"id": id, "namespace": namespace,
+	}), func() {
+		s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeDeleted, namespace, id)
+	})
+	if err != nil {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
+}
