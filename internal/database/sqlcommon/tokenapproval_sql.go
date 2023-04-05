@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -254,6 +254,24 @@ func (s *SQLCommon) UpdateTokenApprovals(ctx context.Context, filter ffapi.Filte
 
 	_, err = s.UpdateTx(ctx, tokenapprovalTable, tx, query, nil /* no change events filter based update */)
 	if err != nil {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) DeleteTokenApprovals(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	err = s.DeleteTx(ctx, tokenapprovalTable, tx, sq.Delete(tokenapprovalTable).Where(sq.Eq{
+		"namespace": namespace,
+		"pool_id":   poolID,
+	}), nil)
+	if err != nil && err != fftypes.DeleteRecordNotFound {
 		return err
 	}
 

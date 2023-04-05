@@ -123,6 +123,62 @@ func (_m *Plugin) DeleteSubscriptionByID(ctx context.Context, namespace string, 
 	return r0
 }
 
+// DeleteTokenApprovals provides a mock function with given fields: ctx, namespace, poolID
+func (_m *Plugin) DeleteTokenApprovals(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, poolID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, poolID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteTokenBalances provides a mock function with given fields: ctx, namespace, poolID
+func (_m *Plugin) DeleteTokenBalances(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, poolID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, poolID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteTokenPool provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) DeleteTokenPool(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteTokenTransfers provides a mock function with given fields: ctx, namespace, poolID
+func (_m *Plugin) DeleteTokenTransfers(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, poolID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, poolID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetBatchByID provides a mock function with given fields: ctx, namespace, id
 func (_m *Plugin) GetBatchByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.BatchPersisted, error) {
 	ret := _m.Called(ctx, namespace, id)

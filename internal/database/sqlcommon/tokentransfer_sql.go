@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -238,4 +238,22 @@ func (s *SQLCommon) GetTokenTransfers(ctx context.Context, namespace string, fil
 	}
 
 	return transfers, s.QueryRes(ctx, tokentransferTable, tx, fop, fi), err
+}
+
+func (s *SQLCommon) DeleteTokenTransfers(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	err = s.DeleteTx(ctx, tokentransferTable, tx, sq.Delete(tokentransferTable).Where(sq.Eq{
+		"namespace": namespace,
+		"pool_id":   poolID,
+	}), nil)
+	if err != nil && err != fftypes.DeleteRecordNotFound {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
 }

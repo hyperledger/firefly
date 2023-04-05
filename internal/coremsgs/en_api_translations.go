@@ -178,6 +178,7 @@ var (
 	APIEndpointsPostTokenBurn                   = ffm("api.endpoints.postTokenBurn", "Burns some tokens")
 	APIEndpointsPostTokenMint                   = ffm("api.endpoints.postTokenMint", "Mints some tokens")
 	APIEndpointsPostTokenPool                   = ffm("api.endpoints.postTokenPool", "Creates a new token pool")
+	APIEndpointsDeleteTokenPool                 = ffm("api.endpoints.deleteTokenPool", "Delete a token pool")
 	APIEndpointsPostTokenTransfer               = ffm("api.endpoints.postTokenTransfer", "Transfers some tokens")
 	APIEndpointsPutContractAPI                  = ffm("api.endpoints.putContractAPI", "Updates an existing contract API")
 	APIEndpointsPutSubscription                 = ffm("api.endpoints.putSubscription", "Update an existing subscription")
