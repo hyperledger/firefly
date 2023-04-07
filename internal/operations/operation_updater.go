@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -342,12 +343,15 @@ func (ou *operationUpdater) close() {
 }
 
 func (ou *operationUpdater) resolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error) {
-	// Update the operation as long as it has not already entered a "final" state
+	// Never move an operation from Succeeded/Failed back to Pending
 	fb := database.OperationQueryFactory.NewFilter(ctx)
-	filter := fb.And(
-		fb.Neq("status", core.OpStatusSucceeded),
-		fb.Neq("status", core.OpStatusFailed),
-	)
+	var filter ffapi.AndFilter
+	if status == core.OpStatusPending {
+		filter = fb.And(
+			fb.Neq("status", core.OpStatusSucceeded),
+			fb.Neq("status", core.OpStatusFailed),
+		)
+	}
 
 	update := database.OperationQueryFactory.NewUpdate(ctx).S()
 	if status != "" {
