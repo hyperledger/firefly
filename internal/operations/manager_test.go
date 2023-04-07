@@ -453,7 +453,7 @@ func TestResolveOperationAlreadyResolved(t *testing.T) {
 	opID := fftypes.NewUUID()
 	errStr := "my error"
 	opUpdate := &core.OperationUpdateDTO{
-		Status: core.OpStatusSucceeded,
+		Status: core.OpStatusPending,
 		Error:  &errStr,
 		Output: fftypes.JSONObject{
 			"my": "data",
