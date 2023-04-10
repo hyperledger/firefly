@@ -901,6 +901,28 @@ func TestDeletePoolFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestDeletePoolPublished(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+		Published: true,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.Regexp(t, "FF10449", err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestDeletePoolTransfersFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()

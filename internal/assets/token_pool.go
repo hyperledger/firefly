@@ -194,6 +194,9 @@ func (am *assetManager) DeleteTokenPool(ctx context.Context, poolNameOrID string
 		if err != nil {
 			return err
 		}
+		if pool.Published {
+			return i18n.NewError(ctx, coremsgs.MsgCannotDeletePublished)
+		}
 		if err = am.database.DeleteTokenPool(ctx, am.namespace, pool.ID); err != nil {
 			return err
 		}
