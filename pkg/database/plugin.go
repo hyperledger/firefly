@@ -352,8 +352,12 @@ type iBlobCollection interface {
 }
 
 type iTokenPoolCollection interface {
+	// InsertTokenPool - Insert a new token pool
+	// If a pool with the same name has already been recorded, does not insert but returns the existing row
+	InsertOrGetTokenPool(ctx context.Context, pool *core.TokenPool) (existing *core.TokenPool, err error)
+
 	// UpsertTokenPool - Upsert a token pool
-	UpsertTokenPool(ctx context.Context, pool *core.TokenPool) error
+	UpsertTokenPool(ctx context.Context, pool *core.TokenPool, optimization UpsertOptimization) error
 
 	// GetTokenPool - Get a token pool by name
 	GetTokenPool(ctx context.Context, namespace, name string) (*core.TokenPool, error)

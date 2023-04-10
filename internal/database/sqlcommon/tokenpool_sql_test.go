@@ -24,7 +24,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -68,9 +67,9 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, core.ChangeEventTypeUpdated, "ns1", poolID, mock.Anything).
 		Return().Once()
 
-	err := s.UpsertTokenPool(ctx, pool)
+	// Insert the pool
+	_, err := s.InsertOrGetTokenPool(ctx, pool)
 	assert.NoError(t, err)
-
 	assert.NotNil(t, pool.Created)
 	poolJson, _ := json.Marshal(&pool)
 
@@ -111,10 +110,17 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(pools[0])
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
+	// Cannot insert again with same name or network name
+	_, err = s.InsertOrGetTokenPool(ctx, pool)
+	assert.NoError(t, err)
+	pool.NetworkName = "pool1-shared"
+	_, err = s.InsertOrGetTokenPool(ctx, pool)
+	assert.NoError(t, err)
+
 	// Update the token pool
 	pool.Locator = "67890"
 	pool.Type = core.TokenTypeNonFungible
-	err = s.UpsertTokenPool(ctx, pool)
+	err = s.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting)
 	assert.NoError(t, err)
 
 	// Query back the token pool (by ID)
@@ -129,7 +135,15 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 func TestUpsertTokenPoolFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{}, database.UpsertOptimizationNew)
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertOrGetTokenPoolFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	_, err := s.InsertOrGetTokenPool(context.Background(), &core.TokenPool{})
 	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -138,18 +152,40 @@ func TestUpsertTokenPoolFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
+	mock.ExpectRollback()
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00176", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertOrGetTokenPoolFailSelectName(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	_, err := s.InsertOrGetTokenPool(context.Background(), &core.TokenPool{})
+	assert.Regexp(t, "FF00176", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertOrGetTokenPoolFailInsert(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
+	mock.ExpectRollback()
+	_, err := s.InsertOrGetTokenPool(context.Background(), &core.TokenPool{})
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertTokenPoolFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -157,10 +193,11 @@ func TestUpsertTokenPoolFailInsert(t *testing.T) {
 func TestUpsertTokenPoolFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00178", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -168,30 +205,11 @@ func TestUpsertTokenPoolFailUpdate(t *testing.T) {
 func TestUpsertTokenPoolFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpsertTokenPoolUpdateIDMismatch(t *testing.T) {
-	s, db := newMockProvider().init()
-	callbacks := &databasemocks.Callbacks{}
-	s.SetHandler("ns1", callbacks)
-	poolID := fftypes.NewUUID()
-	pool := &core.TokenPool{
-		ID:        poolID,
-		Namespace: "ns1",
-	}
-
-	db.ExpectBegin()
-	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
-	db.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), pool)
-	assert.Equal(t, database.IDMismatch, err)
-	assert.NoError(t, db.ExpectationsWereMet())
 }
 
 func TestGetTokenPoolByIDSelectFail(t *testing.T) {

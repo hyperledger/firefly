@@ -88,6 +88,8 @@ func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 		return ds.publishTokenPool(ctx, pool, waitConfirm)
 	}
 
+	pool.Pool.NetworkName = ""
+
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
 		hr, err := ds.handler.handleTokenPoolDefinition(ctx, state, pool.Pool)
 		if err != nil {

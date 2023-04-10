@@ -181,8 +181,8 @@ func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 	defer cancel()
 	ds.multiparty = false
 
-	mdm := ds.data.(*datamocks.Manager)
 	mdb := ds.database.(*databasemocks.Plugin)
+	mam := ds.assets.(*assetmocks.Manager)
 
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
@@ -199,21 +199,20 @@ func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 		Pool: pool,
 	}
 
-	mdb.On("GetTokenPoolByID", mock.Anything, mock.Anything, mock.Anything).Return(pool, nil)
+	mdb.On("InsertOrGetTokenPool", mock.Anything, pool).Return(nil, nil)
+	mam.On("ActivateTokenPool", mock.Anything, pool).Return(nil)
 
 	err := ds.DefineTokenPool(context.Background(), definition, false)
 	assert.NoError(t, err)
 
-	mdm.AssertExpectations(t)
 	mdb.AssertExpectations(t)
+	mam.AssertExpectations(t)
 }
 
 func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
-	mdm := ds.data.(*datamocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mdi := ds.database.(*databasemocks.Plugin)
 
 	pool := &core.TokenPoolDefinition{
@@ -229,13 +228,12 @@ func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.Pool.ID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("InsertOrGetTokenPool", mock.Anything, pool.Pool).Return(nil, fmt.Errorf("pop"))
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "pop", err)
 
-	mdm.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestDefineTokenPoolBadName(t *testing.T) {

@@ -2563,6 +2563,32 @@ func (_m *Plugin) InsertOrGetBlockchainEvent(ctx context.Context, event *core.Bl
 	return r0, r1
 }
 
+// InsertOrGetTokenPool provides a mock function with given fields: ctx, pool
+func (_m *Plugin) InsertOrGetTokenPool(ctx context.Context, pool *core.TokenPool) (*core.TokenPool, error) {
+	ret := _m.Called(ctx, pool)
+
+	var r0 *core.TokenPool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) (*core.TokenPool, error)); ok {
+		return rf(ctx, pool)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) *core.TokenPool); ok {
+		r0 = rf(ctx, pool)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.TokenPool)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenPool) error); ok {
+		r1 = rf(ctx, pool)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // InsertPins provides a mock function with given fields: ctx, pins
 func (_m *Plugin) InsertPins(ctx context.Context, pins []*core.Pin) error {
 	ret := _m.Called(ctx, pins)
@@ -3061,13 +3087,13 @@ func (_m *Plugin) UpsertTokenApproval(ctx context.Context, approval *core.TokenA
 	return r0
 }
 
-// UpsertTokenPool provides a mock function with given fields: ctx, pool
-func (_m *Plugin) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) error {
-	ret := _m.Called(ctx, pool)
+// UpsertTokenPool provides a mock function with given fields: ctx, pool, optimization
+func (_m *Plugin) UpsertTokenPool(ctx context.Context, pool *core.TokenPool, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, pool, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) error); ok {
-		r0 = rf(ctx, pool)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, pool, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}

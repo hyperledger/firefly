@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -128,7 +129,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil).Once()
 	em.mth.On("PersistTransaction", mock.Anything, txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
-	em.mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
+	em.mdi.On("UpsertTokenPool", em.ctx, storedPool, database.UpsertOptimizationExisting).Return(nil).Once()
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
 	})).Return(nil).Once()
@@ -316,7 +317,7 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil)
 	em.mth.On("PersistTransaction", mock.Anything, txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
-	em.mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(fmt.Errorf("pop"))
+	em.mdi.On("UpsertTokenPool", em.ctx, storedPool, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
 	err := em.confirmPool(em.ctx, storedPool, event)
 	assert.EqualError(t, err, "pop")

@@ -18,12 +18,12 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
@@ -52,25 +52,31 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 	// from the event (without downloading and parsing the msg)
 	correlator := pool.ID
 
+	// Attempt to create the pool in pending state
 	pool.Namespace = dh.namespace.Name
-	if err := pool.Validate(ctx); err != nil {
-		return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID)
-	}
-
-	// Check if pool has already been confirmed on chain (and confirm the message if so)
-	if existingPool, err := dh.database.GetTokenPoolByID(ctx, dh.namespace.Name, pool.ID); err != nil {
-		return HandlerResult{Action: core.ActionRetry}, err
-	} else if existingPool != nil && existingPool.State == core.TokenPoolStateConfirmed {
-		return HandlerResult{Action: core.ActionConfirm, CustomCorrelator: correlator}, nil
-	}
-
-	// Create the pool in pending state
 	pool.State = core.TokenPoolStatePending
-	if err := dh.database.UpsertTokenPool(ctx, pool); err != nil {
-		if err == database.IDMismatch {
-			return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIDMismatch, "token pool", pool.ID)
+	for i := 1; ; i++ {
+		if err := pool.Validate(ctx); err != nil {
+			return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID)
 		}
-		return HandlerResult{Action: core.ActionRetry}, err
+
+		existing, err := dh.database.InsertOrGetTokenPool(ctx, pool)
+		if err != nil {
+			return HandlerResult{Action: core.ActionRetry}, err
+		} else if existing == nil {
+			break
+		}
+
+		if existing.State == core.TokenPoolStateConfirmed && existing.ID.Equals(pool.ID) && existing.Message.Equals(pool.Message) {
+			// If this is a rewind for a pool that was confirmed, confirm the message now
+			return HandlerResult{Action: core.ActionConfirm, CustomCorrelator: correlator}, nil
+		}
+		if pool.Published && existing.Name == pool.Name {
+			// Published pools get a unique name generated from the network name
+			pool.Name = fmt.Sprintf("%s-%d", pool.NetworkName, i)
+		} else {
+			return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "token pool", pool.ID, existing.ID)
+		}
 	}
 
 	// Message will remain unconfirmed, but plugin will be notified to activate the pool

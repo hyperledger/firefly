@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -69,7 +70,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 		return err
 	}
 	pool.State = core.TokenPoolStateConfirmed
-	if err := em.database.UpsertTokenPool(ctx, pool); err != nil {
+	if err := em.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
 		return err
 	}
 	log.L(ctx).Infof("Token pool confirmed, id=%s", pool.ID)
