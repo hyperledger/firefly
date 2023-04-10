@@ -24,9 +24,31 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (ds *definitionSender) PublishTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error {
+func (ds *definitionSender) PublishTokenPool(ctx context.Context, poolNameOrID, networkName string, waitConfirm bool) (*core.TokenPool, error) {
+	if !ds.multiparty {
+		return nil, i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
+	}
+	pool, err := ds.assets.GetTokenPoolByNameOrID(ctx, poolNameOrID)
+	if err != nil {
+		return nil, err
+	}
+	if networkName != "" {
+		pool.NetworkName = networkName
+	}
+	err = ds.publishTokenPool(ctx, &core.TokenPoolDefinition{Pool: pool}, waitConfirm)
+	if err != nil {
+		return nil, err
+	}
+	if !waitConfirm {
+		err = ds.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting)
+	}
+	return pool, err
+}
+
+func (ds *definitionSender) publishTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error {
 	// Map token connector name -> broadcast name
 	if broadcastName, exists := ds.tokenBroadcastNames[pool.Pool.Connector]; exists {
 		pool.Pool.Connector = broadcastName
@@ -39,11 +61,21 @@ func (ds *definitionSender) PublishTokenPool(ctx context.Context, pool *core.Tok
 		return err
 	}
 
+	// Prepare the pool definition to be serialized for broadcast
+	localName := pool.Pool.Name
+	pool.Pool.Name = ""
 	pool.Pool.Namespace = ""
+	pool.Pool.Published = true
+	if pool.Pool.NetworkName == "" {
+		pool.Pool.NetworkName = localName
+	}
+
 	msg, err := ds.sendDefinitionDefault(ctx, pool, core.SystemTagDefinePool, waitConfirm)
 	if msg != nil {
 		pool.Pool.Message = msg.Header.ID
 	}
+
+	pool.Pool.Name = localName
 	pool.Pool.Namespace = ds.namespace
 	return err
 }
@@ -53,7 +85,7 @@ func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 		if !ds.multiparty {
 			return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
 		}
-		return ds.PublishTokenPool(ctx, pool, waitConfirm)
+		return ds.publishTokenPool(ctx, pool, waitConfirm)
 	}
 
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {

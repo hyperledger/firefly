@@ -56,6 +56,7 @@ type TokenPool struct {
 	Type            TokenType             `ffstruct:"TokenPool" json:"type" ffenum:"tokentype"`
 	Namespace       string                `ffstruct:"TokenPool" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Name            string                `ffstruct:"TokenPool" json:"name,omitempty"`
+	NetworkName     string                `ffstruct:"TokenPool" json:"networkName,omitempty"`
 	Standard        string                `ffstruct:"TokenPool" json:"standard,omitempty" ffexcludeinput:"true"`
 	Locator         string                `ffstruct:"TokenPool" json:"locator,omitempty" ffexcludeinput:"true"`
 	Key             string                `ffstruct:"TokenPool" json:"key,omitempty"`
@@ -81,6 +82,11 @@ type TokenPoolDefinition struct {
 func (t *TokenPool) Validate(ctx context.Context) (err error) {
 	if err = fftypes.ValidateFFNameFieldNoUUID(ctx, t.Name, "name"); err != nil {
 		return err
+	}
+	if t.NetworkName != "" {
+		if err = fftypes.ValidateFFNameFieldNoUUID(ctx, t.NetworkName, "networkName"); err != nil {
+			return err
+		}
 	}
 	return nil
 }

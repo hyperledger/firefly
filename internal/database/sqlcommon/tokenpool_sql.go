@@ -35,6 +35,7 @@ var (
 		"id",
 		"namespace",
 		"name",
+		"networkName",
 		"standard",
 		"locator",
 		"type",
@@ -50,6 +51,7 @@ var (
 		"interface",
 		"interface_format",
 		"methods",
+		"published",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
 		"message":         "message_id",
@@ -101,6 +103,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 		if _, err = s.UpdateTx(ctx, tokenpoolTable, tx,
 			sq.Update(tokenpoolTable).
 				Set("name", pool.Name).
+				Set("networkName", pool.NetworkName).
 				Set("standard", pool.Standard).
 				Set("locator", pool.Locator).
 				Set("type", pool.Type).
@@ -115,6 +118,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 				Set("interface", interfaceID).
 				Set("interface_format", pool.InterfaceFormat).
 				Set("methods", pool.Methods).
+				Set("published", pool.Published).
 				Where(sq.Eq{"id": pool.ID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
@@ -131,6 +135,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 					pool.ID,
 					pool.Namespace,
 					pool.Name,
+					pool.NetworkName,
 					pool.Standard,
 					pool.Locator,
 					pool.Type,
@@ -146,6 +151,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 					interfaceID,
 					pool.InterfaceFormat,
 					pool.Methods,
+					pool.Published,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeCreated, pool.Namespace, pool.ID)
@@ -165,6 +171,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.T
 		&pool.ID,
 		&pool.Namespace,
 		&pool.Name,
+		&pool.NetworkName,
 		&pool.Standard,
 		&pool.Locator,
 		&pool.Type,
@@ -180,6 +187,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.T
 		&iface.ID,
 		&pool.InterfaceFormat,
 		&pool.Methods,
+		&pool.Published,
 	)
 	if iface.ID != nil {
 		pool.Interface = &iface

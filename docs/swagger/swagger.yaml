@@ -28046,6 +28046,10 @@ paths:
                     namespace:
                       description: The namespace for the token pool
                       type: string
+                    networkName:
+                      description: The published name of the token pool within the
+                        multiparty network
+                      type: string
                     published:
                       description: Indicates if the token pool is published to other
                         members of the multiparty network
@@ -28168,6 +28172,10 @@ paths:
                   description: The name of the token pool. Note the name is not validated
                     against the description of the token on the blockchain
                   type: string
+                networkName:
+                  description: The published name of the token pool within the multiparty
+                    network
+                  type: string
                 symbol:
                   description: The token symbol. If supplied on input for an existing
                     on-chain token, this must match the on-chain information
@@ -28255,6 +28263,10 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
+                    type: string
+                  networkName:
+                    description: The published name of the token pool within the multiparty
+                      network
                     type: string
                   published:
                     description: Indicates if the token pool is published to other
@@ -28369,6 +28381,10 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
+                    type: string
+                  networkName:
+                    description: The published name of the token pool within the multiparty
+                      network
                     type: string
                   published:
                     description: Indicates if the token pool is published to other
@@ -28514,6 +28530,10 @@ paths:
                   namespace:
                     description: The namespace for the token pool
                     type: string
+                  networkName:
+                    description: The published name of the token pool within the multiparty
+                      network
+                    type: string
                   published:
                     description: Indicates if the token pool is published to other
                       members of the multiparty network
@@ -28590,7 +28610,11 @@ paths:
         content:
           application/json:
             schema:
-              additionalProperties: {}
+              properties:
+                networkName:
+                  description: An optional name to be used for publishing this definition
+                    to the multiparty network, which may differ from the local name
+                  type: string
               type: object
       responses:
         "200":
@@ -28668,6 +28692,10 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
+                    type: string
+                  networkName:
+                    description: The published name of the token pool within the multiparty
+                      network
                     type: string
                   published:
                     description: Indicates if the token pool is published to other
@@ -28782,6 +28810,10 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
+                    type: string
+                  networkName:
+                    description: The published name of the token pool within the multiparty
+                      network
                     type: string
                   published:
                     description: Indicates if the token pool is published to other
@@ -35864,6 +35896,10 @@ paths:
                     namespace:
                       description: The namespace for the token pool
                       type: string
+                    networkName:
+                      description: The published name of the token pool within the
+                        multiparty network
+                      type: string
                     published:
                       description: Indicates if the token pool is published to other
                         members of the multiparty network
@@ -35979,6 +36015,10 @@ paths:
                   description: The name of the token pool. Note the name is not validated
                     against the description of the token on the blockchain
                   type: string
+                networkName:
+                  description: The published name of the token pool within the multiparty
+                    network
+                  type: string
                 symbol:
                   description: The token symbol. If supplied on input for an existing
                     on-chain token, this must match the on-chain information
@@ -36066,6 +36106,10 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
+                    type: string
+                  networkName:
+                    description: The published name of the token pool within the multiparty
+                      network
                     type: string
                   published:
                     description: Indicates if the token pool is published to other
@@ -36180,6 +36224,10 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
+                    type: string
+                  networkName:
+                    description: The published name of the token pool within the multiparty
+                      network
                     type: string
                   published:
                     description: Indicates if the token pool is published to other
@@ -36318,6 +36366,10 @@ paths:
                   namespace:
                     description: The namespace for the token pool
                     type: string
+                  networkName:
+                    description: The published name of the token pool within the multiparty
+                      network
+                    type: string
                   published:
                     description: Indicates if the token pool is published to other
                       members of the multiparty network
@@ -36387,7 +36439,11 @@ paths:
         content:
           application/json:
             schema:
-              additionalProperties: {}
+              properties:
+                networkName:
+                  description: An optional name to be used for publishing this definition
+                    to the multiparty network, which may differ from the local name
+                  type: string
               type: object
       responses:
         "200":
@@ -36465,6 +36521,10 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
+                    type: string
+                  networkName:
+                    description: The published name of the token pool within the multiparty
+                      network
                     type: string
                   published:
                     description: Indicates if the token pool is published to other
@@ -36579,6 +36639,10 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
+                    type: string
+                  networkName:
+                    description: The published name of the token pool within the multiparty
+                      network
                     type: string
                   published:
                     description: Indicates if the token pool is published to other

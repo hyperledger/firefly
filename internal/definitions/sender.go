@@ -41,7 +41,7 @@ type Sender interface {
 	UpdateIdentity(ctx context.Context, identity *core.Identity, def *core.IdentityUpdate, signingIdentity *core.SignerRef, waitConfirm bool) error
 	DefineDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) error
 	DefineTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error
-	PublishTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error
+	PublishTokenPool(ctx context.Context, poolNameOrID, networkName string, waitConfirm bool) (*core.TokenPool, error)
 	DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm bool) error
 	DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error
 }
@@ -55,6 +55,7 @@ type definitionSender struct {
 	identity            identity.Manager
 	data                data.Manager
 	contracts           contracts.Manager // optional
+	assets              assets.Manager
 	handler             *definitionHandler
 	tokenBroadcastNames map[string]string // mapping of token connector name => remote name
 }
@@ -85,6 +86,7 @@ func NewDefinitionSender(ctx context.Context, ns *core.Namespace, multiparty boo
 		identity:            im,
 		data:                dm,
 		contracts:           cm,
+		assets:              am,
 		tokenBroadcastNames: tokenBroadcastNames,
 	}
 	dh, err := newDefinitionHandler(ctx, ns, multiparty, di, bi, dx, dm, im, am, cm, reverseMap(tokenBroadcastNames))

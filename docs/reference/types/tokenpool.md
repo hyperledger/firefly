@@ -56,6 +56,7 @@ nav_order: 11
 | `type` | The type of token the pool contains, such as fungible/non-fungible | `FFEnum`:<br/>`"fungible"`<br/>`"nonfungible"` |
 | `namespace` | The namespace for the token pool | `string` |
 | `name` | The name of the token pool. Note the name is not validated against the description of the token on the blockchain | `string` |
+| `networkName` | The published name of the token pool within the multiparty network | `string` |
 | `standard` | The ERC standard the token pool conforms to, as reported by the token connector | `string` |
 | `locator` | A unique identifier for the pool, as provided by the token connector | `string` |
 | `key` | The signing key used to create the token pool. On input for token connectors that support on-chain deployment of new tokens (vs. only index existing ones) this determines the signing key used to create the token on-chain | `string` |

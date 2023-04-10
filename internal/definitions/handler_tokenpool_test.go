@@ -33,12 +33,13 @@ import (
 
 func newPoolDefinition() *core.TokenPoolDefinition {
 	pool := &core.TokenPool{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		Name:      "name1",
-		Type:      core.TokenTypeFungible,
-		Locator:   "12345",
-		Symbol:    "COIN",
+		ID:          fftypes.NewUUID(),
+		Namespace:   "ns1",
+		Name:        "name1",
+		NetworkName: "name1",
+		Type:        core.TokenTypeFungible,
+		Locator:     "12345",
+		Symbol:      "COIN",
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
@@ -98,7 +99,7 @@ func TestHandleDefinitionBroadcastTokenPoolBadConnector(t *testing.T) {
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
-	pool.Name = "//bad"
+	pool.NetworkName = "//bad"
 	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 

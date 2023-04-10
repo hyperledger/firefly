@@ -45,9 +45,7 @@ func TestPostTokenPoolPublish(t *testing.T) {
 	pool := &core.TokenPool{}
 
 	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	mds.On("PublishTokenPool", mock.Anything, mock.MatchedBy(func(definition *core.TokenPoolDefinition) bool {
-		return definition.Pool == pool
-	}), false).Return(nil)
+	mds.On("PublishTokenPool", mock.Anything, "pool1", "", false).Return(pool, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)
