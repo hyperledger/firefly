@@ -216,6 +216,9 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
 	accountPools = suite.testState.client2.GetTokenAccountPools(suite.T(), suite.testState.org2key.Value)
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
+
+	// Cannot delete pools in multiparty mode
+	suite.testState.client1.DeleteTokenPool(suite.T(), poolID, 409)
 }
 
 func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
@@ -371,4 +374,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
 	accountPools = suite.testState.client2.GetTokenAccountPools(suite.T(), suite.testState.org2key.Value)
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
+
+	// Cannot delete pools in multiparty mode
+	suite.testState.client1.DeleteTokenPool(suite.T(), poolID, 409)
 }

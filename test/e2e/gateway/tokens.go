@@ -96,4 +96,8 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	e2e.ValidateAccountBalances(suite.T(), suite.testState.client1, poolID, "", map[string]int64{
 		suite.key: 0,
 	})
+
+	suite.testState.client1.DeleteTokenPool(suite.T(), poolID, 204)
+	pools = suite.testState.client1.GetTokenPools(suite.T(), suite.testState.startTime)
+	assert.Equal(suite.T(), 0, len(pools))
 }

@@ -588,6 +588,13 @@ func (client *FireFlyClient) GetTokenPool(t *testing.T, poolID *fftypes.UUID) (p
 	return pool
 }
 
+func (client *FireFlyClient) DeleteTokenPool(t *testing.T, poolID *fftypes.UUID, expectedStatus int) {
+	path := client.namespaced(urlTokenPools + "/" + poolID.String())
+	resp, err := client.Client.R().Delete(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
 func (client *FireFlyClient) MintTokens(t *testing.T, mint *core.TokenTransferInput, confirm bool, expectedStatus ...int) *core.TokenTransfer {
 	var transferOut core.TokenTransfer
 	path := client.namespaced(urlTokenMint)
