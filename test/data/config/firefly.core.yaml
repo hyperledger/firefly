@@ -19,9 +19,12 @@ sharedstorage:
   type: ipfs
   ipfs:
     api:
-      url: http://localhost:8080
+    #   url: http://localhost:8080
+    # gateway:
+    #   url: http://localhost:8080
+      url: http://localhost:7000
     gateway:
-      url: http://localhost:8080
+      url: http://localhost:7000
 tokens:
   - name: erc1155
     connector: https
