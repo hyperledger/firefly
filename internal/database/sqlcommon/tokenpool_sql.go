@@ -70,10 +70,14 @@ func (s *SQLCommon) attemptTokenPoolUpdate(ctx context.Context, tx *dbsql.TXWrap
 	if pool.Interface != nil {
 		interfaceID = pool.Interface.ID
 	}
+	var networkName *string
+	if pool.NetworkName != "" {
+		networkName = &pool.NetworkName
+	}
 	return s.UpdateTx(ctx, tokenpoolTable, tx,
 		sq.Update(tokenpoolTable).
 			Set("name", pool.Name).
-			Set("network_name", pool.NetworkName).
+			Set("network_name", networkName).
 			Set("standard", pool.Standard).
 			Set("locator", pool.Locator).
 			Set("type", pool.Type).
@@ -101,11 +105,15 @@ func (s *SQLCommon) setTokenPoolInsertValues(query sq.InsertBuilder, pool *core.
 	if pool.Interface != nil {
 		interfaceID = pool.Interface.ID
 	}
+	var networkName *string
+	if pool.NetworkName != "" {
+		networkName = &pool.NetworkName
+	}
 	return query.Values(
 		pool.ID,
 		pool.Namespace,
 		pool.Name,
-		pool.NetworkName,
+		networkName,
 		pool.Standard,
 		pool.Locator,
 		pool.Type,
@@ -220,11 +228,12 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool, o
 func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.TokenPool, error) {
 	pool := core.TokenPool{}
 	iface := fftypes.FFIReference{}
+	var networkName *string
 	err := row.Scan(
 		&pool.ID,
 		&pool.Namespace,
 		&pool.Name,
-		&pool.NetworkName,
+		&networkName,
 		&pool.Standard,
 		&pool.Locator,
 		&pool.Type,
@@ -244,6 +253,9 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.T
 	)
 	if iface.ID != nil {
 		pool.Interface = &iface
+	}
+	if networkName != nil {
+		pool.NetworkName = *networkName
 	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, tokenpoolTable)

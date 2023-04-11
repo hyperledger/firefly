@@ -38,17 +38,18 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	// Create a new token pool entry
 	poolID := fftypes.NewUUID()
 	pool := &core.TokenPool{
-		ID:        poolID,
-		Namespace: "ns1",
-		Name:      "my-pool",
-		Standard:  "ERC1155",
-		Type:      core.TokenTypeFungible,
-		Locator:   "12345",
-		Connector: "erc1155",
-		Symbol:    "COIN",
-		Decimals:  18,
-		Message:   fftypes.NewUUID(),
-		State:     core.TokenPoolStateConfirmed,
+		ID:          poolID,
+		Namespace:   "ns1",
+		Name:        "my-pool",
+		NetworkName: "my-pool",
+		Standard:    "ERC1155",
+		Type:        core.TokenTypeFungible,
+		Locator:     "12345",
+		Connector:   "erc1155",
+		Symbol:      "COIN",
+		Decimals:    18,
+		Message:     fftypes.NewUUID(),
+		State:       core.TokenPoolStateConfirmed,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
@@ -112,12 +113,21 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(pools[0])
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
-	// Cannot insert again with same name or network name
-	_, err = s.InsertOrGetTokenPool(ctx, pool)
+	// Cannot insert again with same name, network name, or locator
+	existing, err := s.InsertOrGetTokenPool(ctx, &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Name:      "my-pool",
+		Namespace: "ns1",
+	})
 	assert.NoError(t, err)
-	pool.NetworkName = "pool1-shared"
-	_, err = s.InsertOrGetTokenPool(ctx, pool)
+	assert.Equal(t, pool.ID, existing.ID)
+	existing, err = s.InsertOrGetTokenPool(ctx, &core.TokenPool{
+		ID:          fftypes.NewUUID(),
+		NetworkName: "my-pool",
+		Namespace:   "ns1",
+	})
 	assert.NoError(t, err)
+	assert.Equal(t, pool.ID, existing.ID)
 
 	// Update the token pool
 	pool.Locator = "67890"
