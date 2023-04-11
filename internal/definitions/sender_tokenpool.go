@@ -41,7 +41,7 @@ func (ds *definitionSender) PublishTokenPool(ctx context.Context, poolNameOrID, 
 			pool.NetworkName = networkName
 		}
 
-		sender = ds.getTokenPoolSender(ctx, &core.TokenPoolDefinition{Pool: pool})
+		sender = ds.getTokenPoolSender(ctx, pool)
 		if sender.err != nil {
 			return sender.err
 		}
@@ -63,40 +63,41 @@ func (ds *definitionSender) PublishTokenPool(ctx context.Context, poolNameOrID, 
 	return pool, err
 }
 
-func (ds *definitionSender) getTokenPoolSender(ctx context.Context, pool *core.TokenPoolDefinition) *sendWrapper {
+func (ds *definitionSender) getTokenPoolSender(ctx context.Context, pool *core.TokenPool) *sendWrapper {
 	// Map token connector name -> broadcast name
-	if broadcastName, exists := ds.tokenBroadcastNames[pool.Pool.Connector]; exists {
-		pool.Pool.Connector = broadcastName
+	if broadcastName, exists := ds.tokenBroadcastNames[pool.Connector]; exists {
+		pool.Connector = broadcastName
 	} else {
-		log.L(ctx).Infof("Could not find broadcast name for token connector: %s", pool.Pool.Connector)
+		log.L(ctx).Infof("Could not find broadcast name for token connector: %s", pool.Connector)
 		return wrapSendError(i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, broadcastName, "token"))
 	}
 
-	if err := pool.Pool.Validate(ctx); err != nil {
+	if err := pool.Validate(ctx); err != nil {
 		return wrapSendError(err)
 	}
 
 	// Prepare the pool definition to be serialized for broadcast
-	localName := pool.Pool.Name
-	pool.Pool.Name = ""
-	pool.Pool.Namespace = ""
-	pool.Pool.Published = true
-	if pool.Pool.NetworkName == "" {
-		pool.Pool.NetworkName = localName
+	localName := pool.Name
+	pool.Name = ""
+	pool.Namespace = ""
+	pool.Published = true
+	if pool.NetworkName == "" {
+		pool.NetworkName = localName
 	}
+	definition := &core.TokenPoolDefinition{Pool: pool}
 
-	sender := ds.getSenderDefault(ctx, pool, core.SystemTagDefinePool)
+	sender := ds.getSenderDefault(ctx, definition, core.SystemTagDefinePool)
 	if sender.message != nil {
-		pool.Pool.Message = sender.message.Header.ID
+		pool.Message = sender.message.Header.ID
 	}
 
-	pool.Pool.Name = localName
-	pool.Pool.Namespace = ds.namespace
+	pool.Name = localName
+	pool.Namespace = ds.namespace
 	return sender
 }
 
-func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error {
-	if pool.Pool.Published {
+func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPool, waitConfirm bool) error {
+	if pool.Published {
 		if !ds.multiparty {
 			return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
 		}
@@ -104,10 +105,10 @@ func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 		return err
 	}
 
-	pool.Pool.NetworkName = ""
+	pool.NetworkName = ""
 
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		hr, err := ds.handler.handleTokenPoolDefinition(ctx, state, pool.Pool)
+		hr, err := ds.handler.handleTokenPoolDefinition(ctx, state, pool)
 		if err != nil {
 			if innerErr := errors.Unwrap(err); innerErr != nil {
 				return hr, innerErr

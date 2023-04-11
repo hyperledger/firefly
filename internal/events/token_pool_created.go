@@ -182,9 +182,7 @@ func (em *eventManager) TokenPoolCreated(ctx context.Context, ti tokens.Plugin, 
 			// Publish the details of the new token pool
 			// Other nodes will pass these details to their own token connector for validation/activation of the pool
 			log.L(ctx).Infof("Defining token pool, id=%s", stagedPool.ID)
-			err = em.defsender.DefineTokenPool(ctx, &core.TokenPoolDefinition{
-				Pool: stagedPool,
-			}, false)
+			err = em.defsender.DefineTokenPool(ctx, stagedPool, false)
 		}
 	}
 

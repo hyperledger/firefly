@@ -358,8 +358,8 @@ func TestTokenPoolCreatedPublish(t *testing.T) {
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(nil, fmt.Errorf("pop")).Once()
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil).Once()
-	em.mds.On("DefineTokenPool", em.ctx, mock.MatchedBy(func(pool *core.TokenPoolDefinition) bool {
-		return pool.Pool.Namespace == "ns1" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
+	em.mds.On("DefineTokenPool", em.ctx, mock.MatchedBy(func(pool *core.TokenPool) bool {
+		return pool.Namespace == "ns1" && pool.Name == "my-pool" && *pool.ID == *poolID
 	}), false).Return(nil, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, pool)

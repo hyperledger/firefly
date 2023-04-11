@@ -41,16 +41,14 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 
 	mdm := ds.data.(*datamocks.Manager)
 
-	pool := &core.TokenPoolDefinition{
-		Pool: &core.TokenPool{
-			ID:        fftypes.NewUUID(),
-			Namespace: "",
-			Name:      "",
-			Type:      core.TokenTypeNonFungible,
-			Locator:   "N1",
-			Symbol:    "COIN",
-			Published: true,
-		},
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "",
+		Name:      "",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Published: true,
 	}
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
@@ -66,16 +64,14 @@ func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
 
 	mdm := ds.data.(*datamocks.Manager)
 
-	pool := &core.TokenPoolDefinition{
-		Pool: &core.TokenPool{
-			ID:        fftypes.NewUUID(),
-			Namespace: "",
-			Name:      "",
-			Type:      core.TokenTypeNonFungible,
-			Locator:   "N1",
-			Symbol:    "COIN",
-			Published: false,
-		},
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "",
+		Name:      "",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Published: false,
 	}
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
@@ -91,16 +87,14 @@ func TestBroadcastTokenPoolPublishNonMultiparty(t *testing.T) {
 
 	mdm := ds.data.(*datamocks.Manager)
 
-	pool := &core.TokenPoolDefinition{
-		Pool: &core.TokenPool{
-			ID:        fftypes.NewUUID(),
-			Namespace: "",
-			Name:      "",
-			Type:      core.TokenTypeNonFungible,
-			Locator:   "N1",
-			Symbol:    "COIN",
-			Published: true,
-		},
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "",
+		Name:      "",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Published: true,
 	}
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
@@ -116,17 +110,15 @@ func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
 
 	mdm := ds.data.(*datamocks.Manager)
 
-	pool := &core.TokenPoolDefinition{
-		Pool: &core.TokenPool{
-			ID:        fftypes.NewUUID(),
-			Namespace: "",
-			Name:      "",
-			Type:      core.TokenTypeNonFungible,
-			Locator:   "N1",
-			Symbol:    "COIN",
-			Connector: "connector1",
-			Published: true,
-		},
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "",
+		Name:      "",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: true,
 	}
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
@@ -145,17 +137,15 @@ func TestDefineTokenPoolOk(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	pool := &core.TokenPoolDefinition{
-		Pool: &core.TokenPool{
-			ID:        fftypes.NewUUID(),
-			Namespace: "ns1",
-			Name:      "mypool",
-			Type:      core.TokenTypeNonFungible,
-			Locator:   "N1",
-			Symbol:    "COIN",
-			Connector: "connector1",
-			Published: true,
-		},
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "mypool",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: true,
 	}
 
 	mim.On("GetMultipartyRootOrg", ds.ctx).Return(&core.Identity{
@@ -195,14 +185,11 @@ func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 		State:     core.TokenPoolStateConfirmed,
 		Published: false,
 	}
-	definition := &core.TokenPoolDefinition{
-		Pool: pool,
-	}
 
 	mdb.On("InsertOrGetTokenPool", mock.Anything, pool).Return(nil, nil)
 	mam.On("ActivateTokenPool", mock.Anything, pool).Return(nil)
 
-	err := ds.DefineTokenPool(context.Background(), definition, false)
+	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
 
 	mdb.AssertExpectations(t)
@@ -215,20 +202,18 @@ func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 
 	mdi := ds.database.(*databasemocks.Plugin)
 
-	pool := &core.TokenPoolDefinition{
-		Pool: &core.TokenPool{
-			ID:        fftypes.NewUUID(),
-			Namespace: "ns1",
-			Name:      "mypool",
-			Type:      core.TokenTypeNonFungible,
-			Locator:   "N1",
-			Symbol:    "COIN",
-			Connector: "connector1",
-			Published: false,
-		},
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "mypool",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: false,
 	}
 
-	mdi.On("InsertOrGetTokenPool", mock.Anything, pool.Pool).Return(nil, fmt.Errorf("pop"))
+	mdi.On("InsertOrGetTokenPool", mock.Anything, pool).Return(nil, fmt.Errorf("pop"))
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "pop", err)
@@ -241,17 +226,15 @@ func TestDefineTokenPoolBadName(t *testing.T) {
 	defer cancel()
 	ds.multiparty = true
 
-	pool := &core.TokenPoolDefinition{
-		Pool: &core.TokenPool{
-			ID:        fftypes.NewUUID(),
-			Namespace: "ns1",
-			Name:      "///bad/////",
-			Type:      core.TokenTypeNonFungible,
-			Locator:   "N1",
-			Symbol:    "COIN",
-			Connector: "connector1",
-			Published: false,
-		},
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "///bad/////",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: false,
 	}
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
