@@ -899,6 +899,7 @@ var TokenPoolQueryFactory = &ffapi.QueryFields{
 	"id":              &ffapi.UUIDField{},
 	"type":            &ffapi.StringField{},
 	"name":            &ffapi.StringField{},
+	"networkname":     &ffapi.StringField{},
 	"standard":        &ffapi.StringField{},
 	"locator":         &ffapi.StringField{},
 	"symbol":          &ffapi.StringField{},
@@ -911,6 +912,7 @@ var TokenPoolQueryFactory = &ffapi.QueryFields{
 	"tx.id":           &ffapi.UUIDField{},
 	"interface":       &ffapi.UUIDField{},
 	"interfaceformat": &ffapi.StringField{},
+	"published":       &ffapi.BoolField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances

@@ -36,7 +36,7 @@ var (
 		"id",
 		"namespace",
 		"name",
-		"networkName",
+		"network_name",
 		"standard",
 		"locator",
 		"type",
@@ -59,6 +59,7 @@ var (
 		"tx.type":         "tx_type",
 		"tx.id":           "tx_id",
 		"interfaceformat": "interface_format",
+		"networkname":     "network_name",
 	}
 )
 
@@ -72,7 +73,7 @@ func (s *SQLCommon) attemptTokenPoolUpdate(ctx context.Context, tx *dbsql.TXWrap
 	return s.UpdateTx(ctx, tokenpoolTable, tx,
 		sq.Update(tokenpoolTable).
 			Set("name", pool.Name).
-			Set("networkName", pool.NetworkName).
+			Set("network_name", pool.NetworkName).
 			Set("standard", pool.Standard).
 			Set("locator", pool.Locator).
 			Set("type", pool.Type).
@@ -143,7 +144,7 @@ func (s *SQLCommon) tokenPoolExists(ctx context.Context, tx *dbsql.TXWrapper, po
 			sq.Eq{"namespace": pool.Namespace},
 			sq.Or{
 				sq.Eq{"name": pool.Name},
-				sq.Eq{"networkName": pool.NetworkName},
+				sq.Eq{"network_name": pool.NetworkName},
 			},
 		}),
 	)
@@ -171,7 +172,7 @@ func (s *SQLCommon) InsertOrGetTokenPool(ctx context.Context, pool *core.TokenPo
 		sq.Eq{"namespace": pool.Namespace},
 		sq.Or{
 			sq.Eq{"name": pool.Name},
-			sq.Eq{"networkName": pool.NetworkName},
+			sq.Eq{"network_name": pool.NetworkName},
 		},
 	})
 	if queryErr != nil || existing != nil {

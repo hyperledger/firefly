@@ -1,5 +1,5 @@
 BEGIN;
 DROP INDEX tokenpool_networkname;
 ALTER TABLE tokenpool DROP COLUMN published;
-ALTER TABLE tokenpool DROP COLUMN networkName;
+ALTER TABLE tokenpool DROP COLUMN network_name;
 COMMIT;
