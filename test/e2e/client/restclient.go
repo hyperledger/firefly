@@ -567,6 +567,22 @@ func (client *FireFlyClient) CreateTokenPool(t *testing.T, pool *core.TokenPool,
 	return &poolOut
 }
 
+func (client *FireFlyClient) PublishTokenPool(t *testing.T, poolID *fftypes.UUID, networkName string, confirm bool) {
+	path := client.namespaced(urlTokenPools + "/" + poolID.String() + "/publish")
+	resp, err := client.Client.R().
+		SetBody(&core.DefinitionPublish{
+			NetworkName: networkName,
+		}).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		Post(path)
+	require.NoError(t, err)
+	expected := 202
+	if confirm {
+		expected = 200
+	}
+	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
 func (client *FireFlyClient) GetTokenPools(t *testing.T, startTime time.Time) (pools []*core.TokenPool) {
 	path := client.namespaced(urlTokenPools)
 	resp, err := client.Client.R().
