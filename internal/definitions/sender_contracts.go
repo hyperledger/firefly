@@ -41,7 +41,7 @@ func (ds *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, wai
 		}
 
 		ffi.Namespace = ""
-		msg, err := ds.sendDefinitionDefault(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
+		msg, err := ds.getSenderDefault(ctx, ffi, core.SystemTagDefineFFI).send(ctx, waitConfirm)
 		if msg != nil {
 			ffi.Message = msg.Header.ID
 		}
@@ -65,7 +65,7 @@ func (ds *definitionSender) DefineContractAPI(ctx context.Context, httpServerURL
 		}
 
 		api.Namespace = ""
-		msg, err := ds.sendDefinitionDefault(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
+		msg, err := ds.getSenderDefault(ctx, api, core.SystemTagDefineContractAPI).send(ctx, waitConfirm)
 		if msg != nil {
 			api.Message = msg.Header.ID
 		}

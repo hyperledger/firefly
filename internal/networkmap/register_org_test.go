@@ -74,7 +74,7 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 			return sr.Key == "0x12345"
 		}),
 		(*core.SignerRef)(nil),
-		false).Return(nil)
+	).Return(nil)
 
 	org, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.NoError(t, err)

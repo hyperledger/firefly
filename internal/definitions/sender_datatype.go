@@ -44,7 +44,7 @@ func (ds *definitionSender) DefineDatatype(ctx context.Context, datatype *core.D
 		}
 
 		datatype.Namespace = ""
-		msg, err := ds.sendDefinitionDefault(ctx, datatype, core.SystemTagDefineDatatype, waitConfirm)
+		msg, err := ds.getSenderDefault(ctx, datatype, core.SystemTagDefineDatatype).send(ctx, waitConfirm)
 		if msg != nil {
 			datatype.Message = msg.Header.ID
 		}

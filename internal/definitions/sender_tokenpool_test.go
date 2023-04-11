@@ -288,8 +288,10 @@ func TestPublishTokenPool(t *testing.T) {
 	}, nil)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(nil)
 	mdi.On("UpsertTokenPool", context.Background(), pool, database.UpsertOptimizationExisting).Return(nil)
+	mockRunAsGroupPassthrough(mdi)
 
 	result, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.NoError(t, err)
@@ -318,20 +320,56 @@ func TestPublishTokenPoolQueryFail(t *testing.T) {
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
+	mdi := ds.database.(*databasemocks.Plugin)
 
 	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(nil, fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(mdi)
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.EqualError(t, err, "pop")
 
 	mam.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
-func TestPublishTokenPoolSendFail(t *testing.T) {
+func TestPublishTokenPoolResolveFail(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	ds.multiparty = true
 
+	mam := ds.assets.(*assetmocks.Manager)
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mdi := ds.database.(*databasemocks.Plugin)
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "pool1",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: false,
+	}
+
+	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(mdi)
+
+	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
+	assert.EqualError(t, err, "pop")
+
+	mam.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestPublishTokenPoolPrepareFail(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = true
+
+	mdi := ds.database.(*databasemocks.Plugin)
 	mam := ds.assets.(*assetmocks.Manager)
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
@@ -356,12 +394,149 @@ func TestPublishTokenPoolSendFail(t *testing.T) {
 	}, nil)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
-	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
+	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(mdi)
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.EqualError(t, err, "pop")
 	assert.True(t, pool.Published)
 
+	mdi.AssertExpectations(t)
+	mam.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestPublishTokenPoolSendFail(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = true
+
+	mdi := ds.database.(*databasemocks.Plugin)
+	mam := ds.assets.(*assetmocks.Manager)
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mbm := ds.broadcast.(*broadcastmocks.Manager)
+	mms := &syncasyncmocks.Sender{}
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "pool1",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: false,
+	}
+
+	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertTokenPool", context.Background(), pool, database.UpsertOptimizationExisting).Return(nil)
+	mockRunAsGroupPassthrough(mdi)
+
+	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
+	assert.EqualError(t, err, "pop")
+	assert.True(t, pool.Published)
+
+	mdi.AssertExpectations(t)
+	mam.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestPublishTokenPoolUpsertFail(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = true
+
+	mdi := ds.database.(*databasemocks.Plugin)
+	mam := ds.assets.(*assetmocks.Manager)
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mbm := ds.broadcast.(*broadcastmocks.Manager)
+	mms := &syncasyncmocks.Sender{}
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "pool1",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: false,
+	}
+
+	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mdi.On("UpsertTokenPool", context.Background(), pool, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(mdi)
+
+	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
+	assert.EqualError(t, err, "pop")
+	assert.True(t, pool.Published)
+
+	mdi.AssertExpectations(t)
+	mam.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestPublishTokenPoolConfirm(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = true
+
+	mdi := ds.database.(*databasemocks.Plugin)
+	mam := ds.assets.(*assetmocks.Manager)
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mbm := ds.broadcast.(*broadcastmocks.Manager)
+	mms := &syncasyncmocks.Sender{}
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "pool1",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: false,
+	}
+
+	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	mms.On("SendAndWait", context.Background()).Return(nil)
+	mockRunAsGroupPassthrough(mdi)
+
+	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", true)
+	assert.NoError(t, err)
+	assert.True(t, pool.Published)
+
+	mdi.AssertExpectations(t)
 	mam.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)

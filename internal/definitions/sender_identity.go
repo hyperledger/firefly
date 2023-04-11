@@ -25,7 +25,7 @@ import (
 
 // ClaimIdentity is a special form of CreateDefinition where the signing identity does not need to have been pre-registered
 // The blockchain "key" will be normalized, but the "author" will pass through unchecked
-func (ds *definitionSender) ClaimIdentity(ctx context.Context, claim *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error {
+func (ds *definitionSender) ClaimIdentity(ctx context.Context, claim *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef) error {
 	if ds.multiparty {
 		var err error
 		signingIdentity.Key, err = ds.identity.ResolveInputSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
@@ -34,7 +34,7 @@ func (ds *definitionSender) ClaimIdentity(ctx context.Context, claim *core.Ident
 		}
 
 		claim.Identity.Namespace = ""
-		claimMsg, err := ds.sendDefinitionCommon(ctx, claim, signingIdentity, core.SystemTagIdentityClaim, waitConfirm)
+		claimMsg, err := ds.getSenderResolved(ctx, claim, signingIdentity, core.SystemTagIdentityClaim).send(ctx, false)
 		if err != nil {
 			return err
 		}
@@ -42,13 +42,13 @@ func (ds *definitionSender) ClaimIdentity(ctx context.Context, claim *core.Ident
 
 		// Send the verification if one is required.
 		if parentSigner != nil {
-			verifyMsg, err := ds.sendDefinition(ctx, &core.IdentityVerification{
+			verifyMsg, err := ds.getSender(ctx, &core.IdentityVerification{
 				Claim: core.MessageRef{
 					ID:   claimMsg.Header.ID,
 					Hash: claimMsg.Hash,
 				},
 				Identity: claim.Identity.IdentityBase,
-			}, parentSigner, core.SystemTagIdentityVerification, false)
+			}, parentSigner, core.SystemTagIdentityVerification).send(ctx, false)
 			if err != nil {
 				return err
 			}
@@ -66,7 +66,7 @@ func (ds *definitionSender) ClaimIdentity(ctx context.Context, claim *core.Ident
 
 func (ds *definitionSender) UpdateIdentity(ctx context.Context, identity *core.Identity, def *core.IdentityUpdate, signingIdentity *core.SignerRef, waitConfirm bool) error {
 	if ds.multiparty {
-		updateMsg, err := ds.sendDefinition(ctx, def, signingIdentity, core.SystemTagIdentityUpdate, waitConfirm)
+		updateMsg, err := ds.getSender(ctx, def, signingIdentity, core.SystemTagIdentityUpdate).send(ctx, waitConfirm)
 		identity.Messages.Update = updateMsg.Header.ID
 		return err
 	}

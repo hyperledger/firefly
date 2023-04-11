@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -37,7 +38,7 @@ import (
 type Sender interface {
 	core.Named
 
-	ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error
+	ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef) error
 	UpdateIdentity(ctx context.Context, identity *core.Identity, def *core.IdentityUpdate, signingIdentity *core.SignerRef, waitConfirm bool) error
 	DefineDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) error
 	DefineTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error
@@ -107,32 +108,49 @@ func (ds *definitionSender) Name() string {
 	return "DefinitionSender"
 }
 
-func (ds *definitionSender) sendDefinitionDefault(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
+type sendWrapper struct {
+	sender  syncasync.Sender
+	message *core.Message
+	err     error
+}
+
+func wrapSendError(err error) *sendWrapper {
+	return &sendWrapper{err: err}
+}
+
+func (w *sendWrapper) send(ctx context.Context, waitConfirm bool) (*core.Message, error) {
+	switch {
+	case w.err != nil:
+		return nil, w.err
+	case waitConfirm:
+		return w.message, w.sender.SendAndWait(ctx)
+	default:
+		return w.message, w.sender.Send(ctx)
+	}
+}
+
+func (ds *definitionSender) getSenderDefault(ctx context.Context, def core.Definition, tag string) *sendWrapper {
 	org, err := ds.identity.GetMultipartyRootOrg(ctx)
 	if err != nil {
-		return nil, err
+		return wrapSendError(err)
 	}
-
-	return ds.sendDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */
+	return ds.getSender(ctx, def, &core.SignerRef{ /* resolve to node default */
 		Author: org.DID,
-	}, tag, waitConfirm)
+	}, tag)
 }
 
-func (ds *definitionSender) sendDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
-
-	err = ds.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
+func (ds *definitionSender) getSender(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string) *sendWrapper {
+	err := ds.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
 	if err != nil {
-		return nil, err
+		return wrapSendError(err)
 	}
-
-	return ds.sendDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
+	return ds.getSenderResolved(ctx, def, signingIdentity, tag)
 }
 
-func (ds *definitionSender) sendDefinitionCommon(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
-
+func (ds *definitionSender) getSenderResolved(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string) *sendWrapper {
 	b, err := json.Marshal(&def)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
+		return wrapSendError(i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed))
 	}
 	dataValue := fftypes.JSONAnyPtrBytes(b)
 	message := &core.MessageInOut{
@@ -149,12 +167,8 @@ func (ds *definitionSender) sendDefinitionCommon(ctx context.Context, def core.D
 			&core.DataRefOrValue{Value: dataValue},
 		},
 	}
-
-	sender := ds.broadcast.NewBroadcast(message)
-	if waitConfirm {
-		err = sender.SendAndWait(ctx)
-	} else {
-		err = sender.Send(ctx)
+	return &sendWrapper{
+		message: &message.Message,
+		sender:  ds.broadcast.NewBroadcast(message),
 	}
-	return &message.Message, err
 }

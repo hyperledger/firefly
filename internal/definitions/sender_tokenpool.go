@@ -27,38 +27,53 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (ds *definitionSender) PublishTokenPool(ctx context.Context, poolNameOrID, networkName string, waitConfirm bool) (*core.TokenPool, error) {
+func (ds *definitionSender) PublishTokenPool(ctx context.Context, poolNameOrID, networkName string, waitConfirm bool) (pool *core.TokenPool, err error) {
 	if !ds.multiparty {
 		return nil, i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
 	}
-	pool, err := ds.assets.GetTokenPoolByNameOrID(ctx, poolNameOrID)
+
+	var sender *sendWrapper
+	err = ds.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		if pool, err = ds.assets.GetTokenPoolByNameOrID(ctx, poolNameOrID); err != nil {
+			return err
+		}
+		if networkName != "" {
+			pool.NetworkName = networkName
+		}
+
+		sender = ds.getTokenPoolSender(ctx, &core.TokenPoolDefinition{Pool: pool})
+		if sender.err != nil {
+			return sender.err
+		}
+		if !waitConfirm {
+			if err = sender.sender.Prepare(ctx); err != nil {
+				return err
+			}
+			if err = ds.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if networkName != "" {
-		pool.NetworkName = networkName
-	}
-	err = ds.publishTokenPool(ctx, &core.TokenPoolDefinition{Pool: pool}, waitConfirm)
-	if err != nil {
-		return nil, err
-	}
-	if !waitConfirm {
-		err = ds.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting)
-	}
+
+	_, err = sender.send(ctx, waitConfirm)
 	return pool, err
 }
 
-func (ds *definitionSender) publishTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error {
+func (ds *definitionSender) getTokenPoolSender(ctx context.Context, pool *core.TokenPoolDefinition) *sendWrapper {
 	// Map token connector name -> broadcast name
 	if broadcastName, exists := ds.tokenBroadcastNames[pool.Pool.Connector]; exists {
 		pool.Pool.Connector = broadcastName
 	} else {
 		log.L(ctx).Infof("Could not find broadcast name for token connector: %s", pool.Pool.Connector)
-		return i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, broadcastName, "token")
+		return wrapSendError(i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, broadcastName, "token"))
 	}
 
 	if err := pool.Pool.Validate(ctx); err != nil {
-		return err
+		return wrapSendError(err)
 	}
 
 	// Prepare the pool definition to be serialized for broadcast
@@ -70,14 +85,14 @@ func (ds *definitionSender) publishTokenPool(ctx context.Context, pool *core.Tok
 		pool.Pool.NetworkName = localName
 	}
 
-	msg, err := ds.sendDefinitionDefault(ctx, pool, core.SystemTagDefinePool, waitConfirm)
-	if msg != nil {
-		pool.Pool.Message = msg.Header.ID
+	sender := ds.getSenderDefault(ctx, pool, core.SystemTagDefinePool)
+	if sender.message != nil {
+		pool.Pool.Message = sender.message.Header.ID
 	}
 
 	pool.Pool.Name = localName
 	pool.Pool.Namespace = ds.namespace
-	return err
+	return sender
 }
 
 func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolDefinition, waitConfirm bool) error {
@@ -85,7 +100,8 @@ func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 		if !ds.multiparty {
 			return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
 		}
-		return ds.publishTokenPool(ctx, pool, waitConfirm)
+		_, err := ds.getTokenPoolSender(ctx, pool).send(ctx, waitConfirm)
+		return err
 	}
 
 	pool.Pool.NetworkName = ""

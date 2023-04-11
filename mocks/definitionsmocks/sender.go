@@ -17,13 +17,13 @@ type Sender struct {
 	mock.Mock
 }
 
-// ClaimIdentity provides a mock function with given fields: ctx, def, signingIdentity, parentSigner, waitConfirm
-func (_m *Sender) ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error {
-	ret := _m.Called(ctx, def, signingIdentity, parentSigner, waitConfirm)
+// ClaimIdentity provides a mock function with given fields: ctx, def, signingIdentity, parentSigner
+func (_m *Sender) ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef) error {
+	ret := _m.Called(ctx, def, signingIdentity, parentSigner)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityClaim, *core.SignerRef, *core.SignerRef, bool) error); ok {
-		r0 = rf(ctx, def, signingIdentity, parentSigner, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityClaim, *core.SignerRef, *core.SignerRef) error); ok {
+		r0 = rf(ctx, def, signingIdentity, parentSigner)
 	} else {
 		r0 = ret.Error(0)
 	}

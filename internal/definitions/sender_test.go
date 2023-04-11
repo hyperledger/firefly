@@ -54,6 +54,14 @@ func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
 	return ds.(*definitionSender), cancel
 }
 
+func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		fn := a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
+}
+
 func TestInitSenderFail(t *testing.T) {
 	_, _, err := NewDefinitionSender(context.Background(), &core.Namespace{}, false, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
@@ -83,7 +91,7 @@ func TestCreateDefinitionConfirm(t *testing.T) {
 	mms.On("SendAndWait", mock.Anything).Return(nil)
 
 	ds.multiparty = true
-	_, err := ds.sendDefinitionDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype, true)
+	_, err := ds.getSenderDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype).send(ds.ctx, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -110,7 +118,7 @@ func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 
 	ds.multiparty = true
 
-	_, err := ds.sendDefinitionDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype, true)
+	_, err := ds.getSenderDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype).send(ds.ctx, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -126,9 +134,9 @@ func TestCreateDefinitionBadIdentity(t *testing.T) {
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := ds.sendDefinition(ds.ctx, &core.Datatype{}, &core.SignerRef{
+	_, err := ds.getSender(ds.ctx, &core.Datatype{}, &core.SignerRef{
 		Author: "wrong",
 		Key:    "wrong",
-	}, core.SystemTagDefineDatatype, false)
+	}, core.SystemTagDefineDatatype).send(ds.ctx, false)
 	assert.Regexp(t, "pop", err)
 }
