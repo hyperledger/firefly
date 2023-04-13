@@ -375,25 +375,25 @@ func (_m *Plugin) NormalizeContractLocation(ctx context.Context, ntype blockchai
 	return r0, r1
 }
 
-// QueryContract provides a mock function with given fields: ctx, location, method, input, errors, options
-func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
-	ret := _m.Called(ctx, location, method, input, errors, options)
+// QueryContract provides a mock function with given fields: ctx, signingKey, location, method, input, errors, options
+func (_m *Plugin) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
+	ret := _m.Called(ctx, signingKey, location, method, input, errors, options)
 
 	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) (interface{}, error)); ok {
-		return rf(ctx, location, method, input, errors, options)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) (interface{}, error)); ok {
+		return rf(ctx, signingKey, location, method, input, errors, options)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) interface{}); ok {
-		r0 = rf(ctx, location, method, input, errors, options)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) interface{}); ok {
+		r0 = rf(ctx, signingKey, location, method, input, errors, options)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) error); ok {
-		r1 = rf(ctx, location, method, input, errors, options)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) error); ok {
+		r1 = rf(ctx, signingKey, location, method, input, errors, options)
 	} else {
 		r1 = ret.Error(1)
 	}

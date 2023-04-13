@@ -2332,7 +2332,6 @@ func TestQueryContractOK(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 	signingKey := fftypes.NewRandB32().String()
-	e.signer = signingKey
 	location := &Location{
 		Channel:   "firefly",
 		Chaincode: "simplestorage",
@@ -2360,7 +2359,7 @@ func TestQueryContractOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, &fabQueryNamedOutput{})(req)
 		})
 	var errors []*fftypes.FFIError
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	_, err = e.QueryContract(context.Background(), signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.NoError(t, err)
 }
 
@@ -2383,7 +2382,7 @@ func TestQueryContractInputNotJSON(t *testing.T) {
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	var errors []*fftypes.FFIError
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	_, err = e.QueryContract(context.Background(), "", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -2401,7 +2400,7 @@ func TestQueryContractBadLocation(t *testing.T) {
 	}
 	options := map[string]interface{}{}
 	var errors []*fftypes.FFIError
-	_, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtr(`{"validLocation": false}`), method, params, errors, options)
+	_, err := e.QueryContract(context.Background(), "", fftypes.JSONAnyPtr(`{"validLocation": false}`), method, params, errors, options)
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -2427,7 +2426,7 @@ func TestQueryContractFabconnectError(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(400, &fabQueryNamedOutput{})(req)
 		})
 	var errors []*fftypes.FFIError
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	_, err = e.QueryContract(context.Background(), "", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10284", err)
 }
 
@@ -2459,7 +2458,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
 	var errors []*fftypes.FFIError
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	_, err = e.QueryContract(context.Background(), "", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "invalid character", err)
 }
 
