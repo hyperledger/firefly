@@ -2567,10 +2567,11 @@ func TestQueryContract(t *testing.T) {
 			Returns: fftypes.FFIParams{},
 		},
 		IdempotencyKey: "idem1",
+		Key:            "key-unresolved",
 	}
 
-	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input, req.Errors, req.Options).Return(struct{}{}, nil)
+	mim.On("ResolveQuerySigningKey", mock.Anything, "key-unresolved", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mbi.On("QueryContract", mock.Anything, "key-resolved", req.Location, req.Method, req.Input, req.Errors, req.Options).Return(struct{}{}, nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)

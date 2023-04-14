@@ -349,7 +349,12 @@ func (cm *contractManager) DeployContract(ctx context.Context, req *core.Contrac
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, req *core.ContractCallRequest, waitConfirm bool) (res interface{}, err error) {
-	req.Key, err = cm.identity.ResolveInputSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
+	keyResolver := cm.identity.ResolveInputSigningKey
+	if req.Type == core.CallTypeQuery {
+		// Special case that we are resolving the key with an intent to query, not sign
+		keyResolver = cm.identity.ResolveQuerySigningKey
+	}
+	req.Key, err = keyResolver(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}
@@ -414,7 +419,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 		return op, send(ctx)
 
 	case core.CallTypeQuery:
-		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Errors, req.Options)
+		return cm.blockchain.QueryContract(ctx, req.Key, req.Location, req.Method, req.Input, req.Errors, req.Options)
 
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))

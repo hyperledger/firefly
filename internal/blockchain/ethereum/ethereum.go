@@ -579,12 +579,12 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 	return nil
 }
 
-func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi *abi.Entry, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (*resty.Response, error) {
+func (e *Ethereum) queryContractMethod(ctx context.Context, address, signingKey string, abi *abi.Entry, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (*resty.Response, error) {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainQuery(address, abi.Name)
 	}
 	messageType := "Query"
-	body, err := e.buildEthconnectRequestBody(ctx, messageType, address, "", abi, "", input, errors, options)
+	body, err := e.buildEthconnectRequestBody(ctx, messageType, address, signingKey, abi, "", input, errors, options)
 	if err != nil {
 		return nil, err
 	}
@@ -772,7 +772,7 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, nsOpID, orderedInput, errorsAbi, options)
 }
 
-func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
 	ethereumLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -781,7 +781,7 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	if err != nil {
 		return nil, err
 	}
-	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, abi, orderedInput, errorsAbi, options)
+	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, signingKey, abi, orderedInput, errorsAbi, options)
 	if err != nil || !res.IsSuccess() {
 		return nil, err
 	}
@@ -956,7 +956,7 @@ func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSON
 
 func (e *Ethereum) queryNetworkVersion(ctx context.Context, address string) (version int, err error) {
 	var emptyErrors []*abi.Entry
-	res, err := e.queryContractMethod(ctx, address, networkVersionMethodABI, []interface{}{}, emptyErrors, nil)
+	res, err := e.queryContractMethod(ctx, address, "", networkVersionMethodABI, []interface{}{}, emptyErrors, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Call failed" is interpreted as "method does not exist, default to version 1"
 		if strings.Contains(err.Error(), "FFEC100148") || strings.Contains(err.Error(), "FF23021") {

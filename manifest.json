@@ -6,13 +6,13 @@
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.2.6-20230403-44",
-    "sha": "7181937056fc056cace8e2797e51ad5809a4dde93ea1f075a8ad258dde22a1d1"
+    "tag": "v1.2.8",
+    "sha": "44cac586392a4b9c43f57e9955b53cdc1a9d71f7d12b97f9fe81ef0b92314ad0"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.17-20230308-31",
-    "sha": "fb84889f063477924320970dab8a2e6ad709e9dc0bf0ba8f1419bb05c37d93fe"
+    "tag": "v0.9.17",
+    "sha": "7d4aa158f9dff31f200ae7a04f68665f32930f7739156b25a0da80e5353f3245"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
@@ -21,13 +21,13 @@
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v1.2.1",
-    "sha": "c9c4cf768e336ab73f5b8ab5c2872bf4cd1216b5c0de9a1bee811c8aeaf91a43"
+    "tag": "v1.2.2",
+    "sha": "3d259bd4b68dad4634704c9a58c20bdf80457e8bc58ee7ded73292e10702aceb"
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
-    "tag": "v1.2.1",
-    "sha": "401d4fbe3fcf26e63bdfc889d6eac46fde346d90ed091da558ac5fcb97d243c8"
+    "tag": "v1.2.3",
+    "sha": "e1c65bdf95bd5cd88102e539c0aa193edeaefc73fd268606c5550e2d1aae6b31"
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",

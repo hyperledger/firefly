@@ -31,6 +31,7 @@ type ResolveKeyIntent string
 
 const (
 	ResolveKeyIntentSign   ResolveKeyIntent = "sign"   // used everywhere we accept an signing action (messages, tokens, custom invoke)
+	ResolveKeyIntentQuery  ResolveKeyIntent = "query"  // used to perform a query to the blockchain, to run logic in order to query blockchain state
 	ResolveKeyIntentLookup ResolveKeyIntent = "lookup" // used only on the /api/v1/resolve API
 )
 
@@ -86,7 +87,7 @@ type Plugin interface {
 	InvokeContract(ctx context.Context, nsOpID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *BatchPin) error
 
 	// QueryContract executes a method via custom on-chain logic and returns the result
-	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error)
+	QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error)
 
 	// AddContractListener adds a new subscription to a user-specified contract and event
 	AddContractListener(ctx context.Context, subscription *core.ContractListener) error
