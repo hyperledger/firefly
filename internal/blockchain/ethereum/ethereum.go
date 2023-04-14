@@ -781,7 +781,7 @@ func (e *Ethereum) QueryContract(ctx context.Context, signingKey string, locatio
 	if err != nil {
 		return nil, err
 	}
-	res, err := e.queryContractMethod(ctx, signingKey, ethereumLocation.Address, abi, orderedInput, errorsAbi, options)
+	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, signingKey, abi, orderedInput, errorsAbi, options)
 	if err != nil || !res.IsSuccess() {
 		return nil, err
 	}
@@ -956,7 +956,7 @@ func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSON
 
 func (e *Ethereum) queryNetworkVersion(ctx context.Context, address string) (version int, err error) {
 	var emptyErrors []*abi.Entry
-	res, err := e.queryContractMethod(ctx, "", address, networkVersionMethodABI, []interface{}{}, emptyErrors, nil)
+	res, err := e.queryContractMethod(ctx, address, "", networkVersionMethodABI, []interface{}{}, emptyErrors, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Call failed" is interpreted as "method does not exist, default to version 1"
 		if strings.Contains(err.Error(), "FFEC100148") || strings.Contains(err.Error(), "FF23021") {
