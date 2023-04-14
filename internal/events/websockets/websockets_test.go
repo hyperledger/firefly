@@ -552,8 +552,10 @@ func TestHandleAckMultipleStartedNoSubSingleMatch(t *testing.T) {
 	wsc := &websocketConnection{
 		ctx: context.Background(),
 		ws: &WebSockets{
-			ctx:       context.Background(),
-			callbacks: map[string]events.Callbacks{"ns1": cbs},
+			ctx: context.Background(),
+			callbacks: callbacks{
+				handlers: map[string]events.Callbacks{"ns1": cbs},
+			},
 		},
 		started: []*websocketStartedSub{{WSStart: core.WSStart{
 			Ephemeral: false, Name: "name1", Namespace: "ns1",
@@ -654,8 +656,10 @@ func TestDispatchAutoAck(t *testing.T) {
 		ctx:    context.Background(),
 		connID: fftypes.NewUUID().String(),
 		ws: &WebSockets{
-			ctx:         context.Background(),
-			callbacks:   map[string]events.Callbacks{"ns1": cbs},
+			ctx: context.Background(),
+			callbacks: callbacks{
+				handlers: map[string]events.Callbacks{"ns1": cbs},
+			},
 			connections: make(map[string]*websocketConnection),
 		},
 		started: []*websocketStartedSub{{WSStart: core.WSStart{
@@ -732,8 +736,8 @@ func TestNamespaceRestarted(t *testing.T) {
 	ws := &WebSockets{
 		ctx:         context.Background(),
 		connections: make(map[string]*websocketConnection),
-		callbacks: map[string]events.Callbacks{
-			"ns1": mcb,
+		callbacks: callbacks{
+			handlers: map[string]events.Callbacks{"ns1": mcb},
 		},
 	}
 	origTime := fftypes.Now()
@@ -768,8 +772,8 @@ func TestNamespaceRestartedFailClose(t *testing.T) {
 	ws := &WebSockets{
 		ctx:         context.Background(),
 		connections: make(map[string]*websocketConnection),
-		callbacks: map[string]events.Callbacks{
-			"ns1": mcb,
+		callbacks: callbacks{
+			handlers: map[string]events.Callbacks{"ns1": mcb},
 		},
 	}
 	origTime := fftypes.Now()

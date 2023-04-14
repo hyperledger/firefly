@@ -35,6 +35,7 @@ import (
 	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/blockchaincommonmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/coremocks"
@@ -280,6 +281,12 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
+	msb := &blockchaincommonmocks.FireflySubscriptions{}
+	e.subs = msb
+	msb.On("GetSubscription", mock.Anything).Return(&common.SubscriptionInfo{
+		Version: 2,
+	})
+
 	assert.Equal(t, "ethereum", e.Name())
 	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
 
@@ -300,6 +307,12 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	fromServer <- `{"batchNumber":12345,"events":[]}` // empty batch, will be ignored, but acked
 	reply := <-toServer
 	assert.Equal(t, `{"type":"ack","topic":"topic1","batchNumber":12345}`, reply)
+
+	fromServer <- `{"batchNumber":12345,"events":[{
+		"bad":"batch"
+	}]}` // empty batch, will be ignored, but nack'd as it is invalid
+	reply = <-toServer
+	assert.Regexp(t, `{"type":"error","topic":"topic1","batchNumber":12345,"message":"FF10141.*"}`, reply)
 
 	// Bad data will be ignored
 	fromServer <- `!json`

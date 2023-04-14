@@ -59,6 +59,7 @@ type dxNode struct {
 
 type callbacks struct {
 	plugin     *FFDX
+	writeLock  sync.Mutex
 	handlers   map[string]dataexchange.Callbacks
 	opHandlers map[string]core.OperationCallbacks
 }
@@ -196,11 +197,15 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 }
 
 func (h *FFDX) SetHandler(networkNamespace, nodeName string, handler dataexchange.Callbacks) {
+	h.callbacks.writeLock.Lock()
+	defer h.callbacks.writeLock.Unlock()
 	key := networkNamespace + ":" + nodeName
 	h.callbacks.handlers[key] = handler
 }
 
 func (h *FFDX) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
+	h.callbacks.writeLock.Lock()
+	defer h.callbacks.writeLock.Unlock()
 	h.callbacks.opHandlers[namespace] = handler
 }
 

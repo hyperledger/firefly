@@ -89,6 +89,7 @@ type ethWSCommandPayload struct {
 	Type        string `json:"type"`
 	Topic       string `json:"topic,omitempty"`
 	BatchNumber int64  `json:"batchNumber,omitempty"`
+	Message     string `json:"message,omitempty"`
 }
 
 type ethError struct {
@@ -457,14 +458,20 @@ func (e *Ethereum) eventLoop() {
 						// FFTM delivery with a batch number to use in the ack
 						isBatch = true
 						err = e.handleMessageBatch(ctx, events)
-						if err == nil {
-							ack, _ := json.Marshal(&ethWSCommandPayload{
-								Type:        "ack",
-								Topic:       e.topic,
-								BatchNumber: int64(batchNumber),
-							})
-							err = e.wsconn.Send(ctx, ack)
+						// Errors processing messages are converted into nacks
+						ackOrNack := &ethWSCommandPayload{
+							Topic:       e.topic,
+							BatchNumber: int64(batchNumber),
 						}
+						if err == nil {
+							ackOrNack.Type = "ack"
+						} else {
+							log.L(ctx).Errorf("Rejecting batch due error: %s", err)
+							ackOrNack.Type = "error"
+							ackOrNack.Message = err.Error()
+						}
+						b, _ := json.Marshal(&ackOrNack)
+						err = e.wsconn.Send(ctx, b)
 					}
 				}
 				if !isBatch {

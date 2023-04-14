@@ -452,7 +452,6 @@ func (f *Fabric) eventLoop() {
 	defer close(f.closed)
 	l := log.L(f.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(f.ctx, l)
-	ack, _ := json.Marshal(map[string]string{"type": "ack", "topic": f.topic})
 	for {
 		select {
 		case <-ctx.Done():
@@ -474,9 +473,14 @@ func (f *Fabric) eventLoop() {
 			switch msgTyped := msgParsed.(type) {
 			case []interface{}:
 				err = f.handleMessageBatch(ctx, msgTyped)
+				var ackOrNack []byte
 				if err == nil {
-					err = f.wsconn.Send(ctx, ack)
+					ackOrNack, _ = json.Marshal(map[string]string{"type": "ack", "topic": f.topic})
+				} else {
+					log.L(ctx).Errorf("Rejecting batch due error: %s", err)
+					ackOrNack, _ = json.Marshal(map[string]string{"type": "error", "topic": f.topic, "message": err.Error()})
 				}
+				err = f.wsconn.Send(ctx, ackOrNack)
 			case map[string]interface{}:
 				var receipt common.BlockchainReceiptNotification
 				_ = json.Unmarshal(msgBytes, &receipt)

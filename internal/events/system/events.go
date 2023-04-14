@@ -36,11 +36,16 @@ const (
 type Events struct {
 	ctx          context.Context
 	capabilities *events.Capabilities
-	callbacks    map[string]events.Callbacks
-	mux          sync.Mutex
-	listeners    map[string][]EventListener
-	connID       string
-	readAhead    uint16
+	callbacks
+	mux       sync.Mutex
+	listeners map[string][]EventListener
+	connID    string
+	readAhead uint16
+}
+
+type callbacks struct {
+	writeLock sync.Mutex
+	handlers  map[string]events.Callbacks
 }
 
 type EventInterface interface {
@@ -55,16 +60,20 @@ func (se *Events) Init(ctx context.Context, config config.Section) (err error) {
 	*se = Events{
 		ctx:          ctx,
 		capabilities: &events.Capabilities{},
-		callbacks:    make(map[string]events.Callbacks),
-		listeners:    make(map[string][]EventListener),
-		readAhead:    uint16(config.GetInt(SystemEventsConfReadAhead)),
-		connID:       fftypes.ShortID(),
+		callbacks: callbacks{
+			handlers: make(map[string]events.Callbacks),
+		},
+		listeners: make(map[string][]EventListener),
+		readAhead: uint16(config.GetInt(SystemEventsConfReadAhead)),
+		connID:    fftypes.ShortID(),
 	}
 	return nil
 }
 
 func (se *Events) SetHandler(namespace string, handler events.Callbacks) error {
-	se.callbacks[namespace] = handler
+	se.callbacks.writeLock.Lock()
+	defer se.callbacks.writeLock.Unlock()
+	se.callbacks.handlers[namespace] = handler
 	// We have a single logical connection, that matches all subscriptions
 	return handler.RegisterConnection(se.connID, func(sr core.SubscriptionRef) bool { return true })
 }
@@ -80,7 +89,7 @@ func (se *Events) ValidateOptions(options *core.SubscriptionOptions) error {
 func (se *Events) AddListener(ns string, el EventListener) error {
 	no := false
 	newest := core.SubOptsFirstEventNewest
-	if cb, ok := se.callbacks[ns]; ok {
+	if cb, ok := se.callbacks.handlers[ns]; ok {
 		err := cb.EphemeralSubscription(se.connID, ns, &core.SubscriptionFilter{ /* all events */ }, &core.SubscriptionOptions{
 			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData:   &no,
@@ -110,7 +119,7 @@ func (se *Events) DeliveryRequest(connID string, sub *core.Subscription, event *
 			}
 		}
 	}
-	if cb, ok := se.callbacks[sub.Namespace]; ok {
+	if cb, ok := se.callbacks.handlers[sub.Namespace]; ok {
 		cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 			ID:           event.ID,
 			Rejected:     false,
