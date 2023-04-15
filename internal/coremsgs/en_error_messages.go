@@ -280,4 +280,5 @@ var (
 	MsgConfigArrayVsRawConfigMismatch     = ffe("FF10439", "Error processing configuration - mismatch between raw and processed array lengths")
 	MsgDefaultChannelNotConfigured        = ffe("FF10440", "No default channel configured for this namespace", 400)
 	MsgNamespaceInitializing              = ffe("FF10441", "Namespace '%s' is initializing", 412)
+	MsgNamespaceNotStarted                = ffe("FF10442", "Namespace '%s' is not started", 412)
 )

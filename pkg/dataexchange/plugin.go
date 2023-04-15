@@ -106,7 +106,7 @@ type Plugin interface {
 // Callbacks is the interface provided to the data exchange plugin, to allow it to pass events back to firefly.
 type Callbacks interface {
 	// Event has sub-types as defined below, and can be processed and ack'd asynchronously
-	DXEvent(plugin Plugin, event DXEvent)
+	DXEvent(plugin Plugin, event DXEvent) error
 }
 
 type DXEventType int
