@@ -20,6 +20,9 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
@@ -110,6 +113,123 @@ func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestCreateTokenPoolIdempotentResubmit(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	op := &core.Operation{
+		ID:     fftypes.NewUUID(),
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainPinBatch,
+		Status: core.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).
+		Return(id, &sqlcommon.IdempotencyError{
+			ExistingTXID:  id,
+			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(op, nil)
+
+	_, err := am.CreateTokenPool(context.Background(), pool, false)
+
+	// SubmitNewTransction returned 409 idempotency clash, ResubmitOperations returned that it resubmitted an operation. Shouldn't
+	// see the original 409 Conflict error
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestCreateTokenPoolIdempotentNoOperationToResubmit(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).
+		Return(id, &sqlcommon.IdempotencyError{
+			ExistingTXID:  id,
+			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+
+	_, err := am.CreateTokenPool(context.Background(), pool, false)
+
+	// SubmitNewTransction returned 409 idempotency clash, ResubmitOperations returned no resubmitted operations. Expect to
+	// see the original 409 Conflict error
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "FF10431")
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestCreateTokenPoolIdempotentErrorOnOperationResubmit(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).
+		Return(id, &sqlcommon.IdempotencyError{
+			ExistingTXID:  id,
+			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+
+	_, err := am.CreateTokenPool(context.Background(), pool, false)
+
+	// SubmitNewTransction returned 409 idempotency clash, ResubmitOperations failed trying to resubmit an existing operation. Expect
+	// to see the resubmit error
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -461,11 +581,14 @@ func TestActivateTokenPool(t *testing.T) {
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Connector: "magic-tokens",
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
 	}
 
-	mdi := am.database.(*databasemocks.Plugin)
 	mom := am.operations.(*operationmocks.Manager)
-	mdi.On("GetOperations", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("FindOperationInTransaction", context.Background(), pool.TX.ID, core.OpTypeTokenActivatePool).Return(nil, nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(nil)
@@ -477,7 +600,7 @@ func TestActivateTokenPool(t *testing.T) {
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
 
-	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }
 
@@ -501,11 +624,14 @@ func TestActivateTokenPoolOpInsertFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "magic-tokens",
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
 	}
 
-	mdi := am.database.(*databasemocks.Plugin)
 	mom := am.operations.(*operationmocks.Manager)
-	mdi.On("GetOperations", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("FindOperationInTransaction", context.Background(), pool.TX.ID, core.OpTypeTokenActivatePool).Return(nil, nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(fmt.Errorf("pop"))
@@ -513,7 +639,7 @@ func TestActivateTokenPoolOpInsertFail(t *testing.T) {
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }
 
@@ -524,11 +650,14 @@ func TestActivateTokenPoolFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "magic-tokens",
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
 	}
 
-	mdi := am.database.(*databasemocks.Plugin)
 	mom := am.operations.(*operationmocks.Manager)
-	mdi.On("GetOperations", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("FindOperationInTransaction", context.Background(), pool.TX.ID, core.OpTypeTokenActivatePool).Return(nil, nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(nil)
@@ -540,7 +669,7 @@ func TestActivateTokenPoolFail(t *testing.T) {
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }
 
@@ -551,15 +680,18 @@ func TestActivateTokenPoolExisting(t *testing.T) {
 	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "magic-tokens",
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
 	}
 
-	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), "ns1", mock.Anything).Return([]*core.Operation{{}}, nil, nil)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("FindOperationInTransaction", context.Background(), pool.TX.ID, core.OpTypeTokenActivatePool).Return(&core.Operation{}, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
 
-	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestActivateTokenPoolExistingFail(t *testing.T) {
@@ -569,15 +701,18 @@ func TestActivateTokenPoolExistingFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "magic-tokens",
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
 	}
 
-	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mth.On("FindOperationInTransaction", context.Background(), pool.TX.ID, core.OpTypeTokenActivatePool).Return(nil, fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestActivateTokenPoolSyncSuccess(t *testing.T) {
@@ -587,12 +722,14 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "magic-tokens",
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
 	}
 
-	mdi := am.database.(*databasemocks.Plugin)
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
-	mdi.On("GetOperations", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
+	mth.On("FindOperationInTransaction", context.Background(), pool.TX.ID, core.OpTypeTokenActivatePool).Return(nil, nil)
 	mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(nil)
@@ -604,7 +741,6 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
 
-	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }

@@ -39,7 +39,7 @@ describe("Firefly.sol", () => {
         assert.isDefined(logArgs);
         if (logArgs) {
           assert.equal(logArgs.author, deployer.address);
-          assert.equal(logArgs.action, "");
+          assert.equal(logArgs.action, "firefly:batch_pin");
           assert.equal(logArgs.uuids, uuids);
           assert.equal(logArgs.batchHash, batchHash);
           assert.equal(logArgs.payloadRef, payloadRef);
@@ -66,7 +66,36 @@ describe("Firefly.sol", () => {
         assert.isDefined(logArgs);
         if (logArgs) {
           assert.equal(logArgs.author, deployer.address);
-          assert.equal(logArgs.action, "");
+          assert.equal(logArgs.action, "firefly:batch_pin");
+          assert.equal(logArgs.uuids, uuids);
+          assert.equal(logArgs.batchHash, batchHash);
+          assert.equal(logArgs.payloadRef, payloadRef);
+          assert.equal(logArgs.contexts.length, 3);
+          assert.equal(logArgs.contexts[0], contexts[0]);
+          assert.equal(logArgs.contexts[1], contexts[1]);
+          assert.equal(logArgs.contexts[2], contexts[2]);
+        }
+      });
+    });
+
+    describe("pinBatchData", () => {
+      it("broadcast with a payloadRef", async () => {
+        const uuids = randB32Hex();
+        const batchHash = randB32Hex();
+        const payloadRef = "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD";
+        const contexts = [randB32Hex(), randB32Hex(), randB32Hex()];
+        const abiCoder = ethers.utils.defaultAbiCoder;
+        const data = abiCoder.encode(
+          ["bytes32", "bytes32", "string", "bytes32[]"],
+          [uuids, batchHash, payloadRef, contexts]
+        );
+        const result = await fireflyContract.pinBatchData(data);
+        const receipt = await result.wait();
+        const logArgs = receipt.events?.[0]?.args;
+        assert.isDefined(logArgs);
+        if (logArgs) {
+          assert.equal(logArgs.author, deployer.address);
+          assert.equal(logArgs.action, "firefly:contract_invoke_pin");
           assert.equal(logArgs.uuids, uuids);
           assert.equal(logArgs.batchHash, batchHash);
           assert.equal(logArgs.payloadRef, payloadRef);
@@ -80,13 +109,16 @@ describe("Firefly.sol", () => {
 
     describe("networkAction", () => {
       it("terminate action", async () => {
-        const result = await fireflyContract.networkAction("terminate", "123");
+        const result = await fireflyContract.networkAction(
+          "firefly:terminate",
+          "123"
+        );
         const receipt = await result.wait();
         const logArgs = receipt.events?.[0]?.args;
         assert.isDefined(logArgs);
         if (logArgs) {
           assert.equal(logArgs.author, deployer.address);
-          assert.equal(logArgs.action, "terminate");
+          assert.equal(logArgs.action, "firefly:terminate");
           assert.equal(
             logArgs.uuids,
             "0x0000000000000000000000000000000000000000000000000000000000000000"

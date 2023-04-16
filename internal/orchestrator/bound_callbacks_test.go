@@ -125,29 +125,29 @@ func TestBoundCallbacksStopped(t *testing.T) {
 	bc.o.started = false
 
 	_, err := bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
-	assert.Regexp(t, "FF10442", err)
+	assert.Regexp(t, "FF10446", err)
 
 	err = bc.SharedStorageBlobDownloaded(*fftypes.NewRandB32(), 12345, "payload1", nil)
-	assert.Regexp(t, "FF10442", err)
+	assert.Regexp(t, "FF10446", err)
 
 	err = bc.BatchPinComplete("ns1", &blockchain.BatchPin{}, &core.VerifierRef{})
-	assert.Regexp(t, "FF10442", err)
+	assert.Regexp(t, "FF10446", err)
 
 	err = bc.BlockchainNetworkAction("action", fftypes.JSONAnyPtr("{}"), &blockchain.Event{}, &core.VerifierRef{})
-	assert.Regexp(t, "FF10442", err)
+	assert.Regexp(t, "FF10446", err)
 
 	err = bc.BlockchainEvent(&blockchain.EventWithSubscription{})
-	assert.Regexp(t, "FF10442", err)
+	assert.Regexp(t, "FF10446", err)
 
 	err = bc.DXEvent(nil, &dataexchangemocks.DXEvent{})
-	assert.Regexp(t, "FF10442", err)
+	assert.Regexp(t, "FF10446", err)
 
 	err = bc.TokenPoolCreated(context.Background(), nil, &tokens.TokenPool{})
-	assert.Regexp(t, "FF10442", err)
+	assert.Regexp(t, "FF10446", err)
 
 	err = bc.TokensTransferred(nil, &tokens.TokenTransfer{})
-	assert.Regexp(t, "FF10442", err)
+	assert.Regexp(t, "FF10446", err)
 
 	err = bc.TokensApproved(nil, &tokens.TokenApproval{})
-	assert.Regexp(t, "FF10442", err)
+	assert.Regexp(t, "FF10446", err)
 }

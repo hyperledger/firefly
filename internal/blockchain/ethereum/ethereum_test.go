@@ -75,6 +75,19 @@ func testFFIMethod() *fftypes.FFIMethod {
 	}
 }
 
+func testFFIPinMethod() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
+		Name: "customPin",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "data",
+				Schema: fftypes.JSONAnyPtr(`{"type":"string","details":{"type":"bytes"}}`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{},
+	}
+}
+
 func testFFIErrors() []*fftypes.FFIError {
 	errorDef1 := fftypes.FFIErrorDefinition{
 		Name: "CustomError1",
@@ -659,13 +672,17 @@ func TestInitAllExistingStreams(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
@@ -701,13 +718,17 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
@@ -743,13 +764,17 @@ func TestInitAllExistingStreamsOld(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
@@ -785,13 +810,17 @@ func TestInitAllExistingStreamsInvalidName(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10416", err)
 }
 
@@ -2428,8 +2457,63 @@ func TestInvokeContractOK(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
 	assert.NoError(t, err)
+}
+
+func TestInvokeContractWithBatchOK(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{
+		Address: "0x12345",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	method := testFFIPinMethod()
+	errors := testFFIErrors()
+	batch := &blockchain.BatchPin{
+		TransactionID:   fftypes.MustParseUUID("82281f91-6ba8-498a-9e68-c6c6a594b747"),
+		BatchID:         fftypes.MustParseUUID("f3cce875-b979-48be-99a6-1a64c780330d"),
+		BatchHash:       fftypes.MustParseBytes32("4529bffbf77984bfa4b83126f8b963e4da10d194e021f097a60d952d81783649"),
+		BatchPayloadRef: "test-payload",
+		Contexts:        []*fftypes.Bytes32{},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t,
+				"82281f916ba8498a9e68c6c6a594b747f3cce875b97948be99a61a64c780330d4529bffbf77984bfa4b83126f8b963e4da10d194e021f097a60d952d81783649000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000c746573742d7061796c6f616400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+				params[0])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, nil, errors, nil, batch)
+	assert.NoError(t, err)
+}
+
+func TestInvokeContractWithBatchUnsupported(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{
+		Address: "0x12345",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	method := testFFIMethod()
+	errors := testFFIErrors()
+	batch := &blockchain.BatchPin{}
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, nil, errors, nil, batch)
+	assert.Regexp(t, "FF10443", err)
 }
 
 func TestInvokeContractInvalidOption(t *testing.T) {
@@ -2463,7 +2547,7 @@ func TestInvokeContractInvalidOption(t *testing.T) {
 			assert.Equal(t, "1000000000000000000000000", params[1])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
 	assert.Regexp(t, "FF10398", err)
 }
 
@@ -2499,7 +2583,7 @@ func TestInvokeContractInvalidInput(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
 	assert.Regexp(t, "unsupported type", err)
 }
 
@@ -2517,7 +2601,7 @@ func TestInvokeContractAddressNotSet(t *testing.T) {
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -2543,7 +2627,7 @@ func TestInvokeContractEthconnectError(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -2572,7 +2656,7 @@ func TestInvokeContractPrepareFail(t *testing.T) {
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
 	assert.Regexp(t, "invalid json", err)
 }
 
@@ -2598,10 +2682,12 @@ func TestQueryContractOK(t *testing.T) {
 			json.NewDecoder(req.Body).Decode(&body)
 			headers := body["headers"].(map[string]interface{})
 			assert.Equal(t, "Query", headers["type"])
-			assert.Equal(t, body["customOption"].(string), "customValue")
+			assert.Equal(t, "customValue", body["customOption"].(string))
+			assert.Equal(t, "0x12345", body["to"].(string))
+			assert.Equal(t, "0x01020304", body["from"].(string))
 			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
 		})
-	result, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	result, err := e.QueryContract(context.Background(), "0x01020304", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.NoError(t, err)
 	j, err := json.Marshal(result)
 	assert.NoError(t, err)
@@ -2632,7 +2718,7 @@ func TestQueryContractInvalidOption(t *testing.T) {
 			assert.Equal(t, "Query", headers["type"])
 			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	_, err = e.QueryContract(context.Background(), "0x01020304", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10398", err)
 }
 
@@ -2657,7 +2743,7 @@ func TestQueryContractErrorPrepare(t *testing.T) {
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	_, err = e.QueryContract(context.Background(), "0x01020304", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "invalid json", err)
 }
 
@@ -2674,7 +2760,7 @@ func TestQueryContractAddressNotSet(t *testing.T) {
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	_, err = e.QueryContract(context.Background(), "0x01020304", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -2699,7 +2785,7 @@ func TestQueryContractEthconnectError(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, queryOutput{})(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	_, err = e.QueryContract(context.Background(), "0x01020304", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -2728,7 +2814,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 			assert.Equal(t, "Query", headers["type"])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	_, err = e.QueryContract(context.Background(), "0x01020304", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
 	assert.Regexp(t, "invalid character", err)
 }
 
@@ -2740,7 +2826,7 @@ func TestNormalizeContractLocation(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	result, err := e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	result, err := e.NormalizeContractLocation(context.Background(), blockchain.NormalizeCall, fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
 	assert.Equal(t, "0x3081d84fd367044f4ed453f2024709242470388c", result.JSONObject()["address"])
 }
@@ -2753,7 +2839,7 @@ func TestNormalizeContractLocationInvalid(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), blockchain.NormalizeCall, fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.Regexp(t, "FF10141", err)
 }
 
@@ -2763,7 +2849,7 @@ func TestNormalizeContractLocationBlank(t *testing.T) {
 	location := &Location{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), blockchain.NormalizeCall, fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -3188,6 +3274,8 @@ func TestGetNetworkVersion(t *testing.T) {
 			json.NewDecoder(req.Body).Decode(&body)
 			headers := body["headers"].(map[string]interface{})
 			assert.Equal(t, "Query", headers["type"])
+			assert.Equal(t, "0x123", body["to"].(string))
+			assert.Nil(t, body["from"])
 			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "1"})(req)
 		})
 
@@ -3400,9 +3488,13 @@ func TestAddSubBadLocation(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"bad": "bad",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err := e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err := e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -3445,9 +3537,13 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	subID, err := e.AddFireflySubscription(e.ctx, ns, location, "newest")
+	subID, err := e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 	assert.NotNil(t, e.subs.GetSubscription("sub1"))
 
@@ -3488,9 +3584,13 @@ func TestAddFireflySubscriptionV1(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "newest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 	assert.NotNil(t, e.subs.GetSubscription("sub1"))
 }
@@ -3526,9 +3626,13 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -3564,9 +3668,13 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -3601,9 +3709,13 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
 	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "oldest",
+	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -3827,4 +3939,15 @@ func TestGetTransactionStatusBadResult(t *testing.T) {
 	status, err := e.GetTransactionStatus(context.Background(), op)
 	assert.Nil(t, status)
 	assert.Error(t, err)
+}
+
+func TestValidateInvokeRequest(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	err := e.ValidateInvokeRequest(context.Background(), testFFIMethod(), nil, nil, false)
+	assert.NoError(t, err)
+
+	err = e.ValidateInvokeRequest(context.Background(), testFFIMethod(), nil, nil, true)
+	assert.Regexp(t, "FF10443", err)
 }

@@ -37,7 +37,7 @@ type BlockchainCallbacks interface {
 	SetOperationalHandler(namespace string, handler core.OperationCallbacks)
 
 	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
-	BatchPinOrNetworkAction(ctx context.Context, nsOrAction string, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams) error
+	BatchPinOrNetworkAction(ctx context.Context, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams) error
 	BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error
 }
 
@@ -62,6 +62,7 @@ type BatchPinParams struct {
 	BatchHash  string
 	Contexts   []string
 	PayloadRef string
+	NsOrAction string
 }
 
 // A single subscription on network version 1 may receive events from many remote namespaces,
@@ -128,10 +129,10 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, plugin core.Named, nsO
 	log.L(ctx).Errorf("No handler found for blockchain operation '%s'", nsOpID)
 }
 
-func (cb *callbacks) BatchPinOrNetworkAction(ctx context.Context, nsOrAction string, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams) error {
+func (cb *callbacks) BatchPinOrNetworkAction(ctx context.Context, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams) error {
 	// Check if this is actually an operator action
-	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
-		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
+	if len(params.Contexts) == 0 && strings.HasPrefix(params.NsOrAction, blockchain.FireFlyActionPrefix) {
+		action := params.NsOrAction[len(blockchain.FireFlyActionPrefix):]
 
 		// For V1 of the FireFly contract, action is sent to all namespaces.
 		// For V2+, namespace is inferred from the subscription.
@@ -153,12 +154,20 @@ func (cb *callbacks) BatchPinOrNetworkAction(ctx context.Context, nsOrAction str
 	// For V1 of the FireFly contract, namespace is passed explicitly, but needs to be mapped to local name(s).
 	// For V2+, namespace is inferred from the subscription.
 	if subInfo.Version == 1 {
-		namespaces := subInfo.V1Namespace[nsOrAction]
+		networkNamespace := params.NsOrAction
+		namespaces := subInfo.V1Namespace[networkNamespace]
 		if len(namespaces) == 0 {
-			log.L(ctx).Errorf("No handler found for blockchain batch pin on remote namespace '%s'", nsOrAction)
+			log.L(ctx).Errorf("No handler found for blockchain batch pin on network namespace '%s'", networkNamespace)
 			return nil
 		}
 		return cb.batchPinComplete(ctx, namespaces, batch, signingKey)
+	}
+	batch.TransactionType = core.TransactionTypeBatchPin
+	if strings.HasPrefix(params.NsOrAction, blockchain.FireFlyActionPrefix) {
+		typeName := params.NsOrAction[len(blockchain.FireFlyActionPrefix):]
+		if typeName == "contract_invoke_pin" {
+			batch.TransactionType = core.TransactionTypeContractInvokePin
+		}
 	}
 	return cb.batchPinComplete(ctx, []string{subInfo.V2Namespace}, batch, signingKey)
 }

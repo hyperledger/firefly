@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -162,10 +163,16 @@ func (am *assetManager) TransferTokens(ctx context.Context, transfer *core.Token
 
 func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) (err error) {
 	if !s.resolved {
-		if err = s.resolve(ctx); err != nil {
+		var opResubmit bool
+		if opResubmit, err = s.resolve(ctx); err != nil {
 			return err
 		}
 		s.resolved = true
+		if opResubmit {
+			// Operation had already been created on a previous call but never got submitted. We've resubmitted
+			// it now so no need to carry on
+			return nil
+		}
 	}
 
 	if method == methodSendAndWait && s.transfer.Message != nil {
@@ -180,11 +187,23 @@ func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) 
 	return s.sendInternal(ctx, method)
 }
 
-func (s *transferSender) resolve(ctx context.Context) (err error) {
+func (s *transferSender) resolve(ctx context.Context) (opResubmitted bool, err error) {
 	// Create a transaction and attach to the transfer
 	txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenTransfer, s.transfer.IdempotencyKey)
 	if err != nil {
-		return err
+		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+		// submitting to their handlers. Note that we'll return the result of resubmitting the operation, not a 409 Conflict error
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			operation, resubmitErr := s.mgr.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			if resubmitErr != nil {
+				// Error doing resubmit, return the new error
+				err = resubmitErr
+			} else if operation != nil {
+				// We successfully resubmitted an initialized operation, return 2xx not 409
+				return true, nil
+			}
+		}
+		return true, err
 	}
 	s.transfer.TX.ID = txid
 	s.transfer.TX.Type = core.TransactionTypeTokenTransfer
@@ -197,15 +216,15 @@ func (s *transferSender) resolve(ctx context.Context) (err error) {
 		}
 		s.msgSender, err = s.buildTransferMessage(ctx, s.transfer.Message)
 		if err != nil {
-			return err
+			return false, err
 		}
 		if err = s.msgSender.Prepare(ctx); err != nil {
-			return err
+			return false, err
 		}
 		s.transfer.TokenTransfer.Message = s.transfer.Message.Header.ID
 		s.transfer.TokenTransfer.MessageHash = s.transfer.Message.Hash
 	}
-	return nil
+	return false, nil
 }
 
 func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (err error) {

@@ -21,6 +21,9 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
@@ -105,6 +108,94 @@ func TestMintTokensSuccess(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestMintTokensIdempotentResubmit(t *testing.T) {
+	am, cancel := newTestAssetsWithMetrics(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	mint := &core.TokenTransferInput{
+		TokenTransfer: core.TokenTransfer{
+			Amount: *fftypes.NewFFBigInt(5),
+		},
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
+	}
+
+	op := &core.Operation{}
+
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(op, nil)
+
+	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
+	_, err := am.MintTokens(context.Background(), mint, false)
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestMintTokensIdempotentNoOperationToResubmit(t *testing.T) {
+	am, cancel := newTestAssetsWithMetrics(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	mint := &core.TokenTransferInput{
+		TokenTransfer: core.TokenTransfer{
+			Amount: *fftypes.NewFFBigInt(5),
+		},
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
+	}
+
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+
+	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
+	_, err := am.MintTokens(context.Background(), mint, false)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "FF10431")
+
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestMintTokensIdempotentErrorOnResubmit(t *testing.T) {
+	am, cancel := newTestAssetsWithMetrics(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	mint := &core.TokenTransferInput{
+		TokenTransfer: core.TokenTransfer{
+			Amount: *fftypes.NewFFBigInt(5),
+		},
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
+	}
+
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+
+	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
+	_, err := am.MintTokens(context.Background(), mint, false)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "pop")
+
 	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }

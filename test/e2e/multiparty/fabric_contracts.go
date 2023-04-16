@@ -71,13 +71,14 @@ func assetManagerGetAsset() *fftypes.FFIMethod {
 	}
 }
 
-func deployChaincode(t *testing.T, stackName string) string {
+func deployChaincode(t *testing.T, stackName, chaincodePath string) string {
 	id, err := nanoid.Generate("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", nanoid.DefaultSize)
 	assert.NoError(t, err)
 	chaincodeName := "e2e_" + id
 
 	cmd := exec.Command("bash", "../deploy_chaincode.sh")
 	cmd.Env = append(cmd.Env, "STACK_NAME="+stackName)
+	cmd.Env = append(cmd.Env, "CHAINCODE="+chaincodePath)
 	cmd.Env = append(cmd.Env, "CHAINCODE_NAME="+chaincodeName)
 	cmd.Env = append(cmd.Env, "PATH="+os.Getenv("PATH"))
 	cmd.Stdout = os.Stdout
@@ -97,7 +98,7 @@ type FabricContractTestSuite struct {
 
 func (suite *FabricContractTestSuite) SetupSuite() {
 	stack := e2e.ReadStack(suite.T())
-	suite.chaincodeName = deployChaincode(suite.T(), stack.Name)
+	suite.chaincodeName = deployChaincode(suite.T(), stack.Name, "/testcontracts/assetcreator")
 
 	suite.fabClient = client.NewResty(suite.T())
 	suite.fabClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))

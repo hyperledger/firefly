@@ -28,7 +28,7 @@ type fakePlugin struct{}
 
 func (f *fakePlugin) Name() string { return "fake" }
 
-func TestNewPendingMessageOp(t *testing.T) {
+func TestNewInitializedMessageOp(t *testing.T) {
 
 	txID := fftypes.NewUUID()
 	op := NewOperation(&fakePlugin{}, "ns1", txID, OpTypeSharedStorageUploadBatch)
@@ -38,7 +38,7 @@ func TestNewPendingMessageOp(t *testing.T) {
 		Transaction: txID,
 		Plugin:      "fake",
 		Type:        OpTypeSharedStorageUploadBatch,
-		Status:      OpStatusPending,
+		Status:      OpStatusInitialized,
 		Created:     op.Created,
 		Updated:     op.Created,
 	}, *op)
@@ -54,7 +54,7 @@ func TestOperationTypes(t *testing.T) {
 		Transaction: txID,
 		Plugin:      "fake",
 		Type:        OpTypeSharedStorageUploadBatch,
-		Status:      OpStatusPending,
+		Status:      OpStatusInitialized,
 		Created:     op.Created,
 		Updated:     op.Created,
 	}, *op)

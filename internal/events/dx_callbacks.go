@@ -85,7 +85,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, w
 		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			l := log.L(ctx)
 
-			if batch.Payload.TX.Type == core.TransactionTypeUnpinned {
+			if !core.IsPinned(batch.Payload.TX.Type) {
 				if wrapperGroup != nil {
 					if valid, err := em.messaging.EnsureLocalGroup(ctx, wrapperGroup, sender); err != nil {
 						return err
@@ -109,7 +109,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, w
 				return err // retry - persistBatch only returns retryable errors
 			}
 
-			if batch.Payload.TX.Type == core.TransactionTypeUnpinned {
+			if !core.IsPinned(batch.Payload.TX.Type) {
 				// We need to confirm all these messages immediately.
 				if err := em.markUnpinnedMessagesConfirmed(ctx, batch); err != nil {
 					return err
@@ -124,7 +124,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, w
 		return "", err
 	}
 	// Poke the aggregator to do its stuff - after we have committed the transaction so the pins are visible
-	if batch.Payload.TX.Type == core.TransactionTypeBatchPin {
+	if core.IsPinned(batch.Payload.TX.Type) {
 		em.aggregator.queueBatchRewind(batch.ID)
 	}
 	return manifest, err

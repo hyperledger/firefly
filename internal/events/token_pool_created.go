@@ -25,7 +25,6 @@ import (
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -78,22 +77,6 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 	return em.database.InsertEvent(ctx, event)
 }
 
-func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, opType core.OpType) (*core.Operation, error) {
-	// Find a matching operation within this transaction
-	fb := database.OperationQueryFactory.NewFilter(ctx)
-	filter := fb.And(
-		fb.Eq("tx", tx),
-		fb.Eq("type", opType),
-	)
-	if operations, _, err := em.database.GetOperations(ctx, em.namespace.Name, filter); err != nil {
-		return nil, err
-	} else if len(operations) > 0 {
-		return operations[0], nil
-	}
-	log.L(ctx).Debugf("No pool found for tx=%s status=%s", tx, core.OpTypeTokenCreatePool)
-	return nil, nil
-}
-
 func (em *eventManager) loadExisting(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
 	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace.Name, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
 		log.L(ctx).Debugf("Pool not found with ns=%s connector=%s locator=%s (err=%v)", em.namespace.Name, pool.Connector, pool.PoolLocator, err)
@@ -108,10 +91,11 @@ func (em *eventManager) loadExisting(ctx context.Context, pool *tokens.TokenPool
 }
 
 func (em *eventManager) loadFromOperation(ctx context.Context, pool *tokens.TokenPool) (announcePool *core.TokenPool, err error) {
-	op, err := em.findTXOperation(ctx, pool.TX.ID, core.OpTypeTokenCreatePool)
+	op, err := em.txHelper.FindOperationInTransaction(ctx, pool.TX.ID, core.OpTypeTokenCreatePool)
 	if err != nil {
 		return nil, err
 	} else if op == nil {
+		log.L(ctx).Debugf("No pool found for tx=%s status=%s", pool.TX.ID, core.OpTypeTokenCreatePool)
 		return nil, nil
 	}
 

@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/multiparty"
@@ -112,6 +113,12 @@ func NewBroadcastManager(ctx context.Context, ns *core.Namespace, di database.Pl
 				core.MessageTypeDeprecatedTransferBroadcast,
 				core.MessageTypeDeprecatedApprovalBroadcast,
 			}, bm.dispatchBatch, bo)
+
+		ba.RegisterDispatcher(broadcastDispatcherName,
+			core.TransactionTypeContractInvokePin,
+			[]core.MessageType{
+				core.MessageTypeBroadcast,
+			}, bm.dispatchBatch, bo)
 	}
 
 	om.RegisterHandler(ctx, bm, []core.OpType{
@@ -127,10 +134,10 @@ func (bm *broadcastManager) Name() string {
 	return "BroadcastManager"
 }
 
-func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.DispatchState) error {
+func (bm *broadcastManager) dispatchBatch(ctx context.Context, payload *batch.DispatchPayload) error {
 
 	// Ensure all the blobs are published
-	if err := bm.uploadBlobs(ctx, state.Persisted.TX.ID, state.Data); err != nil {
+	if err := bm.uploadBlobs(ctx, payload.Batch.TX.ID, payload.Data); err != nil {
 		return err
 	}
 
@@ -138,13 +145,13 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	op := core.NewOperation(
 		bm.sharedstorage,
 		bm.namespace.Name,
-		state.Persisted.TX.ID,
+		payload.Batch.TX.ID,
 		core.OpTypeSharedStorageUploadBatch)
-	addUploadBatchInputs(op, state.Persisted.ID)
+	addUploadBatchInputs(op, payload.Batch.ID)
 	if err := bm.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
 	}
-	batch := state.Persisted.GenInflight(state.Messages, state.Data)
+	batch := payload.Batch.GenInflight(payload.Messages, payload.Data)
 
 	// We are in an (indefinite) retry cycle from the batch processor to dispatch this batch, that is only
 	// terminated with shutdown. So we leave the operation pending on failure, as it is still being retried.
@@ -155,7 +162,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	}
 	payloadRef := outputs.GetString("payloadRef")
 	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payloadRef=%s", batch.ID, batch.Author, batch.Key, payloadRef)
-	return bm.multiparty.SubmitBatchPin(ctx, &state.Persisted, state.Pins, payloadRef)
+	return bm.multiparty.SubmitBatchPin(ctx, &payload.Batch, payload.Pins, payloadRef)
 }
 
 func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data core.DataArray) error {
@@ -224,7 +231,20 @@ func (bm *broadcastManager) PublishDataValue(ctx context.Context, id string, ide
 
 	txid, err := bm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeDataPublish, idempotencyKey)
 	if err != nil {
-		return nil, err
+		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+		// submitting to their handlers
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			operation, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+
+			if resubmitErr != nil {
+				// Error doing resubmit, return the new error
+				err = resubmitErr
+			} else if operation != nil {
+				// We successfully resubmitted an initialized operation, return 2xx not 409
+				err = nil
+			}
+		}
+		return d, err
 	}
 
 	op := core.NewOperation(
@@ -253,7 +273,20 @@ func (bm *broadcastManager) PublishDataBlob(ctx context.Context, id string, idem
 
 	txid, err := bm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeDataPublish, idempotencyKey)
 	if err != nil {
-		return nil, err
+		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+		// submitting to their handlers
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			operation, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+
+			if resubmitErr != nil {
+				// Error doing resubmit, return the new error
+				err = resubmitErr
+			} else if operation != nil {
+				// We successfully resubmitted an initialized operation, return 2xx not 409
+				err = nil
+			}
+		}
+		return d, err
 	}
 
 	if err = bm.uploadDataBlob(ctx, txid, d); err != nil {

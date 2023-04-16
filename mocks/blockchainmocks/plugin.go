@@ -38,23 +38,23 @@ func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.Co
 	return r0
 }
 
-// AddFireflySubscription provides a mock function with given fields: ctx, namespace, location, firstEvent
-func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (string, error) {
-	ret := _m.Called(ctx, namespace, location, firstEvent)
+// AddFireflySubscription provides a mock function with given fields: ctx, namespace, contract
+func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+	ret := _m.Called(ctx, namespace, contract)
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *fftypes.JSONAny, string) (string, error)); ok {
-		return rf(ctx, namespace, location, firstEvent)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract) (string, error)); ok {
+		return rf(ctx, namespace, contract)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *fftypes.JSONAny, string) string); ok {
-		r0 = rf(ctx, namespace, location, firstEvent)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract) string); ok {
+		r0 = rf(ctx, namespace, contract)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *core.Namespace, *fftypes.JSONAny, string) error); ok {
-		r1 = rf(ctx, namespace, location, firstEvent)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract) error); ok {
+		r1 = rf(ctx, namespace, contract)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -321,13 +321,13 @@ func (_m *Plugin) InitConfig(_a0 config.Section) {
 	_m.Called(_a0)
 }
 
-// InvokeContract provides a mock function with given fields: ctx, nsOpID, signingKey, location, method, input, errors, options
-func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error {
-	ret := _m.Called(ctx, nsOpID, signingKey, location, method, input, errors, options)
+// InvokeContract provides a mock function with given fields: ctx, nsOpID, signingKey, location, method, input, errors, options, batch
+func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
+	ret := _m.Called(ctx, nsOpID, signingKey, location, method, input, errors, options, batch)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) error); ok {
-		r0 = rf(ctx, nsOpID, signingKey, location, method, input, errors, options)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}, *blockchain.BatchPin) error); ok {
+		r0 = rf(ctx, nsOpID, signingKey, location, method, input, errors, options, batch)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -349,25 +349,25 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// NormalizeContractLocation provides a mock function with given fields: ctx, location
-func (_m *Plugin) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (*fftypes.JSONAny, error) {
-	ret := _m.Called(ctx, location)
+// NormalizeContractLocation provides a mock function with given fields: ctx, ntype, location
+func (_m *Plugin) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (*fftypes.JSONAny, error) {
+	ret := _m.Called(ctx, ntype, location)
 
 	var r0 *fftypes.JSONAny
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny) (*fftypes.JSONAny, error)); ok {
-		return rf(ctx, location)
+	if rf, ok := ret.Get(0).(func(context.Context, blockchain.NormalizeType, *fftypes.JSONAny) (*fftypes.JSONAny, error)); ok {
+		return rf(ctx, ntype, location)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny) *fftypes.JSONAny); ok {
-		r0 = rf(ctx, location)
+	if rf, ok := ret.Get(0).(func(context.Context, blockchain.NormalizeType, *fftypes.JSONAny) *fftypes.JSONAny); ok {
+		r0 = rf(ctx, ntype, location)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.JSONAny)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny) error); ok {
-		r1 = rf(ctx, location)
+	if rf, ok := ret.Get(1).(func(context.Context, blockchain.NormalizeType, *fftypes.JSONAny) error); ok {
+		r1 = rf(ctx, ntype, location)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -375,25 +375,25 @@ func (_m *Plugin) NormalizeContractLocation(ctx context.Context, location *fftyp
 	return r0, r1
 }
 
-// QueryContract provides a mock function with given fields: ctx, location, method, input, errors, options
-func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
-	ret := _m.Called(ctx, location, method, input, errors, options)
+// QueryContract provides a mock function with given fields: ctx, signingKey, location, method, input, errors, options
+func (_m *Plugin) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
+	ret := _m.Called(ctx, signingKey, location, method, input, errors, options)
 
 	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) (interface{}, error)); ok {
-		return rf(ctx, location, method, input, errors, options)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) (interface{}, error)); ok {
+		return rf(ctx, signingKey, location, method, input, errors, options)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) interface{}); ok {
-		r0 = rf(ctx, location, method, input, errors, options)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) interface{}); ok {
+		r0 = rf(ctx, signingKey, location, method, input, errors, options)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) error); ok {
-		r1 = rf(ctx, location, method, input, errors, options)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) error); ok {
+		r1 = rf(ctx, signingKey, location, method, input, errors, options)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -475,6 +475,20 @@ func (_m *Plugin) SubmitNetworkAction(ctx context.Context, nsOpID string, signin
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, fftypes.FFEnum, *fftypes.JSONAny) error); ok {
 		r0 = rf(ctx, nsOpID, signingKey, action, location)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ValidateInvokeRequest provides a mock function with given fields: ctx, method, input, errors, hasMessage
+func (_m *Plugin) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
+	ret := _m.Called(ctx, method, input, errors, hasMessage)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, bool) error); ok {
+		r0 = rf(ctx, method, input, errors, hasMessage)
 	} else {
 		r0 = ret.Error(0)
 	}

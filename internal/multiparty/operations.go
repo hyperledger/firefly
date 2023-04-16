@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -22,15 +22,10 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 )
-
-type batchPinData struct {
-	Batch      *core.BatchPersisted `json:"batch"`
-	Contexts   []*fftypes.Bytes32   `json:"contexts"`
-	PayloadRef string               `json:"payloadRef"`
-}
 
 type networkActionData struct {
 	Type core.NetworkActionType `json:"type"`
@@ -105,7 +100,7 @@ func (mm *multipartyManager) PrepareOperation(ctx context.Context, op *core.Oper
 
 func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
-	case batchPinData:
+	case txcommon.BatchPinData:
 		batch := data.Batch
 		contract := mm.namespace.Contracts.Active
 		return nil, false, mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Namespace, batch.Key, &blockchain.BatchPin{
@@ -135,7 +130,7 @@ func opBatchPin(op *core.Operation, batch *core.BatchPersisted, contexts []*ffty
 		Namespace: op.Namespace,
 		Plugin:    op.Plugin,
 		Type:      op.Type,
-		Data:      batchPinData{Batch: batch, Contexts: contexts, PayloadRef: payloadRef},
+		Data:      txcommon.BatchPinData{Batch: batch, Contexts: contexts, PayloadRef: payloadRef},
 	}
 }
 

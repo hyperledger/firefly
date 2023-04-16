@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -93,8 +93,13 @@ func (s *broadcastSender) setDefaults() {
 	if msg.Header.Type == "" {
 		msg.Header.Type = core.MessageTypeBroadcast
 	}
-	// We only have one transaction type for broadcast currently
-	msg.Header.TxType = core.TransactionTypeBatchPin
+	switch msg.Header.TxType {
+	case core.TransactionTypeContractInvokePin:
+		// valid
+	default:
+		// the only other valid option is "batch_pin"
+		msg.Header.TxType = core.TransactionTypeBatchPin
+	}
 }
 
 func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod) error {

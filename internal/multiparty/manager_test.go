@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
@@ -84,7 +85,7 @@ func TestNewMultipartyManager(t *testing.T) {
 	config := Config{
 		Org:       RootOrg{Name: "org1"},
 		Node:      LocalNode{Name: "node1"},
-		Contracts: []Contract{},
+		Contracts: []blockchain.MultipartyContract{},
 	}
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, []core.OpType{
 		core.OpTypeBlockchainPinBatch,
@@ -100,7 +101,7 @@ func TestNewMultipartyManager(t *testing.T) {
 }
 
 func TestInitFail(t *testing.T) {
-	config := Config{Contracts: []Contract{}}
+	config := Config{Contracts: []blockchain.MultipartyContract{}}
 	_, err := NewMultipartyManager(context.Background(), &core.Namespace{}, config, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
@@ -117,7 +118,7 @@ func TestConfigureContract(t *testing.T) {
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -147,7 +148,7 @@ func TestConfigureContractLocationChanged(t *testing.T) {
 			Location: location,
 		},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location2,
 	}}
@@ -184,7 +185,7 @@ func TestResolveContractDeprecatedConfigError(t *testing.T) {
 
 	mp.mbi.On("GetAndConvertDeprecatedContractConfig", context.Background()).Return(nil, "", fmt.Errorf("pop"))
 
-	_, _, err := mp.resolveFireFlyContract(context.Background(), 0)
+	_, err := mp.resolveFireFlyContract(context.Background(), 0)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -196,7 +197,7 @@ func TestResolveContractDeprecatedConfigNewestBlock(t *testing.T) {
 		"address": "0x123",
 	}.String()), "newst", nil)
 
-	_, _, err := mp.resolveFireFlyContract(context.Background(), 0)
+	_, err := mp.resolveFireFlyContract(context.Background(), 0)
 	assert.NoError(t, err)
 }
 
@@ -211,7 +212,7 @@ func TestConfigureContractBadIndex(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 1},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -233,7 +234,7 @@ func TestConfigureContractNetworkVersionFail(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -254,7 +255,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -297,7 +298,7 @@ func TestSubmitNetworkActionTXFail(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -328,7 +329,7 @@ func TestSubmitNetworkActionOpFail(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -365,7 +366,7 @@ func TestSubmitNetworkActionBadType(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -407,7 +408,7 @@ func TestSubmitBatchPinOk(t *testing.T) {
 	})).Return(nil)
 	mp.mmi.On("IsMetricsEnabled").Return(false)
 	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
-		data := op.Data.(batchPinData)
+		data := op.Data.(txcommon.BatchPinData)
 		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
 	})).Return(nil, nil)
 
@@ -445,7 +446,140 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	mp.mmi.On("IsMetricsEnabled").Return(true)
 	mp.mmi.On("CountBatchPin").Return()
 	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
-		data := op.Data.(batchPinData)
+		data := op.Data.(txcommon.BatchPinData)
+		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
+	})).Return(nil, nil)
+
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	assert.NoError(t, err)
+}
+
+func TestSubmitBatchPinWithBatchOk(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	ctx := context.Background()
+
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: core.TransactionTypeContractInvokePin,
+		},
+	}
+	contexts := []*fftypes.Bytes32{fftypes.NewRandB32()}
+	invokeOp := &core.Operation{
+		Type: core.OpTypeBlockchainInvoke,
+	}
+
+	mp.mth.On("FindOperationInTransaction", ctx, batch.TX.ID, core.OpTypeBlockchainInvoke).Return(invokeOp, nil)
+	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(txcommon.BlockchainInvokeData)
+		assert.Equal(t, contexts, data.BatchPin.Contexts)
+		assert.Equal(t, "payload1", data.BatchPin.PayloadRef)
+		return op.Type == core.OpTypeBlockchainInvoke && data.BatchPin.Batch == batch
+	})).Return(nil, nil)
+
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	assert.NoError(t, err)
+}
+
+func TestSubmitBatchPinWithBatchOpFailure(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	ctx := context.Background()
+
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: core.TransactionTypeContractInvokePin,
+		},
+	}
+	contexts := []*fftypes.Bytes32{fftypes.NewRandB32()}
+
+	mp.mth.On("FindOperationInTransaction", ctx, batch.TX.ID, core.OpTypeBlockchainInvoke).Return(nil, fmt.Errorf("pop"))
+
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	assert.EqualError(t, err, "pop")
+}
+
+func TestSubmitBatchPinWithBatchOpMalformed(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	ctx := context.Background()
+
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: core.TransactionTypeContractInvokePin,
+		},
+	}
+	contexts := []*fftypes.Bytes32{fftypes.NewRandB32()}
+	invokeOp := &core.Operation{
+		Type: core.OpTypeBlockchainInvoke,
+		Input: fftypes.JSONObject{
+			"interface": "NOT-A-UUID",
+		},
+	}
+
+	mp.mth.On("FindOperationInTransaction", ctx, batch.TX.ID, core.OpTypeBlockchainInvoke).Return(invokeOp, nil)
+
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	assert.Regexp(t, "FF00127", err)
+}
+
+func TestSubmitBatchPinWithBatchOpNotFound(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	ctx := context.Background()
+
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: core.TransactionTypeContractInvokePin,
+		},
+	}
+	contexts := []*fftypes.Bytes32{fftypes.NewRandB32()}
+
+	mp.mth.On("FindOperationInTransaction", ctx, batch.TX.ID, core.OpTypeBlockchainInvoke).Return(nil, nil)
+	mp.mbi.On("Name").Return("ut")
+	mp.mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *core.Operation) bool {
+		assert.Equal(t, core.OpTypeBlockchainPinBatch, op.Type)
+		assert.Equal(t, "ut", op.Plugin)
+		assert.Equal(t, *batch.TX.ID, *op.Transaction)
+		assert.Equal(t, "payload1", op.Input.GetString("payloadRef"))
+		return true
+	})).Return(nil)
+	mp.mmi.On("IsMetricsEnabled").Return(true)
+	mp.mmi.On("CountBatchPin").Return()
+	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(txcommon.BatchPinData)
 		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
 	})).Return(nil, nil)
 
@@ -493,7 +627,7 @@ func TestGetNetworkVersion(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}}
@@ -521,7 +655,7 @@ func TestConfgureAndTerminateContract(t *testing.T) {
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
 	}
-	mp.multipartyManager.config.Contracts = []Contract{{
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
 		Location:   location,
 	}, {

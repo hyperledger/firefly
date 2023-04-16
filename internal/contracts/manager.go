@@ -25,9 +25,14 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/batch"
+	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/operations"
+	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -74,6 +79,10 @@ type Manager interface {
 type contractManager struct {
 	namespace         string
 	database          database.Plugin
+	data              data.Manager
+	broadcast         broadcast.Manager        // optional
+	messaging         privatemessaging.Manager // optional
+	batch             batch.Manager            // optional
 	txHelper          txcommon.Helper
 	identity          identity.Manager
 	blockchain        blockchain.Plugin
@@ -82,8 +91,8 @@ type contractManager struct {
 	syncasync         syncasync.Bridge
 }
 
-func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, im identity.Manager, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
-	if di == nil || im == nil || bi == nil || om == nil || txHelper == nil || sa == nil {
+func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, bp batch.Manager, im identity.Manager, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
+	if di == nil || im == nil || bi == nil || dm == nil || om == nil || txHelper == nil || sa == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "ContractManager")
 	}
 	v, err := bi.GetFFIParamValidator(ctx)
@@ -94,6 +103,10 @@ func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi b
 	cm := &contractManager{
 		namespace:         ns,
 		database:          di,
+		data:              dm,
+		broadcast:         bm,
+		messaging:         pm,
+		batch:             bp,
 		txHelper:          txHelper,
 		identity:          im,
 		blockchain:        bi,
@@ -229,12 +242,36 @@ func (cm *contractManager) verifyListeners(ctx context.Context) error {
 }
 
 func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core.ContractCallRequest) (*core.Operation, error) {
-	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractInvoke, req.IdempotencyKey)
+	txtype := core.TransactionTypeContractInvoke
+	if req.Message != nil {
+		txtype = core.TransactionTypeContractInvokePin
+	}
+	txid, err := cm.txHelper.SubmitNewTransaction(ctx, txtype, req.IdempotencyKey)
+	var op *core.Operation
 	if err != nil {
-		return nil, err
+		var resubmitErr error
+		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+		// submitting to their handlers
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			op, resubmitErr = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+
+			if resubmitErr != nil {
+				// Error doing resubmit, return the new error
+				err = resubmitErr
+			} else if op != nil {
+				// We successfully resubmitted an initialized operation, return the operation
+				// and the idempotent error. The caller will revert the 409 to 2xx
+				err = idemErr
+			}
+		}
+		return op, err
+	}
+	if req.Message != nil {
+		req.Message.Header.TxType = txtype
+		req.Message.TransactionID = txid
 	}
 
-	op := core.NewOperation(
+	op = core.NewOperation(
 		cm.blockchain,
 		cm.namespace,
 		txid,
@@ -247,11 +284,27 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 
 func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core.ContractDeployRequest) (*core.Operation, error) {
 	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractDeploy, req.IdempotencyKey)
+	var op *core.Operation
 	if err != nil {
-		return nil, err
+		var resubmitErr error
+		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
+		// submitting to their handlers
+		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
+			op, resubmitErr = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+
+			if resubmitErr != nil {
+				// Error doing resubmit, return the new error
+				err = resubmitErr
+			} else if op != nil {
+				// We successfully resubmitted an initialized operation, return the operation
+				// and the idempotent error. The caller will revert the 409 to 2xx
+				err = idemErr
+			}
+		}
+		return op, err
 	}
 
-	op := core.NewOperation(
+	op = core.NewOperation(
 		cm.blockchain,
 		cm.namespace,
 		txid,
@@ -271,12 +324,16 @@ func (cm *contractManager) DeployContract(ctx context.Context, req *core.Contrac
 	var op *core.Operation
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		op, err = cm.writeDeployTransaction(ctx, req)
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	})
 	if err != nil {
+		if _, ok := err.(*sqlcommon.IdempotencyError); ok {
+			if op != nil {
+				// Idempotency key clash but we resubmitted an initialized operation? Return 20x, not 409
+				return op, nil
+			}
+		}
+		// Any other error? Return the error unchanged
 		return nil, err
 	}
 
@@ -292,9 +349,21 @@ func (cm *contractManager) DeployContract(ctx context.Context, req *core.Contrac
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, req *core.ContractCallRequest, waitConfirm bool) (res interface{}, err error) {
-	req.Key, err = cm.identity.ResolveInputSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
+	keyResolver := cm.identity.ResolveInputSigningKey
+	if req.Type == core.CallTypeQuery {
+		// Special case that we are resolving the key with an intent to query, not sign
+		keyResolver = cm.identity.ResolveQuerySigningKey
+	}
+	req.Key, err = keyResolver(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
+	}
+
+	var msgSender syncasync.Sender
+	if req.Message != nil {
+		if msgSender, err = cm.buildInvokeMessage(ctx, req.Message); err != nil {
+			return nil, err
+		}
 	}
 
 	var op *core.Operation
@@ -305,6 +374,14 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 		if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
 			return err
 		}
+		if msgSender != nil {
+			if err = msgSender.Prepare(ctx); err != nil {
+				return err
+			}
+			// Clear inline data now that it's been resolved
+			// (so as not to store all data values on the operation inputs)
+			req.Message.InlineData = nil
+		}
 		if req.Type == core.CallTypeInvoke {
 			op, err = cm.writeInvokeTransaction(ctx, req)
 			if err != nil {
@@ -314,22 +391,36 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 		return nil
 	})
 	if err != nil {
+		if _, ok := err.(*sqlcommon.IdempotencyError); ok {
+			if op != nil {
+				// Idempotency key clash but we resubmitted an initialized operation? Return 20x, not 409
+				return op, nil
+			}
+		}
+		// Any other error? Return the error unchanged
 		return nil, err
 	}
 
 	switch req.Type {
 	case core.CallTypeInvoke:
+		if msgSender != nil {
+			if waitConfirm {
+				return op, msgSender.SendAndWait(ctx)
+			}
+			return op, msgSender.Send(ctx)
+		}
 		send := func(ctx context.Context) error {
-			_, err := cm.operations.RunOperation(ctx, opBlockchainInvoke(op, req))
+			_, err := cm.operations.RunOperation(ctx, txcommon.OpBlockchainInvoke(op, req, nil))
 			return err
 		}
 		if waitConfirm {
 			return cm.syncasync.WaitForInvokeOperation(ctx, op.ID, send)
 		}
-		err = send(ctx)
-		return op, err
+		return op, send(ctx)
+
 	case core.CallTypeQuery:
-		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Errors, req.Options)
+		return cm.blockchain.QueryContract(ctx, req.Key, req.Location, req.Method, req.Input, req.Errors, req.Options)
+
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}
@@ -401,7 +492,7 @@ func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL st
 
 func (cm *contractManager) ResolveContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) (err error) {
 	if api.Location != nil {
-		if api.Location, err = cm.blockchain.NormalizeContractLocation(ctx, api.Location); err != nil {
+		if api.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeCall, api.Location); err != nil {
 			return err
 		}
 	}
@@ -569,7 +660,23 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 		return err
 	}
 
-	for _, param := range req.Method.Params {
+	// Validate that all parameters are specified and are of reasonable JSON types to match the FFI
+	lastIndex := len(req.Method.Params)
+	if req.Message != nil {
+		// If a message is included, skip validation of the last parameter
+		// (assume it will be used for sending the batch pin)
+		lastIndex--
+		if lastIndex < 0 {
+			return i18n.NewError(ctx, coremsgs.MsgMethodDoesNotSupportPinning)
+		}
+
+		// Also verify that the user didn't pass in a value for this last parameter
+		lastParam := req.Method.Params[lastIndex]
+		if _, ok := req.Input[lastParam.Name]; ok {
+			return i18n.NewError(ctx, coremsgs.MsgCannotSetParameterWithMessage, lastParam.Name)
+		}
+	}
+	for _, param := range req.Method.Params[:lastIndex] {
 		value, ok := req.Input[param.Name]
 		if !ok {
 			return i18n.NewError(ctx, coremsgs.MsgContractMissingInputArgument, param.Name)
@@ -579,7 +686,8 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 		}
 	}
 
-	return nil
+	// Allow the blockchain plugin to perform additional blockchain-specific parameter validation
+	return cm.blockchain.ValidateInvokeRequest(ctx, req.Method, req.Input, req.Errors, req.Message != nil)
 }
 
 func (cm *contractManager) resolveEvent(ctx context.Context, ffi *fftypes.FFIReference, eventPath string) (*core.FFISerializedEvent, error) {
@@ -626,7 +734,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 	}
 
 	if listener.Location != nil {
-		if listener.Location, err = cm.blockchain.NormalizeContractLocation(ctx, listener.Location); err != nil {
+		if listener.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeListener, listener.Location); err != nil {
 			return nil, err
 		}
 	}
@@ -814,5 +922,29 @@ func (cm *contractManager) GenerateFFI(ctx context.Context, generationRequest *f
 func (cm *contractManager) getDefaultContractListenerOptions() *core.ContractListenerOptions {
 	return &core.ContractListenerOptions{
 		FirstEvent: string(core.SubOptsFirstEventNewest),
+	}
+}
+
+func (cm *contractManager) buildInvokeMessage(ctx context.Context, in *core.MessageInOut) (syncasync.Sender, error) {
+	allowedTypes := []fftypes.FFEnum{
+		core.MessageTypeBroadcast,
+		core.MessageTypePrivate,
+	}
+	if in.Header.Type == "" {
+		in.Header.Type = core.MessageTypeBroadcast
+	}
+	switch in.Header.Type {
+	case core.MessageTypeBroadcast:
+		if cm.broadcast == nil {
+			return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
+		}
+		return cm.broadcast.NewBroadcast(in), nil
+	case core.MessageTypePrivate:
+		if cm.messaging == nil {
+			return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
+		}
+		return cm.messaging.NewMessage(in), nil
+	default:
+		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidMessageType, allowedTypes)
 	}
 }

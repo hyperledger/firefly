@@ -146,6 +146,13 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 		},
 		pm.dispatchPinnedBatch, bo)
 
+	ba.RegisterDispatcher(pinnedPrivateDispatcherName,
+		core.TransactionTypeContractInvokePin,
+		[]core.MessageType{
+			core.MessageTypePrivate,
+		},
+		pm.dispatchPinnedBatch, bo)
+
 	ba.RegisterDispatcher(unpinnedPrivateDispatcherName,
 		core.TransactionTypeUnpinned,
 		[]core.MessageType{
@@ -165,22 +172,22 @@ func (pm *privateMessaging) Name() string {
 	return "PrivateMessaging"
 }
 
-func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, state *batch.DispatchState) error {
-	err := pm.dispatchBatchCommon(ctx, state)
+func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, payload *batch.DispatchPayload) error {
+	err := pm.dispatchBatchCommon(ctx, payload)
 	if err != nil {
 		return err
 	}
 
-	log.L(ctx).Infof("Pinning private batch %s with author=%s key=%s group=%s", state.Persisted.ID, state.Persisted.Author, state.Persisted.Key, state.Persisted.Group)
-	return pm.multiparty.SubmitBatchPin(ctx, &state.Persisted, state.Pins, "" /* no payloadRef for private */)
+	log.L(ctx).Infof("Pinning private batch %s with author=%s key=%s group=%s", payload.Batch.ID, payload.Batch.Author, payload.Batch.Key, payload.Batch.Group)
+	return pm.multiparty.SubmitBatchPin(ctx, &payload.Batch, payload.Pins, "" /* no payloadRef for private */)
 }
 
-func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, state *batch.DispatchState) error {
-	return pm.dispatchBatchCommon(ctx, state)
+func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, payload *batch.DispatchPayload) error {
+	return pm.dispatchBatchCommon(ctx, payload)
 }
 
-func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batch.DispatchState) error {
-	batch := state.Persisted.GenInflight(state.Messages, state.Data)
+func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, payload *batch.DispatchPayload) error {
+	batch := payload.Batch.GenInflight(payload.Messages, payload.Data)
 	batch.Namespace = pm.namespace.NetworkName
 	tw := &core.TransportWrapper{
 		Batch: batch,
@@ -192,7 +199,7 @@ func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batc
 		return err
 	}
 
-	if batch.Payload.TX.Type == core.TransactionTypeUnpinned {
+	if !core.IsPinned(batch.Payload.TX.Type) {
 		// In the case of an un-pinned message we cannot be sure the group has been broadcast via the blockchain.
 		// So we have to take the hit of sending it along with every message.
 		tw.Group = group

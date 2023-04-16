@@ -40,7 +40,6 @@ import (
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/metrics"
-	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/spievents"
@@ -267,6 +266,12 @@ func (nm *namespaceManager) startV1NamespaceIfRequired(nsToCheck *namespace) err
 		// Ok - we've now initialized the system NS
 		nm.namespaces[core.LegacySystemNamespace] = systemNS
 		log.L(nm.ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, nsToCheck.Name)
+		err = systemNS.orchestrator.Start()
+		if err == nil {
+			log.L(nm.ctx).Infof("Namespace %s started", core.LegacySystemNamespace)
+			systemNS.started = true
+		}
+		return err
 	}
 
 	return nil
@@ -943,14 +948,16 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	if multipartyEnabled.(bool) {
 		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
 		contractConfArraySize := contractsConf.ArraySize()
-		contracts := make([]multiparty.Contract, contractConfArraySize)
+		contracts := make([]blockchain.MultipartyContract, contractConfArraySize)
 
 		for i := 0; i < contractConfArraySize; i++ {
 			conf := contractsConf.ArrayEntry(i)
 			location := fftypes.JSONAnyPtr(conf.GetObject(coreconfig.NamespaceMultipartyContractLocation).String())
-			contract := multiparty.Contract{
+			options := fftypes.JSONAnyPtr(conf.GetObject(coreconfig.NamespaceMultipartyContractOptions).String())
+			contract := blockchain.MultipartyContract{
 				Location:   location,
 				FirstEvent: conf.GetString(coreconfig.NamespaceMultipartyContractFirstEvent),
+				Options:    options,
 			}
 			contracts[i] = contract
 		}

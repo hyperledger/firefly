@@ -166,7 +166,10 @@ func (dm *downloadManager) recoverDownloads(startupTime *fftypes.FFTime) {
 				core.OpTypeSharedStorageDownloadBatch,
 				core.OpTypeSharedStorageDownloadBlob,
 			}),
-			fb.Eq("status", core.OpStatusPending),
+			fb.Or(
+				fb.Eq("status", core.OpStatusPending),
+				fb.Eq("status", core.OpStatusInitialized),
+			),
 			fb.Lt("created", startupTime), // retry is handled completely separately
 		).
 			Sort("created").
