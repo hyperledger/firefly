@@ -98,8 +98,17 @@ func (_m *EventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 }
 
 // DXEvent provides a mock function with given fields: plugin, event
-func (_m *EventManager) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) {
-	_m.Called(plugin, event)
+func (_m *EventManager) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) error {
+	ret := _m.Called(plugin, event)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, dataexchange.DXEvent) error); ok {
+		r0 = rf(plugin, event)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // DeleteDurableSubscription provides a mock function with given fields: ctx, subDef
@@ -254,8 +263,17 @@ func (_m *EventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, pa
 }
 
 // SharedStorageBlobDownloaded provides a mock function with given fields: ss, hash, size, payloadRef, dataID
-func (_m *EventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) {
-	_m.Called(ss, hash, size, payloadRef, dataID)
+func (_m *EventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) error {
+	ret := _m.Called(ss, hash, size, payloadRef, dataID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(sharedstorage.Plugin, fftypes.Bytes32, int64, string, *fftypes.UUID) error); ok {
+		r0 = rf(ss, hash, size, payloadRef, dataID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Start provides a mock function with given fields:

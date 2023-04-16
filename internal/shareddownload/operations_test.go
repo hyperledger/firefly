@@ -131,6 +131,33 @@ func TestDownloadBlobDownloadDataReadFail(t *testing.T) {
 	mdx.AssertExpectations(t)
 }
 
+func TestDownloadBlobDownloadDataCBCalled(t *testing.T) {
+
+	dm, cancel := newTestDownloadManager(t)
+	defer cancel()
+
+	reader := ioutil.NopCloser(iotest.ErrReader(fmt.Errorf("read failed")))
+
+	mss := dm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mss.On("DownloadData", mock.Anything, "ref1").Return(reader, nil)
+
+	mdx := dm.dataexchange.(*dataexchangemocks.Plugin)
+	mdx.On("UploadBlob", mock.Anything, "ns1", mock.Anything, reader).Return("", fftypes.NewRandB32(), int64(-1), nil)
+
+	mdc := &shareddownloadmocks.Callbacks{}
+	mdc.On("SharedStorageBlobDownloaded", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	dm.callbacks = mdc
+
+	_, _, err := dm.downloadBlob(dm.ctx, downloadBlobData{
+		PayloadRef: "ref1",
+		DataID:     fftypes.NewUUID(),
+	})
+	assert.Regexp(t, "pop", err)
+
+	mss.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+}
+
 func TestOperationUpdate(t *testing.T) {
 	dm, cancel := newTestDownloadManager(t)
 	defer cancel()

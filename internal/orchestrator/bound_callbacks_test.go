@@ -82,7 +82,7 @@ func TestBoundCallbacks(t *testing.T) {
 	_, err := bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
 	assert.EqualError(t, err, "pop")
 
-	mei.On("SharedStorageBlobDownloaded", mss, *hash, int64(12345), "payload1", dataID).Return()
+	mei.On("SharedStorageBlobDownloaded", mss, *hash, int64(12345), "payload1", dataID).Return(nil)
 	err = bc.SharedStorageBlobDownloaded(*hash, 12345, "payload1", dataID)
 	assert.NoError(t, err)
 

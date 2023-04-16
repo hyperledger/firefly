@@ -427,7 +427,8 @@ func mockInitConfig(nmm *nmMocks) {
 	nmm.mdx.On("Start").Return(nil)
 	nmm.mti[1].On("Start").Return(nil)
 
-	nmm.mo.On("Init", mock.Anything, mock.Anything).
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything, mock.Anything).Return()
+	nmm.mo.On("Init").
 		Run(func(args mock.Arguments) {
 			if nmm.nm != nil && nmm.nm.namespaces["ns1"] != nil && nmm.nm.namespaces["ns1"].Contracts != nil {
 				nmm.nm.namespaces["ns1"].Contracts.Active = &core.MultipartyContract{
@@ -1021,7 +1022,8 @@ namespaces:
 	nmm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
+	nmm.mo.On("Init").Return(nil)
 	nmm.mo.On("Start", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		nm.cancelCtx()
 	}).Return(fmt.Errorf("pop"))

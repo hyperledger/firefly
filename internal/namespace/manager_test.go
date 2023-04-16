@@ -415,7 +415,8 @@ func TestInitOrchestratorFail(t *testing.T) {
 	defer cleanup()
 
 	nm.plugins = make(map[string]*plugin)
-	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
+	nmm.mo.On("Init").Return(fmt.Errorf("pop"))
 
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
@@ -423,6 +424,7 @@ func TestInitOrchestratorFail(t *testing.T) {
 	err := nm.initComponents(nm.ctx)
 	assert.NoError(t, err)
 
+	nm.preInitNamespace(nm.namespaces["default"])
 	err = nm.initNamespace(nm.namespaces["default"])
 	assert.Regexp(t, "pop", err)
 }
@@ -449,7 +451,8 @@ func TestInitVersion1(t *testing.T) {
 	defer cleanup()
 
 	nmm.mo.On("Start", mock.Anything).Return(nil)
-	nmm.mo.On("Init", mock.Anything, mock.Anything).
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
+	nmm.mo.On("Init").
 		Run(func(args mock.Arguments) {
 			nm.namespaces["default"].config.Multiparty.Enabled = true
 			nm.namespaces["default"].Contracts.Active = &core.MultipartyContract{
@@ -464,6 +467,7 @@ func TestInitVersion1(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
+	nm.preInitNamespace(nm.namespaces["default"])
 	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.NoError(t, err)
 
@@ -479,6 +483,7 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 	nm.metricsEnabled = true
 
 	nmm.mo.On("Start", mock.Anything).Return(nil)
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
 	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			nm.namespaces["default"].config.Multiparty.Enabled = true
@@ -502,6 +507,7 @@ func TestInitFFSystemWithTerminatedV1Contract(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
+	nm.preInitNamespace(nm.namespaces["default"])
 	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.NoError(t, err)
 
@@ -515,6 +521,7 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 	defer cleanup()
 	nm.metricsEnabled = true
 
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
 	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			nm.namespaces["ff_system"] = &namespace{
@@ -546,6 +553,7 @@ func TestLegacyNamespaceConflictingPlugins(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
+	nm.preInitNamespace(nm.namespaces["default"])
 	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.Regexp(t, "FF10421", err)
 }
@@ -555,6 +563,7 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 	defer cleanup()
 	nm.metricsEnabled = true
 
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
 	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			nm.namespaces["ff_system"] = &namespace{
@@ -584,6 +593,7 @@ func TestLegacyNamespaceConflictingPluginsTooManyPlugins(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
+	nm.preInitNamespace(nm.namespaces["default"])
 	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.Regexp(t, "FF10421", err)
 
@@ -598,6 +608,7 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 	nm.metricsEnabled = true
 
 	nmm.mo.On("Start", mock.Anything).Return(nil)
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
 	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			nm.namespaces["ff_system"] = &namespace{
@@ -628,6 +639,7 @@ func TestLegacyNamespaceMatchingPlugins(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
+	nm.preInitNamespace(nm.namespaces["default"])
 	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.NoError(t, err)
 
@@ -640,6 +652,7 @@ func TestInitVersion1Fail(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
 	nmm.mo.On("Init", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			nm.namespaces["default"].config.Multiparty.Enabled = true
@@ -657,6 +670,23 @@ func TestInitVersion1Fail(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, core.LegacySystemNamespace).Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
+	nm.preInitNamespace(nm.namespaces["default"])
+	err := nm.initAndStartNamespace(nm.namespaces["default"])
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestInitFail(t *testing.T) {
+	nm, nmm, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
+	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+
+	nm.preInitNamespace(nm.namespaces["default"])
 	err := nm.initAndStartNamespace(nm.namespaces["default"])
 	assert.EqualError(t, err, "pop")
 
@@ -668,7 +698,7 @@ func TestInitNamespaceQueryFail(t *testing.T) {
 
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, fmt.Errorf("pop"))
 
-	err := nm.initAndStartNamespace(nm.namespaces["default"])
+	err := nm.preInitNamespace(nm.namespaces["default"])
 	assert.EqualError(t, err, "pop")
 }
 
@@ -683,7 +713,7 @@ func TestInitNamespaceExistingUpsertFail(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(existing, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
 
-	err := nm.initNamespace(nm.namespaces["default"])
+	err := nm.preInitNamespace(nm.namespaces["default"])
 	assert.EqualError(t, err, "pop")
 }
 
@@ -1762,7 +1792,8 @@ func TestStart(t *testing.T) {
 	nmm.mti[1].On("Start", mock.Anything).Return(nil)
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return(nil)
+	nmm.mo.On("Init").Return(nil)
 	nmm.mo.On("Start", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		nm.cancelCtx()
 	})
@@ -1827,7 +1858,8 @@ func TestStartOrchestratorFail(t *testing.T) {
 
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
+	nmm.mo.On("Init").Return(nil)
 	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{})
 	assert.NoError(t, err)
 
@@ -1842,7 +1874,8 @@ func TestWaitStop(t *testing.T) {
 
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
+	nmm.mo.On("Init").Return(nil)
 	nmm.mo.On("Start", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		nm.cancelCtx()
 	})

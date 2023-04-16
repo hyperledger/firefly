@@ -256,7 +256,11 @@ func (nm *namespaceManager) startV1NamespaceIfRequired(nsToCheck *namespace) err
 
 		// Start the namespace synchronously, while holding the nsMux (but without retry), so that
 		// all namespaces can do the above ^^^ check ok
-		if err := nm.initNamespace(systemNS); err != nil {
+		err := nm.preInitNamespace(systemNS)
+		if err == nil {
+			err = nm.initNamespace(systemNS)
+		}
+		if err != nil {
 			return err
 		}
 
@@ -335,7 +339,7 @@ func (nm *namespaceManager) initAndStartNamespace(ns *namespace) error {
 	return ns.orchestrator.Start()
 }
 
-func (nm *namespaceManager) initNamespace(ns *namespace) error {
+func (nm *namespaceManager) preInitNamespace(ns *namespace) error {
 	bgCtx := nm.ctx
 
 	database := ns.plugins.Database.Plugin
@@ -358,13 +362,15 @@ func (nm *namespaceManager) initNamespace(ns *namespace) error {
 	if err = database.UpsertNamespace(bgCtx, &ns.Namespace, true); err != nil {
 		return err
 	}
-
 	ns.orchestrator = nm.orchestratorFactory(&ns.Namespace, ns.config, ns.plugins, nm.metrics, nm.cacheManager)
 	ns.ctx, ns.cancelCtx = context.WithCancel(bgCtx)
-	if err := ns.orchestrator.Init(ns.ctx, ns.cancelCtx); err != nil {
-		return err
-	}
+
+	ns.orchestrator.PreInit(ns.ctx, ns.cancelCtx)
 	return nil
+}
+
+func (nm *namespaceManager) initNamespace(ns *namespace) error {
+	return ns.orchestrator.Init()
 }
 
 func (nm *namespaceManager) stopNamespace(ctx context.Context, ns *namespace) {
@@ -382,8 +388,16 @@ func (nm *namespaceManager) Start() error {
 }
 
 func (nm *namespaceManager) startNamespacesAndPlugins(namespacesToStart map[string]*namespace, pluginsToStart map[string]*plugin) error {
-	// Orchestrators must be started before plugins so as not to miss events
 	for _, ns := range namespacesToStart {
+		// Orchestrators must all be initialized to the point they register their
+		// callbacks on the plugins, before we start the plugins.
+		//
+		// Note they will not be ready to process the events, and will error.
+		// That is fine as it will cause the plugin to push back the events,
+		// so they will not be rejected (or held in a retry loop).
+		if err := nm.preInitNamespace(ns); err != nil {
+			return err
+		}
 		go nm.namespaceStarter(ns)
 	}
 	for _, plugin := range pluginsToStart {

@@ -55,7 +55,8 @@ import (
 
 // Orchestrator is the main interface behind the API, implementing the actions
 type Orchestrator interface {
-	Init(ctx context.Context, cancelCtx context.CancelFunc) error
+	PreInit(ctx context.Context, cancelCtx context.CancelFunc)
+	Init() error
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
 
@@ -226,15 +227,19 @@ func NewOrchestrator(ns *core.Namespace, config Config, plugins *Plugins, metric
 	return or
 }
 
-func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
+func (or *orchestrator) PreInit(ctx context.Context, cancelCtx context.CancelFunc) {
 	namespaceLog := or.namespace.Name
 	if or.namespace.NetworkName != "" && or.namespace.NetworkName != or.namespace.Name {
 		namespaceLog += "->" + or.namespace.NetworkName
 	}
 	or.ctx, or.cancelCtx = context.WithCancel(log.WithLogField(ctx, "ns", namespaceLog))
+	or.initHandlers(or.ctx)
+}
+
+func (or *orchestrator) Init() (err error) {
 	err = or.initComponents(or.ctx)
 	if err == nil {
-		err = or.initHandlers(or.ctx)
+		err = or.initMultiParty(or.ctx)
 	}
 	return err
 }
@@ -372,7 +377,7 @@ func (or *orchestrator) Identity() identity.Manager {
 	return or.identity
 }
 
-func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
+func (or *orchestrator) initHandlers(ctx context.Context) {
 	or.plugins.Database.Plugin.SetHandler(or.namespace.Name, or)
 
 	if or.plugins.Blockchain.Plugin != nil {
@@ -385,19 +390,6 @@ func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 	}
 
 	if or.plugins.DataExchange.Plugin != nil {
-		fb := database.IdentityQueryFactory.NewFilter(ctx)
-		nodes, _, err := or.database().GetIdentities(ctx, or.namespace.Name, fb.And(
-			fb.Eq("type", core.IdentityTypeNode),
-		))
-		if err != nil {
-			return err
-		}
-		for _, node := range nodes {
-			err = or.plugins.DataExchange.Plugin.AddNode(ctx, or.namespace.NetworkName, node.Name, node.Profile)
-			if err != nil {
-				return err
-			}
-		}
 		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.NetworkName, or.config.Multiparty.Node.Name, &or.bc)
 		or.plugins.DataExchange.Plugin.SetOperationHandler(or.namespace.Name, &or.bc)
 	}
@@ -407,6 +399,22 @@ func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 		token.Plugin.SetOperationHandler(or.namespace.Name, &or.bc)
 	}
 
+}
+
+func (or *orchestrator) initMultiParty(ctx context.Context) error {
+	fb := database.IdentityQueryFactory.NewFilter(ctx)
+	nodes, _, err := or.database().GetIdentities(ctx, or.namespace.Name, fb.And(
+		fb.Eq("type", core.IdentityTypeNode),
+	))
+	if err != nil {
+		return err
+	}
+	for _, node := range nodes {
+		err = or.plugins.DataExchange.Plugin.AddNode(ctx, or.namespace.NetworkName, node.Name, node.Profile)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

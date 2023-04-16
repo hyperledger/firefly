@@ -56,8 +56,7 @@ func (bc *boundCallbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size
 	if err := bc.checkStopped(); err != nil {
 		return err
 	}
-	bc.o.events.SharedStorageBlobDownloaded(bc.o.sharedstorage(), hash, size, payloadRef, dataID)
-	return nil
+	return bc.o.events.SharedStorageBlobDownloaded(bc.o.sharedstorage(), hash, size, payloadRef, dataID)
 }
 
 func (bc *boundCallbacks) BatchPinComplete(namespace string, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
@@ -85,8 +84,7 @@ func (bc *boundCallbacks) DXEvent(plugin dataexchange.Plugin, event dataexchange
 	if err := bc.checkStopped(); err != nil {
 		return err
 	}
-	bc.o.events.DXEvent(plugin, event)
-	return nil
+	return bc.o.events.DXEvent(plugin, event)
 }
 
 func (bc *boundCallbacks) TokenPoolCreated(ctx context.Context, plugin tokens.Plugin, pool *tokens.TokenPool) error {
