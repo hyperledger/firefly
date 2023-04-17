@@ -43,6 +43,7 @@ type Manager interface {
 	ActivateTokenPool(ctx context.Context, pool *core.TokenPool) error
 	GetTokenPools(ctx context.Context, filter ffapi.AndFilter) ([]*core.TokenPool, *ffapi.FilterResult, error)
 	GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error)
+	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*core.TokenPool, error)
 	ResolvePoolMethods(ctx context.Context, pool *core.TokenPool) error
 	DeleteTokenPool(ctx context.Context, poolNameOrID string) error
 

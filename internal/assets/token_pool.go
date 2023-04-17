@@ -167,13 +167,17 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 		if pool, err = am.database.GetTokenPool(ctx, am.namespace, poolNameOrID); err != nil {
 			return nil, err
 		}
-	} else if pool, err = am.database.GetTokenPoolByID(ctx, am.namespace, poolID); err != nil {
+	} else if pool, err = am.GetTokenPoolByID(ctx, poolID); err != nil {
 		return nil, err
 	}
 	if pool == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return pool, nil
+}
+
+func (am *assetManager) GetTokenPoolByID(ctx context.Context, poolID *fftypes.UUID) (*core.TokenPool, error) {
+	return am.database.GetTokenPoolByID(ctx, am.namespace, poolID)
 }
 
 func (am *assetManager) ResolvePoolMethods(ctx context.Context, pool *core.TokenPool) error {

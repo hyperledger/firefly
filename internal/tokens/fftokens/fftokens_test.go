@@ -1027,7 +1027,7 @@ func TestPoolEvents(t *testing.T) {
 		"id":    "8",
 		"event": "token-pool",
 		"data": fftypes.JSONObject{
-			"id":          "000000000010/000020/000030/000040",
+			"id":          "000000000010/000020/000030/000041",
 			"poolData":    "ns1",
 			"type":        "fungible",
 			"poolLocator": "F1",
@@ -1044,7 +1044,27 @@ func TestPoolEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
 
-	// token-pool: batch + callback fail
+	// token-pool: no handler
+	fromServer <- fftypes.JSONObject{
+		"id":    "10",
+		"event": "token-pool",
+		"data": fftypes.JSONObject{
+			"id":          "000000000010/000020/000030/000042",
+			"poolData":    "BAD-NAMESPACE",
+			"type":        "fungible",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
+			"blockchain": fftypes.JSONObject{
+				"id": "000000000010/000020/000030",
+				"info": fftypes.JSONObject{
+					"transactionHash": "0xffffeeee",
+				},
+			},
+		},
+	}.String()
+
+	// token-pool: batch + callback fail (terminates loop)
 	mcb.On("TokenPoolCreated", mock.Anything, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && txID.Equals(p.TX.ID) && p.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(fmt.Errorf("pop")).Once()
@@ -1055,7 +1075,7 @@ func TestPoolEvents(t *testing.T) {
 			"events": fftypes.JSONObjectArray{{
 				"event": "token-pool",
 				"data": fftypes.JSONObject{
-					"id":          "000000000010/000020/000030/000040",
+					"id":          "000000000010/000020/000030/000043",
 					"type":        "fungible",
 					"poolLocator": "F1",
 					"signer":      "0x0",
@@ -1098,6 +1118,7 @@ func TestTransferEvents(t *testing.T) {
 		"data": fftypes.JSONObject{
 			"id":          "1.0.0",
 			"poolLocator": "F1",
+			"poolData":    "ns1|" + fftypes.NewUUID().String(),
 			"tokenIndex":  "0",
 			"signer":      "0x0",
 			"to":          "0x0",

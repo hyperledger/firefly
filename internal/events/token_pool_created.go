@@ -78,8 +78,16 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 	return em.database.InsertEvent(ctx, event)
 }
 
+func (em *eventManager) getPoolByIDOrLocator(ctx context.Context, id *fftypes.UUID, connector, locator string) (*core.TokenPool, error) {
+	if id != nil {
+		// TODO: should cache this lookup for efficiency
+		return em.assets.GetTokenPoolByID(ctx, id)
+	}
+	return em.database.GetTokenPoolByLocator(ctx, em.namespace.Name, connector, locator)
+}
+
 func (em *eventManager) loadExisting(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
-	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace.Name, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
+	if existingPool, err = em.getPoolByIDOrLocator(ctx, pool.ID, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
 		log.L(ctx).Debugf("Pool not found with ns=%s connector=%s locator=%s (err=%v)", em.namespace.Name, pool.Connector, pool.PoolLocator, err)
 		return existingPool, err
 	}

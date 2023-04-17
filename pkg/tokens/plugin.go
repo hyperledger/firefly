@@ -107,6 +107,9 @@ type TokenPool struct {
 	// Type is the type of tokens (fungible, non-fungible, etc) in this pool
 	Type core.TokenType
 
+	// ID is the ID assigned to this pool by FireFly (if known)
+	ID *fftypes.UUID
+
 	// PoolLocator is the ID assigned to this pool by the connector (must be unique for this connector)
 	PoolLocator string
 
@@ -145,7 +148,6 @@ type TokenPoolMethods struct {
 
 type TokenTransfer struct {
 	// Although not every field will be filled in, embed core.TokenTransfer to avoid duplicating lots of fields
-	// Notable fields NOT expected to be populated by plugins: Namespace, LocalID, Pool
 	core.TokenTransfer
 
 	// PoolLocator is the ID assigned to the token pool by the connector
@@ -156,6 +158,7 @@ type TokenTransfer struct {
 }
 
 type TokenApproval struct {
+	// Although not every field will be filled in, embed core.TokenApproval to avoid duplicating lots of fields
 	core.TokenApproval
 
 	// PoolLocator is the ID assigned to the token pool by the connector

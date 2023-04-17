@@ -34,7 +34,6 @@ func newApproval() *tokens.TokenApproval {
 		PoolLocator: "F1",
 		TokenApproval: core.TokenApproval{
 			LocalID:    fftypes.NewUUID(),
-			Pool:       fftypes.NewUUID(),
 			Connector:  "erc1155",
 			Namespace:  "ns1",
 			Key:        "0x01",
@@ -70,7 +69,8 @@ func TestTokensApprovedSucceedWithRetries(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(4)
+	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Once()
+	em.mam.On("GetTokenPoolByID", em.ctx, pool.ID).Return(pool, nil).Times(3)
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(nil, fmt.Errorf("pop")).Once()
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(nil, nil).Times(3)
 	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
@@ -339,7 +339,8 @@ func TestTokensApprovedWithMessageReceived(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(2)
+	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Once()
+	em.mam.On("GetTokenPoolByID", em.ctx, pool.ID).Return(pool, nil).Once()
 	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(nil, nil).Times(2)
@@ -391,7 +392,8 @@ func TestTokensApprovedWithMessageSend(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(2)
+	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Once()
+	em.mam.On("GetTokenPoolByID", em.ctx, pool.ID).Return(pool, nil).Once()
 	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(nil, nil).Times(2)
