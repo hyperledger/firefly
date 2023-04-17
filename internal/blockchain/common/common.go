@@ -36,7 +36,7 @@ type BlockchainCallbacks interface {
 	SetHandler(namespace string, handler blockchain.Callbacks)
 	SetOperationalHandler(namespace string, handler core.OperationCallbacks)
 
-	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
+	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error
 	BatchPinOrNetworkAction(ctx context.Context, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams) error
 	BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error
 }
@@ -113,10 +113,10 @@ func (cb *callbacks) SetOperationalHandler(namespace string, handler core.Operat
 	cb.opHandlers[namespace] = handler
 }
 
-func (cb *callbacks) OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+func (cb *callbacks) OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(&core.OperationUpdate{
+		return handler.OperationUpdate(&core.OperationUpdate{
 			Plugin:         plugin.Name(),
 			NamespacedOpID: nsOpID,
 			Status:         status,
@@ -124,9 +124,9 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, plugin core.Named, nsO
 			ErrorMessage:   errorMessage,
 			Output:         opOutput,
 		})
-		return
 	}
 	log.L(ctx).Errorf("No handler found for blockchain operation '%s'", nsOpID)
+	return nil
 }
 
 func (cb *callbacks) BatchPinOrNetworkAction(ctx context.Context, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams) error {
@@ -333,7 +333,5 @@ func HandleReceipt(ctx context.Context, plugin core.Named, reply *BlockchainRece
 	_ = json.Unmarshal(obj, &output)
 
 	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, reply.Headers.ReceiptID, reply.TxHash, reply.Message)
-	callbacks.OperationUpdate(ctx, plugin, reply.Headers.ReceiptID, updateType, reply.TxHash, reply.Message, output)
-
-	return nil
+	return callbacks.OperationUpdate(ctx, plugin, reply.Headers.ReceiptID, updateType, reply.TxHash, reply.Message, output)
 }

@@ -1630,3 +1630,20 @@ func TestCheckInterfaceFFIBadResponse(t *testing.T) {
 	_, err := h.CheckInterface(context.Background(), pool, methods)
 	assert.Regexp(t, "FF00127", err)
 }
+
+func TestHandleReceiptErrorSwallowed(t *testing.T) {
+	h, _, _, _, done := newTestFFTokens(t)
+	defer done()
+
+	mcb := &coremocks.OperationCallbacks{}
+	h.callbacks.opHandlers["ns1"] = mcb
+
+	mcb.On("OperationUpdate", mock.Anything).Return(fmt.Errorf("pop"))
+
+	h.handleReceipt(h.ctx, fftypes.JSONObject{
+		"headers": map[string]interface{}{
+			"requestId": "ns1:" + fftypes.NewUUID().String(),
+			"type":      "TransactionSuccess",
+		},
+	})
+}

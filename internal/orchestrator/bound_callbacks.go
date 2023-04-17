@@ -41,8 +41,12 @@ func (bc *boundCallbacks) checkStopped() error {
 	return nil
 }
 
-func (bc *boundCallbacks) OperationUpdate(update *core.OperationUpdate) {
+func (bc *boundCallbacks) OperationUpdate(update *core.OperationUpdate) error {
+	if err := bc.checkStopped(); err != nil {
+		return err
+	}
 	bc.o.operations.SubmitOperationUpdate(update)
+	return nil
 }
 
 func (bc *boundCallbacks) SharedStorageBatchDownloaded(payloadRef string, data []byte) (*fftypes.UUID, error) {

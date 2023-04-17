@@ -66,14 +66,15 @@ type callbacks struct {
 	opHandlers map[string]core.OperationCallbacks
 }
 
-func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.OperationUpdate) {
+func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.OperationUpdate) error {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(update)
-	} else {
-		log.L(ctx).Errorf("No handler found for DX operation '%s'", update.NamespacedOpID)
-		update.OnComplete()
+		return handler.OperationUpdate(update)
 	}
+	log.L(ctx).Errorf("No handler found for DX operation '%s'", update.NamespacedOpID)
+	update.OnComplete()
+	return nil
+
 }
 
 func (cb *callbacks) DXEvent(ctx context.Context, namespace, recipient string, event dataexchange.DXEvent) error {
@@ -445,7 +446,7 @@ func (h *FFDX) eventLoop() {
 				continue // Swallow this and move on
 			}
 			l.Debugf("Received %s event from DX sender=%s", msg.Type, msg.Sender)
-			h.dispatchEvent(&msg)
+			h.dispatchWithRetry(&msg)
 		}
 	}
 }

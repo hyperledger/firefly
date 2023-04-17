@@ -53,10 +53,10 @@ type callbacks struct {
 	opHandlers map[string]core.OperationCallbacks
 }
 
-func (cb *callbacks) OperationUpdate(ctx context.Context, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+func (cb *callbacks) OperationUpdate(ctx context.Context, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(&core.OperationUpdate{
+		return handler.OperationUpdate(&core.OperationUpdate{
 			Plugin:         cb.plugin.Name(),
 			NamespacedOpID: nsOpID,
 			Status:         status,
@@ -64,9 +64,9 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, nsOpID string, status 
 			ErrorMessage:   errorMessage,
 			Output:         opOutput,
 		})
-	} else {
-		log.L(ctx).Errorf("No handler found for token operation '%s'", nsOpID)
 	}
+	log.L(ctx).Errorf("No handler found for token operation '%s'", nsOpID)
+	return nil
 }
 
 func (cb *callbacks) TokenPoolCreated(ctx context.Context, pool *tokens.TokenPool) error {
@@ -284,7 +284,6 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 	message := data.GetString("errorMessage")
 	if requestID == "" || replyType == "" {
 		l.Errorf("Reply cannot be processed - missing fields: %+v", data)
-		return
 	}
 	var updateType core.OpStatus
 	switch replyType {
@@ -296,7 +295,13 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 		updateType = core.OpStatusFailed
 	}
 	l.Infof("Received operation update: status=%s request=%s message=%s", updateType, requestID, message)
-	ft.callbacks.OperationUpdate(ctx, requestID, updateType, txHash, message, data)
+	err := ft.callbacks.OperationUpdate(ctx, requestID, updateType, txHash, message, data)
+	if err != nil {
+		// We accept a failure to process the receipt, as none of the downstream processing
+		// relies on receipt processing for data integrity, and there's no way for us to
+		// nack it back to the connector for re-delivery/
+		l.Errorf("Failed to process receipt: %s", err)
+	}
 }
 
 func (ft *FFTokens) buildBlockchainEvent(eventData fftypes.JSONObject) *blockchain.Event {

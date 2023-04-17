@@ -480,7 +480,10 @@ func (e *Ethereum) eventLoop() {
 					_ = json.Unmarshal(msgBytes, &receipt)
 					err := common.HandleReceipt(ctx, e, &receipt, e.callbacks)
 					if err != nil {
-						l.Errorf("Failed to process receipt: %+v", msgTyped)
+						// We accept a failure to process the receipt, as none of the downstream processing
+						// relies on receipt processing for data integrity, and there's no way for us to
+						// nack it back to the connector for re-delivery/
+						l.Errorf("Failed to process receipt (%+v): %s", msgTyped, err)
 					}
 				}
 			default:
@@ -1058,7 +1061,7 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 				ProtocolID: receiptInfo.GetString("protocolId")}
 			err := common.HandleReceipt(ctx, e, receipt, e.callbacks)
 			if err != nil {
-				log.L(ctx).Warnf("Failed to handle receipt")
+				log.L(ctx).Warnf("Failed to handle receipt: %s", err)
 			}
 		}
 	} else {

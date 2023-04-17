@@ -503,7 +503,10 @@ func (f *Fabric) eventLoop() {
 
 				err := common.HandleReceipt(ctx, f, &receipt, f.callbacks)
 				if err != nil {
-					l.Errorf("Failed to process receipt: %+v", msgTyped)
+					// We accept a failure to process the receipt, as none of the downstream processing
+					// relies on receipt processing for data integrity, and there's no way for us to
+					// nack it back to the connector for re-delivery
+					l.Errorf("Failed to process receipt (%+v): %s", msgTyped, err)
 				}
 			default:
 				l.Errorf("Message unexpected: %+v", msgTyped)

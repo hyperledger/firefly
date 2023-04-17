@@ -82,15 +82,15 @@ func (e *dxEvent) PrivateBlobReceived() *dataexchange.PrivateBlobReceived {
 	return e.privateBlobReceived
 }
 
-func (h *FFDX) dispatchEvent(msg *wsEvent) {
+func (h *FFDX) dispatchEvent(msg *wsEvent) error {
 	var dataID string
 	var namespace string
-	var err error
+	var rejectErr error
 	e := &dxEvent{ffdx: h, id: msg.EventID}
 
 	switch msg.Type {
 	case messageFailed:
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+		return h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
 			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         core.OpStatusFailed,
@@ -98,22 +98,20 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			Output:         msg.Info,
 			OnComplete:     e.Ack,
 		})
-		return
 	case messageDelivered:
 		status := core.OpStatusSucceeded
 		if h.capabilities.Manifest {
 			status = core.OpStatusPending
 		}
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+		return h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
 			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         status,
 			Output:         msg.Info,
 			OnComplete:     e.Ack,
 		})
-		return
 	case messageAcknowledged:
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+		return h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
 			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         core.OpStatusSucceeded,
@@ -122,9 +120,8 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			Output:         msg.Info,
 			OnComplete:     e.Ack,
 		})
-		return
 	case blobFailed:
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+		return h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
 			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         core.OpStatusFailed,
@@ -132,22 +129,20 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			Output:         msg.Info,
 			OnComplete:     e.Ack,
 		})
-		return
 	case blobDelivered:
 		status := core.OpStatusSucceeded
 		if h.capabilities.Manifest {
 			status = core.OpStatusPending
 		}
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+		return h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
 			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         status,
 			Output:         msg.Info,
 			OnComplete:     e.Ack,
 		})
-		return
 	case blobAcknowledged:
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
+		return h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
 			Plugin:         h.Name(),
 			NamespacedOpID: msg.RequestID,
 			Status:         core.OpStatusSucceeded,
@@ -156,17 +151,16 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			DXHash:         msg.Hash,
 			OnComplete:     e.Ack,
 		})
-		return
 
 	case messageReceived:
 		// De-serialize the transport wrapper
 		var wrapper *core.TransportWrapper
-		err = json.Unmarshal([]byte(msg.Message), &wrapper)
+		rejectErr = json.Unmarshal([]byte(msg.Message), &wrapper)
 		switch {
-		case err != nil:
-			err = fmt.Errorf("invalid transmission from peer '%s': %s", msg.Sender, err)
+		case rejectErr != nil:
+			rejectErr = fmt.Errorf("invalid transmission from peer '%s': %s", msg.Sender, rejectErr)
 		case wrapper.Batch == nil:
-			err = fmt.Errorf("invalid transmission from peer '%s': nil batch", msg.Sender)
+			rejectErr = fmt.Errorf("invalid transmission from peer '%s': nil batch", msg.Sender)
 		default:
 			namespace = wrapper.Batch.Namespace
 			e.dxType = dataexchange.DXEventTypeMessageReceived
@@ -178,8 +172,8 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 
 	case blobReceived:
 		var hash *fftypes.Bytes32
-		hash, err = fftypes.ParseBytes32(h.ctx, msg.Hash)
-		if err == nil {
+		hash, rejectErr = fftypes.ParseBytes32(h.ctx, msg.Hash)
+		if rejectErr == nil {
 			_, namespace, dataID = splitBlobPath(msg.Path)
 			e.dxType = dataexchange.DXEventTypePrivateBlobReceived
 			e.privateBlobReceived = &dataexchange.PrivateBlobReceived{
@@ -193,25 +187,21 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		}
 
 	default:
-		err = i18n.NewError(h.ctx, coremsgs.MsgUnexpectedDXMessageType, msg.Type)
+		rejectErr = i18n.NewError(h.ctx, coremsgs.MsgUnexpectedDXMessageType, msg.Type)
 	}
 
 	// If we couldn't dispatch the event we received, we still ack it
-	if err != nil {
-		log.L(h.ctx).Warnf("Failed to dispatch DX event: %s", err)
+	if rejectErr != nil {
+		log.L(h.ctx).Warnf("rejected DX event: %s", rejectErr)
 		e.Ack()
-	} else {
-		// Once we're ready to dispatch it to the callback, we use a retry
-		// loop because if the namespace isn't ready to consume the event
-		// we need to hold onto it - not ack it (there's no nack in the protocol
-		// with FFDX that allows us to push it back to the remote microservice).
-		h.callbackWithRetry(namespace, msg.Recipient, e)
+		return nil
 	}
+	return h.callbacks.DXEvent(h.ctx, namespace, msg.Recipient, e)
 }
 
-func (h *FFDX) callbackWithRetry(namespace, recipient string, e *dxEvent) {
+func (h *FFDX) dispatchWithRetry(msg *wsEvent) {
 	_ = h.retry.Do(h.ctx, "dispatch ffdx event", func(attempt int) (retry bool, err error) {
 		// Return until success, or the context closes.
-		return true, h.callbacks.DXEvent(h.ctx, namespace, recipient, e)
+		return true, h.dispatchEvent(msg)
 	})
 }

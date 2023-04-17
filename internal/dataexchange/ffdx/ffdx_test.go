@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/coremocks"
@@ -619,6 +620,7 @@ func TestEventLoopClosedContext(t *testing.T) {
 		ctx:       ctx,
 		callbacks: callbacks{handlers: map[string]dataexchange.Callbacks{"ns1": dxc}},
 		wsconn:    wsm,
+		retry:     &retry.Retry{},
 	}
 	r := make(chan []byte, 1)
 	r <- []byte(`{}`)

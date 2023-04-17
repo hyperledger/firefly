@@ -13,8 +13,17 @@ type OperationCallbacks struct {
 }
 
 // OperationUpdate provides a mock function with given fields: update
-func (_m *OperationCallbacks) OperationUpdate(update *core.OperationUpdate) {
-	_m.Called(update)
+func (_m *OperationCallbacks) OperationUpdate(update *core.OperationUpdate) error {
+	ret := _m.Called(update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*core.OperationUpdate) error); ok {
+		r0 = rf(update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 type mockConstructorTestingTNewOperationCallbacks interface {

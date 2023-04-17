@@ -124,7 +124,10 @@ func TestBoundCallbacksStopped(t *testing.T) {
 	_, _, _, bc := newTestBoundCallbacks(t)
 	bc.o.started = false
 
-	_, err := bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
+	err := bc.OperationUpdate(nil)
+	assert.Regexp(t, "FF10446", err)
+
+	_, err = bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
 	assert.Regexp(t, "FF10446", err)
 
 	err = bc.SharedStorageBlobDownloaded(*fftypes.NewRandB32(), 12345, "payload1", nil)

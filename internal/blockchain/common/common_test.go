@@ -46,7 +46,7 @@ func TestCallbackOperationUpdate(t *testing.T) {
 			update.BlockchainTXID == "tx1" &&
 			update.ErrorMessage == "err" &&
 			update.Plugin == "utblockchain"
-	})).Return().Once()
+	})).Return(nil).Once()
 	cb.OperationUpdate(context.Background(), mbi, nsOpID, core.OpStatusSucceeded, "tx1", "err", fftypes.JSONObject{})
 
 	nsOpID = "ns2:" + fftypes.NewUUID().String()
