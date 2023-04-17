@@ -181,7 +181,7 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 	}).Once()
 
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
-	mci.On("SharedStorageBlobDownloaded", *blobHash, int64(12345), "privateRef1", dataID).Return()
+	mci.On("SharedStorageBlobDownloaded", *blobHash, int64(12345), "privateRef1", dataID).Return(nil)
 
 	err := dm.InitiateDownloadBlob(dm.ctx, txID, dataID, "ref1")
 	assert.NoError(t, err)

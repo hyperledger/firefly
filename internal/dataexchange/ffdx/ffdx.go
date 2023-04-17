@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -50,6 +51,7 @@ type FFDX struct {
 	initMutex    sync.Mutex
 	nodes        map[string]*dxNode
 	ackChannel   chan *ack
+	retry        *retry.Retry
 }
 
 type dxNode struct {
@@ -59,6 +61,7 @@ type dxNode struct {
 
 type callbacks struct {
 	plugin     *FFDX
+	writeLock  sync.Mutex
 	handlers   map[string]dataexchange.Callbacks
 	opHandlers map[string]core.OperationCallbacks
 }
@@ -73,20 +76,20 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.Operation
 	}
 }
 
-func (cb *callbacks) DXEvent(ctx context.Context, namespace, recipient string, event dataexchange.DXEvent) {
+func (cb *callbacks) DXEvent(ctx context.Context, namespace, recipient string, event dataexchange.DXEvent) error {
 	node := cb.plugin.findNode(namespace, recipient)
 	if node != nil {
 		key := namespace + ":" + node.Name
 		if handler, ok := cb.handlers[key]; ok {
-			handler.DXEvent(cb.plugin, event)
-		} else {
-			log.L(ctx).Errorf("No handler found for DX event '%s' namespace=%s node=%s", event.EventID(), namespace, node.Name)
-			event.Ack()
+			return handler.DXEvent(cb.plugin, event)
 		}
+		log.L(ctx).Errorf("No handler found for DX event '%s' namespace=%s node=%s", event.EventID(), namespace, node.Name)
+		event.Ack()
 	} else {
 		log.L(ctx).Errorf("Unknown local node for DX event '%s' recipient=%s", event.EventID(), recipient)
 		event.Ack()
 	}
+	return nil
 }
 
 func splitLast(s string, sep string) (string, string) {
@@ -183,6 +186,11 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 	h.capabilities = &dataexchange.Capabilities{
 		Manifest: config.GetBool(DataExchangeManifestEnabled),
 	}
+	h.retry = &retry.Retry{
+		InitialDelay: config.GetDuration(DataExchangeRetryInitialDelay),
+		MaximumDelay: config.GetDuration(DataExchangeRetryMaxDelay),
+		Factor:       config.GetFloat64(DataExchangeRetryFactor),
+	}
 
 	wsConfig := wsclient.GenerateConfig(config)
 
@@ -196,11 +204,15 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 }
 
 func (h *FFDX) SetHandler(networkNamespace, nodeName string, handler dataexchange.Callbacks) {
+	h.callbacks.writeLock.Lock()
+	defer h.callbacks.writeLock.Unlock()
 	key := networkNamespace + ":" + nodeName
 	h.callbacks.handlers[key] = handler
 }
 
 func (h *FFDX) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
+	h.callbacks.writeLock.Lock()
+	defer h.callbacks.writeLock.Unlock()
 	h.callbacks.opHandlers[namespace] = handler
 }
 

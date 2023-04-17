@@ -671,6 +671,8 @@ var (
 	WSSubscriptionStatusEphemeral = ffm("WSSubscriptionStatus.ephemeral", "Indicates whether the subscription is ephemeral (vs durable)")
 	WSSubscriptionStatusNamespace = ffm("WSSubscriptionStatus.namespace", "The subscription namespace")
 	WSSubscriptionStatusName      = ffm("WSSubscriptionStatus.name", "The subscription name (for durable subscriptions only)")
+	WSSubscriptionStatusFilter    = ffm("WSSubscriptionStatus.filter", "The subscription filter specification")
+	WSSubscriptionStatusStartTime = ffm("WSSubscriptionStatus.startTime", "The time the subscription started (reset on dynamic namespace reload)")
 
 	WebhooksOptJSON         = ffm("WebhookSubOptions.json", "Webhooks only: Whether to assume the response body is JSON, regardless of the returned Content-Type")
 	WebhooksOptReply        = ffm("WebhookSubOptions.reply", "Webhooks only: Whether to automatically send a reply event, using the body returned by the webhook")

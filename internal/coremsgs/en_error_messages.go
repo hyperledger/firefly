@@ -283,4 +283,5 @@ var (
 	MsgMethodDoesNotSupportPinning        = ffe("FF10443", "This method does not support passing a payload for pinning")
 	MsgOperationNotFoundInTransaction     = ffe("FF10444", "No operation of type %s was found in transaction '%s'")
 	MsgCannotSetParameterWithMessage      = ffe("FF10445", "Cannot provide a value for '%s' when pinning a message", 400)
+	MsgNamespaceNotStarted                = ffe("FF10446", "Namespace '%s' is not started", 412)
 )

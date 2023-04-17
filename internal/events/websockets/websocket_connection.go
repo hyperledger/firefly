@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -32,9 +33,8 @@ import (
 )
 
 type websocketStartedSub struct {
-	ephemeral bool
-	name      string
-	namespace string
+	core.WSStart
+	startTime *fftypes.FFTime
 }
 
 type websocketConnection struct {
@@ -231,6 +231,25 @@ func (wc *websocketConnection) send(msg interface{}) error {
 	}
 }
 
+func (wc *websocketConnection) restartForNamespace(ns string, startTime time.Time) {
+	wc.mux.Lock()
+	toStart := []*core.WSStart{}
+	for _, s := range wc.started {
+		if s.Namespace == ns && s.startTime.Time().Before(startTime) {
+			log.L(wc.ctx).Infof("Restarting subscription '%s:%s' (ephemeral=%t)", s.Namespace, s.Name, s.Ephemeral)
+			toStart = append(toStart, &s.WSStart)
+			s.startTime = fftypes.Now()
+		}
+	}
+	wc.mux.Unlock()
+	for _, s := range toStart {
+		if err := wc.ws.start(wc, s); err != nil {
+			log.L(wc.ctx).Errorf("Failed restart subscription '%s:%s' (closing): %s", s.Namespace, s.Name, err)
+			wc.close()
+		}
+	}
+}
+
 func (wc *websocketConnection) handleStart(start *core.WSStart) (err error) {
 	wc.mux.Lock()
 	if start.AutoAck != nil {
@@ -241,9 +260,8 @@ func (wc *websocketConnection) handleStart(start *core.WSStart) (err error) {
 		wc.autoAck = *start.AutoAck
 	}
 	wc.started = append(wc.started, &websocketStartedSub{
-		ephemeral: start.Ephemeral,
-		namespace: start.Namespace,
-		name:      start.Name,
+		startTime: fftypes.Now(),
+		WSStart:   *start,
 	})
 	wc.mux.Unlock()
 	return wc.ws.start(wc, start)
@@ -253,7 +271,7 @@ func (wc *websocketConnection) durableSubMatcher(sr core.SubscriptionRef) bool {
 	wc.mux.Lock()
 	defer wc.mux.Unlock()
 	for _, startedSub := range wc.started {
-		if !startedSub.ephemeral && startedSub.namespace == sr.Namespace && startedSub.name == sr.Name {
+		if !startedSub.Ephemeral && startedSub.Namespace == sr.Namespace && startedSub.Name == sr.Name {
 			return true
 		}
 	}
@@ -331,7 +349,9 @@ func (wc *websocketConnection) close() {
 	if !wc.closed {
 		didClosed = true
 		wc.closed = true
-		_ = wc.wsConn.Close()
+		if wc.wsConn != nil {
+			_ = wc.wsConn.Close()
+		}
 		wc.cancelCtx()
 	}
 	wc.mux.Unlock()

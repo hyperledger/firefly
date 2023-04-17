@@ -69,7 +69,7 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, pa
 	return batch.ID, nil
 }
 
-func (em *eventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) {
+func (em *eventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) error {
 	l := log.L(em.ctx)
 	l.Infof("Blob received event from public storage %s: Hash='%v'", ss.Name(), hash)
 
@@ -85,4 +85,5 @@ func (em *eventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, has
 			DataID:     dataID,
 		},
 	})
+	return nil
 }

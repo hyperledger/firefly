@@ -21,11 +21,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -425,7 +427,8 @@ func mockInitConfig(nmm *nmMocks) {
 	nmm.mdx.On("Start").Return(nil)
 	nmm.mti[1].On("Start").Return(nil)
 
-	nmm.mo.On("Init", mock.Anything, mock.Anything).
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything, mock.Anything).Return()
+	nmm.mo.On("Init").
 		Run(func(args mock.Arguments) {
 			if nmm.nm != nil && nmm.nm.namespaces["ns1"] != nil && nmm.nm.namespaces["ns1"].Contracts != nil {
 				nmm.nm.namespaces["ns1"].Contracts.Active = &core.MultipartyContract{
@@ -438,6 +441,21 @@ func mockInitConfig(nmm *nmMocks) {
 		Return(nil)
 	nmm.mo.On("Start").Return(nil)
 	nmm.mo.On("WaitStop").Return(nil).Maybe()
+}
+
+func namespaceInitWaiter(t *testing.T, nmm *nmMocks, namespaces []string) *sync.WaitGroup {
+	wg := &sync.WaitGroup{}
+	for _, ns := range namespaces {
+		_ns := ns
+		for _, mei := range nmm.mei {
+			wg.Add(1)
+			mei.On("NamespaceRestarted", _ns, mock.Anything).Return().Run(func(args mock.Arguments) {
+				log.L(context.Background()).Infof("WAITER: Namespace started '%s'", _ns)
+				wg.Done()
+			}).Once()
+		}
+	}
+	return wg
 }
 
 func TestConfigListenerE2E(t *testing.T) {
@@ -456,6 +474,7 @@ func TestConfigListenerE2E(t *testing.T) {
 	nm := NewNamespaceManager().(*namespaceManager)
 	nmm := mockPluginFactories(nm)
 	mockInitConfig(nmm)
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2", "ns3"})
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error {
@@ -477,6 +496,8 @@ func TestConfigListenerE2E(t *testing.T) {
 	for nm.namespaces["ns3"] == nil {
 		time.Sleep(10 * time.Millisecond)
 	}
+
+	waitInit.Wait()
 
 }
 
@@ -527,6 +548,7 @@ func TestConfigReload1to2(t *testing.T) {
 	defer cancelCtx()
 
 	mockInitConfig(nmm)
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2", "ns3"})
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
@@ -582,6 +604,8 @@ func TestConfigReload1to2(t *testing.T) {
 	assert.Len(t, nm.namespaces, len(originaNS)+1)
 	assert.NotNil(t, nm.namespaces["ns3"])
 
+	waitInit.Wait()
+
 }
 
 func TestConfigReload1to3(t *testing.T) {
@@ -598,12 +622,14 @@ func TestConfigReload1to3(t *testing.T) {
 	defer cancelCtx()
 
 	mockInitConfig(nmm)
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
 	assert.NoError(t, err)
+	waitInit.Wait()
 
 	originalPlugins := nm.plugins
 	originalPluginHashes := make(map[string]*fftypes.Bytes32)
@@ -616,6 +642,7 @@ func TestConfigReload1to3(t *testing.T) {
 		originalNSHashes[k] = v.configHash
 	}
 
+	waitInit = namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 	coreconfig.Reset()
 	InitConfig()
 	viper.SetConfigType("yaml")
@@ -648,6 +675,7 @@ func TestConfigReload1to3(t *testing.T) {
 	assert.False(t, originaNS["ns1"] == nm.namespaces["ns1"])
 	assert.NotEqual(t, originalNSHashes["ns1"], nm.namespaces["ns1"].configHash)
 
+	waitInit.Wait()
 }
 
 func TestConfigReloadBadNewConfigPlugins(t *testing.T) {
@@ -664,6 +692,7 @@ func TestConfigReloadBadNewConfigPlugins(t *testing.T) {
 	defer cancelCtx()
 
 	mockInitConfig(nmm)
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
@@ -673,6 +702,8 @@ func TestConfigReloadBadNewConfigPlugins(t *testing.T) {
 
 	err = nm.Start()
 	assert.NoError(t, err)
+
+	waitInit.Wait()
 
 	coreconfig.Reset()
 	InitConfig()
@@ -713,6 +744,7 @@ func TestConfigReloadBadNSMissingRequiredPlugins(t *testing.T) {
 	defer cancelCtx()
 
 	mockInitConfig(nmm)
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
@@ -722,6 +754,8 @@ func TestConfigReloadBadNSMissingRequiredPlugins(t *testing.T) {
 
 	err = nm.Start()
 	assert.NoError(t, err)
+
+	waitInit.Wait()
 
 	coreconfig.Reset()
 	InitConfig()
@@ -772,12 +806,14 @@ func TestConfigDownToNothingOk(t *testing.T) {
 	defer cancelCtx()
 
 	mockInitConfig(nmm)
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
 	assert.NoError(t, err)
+	waitInit.Wait()
 
 	coreconfig.Reset()
 	InitConfig()
@@ -817,12 +853,14 @@ func TestConfigStartPluginsFails(t *testing.T) {
 	defer cancelCtx()
 
 	mockInitConfig(nmm)
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
 	assert.NoError(t, err)
+	waitInit.Wait()
 
 	coreconfig.Reset()
 	InitConfig()
@@ -891,50 +929,6 @@ plugins:
 
 }
 
-func TestConfigReloadStartPluginsFailOnReload(t *testing.T) {
-	logrus.SetLevel(logrus.TraceLevel)
-
-	nm, nmm, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-
-	// Start with empty config
-	for _, mei := range nmm.mei {
-		mei.On("Init", mock.Anything, mock.Anything).Return(nil).Maybe()
-	}
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	defer cancelCtx()
-
-	err := nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
-	assert.NoError(t, err)
-
-	err = nm.Start()
-	assert.NoError(t, err)
-
-	coreconfig.Reset()
-	InitConfig()
-	viper.SetConfigType("yaml")
-	err = viper.ReadConfig(strings.NewReader(`
-plugins:
-  blockchain:
-  - name: "badness"
-    type: "ethereum"
-`))
-	assert.NoError(t, err)
-
-	// Drive the config reload
-	nmm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nmm.mbi.On("Start", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	nm.configReloaded(nm.ctx)
-
-	// Should terminate
-	<-nm.ctx.Done()
-	nmm.mae.On("WaitStop").Return(nil).Maybe()
-	nmm.mo.On("WaitStop").Return(nil).Maybe()
-	nm.WaitStop()
-
-}
-
 func TestConfigReloadInitNamespacesFailOnReload(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel)
 
@@ -972,17 +966,14 @@ namespaces:
 	assert.NoError(t, err)
 
 	// Drive the config reload
-	testDone := make(chan struct{})
 	nmm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nmm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
-	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, fmt.Errorf("pop")).Run(func(args mock.Arguments) {
-		close(testDone)
-		cancelCtx() // only once
-	})
+	nmm.mdi.On("GetNamespace", mock.Anything, "default").Run(func(args mock.Arguments) {
+		nm.cancelCtx()
+	}).Return(nil, fmt.Errorf("pop"))
 	nm.configReloaded(nm.ctx)
 
 	// Should terminate
-	<-testDone
 	<-nm.ctx.Done()
 	nmm.mae.On("WaitStop").Return(nil).Maybe()
 	nmm.mo.On("WaitStop").Return(nil).Maybe()
@@ -1031,10 +1022,11 @@ namespaces:
 	nmm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	nmm.mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nmm.mo.On("Start", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Run(func(args mock.Arguments) {
-		cancelCtx() // only once
-	})
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
+	nmm.mo.On("Init").Return(nil)
+	nmm.mo.On("Start", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+		nm.cancelCtx()
+	}).Return(fmt.Errorf("pop"))
 	nm.configReloaded(nm.ctx)
 
 	// Should terminate

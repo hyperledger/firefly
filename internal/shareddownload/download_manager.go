@@ -76,7 +76,7 @@ type downloadWork struct {
 
 type Callbacks interface {
 	SharedStorageBatchDownloaded(payloadRef string, data []byte) (batchID *fftypes.UUID, err error)
-	SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID)
+	SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) error
 }
 
 func NewDownloadManager(ctx context.Context, ns *core.Namespace, di database.Plugin, ss sharedstorage.Plugin, dx dataexchange.Plugin, om operations.Manager, cb Callbacks) (Manager, error) {

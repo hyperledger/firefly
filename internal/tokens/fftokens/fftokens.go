@@ -19,6 +19,7 @@ package fftokens
 import (
 	"context"
 	"encoding/json"
+	"sync"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -47,6 +48,7 @@ type FFTokens struct {
 
 type callbacks struct {
 	plugin     tokens.Plugin
+	writeLock  sync.Mutex
 	handlers   map[string]tokens.Callbacks
 	opHandlers map[string]core.OperationCallbacks
 }
@@ -253,10 +255,14 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 }
 
 func (ft *FFTokens) SetHandler(namespace string, handler tokens.Callbacks) {
+	ft.callbacks.writeLock.Lock()
+	defer ft.callbacks.writeLock.Unlock()
 	ft.callbacks.handlers[namespace] = handler
 }
 
 func (ft *FFTokens) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
+	ft.callbacks.writeLock.Lock()
+	defer ft.callbacks.writeLock.Unlock()
 	ft.callbacks.opHandlers[namespace] = handler
 }
 

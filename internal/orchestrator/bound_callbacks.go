@@ -17,27 +17,93 @@
 package orchestrator
 
 import (
+	"context"
+	"sync"
+
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/events"
-	"github.com/hyperledger/firefly/internal/operations"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/sharedstorage"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 type boundCallbacks struct {
-	ss sharedstorage.Plugin
-	ei events.EventManager
-	om operations.Manager
+	sync.Mutex
+	o *orchestrator
+}
+
+func (bc *boundCallbacks) checkStopped() error {
+	if !bc.o.isStarted() {
+		return i18n.NewError(bc.o.ctx, coremsgs.MsgNamespaceNotStarted, bc.o.namespace.Name)
+	}
+	return nil
 }
 
 func (bc *boundCallbacks) OperationUpdate(update *core.OperationUpdate) {
-	bc.om.SubmitOperationUpdate(update)
+	bc.o.operations.SubmitOperationUpdate(update)
 }
 
 func (bc *boundCallbacks) SharedStorageBatchDownloaded(payloadRef string, data []byte) (*fftypes.UUID, error) {
-	return bc.ei.SharedStorageBatchDownloaded(bc.ss, payloadRef, data)
+	if err := bc.checkStopped(); err != nil {
+		return nil, err
+	}
+	return bc.o.events.SharedStorageBatchDownloaded(bc.o.sharedstorage(), payloadRef, data)
 }
 
-func (bc *boundCallbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) {
-	bc.ei.SharedStorageBlobDownloaded(bc.ss, hash, size, payloadRef, dataID)
+func (bc *boundCallbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) error {
+	if err := bc.checkStopped(); err != nil {
+		return err
+	}
+	return bc.o.events.SharedStorageBlobDownloaded(bc.o.sharedstorage(), hash, size, payloadRef, dataID)
+}
+
+func (bc *boundCallbacks) BatchPinComplete(namespace string, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+	if err := bc.checkStopped(); err != nil {
+		return err
+	}
+	return bc.o.events.BatchPinComplete(namespace, batch, signingKey)
+}
+
+func (bc *boundCallbacks) BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	if err := bc.checkStopped(); err != nil {
+		return err
+	}
+	return bc.o.events.BlockchainNetworkAction(action, location, event, signingKey)
+}
+
+func (bc *boundCallbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
+	if err := bc.checkStopped(); err != nil {
+		return err
+	}
+	return bc.o.events.BlockchainEvent(event)
+}
+
+func (bc *boundCallbacks) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) error {
+	if err := bc.checkStopped(); err != nil {
+		return err
+	}
+	return bc.o.events.DXEvent(plugin, event)
+}
+
+func (bc *boundCallbacks) TokenPoolCreated(ctx context.Context, plugin tokens.Plugin, pool *tokens.TokenPool) error {
+	if err := bc.checkStopped(); err != nil {
+		return err
+	}
+	return bc.o.events.TokenPoolCreated(ctx, plugin, pool)
+}
+
+func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
+	if err := bc.checkStopped(); err != nil {
+		return err
+	}
+	return bc.o.events.TokensTransferred(plugin, transfer)
+}
+
+func (bc *boundCallbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.TokenApproval) error {
+	if err := bc.checkStopped(); err != nil {
+		return err
+	}
+	return bc.o.events.TokensApproved(plugin, approval)
 }

@@ -18,6 +18,7 @@ package sqlcommon
 
 import (
 	"context"
+	"sync"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/dbsql"
@@ -36,7 +37,8 @@ type SQLCommon struct {
 }
 
 type callbacks struct {
-	handlers map[string]database.Callbacks
+	writeLock sync.Mutex
+	handlers  map[string]database.Callbacks
 }
 
 func (cb *callbacks) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
@@ -81,6 +83,8 @@ func (s *SQLCommon) Init(ctx context.Context, provider dbsql.Provider, config co
 }
 
 func (s *SQLCommon) SetHandler(namespace string, handler database.Callbacks) {
+	s.callbacks.writeLock.Lock()
+	defer s.callbacks.writeLock.Unlock()
 	if s.callbacks.handlers == nil {
 		s.callbacks.handlers = make(map[string]database.Callbacks)
 	}

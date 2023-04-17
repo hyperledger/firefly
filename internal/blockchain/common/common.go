@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -47,6 +48,7 @@ type FireflySubscriptions interface {
 }
 
 type callbacks struct {
+	writeLock  sync.Mutex
 	handlers   map[string]blockchain.Callbacks
 	opHandlers map[string]core.OperationCallbacks
 }
@@ -100,10 +102,14 @@ func NewFireflySubscriptions() FireflySubscriptions {
 }
 
 func (cb *callbacks) SetHandler(namespace string, handler blockchain.Callbacks) {
+	cb.writeLock.Lock()
+	defer cb.writeLock.Unlock()
 	cb.handlers[namespace] = handler
 }
 
 func (cb *callbacks) SetOperationalHandler(namespace string, handler core.OperationCallbacks) {
+	cb.writeLock.Lock()
+	defer cb.writeLock.Unlock()
 	cb.opHandlers[namespace] = handler
 }
 

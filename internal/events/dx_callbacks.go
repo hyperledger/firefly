@@ -167,7 +167,7 @@ func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch
 	return nil
 }
 
-func (em *eventManager) DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent) {
+func (em *eventManager) DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent) error {
 	switch event.Type() {
 	case dataexchange.DXEventTypePrivateBlobReceived:
 		em.privateBlobReceived(dx, event)
@@ -178,6 +178,7 @@ func (em *eventManager) DXEvent(dx dataexchange.Plugin, event dataexchange.DXEve
 		log.L(em.ctx).Errorf("Invalid data exchange event type from %s: %d", dx.Name(), event.Type())
 		event.Ack() // still ack
 	}
+	return nil
 }
 
 func (em *eventManager) messageReceived(dx dataexchange.Plugin, event dataexchange.DXEvent) {

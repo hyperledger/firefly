@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/auth"
 	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
@@ -254,14 +255,18 @@ func (nm *namespaceManager) startV1NamespaceIfRequired(nsToCheck *namespace) err
 
 		// Start the namespace synchronously, while holding the nsMux (but without retry), so that
 		// all namespaces can do the above ^^^ check ok
-		if err := nm.initNamespace(systemNS); err != nil {
+		err := nm.preInitNamespace(systemNS)
+		if err == nil {
+			err = nm.initNamespace(systemNS)
+		}
+		if err != nil {
 			return err
 		}
 
 		// Ok - we've now initialized the system NS
 		nm.namespaces[core.LegacySystemNamespace] = systemNS
 		log.L(nm.ctx).Infof("Initialized namespace '%s' as a copy of '%s'", core.LegacySystemNamespace, nsToCheck.Name)
-		err := systemNS.orchestrator.Start()
+		err = systemNS.orchestrator.Start()
 		if err == nil {
 			log.L(nm.ctx).Infof("Namespace %s started", core.LegacySystemNamespace)
 			systemNS.started = true
@@ -294,6 +299,7 @@ func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContra
 // Note that plugins have a separate lifecycle, independent from namespace orchestrators.
 func (nm *namespaceManager) namespaceStarter(ns *namespace) {
 	_ = nm.nsStartupRetry.Do(nm.ctx, fmt.Sprintf("namespace %s", ns.Name), func(attempt int) (retry bool, err error) {
+		startTime := time.Now()
 		err = nm.initAndStartNamespace(ns)
 		// If we started successfully, then all is good
 		if err == nil {
@@ -302,6 +308,11 @@ func (nm *namespaceManager) namespaceStarter(ns *namespace) {
 			ns.started = true
 			ns.initError = ""
 			nm.nsMux.Unlock()
+
+			// Notify all the event plugins of the start, so they can re-register their subs.
+			for _, ep := range ns.plugins.Events {
+				ep.NamespaceRestarted(ns.Name, startTime)
+			}
 			return false, nil
 		}
 		// Otherwise the back-off retry should retry indefinitely (until the context is closed, which is
@@ -333,7 +344,7 @@ func (nm *namespaceManager) initAndStartNamespace(ns *namespace) error {
 	return ns.orchestrator.Start()
 }
 
-func (nm *namespaceManager) initNamespace(ns *namespace) error {
+func (nm *namespaceManager) preInitNamespace(ns *namespace) error {
 	bgCtx := nm.ctx
 
 	database := ns.plugins.Database.Plugin
@@ -356,13 +367,15 @@ func (nm *namespaceManager) initNamespace(ns *namespace) error {
 	if err = database.UpsertNamespace(bgCtx, &ns.Namespace, true); err != nil {
 		return err
 	}
-
 	ns.orchestrator = nm.orchestratorFactory(&ns.Namespace, ns.config, ns.plugins, nm.metrics, nm.cacheManager)
 	ns.ctx, ns.cancelCtx = context.WithCancel(bgCtx)
-	if err := ns.orchestrator.Init(ns.ctx, ns.cancelCtx); err != nil {
-		return err
-	}
+
+	ns.orchestrator.PreInit(ns.ctx, ns.cancelCtx)
 	return nil
+}
+
+func (nm *namespaceManager) initNamespace(ns *namespace) error {
+	return ns.orchestrator.Init()
 }
 
 func (nm *namespaceManager) stopNamespace(ctx context.Context, ns *namespace) {
@@ -380,8 +393,16 @@ func (nm *namespaceManager) Start() error {
 }
 
 func (nm *namespaceManager) startNamespacesAndPlugins(namespacesToStart map[string]*namespace, pluginsToStart map[string]*plugin) error {
-	// Orchestrators must be started before plugins so as not to miss events
 	for _, ns := range namespacesToStart {
+		// Orchestrators must all be initialized to the point they register their
+		// callbacks on the plugins, before we start the plugins.
+		//
+		// Note they will not be ready to process the events, and will error.
+		// That is fine as it will cause the plugin to push back the events,
+		// so they will not be rejected (or held in a retry loop).
+		if err := nm.preInitNamespace(ns); err != nil {
+			return err
+		}
 		go nm.namespaceStarter(ns)
 	}
 	for _, plugin := range pluginsToStart {

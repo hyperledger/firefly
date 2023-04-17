@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,6 +20,7 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -33,11 +34,16 @@ import (
 type WebSockets struct {
 	ctx          context.Context
 	capabilities *events.Capabilities
-	callbacks    map[string]events.Callbacks
+	callbacks    callbacks
 	connections  map[string]*websocketConnection
 	connMux      sync.Mutex
 	upgrader     websocket.Upgrader
 	auth         core.Authorizer
+}
+
+type callbacks struct {
+	writeLock sync.Mutex
+	handlers  map[string]events.Callbacks
 }
 
 func (ws *WebSockets) Name() string { return "websockets" }
@@ -47,7 +53,9 @@ func (ws *WebSockets) Init(ctx context.Context, config config.Section) error {
 		ctx:          ctx,
 		connections:  make(map[string]*websocketConnection),
 		capabilities: &events.Capabilities{},
-		callbacks:    make(map[string]events.Callbacks),
+		callbacks: callbacks{
+			handlers: make(map[string]events.Callbacks),
+		},
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  int(config.GetByteSize(ReadBufferSize)),
 			WriteBufferSize: int(config.GetByteSize(WriteBufferSize)),
@@ -65,7 +73,9 @@ func (ws *WebSockets) SetAuthorizer(auth core.Authorizer) {
 }
 
 func (ws *WebSockets) SetHandler(namespace string, handler events.Callbacks) error {
-	ws.callbacks[namespace] = handler
+	ws.callbacks.writeLock.Lock()
+	defer ws.callbacks.writeLock.Unlock()
+	ws.callbacks.handlers[namespace] = handler
 	return nil
 }
 
@@ -109,7 +119,7 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (ws *WebSockets) ack(connID string, inflight *core.EventDeliveryResponse) {
-	if cb, ok := ws.callbacks[inflight.Subscription.Namespace]; ok {
+	if cb, ok := ws.callbacks.handlers[inflight.Subscription.Namespace]; ok {
 		cb.DeliveryResponse(connID, inflight)
 	}
 }
@@ -118,7 +128,7 @@ func (ws *WebSockets) start(wc *websocketConnection, start *core.WSStart) error 
 	if start.Namespace == "" || (!start.Ephemeral && start.Name == "") {
 		return i18n.NewError(ws.ctx, coremsgs.MsgWSInvalidStartAction)
 	}
-	if cb, ok := ws.callbacks[start.Namespace]; ok {
+	if cb, ok := ws.callbacks.handlers[start.Namespace]; ok {
 		if start.Ephemeral {
 			return cb.EphemeralSubscription(wc.connID, start.Namespace, &start.Filter, &start.Options)
 		}
@@ -135,7 +145,7 @@ func (ws *WebSockets) connClosed(connID string) {
 	delete(ws.connections, connID)
 	ws.connMux.Unlock()
 	// Drop lock before calling back
-	for _, cb := range ws.callbacks {
+	for _, cb := range ws.callbacks.handlers {
 		cb.ConnectionClosed(connID)
 	}
 }
@@ -150,6 +160,21 @@ func (ws *WebSockets) WaitClosed() {
 	for _, ws := range closedConnections {
 		ws.waitClose()
 	}
+}
+
+func (ws *WebSockets) NamespaceRestarted(ns string, startTime time.Time) {
+
+	ws.connMux.Lock()
+	connections := make([]*websocketConnection, 0, len(ws.connections))
+	for _, c := range ws.connections {
+		connections = append(connections, c)
+	}
+	ws.connMux.Unlock()
+
+	for _, wc := range connections {
+		wc.restartForNamespace(ns, startTime)
+	}
+
 }
 
 func (ws *WebSockets) GetStatus() *core.WebSocketStatus {
@@ -176,9 +201,11 @@ func (ws *WebSockets) GetStatus() *core.WebSocketStatus {
 		status.Connections = append(status.Connections, conn)
 		for _, s := range wc.started {
 			sub := &core.WSSubscriptionStatus{
-				Name:      s.name,
-				Namespace: s.namespace,
-				Ephemeral: s.ephemeral,
+				StartTime: s.startTime,
+				Name:      s.Name,
+				Namespace: s.Namespace,
+				Ephemeral: s.Ephemeral,
+				Filter:    s.Filter,
 			}
 			conn.Subscriptions = append(conn.Subscriptions, sub)
 		}

@@ -36,6 +36,7 @@ import (
 	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/blockchaincommonmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/coremocks"
@@ -211,6 +212,13 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	))
 	assert.NoError(t, err)
 
+	msb := &blockchaincommonmocks.FireflySubscriptions{}
+	e.subs = msb
+	msb.On("GetSubscription", mock.Anything).Return(&common.SubscriptionInfo{
+		Version: 2,
+		Extra:   "channel1",
+	})
+
 	assert.Equal(t, "fabric", e.Name())
 	assert.Equal(t, core.VerifierTypeMSPIdentity, e.VerifierType())
 
@@ -230,6 +238,9 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	fromServer <- `[]`                // empty batch, will be ignored, but acked
 	reply := <-toServer
 	assert.Equal(t, `{"topic":"topic1","type":"ack"}`, reply)
+	fromServer <- `[{}]` // bad batch, which will be nack'd
+	reply = <-toServer
+	assert.Regexp(t, `{\"message\":\"FF10310: .*\",\"topic\":\"topic1\",\"type\":\"error\"}`, reply)
 
 	// Bad data will be ignored
 	fromServer <- `!json`

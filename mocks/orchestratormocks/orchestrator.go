@@ -1383,13 +1383,13 @@ func (_m *Orchestrator) Identity() identity.Manager {
 	return r0
 }
 
-// Init provides a mock function with given fields: ctx, cancelCtx
-func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) error {
-	ret := _m.Called(ctx, cancelCtx)
+// Init provides a mock function with given fields:
+func (_m *Orchestrator) Init() error {
+	ret := _m.Called()
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc) error); ok {
-		r0 = rf(ctx, cancelCtx)
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1443,6 +1443,11 @@ func (_m *Orchestrator) Operations() operations.Manager {
 	}
 
 	return r0
+}
+
+// PreInit provides a mock function with given fields: ctx, cancelCtx
+func (_m *Orchestrator) PreInit(ctx context.Context, cancelCtx context.CancelFunc) {
+	_m.Called(ctx, cancelCtx)
 }
 
 // PrivateMessaging provides a mock function with given fields:
