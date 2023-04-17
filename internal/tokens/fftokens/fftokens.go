@@ -660,6 +660,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *co
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
 			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
+		obj["poolData"] = packPoolData(pool.Namespace, pool.ID)
 		return true, ft.handleTokenPoolCreate(ctx, obj, tokenData)
 	}
 	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
