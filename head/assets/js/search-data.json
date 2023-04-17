@@ -1051,7 +1051,7 @@
   },"175": {
     "doc": "Configuration Reference",
     "title": "dataexchange.ffdx.retry",
-    "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
+    "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | factor | The retry backoff factor | float32 | 2 | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | initialDelay | The initial retry delay | time.Duration | 50ms | . | maxDelay | The maximum retry delay | time.Duration | 30s | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#dataexchangeffdxretry",
     "relUrl": "/reference/config.html#dataexchangeffdxretry"
   },"176": {
@@ -1489,7 +1489,7 @@
   },"248": {
     "doc": "Configuration Reference",
     "title": "plugins.dataexchange[].ffdx.retry",
-    "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
+    "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | factor | The retry backoff factor | float32 | 2 | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | initialDelay | The initial retry delay | time.Duration | 50ms | . | maxDelay | The maximum retry delay | time.Duration | 30s | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#pluginsdataexchangeffdxretry",
     "relUrl": "/reference/config.html#pluginsdataexchangeffdxretry"
   },"249": {

@@ -37475,12 +37475,100 @@ paths:
                                 description: Indicates whether the subscription is
                                   ephemeral (vs durable)
                                 type: boolean
+                              filter:
+                                description: The subscription filter specification
+                                properties:
+                                  author:
+                                    description: 'Deprecated: Please use ''message.author''
+                                      instead'
+                                    type: string
+                                  blockchainevent:
+                                    description: Filters specific to blockchain events.
+                                      If an event is not a blockchain event, these
+                                      filters are ignored
+                                    properties:
+                                      listener:
+                                        description: Regular expression to apply to
+                                          the blockchain event 'listener' field, which
+                                          is the UUID of the event listener. So you
+                                          can restrict your subscription to certain
+                                          blockchain listeners. Alternatively to avoid
+                                          your application need to know listener UUIDs
+                                          you can set the 'topic' field of blockchain
+                                          event listeners, and use a topic filter
+                                          on your subscriptions
+                                        type: string
+                                      name:
+                                        description: Regular expression to apply to
+                                          the blockchain event 'name' field, which
+                                          is the name of the event in the underlying
+                                          blockchain smart contract
+                                        type: string
+                                    type: object
+                                  events:
+                                    description: Regular expression to apply to the
+                                      event type, to subscribe to a subset of event
+                                      types
+                                    type: string
+                                  group:
+                                    description: 'Deprecated: Please use ''message.group''
+                                      instead'
+                                    type: string
+                                  message:
+                                    description: Filters specific to message events.
+                                      If an event is not a message event, these filters
+                                      are ignored
+                                    properties:
+                                      author:
+                                        description: Regular expression to apply to
+                                          the message 'header.author' field
+                                        type: string
+                                      group:
+                                        description: Regular expression to apply to
+                                          the message 'header.group' field
+                                        type: string
+                                      tag:
+                                        description: Regular expression to apply to
+                                          the message 'header.tag' field
+                                        type: string
+                                    type: object
+                                  tag:
+                                    description: 'Deprecated: Please use ''message.tag''
+                                      instead'
+                                    type: string
+                                  topic:
+                                    description: Regular expression to apply to the
+                                      topic of the event, to subscribe to a subset
+                                      of topics. Note for messages sent with multiple
+                                      topics, a separate event is emitted for each
+                                      topic
+                                    type: string
+                                  topics:
+                                    description: 'Deprecated: Please use ''topic''
+                                      instead'
+                                    type: string
+                                  transaction:
+                                    description: Filters specific to events with a
+                                      transaction. If an event is not associated with
+                                      a transaction, this filter is ignored
+                                    properties:
+                                      type:
+                                        description: Regular expression to apply to
+                                          the transaction 'type' field
+                                        type: string
+                                    type: object
+                                type: object
                               name:
                                 description: The subscription name (for durable subscriptions
                                   only)
                                 type: string
                               namespace:
                                 description: The subscription namespace
+                                type: string
+                              startTime:
+                                description: The time the subscription started (reset
+                                  on dynamic namespace reload)
+                                format: date-time
                                 type: string
                             type: object
                           type: array
