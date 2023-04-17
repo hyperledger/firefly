@@ -19,6 +19,7 @@ package fftokens
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"sync"
 
 	"github.com/go-resty/resty/v2"
@@ -219,6 +220,21 @@ type tokenError struct {
 	Message string `json:"message,omitempty"`
 }
 
+func packPoolData(namespace, id string) string {
+	if id == "" {
+		return namespace
+	}
+	return namespace + "|" + id
+}
+
+func unpackPoolData(data string) (namespace string, id string) {
+	pieces := strings.Split(data, "|")
+	if len(pieces) == 1 {
+		return pieces[0], ""
+	}
+	return pieces[0], pieces[1]
+}
+
 func (ft *FFTokens) Name() string {
 	return "fftokens"
 }
@@ -403,7 +419,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 	// These fields are optional
 	tokenIndex := data.GetString("tokenIndex")
 	uri := data.GetString("uri")
-	namespace := data.GetString("poolData")
+	namespace, _ := unpackPoolData(data.GetString("poolData"))
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
@@ -472,7 +488,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 
 	// These fields are optional
 	info := data.GetObject("info")
-	namespace := data.GetString("poolData")
+	namespace, _ := unpackPoolData(data.GetString("poolData"))
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
@@ -639,7 +655,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
 			RequestID:   nsOpID,
-			PoolData:    pool.Namespace,
+			PoolData:    packPoolData(pool.Namespace, pool.ID.String()),
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
 		}).

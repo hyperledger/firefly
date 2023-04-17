@@ -496,6 +496,7 @@ func TestActivateTokenPoolNoContent(t *testing.T) {
 	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Locator:   "N1",
+		ID:        fftypes.NewUUID(),
 		Config:    poolConfig,
 	}
 
@@ -505,7 +506,7 @@ func TestActivateTokenPoolNoContent(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"poolData":    "ns1",
+				"poolData":    "ns1|" + pool.ID.String(),
 				"requestId":   "ns1:" + opID.String(),
 				"poolLocator": "N1",
 				"config":      poolConfig,
@@ -1121,7 +1122,7 @@ func TestTransferEvents(t *testing.T) {
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
 			"id":          "000000000010/000020/000030/000040",
-			"poolData":    "ns1",
+			"poolData":    "ns1|id1",
 			"poolLocator": "F1",
 			"signer":      "0x0",
 			"to":          "0x0",
