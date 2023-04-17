@@ -55,7 +55,9 @@ func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, wai
 }
 
 func (bm *definitionSender) DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error {
-	api.ID = fftypes.NewUUID()
+	if api.ID == nil {
+		api.ID = fftypes.NewUUID()
+	}
 
 	if bm.multiparty {
 		if err := bm.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
