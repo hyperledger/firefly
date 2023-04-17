@@ -403,7 +403,7 @@ type iTokenTransferCollection interface {
 	GetTokenTransferByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenTransfer, error)
 
 	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenTransferByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenTransfer, error)
+	GetTokenTransferByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenTransfer, *ffapi.FilterResult, error)
@@ -423,7 +423,7 @@ type iTokenApprovalCollection interface {
 	GetTokenApprovalByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenApproval, error)
 
 	// GetTokenTransferByProtocolID - Get a token approval by protocol ID
-	GetTokenApprovalByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenApproval, error)
+	GetTokenApprovalByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
 	GetTokenApprovals(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenApproval, *ffapi.FilterResult, error)

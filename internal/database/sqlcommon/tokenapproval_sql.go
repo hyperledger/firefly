@@ -202,10 +202,10 @@ func (s *SQLCommon) GetTokenApprovalByID(ctx context.Context, namespace string, 
 	return s.getTokenApprovalPred(ctx, localID.String(), sq.Eq{"local_id": localID, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenApproval, error) {
+func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenApproval, error) {
 	return s.getTokenApprovalPred(ctx, protocolID, sq.And{
 		sq.Eq{"namespace": namespace},
-		sq.Eq{"connector": connector},
+		sq.Eq{"pool_id": poolID},
 		sq.Eq{"protocol_id": protocolID},
 	})
 }

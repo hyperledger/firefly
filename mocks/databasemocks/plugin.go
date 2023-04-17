@@ -1938,25 +1938,25 @@ func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, namespace string, lo
 	return r0, r1
 }
 
-// GetTokenApprovalByProtocolID provides a mock function with given fields: ctx, namespace, connector, protocolID
-func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, namespace string, connector string, protocolID string) (*core.TokenApproval, error) {
-	ret := _m.Called(ctx, namespace, connector, protocolID)
+// GetTokenApprovalByProtocolID provides a mock function with given fields: ctx, namespace, poolID, protocolID
+func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenApproval, error) {
+	ret := _m.Called(ctx, namespace, poolID, protocolID)
 
 	var r0 *core.TokenApproval
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*core.TokenApproval, error)); ok {
-		return rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) (*core.TokenApproval, error)); ok {
+		return rf(ctx, namespace, poolID, protocolID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.TokenApproval); ok {
-		r0 = rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *core.TokenApproval); ok {
+		r0 = rf(ctx, namespace, poolID, protocolID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenApproval)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
+		r1 = rf(ctx, namespace, poolID, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2199,25 +2199,25 @@ func (_m *Plugin) GetTokenTransferByID(ctx context.Context, namespace string, lo
 	return r0, r1
 }
 
-// GetTokenTransferByProtocolID provides a mock function with given fields: ctx, namespace, connector, protocolID
-func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, namespace string, connector string, protocolID string) (*core.TokenTransfer, error) {
-	ret := _m.Called(ctx, namespace, connector, protocolID)
+// GetTokenTransferByProtocolID provides a mock function with given fields: ctx, namespace, poolID, protocolID
+func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenTransfer, error) {
+	ret := _m.Called(ctx, namespace, poolID, protocolID)
 
 	var r0 *core.TokenTransfer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*core.TokenTransfer, error)); ok {
-		return rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) (*core.TokenTransfer, error)); ok {
+		return rf(ctx, namespace, poolID, protocolID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.TokenTransfer); ok {
-		r0 = rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *core.TokenTransfer); ok {
+		r0 = rf(ctx, namespace, poolID, protocolID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenTransfer)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
+		r1 = rf(ctx, namespace, poolID, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}

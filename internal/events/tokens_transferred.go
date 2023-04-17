@@ -73,7 +73,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	transfer.Pool = pool.ID
 
 	// Check that transfer has not already been recorded
-	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, em.namespace.Name, transfer.Connector, transfer.ProtocolID); err != nil {
+	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, em.namespace.Name, transfer.Pool, transfer.ProtocolID); err != nil {
 		return false, err
 	} else if existing != nil {
 		log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.ProtocolID)

@@ -76,7 +76,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(transferJson), string(transferReadJson))
 
 	// Query back the token transfer (by protocol ID)
-	transferRead, err = s.GetTokenTransferByProtocolID(ctx, "ns1", transfer.Connector, transfer.ProtocolID)
+	transferRead, err = s.GetTokenTransferByProtocolID(ctx, "ns1", transfer.Pool, transfer.ProtocolID)
 	assert.NoError(t, err)
 	assert.NotNil(t, transferRead)
 	transferReadJson, _ = json.Marshal(&transferRead)
