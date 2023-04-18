@@ -182,6 +182,10 @@ func NewNamespaceManager() Manager {
 }
 
 func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc, reset chan bool, reloadConfig func() error) (err error) {
+	// Hold the mutex throughout initial init, as we do not want to allow config reload to go yet
+	nm.nsMux.Lock()
+	defer nm.nsMux.Unlock()
+
 	nm.reset = reset               // channel to ask our parent to reload us
 	nm.reloadConfig = reloadConfig // function to cause our parent to call InitConfig on all components, including us
 	nm.ctx = ctx
