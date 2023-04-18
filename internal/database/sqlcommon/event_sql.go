@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -118,7 +118,7 @@ func (p *eventsPCA) PreCommit(ctx context.Context, tx *dbsql.TXWrapper) (err err
 		}
 	}
 
-	if p.s.features.MultiRowInsert {
+	if p.s.Features().MultiRowInsert {
 		query := sq.Insert(eventsTable).Columns(eventColumns...)
 		for _, event := range p.events {
 			query = p.s.setEventInsertValues(query, event)

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -146,9 +146,10 @@ func TestInsertPinsBeginFail(t *testing.T) {
 }
 
 func TestInsertPinsMultiRowOK(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 
 	pin1 := &core.Pin{Namespace: "ns1", Hash: fftypes.NewRandB32()}
 	pin2 := &core.Pin{Namespace: "ns1", Hash: fftypes.NewRandB32()}
@@ -168,9 +169,10 @@ func TestInsertPinsMultiRowOK(t *testing.T) {
 }
 
 func TestInsertPinsMultiRowFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	s.features.MultiRowInsert = true
+	s := newMockProvider()
+	s.multiRowInsert = true
 	s.fakePSQLInsert = true
+	s, mock := s.init()
 	pin1 := &core.Pin{Hash: fftypes.NewRandB32()}
 	mock.ExpectBegin()
 	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))

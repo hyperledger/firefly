@@ -195,7 +195,7 @@ func (s *SQLCommon) InsertDataArray(ctx context.Context, dataArray core.DataArra
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	if s.features.MultiRowInsert {
+	if s.Features().MultiRowInsert {
 		query := sq.Insert(dataTable).Columns(dataColumnsWithValue...)
 		for _, data := range dataArray {
 			query = s.setDataInsertValues(query, data)
@@ -212,7 +212,7 @@ func (s *SQLCommon) InsertDataArray(ctx context.Context, dataArray core.DataArra
 	} else {
 		// Fall back to individual inserts grouped in a TX
 		for _, data := range dataArray {
-			_, err := s.attemptDataInsert(ctx, tx, data, false)
+			_, err := s.attemptDataInsert(ctx, tx, data, true)
 			if err != nil {
 				return err
 			}
