@@ -606,6 +606,10 @@ func (ag *aggregator) readyForDispatch(ctx context.Context, msg *core.Message, d
 		var handlerResult definitions.HandlerResult
 		handlerResult, err = ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
 		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
+		if handlerResult.Action == core.ActionReject {
+			log.L(ctx).Infof("Definition broadcast '%s' rejected: %s", msg.Header.ID, err)
+			err = nil
+		}
 		correlator = handlerResult.CustomCorrelator
 		action = handlerResult.Action
 
