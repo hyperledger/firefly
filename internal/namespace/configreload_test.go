@@ -23,7 +23,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -474,7 +473,7 @@ func TestConfigListenerE2E(t *testing.T) {
 	nm := NewNamespaceManager().(*namespaceManager)
 	nmm := mockPluginFactories(nm)
 	mockInitConfig(nmm)
-	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2", "ns3"})
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error {
@@ -490,12 +489,12 @@ func TestConfigListenerE2E(t *testing.T) {
 	err = nm.Start()
 	assert.NoError(t, err)
 
+	waitInit.Wait()
+
+	waitInit = namespaceInitWaiter(t, nmm, []string{"ns3"})
+
 	err = ioutil.WriteFile(configFilename, []byte(exampleConfig2extraNS), 0664)
 	assert.NoError(t, err)
-
-	for nm.namespaces["ns3"] == nil {
-		time.Sleep(10 * time.Millisecond)
-	}
 
 	waitInit.Wait()
 
@@ -548,13 +547,16 @@ func TestConfigReload1to2(t *testing.T) {
 	defer cancelCtx()
 
 	mockInitConfig(nmm)
-	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2", "ns3"})
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
 	assert.NoError(t, err)
+
+	waitInit.Wait()
+	waitInit = namespaceInitWaiter(t, nmm, []string{"ns3"})
 
 	originalPlugins := nm.plugins
 	originalPluginHashes := make(map[string]*fftypes.Bytes32)
