@@ -128,6 +128,15 @@ func TestGetNextPinsForContextReadMessageFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestGetNextPinsBadFilter(t *testing.T) {
+	s, mock := newMockProvider().init()
+	_, _, err := s.GetNextPins(context.Background(), "ns", database.NextPinQueryFactory.NewFilter(context.Background()).Eq(
+		"wrong", "bad",
+	))
+	assert.Regexp(t, "FF00142", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
 func TestGetNextPinQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))

@@ -312,8 +312,9 @@ func TestWaitForShoulderTapOrPollTimeoutTap(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
 	defer cancel()
+	ep.conf.eventPollTimeout = 10 * time.Second
 	ep.shoulderTap()
-	assert.True(t, ep.waitForShoulderTapOrPollTimeout(ep.conf.eventBatchSize))
+	assert.True(t, ep.waitForShoulderTapOrPollTimeout(0))
 }
 
 func TestDoubleTap(t *testing.T) {
