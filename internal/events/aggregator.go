@@ -535,8 +535,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		np.IncrementNextPin(ctx, ag.namespace)
 	}
 	state.markMessageDispatched(manifest.ID, msg, msgBaseIndex, newState)
-
-	return err
+	return nil
 }
 
 func needsTokenTransfer(msg *core.Message) bool {
