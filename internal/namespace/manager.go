@@ -303,7 +303,7 @@ func (nm *namespaceManager) namespaceStarter(ns *namespace) {
 		err = nm.initAndStartNamespace(ns)
 		// If we started successfully, then all is good
 		if err == nil {
-			log.L(nm.ctx).Infof("Namespace %s started", ns.Name)
+			log.L(nm.ctx).Infof("Namespace started '%s'", ns.Name)
 			nm.nsMux.Lock()
 			ns.started = true
 			ns.initError = ""
@@ -400,6 +400,7 @@ func (nm *namespaceManager) startNamespacesAndPlugins(namespacesToStart map[stri
 		// Note they will not be ready to process the events, and will error.
 		// That is fine as it will cause the plugin to push back the events,
 		// so they will not be rejected (or held in a retry loop).
+		log.L(nm.ctx).Infof("Initiating start of namespace '%s'", ns.Name)
 		if err := nm.preInitNamespace(ns); err != nil {
 			return err
 		}

@@ -446,10 +446,12 @@ func namespaceInitWaiter(t *testing.T, nmm *nmMocks, namespaces []string) *sync.
 	wg := &sync.WaitGroup{}
 	for _, ns := range namespaces {
 		_ns := ns
-		for _, mei := range nmm.mei {
+		count := len(nmm.mei)
+		for i, mei := range nmm.mei {
+			idx := i + 1
 			wg.Add(1)
 			mei.On("NamespaceRestarted", _ns, mock.Anything).Return().Run(func(args mock.Arguments) {
-				log.L(context.Background()).Infof("WAITER: Namespace started '%s'", _ns)
+				log.L(context.Background()).Infof("WAITER: Namespace started (cb=%d/%d) '%s'", idx, count, _ns)
 				wg.Done()
 			}).Once()
 		}
