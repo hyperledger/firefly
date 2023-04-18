@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -283,9 +283,15 @@ func (ep *eventPoller) shoulderTap() {
 func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount int) bool {
 	l := log.L(ep.ctx)
 	longTimeoutDuration := ep.conf.eventPollTimeout
+
+	if lastEventCount >= ep.conf.eventBatchSize {
+		l.Tracef("Polling immediately due to full previous event batch")
+		return true
+	}
+
 	// For throughput optimized environments, we can set an eventBatchingTimeout to allow messages to arrive
 	// between polling cycles (at the cost of some dispatch latency)
-	if ep.conf.eventBatchTimeout > 0 && lastEventCount > 0 && lastEventCount < ep.conf.eventBatchSize {
+	if ep.conf.eventBatchTimeout > 0 && lastEventCount > 0 {
 		shortTimeout := time.NewTimer(ep.conf.eventBatchTimeout)
 		select {
 		case <-shortTimeout.C:

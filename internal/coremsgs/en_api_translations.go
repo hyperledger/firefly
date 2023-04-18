@@ -169,7 +169,7 @@ var (
 	APIEndpointsPostNewOrganization             = ffm("api.endpoints.postNewOrganization", "Registers a new org in the network")
 	APIEndpointsPostNewSubscription             = ffm("api.endpoints.postNewSubscription", "Creates a new subscription for an application to receive events from FireFly")
 	APIEndpointsPostOpRetry                     = ffm("api.endpoints.postOpRetry", "Retries a failed operation")
-	APIEndpointsPostPinsRewind                  = ffm("api.endpoints.postPinsRewind", "Force a rewind of the event aggregator to a previous position, to re-evaluate all unconfirmed pins since that point")
+	APIEndpointsPostPinsRewind                  = ffm("api.endpoints.postPinsRewind", "Force a rewind of the event aggregator to a previous position, to re-evaluate (and possibly dispatch) that pin and others after it. Only accepts a sequence or batch ID for a currently undispatched pin")
 	APIEndpointsPostTokenApproval               = ffm("api.endpoints.postTokenApproval", "Creates a token approval")
 	APIEndpointsPostTokenBurn                   = ffm("api.endpoints.postTokenBurn", "Burns some tokens")
 	APIEndpointsPostTokenMint                   = ffm("api.endpoints.postTokenMint", "Mints some tokens")

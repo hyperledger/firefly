@@ -552,7 +552,7 @@ func (or *orchestrator) Authorize(ctx context.Context, authReq *fftypes.AuthReq)
 func (or *orchestrator) RewindPins(ctx context.Context, rewind *core.PinRewind) (*core.PinRewind, error) {
 	if rewind.Sequence > 0 {
 		fb := database.PinQueryFactory.NewFilter(ctx)
-		if pins, _, err := or.GetPins(ctx, fb.And(fb.Eq("seq", rewind.Sequence))); err != nil {
+		if pins, _, err := or.GetPins(ctx, fb.And(fb.Eq("sequence", rewind.Sequence))); err != nil {
 			return nil, err
 		} else if len(pins) > 0 {
 			rewind.Batch = pins[0].Batch

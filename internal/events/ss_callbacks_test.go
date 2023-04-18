@@ -39,7 +39,7 @@ func TestSharedStorageBatchDownloadedOk(t *testing.T) {
 	b, _ := json.Marshal(&batch)
 
 	mss := &sharedstoragemocks.Plugin{}
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
@@ -71,7 +71,7 @@ func TestSharedStorageBatchDownloadedPersistFail(t *testing.T) {
 	b, _ := json.Marshal(&batch)
 
 	mss := &sharedstoragemocks.Plugin{}
-	em.mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	em.mdi.On("InsertOrGetBatch", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mss.On("Name").Return("utdx").Maybe()
 
 	_, err := em.SharedStorageBatchDownloaded(mss, "payload1", b)
