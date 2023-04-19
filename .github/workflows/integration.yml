@@ -9,7 +9,7 @@ on:
 
 jobs:
   e2e-test:
-    runs-on: ubuntu-latest-m
+    runs-on: firefly-ubuntu-latest
     strategy:
       matrix:
         test-suite:
@@ -82,7 +82,7 @@ jobs:
           path: containerlogs/logs.txt
 
   migration-test:
-    runs-on: ubuntu-latest-m
+    runs-on: firefly-ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
