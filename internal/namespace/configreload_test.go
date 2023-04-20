@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -447,10 +447,12 @@ func namespaceInitWaiter(t *testing.T, nmm *nmMocks, namespaces []string) *sync.
 	wg := &sync.WaitGroup{}
 	for _, ns := range namespaces {
 		_ns := ns
-		for _, mei := range nmm.mei {
+		count := len(nmm.mei)
+		for i, mei := range nmm.mei {
+			idx := i + 1
 			wg.Add(1)
 			mei.On("NamespaceRestarted", _ns, mock.Anything).Return().Run(func(args mock.Arguments) {
-				log.L(context.Background()).Infof("WAITER: Namespace started '%s'", _ns)
+				log.L(context.Background()).Infof("WAITER: Namespace started (cb=%d/%d) '%s'", idx, count, _ns)
 				wg.Done()
 			}).Once()
 		}
@@ -458,23 +460,30 @@ func namespaceInitWaiter(t *testing.T, nmm *nmMocks, namespaces []string) *sync.
 	return wg
 }
 
+func renameWriteFile(t *testing.T, filename string, data []byte) {
+	tempFile := fmt.Sprintf("%s-%s", t.TempDir(), fftypes.NewUUID())
+	err := ioutil.WriteFile(tempFile, data, 0664)
+	assert.NoError(t, err)
+	err = os.Rename(tempFile, filename)
+	assert.NoError(t, err)
+}
+
 func TestConfigListenerE2E(t *testing.T) {
 
 	testDir := t.TempDir()
 	configFilename := fmt.Sprintf("%s/firefly.core", testDir)
-	err := ioutil.WriteFile(configFilename, []byte(exampleConfig1base), 0664)
-	assert.NoError(t, err)
+	renameWriteFile(t, configFilename, []byte(exampleConfig1base))
 
 	coreconfig.Reset()
 	InitConfig()
-	err = config.ReadConfig("core", configFilename)
+	err := config.ReadConfig("core", configFilename)
 	assert.NoError(t, err)
 	config.Set(coreconfig.ConfigAutoReload, true)
 
 	nm := NewNamespaceManager().(*namespaceManager)
 	nmm := mockPluginFactories(nm)
 	mockInitConfig(nmm)
-	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2", "ns3"})
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error {
@@ -490,12 +499,11 @@ func TestConfigListenerE2E(t *testing.T) {
 	err = nm.Start()
 	assert.NoError(t, err)
 
-	err = ioutil.WriteFile(configFilename, []byte(exampleConfig2extraNS), 0664)
-	assert.NoError(t, err)
+	waitInit.Wait()
 
-	for nm.namespaces["ns3"] == nil {
-		time.Sleep(10 * time.Millisecond)
-	}
+	waitInit = namespaceInitWaiter(t, nmm, []string{"ns3"})
+
+	renameWriteFile(t, configFilename, []byte(exampleConfig2extraNS))
 
 	waitInit.Wait()
 
@@ -525,8 +533,7 @@ func TestConfigListenerUnreadableYAML(t *testing.T) {
 	err = nm.Start()
 	assert.NoError(t, err)
 
-	err = ioutil.WriteFile(configFilename, []byte(`--\n: ! YAML !!!: !`), 0664)
-	assert.NoError(t, err)
+	renameWriteFile(t, configFilename, []byte(`--\n: ! YAML !!!: !`))
 
 	// Should stop itself
 	<-nm.ctx.Done()
@@ -548,13 +555,16 @@ func TestConfigReload1to2(t *testing.T) {
 	defer cancelCtx()
 
 	mockInitConfig(nmm)
-	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2", "ns3"})
+	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
 	assert.NoError(t, err)
 
 	err = nm.Start()
 	assert.NoError(t, err)
+
+	waitInit.Wait()
+	waitInit = namespaceInitWaiter(t, nmm, []string{"ns3"})
 
 	originalPlugins := nm.plugins
 	originalPluginHashes := make(map[string]*fftypes.Bytes32)

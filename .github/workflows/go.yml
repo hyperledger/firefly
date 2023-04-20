@@ -9,6 +9,8 @@ on:
 
 jobs:
   build:
+    env:
+      TEST_ARGS: -v
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

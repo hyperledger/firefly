@@ -121,7 +121,10 @@ func (nm *namespaceManager) stopDefunctNamespaces(ctx context.Context, newPlugin
 	updatedNamespaces = make(map[string]*namespace)
 	availableNamespaces = make(map[string]*namespace)
 	namespacesToStop := make(map[string]*namespace)
+	newNamespaceNames := make([]string, 0)
+	updatedNamespaceNames := make([]string, 0)
 	for nsName, newNS := range newNamespaces {
+		newNamespaceNames = append(newNamespaceNames, nsName)
 		if existingNS := nm.namespaces[nsName]; existingNS != nil {
 			var changes []string
 			if !existingNS.configHash.Equals(newNS.configHash) {
@@ -147,15 +150,21 @@ func (nm *namespaceManager) stopDefunctNamespaces(ctx context.Context, newPlugin
 		// This is either changed, or brand new - mark it in the map
 		availableNamespaces[nsName] = newNS
 		updatedNamespaces[nsName] = newNS
+		updatedNamespaceNames = append(updatedNamespaceNames, nsName)
 	}
 
 	// Stop everything we need to stop
+	oldNamespaceNames := make([]string, 0)
+	stoppingNamespaceNames := make([]string, 0)
 	for nsName, existingNS := range nm.namespaces {
+		oldNamespaceNames = append(oldNamespaceNames, nsName)
 		if namespacesToStop[nsName] != nil || newNamespaces[nsName] == nil {
+			stoppingNamespaceNames = append(stoppingNamespaceNames, nsName)
 			log.L(ctx).Debugf("Stopping namespace '%s' after config reload. Loaded at %s", nsName, existingNS.loadTime)
 			nm.stopNamespace(ctx, existingNS)
 		}
 	}
+	log.L(nm.ctx).Infof("Namespace reload summary: old=%v new=%v updated=%v stopping=%v", oldNamespaceNames, newNamespaceNames, updatedNamespaceNames, stoppingNamespaceNames)
 
 	return availableNamespaces, updatedNamespaces
 
