@@ -2,12 +2,17 @@ run:
   tests: false
   skip-dirs:
   - "mocks"
+  - "ffconfig"
 linters-settings:
   golint: {}
   gocritic:
     enabled-checks: []
     disabled-checks:
       - regexpMust
+  revive:
+    rules:
+    - name: unused-parameter
+      disabled: true    
   goheader:
     values:
       regexp:

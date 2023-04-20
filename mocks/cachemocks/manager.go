@@ -54,6 +54,11 @@ func (_m *Manager) ListKeys() []string {
 	return r0
 }
 
+// ResetCachesForNamespace provides a mock function with given fields: ns
+func (_m *Manager) ResetCachesForNamespace(ns string) {
+	_m.Called(ns)
+}
+
 type mockConstructorTestingTNewManager interface {
 	mock.TestingT
 	Cleanup(func())
