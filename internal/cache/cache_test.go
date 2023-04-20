@@ -90,3 +90,29 @@ func TestUmmanagedCacheInstance(t *testing.T) {
 	uc1 := NewUmanagedCache(context.Background(), 100, 5*time.Minute)
 	assert.NotEqual(t, uc0, uc1)
 }
+
+func TestResetCachesForNamespace(t *testing.T) {
+	coreconfig.Reset()
+	ctx := context.Background()
+	cacheManager := NewCacheManager(ctx)
+	cacheNS1, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.batch.limit", "cache.batch.ttl", "ns1"))
+	cacheNS1.Set("key1", "value1")
+
+	cacheNS2, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.message.size", "cache.message.ttl", "ns2"))
+	cacheNS2.Set("key2", "value2")
+
+	cacheNS1_a, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.batch.limit", "cache.batch.ttl", "ns1"))
+	assert.Equal(t, cacheNS1, cacheNS1_a)
+	assert.Equal(t, "value1", cacheNS1_a.Get("key1"))
+
+	cacheManager.ResetCachesForNamespace("ns1")
+
+	cacheNS2_a, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.message.size", "cache.message.ttl", "ns2"))
+	assert.Equal(t, cacheNS2, cacheNS2_a)
+	assert.Equal(t, "value2", cacheNS2_a.Get("key2"))
+
+	cacheNS1_b, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.message.size", "cache.message.ttl", "ns1"))
+	assert.NotEqual(t, cacheNS1, cacheNS1_b)
+	assert.Nil(t, cacheNS1_b.Get("key1"))
+
+}

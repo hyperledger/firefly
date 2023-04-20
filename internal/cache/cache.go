@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -100,6 +100,7 @@ func (cc *CConfig) TTL() time.Duration {
 
 type Manager interface {
 	GetCache(cc *CConfig) (CInterface, error)
+	ResetCachesForNamespace(ns string)
 	ListKeys() []string
 }
 
@@ -115,11 +116,12 @@ type CInterface interface {
 }
 
 type CCache struct {
-	enabled  bool
-	ctx      context.Context
-	name     string
-	cache    *ccache.Cache
-	cacheTTL time.Duration
+	enabled   bool
+	ctx       context.Context
+	namespace string
+	name      string
+	cache     *ccache.Cache
+	cacheTTL  time.Duration
 }
 
 func (c *CCache) Set(key string, val interface{}) {
@@ -169,7 +171,20 @@ type cacheManager struct {
 	m       sync.Mutex
 	// maintain a list of named configured CCache, the name are unique configuration category id
 	// e.g. cache.batch
-	configuredCaches map[string]CInterface
+	configuredCaches map[string]*CCache
+}
+
+func (cm *cacheManager) ResetCachesForNamespace(ns string) {
+	cm.m.Lock()
+	defer cm.m.Unlock()
+	for k, c := range cm.configuredCaches {
+		if c.namespace == ns {
+			// Clear the cache to free the memory immediately
+			c.cache.Clear()
+			// Remove it from the map, so the next call will generate a new one
+			delete(cm.configuredCaches, k)
+		}
+	}
 }
 
 func (cm *cacheManager) GetCache(cc *CConfig) (CInterface, error) {
@@ -185,11 +200,12 @@ func (cm *cacheManager) GetCache(cc *CConfig) (CInterface, error) {
 	cache, exists := cm.configuredCaches[cacheName]
 	if !exists {
 		cache = &CCache{
-			ctx:      cc.ctx,
-			name:     cacheName,
-			cache:    ccache.New(ccache.Configure().MaxSize(maxSize)),
-			cacheTTL: cc.TTL(),
-			enabled:  cm.enabled,
+			ctx:       cc.ctx,
+			namespace: cc.namespace,
+			name:      cacheName,
+			cache:     ccache.New(ccache.Configure().MaxSize(maxSize)),
+			cacheTTL:  cc.TTL(),
+			enabled:   cm.enabled,
 		}
 		cm.configuredCaches[cacheName] = cache
 	}
@@ -209,7 +225,7 @@ func NewCacheManager(ctx context.Context) Manager {
 	cm := &cacheManager{
 		ctx:              ctx,
 		enabled:          config.GetBool(coreconfig.CacheEnabled),
-		configuredCaches: map[string]CInterface{},
+		configuredCaches: map[string]*CCache{},
 	}
 	return cm
 }

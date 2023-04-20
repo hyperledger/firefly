@@ -162,6 +162,9 @@ func (nm *namespaceManager) stopDefunctNamespaces(ctx context.Context, newPlugin
 			stoppingNamespaceNames = append(stoppingNamespaceNames, nsName)
 			log.L(ctx).Debugf("Stopping namespace '%s' after config reload. Loaded at %s", nsName, existingNS.loadTime)
 			nm.stopNamespace(ctx, existingNS)
+
+			// Clear cache managers for the stopped namespace, now the orchestrator is stopped
+			nm.cacheManager.ResetCachesForNamespace(nsName)
 		}
 	}
 	log.L(nm.ctx).Infof("Namespace reload summary: old=%v new=%v updated=%v stopping=%v", oldNamespaceNames, newNamespaceNames, updatedNamespaceNames, stoppingNamespaceNames)

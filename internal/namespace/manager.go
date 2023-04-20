@@ -200,10 +200,10 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		return err
 	}
 
-	return nm.initComponents(ctx)
+	return nm.initComponents()
 }
 
-func (nm *namespaceManager) initComponents(ctx context.Context) (err error) {
+func (nm *namespaceManager) initComponents() (err error) {
 	if nm.metricsEnabled {
 		// Ensure metrics are registered, before initializing the namespaces
 		metrics.Registry()
@@ -214,11 +214,7 @@ func (nm *namespaceManager) initComponents(ctx context.Context) (err error) {
 		return err
 	}
 
-	if err := nm.startConfigListener(); err != nil {
-		return err
-	}
-
-	return nil
+	return nm.startConfigListener()
 }
 
 func (nm *namespaceManager) startV1NamespaceIfRequired(nsToCheck *namespace) error {

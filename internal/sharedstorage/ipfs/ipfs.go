@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -67,7 +67,7 @@ func (i *IPFS) Init(ctx context.Context, config config.Section) error {
 	return nil
 }
 
-func (i *IPFS) SetHandler(namespace string, handler sharedstorage.Callbacks) {
+func (i *IPFS) SetHandler(_ string, handler sharedstorage.Callbacks) {
 }
 
 func (i *IPFS) Capabilities() *sharedstorage.Capabilities {

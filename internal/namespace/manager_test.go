@@ -321,7 +321,7 @@ func TestInitComponentsPluginsFail(t *testing.T) {
 	nm.plugins = map[string]*plugin{
 		"basicauth": nm.plugins["basicauth"],
 	}
-	err := nm.initComponents(context.Background())
+	err := nm.initComponents()
 	assert.Regexp(t, "pop", err)
 }
 
@@ -421,7 +421,7 @@ func TestInitOrchestratorFail(t *testing.T) {
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 
-	err := nm.initComponents(nm.ctx)
+	err := nm.initComponents()
 	assert.NoError(t, err)
 
 	nm.preInitNamespace(nm.namespaces["default"])
@@ -442,7 +442,7 @@ func TestInitConfigListenerFail(t *testing.T) {
 	viper.SetConfigFile(fmt.Sprintf("%s/problem", badDir))
 	config.Set(coreconfig.ConfigAutoReload, true)
 
-	err := nm.initComponents(nm.ctx)
+	err := nm.initComponents()
 	assert.Regexp(t, "FF00194", err)
 }
 
