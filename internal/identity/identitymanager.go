@@ -132,7 +132,7 @@ func (im *identityManager) resolveInputSigningKey(ctx context.Context, inputKey 
 			return im.defaultKey, nil
 		}
 
-		verifierRef, err := im.getDefaultVerifier(ctx)
+		verifierRef, err := im.getDefaultVerifier(ctx, intent)
 		if err != nil {
 			return "", err
 		}
@@ -269,7 +269,7 @@ func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType c
 
 // resolveDefaultSigningIdentity adds the default signing identity into a message
 func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, signerRef *core.SignerRef) (err error) {
-	verifierRef, err := im.getDefaultVerifier(ctx)
+	verifierRef, err := im.getDefaultVerifier(ctx, blockchain.ResolveKeyIntentSign)
 	if err != nil {
 		return err
 	}
@@ -283,12 +283,16 @@ func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, si
 }
 
 // getDefaultVerifier gets the default blockchain verifier via the configuration
-func (im *identityManager) getDefaultVerifier(ctx context.Context) (verifier *core.VerifierRef, err error) {
+func (im *identityManager) getDefaultVerifier(ctx context.Context, intent blockchain.ResolveKeyIntent) (verifier *core.VerifierRef, err error) {
 	if im.defaultKey != "" {
-		return im.resolveInputKeyViaBlockchainPlugin(ctx, im.defaultKey, blockchain.ResolveKeyIntentSign)
+		return im.resolveInputKeyViaBlockchainPlugin(ctx, im.defaultKey, intent)
 	}
 	if im.multiparty != nil {
-		return im.GetMultipartyRootVerifier(ctx)
+		orgKey := im.multiparty.RootOrg().Key
+		if orgKey == "" {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+		}
+		return im.resolveInputKeyViaBlockchainPlugin(ctx, orgKey, intent)
 	}
 	return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 }
