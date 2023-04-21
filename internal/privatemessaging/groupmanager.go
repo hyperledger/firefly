@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -52,20 +52,12 @@ type groupHashEntry struct {
 	nodes []*core.Identity
 }
 
+// EnsureLocalGroup is called for unpinned messages, which carry the full group definition next to the message batch.
+// The group simply needs to be validated and stored (or loaded if it exists already).
 func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *core.Group, creator *core.Member) (ok bool, err error) {
-	if group == nil {
-		return false, i18n.NewError(ctx, coremsgs.MsgGroupRequired)
-	}
-
-	// In the case that we've received a private message for a group, it's possible (likely actually)
-	// that the private message using the group will arrive before the group init message confirming
-	// the group via the blockchain.
-	// So this method checks if a group exists, and if it doesn't inserts it.
-	// We do assume the other side has sent the batch init of the group (rather than generating a second one)
 	if g, err := gm.database.GetGroupByHash(ctx, gm.namespace.Name, group.Hash); err != nil {
 		return false, err
 	} else if g != nil {
-		// The group already exists
 		return true, nil
 	}
 

@@ -1930,6 +1930,21 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 
 }
 
+func TestPrivateMessageUnregisteredSigner(t *testing.T) {
+	ag := newTestAggregator()
+	defer ag.cleanup(t)
+
+	msg1, _, _, _ := newTestManifest(core.MessageTypePrivate, nil)
+	msg1.Header.Tag = core.SystemTagIdentityClaim
+
+	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil)
+
+	action, err := ag.checkOnchainConsistency(ag.ctx, msg1, &core.Pin{Signer: "0x12345"})
+	assert.NoError(t, err)
+	assert.Equal(t, core.ActionConfirm, action)
+
+}
+
 func TestCompleteDispatchEventFail(t *testing.T) {
 	ag := newTestAggregator()
 	defer ag.cleanup(t)
