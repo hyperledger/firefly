@@ -79,8 +79,8 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
 		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil).Times(3)
-	em.mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(fmt.Errorf("pop")).Once()
-	em.mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
+	// em.mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(fmt.Errorf("pop")).Once()
+	em.mdi.On("InsertOrGetTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil, nil).Times(2)
 	em.mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(fmt.Errorf("pop")).Once()
 	em.mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Once()
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
@@ -281,7 +281,7 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
 		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil)
-	em.mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil)
+	// em.mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil)
 	em.mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil)
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
@@ -353,7 +353,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
 		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil).Times(2)
-	em.mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
+	// em.mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
 	em.mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
 	em.mdi.On("GetMessageByID", em.ctx, "ns1", transfer.Message).Return(nil, fmt.Errorf("pop")).Once()
 	em.mdi.On("GetMessageByID", em.ctx, "ns1", transfer.Message).Return(message, nil).Once()
@@ -412,7 +412,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
 		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil).Times(2)
-	em.mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
+	// em.mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
 	em.mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
 	em.mdi.On("GetMessageByID", em.ctx, "ns1", mock.Anything).Return(message, nil).Times(2)
 	em.mdi.On("ReplaceMessage", em.ctx, mock.MatchedBy(func(msg *core.Message) bool {

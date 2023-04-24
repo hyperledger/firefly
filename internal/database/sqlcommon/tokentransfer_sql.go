@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -68,6 +69,59 @@ var (
 )
 
 const tokentransferTable = "tokentransfer"
+
+func (s *SQLCommon) setTokenTransferEventInsertValues(query sq.InsertBuilder, transfer *core.TokenTransfer) sq.InsertBuilder {
+	return query.Values(
+		transfer.Type,
+		transfer.LocalID,
+		transfer.Pool,
+		transfer.TokenIndex,
+		transfer.URI,
+		transfer.Connector,
+		transfer.Namespace,
+		transfer.Key,
+		transfer.From,
+		transfer.To,
+		transfer.Amount,
+		transfer.ProtocolID,
+		transfer.Message,
+		transfer.MessageHash,
+		transfer.TX.Type,
+		transfer.TX.ID,
+		transfer.Created,
+	)
+}
+
+func (s *SQLCommon) attemptTokenTransferEventInsert(ctx context.Context, tx *dbsql.TXWrapper, transfer *core.TokenTransfer, requestConflictEmptyResult bool) (err error) {
+	_, err = s.InsertTxExt(ctx, tokentransferTable, tx,
+		s.setTokenTransferEventInsertValues(sq.Insert(tokentransferTable).Columns(tokenTransferColumns...), transfer),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenTransfers, core.ChangeEventTypeCreated, transfer.Namespace, transfer.LocalID)
+		}, requestConflictEmptyResult)
+	return err
+}
+
+func (s *SQLCommon) InsertOrGetTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) (existing *core.TokenTransfer, err error) {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	opErr := s.attemptTokenTransferEventInsert(ctx, tx, transfer, true /* we want a failure here we can progress past */)
+	if opErr == nil {
+		return nil, s.CommitTx(ctx, tx, autoCommit)
+	}
+
+	// Do a select within the transaction to determine if the protocolID already exists
+	existing, err = s.GetTokenTransferByProtocolID(ctx, transfer.Namespace, transfer.Connector, transfer.ProtocolID)
+	if err != nil || existing != nil {
+		return existing, err
+	}
+
+	// Error was apparently not a protocolID conflict - must have been something else
+	return nil, opErr
+}
 
 func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) (err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)

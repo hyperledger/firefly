@@ -73,14 +73,6 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	transfer.Namespace = pool.Namespace
 	transfer.Pool = pool.ID
 
-	// Check that transfer has not already been recorded
-	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, em.namespace.Name, transfer.Connector, transfer.ProtocolID); err != nil {
-		return false, err
-	} else if existing != nil {
-		log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.ProtocolID)
-		return false, nil
-	}
-
 	if transfer.TX.ID == nil {
 		transfer.LocalID = fftypes.NewUUID()
 	} else {
@@ -103,10 +95,13 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	em.emitBlockchainEventMetric(transfer.Event)
 	transfer.BlockchainEvent = chainEvent.ID
 
-	if err := em.database.UpsertTokenTransfer(ctx, &transfer.TokenTransfer); err != nil {
+	_, err = em.database.InsertOrGetTokenTransfer(ctx, &transfer.TokenTransfer)
+
+	if err != nil {
 		log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 		return false, err
 	}
+
 	if err := em.database.UpdateTokenBalances(ctx, &transfer.TokenTransfer); err != nil {
 		log.L(ctx).Errorf("Failed to update accounts %s -> %s for token transfer '%s': %s", transfer.From, transfer.To, transfer.ProtocolID, err)
 		return false, err
