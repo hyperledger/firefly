@@ -717,29 +717,6 @@ func TestInitNamespaceExistingUpsertFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestDeprecatedDatabasePlugin(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
-	deprecatedDatabaseConfig.Set(coreconfig.PluginConfigType, "postgres")
-	plugins := make(map[string]*plugin)
-	err := nm.getDatabasePlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Equal(t, 1, len(plugins))
-	assert.NoError(t, err)
-}
-
-func TestDeprecatedDatabasePluginBadType(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
-	deprecatedDatabaseConfig.Set(coreconfig.PluginConfigType, "wrong")
-	nm.databaseFactory = func(ctx context.Context, pluginType string) (database.Plugin, error) {
-		return nil, fmt.Errorf("pop")
-	}
-	err := nm.getDatabasePlugins(context.Background(), make(map[string]*plugin), nm.dumpRootConfig())
-	assert.Regexp(t, "pop", err)
-}
-
 func TestDatabasePlugin(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, false)
 	defer cleanup()
@@ -828,28 +805,6 @@ func TestIdentityPlugin(t *testing.T) {
 	assert.Equal(t, 1, len(plugins))
 }
 
-func TestDeprecatedBlockchainPlugin(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
-	deprecatedBlockchainConfig.Set(coreconfig.PluginConfigType, "ethereum")
-	plugins := make(map[string]*plugin)
-	err := nm.getBlockchainPlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Equal(t, 1, len(plugins))
-	assert.NoError(t, err)
-}
-
-func TestDeprecatedBlockchainPluginBadType(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	deprecatedBlockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
-	nm.blockchainFactory = func(ctx context.Context, pluginType string) (blockchain.Plugin, error) {
-		return nil, fmt.Errorf("pop")
-	}
-	_, err := nm.loadPlugins(context.Background(), nm.dumpRootConfig())
-	assert.Regexp(t, "pop", err)
-}
-
 func TestBlockchainPlugin(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, false)
 	defer cleanup()
@@ -887,29 +842,6 @@ func TestBlockchainPluginBadType(t *testing.T) {
 		return nil, fmt.Errorf("pop")
 	}
 	err := nm.getBlockchainPlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Regexp(t, "pop", err)
-}
-
-func TestDeprecatedSharedStoragePlugin(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
-	deprecatedSharedStorageConfig.Set(coreconfig.PluginConfigType, "ipfs")
-	plugins := make(map[string]*plugin)
-	err := nm.getSharedStoragePlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Equal(t, 1, len(plugins))
-	assert.NoError(t, err)
-}
-
-func TestDeprecatedSharedStoragePluginBadType(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
-	deprecatedSharedStorageConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
-	nm.sharedstorageFactory = func(ctx context.Context, pluginType string) (sharedstorage.Plugin, error) {
-		return nil, fmt.Errorf("pop")
-	}
-	_, err := nm.loadPlugins(context.Background(), nm.dumpRootConfig())
 	assert.Regexp(t, "pop", err)
 }
 
@@ -953,29 +885,6 @@ func TestSharedStoragePluginBadType(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
-func TestDeprecatedDataExchangePlugin(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
-	deprecatedDataexchangeConfig.Set(coreconfig.PluginConfigType, "ffdx")
-	plugins := make(map[string]*plugin)
-	err := nm.getDataExchangePlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Equal(t, 1, len(plugins))
-	assert.NoError(t, err)
-}
-
-func TestDeprecatedDataExchangePluginBadType(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
-	deprecatedDataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
-	nm.dataexchangeFactory = func(ctx context.Context, pluginType string) (dataexchange.Plugin, error) {
-		return nil, fmt.Errorf("pop")
-	}
-	_, err := nm.loadPlugins(context.Background(), nm.dumpRootConfig())
-	assert.Regexp(t, "pop", err)
-}
-
 func TestDataExchangePlugin(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, false)
 	defer cleanup()
@@ -1013,56 +922,6 @@ func TestDataExchangePluginBadType(t *testing.T) {
 	}
 	plugins := make(map[string]*plugin)
 	err := nm.getDataExchangePlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Regexp(t, "pop", err)
-}
-
-func TestDeprecatedTokensPlugin(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "test")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	plugins := make(map[string]*plugin)
-	err := nm.getTokensPlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Equal(t, 1, len(plugins))
-	assert.NoError(t, err)
-}
-
-func TestDeprecatedTokensPluginNoName(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	plugins := make(map[string]*plugin)
-	err := nm.getTokensPlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Regexp(t, "FF10273", err)
-}
-
-func TestDeprecatedTokensPluginBadName(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "BAD!")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	plugins := make(map[string]*plugin)
-	err := nm.getTokensPlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Regexp(t, "FF00140", err)
-}
-
-func TestDeprecatedTokensPluginBadType(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "test")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "wrong")
-	nm.tokensFactory = func(ctx context.Context, pluginType string) (tokens.Plugin, error) {
-		return nil, fmt.Errorf("pop")
-	}
-	_, err := nm.loadPlugins(context.Background(), nm.dumpRootConfig())
 	assert.Regexp(t, "pop", err)
 }
 

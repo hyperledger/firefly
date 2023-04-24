@@ -48,13 +48,6 @@ var (
 	identityConfig      = config.RootArray("plugins.identity")
 	authConfig          = config.RootArray("plugins.auth")
 	eventsConfig        = config.RootSection("events") // still at root
-
-	// Deprecated configs
-	deprecatedTokensConfig        = config.RootArray("tokens")
-	deprecatedBlockchainConfig    = config.RootSection("blockchain")
-	deprecatedDatabaseConfig      = config.RootSection("database")
-	deprecatedSharedStorageConfig = config.RootSection("sharedstorage")
-	deprecatedDataexchangeConfig  = config.RootSection("dataexchange")
 )
 
 func InitConfig() {
@@ -78,16 +71,11 @@ func InitConfig() {
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractLocation)
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractOptions)
 
-	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
 	bifactory.InitConfig(blockchainConfig)
-	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
 	difactory.InitConfig(databaseConfig)
-	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
 	ssfactory.InitConfig(sharedstorageConfig)
 	dxfactory.InitConfig(dataexchangeConfig)
-	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
 	iifactory.InitConfig(identityConfig)
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	tifactory.InitConfig(tokensConfig)
 	authfactory.InitConfigArray(authConfig)
 	eifactory.InitConfig(eventsConfig)

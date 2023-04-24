@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -37,15 +37,6 @@ func InitConfig(config config.ArraySection) {
 	config.AddKnownKey(coreconfig.PluginBroadcastName)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
-	}
-}
-
-func InitConfigDeprecated(config config.ArraySection) {
-	config.AddKnownKey(tokens.TokensConfigPlugin)
-	config.AddKnownKey(coreconfig.PluginConfigName)
-	for _, plugin := range pluginsByName {
-		// Accept a superset of configs allowed by all plugins
-		plugin().InitConfig(config)
 	}
 }
 
