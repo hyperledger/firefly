@@ -5260,28 +5260,6 @@ paths:
                   description: The in-line value for the data. Can be any JSON type
                     - object, array, string, number or boolean
               type: object
-          multipart/form-data:
-            schema:
-              properties:
-                autometa:
-                  description: Success
-                  type: string
-                datatype.name:
-                  description: Success
-                  type: string
-                datatype.version:
-                  description: Success
-                  type: string
-                filename.ext:
-                  format: binary
-                  type: string
-                metadata:
-                  description: Success
-                  type: string
-                validator:
-                  description: Success
-                  type: string
-              type: object
       responses:
         "201":
           content:
@@ -16663,28 +16641,6 @@ paths:
                 value:
                   description: The in-line value for the data. Can be any JSON type
                     - object, array, string, number or boolean
-              type: object
-          multipart/form-data:
-            schema:
-              properties:
-                autometa:
-                  description: Success
-                  type: string
-                datatype.name:
-                  description: Success
-                  type: string
-                datatype.version:
-                  description: Success
-                  type: string
-                filename.ext:
-                  format: binary
-                  type: string
-                metadata:
-                  description: Success
-                  type: string
-                validator:
-                  description: Success
-                  type: string
               type: object
       responses:
         "201":
