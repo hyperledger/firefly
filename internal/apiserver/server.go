@@ -30,6 +30,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/httpserver"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -134,7 +135,8 @@ func (as *apiServer) getPublicURL(conf config.Section, pathPrefix string) string
 	publicURL := conf.GetString(httpserver.HTTPConfPublicURL)
 	if publicURL == "" {
 		proto := "https"
-		if !conf.GetBool(httpserver.HTTPConfTLSEnabled) {
+		tlsSection := conf.SubSection("tls")
+		if !tlsSection.GetBool(fftls.HTTPConfTLSEnabled) {
 			proto = "http"
 		}
 		publicURL = fmt.Sprintf("%s://%s:%s", proto, conf.GetString(httpserver.HTTPConfAddress), conf.GetString(httpserver.HTTPConfPort))

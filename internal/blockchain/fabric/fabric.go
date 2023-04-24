@@ -205,7 +205,11 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
 	}
-	f.client = ffresty.New(f.ctx, fabconnectConf)
+
+	f.client, err = ffresty.New(f.ctx, fabconnectConf)
+	if err != nil {
+		return err
+	}
 
 	f.defaultChannel = fabconnectConf.GetString(FabconnectConfigDefaultChannel)
 	// the org identity is guaranteed to be configured by the core

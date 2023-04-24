@@ -182,7 +182,11 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
 	}
 
-	h.client = ffresty.New(h.ctx, config)
+	h.client, err = ffresty.New(h.ctx, config)
+	if err != nil {
+		return err
+	}
+
 	h.capabilities = &dataexchange.Capabilities{
 		Manifest: config.GetBool(DataExchangeManifestEnabled),
 	}

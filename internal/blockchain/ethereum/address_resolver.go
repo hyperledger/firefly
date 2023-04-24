@@ -55,11 +55,18 @@ type addressResolverInserts struct {
 }
 
 func newAddressResolver(ctx context.Context, localConfig config.Section, cacheManager cache.Manager, enableCache bool) (ar *addressResolver, err error) {
+
+	client, err := ffresty.New(ctx, localConfig)
+
+	if err != nil {
+		return nil, err
+	}
+
 	ar = &addressResolver{
 		retainOriginal: localConfig.GetBool(AddressResolverRetainOriginal),
 		method:         localConfig.GetString(AddressResolverMethod),
 		responseField:  localConfig.GetString(AddressResolverResponseField),
-		client:         ffresty.New(ctx, localConfig),
+		client:         client,
 	}
 	if enableCache {
 		ar.cache, err = cacheManager.GetCache(

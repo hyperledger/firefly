@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 )
 
-func (ft *FFTokens) InitConfig(config config.KeySet) {
+func (ft *FFTokens) InitConfig(config config.Section) {
 	wsclient.InitConfig(config)
 }

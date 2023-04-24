@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,14 +40,13 @@ func InitConfig(config config.ArraySection) {
 	}
 }
 
-func InitConfigDeprecated(config config.ArraySection) {
-	config.AddKnownKey(tokens.TokensConfigPlugin)
-	config.AddKnownKey(coreconfig.PluginConfigName)
-	for _, plugin := range pluginsByName {
-		// Accept a superset of configs allowed by all plugins
-		plugin().InitConfig(config)
-	}
-}
+// func InitConfigDeprecated(conf config.ArraySection) {
+// 	conf.AddKnownKey(tokens.TokensConfigPlugin)
+// 	conf.AddKnownKey(coreconfig.PluginConfigName)
+// 	for name, plugin := range pluginsByName {
+// 		plugin().InitConfig(config)
+// 	}
+// }
 
 func GetPlugin(ctx context.Context, connectorName string) (tokens.Plugin, error) {
 	plugin, ok := pluginsByName[connectorName]

@@ -50,7 +50,6 @@ var (
 	eventsConfig        = config.RootSection("events") // still at root
 
 	// Deprecated configs
-	deprecatedTokensConfig        = config.RootArray("tokens")
 	deprecatedBlockchainConfig    = config.RootSection("blockchain")
 	deprecatedDatabaseConfig      = config.RootSection("database")
 	deprecatedSharedStorageConfig = config.RootSection("sharedstorage")
@@ -87,7 +86,6 @@ func InitConfig() {
 	dxfactory.InitConfig(dataexchangeConfig)
 	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
 	iifactory.InitConfig(identityConfig)
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	tifactory.InitConfig(tokensConfig)
 	authfactory.InitConfigArray(authConfig)
 	eifactory.InitConfig(eventsConfig)

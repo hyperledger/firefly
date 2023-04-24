@@ -548,35 +548,6 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context, plugins map[st
 		}
 	}
 
-	// If there still is no tokens config, check the deprecated structure for config
-	if len(plugins) == 0 {
-		tokensConfigArraySize = deprecatedTokensConfig.ArraySize()
-		if tokensConfigArraySize > 0 {
-			log.L(ctx).Warnf("Your tokens config uses a deprecated configuration structure - the tokens configuration has been moved under the 'plugins' section")
-		}
-
-		for i := 0; i < tokensConfigArraySize; i++ {
-			deprecatedConfig := deprecatedTokensConfig.ArrayEntry(i)
-			name := deprecatedConfig.GetString(coreconfig.PluginConfigName)
-			pluginType := deprecatedConfig.GetString(tokens.TokensConfigPlugin)
-			if name == "" || pluginType == "" {
-				return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
-			}
-			if err = fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
-				return err
-			}
-			nm.tokenBroadcastNames[name] = name
-
-			pc, err := nm.newPluginCommon(ctx, plugins, pluginCategoryTokens, name, pluginType, deprecatedConfig, rawConfig.GetObject("plugins").GetObject("tokens"))
-			if err == nil {
-				pc.tokens, err = nm.tokensFactory(ctx, pluginType)
-			}
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 

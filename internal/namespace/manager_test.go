@@ -1016,55 +1016,55 @@ func TestDataExchangePluginBadType(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
-func TestDeprecatedTokensPlugin(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "test")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	plugins := make(map[string]*plugin)
-	err := nm.getTokensPlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Equal(t, 1, len(plugins))
-	assert.NoError(t, err)
-}
+// func TestDeprecatedTokensPlugin(t *testing.T) {
+// 	nm, _, cleanup := newTestNamespaceManager(t, false)
+// 	defer cleanup()
+// 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+// 	config.Set("tokens", []fftypes.JSONObject{{}})
+// 	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "test")
+// 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
+// 	plugins := make(map[string]*plugin)
+// 	err := nm.getTokensPlugins(context.Background(), plugins, nm.dumpRootConfig())
+// 	assert.Equal(t, 1, len(plugins))
+// 	assert.NoError(t, err)
+// }
 
-func TestDeprecatedTokensPluginNoName(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	plugins := make(map[string]*plugin)
-	err := nm.getTokensPlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Regexp(t, "FF10273", err)
-}
+// func TestDeprecatedTokensPluginNoName(t *testing.T) {
+// 	nm, _, cleanup := newTestNamespaceManager(t, false)
+// 	defer cleanup()
+// 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+// 	config.Set("tokens", []fftypes.JSONObject{{}})
+// 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
+// 	plugins := make(map[string]*plugin)
+// 	err := nm.getTokensPlugins(context.Background(), plugins, nm.dumpRootConfig())
+// 	assert.Regexp(t, "FF10273", err)
+// }
 
-func TestDeprecatedTokensPluginBadName(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "BAD!")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	plugins := make(map[string]*plugin)
-	err := nm.getTokensPlugins(context.Background(), plugins, nm.dumpRootConfig())
-	assert.Regexp(t, "FF00140", err)
-}
+// func TestDeprecatedTokensPluginBadName(t *testing.T) {
+// 	nm, _, cleanup := newTestNamespaceManager(t, false)
+// 	defer cleanup()
+// 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+// 	config.Set("tokens", []fftypes.JSONObject{{}})
+// 	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "BAD!")
+// 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
+// 	plugins := make(map[string]*plugin)
+// 	err := nm.getTokensPlugins(context.Background(), plugins, nm.dumpRootConfig())
+// 	assert.Regexp(t, "FF00140", err)
+// }
 
-func TestDeprecatedTokensPluginBadType(t *testing.T) {
-	nm, _, cleanup := newTestNamespaceManager(t, false)
-	defer cleanup()
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "test")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "wrong")
-	nm.tokensFactory = func(ctx context.Context, pluginType string) (tokens.Plugin, error) {
-		return nil, fmt.Errorf("pop")
-	}
-	_, err := nm.loadPlugins(context.Background(), nm.dumpRootConfig())
-	assert.Regexp(t, "pop", err)
-}
+// func TestDeprecatedTokensPluginBadType(t *testing.T) {
+// 	nm, _, cleanup := newTestNamespaceManager(t, false)
+// 	defer cleanup()
+// 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+// 	config.Set("tokens", []fftypes.JSONObject{{}})
+// 	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "test")
+// 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "wrong")
+// 	nm.tokensFactory = func(ctx context.Context, pluginType string) (tokens.Plugin, error) {
+// 		return nil, fmt.Errorf("pop")
+// 	}
+// 	_, err := nm.loadPlugins(context.Background(), nm.dumpRootConfig())
+// 	assert.Regexp(t, "pop", err)
+// }
 
 func TestTokensPlugin(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, false)

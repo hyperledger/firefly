@@ -2871,9 +2871,11 @@ func TestGetContractAddressBadJSON(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	e.client = ffresty.New(e.ctx, utEthconnectConf)
+	var err error
+	e.client, err = ffresty.New(e.ctx, utEthconnectConf)
+	assert.Nil(t, err)
 
-	_, err := e.getContractAddress(context.Background(), "/contracts/firefly")
+	_, err = e.getContractAddress(context.Background(), "/contracts/firefly")
 
 	assert.Regexp(t, "invalid character 'n' looking for beginning of object key string", err)
 }
@@ -3437,7 +3439,9 @@ func TestConvertDeprecatedContractConfigContractURL(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	e.client = ffresty.New(e.ctx, utEthconnectConf)
+	var err error
+	e.client, err = ffresty.New(e.ctx, utEthconnectConf)
+	assert.Nil(t, err)
 
 	locationBytes, fromBlock, err := e.GetAndConvertDeprecatedContractConfig(e.ctx)
 	assert.NoError(t, err)
@@ -3466,9 +3470,11 @@ func TestConvertDeprecatedContractConfigContractURLBadQuery(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	e.client = ffresty.New(e.ctx, utEthconnectConf)
+	var err error
+	e.client, err = ffresty.New(e.ctx, utEthconnectConf)
+	assert.Nil(t, err)
 
-	_, _, err := e.GetAndConvertDeprecatedContractConfig(e.ctx)
+	_, _, err = e.GetAndConvertDeprecatedContractConfig(e.ctx)
 	assert.Regexp(t, "FFEC100148", err)
 }
 
