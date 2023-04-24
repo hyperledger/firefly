@@ -103,10 +103,17 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	em.emitBlockchainEventMetric(transfer.Event)
 	transfer.BlockchainEvent = chainEvent.ID
 
-	if err := em.database.UpsertTokenTransfer(ctx, &transfer.TokenTransfer); err != nil {
+	existing, err := em.database.InsertUpdateOrGetTokenTransfer(ctx, &transfer.TokenTransfer)
+
+	if err != nil {
 		log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 		return false, err
 	}
+	if existing != nil {
+		log.L(ctx).Debugf("Ignoring duplicate token transfer event %s", existing.ProtocolID)
+		return false, nil
+	}
+
 	if err := em.database.UpdateTokenBalances(ctx, &transfer.TokenTransfer); err != nil {
 		log.L(ctx).Errorf("Failed to update accounts %s -> %s for token transfer '%s': %s", transfer.From, transfer.To, transfer.ProtocolID, err)
 		return false, err

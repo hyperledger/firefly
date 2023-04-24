@@ -62,8 +62,9 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenTransfers, core.ChangeEventTypeUpdated, transfer.Namespace, transfer.LocalID, mock.Anything).
 		Return().Once()
 
-	err := s.UpsertTokenTransfer(ctx, transfer)
+	existing, err := s.InsertUpdateOrGetTokenTransfer(ctx, transfer)
 	assert.NoError(t, err)
+	assert.Nil(t, existing)
 
 	assert.NotNil(t, transfer.Created)
 	transferJson, _ := json.Marshal(&transfer)
@@ -103,8 +104,9 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	transfer.Type = core.TokenTransferTypeMint
 	transfer.Amount.Int().SetInt64(1)
 	transfer.To = "0x03"
-	err = s.UpsertTokenTransfer(ctx, transfer)
+	existing, err = s.InsertUpdateOrGetTokenTransfer(ctx, transfer)
 	assert.NoError(t, err)
+	assert.NotNil(t, existing)
 
 	// Query back the token transfer (by ID)
 	transferRead, err = s.GetTokenTransferByID(ctx, "ns1", transfer.LocalID)
@@ -115,53 +117,60 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(transferJson), string(transferReadJson))
 }
 
-func TestUpsertTokenTransferFailBegin(t *testing.T) {
+func TestInsertUpdateOrGetTokenTransferFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenTransfer(context.Background(), &core.TokenTransfer{})
+	existing, err := s.InsertUpdateOrGetTokenTransfer(context.Background(), &core.TokenTransfer{})
 	assert.Regexp(t, "FF00175", err)
+	assert.Nil(t, existing)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertTokenTransferFailSelect(t *testing.T) {
+func TestInsertUpdateOrGetTokenTransferFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenTransfer(context.Background(), &core.TokenTransfer{})
-	assert.Regexp(t, "FF00176", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpsertTokenTransferFailInsert(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectRollback()
-	err := s.UpsertTokenTransfer(context.Background(), &core.TokenTransfer{})
+	existing, err := s.InsertUpdateOrGetTokenTransfer(context.Background(), &core.TokenTransfer{})
 	assert.Regexp(t, "FF00177", err)
+	assert.Nil(t, existing)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertTokenTransferFailUpdate(t *testing.T) {
+func TestInsertUpdateOrGetTokenTransferFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("1"))
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	err := s.UpsertTokenTransfer(context.Background(), &core.TokenTransfer{})
-	assert.Regexp(t, "FF00178", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpsertTokenTransferFailCommit(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenTransfer(context.Background(), &core.TokenTransfer{})
+	_, err := s.InsertOrGetBlockchainEvent(context.Background(), &core.BlockchainEvent{})
 	assert.Regexp(t, "FF00180", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertUpdateOrGetTokenTransferFailUpdate(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	rows := sqlmock.NewRows(tokenTransferColumns).
+		AddRow(core.TokenTransferTypeMint,
+			fftypes.NewUUID().String(),
+			fftypes.NewUUID().String(),
+			"", "", "", "", "", "", "",
+			fftypes.NewFFBigInt(10),
+			"",
+			fftypes.NewUUID().String(),
+			&fftypes.Bytes32{},
+			core.TransactionTypeTokenTransfer,
+			fftypes.NewUUID().String(),
+			fftypes.NewUUID().String(),
+			fftypes.Now())
+	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop2"))
+	mock.ExpectRollback()
+	existing, err := s.InsertUpdateOrGetTokenTransfer(context.Background(), &core.TokenTransfer{})
+	assert.Regexp(t, "FF00178", err)
+	assert.Nil(t, existing)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
