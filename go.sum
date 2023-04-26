@@ -674,6 +674,8 @@ github.com/hashicorp/mdns v1.0.0/go.mod h1:tL+uN++7HEJ6SQLQ2/p+z2pH24WQKWjBPkE0m
 github.com/hashicorp/memberlist v0.1.3/go.mod h1:ajVTdAv/9Im8oMAAj5G31PhhMCZJV2pPBoIllUwCN7I=
 github.com/hashicorp/serf v0.8.2/go.mod h1:6hOLApaqBFA1NXqRQAsxw9QxuDEvNxSQRwA/JwenrHc=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
+github.com/hyperledger/firefly-common v1.2.8 h1:tPHgjGzQnPRXl77qHQd+dieu6N62NFEWhoGW7sn9u6U=
+github.com/hyperledger/firefly-common v1.2.8/go.mod h1:q6uawjzWAFekIMFb0t9EWpJQQvjvl2CFBikk6++8Woc=
 github.com/hyperledger/firefly-signer v1.1.5 h1:kCHe4O3tmYaMYf1hXrG40sIlpiGfOICmNNAcuMH5+jQ=
 github.com/hyperledger/firefly-signer v1.1.5/go.mod h1:XZP8ZXUZJSAPB6WUSM9RqRdpjnjm6Jsn0784WM4IKug=
 github.com/iancoleman/strcase v0.2.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
