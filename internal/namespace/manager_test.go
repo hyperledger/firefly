@@ -837,11 +837,10 @@ func TestBlockchainPluginBadType(t *testing.T) {
 	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
 	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
 
-	plugins := make(map[string]*plugin)
 	nm.blockchainFactory = func(ctx context.Context, pluginType string) (blockchain.Plugin, error) {
 		return nil, fmt.Errorf("pop")
 	}
-	err := nm.getBlockchainPlugins(context.Background(), plugins, nm.dumpRootConfig())
+	_, err := nm.loadPlugins(context.Background(), nm.dumpRootConfig())
 	assert.Regexp(t, "pop", err)
 }
 
@@ -880,8 +879,7 @@ func TestSharedStoragePluginBadType(t *testing.T) {
 	nm.sharedstorageFactory = func(ctx context.Context, pluginType string) (sharedstorage.Plugin, error) {
 		return nil, fmt.Errorf("pop")
 	}
-	plugins := make(map[string]*plugin)
-	err := nm.getSharedStoragePlugins(context.Background(), plugins, nm.dumpRootConfig())
+	_, err := nm.loadPlugins(context.Background(), nm.dumpRootConfig())
 	assert.Regexp(t, "pop", err)
 }
 
@@ -920,8 +918,7 @@ func TestDataExchangePluginBadType(t *testing.T) {
 	nm.dataexchangeFactory = func(ctx context.Context, pluginType string) (dataexchange.Plugin, error) {
 		return nil, fmt.Errorf("pop")
 	}
-	plugins := make(map[string]*plugin)
-	err := nm.getDataExchangePlugins(context.Background(), plugins, nm.dumpRootConfig())
+	_, err := nm.loadPlugins(context.Background(), nm.dumpRootConfig())
 	assert.Regexp(t, "pop", err)
 }
 
@@ -1017,8 +1014,7 @@ func TestTokensPluginBadType(t *testing.T) {
 	nm.tokensFactory = func(ctx context.Context, pluginType string) (tokens.Plugin, error) {
 		return nil, fmt.Errorf("pop")
 	}
-	plugins := make(map[string]*plugin)
-	err := nm.getTokensPlugins(context.Background(), plugins, nm.dumpRootConfig())
+	_, err := nm.loadPlugins(context.Background(), nm.dumpRootConfig())
 	assert.Regexp(t, "pop", err)
 }
 
