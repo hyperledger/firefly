@@ -61,7 +61,6 @@ func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, tr
 
 func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *tokens.TokenTransfer) (valid bool, err error) {
 	// Check that this is from a known pool
-	// TODO: should cache this lookup for efficiency
 	pool, err := em.assets.GetTokenPoolByLocator(ctx, transfer.Connector, transfer.PoolLocator)
 	if err != nil {
 		return false, err
@@ -72,14 +71,6 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	}
 	transfer.Namespace = pool.Namespace
 	transfer.Pool = pool.ID
-
-	// Check that transfer has not already been recorded
-	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, em.namespace.Name, transfer.Connector, transfer.ProtocolID); err != nil {
-		return false, err
-	} else if existing != nil {
-		log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.ProtocolID)
-		return false, nil
-	}
 
 	if transfer.TX.ID == nil {
 		transfer.LocalID = fftypes.NewUUID()
@@ -92,6 +83,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		}
 	}
 
+	// This is a no-op if we've already persisted this token transfer
 	chainEvent := buildBlockchainEvent(pool.Namespace, nil, transfer.Event, &core.BlockchainTransactionRef{
 		ID:           transfer.TX.ID,
 		Type:         transfer.TX.Type,
@@ -103,7 +95,8 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	em.emitBlockchainEventMetric(transfer.Event)
 	transfer.BlockchainEvent = chainEvent.ID
 
-	existing, err := em.database.InsertUpdateOrGetTokenTransfer(ctx, &transfer.TokenTransfer)
+	// This is a no-op if we've already persisted this token transfer
+	existing, err := em.database.InsertOrGetTokenTransfer(ctx, &transfer.TokenTransfer)
 
 	if err != nil {
 		log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)

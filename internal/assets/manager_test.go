@@ -17,6 +17,7 @@ package assets
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -85,6 +86,28 @@ func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
 func TestInitFail(t *testing.T) {
 	_, err := NewAssetManager(context.Background(), "", "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestCacheInitFail(t *testing.T) {
+	cacheInitError := errors.New("Initialization error.")
+	coreconfig.Reset()
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mim := &identitymanagermocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mti := &tokenmocks.Plugin{}
+	mm := &metricsmocks.Manager{}
+	mom := &operationmocks.Manager{}
+	mcm := &contractmocks.Manager{}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
+	txHelper, _ := txcommon.NewTransactionHelper(context.Background(), "ns1", mdi, mdm, cmi)
+
+	_, err := NewAssetManager(context.Background(), "ns1", "blockchain_plugin", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, mcm, txHelper, cmi)
+
+	assert.Equal(t, cacheInitError, err)
 }
 
 func TestName(t *testing.T) {

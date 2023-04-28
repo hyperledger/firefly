@@ -69,8 +69,8 @@ func TestTokensApprovedSucceedWithRetries(t *testing.T) {
 		Namespace: "ns1",
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(4)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(4)
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(nil, fmt.Errorf("pop")).Once()
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(nil, nil).Times(3)
 	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
@@ -103,7 +103,7 @@ func TestPersistApprovalDuplicate(t *testing.T) {
 		Namespace: "ns1",
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(&core.TokenApproval{}, nil)
 
 	valid, err := em.persistTokenApproval(em.ctx, approval)
@@ -122,7 +122,7 @@ func TestPersistApprovalOpFail(t *testing.T) {
 		Namespace: "ns1",
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(nil, nil)
 	em.mth.On("FindOperationInTransaction", em.ctx, approval.TX.ID, core.OpTypeTokenApproval).Return(nil, fmt.Errorf("pop"))
 
@@ -148,7 +148,7 @@ func TestPersistApprovalBadOp(t *testing.T) {
 		Transaction: fftypes.NewUUID(),
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(nil, nil)
 	em.mth.On("FindOperationInTransaction", em.ctx, approval.TX.ID, core.OpTypeTokenApproval).Return(op, nil)
 	em.mth.On("PersistTransaction", mock.Anything, approval.TX.ID, core.TransactionTypeTokenApproval, "0xffffeeee").Return(false, fmt.Errorf("pop"))
@@ -177,7 +177,7 @@ func TestPersistApprovalTxFail(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(nil, nil)
 	em.mth.On("FindOperationInTransaction", em.ctx, approval.TX.ID, core.OpTypeTokenApproval).Return(op, nil)
 	em.mdi.On("GetTokenApprovalByID", em.ctx, "ns1", localID).Return(nil, nil)
@@ -207,7 +207,7 @@ func TestPersistApprovalGetApprovalFail(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(nil, nil)
 	em.mth.On("FindOperationInTransaction", em.ctx, approval.TX.ID, core.OpTypeTokenApproval).Return(op, nil)
 	em.mdi.On("GetTokenApprovalByID", em.ctx, "ns1", localID).Return(nil, fmt.Errorf("pop"))
@@ -225,7 +225,7 @@ func TestApprovedBadPool(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	approval := newApproval()
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(nil, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(nil, nil)
 
 	err := em.TokensApproved(mti, approval)
 	assert.NoError(t, err)
@@ -253,7 +253,7 @@ func TestApprovedWithTransactionRegenerateLocalID(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(nil, nil)
 	em.mth.On("FindOperationInTransaction", em.ctx, approval.TX.ID, core.OpTypeTokenApproval).Return(op, nil)
 	em.mth.On("PersistTransaction", mock.Anything, approval.TX.ID, core.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
@@ -294,7 +294,7 @@ func TestApprovedBlockchainEventFail(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", approval.Connector, approval.ProtocolID).Return(nil, nil)
 	em.mth.On("FindOperationInTransaction", em.ctx, approval.TX.ID, core.OpTypeTokenApproval).Return(op, nil)
 	em.mth.On("PersistTransaction", mock.Anything, approval.TX.ID, core.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
@@ -339,7 +339,7 @@ func TestTokensApprovedWithMessageReceived(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(2)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
 	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(nil, nil).Times(2)
@@ -391,7 +391,7 @@ func TestTokensApprovedWithMessageSend(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenApprovalByProtocolID", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(2)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
 	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(nil, nil).Times(2)

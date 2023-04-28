@@ -757,6 +757,42 @@ func TestGetTokenPool(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestGetTokenPoolByLocator(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByLocator", context.Background(), "ns1", "magic-tokens", "abc").Return(&core.TokenPool{}, nil)
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolCached(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	am.cache.Set("ns=ns1,connector=magic-tokens,pool=abc", &core.TokenPool{})
+	_, err := am.GetTokenPool(context.Background(), "magic-tokens", "abc")
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByLocatorCached(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	am.cache.Set("ns=ns1,connector=magic-tokens,poollocator=abc", &core.TokenPool{})
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestGetTokenPoolNotFound(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -789,6 +825,45 @@ func TestGetTokenPoolBadPlugin(t *testing.T) {
 	assert.Regexp(t, "FF10272", err)
 }
 
+func TestGetTokenPoolByLocatorBadPlugin(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	am.tokens = make(map[string]tokens.Plugin)
+	mdi := am.database.(*databasemocks.Plugin)
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10272", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByLocatorNotFound(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByLocator", context.Background(), "ns1", "magic-tokens", "abc").Return(nil, nil)
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10109", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByLocatorFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByLocator", context.Background(), "ns1", "magic-tokens", "abc").Return(nil, fmt.Errorf("pop"))
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestGetTokenPoolBadName(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -804,6 +879,20 @@ func TestGetTokenPoolByID(t *testing.T) {
 	u := fftypes.NewUUID()
 	mdi := am.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", u).Return(&core.TokenPool{}, nil)
+	_, err := am.GetTokenPoolByNameOrID(context.Background(), u.String())
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByIDCached(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	mdi := am.database.(*databasemocks.Plugin)
+
+	am.cache.Set(fmt.Sprintf("ns=ns1,poolnameorid=%s", u.String()), &core.TokenPool{})
 	_, err := am.GetTokenPoolByNameOrID(context.Background(), u.String())
 	assert.NoError(t, err)
 

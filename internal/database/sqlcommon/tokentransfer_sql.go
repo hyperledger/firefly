@@ -102,7 +102,7 @@ func (s *SQLCommon) attemptTokenTransferEventInsert(ctx context.Context, tx *dbs
 	return err
 }
 
-func (s *SQLCommon) InsertUpdateOrGetTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) (existing *core.TokenTransfer, err error) {
+func (s *SQLCommon) InsertOrGetTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) (existing *core.TokenTransfer, err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return nil, err

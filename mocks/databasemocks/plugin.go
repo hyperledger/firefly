@@ -2563,8 +2563,8 @@ func (_m *Plugin) InsertOrGetBlockchainEvent(ctx context.Context, event *core.Bl
 	return r0, r1
 }
 
-// InsertUpdateOrGetTokenTransfer provides a mock function with given fields: ctx, approval
-func (_m *Plugin) InsertUpdateOrGetTokenTransfer(ctx context.Context, approval *core.TokenTransfer) (*core.TokenTransfer, error) {
+// InsertOrGetTokenTransfer provides a mock function with given fields: ctx, approval
+func (_m *Plugin) InsertOrGetTokenTransfer(ctx context.Context, approval *core.TokenTransfer) (*core.TokenTransfer, error) {
 	ret := _m.Called(ctx, approval)
 
 	var r0 *core.TokenTransfer
