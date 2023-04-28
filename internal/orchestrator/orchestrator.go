@@ -500,7 +500,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.namespace.Name, or.config.KeyNormalization, or.database(), or.tokens(), or.identity, or.syncasync, or.broadcast, or.messaging, or.metrics, or.operations, or.contracts, or.txHelper)
+		or.assets, err = assets.NewAssetManager(ctx, or.namespace.Name, or.config.KeyNormalization, or.database(), or.tokens(), or.identity, or.syncasync, or.broadcast, or.messaging, or.metrics, or.operations, or.contracts, or.txHelper, or.cacheManager)
 		if err != nil {
 			return err
 		}

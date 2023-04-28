@@ -62,7 +62,7 @@ func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, tr
 func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *tokens.TokenTransfer) (valid bool, err error) {
 	// Check that this is from a known pool
 	// TODO: should cache this lookup for efficiency
-	pool, err := em.database.GetTokenPoolByLocator(ctx, em.namespace.Name, transfer.Connector, transfer.PoolLocator)
+	pool, err := em.assets.GetTokenPoolByLocator(ctx, transfer.Connector, transfer.PoolLocator)
 	if err != nil {
 		return false, err
 	}

@@ -340,6 +340,13 @@ nav_order: 2
 |limit|Max number of cached items for operations|`int`|`<nil>`
 |ttl|Time to live of cached items for operations|`string`|`<nil>`
 
+## cache.tokenpool
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|limit|Max number of cached items for token pools|`int`|`<nil>`
+|ttl|Time to live of cached items for token pool|`string`|`<nil>`
+
 ## cache.transaction
 
 |Key|Description|Type|Default Value|
