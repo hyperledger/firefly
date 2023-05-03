@@ -19,6 +19,7 @@ package multiparty
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -148,6 +149,14 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	client1.RegisterSelfNode(suite.T(), true)
 	client2.RegisterSelfOrg(suite.T(), true)
 	client2.RegisterSelfNode(suite.T(), true)
+
+	// Wait for the orgs to propagate (org2 to node1, and org1 to node 2)
+	for client1.GetOrganization(suite.T(), suite.testState.org2.Name) == nil {
+		time.Sleep(100 * time.Millisecond)
+	}
+	for client2.GetOrganization(suite.T(), suite.testState.org1.Name) == nil {
+		time.Sleep(100 * time.Millisecond)
+	}
 
 	// Migrate to the new contract
 	client1.NetworkAction(suite.T(), core.NetworkActionTerminate)
