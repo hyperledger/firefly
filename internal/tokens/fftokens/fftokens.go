@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
@@ -44,6 +45,7 @@ type FFTokens struct {
 	configuredName string
 	client         *resty.Client
 	wsconn         wsclient.WSClient
+	retry          *retry.Retry
 }
 
 type callbacks struct {
@@ -247,6 +249,12 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 	ft.wsconn, err = wsclient.New(ctx, wsConfig, nil, nil)
 	if err != nil {
 		return err
+	}
+
+	ft.retry = &retry.Retry{
+		InitialDelay: config.GetDuration(FFTRetryInitialDelay),
+		MaximumDelay: config.GetDuration(FFTRetryMaxDelay),
+		Factor:       config.GetFloat64(FFTRetryFactor),
 	}
 
 	go ft.eventLoop()
@@ -511,42 +519,48 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	return ft.callbacks.TokensApproved(ctx, namespace, approval)
 }
 
+func (ft *FFTokens) handleEventWithRetry(parentCtx context.Context, msg *wsEvent) error {
+	log.L(parentCtx).Debugf("Received %s event %s", msg.Event, msg.ID)
+	eventCtx, done := context.WithCancel(parentCtx)
+	defer done()
+	return ft.retry.Do(eventCtx, "fftokens event", func(attempt int) (retry bool, err error) {
+		switch msg.Event {
+		case messageReceipt:
+			ft.handleReceipt(eventCtx, msg.Data)
+		case messageBatch:
+			for _, msg := range msg.Data.GetObjectArray("events") {
+				if err = ft.handleMessage(eventCtx, []byte(msg.String())); err != nil {
+					break
+				}
+			}
+		case messageTokenPool:
+			err = ft.handleTokenPoolCreate(eventCtx, msg.Data, nil /* need to extract poolData from event */)
+		case messageTokenMint:
+			err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeMint, msg.Data)
+		case messageTokenBurn:
+			err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeBurn, msg.Data)
+		case messageTokenTransfer:
+			err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeTransfer, msg.Data)
+		case messageTokenApproval:
+			err = ft.handleTokenApproval(eventCtx, msg.Data)
+		default:
+			log.L(eventCtx).Errorf("Message unexpected: %s", msg.Event)
+			// do not set error here - we will never be able to process this message so log+swallow it.
+		}
+		return true, err // We keep retrying on error until the context ends
+	})
+}
+
 func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (err error) {
 	l := log.L(ctx)
 
-	var msg wsEvent
+	var msg *wsEvent
 	if err = json.Unmarshal(msgBytes, &msg); err != nil {
 		l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
 		return nil // Swallow this and move on
 	}
 
-	l.Debugf("Received %s event %s", msg.Event, msg.ID)
-	eventCtx, done := context.WithCancel(ctx)
-	defer done()
-
-	switch msg.Event {
-	case messageReceipt:
-		ft.handleReceipt(eventCtx, msg.Data)
-	case messageBatch:
-		for _, msg := range msg.Data.GetObjectArray("events") {
-			if err = ft.handleMessage(eventCtx, []byte(msg.String())); err != nil {
-				break
-			}
-		}
-	case messageTokenPool:
-		err = ft.handleTokenPoolCreate(eventCtx, msg.Data, nil /* need to extract poolData from event */)
-	case messageTokenMint:
-		err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeMint, msg.Data)
-	case messageTokenBurn:
-		err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeBurn, msg.Data)
-	case messageTokenTransfer:
-		err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeTransfer, msg.Data)
-	case messageTokenApproval:
-		err = ft.handleTokenApproval(eventCtx, msg.Data)
-	default:
-		l.Errorf("Message unexpected: %s", msg.Event)
-	}
-
+	err = ft.handleEventWithRetry(ctx, msg)
 	if err == nil && msg.Event != messageReceipt && msg.ID != "" {
 		l.Debugf("Sending ack %s", msg.ID)
 		ack, _ := json.Marshal(fftypes.JSONObject{

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -17,10 +17,22 @@
 package fftokens
 
 import (
+	"time"
+
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 )
 
+const (
+	FFTRetryInitialDelay = "retry.initialDelay"
+	FFTRetryMaxDelay     = "retry.maxDelay"
+	FFTRetryFactor       = "retry.factor"
+)
+
 func (ft *FFTokens) InitConfig(config config.KeySet) {
 	wsclient.InitConfig(config)
+
+	config.AddKnownKey(FFTRetryInitialDelay, 50*time.Millisecond)
+	config.AddKnownKey(FFTRetryMaxDelay, 30*time.Second)
+	config.AddKnownKey(FFTRetryFactor, 2.0)
 }
