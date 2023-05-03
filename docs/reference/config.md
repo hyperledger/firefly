@@ -795,6 +795,14 @@ nav_order: 2
 |password|Password|`string`|`<nil>`
 |username|Username|`string`|`<nil>`
 
+## plugins.dataexchange[].ffdx.eventRetry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|factor|The retry backoff factor, for event processing|`float32`|`2`
+|initialDelay|The initial retry delay, for event processing|[`time.Duration`](https://pkg.go.dev/time#Duration)|`50ms`
+|maxDelay|The maximum retry delay, for event processing|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
 ## plugins.dataexchange[].ffdx.proxy
 
 |Key|Description|Type|Default Value|
@@ -807,10 +815,7 @@ nav_order: 2
 |---|-----------|----|-------------|
 |count|The maximum number of times to retry|`int`|`5`
 |enabled|Enables retries|`boolean`|`false`
-|factor|The retry backoff factor|`float32`|`2`
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
-|initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`50ms`
-|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
 ## plugins.dataexchange[].ffdx.ws
@@ -937,6 +942,14 @@ nav_order: 2
 |---|-----------|----|-------------|
 |password|Password|`string`|`<nil>`
 |username|Username|`string`|`<nil>`
+
+## plugins.tokens[].fftokens.eventRetry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|factor|The retry backoff factor, for event processing|`float32`|`2`
+|initialDelay|The initial retry delay, for event processing|[`time.Duration`](https://pkg.go.dev/time#Duration)|`50ms`
+|maxDelay|The maximum retry delay, for event processing|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
 ## plugins.tokens[].fftokens.proxy
 
