@@ -4132,6 +4132,45 @@
     </tr>
   </tbody>
 </table>
+      <h2 id="pluginsdataexchangeffdxeventretry">
+        
+        
+          <a href="#pluginsdataexchangeffdxeventretry" class="anchor-heading" aria-labelledby="pluginsdataexchangeffdxeventretry"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.dataexchange[].ffdx.eventRetry
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>factor</td>
+      <td>The retry backoff factor, for event processing</td>
+      <td><code class="language-plaintext highlighter-rouge">float32</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
+    </tr>
+    <tr>
+      <td>initialDelay</td>
+      <td>The initial retry delay, for event processing</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">50ms</code></td>
+    </tr>
+    <tr>
+      <td>maxDelay</td>
+      <td>The maximum retry delay, for event processing</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
+    </tr>
+  </tbody>
+</table>
       <h2 id="pluginsdataexchangeffdxproxy">
         
         
@@ -4191,28 +4230,10 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
-      <td>factor</td>
-      <td>The retry backoff factor</td>
-      <td><code class="language-plaintext highlighter-rouge">float32</code></td>
-      <td><code class="language-plaintext highlighter-rouge">2</code></td>
-    </tr>
-    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">250ms</code></td>
-    </tr>
-    <tr>
-      <td>initialDelay</td>
-      <td>The initial retry delay</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">50ms</code></td>
-    </tr>
-    <tr>
-      <td>maxDelay</td>
-      <td>The maximum retry delay</td>
-      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
     </tr>
     <tr>
       <td>maxWaitTime</td>
@@ -4843,6 +4864,45 @@
       <td>Username</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="pluginstokensfftokenseventretry">
+        
+        
+          <a href="#pluginstokensfftokenseventretry" class="anchor-heading" aria-labelledby="pluginstokensfftokenseventretry"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.tokens[].fftokens.eventRetry
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>factor</td>
+      <td>The retry backoff factor, for event processing</td>
+      <td><code class="language-plaintext highlighter-rouge">float32</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
+    </tr>
+    <tr>
+      <td>initialDelay</td>
+      <td>The initial retry delay, for event processing</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">50ms</code></td>
+    </tr>
+    <tr>
+      <td>maxDelay</td>
+      <td>The maximum retry delay, for event processing</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
     </tr>
   </tbody>
 </table>
