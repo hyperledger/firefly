@@ -1633,3 +1633,28 @@ func TestCheckInterfaceFFIBadResponse(t *testing.T) {
 	_, err := h.CheckInterface(context.Background(), pool, methods)
 	assert.Regexp(t, "FF00127", err)
 }
+
+func TestHandleEventRetryableFailure(t *testing.T) {
+	ft, _, _, _, done := newTestFFTokens(t)
+	defer done()
+
+	mcb := &tokenmocks.Callbacks{}
+	mcb.On("TokenPoolCreated", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ft.callbacks.handlers = map[string]tokens.Callbacks{
+		"ns1": mcb,
+	}
+	retry, err := ft.handleMessage(context.Background(), []byte(`{
+		"event": "batch",
+		"data": {
+			"events": [{
+				"event": "token-pool",
+				"data": {
+					"type": "fungible",
+					"poolLocator": "over-there"
+				}
+			}]
+		}
+	}`))
+	assert.Regexp(t, "pop", err)
+	assert.True(t, retry)
+}

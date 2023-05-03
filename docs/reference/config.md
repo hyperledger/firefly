@@ -950,7 +950,10 @@ nav_order: 2
 |---|-----------|----|-------------|
 |count|The maximum number of times to retry|`int`|`5`
 |enabled|Enables retries|`boolean`|`false`
+|factor|The retry backoff factor|`float32`|`2`
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`50ms`
+|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
 ## plugins.tokens[].fftokens.ws
