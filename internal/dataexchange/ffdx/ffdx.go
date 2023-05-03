@@ -187,9 +187,9 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 		Manifest: config.GetBool(DataExchangeManifestEnabled),
 	}
 	h.retry = &retry.Retry{
-		InitialDelay: config.GetDuration(DataExchangeRetryInitialDelay),
-		MaximumDelay: config.GetDuration(DataExchangeRetryMaxDelay),
-		Factor:       config.GetFloat64(DataExchangeRetryFactor),
+		InitialDelay: config.GetDuration(DataExchangeEventRetryInitialDelay),
+		MaximumDelay: config.GetDuration(DataExchangeEventRetryMaxDelay),
+		Factor:       config.GetFloat64(DataExchangeEventRetryFactor),
 	}
 
 	wsConfig := wsclient.GenerateConfig(config)

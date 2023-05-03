@@ -252,9 +252,9 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 	}
 
 	ft.retry = &retry.Retry{
-		InitialDelay: config.GetDuration(FFTRetryInitialDelay),
-		MaximumDelay: config.GetDuration(FFTRetryMaxDelay),
-		Factor:       config.GetFloat64(FFTRetryFactor),
+		InitialDelay: config.GetDuration(FFTEventRetryInitialDelay),
+		MaximumDelay: config.GetDuration(FFTEventRetryMaxDelay),
+		Factor:       config.GetFloat64(FFTEventRetryFactor),
 	}
 
 	go ft.eventLoop()
