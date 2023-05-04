@@ -161,7 +161,10 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	if ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", ethconnectConf)
 	}
-	e.client = ffresty.New(e.ctx, ethconnectConf)
+	e.client, err = ffresty.New(e.ctx, ethconnectConf)
+	if err != nil {
+		return err
+	}
 
 	e.topic = ethconnectConf.GetString(EthconnectConfigTopic)
 	if e.topic == "" {
@@ -170,7 +173,11 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
 	e.prefixLong = ethconnectConf.GetString(EthconnectPrefixLong)
 
-	wsConfig := wsclient.GenerateConfig(ethconnectConf)
+	wsConfig, err := wsclient.GenerateConfig(ctx, ethconnectConf)
+	if err != nil {
+		return err
+	}
+
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
 	}

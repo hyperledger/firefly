@@ -288,6 +288,16 @@ nav_order: 2
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## events.webhooks.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+
 ## events.websockets
 
 |Key|Description|Type|Default Value|
@@ -581,6 +591,16 @@ nav_order: 2
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.blockchain[].ethereum.addressResolver.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+
 ## plugins.blockchain[].ethereum.ethconnect
 
 |Key|Description|Type|Default Value|
@@ -623,6 +643,16 @@ nav_order: 2
 |enabled|Enables retries|`boolean`|`false`
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.blockchain[].ethereum.ethconnect.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 
 ## plugins.blockchain[].ethereum.ethconnect.ws
 
@@ -670,6 +700,16 @@ nav_order: 2
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.blockchain[].ethereum.fftm.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+
 ## plugins.blockchain[].fabric.fabconnect
 
 |Key|Description|Type|Default Value|
@@ -713,6 +753,16 @@ nav_order: 2
 |enabled|Enables retries|`boolean`|`false`
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.blockchain[].fabric.fabconnect.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 
 ## plugins.blockchain[].fabric.fabconnect.ws
 
@@ -818,6 +868,16 @@ nav_order: 2
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.dataexchange[].ffdx.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+
 ## plugins.dataexchange[].ffdx.ws
 
 |Key|Description|Type|Default Value|
@@ -878,6 +938,16 @@ nav_order: 2
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.sharedstorage[].ipfs.api.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+
 ## plugins.sharedstorage[].ipfs.gateway
 
 |Key|Description|Type|Default Value|
@@ -913,6 +983,16 @@ nav_order: 2
 |enabled|Enables retries|`boolean`|`false`
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.sharedstorage[].ipfs.gateway.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 
 ## plugins.tokens[]
 
@@ -965,6 +1045,16 @@ nav_order: 2
 |enabled|Enables retries|`boolean`|`false`
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.tokens[].fftokens.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 
 ## plugins.tokens[].fftokens.ws
 

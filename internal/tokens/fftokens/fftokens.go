@@ -239,9 +239,16 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "tokens.fftokens")
 	}
-	ft.client = ffresty.New(ft.ctx, config)
+	ft.client, err = ffresty.New(ft.ctx, config)
+	if err != nil {
+		return err
+	}
 
-	wsConfig := wsclient.GenerateConfig(config)
+	wsConfig, err := wsclient.GenerateConfig(ctx, config)
+	if err != nil {
+		return err
+	}
+
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/api/ws"
 	}

@@ -71,13 +71,18 @@ func (wh *WebHooks) Name() string { return "webhooks" }
 
 func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error) {
 	connID := fftypes.ShortID()
+
+	client, err := ffresty.New(ctx, config)
+	if err != nil {
+		return err
+	}
 	*wh = WebHooks{
 		ctx:          log.WithLogField(ctx, "webhook", wh.connID),
 		capabilities: &events.Capabilities{},
 		callbacks: callbacks{
 			handlers: make(map[string]events.Callbacks),
 		},
-		client: ffresty.New(ctx, config),
+		client: client,
 		connID: connID,
 	}
 	return nil
