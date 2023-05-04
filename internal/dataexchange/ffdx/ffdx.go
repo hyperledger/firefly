@@ -196,7 +196,14 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 		Factor:       config.GetFloat64(DataExchangeRetryFactor),
 	}
 
-	wsConfig := wsclient.GenerateConfig(config)
+	wsConfig, err := wsclient.GenerateConfig(ctx, config)
+	if err != nil {
+		return err
+	}
+
+	if wsConfig.WSKeyPath == "" {
+		wsConfig.WSKeyPath = "/ws"
+	}
 
 	h.wsconn, err = wsclient.New(ctx, wsConfig, h.beforeConnect, nil)
 	if err != nil {

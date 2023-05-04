@@ -221,10 +221,15 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 	f.prefixShort = fabconnectConf.GetString(FabconnectPrefixShort)
 	f.prefixLong = fabconnectConf.GetString(FabconnectPrefixLong)
 
-	wsConfig := wsclient.GenerateConfig(fabconnectConf)
+	wsConfig, err := wsclient.GenerateConfig(ctx, fabconnectConf)
+	if err != nil {
+		return err
+	}
+
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
 	}
+
 	f.wsconn, err = wsclient.New(f.ctx, wsConfig, nil, f.afterConnect)
 	if err != nil {
 		return err

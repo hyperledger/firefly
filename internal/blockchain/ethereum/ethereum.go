@@ -173,7 +173,11 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
 	e.prefixLong = ethconnectConf.GetString(EthconnectPrefixLong)
 
-	wsConfig := wsclient.GenerateConfig(ethconnectConf)
+	wsConfig, err := wsclient.GenerateConfig(ctx, ethconnectConf)
+	if err != nil {
+		return err
+	}
+
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
 	}

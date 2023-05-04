@@ -242,7 +242,11 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 		return err
 	}
 
-	wsConfig := wsclient.GenerateConfig(config)
+	wsConfig, err := wsclient.GenerateConfig(ctx, config)
+	if err != nil {
+		return err
+	}
+
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/api/ws"
 	}
