@@ -140,7 +140,7 @@ func (_m *Plugin) Init(ctx context.Context, cancelCtx context.CancelFunc, name s
 }
 
 // InitConfig provides a mock function with given fields: _a0
-func (_m *Plugin) InitConfig(_a0 config.KeySet) {
+func (_m *Plugin) InitConfig(_a0 config.Section) {
 	_m.Called(_a0)
 }
 

@@ -182,7 +182,11 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
 	}
 
-	h.client = ffresty.New(h.ctx, config)
+	h.client, err = ffresty.New(h.ctx, config)
+	if err != nil {
+		return err
+	}
+
 	h.capabilities = &dataexchange.Capabilities{
 		Manifest: config.GetBool(DataExchangeManifestEnabled),
 	}
@@ -192,7 +196,14 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 		Factor:       config.GetFloat64(DataExchangeEventRetryFactor),
 	}
 
-	wsConfig := wsclient.GenerateConfig(config)
+	wsConfig, err := wsclient.GenerateConfig(ctx, config)
+	if err != nil {
+		return err
+	}
+
+	if wsConfig.WSKeyPath == "" {
+		wsConfig.WSKeyPath = "/ws"
+	}
 
 	h.wsconn, err = wsclient.New(ctx, wsConfig, h.beforeConnect, nil)
 	if err != nil {

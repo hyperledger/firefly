@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -53,6 +54,19 @@ func TestCacheInitFail(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(nil, cacheInitError)
 	_, err := newAddressResolver(ctx, config, cmi, true)
 	assert.Equal(t, cacheInitError, err)
+}
+
+func TestClientInitFails(t *testing.T) {
+	ctx := context.Background()
+	config := utAddresResolverConfig()
+	tlsConfig := config.SubSection("tls")
+	tlsConfig.Set(fftls.HTTPConfTLSEnabled, true)
+	tlsConfig.Set(fftls.HTTPConfTLSCAFile, "bad-ca!")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	_, err := newAddressResolver(ctx, config, cmi, true)
+	assert.Regexp(t, "FF00153", err)
 }
 
 func newAddressResolverTestEth(t *testing.T, config config.Section) (context.Context, *Ethereum, context.CancelFunc) {

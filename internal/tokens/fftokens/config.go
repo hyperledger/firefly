@@ -29,7 +29,7 @@ const (
 	FFTEventRetryFactor       = "eventRetry.factor"
 )
 
-func (ft *FFTokens) InitConfig(config config.KeySet) {
+func (ft *FFTokens) InitConfig(config config.Section) {
 	wsclient.InitConfig(config)
 
 	config.AddKnownKey(FFTEventRetryInitialDelay, 50*time.Millisecond)

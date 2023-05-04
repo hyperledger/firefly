@@ -30,7 +30,7 @@ type Plugin interface {
 	core.Named
 
 	// InitConfig initializes the set of configuration options that are valid, with defaults. Called on all plugins.
-	InitConfig(config config.KeySet)
+	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, cancelCtx context.CancelFunc, name string, config config.Section) error
