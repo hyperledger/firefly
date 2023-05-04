@@ -40,14 +40,6 @@ func InitConfig(config config.ArraySection) {
 	}
 }
 
-// func InitConfigDeprecated(conf config.ArraySection) {
-// 	conf.AddKnownKey(tokens.TokensConfigPlugin)
-// 	conf.AddKnownKey(coreconfig.PluginConfigName)
-// 	for name, plugin := range pluginsByName {
-// 		plugin().InitConfig(config)
-// 	}
-// }
-
 func GetPlugin(ctx context.Context, connectorName string) (tokens.Plugin, error) {
 	plugin, ok := pluginsByName[connectorName]
 	if !ok {

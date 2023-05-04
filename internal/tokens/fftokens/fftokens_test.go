@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/coremocks"
@@ -1438,6 +1439,7 @@ func TestEventLoopSendClosed(t *testing.T) {
 		ctx:       context.Background(),
 		cancelCtx: func() { called = true },
 		wsconn:    wsm,
+		retry:     &retry.Retry{},
 	}
 	r := make(chan []byte, 1)
 	r <- []byte(`{"id":"1"}`) // ignored but acked
@@ -1455,6 +1457,7 @@ func TestEventLoopClosedContext(t *testing.T) {
 	h := &FFTokens{
 		ctx:    ctx,
 		wsconn: wsm,
+		retry:  &retry.Retry{},
 	}
 	r := make(chan []byte, 1)
 	wsm.On("Close").Return()
@@ -1645,4 +1648,29 @@ func TestCheckInterfaceFFIBadResponse(t *testing.T) {
 
 	_, err := h.CheckInterface(context.Background(), pool, methods)
 	assert.Regexp(t, "FF00127", err)
+}
+
+func TestHandleEventRetryableFailure(t *testing.T) {
+	ft, _, _, _, done := newTestFFTokens(t)
+	defer done()
+
+	mcb := &tokenmocks.Callbacks{}
+	mcb.On("TokenPoolCreated", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ft.callbacks.handlers = map[string]tokens.Callbacks{
+		"ns1": mcb,
+	}
+	retry, err := ft.handleMessage(context.Background(), []byte(`{
+		"event": "batch",
+		"data": {
+			"events": [{
+				"event": "token-pool",
+				"data": {
+					"type": "fungible",
+					"poolLocator": "over-there"
+				}
+			}]
+		}
+	}`))
+	assert.Regexp(t, "pop", err)
+	assert.True(t, retry)
 }

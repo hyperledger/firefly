@@ -571,21 +571,6 @@ func (nm *namespaceManager) getDatabasePlugins(ctx context.Context, plugins map[
 		}
 	}
 
-	// check for deprecated config
-	if len(plugins) == 0 {
-		pluginType := deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType)
-		if pluginType != "" {
-			log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the database configuration has been moved under the 'plugins' section")
-			pc, err := nm.newPluginCommon(ctx, plugins, pluginCategoryDatabase, "database_0", pluginType, deprecatedDatabaseConfig, rawConfig.GetObject("plugins").GetObject("database"))
-			if err == nil {
-				pc.database, err = nm.databaseFactory(ctx, pluginType)
-			}
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -642,21 +627,6 @@ func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context, plugins 
 		}
 	}
 
-	// check deprecated config
-	if len(plugins) == 0 {
-		pluginType := deprecatedDataexchangeConfig.GetString(coreconfig.PluginConfigType)
-		if pluginType != "" {
-			log.L(ctx).Warnf("Your data exchange config uses a deprecated configuration structure - the data exchange configuration has been moved under the 'plugins' section")
-			pc, err := nm.newPluginCommon(ctx, plugins, pluginCategoryDataexchange, "dataexchange_0", pluginType, deprecatedDataexchangeConfig, rawConfig.GetObject("plugins").GetObject("dataexchange"))
-			if err == nil {
-				pc.dataexchange, err = nm.dataexchangeFactory(ctx, pluginType)
-			}
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -699,22 +669,6 @@ func (nm *namespaceManager) getBlockchainPlugins(ctx context.Context, plugins ma
 		}
 	}
 
-	// check deprecated config
-	if len(plugins) == 0 {
-		pluginType := deprecatedBlockchainConfig.GetString(coreconfig.PluginConfigType)
-		if pluginType != "" {
-			log.L(ctx).Warnf("Your blockchain config uses a deprecated configuration structure - the blockchain configuration has been moved under the 'plugins' section")
-
-			pc, err := nm.newPluginCommon(ctx, plugins, pluginCategoryBlockchain, "blockchain_0", pluginType, deprecatedBlockchainConfig, rawConfig.GetObject("plugins").GetObject("blockchain"))
-			if err == nil {
-				pc.blockchain, err = nm.blockchainFactory(ctx, pluginType)
-			}
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -733,22 +687,6 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context, plugins
 		}
 		if err != nil {
 			return err
-		}
-	}
-
-	// check deprecated config
-	if len(plugins) == 0 {
-		pluginType := deprecatedSharedStorageConfig.GetString(coreconfig.PluginConfigType)
-		if pluginType != "" {
-			log.L(ctx).Warnf("Your shared storage config uses a deprecated configuration structure - the shared storage configuration has been moved under the 'plugins' section")
-
-			pc, err := nm.newPluginCommon(ctx, plugins, pluginCategorySharedstorage, "sharedstorage_0", pluginType, deprecatedSharedStorageConfig, rawConfig.GetObject("plugins").GetObject("sharedstorage"))
-			if err == nil {
-				pc.sharedstorage, err = nm.sharedstorageFactory(ctx, pluginType)
-			}
-			if err != nil {
-				return err
-			}
 		}
 	}
 

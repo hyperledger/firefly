@@ -419,7 +419,7 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 		return core.ActionReject, nil // This is not retryable. Reject this message
 	}
 
-	// Verify that we can resolve the signing key back to the identity that is claimed in the batch.
+	// Verify that we can resolve the signing key back to the identity that is claimed in the batch
 	resolvedAuthor, err := ag.identity.FindIdentityForVerifier(ctx, []core.IdentityType{
 		core.IdentityTypeOrg,
 		core.IdentityTypeCustom,
@@ -427,22 +427,32 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 	if err != nil {
 		return core.ActionRetry, err
 	}
+
 	if resolvedAuthor == nil {
-		if msg.Header.Type == core.MessageTypeDefinition &&
-			(msg.Header.Tag == core.SystemTagIdentityClaim || msg.Header.Tag == core.DeprecatedSystemTagDefineNode || msg.Header.Tag == core.DeprecatedSystemTagDefineOrganization) {
-			// We defer detailed checking of this identity to the system handler
+		switch {
+		case msg.Header.Type == core.MessageTypeDefinition &&
+			(msg.Header.Tag == core.SystemTagIdentityClaim ||
+				msg.Header.Tag == core.DeprecatedSystemTagDefineNode ||
+				msg.Header.Tag == core.DeprecatedSystemTagDefineOrganization):
+			// Identity claims can have an unregistered identity at this point
+			// We defer detailed checking of the identity to the system handler
 			return core.ActionConfirm, nil
-		} else if msg.Header.Type != core.MessageTypePrivate {
-			// Only private messages, or root org broadcasts can have an unregistered identity
+
+		case msg.Header.Type == core.MessageTypePrivate || msg.Header.Type == core.MessageTypeGroupInit:
+			// Private messages (and their associated group init) can always use an unregistered verifier
+			return core.ActionConfirm, nil
+
+		default:
+			// Everything else (broadcasts, non-identity definitions) will not be processed from an unregistered identity
 			l.Warnf("Skipping message '%s'. Author '%s' could not be resolved: %s", msg.Header.ID, msg.Header.Author, err)
 			return core.ActionWait, nil // Wait in case the identity is resolved later
 		}
-	} else if msg.Header.Author == "" || resolvedAuthor.DID != msg.Header.Author {
+	}
+	if msg.Header.Author == "" || resolvedAuthor.DID != msg.Header.Author {
 		l.Errorf("Invalid message '%s'. Author '%s' does not match identity registered to %s: %s (%s)", msg.Header.ID, msg.Header.Author, verifierRef.Value, resolvedAuthor.DID, resolvedAuthor.ID)
 		return core.ActionReject, nil // This is not retryable. Reject this message
 
 	}
-
 	return core.ActionConfirm, nil
 }
 
@@ -535,8 +545,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		np.IncrementNextPin(ctx, ag.namespace)
 	}
 	state.markMessageDispatched(manifest.ID, msg, msgBaseIndex, newState)
-
-	return err
+	return nil
 }
 
 func needsTokenTransfer(msg *core.Message) bool {
@@ -607,6 +616,10 @@ func (ag *aggregator) readyForDispatch(ctx context.Context, msg *core.Message, d
 		var handlerResult definitions.HandlerResult
 		handlerResult, err = ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
 		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
+		if handlerResult.Action == core.ActionReject {
+			log.L(ctx).Infof("Definition broadcast '%s' rejected: %s", msg.Header.ID, err)
+			err = nil
+		}
 		correlator = handlerResult.CustomCorrelator
 		action = handlerResult.Action
 

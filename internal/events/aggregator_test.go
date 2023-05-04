@@ -1874,6 +1874,20 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 
 }
 
+func TestDefinitionBroadcastActionReject(t *testing.T) {
+	ag := newTestAggregator()
+	defer ag.cleanup(t)
+
+	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
+
+	ag.mdh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(definitions.HandlerResult{Action: core.ActionReject}, fmt.Errorf("pop"))
+
+	_, _, err := ag.readyForDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	assert.NoError(t, err)
+
+}
+
 func TestDefinitionBroadcastRejectSignerLookupWrongOrg(t *testing.T) {
 	ag := newTestAggregator()
 	defer ag.cleanup(t)
@@ -1927,6 +1941,21 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 
 	_, _, err := ag.readyForDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
+
+}
+
+func TestPrivateMessageUnregisteredSigner(t *testing.T) {
+	ag := newTestAggregator()
+	defer ag.cleanup(t)
+
+	msg1, _, _, _ := newTestManifest(core.MessageTypePrivate, nil)
+	msg1.Header.Tag = core.SystemTagIdentityClaim
+
+	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil)
+
+	action, err := ag.checkOnchainConsistency(ag.ctx, msg1, &core.Pin{Signer: "0x12345"})
+	assert.NoError(t, err)
+	assert.Equal(t, core.ActionConfirm, action)
 
 }
 

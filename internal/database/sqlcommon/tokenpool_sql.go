@@ -71,9 +71,15 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 	rows, _, err := s.QueryTx(ctx, tokenpoolTable, tx,
 		sq.Select("id").
 			From(tokenpoolTable).
-			Where(sq.Eq{
-				"namespace": pool.Namespace,
-				"name":      pool.Name,
+			Where(sq.And{
+				sq.Eq{"namespace": pool.Namespace},
+				sq.Or{
+					sq.Eq{"name": pool.Name},
+					sq.Eq{
+						"connector": pool.Connector,
+						"locator":   pool.Locator,
+					},
+				},
 			}),
 	)
 	if err != nil {

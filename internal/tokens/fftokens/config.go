@@ -17,10 +17,22 @@
 package fftokens
 
 import (
+	"time"
+
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 )
 
+const (
+	FFTEventRetryInitialDelay = "eventRetry.initialDelay"
+	FFTEventRetryMaxDelay     = "eventRetry.maxDelay"
+	FFTEventRetryFactor       = "eventRetry.factor"
+)
+
 func (ft *FFTokens) InitConfig(config config.Section) {
 	wsclient.InitConfig(config)
+
+	config.AddKnownKey(FFTEventRetryInitialDelay, 50*time.Millisecond)
+	config.AddKnownKey(FFTEventRetryMaxDelay, 30*time.Second)
+	config.AddKnownKey(FFTEventRetryFactor, 2.0)
 }

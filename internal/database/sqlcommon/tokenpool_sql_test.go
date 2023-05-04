@@ -24,7 +24,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -124,6 +123,25 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolJson, _ = json.Marshal(&pool)
 	poolReadJson, _ = json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
+
+	// Cannot create with new ID but different name
+	newPool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: pool.Namespace,
+		Name:      pool.Name,
+	}
+	err = s.UpsertTokenPool(ctx, newPool)
+	assert.Equal(t, database.IDMismatch, err)
+
+	// Cannot create with new ID but different locator
+	newPool = &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: pool.Namespace,
+		Connector: pool.Connector,
+		Locator:   pool.Locator,
+	}
+	err = s.UpsertTokenPool(ctx, newPool)
+	assert.Equal(t, database.IDMismatch, err)
 }
 
 func TestUpsertTokenPoolFailBegin(t *testing.T) {
@@ -174,24 +192,6 @@ func TestUpsertTokenPoolFailCommit(t *testing.T) {
 	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
 	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpsertTokenPoolUpdateIDMismatch(t *testing.T) {
-	s, db := newMockProvider().init()
-	callbacks := &databasemocks.Callbacks{}
-	s.SetHandler("ns1", callbacks)
-	poolID := fftypes.NewUUID()
-	pool := &core.TokenPool{
-		ID:        poolID,
-		Namespace: "ns1",
-	}
-
-	db.ExpectBegin()
-	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
-	db.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), pool)
-	assert.Equal(t, database.IDMismatch, err)
-	assert.NoError(t, db.ExpectationsWereMet())
 }
 
 func TestGetTokenPoolByIDSelectFail(t *testing.T) {
