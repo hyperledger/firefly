@@ -74,7 +74,6 @@ const (
 func (e *Ethereum) InitConfig(config config.Section) {
 	e.ethconnectConf = config.SubSection(EthconnectConfigKey)
 	wsclient.InitConfig(e.ethconnectConf)
-	ffresty.InitConfig(e.ethconnectConf)
 
 	e.ethconnectConf.AddKnownKey(EthconnectConfigTopic)
 	e.ethconnectConf.AddKnownKey(EthconnectConfigBatchSize, defaultBatchSize)
