@@ -27,6 +27,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
@@ -53,6 +54,20 @@ func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
 	assert.Equal(t, "webhooks", wh.Name())
 	assert.NotNil(t, wh.Capabilities())
 	return wh, cancelCtx
+}
+
+func TestInitBadTLS(t *testing.T) {
+	coreconfig.Reset()
+
+	wh := &WebHooks{}
+	ctx := context.Background()
+	svrConfig := config.RootSection("ut.webhooks")
+	wh.InitConfig(svrConfig)
+	tlsConfig := svrConfig.SubSection("tls")
+	tlsConfig.Set(fftls.HTTPConfTLSEnabled, true)
+	tlsConfig.Set(fftls.HTTPConfTLSCAFile, "BADCA")
+	err := wh.Init(ctx, svrConfig)
+	assert.Regexp(t, "FF00153", err)
 }
 
 func TestValidateOptionsWithDataFalse(t *testing.T) {

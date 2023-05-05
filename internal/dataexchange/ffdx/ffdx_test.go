@@ -28,6 +28,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -114,6 +115,19 @@ func TestInitBadURL(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	err := h.Init(ctx, cancel, utConfig)
 	assert.Regexp(t, "FF00149", err)
+}
+
+func TestInitBadTLS(t *testing.T) {
+	coreconfig.Reset()
+	h := &FFDX{}
+	h.InitConfig(utConfig)
+	utConfig.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	tlsConfig := utConfig.SubSection("tls")
+	tlsConfig.Set(fftls.HTTPConfTLSEnabled, true)
+	tlsConfig.Set(fftls.HTTPConfTLSCAFile, "badCA")
+	ctx, cancel := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancel, utConfig)
+	assert.Regexp(t, "FF00153", err)
 }
 
 func TestInitMissingURL(t *testing.T) {

@@ -206,7 +206,11 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
 	}
 
-	f.client, err = ffresty.New(f.ctx, fabconnectConf)
+	wsConfig, err := wsclient.GenerateConfig(ctx, fabconnectConf)
+	if err == nil {
+		f.client, err = ffresty.New(f.ctx, fabconnectConf)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -220,11 +224,6 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 	}
 	f.prefixShort = fabconnectConf.GetString(FabconnectPrefixShort)
 	f.prefixLong = fabconnectConf.GetString(FabconnectPrefixLong)
-
-	wsConfig, err := wsclient.GenerateConfig(ctx, fabconnectConf)
-	if err != nil {
-		return err
-	}
 
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
