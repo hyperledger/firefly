@@ -182,7 +182,11 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
 	}
 
-	h.client, err = ffresty.New(h.ctx, config)
+	wsConfig, err := wsclient.GenerateConfig(ctx, config)
+	if err == nil {
+		h.client, err = ffresty.New(h.ctx, config)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -194,11 +198,6 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 		InitialDelay: config.GetDuration(DataExchangeEventRetryInitialDelay),
 		MaximumDelay: config.GetDuration(DataExchangeEventRetryMaxDelay),
 		Factor:       config.GetFloat64(DataExchangeEventRetryFactor),
-	}
-
-	wsConfig, err := wsclient.GenerateConfig(ctx, config)
-	if err != nil {
-		return err
 	}
 
 	if wsConfig.WSKeyPath == "" {
