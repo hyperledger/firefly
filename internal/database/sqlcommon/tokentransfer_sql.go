@@ -81,6 +81,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *core.Toke
 			From(tokentransferTable).
 			Where(sq.Eq{
 				"protocol_id": transfer.ProtocolID,
+				"pool_id":     transfer.Pool,
 				"namespace":   transfer.Namespace,
 			}),
 	)
