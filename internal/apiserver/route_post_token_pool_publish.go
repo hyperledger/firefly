@@ -35,7 +35,7 @@ var postTokenPoolPublish = &ffapi.Route{
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
-	Description:     coremsgs.APIEndpointsPostTokenPool,
+	Description:     coremsgs.APIEndpointsPostTokenPoolPublish,
 	JSONInputValue:  func() interface{} { return &core.DefinitionPublish{} },
 	JSONOutputValue: func() interface{} { return &core.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

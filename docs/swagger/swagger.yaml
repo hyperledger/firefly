@@ -28621,7 +28621,7 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/tokens/pools/{nameOrId}/publish:
     post:
-      description: Creates a new token pool
+      description: Publish a token pool to all other members of the multiparty network
       operationId: postTokenPoolPublishNamespace
       parameters:
       - description: The token pool name or ID
@@ -36493,7 +36493,7 @@ paths:
       - Default Namespace
   /tokens/pools/{nameOrId}/publish:
     post:
-      description: Creates a new token pool
+      description: Publish a token pool to all other members of the multiparty network
       operationId: postTokenPoolPublish
       parameters:
       - description: The token pool name or ID
