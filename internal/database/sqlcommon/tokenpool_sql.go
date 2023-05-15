@@ -216,8 +216,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool, o
 			if _, err := s.attemptTokenPoolUpdate(ctx, tx, pool); err != nil {
 				return err
 			}
-		}
-		if err := s.attemptTokenPoolInsert(ctx, tx, pool, false); err != nil {
+		} else if err := s.attemptTokenPoolInsert(ctx, tx, pool, false); err != nil {
 			return err
 		}
 	}

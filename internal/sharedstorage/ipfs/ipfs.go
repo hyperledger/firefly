@@ -49,7 +49,7 @@ func (i *IPFS) Name() string {
 	return "ipfs"
 }
 
-func (i *IPFS) Init(ctx context.Context, config config.Section) error {
+func (i *IPFS) Init(ctx context.Context, config config.Section) (err error) {
 
 	i.ctx = log.WithLogField(ctx, "sharedstorage", "ipfs")
 
@@ -57,12 +57,18 @@ func (i *IPFS) Init(ctx context.Context, config config.Section) error {
 	if apiConfig.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, apiConfig.Resolve(ffresty.HTTPConfigURL), "ipfs")
 	}
-	i.apiClient = ffresty.New(i.ctx, apiConfig)
+	i.apiClient, err = ffresty.New(i.ctx, apiConfig)
+	if err != nil {
+		return err
+	}
 	gwConfig := config.SubSection(IPFSConfGatewaySubconf)
 	if gwConfig.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, gwConfig.Resolve(ffresty.HTTPConfigURL), "ipfs")
 	}
-	i.gwClient = ffresty.New(i.ctx, gwConfig)
+	i.gwClient, err = ffresty.New(i.ctx, gwConfig)
+	if err != nil {
+		return err
+	}
 	i.capabilities = &sharedstorage.Capabilities{}
 	return nil
 }

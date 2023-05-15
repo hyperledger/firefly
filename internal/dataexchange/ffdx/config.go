@@ -29,16 +29,16 @@ const (
 	// DataExchangeInitEnabled instructs FireFly to always post all current nodes to the /init API before connecting or reconnecting to the connector
 	DataExchangeInitEnabled = "initEnabled"
 
-	DataExchangeRetryInitialDelay = "retry.initialDelay"
-	DataExchangeRetryMaxDelay     = "retry.maxDelay"
-	DataExchangeRetryFactor       = "retry.factor"
+	DataExchangeEventRetryInitialDelay = "eventRetry.initialDelay"
+	DataExchangeEventRetryMaxDelay     = "eventRetry.maxDelay"
+	DataExchangeEventRetryFactor       = "eventRetry.factor"
 )
 
 func (h *FFDX) InitConfig(config config.Section) {
 	wsclient.InitConfig(config)
 	config.AddKnownKey(DataExchangeManifestEnabled, false)
 	config.AddKnownKey(DataExchangeInitEnabled, false)
-	config.AddKnownKey(DataExchangeRetryInitialDelay, 50*time.Millisecond)
-	config.AddKnownKey(DataExchangeRetryMaxDelay, 30*time.Second)
-	config.AddKnownKey(DataExchangeRetryFactor, 2.0)
+	config.AddKnownKey(DataExchangeEventRetryInitialDelay, 50*time.Millisecond)
+	config.AddKnownKey(DataExchangeEventRetryMaxDelay, 30*time.Second)
+	config.AddKnownKey(DataExchangeEventRetryFactor, 2.0)
 }

@@ -43,9 +43,10 @@ func newTestSPIEventsManager(t *testing.T) (ae *adminEventManager, ws *webSocket
 	clientConfig := config.RootSection("ut.wsclient")
 	wsclient.InitConfig(clientConfig)
 	clientConfig.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
-	wsConfig := wsclient.GenerateConfig(clientConfig)
+	wsConfig, err := wsclient.GenerateConfig(context.Background(), clientConfig)
+	assert.NoError(t, err)
 
-	wsc, err := wsclient.New(ae.ctx, wsConfig, nil, nil)
+	wsc, err = wsclient.New(ae.ctx, wsConfig, nil, nil)
 	assert.NoError(t, err)
 	err = wsc.Connect()
 	assert.NoError(t, err)
