@@ -2138,6 +2138,32 @@ func (_m *Plugin) GetTokenPoolByLocator(ctx context.Context, namespace string, c
 	return r0, r1
 }
 
+// GetTokenPoolByNetworkName provides a mock function with given fields: ctx, namespace, networkName
+func (_m *Plugin) GetTokenPoolByNetworkName(ctx context.Context, namespace string, networkName string) (*core.TokenPool, error) {
+	ret := _m.Called(ctx, namespace, networkName)
+
+	var r0 *core.TokenPool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*core.TokenPool, error)); ok {
+		return rf(ctx, namespace, networkName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenPool); ok {
+		r0 = rf(ctx, namespace, networkName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.TokenPool)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, namespace, networkName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTokenPools provides a mock function with given fields: ctx, namespace, filter
 func (_m *Plugin) GetTokenPools(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenPool, *ffapi.FilterResult, error) {
 	ret := _m.Called(ctx, namespace, filter)

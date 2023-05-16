@@ -24,7 +24,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (ds *definitionSender) PublishTokenPool(ctx context.Context, poolNameOrID, networkName string, waitConfirm bool) (pool *core.TokenPool, err error) {
@@ -37,23 +36,15 @@ func (ds *definitionSender) PublishTokenPool(ctx context.Context, poolNameOrID, 
 		if pool, err = ds.assets.GetTokenPoolByNameOrID(ctx, poolNameOrID); err != nil {
 			return err
 		}
-		if networkName != "" {
-			pool.NetworkName = networkName
+		if pool.Published {
+			return i18n.NewError(ctx, coremsgs.MsgAlreadyPublished)
 		}
-
+		pool.NetworkName = networkName
 		sender = ds.getTokenPoolSender(ctx, pool)
 		if sender.err != nil {
 			return sender.err
 		}
-		if !waitConfirm {
-			if err = sender.sender.Prepare(ctx); err != nil {
-				return err
-			}
-			if err = ds.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
-				return err
-			}
-		}
-		return nil
+		return sender.sender.Prepare(ctx)
 	})
 	if err != nil {
 		return nil, err
@@ -72,8 +63,19 @@ func (ds *definitionSender) getTokenPoolSender(ctx context.Context, pool *core.T
 		return wrapSendError(i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, broadcastName, "token"))
 	}
 
+	if pool.NetworkName == "" {
+		pool.NetworkName = pool.Name
+	}
+
+	// Validate the pool before sending
 	if err := pool.Validate(ctx); err != nil {
 		return wrapSendError(err)
+	}
+	existing, err := ds.database.GetTokenPoolByNetworkName(ctx, pool.Namespace, pool.NetworkName)
+	if err != nil {
+		return wrapSendError(err)
+	} else if existing != nil {
+		return wrapSendError(i18n.NewError(ctx, coremsgs.MsgNetworkNameExists))
 	}
 
 	// Prepare the pool definition to be serialized for broadcast
@@ -81,9 +83,7 @@ func (ds *definitionSender) getTokenPoolSender(ctx context.Context, pool *core.T
 	pool.Name = ""
 	pool.Namespace = ""
 	pool.Published = true
-	if pool.NetworkName == "" {
-		pool.NetworkName = localName
-	}
+	pool.State = core.TokenPoolStatePending
 	definition := &core.TokenPoolDefinition{Pool: pool}
 
 	sender := ds.getSenderDefault(ctx, definition, core.SystemTagDefinePool)
@@ -93,6 +93,7 @@ func (ds *definitionSender) getTokenPoolSender(ctx context.Context, pool *core.T
 
 	pool.Name = localName
 	pool.Namespace = ds.namespace
+	pool.State = core.TokenPoolStateConfirmed
 	return sender
 }
 

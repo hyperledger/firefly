@@ -368,6 +368,9 @@ type iTokenPoolCollection interface {
 	// GetTokenPoolByLocator - Get a token pool by locator
 	GetTokenPoolByLocator(ctx context.Context, namespace, connector, locator string) (*core.TokenPool, error)
 
+	// GetTokenPoolByNetworkName - Get a token pool by network name
+	GetTokenPoolByNetworkName(ctx context.Context, namespace, networkName string) (*core.TokenPool, error)
+
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenPool, *ffapi.FilterResult, error)
 

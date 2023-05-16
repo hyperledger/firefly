@@ -179,6 +179,7 @@ func (s *SQLCommon) InsertOrGetTokenPool(ctx context.Context, pool *core.TokenPo
 	existing, queryErr := s.getTokenPoolPred(ctx, pool.Namespace+":"+pool.Name, sq.And{
 		sq.Eq{"namespace": pool.Namespace},
 		sq.Or{
+			sq.Eq{"id": pool.ID},
 			sq.Eq{"name": pool.Name},
 			sq.Eq{"network_name": pool.NetworkName},
 		},
@@ -300,6 +301,10 @@ func (s *SQLCommon) GetTokenPoolByLocator(ctx context.Context, namespace, connec
 		sq.Eq{"connector": connector},
 		sq.Eq{"locator": locator},
 	})
+}
+
+func (s *SQLCommon) GetTokenPoolByNetworkName(ctx context.Context, namespace, networkName string) (*core.TokenPool, error) {
+	return s.getTokenPoolPred(ctx, networkName, sq.Eq{"namespace": namespace, "network_name": networkName})
 }
 
 func (s *SQLCommon) GetTokenPools(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.TokenPool, fr *ffapi.FilterResult, err error) {

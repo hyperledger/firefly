@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
@@ -60,23 +61,39 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 			return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID)
 		}
 
+		// Check if the pool conflicts with an existing pool
 		existing, err := dh.database.InsertOrGetTokenPool(ctx, pool)
 		if err != nil {
 			return HandlerResult{Action: core.ActionRetry}, err
-		} else if existing == nil {
+		}
+
+		if existing == nil {
+			// No conflict - new pool was inserted successfully
 			break
 		}
 
-		if existing.State == core.TokenPoolStateConfirmed && existing.ID.Equals(pool.ID) && existing.Message.Equals(pool.Message) {
-			// If this is a rewind for a pool that was confirmed, confirm the message now
-			return HandlerResult{Action: core.ActionConfirm, CustomCorrelator: correlator}, nil
+		if existing.State == core.TokenPoolStateConfirmed && existing.ID.Equals(pool.ID) {
+			if existing.Message == nil {
+				// Existing pool is confirmed and unpublished - replace it with the published version
+				pool.Name = existing.Name
+				if err = dh.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
+					return HandlerResult{Action: core.ActionRetry}, err
+				}
+				return HandlerResult{Action: core.ActionConfirm, CustomCorrelator: correlator}, nil
+			} else if existing.Message.Equals(pool.Message) {
+				// Existing pool is confirmed and published - this must be a rewind to confirm the message
+				return HandlerResult{Action: core.ActionConfirm, CustomCorrelator: correlator}, nil
+			}
 		}
+
 		if pool.Published && existing.Name == pool.Name {
-			// Published pools get a unique name generated from the network name
+			// This is a newly broadcast pool, but the local name conflicts - generate a unique name and try again
 			pool.Name = fmt.Sprintf("%s-%d", pool.NetworkName, i)
-		} else {
-			return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "token pool", pool.ID, existing.ID)
+			continue
 		}
+
+		// Some other type of conflict - reject
+		return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "token pool", pool.ID, existing.ID)
 	}
 
 	// Message will remain unconfirmed, but plugin will be notified to activate the pool

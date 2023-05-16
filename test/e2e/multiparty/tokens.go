@@ -414,6 +414,7 @@ func (suite *TokensTestSuite) TestE2ETokenPoolPublish() {
 
 	suite.testState.client1.PublishTokenPool(suite.T(), poolID, networkName, false)
 
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeDefinition)
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypePoolConfirmed, poolID)
 	pools = suite.testState.client2.GetTokenPools(suite.T(), suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))

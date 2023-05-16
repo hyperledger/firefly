@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -211,6 +212,72 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionConfirm, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestHandleDefinitionBroadcastTokenPoolExistingUnpublished(t *testing.T) {
+	sh, bs := newTestDefinitionHandler(t)
+
+	definition := newPoolDefinition()
+	pool := definition.Pool
+	msg, data, err := buildPoolDefinitionMessage(definition)
+	assert.NoError(t, err)
+
+	existing := &core.TokenPool{
+		ID:    pool.ID,
+		State: core.TokenPoolStateConfirmed,
+		Name:  "existing-pool",
+	}
+	newPool := *pool
+	newPool.Name = existing.Name
+	newPool.Connector = "connector1"
+	newPool.Published = true
+	newPool.Message = msg.Header.ID
+	newPool.State = core.TokenPoolStatePending
+
+	mdi := sh.database.(*databasemocks.Plugin)
+	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+		return *p.ID == *pool.ID && p.Message == msg.Header.ID
+	})).Return(existing, nil)
+	mdi.On("UpsertTokenPool", context.Background(), &newPool, database.UpsertOptimizationExisting).Return(nil)
+
+	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm, CustomCorrelator: pool.ID}, action)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestHandleDefinitionBroadcastTokenPoolExistingUnpublishedError(t *testing.T) {
+	sh, bs := newTestDefinitionHandler(t)
+
+	definition := newPoolDefinition()
+	pool := definition.Pool
+	msg, data, err := buildPoolDefinitionMessage(definition)
+	assert.NoError(t, err)
+
+	existing := &core.TokenPool{
+		ID:    pool.ID,
+		State: core.TokenPoolStateConfirmed,
+		Name:  "existing-pool",
+	}
+	newPool := *pool
+	newPool.Name = existing.Name
+	newPool.Connector = "connector1"
+	newPool.Published = true
+	newPool.Message = msg.Header.ID
+	newPool.State = core.TokenPoolStatePending
+
+	mdi := sh.database.(*databasemocks.Plugin)
+	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+		return *p.ID == *pool.ID && p.Message == msg.Header.ID
+	})).Return(existing, nil)
+	mdi.On("UpsertTokenPool", context.Background(), &newPool, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
+
+	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
+	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }

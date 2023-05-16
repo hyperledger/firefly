@@ -58,7 +58,7 @@ type definitionSender struct {
 	contracts           contracts.Manager // optional
 	assets              assets.Manager
 	handler             *definitionHandler
-	tokenBroadcastNames map[string]string // mapping of token connector name => remote name
+	tokenBroadcastNames map[string]string // mapping of token connector name => broadcast name
 }
 
 // Definitions that get processed immediately will create a temporary batch state and then finalize it inline

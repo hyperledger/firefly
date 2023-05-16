@@ -97,6 +97,13 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
+	// Query back the token pool (by network name)
+	poolRead, err = s.GetTokenPoolByNetworkName(ctx, pool.Namespace, pool.NetworkName)
+	assert.NoError(t, err)
+	assert.NotNil(t, poolRead)
+	poolReadJson, _ = json.Marshal(&poolRead)
+	assert.Equal(t, string(poolJson), string(poolReadJson))
+
 	// Query back the token pool (by query filter)
 	fb := database.TokenPoolQueryFactory.NewFilter(ctx)
 	filter := fb.And(
@@ -113,8 +120,14 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(pools[0])
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
-	// Cannot insert again with same name, network name, or locator
+	// Cannot insert again with same ID, name, or network name
 	existing, err := s.InsertOrGetTokenPool(ctx, &core.TokenPool{
+		ID:        pool.ID,
+		Namespace: "ns1",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pool.ID, existing.ID)
+	existing, err = s.InsertOrGetTokenPool(ctx, &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Name:      "my-pool",
 		Namespace: "ns1",
