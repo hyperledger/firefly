@@ -109,7 +109,7 @@ func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 	pool.NetworkName = ""
 
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		hr, err := ds.handler.handleTokenPoolDefinition(ctx, state, pool)
+		hr, err := ds.handler.handleTokenPoolDefinition(ctx, state, pool, "")
 		if err != nil {
 			if innerErr := errors.Unwrap(err); innerErr != nil {
 				return hr, innerErr

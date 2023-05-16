@@ -45,10 +45,10 @@ func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state
 	pool.Message = msg.Header.ID
 	pool.Name = pool.NetworkName
 	pool.Published = true
-	return dh.handleTokenPoolDefinition(ctx, state, pool)
+	return dh.handleTokenPoolDefinition(ctx, state, pool, msg.Header.Author)
 }
 
-func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, state *core.BatchState, pool *core.TokenPool) (HandlerResult, error) {
+func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, state *core.BatchState, pool *core.TokenPool, author string) (HandlerResult, error) {
 	// Set an event correlator, so that if we reject then the sync-async bridge action can know
 	// from the event (without downloading and parsing the msg)
 	correlator := pool.ID
@@ -72,27 +72,21 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 			break
 		}
 
-		if existing.State == core.TokenPoolStateConfirmed && existing.ID.Equals(pool.ID) {
-			if existing.Message == nil {
-				// Existing pool is confirmed and unpublished - replace it with the published version
-				pool.Name = existing.Name
-				if err = dh.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
-					return HandlerResult{Action: core.ActionRetry}, err
-				}
-				return HandlerResult{Action: core.ActionConfirm, CustomCorrelator: correlator}, nil
-			} else if existing.Message.Equals(pool.Message) {
-				// Existing pool is confirmed and published - this must be a rewind to confirm the message
-				return HandlerResult{Action: core.ActionConfirm, CustomCorrelator: correlator}, nil
+		if pool.Published {
+			if existing.ID.Equals(pool.ID) {
+				// ID conflict - check if this matches (or should overwrite) the existing record
+				action, err := dh.reconcilePublishedPool(ctx, existing, pool, author)
+				return HandlerResult{Action: action, CustomCorrelator: correlator}, err
+			}
+
+			if existing.Name == pool.Name {
+				// Local name conflict - generate a unique name and try again
+				pool.Name = fmt.Sprintf("%s-%d", pool.NetworkName, i)
+				continue
 			}
 		}
 
-		if pool.Published && existing.Name == pool.Name {
-			// This is a newly broadcast pool, but the local name conflicts - generate a unique name and try again
-			pool.Name = fmt.Sprintf("%s-%d", pool.NetworkName, i)
-			continue
-		}
-
-		// Some other type of conflict - reject
+		// Any other conflict - reject
 		return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "token pool", pool.ID, existing.ID)
 	}
 
@@ -106,4 +100,33 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 		return nil
 	})
 	return HandlerResult{Action: core.ActionWait, CustomCorrelator: correlator}, nil
+}
+
+func (dh *definitionHandler) reconcilePublishedPool(ctx context.Context, existing, pool *core.TokenPool, author string) (core.MessageAction, error) {
+	if existing.Message.Equals(pool.Message) {
+		if existing.State == core.TokenPoolStateConfirmed {
+			// Pool was previously activated - this must be a rewind to confirm the message
+			return core.ActionConfirm, nil
+		} else {
+			// Pool is still awaiting activation
+			return core.ActionWait, nil
+		}
+	}
+
+	if existing.Message == nil {
+		// Pool was previously unpublished - if it was now published by this node, upsert the new version
+		org, err := dh.identity.GetMultipartyRootOrg(ctx)
+		if err != nil {
+			return core.ActionRetry, err
+		}
+		if org.DID == author {
+			pool.Name = existing.Name
+			if err := dh.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
+				return core.ActionRetry, err
+			}
+			return core.ActionConfirm, nil
+		}
+	}
+
+	return core.ActionReject, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "token pool", pool.ID, existing.ID)
 }
