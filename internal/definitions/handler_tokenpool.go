@@ -58,12 +58,12 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
 	if existingPool, err := dh.database.GetTokenPoolByID(ctx, dh.namespace.Name, pool.ID); err != nil {
 		return HandlerResult{Action: core.ActionRetry}, err
-	} else if existingPool != nil && existingPool.State == core.TokenPoolStateConfirmed {
+	} else if existingPool != nil && existingPool.Active {
 		return HandlerResult{Action: core.ActionConfirm, CustomCorrelator: correlator}, nil
 	}
 
 	// Create the pool in pending state
-	pool.State = core.TokenPoolStatePending
+	pool.Active = false
 	if err := dh.database.UpsertTokenPool(ctx, pool); err != nil {
 		if err == database.IDMismatch {
 			return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIDMismatch, "token pool", pool.ID)

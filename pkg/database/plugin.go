@@ -888,7 +888,7 @@ var TokenPoolQueryFactory = &ffapi.QueryFields{
 	"symbol":          &ffapi.StringField{},
 	"decimals":        &ffapi.Int64Field{},
 	"message":         &ffapi.UUIDField{},
-	"state":           &ffapi.StringField{},
+	"active":          &ffapi.BoolField{},
 	"created":         &ffapi.TimeField{},
 	"connector":       &ffapi.StringField{},
 	"tx.type":         &ffapi.StringField{},

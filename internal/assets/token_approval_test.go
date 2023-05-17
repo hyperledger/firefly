@@ -67,7 +67,7 @@ func TestTokenApprovalSuccess(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -107,7 +107,7 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -148,7 +148,7 @@ func TestApprovalBadConnector(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "bad",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -191,7 +191,7 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 			Name:      "pool1",
 			Locator:   "F1",
 			Connector: "magic-tokens",
-			State:     core.TokenPoolStateConfirmed,
+			Active:    true,
 		},
 	}
 	totalCount := int64(1)
@@ -396,7 +396,7 @@ func TestApprovalUnconfirmedPool(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -426,7 +426,7 @@ func TestApprovalIdentityFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -460,7 +460,7 @@ func TestApprovalFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -536,7 +536,7 @@ func TestApprovalWithBroadcastMessage(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -637,7 +637,7 @@ func TestApprovalWithBroadcastMessageSendFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -732,7 +732,7 @@ func TestApprovalWithPrivateMessage(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -855,7 +855,7 @@ func TestApprovalOperationsFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -893,7 +893,7 @@ func TestTokenApprovalConfirm(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -957,7 +957,7 @@ func TestApprovalWithBroadcastConfirm(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1020,7 +1020,7 @@ func TestApprovalPrepare(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	sender := am.NewApproval(approval)

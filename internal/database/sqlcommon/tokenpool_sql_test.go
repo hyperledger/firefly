@@ -48,7 +48,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		Symbol:    "COIN",
 		Decimals:  18,
 		Message:   fftypes.NewUUID(),
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),

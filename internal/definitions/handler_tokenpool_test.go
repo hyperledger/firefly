@@ -165,7 +165,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
 	existing := &core.TokenPool{
-		State: core.TokenPoolStateConfirmed,
+		Active: true,
 	}
 
 	mdi := sh.database.(*databasemocks.Plugin)

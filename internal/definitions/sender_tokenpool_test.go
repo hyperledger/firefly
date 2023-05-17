@@ -161,7 +161,7 @@ func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 		Locator:   "N1",
 		Symbol:    "COIN",
 		Connector: "connector1",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 	poolAnnouncement := &core.TokenPoolAnnouncement{
 		Pool: pool,

@@ -29,16 +29,6 @@ var (
 	TokenTypeNonFungible = fftypes.FFEnumValue("tokentype", "nonfungible")
 )
 
-// TokenPoolState is the current confirmation state of a token pool
-type TokenPoolState = fftypes.FFEnum
-
-var (
-	// TokenPoolStatePending is a token pool that has been announced but not yet confirmed
-	TokenPoolStatePending = fftypes.FFEnumValue("tokenpoolstate", "pending")
-	// TokenPoolStateConfirmed is a token pool that has been confirmed on chain
-	TokenPoolStateConfirmed = fftypes.FFEnumValue("tokenpoolstate", "confirmed")
-)
-
 type TokenInterfaceFormat = fftypes.FFEnum
 
 var (
@@ -63,7 +53,7 @@ type TokenPool struct {
 	Decimals        int                   `ffstruct:"TokenPool" json:"decimals,omitempty" ffexcludeinput:"true"`
 	Connector       string                `ffstruct:"TokenPool" json:"connector,omitempty"`
 	Message         *fftypes.UUID         `ffstruct:"TokenPool" json:"message,omitempty" ffexcludeinput:"true"`
-	State           TokenPoolState        `ffstruct:"TokenPool" json:"state,omitempty" ffenum:"tokenpoolstate" ffexcludeinput:"true"`
+	Active          bool                  `ffstruct:"TokenPool" json:"active" ffexcludeinput:"true"`
 	Created         *fftypes.FFTime       `ffstruct:"TokenPool" json:"created,omitempty" ffexcludeinput:"true"`
 	Config          fftypes.JSONObject    `ffstruct:"TokenPool" json:"config,omitempty" ffexcludeoutput:"true"` // for REST calls only (not stored)
 	Info            fftypes.JSONObject    `ffstruct:"TokenPool" json:"info,omitempty" ffexcludeinput:"true"`

@@ -87,7 +87,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -213,7 +213,7 @@ func TestMintTokensBadConnector(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "bad",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -253,7 +253,7 @@ func TestMintTokenDefaultPoolSuccess(t *testing.T) {
 		{
 			Name:      "pool1",
 			Connector: "magic-tokens",
-			State:     core.TokenPoolStateConfirmed,
+			Active:    true,
 		},
 	}
 	totalCount := int64(1)
@@ -416,7 +416,7 @@ func TestMintTokensIdentityFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -447,7 +447,7 @@ func TestMintTokensFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -486,7 +486,7 @@ func TestMintTokensOperationFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -520,7 +520,7 @@ func TestMintTokensConfirm(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -564,7 +564,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -602,7 +602,7 @@ func TestBurnTokensIdentityFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -633,7 +633,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -680,7 +680,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -721,7 +721,7 @@ func TestTransferTokensUnconfirmedPool(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -751,7 +751,7 @@ func TestTransferTokensIdentityFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -779,7 +779,7 @@ func TestTransferTokensNoFromOrTo(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -850,7 +850,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -953,7 +953,7 @@ func TestTransferTokensWithBroadcastMessageSendFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1050,7 +1050,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1174,7 +1174,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1237,7 +1237,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1326,7 +1326,7 @@ func TestTransferPrepare(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	sender := am.NewTransfer(transfer)
