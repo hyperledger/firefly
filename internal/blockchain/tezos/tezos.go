@@ -18,6 +18,7 @@ package tezos
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 
 	"github.com/go-resty/resty/v2"
@@ -160,8 +161,11 @@ func (t *Tezos) QueryContract(ctx context.Context, signingKey string, location *
 }
 
 func (t *Tezos) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
-	// TODO: impl
-	return nil, nil
+	parsed, err := t.parseContractLocation(ctx, location)
+	if err != nil {
+		return nil, err
+	}
+	return t.encodeContractLocation(ctx, parsed)
 }
 
 func (e *Tezos) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
@@ -215,6 +219,29 @@ func (t *Tezos) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loca
 func (t *Tezos) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
 	// TODO: impl
 	return nil, nil
+}
+
+func (t *Tezos) parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
+	tezosLocation := Location{}
+	if err := json.Unmarshal(location.Bytes(), &tezosLocation); err != nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, err)
+	}
+	if tezosLocation.Address == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'address' not set")
+	}
+	return &tezosLocation, nil
+}
+
+func (t *Tezos) encodeContractLocation(ctx context.Context, location *Location) (result *fftypes.JSONAny, err error) {
+	location.Address, err = formatTezosAddress(ctx, location.Address)
+	if err != nil {
+		return nil, err
+	}
+	normalized, err := json.Marshal(location)
+	if err == nil {
+		result = fftypes.JSONAnyPtrBytes(normalized)
+	}
+	return result, err
 }
 
 func formatTezosAddress(ctx context.Context, key string) (string, error) {
