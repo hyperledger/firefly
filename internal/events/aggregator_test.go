@@ -1980,7 +1980,7 @@ func TestReadyForDispatchGroupInit(t *testing.T) {
 	bs := newBatchState(&ag.aggregator)
 	org1 := newTestOrg("org1")
 
-	_, _, err := ag.readyForDispatch(ag.ctx, &core.Message{
+	action, _, err := ag.readyForDispatch(ag.ctx, &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Type:      core.MessageTypeGroupInit,
@@ -1988,6 +1988,7 @@ func TestReadyForDispatchGroupInit(t *testing.T) {
 		},
 	}, nil, nil, bs, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
+	assert.Equal(t, core.ActionConfirm, action)
 
 }
 
