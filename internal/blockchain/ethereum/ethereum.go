@@ -203,6 +203,7 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
 	stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)
+	// TODO Note: this would be the issue!
 	if err != nil {
 		return err
 	}

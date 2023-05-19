@@ -232,9 +232,10 @@ func newTestNamespaceManager(t *testing.T, initConfig bool) (*namespaceManager, 
 	InitConfig()
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	nm := &namespaceManager{
-		ctx:       ctx,
-		cancelCtx: cancelCtx,
-		reset:     make(chan bool, 1),
+		ctx:          ctx,
+		cancelCtx:    cancelCtx,
+		reset:        make(chan bool, 1),
+		pluginChange: make(chan bool, 1),
 		reloadConfig: func() error {
 			coreconfig.Reset()
 			InitConfig()
@@ -246,6 +247,12 @@ func newTestNamespaceManager(t *testing.T, initConfig bool) (*namespaceManager, 
 		tokenBroadcastNames: make(map[string]string),
 		nsStartupRetry: &retry.Retry{
 			InitialDelay: 1 * time.Second,
+		},
+		pluginInitRetry: &retry.Retry{
+			InitialDelay: 1 * time.Second,
+		},
+		pluginStartupRetry: &retry.Retry{
+			InitialDelay: 5 * time.Second,
 		},
 	}
 	nmm := mockPluginFactories(nm)
@@ -311,6 +318,7 @@ func TestInitAllPlugins(t *testing.T) {
 	defer cleanup()
 }
 
+// Need to make this async!
 func TestInitComponentsPluginsFail(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
@@ -322,7 +330,8 @@ func TestInitComponentsPluginsFail(t *testing.T) {
 		"basicauth": nm.plugins["basicauth"],
 	}
 	err := nm.initComponents()
-	assert.Regexp(t, "pop", err)
+	assert.NoError(t, err)
+	assert.Equal(t, nm.plugins["basicauth"].state, InitError)
 }
 
 func TestInitDatabaseFail(t *testing.T) {
@@ -331,10 +340,12 @@ func TestInitDatabaseFail(t *testing.T) {
 
 	nmm.mdi.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(map[string]*plugin{
+	errors := nm.initPlugins(map[string]*plugin{
 		"postgres": nm.plugins["postgres"],
 	})
-	assert.EqualError(t, err, "pop")
+	assert.Equal(t, len(errors), 1)
+	assert.EqualError(t, errors[0], "pop")
+	assert.Equal(t, nm.plugins["postgres"].state, InitError)
 }
 
 func TestInitBlockchainFail(t *testing.T) {
@@ -343,10 +354,12 @@ func TestInitBlockchainFail(t *testing.T) {
 
 	nmm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nmm.mmi, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(map[string]*plugin{
+	errors := nm.initPlugins(map[string]*plugin{
 		"ethereum": nm.plugins["ethereum"],
 	})
-	assert.EqualError(t, err, "pop")
+	assert.Equal(t, len(errors), 1)
+	assert.EqualError(t, errors[0], "pop")
+	assert.Equal(t, nm.plugins["ethereum"].state, InitError)
 }
 
 func TestInitDataExchangeFail(t *testing.T) {
@@ -355,10 +368,12 @@ func TestInitDataExchangeFail(t *testing.T) {
 
 	nmm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(map[string]*plugin{
+	errors := nm.initPlugins(map[string]*plugin{
 		"ffdx": nm.plugins["ffdx"],
 	})
-	assert.EqualError(t, err, "pop")
+	assert.Equal(t, len(errors), 1)
+	assert.EqualError(t, errors[0], "pop")
+	assert.Equal(t, nm.plugins["ffdx"].state, InitError)
 }
 
 func TestInitSharedStorageFail(t *testing.T) {
@@ -367,10 +382,12 @@ func TestInitSharedStorageFail(t *testing.T) {
 
 	nmm.mps.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(map[string]*plugin{
+	errors := nm.initPlugins(map[string]*plugin{
 		"ipfs": nm.plugins["ipfs"],
 	})
-	assert.EqualError(t, err, "pop")
+	assert.Equal(t, len(errors), 1)
+	assert.EqualError(t, errors[0], "pop")
+	assert.Equal(t, nm.plugins["ipfs"].state, InitError)
 }
 
 func TestInitTokensFail(t *testing.T) {
@@ -379,10 +396,12 @@ func TestInitTokensFail(t *testing.T) {
 
 	nmm.mti[0].On("Init", mock.Anything, mock.Anything, "erc721", mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(map[string]*plugin{
+	errors := nm.initPlugins(map[string]*plugin{
 		"erc721": nm.plugins["erc721"],
 	})
-	assert.EqualError(t, err, "pop")
+	assert.Equal(t, len(errors), 1)
+	assert.EqualError(t, errors[0], "pop")
+	assert.Equal(t, nm.plugins["erc721"].state, InitError)
 }
 
 func TestInitEventsFail(t *testing.T) {
@@ -392,10 +411,12 @@ func TestInitEventsFail(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	mei.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Maybe()
 	nm.plugins["websockets"].events = mei
-	err := nm.initPlugins(map[string]*plugin{
+	errors := nm.initPlugins(map[string]*plugin{
 		"websockets": nm.plugins["websockets"],
 	})
-	assert.EqualError(t, err, "pop")
+	assert.Equal(t, len(errors), 1)
+	assert.EqualError(t, errors[0], "pop")
+	assert.Equal(t, nm.plugins["websockets"].state, InitError)
 }
 
 func TestInitAuthFail(t *testing.T) {
@@ -404,10 +425,12 @@ func TestInitAuthFail(t *testing.T) {
 
 	nmm.mai.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := nm.initPlugins(map[string]*plugin{
+	errors := nm.initPlugins(map[string]*plugin{
 		"basicauth": nm.plugins["basicauth"],
 	})
-	assert.EqualError(t, err, "pop")
+	assert.Equal(t, len(errors), 1)
+	assert.EqualError(t, errors[0], "pop")
+	assert.Equal(t, nm.plugins["basicauth"].state, InitError)
 }
 
 func TestInitOrchestratorFail(t *testing.T) {
@@ -1666,11 +1689,24 @@ func TestStartBlockchainFail(t *testing.T) {
 	nm.namespaces = nil
 	nmm.mbi.On("Start").Return(fmt.Errorf("pop"))
 
-	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{
+	nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{
 		"ethereum": nm.plugins["ethereum"],
 	})
-	assert.EqualError(t, err, "pop")
+	assert.Eventually(t, func() bool { return nm.plugins["ethereum"].state == StartError }, time.Second*10, time.Microsecond)
+}
 
+func TestStartBlockchainPluginFail(t *testing.T) {
+	nm, nmm, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	nm.namespaces = nil
+	nmm.mbi.On("Start").Return(fmt.Errorf("pop"))
+
+	plugins := map[string]*plugin{
+		"ethereum": nm.plugins["ethereum"],
+	}
+	nm.startPlugins(plugins)
+	assert.Eventually(t, func() bool { return plugins["ethereum"].state == StartError }, time.Second*2, time.Microsecond)
 }
 
 func TestStartDataExchangeFail(t *testing.T) {
@@ -1680,11 +1716,11 @@ func TestStartDataExchangeFail(t *testing.T) {
 	nm.namespaces = nil
 	nmm.mdx.On("Start").Return(fmt.Errorf("pop"))
 
-	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{
+	plugins := map[string]*plugin{
 		"ffdx": nm.plugins["ffdx"],
-	})
-	assert.EqualError(t, err, "pop")
-
+	}
+	nm.startPlugins(plugins)
+	assert.Eventually(t, func() bool { return plugins["ffdx"].state == StartError }, time.Second*2, time.Microsecond)
 }
 
 func TestStartTokensFail(t *testing.T) {
@@ -1694,11 +1730,11 @@ func TestStartTokensFail(t *testing.T) {
 	nm.namespaces = nil
 	nmm.mti[0].On("Start").Return(fmt.Errorf("pop"))
 
-	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{
+	plugins := map[string]*plugin{
 		"erc721": nm.plugins["erc721"],
-	})
-	assert.EqualError(t, err, "pop")
-
+	}
+	nm.startPlugins(plugins)
+	assert.Eventually(t, func() bool { return plugins["erc721"].state == StartError }, time.Second*2, time.Microsecond)
 }
 
 func TestStartOrchestratorFail(t *testing.T) {
@@ -1711,12 +1747,12 @@ func TestStartOrchestratorFail(t *testing.T) {
 		close(nsStarted)
 	})
 
+	nm.plugins = map[string]*plugin{}
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
 	nmm.mo.On("Init").Return(nil)
-	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{})
-	assert.NoError(t, err)
+	nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{})
 
 	<-nsStarted
 }
@@ -1738,8 +1774,8 @@ func TestWaitStop(t *testing.T) {
 	nmm.mo.On("WaitStop").Return()
 	nmm.mae.On("WaitStop").Return()
 
-	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{})
-	assert.NoError(t, err)
+	nm.plugins = map[string]*plugin{}
+	nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{})
 
 	waitInit.Wait()
 
@@ -1747,6 +1783,39 @@ func TestWaitStop(t *testing.T) {
 
 	nmm.mo.AssertExpectations(t)
 	nmm.mae.AssertExpectations(t)
+}
+
+func TestInitComponentsPluginsRetry(t *testing.T) {
+	nm, nmm, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	// This is not ideal as it could introduce flakey tests
+	nmm.mai.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Twice()
+	nmm.mai.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+	nm.plugins = map[string]*plugin{
+		"basicauth": nm.plugins["basicauth"],
+	}
+
+	err := nm.initComponents()
+	assert.NoError(t, err)
+	assert.Eventually(t, func() bool { return nm.plugins["basicauth"].state == Initialized }, time.Second*2, time.Microsecond)
+
+	waitInit := namespaceInitWaiter(t, nmm, []string{"default"})
+
+	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return()
+	nmm.mo.On("Init").Return(nil)
+	nmm.mo.On("Start", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		nm.cancelCtx()
+	})
+
+	err = nm.Start()
+	assert.NoError(t, err)
+
+	waitInit.Wait()
+	assert.Eventually(t, func() bool { return nm.namespaces["default"].started }, time.Second*2, time.Microsecond)
 }
 
 func TestReset(t *testing.T) {
@@ -1953,4 +2022,59 @@ func TestOrchestratorWhileInitializing(t *testing.T) {
 
 	_, err := nm.Orchestrator(nm.ctx, "default", false)
 	assert.Regexp(t, "FF10441", err)
+}
+
+func TestStartPluginsNoOp(t *testing.T) {
+	nm, nmm, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	nm.plugins["ffdx"].state = Started
+
+	plugins := map[string]*plugin{
+		"ffdx": nm.plugins["ffdx"],
+	}
+
+	nm.startPlugins(plugins)
+	nmm.mdx.Mock.AssertNotCalled(t, "Start")
+}
+
+func TestStartNsNoOp(t *testing.T) {
+	nm, nmm, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	nm.namespaces["default"].started = true
+	ns := map[string]*namespace{
+		"default": nm.namespaces["default"],
+	}
+
+	nm.startNamespacesAndPlugins(ns, nil)
+	nmm.mdi.AssertNotCalled(t, "GetNamespace", mock.Anything, "default")
+}
+
+func TestStartNsAfterTimeout(t *testing.T) {
+	nm, nmm, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	ns := map[string]*namespace{
+		"default": nm.namespaces["default"],
+	}
+
+	// Make sure all plugins needed are started!
+	for _, plugin := range nm.plugins {
+		plugin.state = Started
+	}
+
+	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, fmt.Errorf("pop")).Once()
+	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
+	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return(nil)
+	nmm.mo.On("Init").Return(nil)
+	nmm.mo.On("Start", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		nm.cancelCtx()
+	})
+	nm.startNamespacesAndPlugins(ns, nil)
+
+	namespaceInitWaiter(t, nmm, []string{"default"})
+
+	assert.Eventually(t, func() bool { return ns["default"].started }, time.Second*15, time.Microsecond)
 }

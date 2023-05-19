@@ -59,6 +59,30 @@ func (nm *namespaceManager) configFileChanged() {
 	nm.configReloaded(nm.ctx)
 }
 
+func (nm *namespaceManager) retryFailedInitPlugins() {
+	_ = nm.pluginInitRetry.Do(nm.ctx, "namespace manager init plugins", func(attempt int) (retry bool, err error) {
+		nm.nsMux.Lock()
+		pluginsToInit := make(map[string]*plugin)
+		for name, p := range nm.plugins {
+			if p.state == InitError {
+				pluginsToInit[name] = nm.plugins[name]
+			}
+		}
+		if len(pluginsToInit) == 0 {
+			nm.nsMux.Unlock()
+			return false, nil
+		}
+		initErrors := nm.initPlugins(pluginsToInit)
+		nm.nsMux.Unlock()
+		nm.pluginChange <- true
+		if len(initErrors) > 0 {
+			return true, fmt.Errorf("failed to initiliazed plugins, errors: %v", initErrors)
+		}
+
+		return false, nil
+	})
+}
+
 func (nm *namespaceManager) configReloaded(ctx context.Context) {
 
 	// Get Viper to dump the whole new config, with everything resolved across env vars
@@ -95,24 +119,20 @@ func (nm *namespaceManager) configReloaded(ctx context.Context) {
 	// Stop all defunct plugins - now the namespaces using them are all stopped
 	nm.stopDefunctPlugins(ctx, pluginsToStop)
 
+	nm.configReload <- true
+
 	// Update the new lists
 	nm.plugins = availablePlugins
 	nm.namespaces = availableNS
 
 	// Only initialize updated plugins
-	if err = nm.initPlugins(updatedPlugins); err != nil {
-		log.L(ctx).Errorf("Failed to initialize plugins after config reload: %s", err)
-		nm.cancelCtx() // stop the world
-		return
+	initErrors := nm.initPlugins(updatedPlugins)
+	if len(initErrors) > 0 {
+		go nm.retryFailedInitPlugins()
 	}
 
 	// Now we can start all the new things
-	if err = nm.startNamespacesAndPlugins(updatedNamespaces, updatedPlugins); err != nil {
-		log.L(ctx).Errorf("Failed to initialize namespaces after config reload: %s", err)
-		nm.cancelCtx() // stop the world
-		return
-	}
-
+	nm.startNamespacesAndPlugins(updatedNamespaces, updatedPlugins)
 }
 
 func (nm *namespaceManager) stopDefunctNamespaces(ctx context.Context, newPlugins map[string]*plugin, newNamespaces map[string]*namespace) (availableNamespaces, updatedNamespaces map[string]*namespace) {

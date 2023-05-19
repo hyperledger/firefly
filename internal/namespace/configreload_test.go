@@ -24,6 +24,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -920,8 +921,8 @@ func TestConfigReloadInitPluginsFailOnReload(t *testing.T) {
 	InitConfig()
 	viper.SetConfigType("yaml")
 	err = viper.ReadConfig(strings.NewReader(`
-plugins:
-  database:
+plugins: 
+  database: 
   - name: "badness"
     type: "postgres"
 `))
@@ -929,14 +930,10 @@ plugins:
 
 	// Drive the config reload
 	nmm.mdi.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
 	nm.configReloaded(nm.ctx)
 
-	// Should terminate
-	<-nm.ctx.Done()
-	nmm.mae.On("WaitStop").Return(nil).Maybe()
-	nmm.mo.On("WaitStop").Return(nil).Maybe()
-	nm.WaitStop()
-
+	assert.Eventually(t, func() bool { return nm.plugins["badness"] != nil && nm.plugins["badness"].state == InitError }, time.Second*3, time.Microsecond)
 }
 
 func TestConfigReloadInitNamespacesFailOnReload(t *testing.T) {
@@ -983,12 +980,12 @@ namespaces:
 	}).Return(nil, fmt.Errorf("pop"))
 	nm.configReloaded(nm.ctx)
 
-	// Should terminate
-	<-nm.ctx.Done()
 	nmm.mae.On("WaitStop").Return(nil).Maybe()
 	nmm.mo.On("WaitStop").Return(nil).Maybe()
 	nm.WaitStop()
 
+	assert.Eventually(t, func() bool { return !nm.namespaces["default"].started }, time.Second*2, time.Microsecond)
+	assert.Eventually(t, func() bool { return nm.namespaces["default"].initError != "" }, time.Second*2, time.Microsecond)
 }
 
 func TestConfigReloadInitNamespacesFailOnStart(t *testing.T) {
@@ -1045,4 +1042,34 @@ namespaces:
 	nmm.mo.On("WaitStop").Return(nil).Maybe()
 	nm.WaitStop()
 
+	assert.Eventually(t, func() bool { return !nm.namespaces["default"].started }, time.Second*2, time.Microsecond)
+	assert.Eventually(t, func() bool { return nm.namespaces["default"].initError != "" }, time.Second*2, time.Microsecond)
+}
+
+func TestRetryFailedPluginsEmpty(t *testing.T) {
+
+	nm, nmm, cleanup := newTestNamespaceManager(t, false)
+	defer cleanup()
+
+	nm.retryFailedInitPlugins()
+
+	nmm.mdi.Mock.AssertNotCalled(t, "Init")
+}
+
+func TestRetryFailedPluginsAllInitialized(t *testing.T) {
+
+	nm, nmm, cleanup := newTestNamespaceManager(t, false)
+	defer cleanup()
+
+	for _, plugin := range nm.plugins {
+		plugin.state = Initialized
+	}
+
+	nm.retryFailedInitPlugins()
+
+	nmm.mae.Mock.AssertNotCalled(t, "Init")
+	nmm.mai.Mock.AssertNotCalled(t, "Init")
+	nmm.mbi.Mock.AssertNotCalled(t, "Init")
+	nmm.mdi.Mock.AssertNotCalled(t, "Init")
+	nmm.mdx.Mock.AssertNotCalled(t, "Init")
 }

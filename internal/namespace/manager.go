@@ -99,6 +99,10 @@ type namespaceManager struct {
 	tokenBroadcastNames map[string]string
 	watchConfig         func() // indirect from viper.WatchConfig for testing
 	nsStartupRetry      *retry.Retry
+	pluginInitRetry     *retry.Retry
+	pluginStartupRetry  *retry.Retry
+	pluginChange        chan bool
+	configReload        chan bool
 
 	orchestratorFactory  func(ns *core.Namespace, config orchestrator.Config, plugins *orchestrator.Plugins, metrics metrics.Manager, cacheManager cache.Manager) orchestrator.Orchestrator
 	blockchainFactory    func(ctx context.Context, pluginType string) (blockchain.Plugin, error)
@@ -124,6 +128,15 @@ const (
 	pluginCategoryAuth          pluginCategory = "auth"
 )
 
+type PluginState string
+
+const (
+	Initialized PluginState = "initialized"
+	InitError   PluginState = "initerror"
+	Started     PluginState = "started"
+	StartError  PluginState = "starterror"
+)
+
 type plugin struct {
 	name       string
 	category   pluginCategory
@@ -133,6 +146,8 @@ type plugin struct {
 	config     config.Section
 	configHash *fftypes.Bytes32
 	loadTime   *fftypes.FFTime
+	state      PluginState
+	mtx        sync.Mutex
 
 	blockchain    blockchain.Plugin
 	database      database.Plugin
@@ -158,11 +173,12 @@ func stringSlicesEqual(a, b []string) bool {
 
 func NewNamespaceManager() Manager {
 	nm := &namespaceManager{
-		namespaces:          make(map[string]*namespace),
-		metricsEnabled:      config.GetBool(coreconfig.MetricsEnabled),
-		tokenBroadcastNames: make(map[string]string),
-		watchConfig:         viper.WatchConfig,
-
+		namespaces:           make(map[string]*namespace),
+		metricsEnabled:       config.GetBool(coreconfig.MetricsEnabled),
+		tokenBroadcastNames:  make(map[string]string),
+		watchConfig:          viper.WatchConfig,
+		pluginChange:         make(chan bool, 1),
+		configReload:         make(chan bool, 1),
 		orchestratorFactory:  orchestrator.NewOrchestrator,
 		blockchainFactory:    bifactory.GetPlugin,
 		databaseFactory:      difactory.GetPlugin,
@@ -177,7 +193,18 @@ func NewNamespaceManager() Manager {
 			MaximumDelay: config.GetDuration(coreconfig.NamespacesRetryMaxDelay),
 			Factor:       config.GetFloat64(coreconfig.NamespacesRetryFactor),
 		},
+		pluginInitRetry: &retry.Retry{
+			InitialDelay: config.GetDuration(coreconfig.NamespacesRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.NamespacesRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.NamespacesRetryFactor),
+		},
+		pluginStartupRetry: &retry.Retry{
+			InitialDelay: config.GetDuration(coreconfig.NamespacesRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.NamespacesRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.NamespacesRetryFactor),
+		},
 	}
+
 	return nm
 }
 
@@ -210,10 +237,10 @@ func (nm *namespaceManager) initComponents() (err error) {
 	}
 
 	// Initialize all the plugins on initial startup
-	if err = nm.initPlugins(nm.plugins); err != nil {
-		return err
+	errors := nm.initPlugins(nm.plugins)
+	if len(errors) > 0 {
+		go nm.retryFailedInitPlugins()
 	}
-
 	return nm.startConfigListener()
 }
 
@@ -298,16 +325,15 @@ func (nm *namespaceManager) findV1Contract(ns *namespace) *core.MultipartyContra
 //
 // Note that plugins have a separate lifecycle, independent from namespace orchestrators.
 func (nm *namespaceManager) namespaceStarter(ns *namespace) {
-	_ = nm.nsStartupRetry.Do(nm.ctx, fmt.Sprintf("namespace %s", ns.Name), func(attempt int) (retry bool, err error) {
+	_ = nm.nsStartupRetry.Do(ns.ctx, fmt.Sprintf("namespace %s", ns.Name), func(attempt int) (retry bool, err error) {
 		startTime := time.Now()
+
 		err = nm.initAndStartNamespace(ns)
 		// If we started successfully, then all is good
 		if err == nil {
 			log.L(nm.ctx).Infof("Namespace started '%s'", ns.Name)
-			nm.nsMux.Lock()
 			ns.started = true
 			ns.initError = ""
-			nm.nsMux.Unlock()
 
 			// Notify all the event plugins of the start, so they can re-register their subs.
 			for _, ep := range ns.plugins.Events {
@@ -317,14 +343,13 @@ func (nm *namespaceManager) namespaceStarter(ns *namespace) {
 		}
 		// Otherwise the back-off retry should retry indefinitely (until the context is closed, which is
 		// the responsibility of the retry library to check)
-		nm.nsMux.Lock()
 		ns.initError = err.Error()
-		nm.nsMux.Unlock()
 		return true, err
 	})
 }
 
 func (nm *namespaceManager) initAndStartNamespace(ns *namespace) error {
+
 	if err := nm.initNamespace(ns); err != nil {
 		return err
 	}
@@ -389,11 +414,122 @@ func (nm *namespaceManager) stopNamespace(ctx context.Context, ns *namespace) {
 
 func (nm *namespaceManager) Start() error {
 	// On initial start, we need to start everything
-	return nm.startNamespacesAndPlugins(nm.namespaces, nm.plugins)
+	nm.startNamespacesAndPlugins(nm.namespaces, nm.plugins)
+	return nil
 }
 
-func (nm *namespaceManager) startNamespacesAndPlugins(namespacesToStart map[string]*namespace, pluginsToStart map[string]*plugin) error {
+func (nm *namespaceManager) pluginStarter(plugin *plugin) {
+	_ = nm.pluginStartupRetry.Do(plugin.ctx, "Starting plugin", func(attempt int) (retry bool, err error) {
+		plugin.mtx.Lock()
+		defer plugin.mtx.Unlock()
+		log.L(plugin.ctx).Debugf("Starting plugin: %s", plugin.name)
+		// Error whilst initializing so need to retry
+		if plugin.state == InitError {
+			retry = true
+			err = fmt.Errorf("error starting plugin %s, as it's not initiliazed", plugin.name)
+			log.L(nm.ctx).Error(err)
+			return true, err
+		}
+
+		switch plugin.category {
+		case pluginCategoryBlockchain:
+			err = plugin.blockchain.Start()
+		case pluginCategoryDataexchange:
+			err = plugin.dataexchange.Start()
+		case pluginCategoryTokens:
+			err = plugin.tokens.Start()
+		}
+
+		if err != nil {
+			plugin.state = StartError
+			nm.pluginChange <- true
+			return true, err
+		}
+
+		plugin.state = Started
+		nm.pluginChange <- true
+		return false, err
+	})
+}
+
+func (nm *namespaceManager) startPlugins(plugins map[string]*plugin) {
+	for _, plugin := range plugins {
+		// Already started so can continue
+		if plugin.state == Started {
+			continue
+		}
+
+		go nm.pluginStarter(plugin)
+	}
+}
+
+func (nm *namespaceManager) checkNS(namespacesToStart map[string]*namespace) bool {
 	for _, ns := range namespacesToStart {
+		if !ns.started {
+			return false
+		}
+	}
+	return true
+}
+
+// startNamespaceAndPlugins attempts to start namespaces and if some have errored starts a goroutine to retry them
+func (nm *namespaceManager) startNamespacesAndPlugins(namespacesToStart map[string]*namespace, pluginsToStart map[string]*plugin) {
+	if len(namespacesToStart) > 0 {
+		nsToRetry := nm.startNamespacesV2(namespacesToStart)
+		go func() {
+			// timeoutInt := time.Second * 5
+			// timeout := time.After(timeoutInt)
+			for {
+				// Check if all the NS have been started
+				// Could have multiple of these loops running concurrently
+				if nm.checkNS(namespacesToStart) {
+					return
+				}
+
+				// Blocks until a plugin has updated
+				// or context is cancelled
+				// and by tries to start the namespaces again
+				select {
+				case <-nm.ctx.Done():
+					return
+				// case <-nm.configReload:
+				// 	return
+				case <-nm.pluginChange:
+					// When a plugin state has changed, try to start ns that failed
+					nm.nsMux.Lock()
+					nsToRetry = nm.startNamespacesV2(nsToRetry)
+					nm.nsMux.Unlock()
+				// case <-timeout:
+				// 	// When a ns fails to init and it's not caused due to a plugin
+				// 	// for safety we timeout after a few seconds and try to init and start
+				// 	// the ns
+				// 	nm.nsMux.Lock()
+				// 	nsToRetry = nm.startNamespacesV2(nsToRetry)
+				// 	nm.nsMux.Unlock()
+				// 	timeout = time.After(timeoutInt)
+				default:
+				}
+
+				time.Sleep(time.Second * 2)
+			}
+		}()
+	}
+	if len(pluginsToStart) > 0 {
+		nm.startPlugins(pluginsToStart)
+	}
+}
+
+func (nm *namespaceManager) startNamespacesV2(namespacesToStart map[string]*namespace) (nsToRetry map[string]*namespace) {
+	nsToRetry = make(map[string]*namespace)
+	// TODO might be worth copying over
+	// nm.nsMux.Lock()
+	// defer nm.nsMux.Unlock()
+	for name, ns := range namespacesToStart {
+		if ns.started {
+			continue
+		}
+
+		// TODO: need to check this with reviewer
 		// Orchestrators must all be initialized to the point they register their
 		// callbacks on the plugins, before we start the plugins.
 		//
@@ -401,28 +537,30 @@ func (nm *namespaceManager) startNamespacesAndPlugins(namespacesToStart map[stri
 		// That is fine as it will cause the plugin to push back the events,
 		// so they will not be rejected (or held in a retry loop).
 		log.L(nm.ctx).Infof("Initiating start of namespace '%s'", ns.Name)
-		if err := nm.preInitNamespace(ns); err != nil {
-			return err
+		err := nm.preInitNamespace(ns)
+		if err != nil {
+			ns.initError = fmt.Sprintf("Failed to initialise namespaces, err: %s", err.Error())
+			nsToRetry[name] = ns
+			continue
 		}
+
+		// Check if plugins are ready for namespaces
+		// Check if any of the plugins that error starting are needed by this ns
+		erroredNSPlugins := []string{}
+		for _, name := range ns.pluginNames {
+			if nm.plugins[name] != nil && nm.plugins[name].state != Started {
+				erroredNSPlugins = append(erroredNSPlugins, name)
+			}
+		}
+		if len(erroredNSPlugins) > 0 {
+			nsToRetry[name] = ns
+			continue
+		}
+
 		go nm.namespaceStarter(ns)
 	}
-	for _, plugin := range pluginsToStart {
-		switch plugin.category {
-		case pluginCategoryBlockchain:
-			if err := plugin.blockchain.Start(); err != nil {
-				return err
-			}
-		case pluginCategoryDataexchange:
-			if err := plugin.dataexchange.Start(); err != nil {
-				return err
-			}
-		case pluginCategoryTokens:
-			if err := plugin.tokens.Start(); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+
+	return nsToRetry
 }
 
 func (nm *namespaceManager) WaitStop() {
@@ -693,44 +831,45 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context, plugins
 	return nil
 }
 
-func (nm *namespaceManager) initPlugins(pluginsToStart map[string]*plugin) (err error) {
+func (nm *namespaceManager) initPlugins(pluginsToStart map[string]*plugin) (errors []error) {
+
+	errors = []error{}
+
 	for name, p := range nm.plugins {
 		if pluginsToStart[name] == nil {
 			continue
 		}
+		var err error
 		switch p.category {
 		case pluginCategoryDatabase:
-			if err = p.database.Init(p.ctx, p.config); err != nil {
-				return err
+			err = p.database.Init(p.ctx, p.config)
+			if err == nil {
+				p.database.SetHandler(database.GlobalHandler, nm)
 			}
-			p.database.SetHandler(database.GlobalHandler, nm)
+			// Should this be the case that it can stop the whole process?
 		case pluginCategoryBlockchain:
-			if err = p.blockchain.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, p.config, nm.metrics, nm.cacheManager); err != nil {
-				return err
-			}
+			err = p.blockchain.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, p.config, nm.metrics, nm.cacheManager)
 		case pluginCategoryDataexchange:
-			if err = p.dataexchange.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, p.config); err != nil {
-				return err
-			}
+			err = p.dataexchange.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, p.config)
 		case pluginCategorySharedstorage:
-			if err = p.sharedstorage.Init(p.ctx, p.config); err != nil {
-				return err
-			}
+			err = p.sharedstorage.Init(p.ctx, p.config)
 		case pluginCategoryTokens:
-			if err = p.tokens.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, name, p.config); err != nil {
-				return err
-			}
+			err = p.tokens.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, name, p.config)
 		case pluginCategoryEvents:
-			if err = p.events.Init(p.ctx, p.config); err != nil {
-				return err
-			}
+			err = p.events.Init(p.ctx, p.config)
 		case pluginCategoryAuth:
-			if err = p.auth.Init(p.ctx, name, p.config); err != nil {
-				return err
-			}
+			err = p.auth.Init(p.ctx, name, p.config)
 		}
+		if err != nil {
+			errors = append(errors, err)
+			p.state = InitError
+			log.L(nm.ctx).Errorf("Failed initializing plugin %s, error: %s", name, err)
+			continue
+		}
+		p.state = Initialized
 	}
-	return nil
+
+	return errors
 }
 
 func (nm *namespaceManager) loadNamespaces(ctx context.Context, rawConfig fftypes.JSONObject, availablePlugins map[string]*plugin) (newNS map[string]*namespace, err error) {
