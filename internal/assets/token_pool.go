@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, pool *core.TokenPoolInput, waitConfirm bool) (*core.TokenPool, error) {
@@ -154,6 +155,22 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenP
 
 func (am *assetManager) GetTokenPools(ctx context.Context, filter ffapi.AndFilter) ([]*core.TokenPool, *ffapi.FilterResult, error) {
 	return am.database.GetTokenPools(ctx, am.namespace, filter)
+}
+
+func (am *assetManager) GetTokenPoolByLocator(ctx context.Context, connector, poolLocator string) (*core.TokenPool, error) {
+	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
+		return nil, err
+	}
+
+	fb := database.TokenPoolQueryFactory.NewFilter(ctx)
+	results, _, err := am.database.GetTokenPools(ctx, am.namespace, fb.And(
+		fb.Eq("connector", connector),
+		fb.Eq("locator", poolLocator),
+	))
+	if err != nil || len(results) == 0 {
+		return nil, err
+	}
+	return results[0], nil
 }
 
 func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error) {

@@ -282,6 +282,32 @@ func (_m *Manager) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*cor
 	return r0, r1
 }
 
+// GetTokenPoolByLocator provides a mock function with given fields: ctx, connector, poolLocator
+func (_m *Manager) GetTokenPoolByLocator(ctx context.Context, connector string, poolLocator string) (*core.TokenPool, error) {
+	ret := _m.Called(ctx, connector, poolLocator)
+
+	var r0 *core.TokenPool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*core.TokenPool, error)); ok {
+		return rf(ctx, connector, poolLocator)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenPool); ok {
+		r0 = rf(ctx, connector, poolLocator)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.TokenPool)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, connector, poolLocator)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTokenPoolByNameOrID provides a mock function with given fields: ctx, poolNameOrID
 func (_m *Manager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error) {
 	ret := _m.Called(ctx, poolNameOrID)

@@ -80,10 +80,9 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 
 func (em *eventManager) getPoolByIDOrLocator(ctx context.Context, id *fftypes.UUID, connector, locator string) (*core.TokenPool, error) {
 	if id != nil {
-		// TODO: should cache this lookup for efficiency
 		return em.assets.GetTokenPoolByID(ctx, id)
 	}
-	return em.database.GetTokenPoolByLocator(ctx, em.namespace.Name, connector, locator)
+	return em.assets.GetTokenPoolByLocator(ctx, connector, locator)
 }
 
 func (em *eventManager) loadExisting(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {

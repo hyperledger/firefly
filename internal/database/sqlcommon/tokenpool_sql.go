@@ -295,14 +295,6 @@ func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, namespace string, id *
 	return s.getTokenPoolPred(ctx, id.String(), sq.Eq{"id": id, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetTokenPoolByLocator(ctx context.Context, namespace, connector, locator string) (*core.TokenPool, error) {
-	return s.getTokenPoolPred(ctx, locator, sq.And{
-		sq.Eq{"namespace": namespace},
-		sq.Eq{"connector": connector},
-		sq.Eq{"locator": locator},
-	})
-}
-
 func (s *SQLCommon) GetTokenPoolByNetworkName(ctx context.Context, namespace, networkName string) (*core.TokenPool, error) {
 	return s.getTokenPoolPred(ctx, networkName, sq.Eq{"namespace": namespace, "network_name": networkName})
 }

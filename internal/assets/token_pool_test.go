@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -743,6 +744,67 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 
 	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByLocator(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy(func(filter ffapi.AndFilter) bool {
+		f, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Len(t, f.Children, 2)
+		assert.Equal(t, "connector", f.Children[0].Field)
+		val, _ := f.Children[0].Value.Value()
+		assert.Equal(t, "magic-tokens", val)
+		assert.Equal(t, "locator", f.Children[1].Field)
+		val, _ = f.Children[1].Value.Value()
+		assert.Equal(t, "abc", val)
+		return true
+	})).Return([]*core.TokenPool{{}}, nil, nil)
+	result, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByLocatorBadPlugin(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	am.tokens = make(map[string]tokens.Plugin)
+	mdi := am.database.(*databasemocks.Plugin)
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.Regexp(t, "FF10272", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByLocatorNotFound(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.Anything).Return([]*core.TokenPool{}, nil, nil)
+	result, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.NoError(t, err)
+	assert.Nil(t, result)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByLocatorFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
 }
 
 func TestGetTokenPoolByID(t *testing.T) {

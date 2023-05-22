@@ -90,13 +90,6 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
-	// Query back the token pool (by locator)
-	poolRead, err = s.GetTokenPoolByLocator(ctx, "ns1", pool.Connector, pool.Locator)
-	assert.NoError(t, err)
-	assert.NotNil(t, poolRead)
-	poolReadJson, _ = json.Marshal(&poolRead)
-	assert.Equal(t, string(poolJson), string(poolReadJson))
-
 	// Query back the token pool (by network name)
 	poolRead, err = s.GetTokenPoolByNetworkName(ctx, pool.Namespace, pool.NetworkName)
 	assert.NoError(t, err)
