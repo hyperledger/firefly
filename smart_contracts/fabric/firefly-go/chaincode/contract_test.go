@@ -39,6 +39,6 @@ func TestPinBatch(t *testing.T) {
 	transactionContext.GetClientIdentityReturns(clientIdentity)
 
 	batchPin := chaincode.SmartContract{}
-	err := batchPin.PinBatch(transactionContext, "test-namespace", "test-uuid", "test-hash", "test-ref", []string{"test-context"})
+	err := batchPin.PinBatch(transactionContext, "test-uuid", "test-hash", "test-ref", []string{"test-context"})
 	require.NoError(t, err)
 }

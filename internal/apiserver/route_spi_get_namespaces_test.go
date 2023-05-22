@@ -32,8 +32,8 @@ func TestSPIGetNamespaces(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mgr.On("GetNamespaces", mock.Anything, mock.Anything).
-		Return([]*core.Namespace{}, nil, nil)
+	mgr.On("GetNamespaces", mock.Anything, false).
+		Return([]*core.NamespaceWithInitStatus{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

@@ -124,7 +124,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 			Tag: core.SystemTagDefineFFI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.RunFinalize(context.Background())
 	assert.NoError(t, err)
@@ -152,7 +152,7 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 			Tag: core.SystemTagDefineFFI,
 		},
 	}, core.DataArray{}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
@@ -231,7 +231,7 @@ func TestHandleFFIBroadcastValidateFail(t *testing.T) {
 			Tag: core.SystemTagDefineFFI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
@@ -253,7 +253,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 			Tag: core.SystemTagDefineFFI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 	bs.assertNoFinalizers()
 
@@ -276,7 +276,7 @@ func TestHandleFFIBroadcastResolveFail(t *testing.T) {
 			Tag: core.SystemTagDefineFFI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Regexp(t, "pop", err)
 	bs.assertNoFinalizers()
 
@@ -303,7 +303,7 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 			Tag: core.SystemTagDefineContractAPI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.RunFinalize(context.Background())
 	assert.NoError(t, err)
@@ -323,7 +323,7 @@ func TestHandleContractAPIBadPayload(t *testing.T) {
 			Tag: core.SystemTagDefineContractAPI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Regexp(t, "FF10400", err)
 }
 
@@ -346,7 +346,7 @@ func TestHandleContractAPIIDMismatch(t *testing.T) {
 			Tag: core.SystemTagDefineContractAPI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Regexp(t, "FF10404", err)
 
 	mdi.AssertExpectations(t)
@@ -383,7 +383,7 @@ func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
 			Tag: core.SystemTagDefineContractAPI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
@@ -406,7 +406,7 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 			Tag: core.SystemTagDefineContractAPI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	bs.assertNoFinalizers()
@@ -431,7 +431,7 @@ func TestHandleContractAPIBroadcastResolveFail(t *testing.T) {
 			Tag: core.SystemTagDefineContractAPI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Regexp(t, "pop", err)
 
 	bs.assertNoFinalizers()

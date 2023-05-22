@@ -78,6 +78,9 @@ func (op *Operation) IsTokenOperation() bool {
 type OpStatus string
 
 const (
+	// OpStatusInitialized indicates the operation has been initialized, but successful confirmation of submission to the
+	// relevant plugin has not yet been received
+	OpStatusInitialized OpStatus = "Initialized"
 	// OpStatusPending indicates the operation has been submitted, but is not yet confirmed as successful or failed
 	OpStatusPending OpStatus = "Pending"
 	// OpStatusSucceeded the infrastructure runtime has returned success for the operation
@@ -90,7 +93,8 @@ type Named interface {
 	Name() string
 }
 
-// NewOperation creates a new operation in a transaction
+// NewOperation creates a new operation in a transaction. It always starts in "Initialized" state
+// and only moves to "Pending" when successful submission to the respective plugin has been confirmed.
 func NewOperation(plugin Named, namespace string, tx *fftypes.UUID, opType OpType) *Operation {
 	now := fftypes.Now()
 	return &Operation{
@@ -99,7 +103,7 @@ func NewOperation(plugin Named, namespace string, tx *fftypes.UUID, opType OpTyp
 		Plugin:      plugin.Name(),
 		Transaction: tx,
 		Type:        opType,
-		Status:      OpStatusPending,
+		Status:      OpStatusInitialized,
 		Created:     now,
 		Updated:     now,
 	}

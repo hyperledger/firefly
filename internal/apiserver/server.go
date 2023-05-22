@@ -30,6 +30,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/httpserver"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -134,7 +135,8 @@ func (as *apiServer) getPublicURL(conf config.Section, pathPrefix string) string
 	publicURL := conf.GetString(httpserver.HTTPConfPublicURL)
 	if publicURL == "" {
 		proto := "https"
-		if !conf.GetBool(httpserver.HTTPConfTLSEnabled) {
+		tlsSection := conf.SubSection("tls")
+		if !tlsSection.GetBool(fftls.HTTPConfTLSEnabled) {
 			proto = "http"
 		}
 		publicURL = fmt.Sprintf("%s://%s:%s", proto, conf.GetString(httpserver.HTTPConfAddress), conf.GetString(httpserver.HTTPConfPort))
@@ -188,7 +190,7 @@ func (as *apiServer) swaggerGenerator(routes []*ffapi.Route, apiBaseURL string) 
 func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
 	return func(req *http.Request) (*openapi3.T, error) {
 		vars := mux.Vars(req)
-		or, err := mgr.Orchestrator(req.Context(), vars["ns"])
+		or, err := mgr.Orchestrator(req.Context(), vars["ns"], false)
 		if err != nil {
 			return nil, err
 		}
@@ -213,11 +215,11 @@ func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL 
 func getOrchestrator(ctx context.Context, mgr namespace.Manager, tag string, r *ffapi.APIRequest) (or orchestrator.Orchestrator, err error) {
 	switch tag {
 	case routeTagDefaultNamespace:
-		return mgr.Orchestrator(ctx, config.GetString(coreconfig.NamespacesDefault))
+		return mgr.Orchestrator(ctx, config.GetString(coreconfig.NamespacesDefault), false)
 	case routeTagNonDefaultNamespace:
 		vars := mux.Vars(r.Req)
 		if ns, ok := vars["ns"]; ok {
-			return mgr.Orchestrator(ctx, ns)
+			return mgr.Orchestrator(ctx, ns, false)
 		}
 	case routeTagGlobal:
 		return nil, nil

@@ -31,6 +31,7 @@ type ResolveKeyIntent string
 
 const (
 	ResolveKeyIntentSign   ResolveKeyIntent = "sign"   // used everywhere we accept an signing action (messages, tokens, custom invoke)
+	ResolveKeyIntentQuery  ResolveKeyIntent = "query"  // used to perform a query to the blockchain, to run logic in order to query blockchain state
 	ResolveKeyIntentLookup ResolveKeyIntent = "lookup" // used only on the /api/v1/resolve API
 )
 
@@ -79,19 +80,23 @@ type Plugin interface {
 	// DeployContract submits a new transaction to deploy a new instance of a smart contract
 	DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error
 
+	// ValidateInvokeRequest performs pre-flight validation of a method call, e.g. to check that parameter formats are correct
+	ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error
+
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
-	InvokeContract(ctx context.Context, nsOpID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) error
+	InvokeContract(ctx context.Context, nsOpID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *BatchPin) error
 
 	// QueryContract executes a method via custom on-chain logic and returns the result
-	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error)
+	QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error)
 
 	// AddContractListener adds a new subscription to a user-specified contract and event
-	AddContractListener(ctx context.Context, subscription *core.ContractListenerInput) error
+	AddContractListener(ctx context.Context, subscription *core.ContractListener) error
 
 	// DeleteContractListener deletes a previously-created subscription
-	DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error
+	DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error
 
-	GetContractListenerStatus(ctx context.Context, subID string) (interface{}, error)
+	// GetContractListenerStatus gets the status of a contract listener from the backend connector. Returns false if not found
+	GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (bool, interface{}, error)
 
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
 	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)
@@ -100,7 +105,7 @@ type Plugin interface {
 	GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error)
 
 	// NormalizeContractLocation validates and normalizes the formatting of the location JSON
-	NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (*fftypes.JSONAny, error)
+	NormalizeContractLocation(ctx context.Context, ntype NormalizeType, location *fftypes.JSONAny) (*fftypes.JSONAny, error)
 
 	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
 	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string
@@ -115,7 +120,7 @@ type Plugin interface {
 	GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error)
 
 	// AddFireflySubscription creates a FireFly BatchPin subscription for the provided location
-	AddFireflySubscription(ctx context.Context, namespace *core.Namespace, location *fftypes.JSONAny, firstEvent string) (subID string, err error)
+	AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *MultipartyContract) (subID string, err error)
 
 	// RemoveFireFlySubscription removes the provided FireFly subscription
 	RemoveFireflySubscription(ctx context.Context, subID string)
@@ -123,6 +128,13 @@ type Plugin interface {
 	// Get the latest status of the given transaction
 	GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error)
 }
+
+type NormalizeType int
+
+const (
+	NormalizeCall NormalizeType = iota
+	NormalizeListener
+)
 
 const FireFlyActionPrefix = "firefly:"
 
@@ -152,11 +164,21 @@ type Callbacks interface {
 type Capabilities struct {
 }
 
+// MultipartyContract represents the location and configuration of a FireFly multiparty contract for batch pinning of messages
+type MultipartyContract struct {
+	Location   *fftypes.JSONAny
+	FirstEvent string
+	Options    *fftypes.JSONAny
+}
+
 // BatchPin is the set of data pinned to the blockchain for a batch - whether it's private or broadcast.
 type BatchPin struct {
 
-	// TransactionID is the firefly transaction ID allocated before transaction submission for correlation with events (it's a UUID so no leakage)
+	// TransactionID is the FireFly transaction ID allocated before transaction submission for correlation with events (it's a UUID so no leakage)
 	TransactionID *fftypes.UUID
+
+	// TransactionType is the type of the FireFly transaction that initiated this BatchPin
+	TransactionType core.TransactionType
 
 	// BatchID is the id of the batch - not strictly required, but writing this in plain text to the blockchain makes for easy human correlation on-chain/off-chain (it's a UUID so no leakage)
 	BatchID *fftypes.UUID

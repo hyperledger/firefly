@@ -9,7 +9,7 @@ on:
 
 jobs:
   e2e-test:
-    runs-on: ubuntu-latest
+    runs-on: firefly-ubuntu-latest
     strategy:
       matrix:
         test-suite:
@@ -19,27 +19,26 @@ jobs:
             TestEthereumMultipartyTokensRemoteNameE2ESuite,
             TestFabricGatewayE2ESuite,
             TestFabricMultipartyE2ESuite,
+            TestFabricMultipartyCustomPinE2ESuite,
           ]
         stack-type: [ethereum, fabric]
         blockchain-node: [geth, besu, fabric]
         database-type: [sqlite3, postgres]
         exclude:
           - test-suite: TestEthereumGatewayE2ESuite
-            blockchain-node: fabric
+            stack-type: fabric
           - test-suite: TestEthereumMultipartyE2ESuite
-            blockchain-node: fabric
+            stack-type: fabric
           - test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
-            blockchain-node: fabric
+            stack-type: fabric
           - test-suite: TestEthereumMultipartyTokensRemoteNameE2ESuite
-            blockchain-node: fabric
+            stack-type: fabric
           - test-suite: TestFabricGatewayE2ESuite
-            blockchain-node: geth
-          - test-suite: TestFabricGatewayE2ESuite
-            blockchain-node: besu
+            stack-type: ethereum
           - test-suite: TestFabricMultipartyE2ESuite
-            blockchain-node: geth
-          - test-suite: TestFabricMultipartyE2ESuite
-            blockchain-node: besu
+            stack-type: ethereum
+          - test-suite: TestFabricMultipartyCustomPinE2ESuite
+            stack-type: ethereum
           - stack-type: ethereum
             blockchain-node: fabric
           - stack-type: fabric
@@ -53,7 +52,11 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
+<<<<<<< HEAD
         uses: actions/setup-go@v4
+=======
+        uses: actions/setup-go@v3
+>>>>>>> 3556e135839b753b8be54a5861c11719ba88c2f2
         with:
           go-version: 1.18
 
@@ -76,14 +79,14 @@ jobs:
         run: ./test/e2e/run.sh
 
       - name: Archive container logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-provider }}-${{ matrix.database-type }}
+          name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-node }}-${{ matrix.database-type }}
           path: containerlogs/logs.txt
 
   migration-test:
-    runs-on: ubuntu-latest
+    runs-on: firefly-ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -112,7 +115,7 @@ jobs:
         run: ./test/e2e/run.sh
 
       - name: Archive container logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: container-logs-TestEthereumV1MigrationE2ESuite-geth-postgres

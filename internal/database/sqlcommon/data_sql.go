@@ -19,6 +19,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly-common/pkg/dbsql"
@@ -43,6 +44,7 @@ var (
 		"blob_hash",
 		"blob_public",
 		"blob_name",
+		"blob_path",
 		"blob_size",
 		"public",
 		"value_size",
@@ -55,6 +57,7 @@ var (
 		"blob.hash":        "blob_hash",
 		"blob.public":      "blob_public",
 		"blob.name":        "blob_name",
+		"blob.path":        "blob_path",
 		"blob.size":        "blob_size",
 	}
 )
@@ -70,6 +73,7 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *dbsql.TXWrapper, 
 	if blob == nil {
 		blob = &core.BlobRef{}
 	}
+	data.CalcPath()
 	return s.UpdateTx(ctx, dataTable, tx,
 		sq.Update(dataTable).
 			Set("validator", string(data.Validator)).
@@ -80,6 +84,7 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *dbsql.TXWrapper, 
 			Set("blob_hash", blob.Hash).
 			Set("blob_public", blob.Public).
 			Set("blob_name", blob.Name).
+			Set("blob_path", blob.Path).
 			Set("blob_size", blob.Size).
 			Set("public", data.Public).
 			Set("value_size", data.ValueSize).
@@ -103,6 +108,7 @@ func (s *SQLCommon) setDataInsertValues(query sq.InsertBuilder, data *core.Data)
 	if blob == nil {
 		blob = &core.BlobRef{}
 	}
+	data.CalcPath()
 	return query.Values(
 		data.ID,
 		string(data.Validator),
@@ -114,6 +120,7 @@ func (s *SQLCommon) setDataInsertValues(query sq.InsertBuilder, data *core.Data)
 		blob.Hash,
 		blob.Public,
 		blob.Name,
+		blob.Path,
 		blob.Size,
 		data.Public,
 		data.ValueSize,
@@ -239,6 +246,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue boo
 		&data.Blob.Hash,
 		&data.Blob.Public,
 		&data.Blob.Name,
+		&data.Blob.Path,
 		&data.Blob.Size,
 		&data.Public,
 		&data.ValueSize,
@@ -347,6 +355,48 @@ func (s *SQLCommon) GetDataRefs(ctx context.Context, namespace string, filter ff
 	}
 
 	return refs, s.QueryRes(ctx, dataTable, tx, fop, fi), err
+
+}
+
+func (s *SQLCommon) GetDataSubPaths(ctx context.Context, namespace, path string) (subPaths []string, err error) {
+
+	// Find all distinct path entries, which are sub-paths of the specified path
+	searchPath := strings.Trim(path, "/")
+	if searchPath == "" {
+		searchPath = "/"
+	} else {
+		searchPath = "/" + searchPath + "/"
+	}
+	sel := sq.Select("blob_path").From(dataTable).Distinct().Where(
+		sq.And{
+			sq.Eq{"namespace": namespace},
+			sq.Like{
+				"blob_path": searchPath + "%",
+			},
+			sq.NotLike{
+				"blob_path": searchPath + "%/%",
+			},
+		},
+	).OrderBy("blob_path")
+	rows, _, err := s.Query(ctx, dataTable, sel)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	paths := []string{}
+	for rows.Next() {
+		var path string
+		err := rows.Scan(
+			&path,
+		)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, dataTable)
+		}
+		paths = append(paths, path)
+	}
+
+	return paths, err
 
 }
 

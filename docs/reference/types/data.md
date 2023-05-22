@@ -77,6 +77,7 @@ nav_order: 17
 | `hash` | The hash of the binary blob data | `Bytes32` |
 | `size` | The size of the binary data | `int64` |
 | `name` | The name field from the metadata attached to the blob, commonly used as a path/filename, and indexed for search | `string` |
+| `path` | If a name is specified, this field stores the '/' prefixed and separated path extracted from the full name | `string` |
 | `public` | If the blob data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.) | `string` |
 
 

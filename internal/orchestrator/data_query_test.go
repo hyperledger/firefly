@@ -260,12 +260,7 @@ func TestGetMessageTransactionOk(t *testing.T) {
 			Namespace: "ns",
 			TxType:    core.TransactionTypeBatchPin,
 		},
-	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, "ns", batchID).Return(&core.BatchPersisted{
-		TX: core.TransactionRef{
-			Type: core.TransactionTypeBatchPin,
-			ID:   txID,
-		},
+		TransactionID: txID,
 	}, nil)
 	or.mth.On("GetTransactionByIDCached", mock.Anything, txID).Return(&core.Transaction{
 		ID: txID,
@@ -276,69 +271,23 @@ func TestGetMessageTransactionOk(t *testing.T) {
 	or.mdi.AssertExpectations(t)
 }
 
-func TestGetMessageTransactionNoBatchTX(t *testing.T) {
+func TestGetMessageTransactionLookupErr(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	msgID := fftypes.NewUUID()
 	batchID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
 	or.mdi.On("GetMessageByID", mock.Anything, "ns", msgID).Return(&core.Message{
 		BatchID: batchID,
 		Header: core.MessageHeader{
 			Namespace: "ns",
 			TxType:    core.TransactionTypeBatchPin,
 		},
+		TransactionID: txID,
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, "ns", batchID).Return(&core.BatchPersisted{}, nil)
-	_, err := or.GetMessageTransaction(context.Background(), msgID.String())
-	assert.Regexp(t, "FF10210", err)
-}
-
-func TestGetMessageTransactionNoBatch(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	msgID := fftypes.NewUUID()
-	batchID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, "ns", msgID).Return(&core.Message{
-		BatchID: batchID,
-		Header: core.MessageHeader{
-			Namespace: "ns",
-			TxType:    core.TransactionTypeBatchPin,
-		},
-	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, "ns", batchID).Return(nil, nil)
-	_, err := or.GetMessageTransaction(context.Background(), msgID.String())
-	assert.Regexp(t, "FF10209", err)
-}
-
-func TestGetMessageTransactionBatchLookupErr(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	msgID := fftypes.NewUUID()
-	batchID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, "ns", msgID).Return(&core.Message{
-		BatchID: batchID,
-		Header: core.MessageHeader{
-			Namespace: "ns",
-			TxType:    core.TransactionTypeBatchPin,
-		},
-	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, "ns", batchID).Return(nil, fmt.Errorf("pop"))
+	or.mth.On("GetTransactionByIDCached", mock.Anything, txID).Return(nil, fmt.Errorf("pop"))
 	_, err := or.GetMessageTransaction(context.Background(), msgID.String())
 	assert.Regexp(t, "pop", err)
-}
-
-func TestGetMessageTransactionNoBatchID(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	msgID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, "ns", msgID).Return(&core.Message{
-		Header: core.MessageHeader{
-			Namespace: "ns",
-			TxType:    core.TransactionTypeBatchPin,
-		},
-	}, nil)
-	_, err := or.GetMessageTransaction(context.Background(), msgID.String())
-	assert.Regexp(t, "FF10208", err)
 }
 
 func TestGetMessageTransactionNoTx(t *testing.T) {
@@ -351,7 +300,7 @@ func TestGetMessageTransactionNoTx(t *testing.T) {
 		},
 	}, nil)
 	_, err := or.GetMessageTransaction(context.Background(), msgID.String())
-	assert.Regexp(t, "FF10207", err)
+	assert.Regexp(t, "FF10210", err)
 }
 
 func TestGetMessageTransactionMessageNotFound(t *testing.T) {
@@ -486,6 +435,14 @@ func TestGetData(t *testing.T) {
 	fb := database.DataQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetData(context.Background(), f)
+	assert.NoError(t, err)
+}
+
+func TestGetDataSubPaths(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.mdi.On("GetDataSubPaths", mock.Anything, "ns", "/parent").Return([]string{}, nil)
+	_, err := or.GetDataSubPaths(context.Background(), "/parent")
 	assert.NoError(t, err)
 }
 

@@ -224,26 +224,10 @@ func (or *orchestrator) getMessageTransactionID(ctx context.Context, id string) 
 	if err != nil || msg == nil {
 		return nil, err
 	}
-	var txID *fftypes.UUID
-	if msg.Header.TxType == core.TransactionTypeBatchPin {
-		if msg.BatchID == nil {
-			return nil, i18n.NewError(ctx, coremsgs.MsgBatchNotSet)
-		}
-		batch, err := or.database().GetBatchByID(ctx, or.namespace.Name, msg.BatchID)
-		if err != nil {
-			return nil, err
-		}
-		if batch == nil {
-			return nil, i18n.NewError(ctx, coremsgs.MsgBatchNotFound, msg.BatchID)
-		}
-		txID = batch.TX.ID
-		if txID == nil {
-			return nil, i18n.NewError(ctx, coremsgs.MsgBatchTXNotSet, msg.BatchID)
-		}
-	} else {
-		return nil, i18n.NewError(ctx, coremsgs.MsgNoTransaction)
+	if msg.TransactionID == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgMessageTXNotSet, msg.Header.ID)
 	}
-	return txID, nil
+	return msg.TransactionID, nil
 }
 
 func (or *orchestrator) GetMessageTransaction(ctx context.Context, id string) (*core.Transaction, error) {
@@ -277,6 +261,10 @@ func (or *orchestrator) GetBatches(ctx context.Context, filter ffapi.AndFilter) 
 
 func (or *orchestrator) GetData(ctx context.Context, filter ffapi.AndFilter) (core.DataArray, *ffapi.FilterResult, error) {
 	return or.database().GetData(ctx, or.namespace.Name, filter)
+}
+
+func (or *orchestrator) GetDataSubPaths(ctx context.Context, path string) ([]string, error) {
+	return or.database().GetDataSubPaths(ctx, or.namespace.Name, path)
 }
 
 func (or *orchestrator) GetMessagesForData(ctx context.Context, id string, filter ffapi.AndFilter) ([]*core.Message, *ffapi.FilterResult, error) {

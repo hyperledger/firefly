@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -61,7 +62,7 @@ func TestDeliveryRequestOk(t *testing.T) {
 		},
 	}
 
-	cbs := se.callbacks["ns1"].(*eventsmocks.Callbacks)
+	cbs := se.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
 	cbs.On("DeliveryResponse", se.connID, mock.Anything).Return(nil)
 
@@ -100,7 +101,7 @@ func TestDeliveryRequestFail(t *testing.T) {
 	se, cancel := newTestEvents(t)
 	defer cancel()
 
-	cbs := se.callbacks["ns1"].(*eventsmocks.Callbacks)
+	cbs := se.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
 
 	err := se.AddListener("ns1", func(event *core.EventDelivery) error {
@@ -124,10 +125,17 @@ func TestAddListenerFail(t *testing.T) {
 	se, cancel := newTestEvents(t)
 	defer cancel()
 
-	cbs := se.callbacks["ns1"].(*eventsmocks.Callbacks)
+	cbs := se.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := se.AddListener("ns1", func(event *core.EventDelivery) error { return nil })
 	assert.EqualError(t, err, "pop")
 
+}
+
+func TestNamespaceRestarted(t *testing.T) {
+	se, cancel := newTestEvents(t)
+	defer cancel()
+
+	se.NamespaceRestarted("ns1", time.Now())
 }

@@ -1,0 +1,7 @@
+go 1.18
+
+use (
+	.
+	./smart_contracts/fabric/firefly-go
+	./smart_contracts/fabric/custompin-sample
+)

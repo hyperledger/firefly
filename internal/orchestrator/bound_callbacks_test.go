@@ -17,23 +17,51 @@
 package orchestrator
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestBoundCallbacks(t *testing.T) {
+func newTestBoundCallbacks(t *testing.T) (*eventmocks.EventManager, *sharedstoragemocks.Plugin, *operationmocks.Manager, *boundCallbacks) {
+
 	mei := &eventmocks.EventManager{}
 	mss := &sharedstoragemocks.Plugin{}
 	mom := &operationmocks.Manager{}
-	bc := boundCallbacks{ei: mei, ss: mss, om: mom}
+	bc := &boundCallbacks{
+		o: &orchestrator{
+			ctx:       context.Background(),
+			namespace: &core.Namespace{Name: "ns1"},
+			started:   true,
+			events:    mei,
+			plugins: &Plugins{
+				SharedStorage: SharedStoragePlugin{
+					Plugin: mss,
+				},
+			},
+			operations: mom,
+		},
+	}
+	return mei, mss, mom, bc
+}
 
+func TestBoundCallbacks(t *testing.T) {
+
+	mei, mss, mom, bc := newTestBoundCallbacks(t)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mti := &tokenmocks.Plugin{}
 	info := fftypes.JSONObject{"hello": "world"}
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
@@ -54,10 +82,72 @@ func TestBoundCallbacks(t *testing.T) {
 	_, err := bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
 	assert.EqualError(t, err, "pop")
 
-	mei.On("SharedStorageBlobDownloaded", mss, *hash, int64(12345), "payload1", dataID).Return()
-	bc.SharedStorageBlobDownloaded(*hash, 12345, "payload1", dataID)
+	mei.On("SharedStorageBlobDownloaded", mss, *hash, int64(12345), "payload1", dataID).Return(nil)
+	err = bc.SharedStorageBlobDownloaded(*hash, 12345, "payload1", dataID)
+	assert.NoError(t, err)
+
+	mei.On("BatchPinComplete", "ns1", &blockchain.BatchPin{}, &core.VerifierRef{}).Return(nil)
+	err = bc.BatchPinComplete("ns1", &blockchain.BatchPin{}, &core.VerifierRef{})
+	assert.NoError(t, err)
+
+	mei.On("BlockchainNetworkAction", "action", fftypes.JSONAnyPtr("{}"), &blockchain.Event{}, &core.VerifierRef{}).Return(nil)
+	err = bc.BlockchainNetworkAction("action", fftypes.JSONAnyPtr("{}"), &blockchain.Event{}, &core.VerifierRef{})
+	assert.NoError(t, err)
+
+	mei.On("BlockchainEvent", &blockchain.EventWithSubscription{}).Return(nil)
+	err = bc.BlockchainEvent(&blockchain.EventWithSubscription{})
+	assert.NoError(t, err)
+
+	mei.On("DXEvent", mdx, &dataexchangemocks.DXEvent{}).Return(nil)
+	err = bc.DXEvent(mdx, &dataexchangemocks.DXEvent{})
+	assert.NoError(t, err)
+
+	mei.On("TokenPoolCreated", mock.Anything, mti, &tokens.TokenPool{}).Return(nil)
+	err = bc.TokenPoolCreated(context.Background(), mti, &tokens.TokenPool{})
+	assert.NoError(t, err)
+
+	mei.On("TokensTransferred", mti, &tokens.TokenTransfer{}).Return(nil)
+	err = bc.TokensTransferred(mti, &tokens.TokenTransfer{})
+	assert.NoError(t, err)
+
+	mei.On("TokensApproved", mti, &tokens.TokenApproval{}).Return(nil)
+	err = bc.TokensApproved(mti, &tokens.TokenApproval{})
+	assert.NoError(t, err)
 
 	mei.AssertExpectations(t)
 	mss.AssertExpectations(t)
 	mom.AssertExpectations(t)
+}
+
+func TestBoundCallbacksStopped(t *testing.T) {
+
+	_, _, _, bc := newTestBoundCallbacks(t)
+	bc.o.started = false
+
+	_, err := bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
+	assert.Regexp(t, "FF10446", err)
+
+	err = bc.SharedStorageBlobDownloaded(*fftypes.NewRandB32(), 12345, "payload1", nil)
+	assert.Regexp(t, "FF10446", err)
+
+	err = bc.BatchPinComplete("ns1", &blockchain.BatchPin{}, &core.VerifierRef{})
+	assert.Regexp(t, "FF10446", err)
+
+	err = bc.BlockchainNetworkAction("action", fftypes.JSONAnyPtr("{}"), &blockchain.Event{}, &core.VerifierRef{})
+	assert.Regexp(t, "FF10446", err)
+
+	err = bc.BlockchainEvent(&blockchain.EventWithSubscription{})
+	assert.Regexp(t, "FF10446", err)
+
+	err = bc.DXEvent(nil, &dataexchangemocks.DXEvent{})
+	assert.Regexp(t, "FF10446", err)
+
+	err = bc.TokenPoolCreated(context.Background(), nil, &tokens.TokenPool{})
+	assert.Regexp(t, "FF10446", err)
+
+	err = bc.TokensTransferred(nil, &tokens.TokenTransfer{})
+	assert.Regexp(t, "FF10446", err)
+
+	err = bc.TokensApproved(nil, &tokens.TokenApproval{})
+	assert.Regexp(t, "FF10446", err)
 }

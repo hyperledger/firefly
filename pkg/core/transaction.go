@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -39,6 +39,8 @@ var (
 	TransactionTypeContractDeploy = fftypes.FFEnumValue("txtype", "contract_deploy")
 	// TransactionTypeContractInvoke is a smart contract invoke
 	TransactionTypeContractInvoke = fftypes.FFEnumValue("txtype", "contract_invoke")
+	// TransactionTypeContractInvokePin is a smart contract invoke with an accompanying pin
+	TransactionTypeContractInvokePin = fftypes.FFEnumValue("txtype", "contract_invoke_pin")
 	// TransactionTypeTokenTransfer represents a token approval
 	TransactionTypeTokenApproval = fftypes.FFEnumValue("txtype", "token_approval")
 	// TransactionTypeDataPublish represents a publish to shared storage
@@ -97,4 +99,8 @@ type TransactionStatus struct {
 
 func (tx *Transaction) Size() int64 {
 	return transactionBaseSizeEstimate // currently a static size assessment for caching
+}
+
+func IsPinned(t TransactionType) bool {
+	return t.Equals(TransactionTypeBatchPin) || t.Equals(TransactionTypeContractInvokePin)
 }

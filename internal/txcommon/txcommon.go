@@ -36,6 +36,7 @@ type Helper interface {
 	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
 	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error)
 	GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
+	FindOperationInTransaction(ctx context.Context, tx *fftypes.UUID, opType core.OpType) (*core.Operation, error)
 }
 
 type transactionHelper struct {
@@ -111,7 +112,9 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType cor
 		IdempotencyKey: idempotencyKey,
 	}
 
-	// Note that InsertTransaction is responsible for idempotency key duplicate detection and helpful error creation
+	// Note that InsertTransaction is responsible for idempotency key duplicate detection and helpful error creation.
+	// (In cases where one or more operations have not yet left 'initialized' state then we need to resubmit them even if
+	// we've seen this idempotency key before.)
 	if err := t.database.InsertTransaction(ctx, tx); err != nil {
 		return nil, err
 	}
@@ -210,4 +213,17 @@ func (t *transactionHelper) InsertOrGetBlockchainEvent(ctx context.Context, even
 	}
 	t.addBlockchainEventToCache(event)
 	return nil, nil
+}
+
+func (t *transactionHelper) FindOperationInTransaction(ctx context.Context, tx *fftypes.UUID, opType core.OpType) (*core.Operation, error) {
+	fb := database.OperationQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("tx", tx),
+		fb.Eq("type", opType),
+	)
+	ops, _, err := t.database.GetOperations(ctx, t.namespace, filter)
+	if err != nil || len(ops) == 0 {
+		return nil, err
+	}
+	return ops[0], nil
 }

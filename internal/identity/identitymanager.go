@@ -42,6 +42,7 @@ type Manager interface {
 	ResolveInputSigningIdentity(ctx context.Context, signerRef *core.SignerRef) (err error)
 	ResolveInputVerifierRef(ctx context.Context, inputKey *core.VerifierRef, intent blockchain.ResolveKeyIntent) (*core.VerifierRef, error)
 	ResolveInputSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error)
+	ResolveQuerySigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error)
 
 	FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, verifier *core.VerifierRef) (identity *core.Identity, err error)
@@ -112,6 +113,16 @@ func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identit
 // This is for cases where keys are used directly without an "author" field alongside them (custom contracts, tokens),
 // or when the author is known by the caller and should not / cannot be confirmed prior to sending (identity claims)
 func (im *identityManager) ResolveInputSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error) {
+	return im.resolveInputSigningKey(ctx, inputKey, keyNormalizationMode, blockchain.ResolveKeyIntentSign)
+}
+
+// ResolveQuerySigningKey does the same resolution as ResolveInputSigningKey, but for the intent of querying the blockchain
+// (rather than signing a transaction)
+func (im *identityManager) ResolveQuerySigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error) {
+	return im.resolveInputSigningKey(ctx, inputKey, keyNormalizationMode, blockchain.ResolveKeyIntentQuery)
+}
+
+func (im *identityManager) resolveInputSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int, intent blockchain.ResolveKeyIntent) (signingKey string, err error) {
 	if inputKey == "" {
 		if im.blockchain == nil {
 			if im.defaultKey == "" {
@@ -121,7 +132,7 @@ func (im *identityManager) ResolveInputSigningKey(ctx context.Context, inputKey 
 			return im.defaultKey, nil
 		}
 
-		verifierRef, err := im.getDefaultVerifier(ctx)
+		verifierRef, err := im.getDefaultVerifier(ctx, intent)
 		if err != nil {
 			return "", err
 		}
@@ -133,7 +144,7 @@ func (im *identityManager) ResolveInputSigningKey(ctx context.Context, inputKey 
 	if keyNormalizationMode != KeyNormalizationBlockchainPlugin {
 		return inputKey, nil
 	}
-	signer, err := im.resolveInputKeyViaBlockchainPlugin(ctx, inputKey)
+	signer, err := im.resolveInputKeyViaBlockchainPlugin(ctx, inputKey, intent)
 	if err != nil {
 		return "", err
 	}
@@ -188,7 +199,7 @@ func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, sign
 
 	case signerRef.Key != "":
 		// Key specified: normalize it, then check it against author (if specified)
-		if verifier, err = im.resolveInputKeyViaBlockchainPlugin(ctx, signerRef.Key); err != nil {
+		if verifier, err = im.resolveInputKeyViaBlockchainPlugin(ctx, signerRef.Key, blockchain.ResolveKeyIntentSign); err != nil {
 			return err
 		}
 		signerRef.Key = verifier.Value
@@ -258,7 +269,7 @@ func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType c
 
 // resolveDefaultSigningIdentity adds the default signing identity into a message
 func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, signerRef *core.SignerRef) (err error) {
-	verifierRef, err := im.getDefaultVerifier(ctx)
+	verifierRef, err := im.getDefaultVerifier(ctx, blockchain.ResolveKeyIntentSign)
 	if err != nil {
 		return err
 	}
@@ -272,12 +283,16 @@ func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, si
 }
 
 // getDefaultVerifier gets the default blockchain verifier via the configuration
-func (im *identityManager) getDefaultVerifier(ctx context.Context) (verifier *core.VerifierRef, err error) {
+func (im *identityManager) getDefaultVerifier(ctx context.Context, intent blockchain.ResolveKeyIntent) (verifier *core.VerifierRef, err error) {
 	if im.defaultKey != "" {
-		return im.resolveInputKeyViaBlockchainPlugin(ctx, im.defaultKey)
+		return im.resolveInputKeyViaBlockchainPlugin(ctx, im.defaultKey, intent)
 	}
 	if im.multiparty != nil {
-		return im.GetMultipartyRootVerifier(ctx)
+		orgKey := im.multiparty.RootOrg().Key
+		if orgKey == "" {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+		}
+		return im.resolveInputKeyViaBlockchainPlugin(ctx, orgKey, intent)
 	}
 	return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 }
@@ -290,7 +305,7 @@ func (im *identityManager) GetMultipartyRootVerifier(ctx context.Context) (*core
 		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 	}
 
-	return im.resolveInputKeyViaBlockchainPlugin(ctx, orgKey)
+	return im.resolveInputKeyViaBlockchainPlugin(ctx, orgKey, blockchain.ResolveKeyIntentSign)
 }
 
 // resolveInputKeyViaBlockchainPlugin calls the blockchain plugin to resolve an input key string, to the
@@ -298,13 +313,13 @@ func (im *identityManager) GetMultipartyRootVerifier(ctx context.Context) (*core
 // See ResolveInputSigningKey on the blockchain connector
 //
 // Note: Caching is deferred down to the blockchain plugin (prior to v1.2 it was performed in the identity manager)
-func (im *identityManager) resolveInputKeyViaBlockchainPlugin(ctx context.Context, inputKey string) (verifier *core.VerifierRef, err error) {
+func (im *identityManager) resolveInputKeyViaBlockchainPlugin(ctx context.Context, inputKey string, intent blockchain.ResolveKeyIntent) (verifier *core.VerifierRef, err error) {
 
 	if im.blockchain == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainNotConfigured)
 	}
 
-	keyString, err := im.blockchain.ResolveSigningKey(ctx, inputKey, blockchain.ResolveKeyIntentSign)
+	keyString, err := im.blockchain.ResolveSigningKey(ctx, inputKey, intent)
 	if err != nil {
 		return nil, err
 	}

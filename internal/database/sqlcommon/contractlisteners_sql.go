@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -175,6 +175,36 @@ func (s *SQLCommon) GetContractListeners(ctx context.Context, namespace string, 
 	}
 
 	return subs, s.QueryRes(ctx, contractlistenersTable, tx, fop, fi), err
+}
+
+func (s *SQLCommon) UpdateContractListener(ctx context.Context, ns string, id *fftypes.UUID, update ffapi.Update) (err error) {
+
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	query, err := s.BuildUpdate(sq.Update(contractlistenersTable), update, contractListenerFilterFieldMap)
+	if err != nil {
+		return err
+	}
+	query = query.Where(sq.And{
+		sq.Eq{"id": id},
+		sq.Eq{"namespace": ns},
+	})
+
+	ra, err := s.UpdateTx(ctx, contractlistenersTable, tx, query, func() {
+		s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeUpdated, ns, id)
+	})
+	if err != nil {
+		return err
+	}
+	if ra < 1 {
+		return i18n.NewError(ctx, coremsgs.Msg404NoResult)
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) DeleteContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) (err error) {

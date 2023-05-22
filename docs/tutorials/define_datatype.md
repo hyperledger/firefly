@@ -36,7 +36,7 @@ of datatypes, as is used to broadcast the data itself.
 
 ### Example 1: Broadcast new datatype
 
-`POST` `/api/v1/namespaces/{ns}/broadcast/datatype`
+`POST` `/api/v1/namespaces/{ns}/datatypes`
 
 ```json
 {

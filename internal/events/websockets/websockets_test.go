@@ -25,6 +25,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
@@ -72,9 +73,10 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, authorizer core
 		qs = fmt.Sprintf("?%s", strings.Join(queryParams, "&"))
 	}
 	clientConfig.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s%s", svr.Listener.Addr(), qs))
-	wsConfig := wsclient.GenerateConfig(clientConfig)
+	wsConfig, err := wsclient.GenerateConfig(ctx, clientConfig)
+	assert.NoError(t, err)
 
-	wsc, err := wsclient.New(ctx, wsConfig, nil, nil)
+	wsc, err = wsclient.New(ctx, wsConfig, nil, nil)
 	assert.NoError(t, err)
 	err = wsc.Connect()
 	assert.NoError(t, err)
@@ -481,8 +483,10 @@ func TestAutoStartBadNamespace(t *testing.T) {
 func TestHandleAckWithAutoAck(t *testing.T) {
 	eventUUID := fftypes.NewUUID()
 	wsc := &websocketConnection{
-		ctx:          context.Background(),
-		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
+		ctx: context.Background(),
+		started: []*websocketStartedSub{{WSStart: core.WSStart{
+			Ephemeral: false, Name: "name1", Namespace: "ns1",
+		}}},
 		sendMessages: make(chan interface{}, 1),
 		inflight: []*core.EventDeliveryResponse{
 			{ID: eventUUID},
@@ -498,8 +502,10 @@ func TestHandleAckWithAutoAck(t *testing.T) {
 func TestHandleStartFlippingAutoAck(t *testing.T) {
 	eventUUID := fftypes.NewUUID()
 	wsc := &websocketConnection{
-		ctx:          context.Background(),
-		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
+		ctx: context.Background(),
+		started: []*websocketStartedSub{{WSStart: core.WSStart{
+			Ephemeral: false, Name: "name1", Namespace: "ns1",
+		}}},
 		sendMessages: make(chan interface{}, 1),
 		inflight: []*core.EventDeliveryResponse{
 			{ID: eventUUID},
@@ -518,9 +524,15 @@ func TestHandleAckMultipleStartedMissingSub(t *testing.T) {
 	wsc := &websocketConnection{
 		ctx: context.Background(),
 		started: []*websocketStartedSub{
-			{ephemeral: false, name: "name1", namespace: "ns1"},
-			{ephemeral: false, name: "name2", namespace: "ns1"},
-			{ephemeral: false, name: "name3", namespace: "ns1"},
+			{WSStart: core.WSStart{
+				Ephemeral: false, Name: "name1", Namespace: "ns1",
+			}},
+			{WSStart: core.WSStart{
+				Ephemeral: false, Name: "name2", Namespace: "ns1",
+			}},
+			{WSStart: core.WSStart{
+				Ephemeral: false, Name: "name3", Namespace: "ns1",
+			}},
 		},
 		sendMessages: make(chan interface{}, 1),
 		inflight: []*core.EventDeliveryResponse{
@@ -541,10 +553,14 @@ func TestHandleAckMultipleStartedNoSubSingleMatch(t *testing.T) {
 	wsc := &websocketConnection{
 		ctx: context.Background(),
 		ws: &WebSockets{
-			ctx:       context.Background(),
-			callbacks: map[string]events.Callbacks{"ns1": cbs},
+			ctx: context.Background(),
+			callbacks: callbacks{
+				handlers: map[string]events.Callbacks{"ns1": cbs},
+			},
 		},
-		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
+		started: []*websocketStartedSub{{WSStart: core.WSStart{
+			Ephemeral: false, Name: "name1", Namespace: "ns1",
+		}}},
 		sendMessages: make(chan interface{}, 1),
 		inflight: []*core.EventDeliveryResponse{
 			{ID: eventUUID},
@@ -641,11 +657,15 @@ func TestDispatchAutoAck(t *testing.T) {
 		ctx:    context.Background(),
 		connID: fftypes.NewUUID().String(),
 		ws: &WebSockets{
-			ctx:         context.Background(),
-			callbacks:   map[string]events.Callbacks{"ns1": cbs},
+			ctx: context.Background(),
+			callbacks: callbacks{
+				handlers: map[string]events.Callbacks{"ns1": cbs},
+			},
 			connections: make(map[string]*websocketConnection),
 		},
-		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
+		started: []*websocketStartedSub{{WSStart: core.WSStart{
+			Ephemeral: false, Name: "name1", Namespace: "ns1",
+		}}},
 		sendMessages: make(chan interface{}, 1),
 		autoAck:      true,
 	}
@@ -691,9 +711,9 @@ func TestWebsocketStatus(t *testing.T) {
 	}
 	ws.connections["id1"] = &websocketConnection{
 		connID: "id1",
-		started: []*websocketStartedSub{
-			{ephemeral: false, name: "name1", namespace: "ns1"},
-		},
+		started: []*websocketStartedSub{{WSStart: core.WSStart{
+			Ephemeral: false, Name: "name1", Namespace: "ns1",
+		}}},
 		remoteAddr: "otherhost",
 		userAgent:  "user",
 	}
@@ -709,4 +729,75 @@ func TestWebsocketStatus(t *testing.T) {
 	assert.Equal(t, false, status.Connections[0].Subscriptions[0].Ephemeral)
 	assert.Equal(t, "ns1", status.Connections[0].Subscriptions[0].Namespace)
 	assert.Equal(t, "name1", status.Connections[0].Subscriptions[0].Name)
+}
+
+func TestNamespaceRestarted(t *testing.T) {
+	mcb := &eventsmocks.Callbacks{}
+	mcb.On("RegisterConnection", mock.Anything, mock.Anything).Return(nil)
+	ws := &WebSockets{
+		ctx:         context.Background(),
+		connections: make(map[string]*websocketConnection),
+		callbacks: callbacks{
+			handlers: map[string]events.Callbacks{"ns1": mcb},
+		},
+	}
+	origTime := fftypes.Now()
+	time.Sleep(1 * time.Microsecond)
+	ws.connections["id1"] = &websocketConnection{
+		ctx:    context.Background(),
+		ws:     ws,
+		connID: "id1",
+		started: []*websocketStartedSub{
+			{
+				WSStart: core.WSStart{
+					Ephemeral: false, Name: "name1", Namespace: "ns1",
+				},
+				startTime: origTime,
+			},
+		},
+		remoteAddr: "otherhost",
+		userAgent:  "user",
+	}
+
+	ws.NamespaceRestarted("ns1", time.Now())
+
+	assert.Greater(t, *ws.connections["id1"].started[0].startTime, *origTime.Time())
+
+	mcb.AssertExpectations(t)
+}
+
+func TestNamespaceRestartedFailClose(t *testing.T) {
+	mcb := &eventsmocks.Callbacks{}
+	mcb.On("RegisterConnection", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mcb.On("ConnectionClosed", mock.Anything, mock.Anything).Return(nil)
+	ws := &WebSockets{
+		ctx:         context.Background(),
+		connections: make(map[string]*websocketConnection),
+		callbacks: callbacks{
+			handlers: map[string]events.Callbacks{"ns1": mcb},
+		},
+	}
+	origTime := fftypes.Now()
+	time.Sleep(1 * time.Microsecond)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	ws.connections["id1"] = &websocketConnection{
+		ctx:       ctx,
+		cancelCtx: cancelCtx,
+		ws:        ws,
+		connID:    "id1",
+		started: []*websocketStartedSub{
+			{
+				WSStart: core.WSStart{
+					Ephemeral: false, Name: "name1", Namespace: "ns1",
+				},
+				startTime: origTime,
+			},
+		},
+		remoteAddr: "otherhost",
+		userAgent:  "user",
+	}
+
+	ws.NamespaceRestarted("ns1", time.Now())
+
+	mcb.AssertExpectations(t)
 }

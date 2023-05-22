@@ -131,6 +131,10 @@ type iDataCollection interface {
 	// GetData - Get data
 	GetData(ctx context.Context, namespace string, filter ffapi.Filter) (message core.DataArray, res *ffapi.FilterResult, err error)
 
+	// GetDataSubPaths - returns unique paths that have files in them, under the specified path.
+	// Requires DB specific processing of the blob.path field.
+	GetDataSubPaths(ctx context.Context, namespace, path string) (subPaths []string, err error)
+
 	// GetDataRefs - Get data references only (no data)
 	GetDataRefs(ctx context.Context, namespace string, filter ffapi.Filter) (message core.DataRefs, res *ffapi.FilterResult, err error)
 
@@ -216,7 +220,7 @@ type iOperationCollection interface {
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
 
 	// UpdateOperation - Update an operation
-	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) (err error)
+	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, filter ffapi.Filter, update ffapi.Update) (updated bool, err error)
 
 	// GetOperationByID - Get an operation by ID
 	GetOperationByID(ctx context.Context, namespace string, id *fftypes.UUID) (operation *core.Operation, err error)
@@ -473,6 +477,9 @@ type iContractAPICollection interface {
 type iContractListenerCollection interface {
 	// InsertContractListener - upsert a listener to an external smart contract
 	InsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
+
+	// UpdateContractListener - update contract listener by id
+	UpdateContractListener(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) (err error)
 
 	// GetContractListener - get contract listener by name
 	GetContractListener(ctx context.Context, namespace, name string) (sub *core.ContractListener, err error)
@@ -741,6 +748,7 @@ var DataQueryFactory = &ffapi.QueryFields{
 	"blob.hash":        &ffapi.Bytes32Field{},
 	"blob.public":      &ffapi.StringField{},
 	"blob.name":        &ffapi.StringField{},
+	"blob.path":        &ffapi.StringField{},
 	"blob.size":        &ffapi.Int64Field{},
 	"created":          &ffapi.TimeField{},
 	"value":            &ffapi.JSONField{},

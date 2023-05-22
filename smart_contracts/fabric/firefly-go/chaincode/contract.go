@@ -1,97 +1,46 @@
 package chaincode
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
+	"github.com/hyperledger/firefly/chaincode-go/batchpin"
 )
 
-// SmartContract provides functions for managing an Asset
 type SmartContract struct {
 	contractapi.Contract
 }
 
-type BatchPinEvent struct {
-	Signer     string               `json:"signer"`
-	Timestamp  *timestamp.Timestamp `json:"timestamp"`
-	Action     string               `json:"action"`
-	Uuids      string               `json:"uuids"`
-	BatchHash  string               `json:"batchHash"`
-	PayloadRef string               `json:"payloadRef"`
-	Contexts   []string             `json:"contexts"`
-}
-
 func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, uuids, batchHash, payloadRef string, contexts []string) error {
-	cid := ctx.GetClientIdentity()
-	id, err := cid.GetID()
-	if err != nil {
-		return fmt.Errorf("Failed to obtain client identity's ID: %s", err)
-	}
-	idString, err := base64.StdEncoding.DecodeString(id)
-	if err != nil {
-		return fmt.Errorf("Failed to decode client identity ID: %s", err)
-	}
-	mspId, err := cid.GetMSPID()
-	if err != nil {
-		return fmt.Errorf("Failed to obtain client identity's MSP ID: %s", err)
-	}
-	timestamp, err := ctx.GetStub().GetTxTimestamp()
-	if err != nil {
-		return fmt.Errorf("Failed to get transaction timestamp: %s", err)
-	}
-	event := BatchPinEvent{
-		Signer:     fmt.Sprintf("%s::%s", mspId, idString),
-		Timestamp:  timestamp,
-		Action:     "",
-		Uuids:      uuids,
+	event, err := batchpin.BuildEvent(ctx, &batchpin.Args{
+		UUIDs:      uuids,
 		BatchHash:  batchHash,
 		PayloadRef: payloadRef,
 		Contexts:   contexts,
+	})
+	if err != nil {
+		return err
 	}
 	bytes, err := json.Marshal(event)
 	if err != nil {
-		return fmt.Errorf("Failed to marshal event: %s", err)
+		return fmt.Errorf("failed to marshal event: %s", err)
 	}
-	ctx.GetStub().SetEvent("BatchPin", bytes)
-	return nil
+	return ctx.GetStub().SetEvent("BatchPin", bytes)
 }
 
 func (s *SmartContract) NetworkAction(ctx contractapi.TransactionContextInterface, action, payload string) error {
-	cid := ctx.GetClientIdentity()
-	id, err := cid.GetID()
+	event, err := batchpin.BuildEvent(ctx, &batchpin.Args{})
 	if err != nil {
-		return fmt.Errorf("Failed to obtain client identity's ID: %s", err)
+		return err
 	}
-	idString, err := base64.StdEncoding.DecodeString(id)
-	if err != nil {
-		return fmt.Errorf("Failed to decode client identity ID: %s", err)
-	}
-	mspId, err := cid.GetMSPID()
-	if err != nil {
-		return fmt.Errorf("Failed to obtain client identity's MSP ID: %s", err)
-	}
-	timestamp, err := ctx.GetStub().GetTxTimestamp()
-	if err != nil {
-		return fmt.Errorf("Failed to get transaction timestamp: %s", err)
-	}
-	event := BatchPinEvent{
-		Signer:     fmt.Sprintf("%s::%s", mspId, idString),
-		Timestamp:  timestamp,
-		Action:     action,
-		Uuids:      "",
-		BatchHash:  "",
-		PayloadRef: payload,
-		Contexts:   []string{},
-	}
+	event.Action = action
+	event.PayloadRef = payload
 	bytes, err := json.Marshal(event)
 	if err != nil {
-		return fmt.Errorf("Failed to marshal event: %s", err)
+		return fmt.Errorf("failed to marshal event: %s", err)
 	}
-	ctx.GetStub().SetEvent("BatchPin", bytes)
-	return nil
+	return ctx.GetStub().SetEvent("BatchPin", bytes)
 }
 
 func (s *SmartContract) NetworkVersion() int {

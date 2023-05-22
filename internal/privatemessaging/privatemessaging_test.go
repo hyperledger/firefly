@@ -75,11 +75,19 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 		}, mock.Anything, mock.Anything).Return()
 
 	mba.On("RegisterDispatcher",
+		pinnedPrivateDispatcherName,
+		core.TransactionTypeContractInvokePin,
+		[]core.MessageType{
+			core.MessageTypePrivate,
+		}, mock.Anything, mock.Anything).Return()
+
+	mba.On("RegisterDispatcher",
 		unpinnedPrivateDispatcherName,
 		core.TransactionTypeUnpinned,
 		[]core.MessageType{
 			core.MessageTypePrivate,
 		}, mock.Anything, mock.Anything).Return()
+
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
@@ -218,8 +226,8 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 
 	mmp.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, "").Return(nil)
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				ID: batchID,
 				SignerRef: core.SignerRef{
@@ -260,7 +268,7 @@ func TestDispatchErrorFindingGroup(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{})
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -271,8 +279,8 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				SignerRef: core.SignerRef{
 					Author: "badauthor",
@@ -310,8 +318,8 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 
 	mim.On("GetLocalNode", pm.ctx).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: groupID,
 				SignerRef: core.SignerRef{
@@ -334,8 +342,8 @@ func TestSendImmediateFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				SignerRef: core.SignerRef{
 					Author: "org1",
@@ -376,8 +384,8 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: groupID,
 				SignerRef: core.SignerRef{
@@ -432,8 +440,8 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 		return op.Type == core.OpTypeDataExchangeSendBlob && *data.Node.ID == *node2.ID
 	})).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: groupID,
 				SignerRef: core.SignerRef{
@@ -505,8 +513,8 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	mmp := pm.multiparty.(*multipartymocks.Manager)
 	mmp.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, "").Return(fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
-		Persisted: core.BatchPersisted{
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{
+		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: groupID,
 				SignerRef: core.SignerRef{

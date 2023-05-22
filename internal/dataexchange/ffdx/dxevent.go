@@ -201,6 +201,17 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		log.L(h.ctx).Warnf("Failed to dispatch DX event: %s", err)
 		e.Ack()
 	} else {
-		h.callbacks.DXEvent(h.ctx, namespace, msg.Recipient, e)
+		// Once we're ready to dispatch it to the callback, we use a retry
+		// loop because if the namespace isn't ready to consume the event
+		// we need to hold onto it - not ack it (there's no nack in the protocol
+		// with FFDX that allows us to push it back to the remote microservice).
+		h.callbackWithRetry(namespace, msg.Recipient, e)
 	}
+}
+
+func (h *FFDX) callbackWithRetry(namespace, recipient string, e *dxEvent) {
+	_ = h.retry.Do(h.ctx, "dispatch ffdx event", func(attempt int) (retry bool, err error) {
+		// Return until success, or the context closes.
+		return true, h.callbacks.DXEvent(h.ctx, namespace, recipient, e)
+	})
 }

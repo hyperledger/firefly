@@ -31,6 +31,10 @@ var (
 	ConfigGlobalMigrationsDirectory = ffc("config.global.migrations.directory", "The directory containing the numerically ordered migration DDL files to apply to the database", i18n.StringType)
 	ConfigGlobalShutdownTimeout     = ffc("config.global.shutdownTimeout", "The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server", i18n.TimeDurationType)
 
+	ConfigEventRetryFactor       = ffc("config.global.eventRetry.factor", "The retry backoff factor, for event processing", i18n.FloatType)
+	ConfigEventRetryInitialDelay = ffc("config.global.eventRetry.initialDelay", "The initial retry delay, for event processing", i18n.TimeDurationType)
+	ConfigEventRetryMaxDelay     = ffc("config.global.eventRetry.maxDelay", "The maximum retry delay, for event processing", i18n.TimeDurationType)
+
 	ConfigConfigAutoReload = ffc("config.config.autoReload", "Monitor the configuration file for changes, and automatically add/remove/reload namespaces and plugins", i18n.BooleanType)
 
 	ConfigLegacyAdmin     = ffc("config.admin.enabled", "Deprecated - use spi.enabled instead", i18n.BooleanType)
@@ -296,7 +300,8 @@ var (
 	ConfigNamespacesMultipartyNodeDescription    = ffc("config.namespaces.predefined[].multiparty.node.description", "A description for the node in this namespace", i18n.StringType)
 	ConfigNamespacesMultipartyContract           = ffc("config.namespaces.predefined[].contract", "A list containing configuration for the multi-party blockchain contract", i18n.StringType)
 	ConfigNamespacesMultipartyContractFirstEvent = ffc("config.namespaces.predefined[].multiparty.contract[].firstEvent", "The first event the contract should process. Valid options are `oldest` or `newest`", i18n.StringType)
-	ConfigNamespacesMultipartyContractLocation   = ffc("config.namespaces.predefined[].multiparty.contract[].location", "A blockchain-specific contract location. For example, an Ethereum contract address, or a Fabric chaincode name and channe", i18n.StringType)
+	ConfigNamespacesMultipartyContractLocation   = ffc("config.namespaces.predefined[].multiparty.contract[].location", "A blockchain-specific contract location. For example, an Ethereum contract address, or a Fabric chaincode name and channel", i18n.StringType)
+	ConfigNamespacesMultipartyContractOptions    = ffc("config.namespaces.predefined[].multiparty.contract[].options", "Blockchain-specific contract options", i18n.StringType)
 
 	ConfigNodeDescription = ffc("config.node.description", "The description of this FireFly node", i18n.StringType)
 	ConfigNodeName        = ffc("config.node.name", "The name of this FireFly node", i18n.StringType)

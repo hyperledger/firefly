@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,6 +33,12 @@ type Namespace struct {
 	Description string               `ffstruct:"Namespace" json:"description"`
 	Created     *fftypes.FFTime      `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
 	Contracts   *MultipartyContracts `ffstruct:"Namespace" json:"-"`
+}
+
+type NamespaceWithInitStatus struct {
+	*Namespace
+	Initializing        bool   `ffstruct:"NamespaceWithInitStatus" json:"initializing,omitempty"`
+	InitializationError string `ffstruct:"NamespaceWithInitStatus" json:"initializationError,omitempty"`
 }
 
 // MultipartyContracts represent the currently active and any terminated FireFly multiparty contract(s)

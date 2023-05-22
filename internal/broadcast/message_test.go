@@ -245,3 +245,19 @@ func TestBroadcastPrepare(t *testing.T) {
 
 	mdm.AssertExpectations(t)
 }
+
+func TestNewMessageContractInvoke(t *testing.T) {
+
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	sender := bm.NewBroadcast(&core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
+				TxType: core.TransactionTypeContractInvokePin,
+			},
+		},
+	})
+	assert.NotNil(t, sender)
+
+}

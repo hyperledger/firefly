@@ -16,9 +16,8 @@ pages:
   blockchain_protocols: Blockchain Protocols
   blockchain_operation_status: Blockchain Operation Status
   broadcast_data: Broadcast data
-  broadcast_data: Broadcast Data
   broadcast_shared_data: Broadcast / Shared Data
-  chains: Connecting to remote blockchains
+  chains: Connect to remote blockchains
   code_hierarchy: FireFly Code Hierarchy
   code_overview: FireFly Code Overview
   code_repositories: Code Repositories
@@ -53,7 +52,8 @@ pages:
   understanding_firefly: Understanding FireFly
   usage_patterns: Usage Patterns
   web3_gateway_features: Web3 Gateway Features
-  basic_auth: Enable Basic Auth
+  basic_auth: Enable basic auth
   fabric_test_network: Fabric-Samples Test Network
   xdc_testnet: XDC Testnet
   zksync_testnet: zkSync Testnet
+  rotate_dx_certs: Rotate Data Exchange Certificates

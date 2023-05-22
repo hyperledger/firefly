@@ -23,9 +23,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
@@ -52,6 +54,20 @@ func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
 	assert.Equal(t, "webhooks", wh.Name())
 	assert.NotNil(t, wh.Capabilities())
 	return wh, cancelCtx
+}
+
+func TestInitBadTLS(t *testing.T) {
+	coreconfig.Reset()
+
+	wh := &WebHooks{}
+	ctx := context.Background()
+	svrConfig := config.RootSection("ut.webhooks")
+	wh.InitConfig(svrConfig)
+	tlsConfig := svrConfig.SubSection("tls")
+	tlsConfig.Set(fftls.HTTPConfTLSEnabled, true)
+	tlsConfig.Set(fftls.HTTPConfTLSCAFile, "BADCA")
+	err := wh.Init(ctx, svrConfig)
+	assert.Regexp(t, "FF00153", err)
 }
 
 func TestValidateOptionsWithDataFalse(t *testing.T) {
@@ -211,7 +227,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		}`),
 	}
 
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
@@ -321,7 +337,7 @@ func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
 		}`),
 	}
 
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
@@ -395,7 +411,7 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 		}`),
 	}
 
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		return !response.Rejected
 	})).Return(nil)
@@ -456,7 +472,7 @@ func TestRequestReplyEmptyData(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
@@ -522,7 +538,7 @@ func TestRequestReplyOneData(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
@@ -576,7 +592,7 @@ func TestRequestReplyBadJSON(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
 		assert.Regexp(t, "FF10257", response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
@@ -642,7 +658,7 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
@@ -696,7 +712,7 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
@@ -749,7 +765,7 @@ func TestWebhookFailFastAsk(t *testing.T) {
 
 	count := 0
 	waiter := make(chan struct{})
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.Anything).
 		Return(nil).
 		Run(func(a mock.Arguments) {
@@ -780,7 +796,7 @@ func TestWebhookFailFastAsk(t *testing.T) {
 func TestDeliveryRequestNilMessage(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.Anything).Return("", &core.EventDelivery{})
 
 	yes := true
@@ -845,7 +861,7 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		return !response.Rejected // should be accepted as a no-op so we can move on to other events
 	}))
@@ -854,4 +870,11 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
+}
+
+func TestNamespaceRestarted(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	wh.NamespaceRestarted("ns1", time.Now())
 }

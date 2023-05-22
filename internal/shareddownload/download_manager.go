@@ -76,7 +76,7 @@ type downloadWork struct {
 
 type Callbacks interface {
 	SharedStorageBatchDownloaded(payloadRef string, data []byte) (batchID *fftypes.UUID, err error)
-	SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID)
+	SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) error
 }
 
 func NewDownloadManager(ctx context.Context, ns *core.Namespace, di database.Plugin, ss sharedstorage.Plugin, dx dataexchange.Plugin, om operations.Manager, cb Callbacks) (Manager, error) {
@@ -166,7 +166,10 @@ func (dm *downloadManager) recoverDownloads(startupTime *fftypes.FFTime) {
 				core.OpTypeSharedStorageDownloadBatch,
 				core.OpTypeSharedStorageDownloadBlob,
 			}),
-			fb.Eq("status", core.OpStatusPending),
+			fb.Or(
+				fb.Eq("status", core.OpStatusPending),
+				fb.Eq("status", core.OpStatusInitialized),
+			),
 			fb.Lt("created", startupTime), // retry is handled completely separately
 		).
 			Sort("created").

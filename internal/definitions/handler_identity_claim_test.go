@@ -179,7 +179,7 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 	bs.AddPendingConfirm(verifyMsg.Header.ID, verifyMsg)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action)
 	assert.NoError(t, err)
 	assert.Equal(t, bs.ConfirmedDIDClaims, []string{custom1.DID})
 
@@ -228,7 +228,7 @@ func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 	bs.AddPendingConfirm(verifyMsg.Header.ID, verifyMsg)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action)
 	assert.NoError(t, err)
 
 	err = bs.RunFinalize(ctx)
@@ -264,7 +264,7 @@ func TestHandleDefinitionIdentityClaimFailInsertIdentity(t *testing.T) {
 	bs.AddPendingConfirm(verifyMsg.Header.ID, verifyMsg)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -296,7 +296,7 @@ func TestHandleDefinitionIdentityClaimVerificationDataFail(t *testing.T) {
 	bs.AddPendingConfirm(verifyMsg.Header.ID, verifyMsg)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -328,7 +328,7 @@ func TestHandleDefinitionIdentityClaimVerificationMissingData(t *testing.T) {
 	bs.AddPendingConfirm(verifyMsg.Header.ID, verifyMsg)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -361,7 +361,7 @@ func TestHandleDefinitionIdentityClaimFailInsertVerifier(t *testing.T) {
 	bs.AddPendingConfirm(verifyMsg.Header.ID, verifyMsg)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -388,7 +388,7 @@ func TestHandleDefinitionIdentityClaimCustomMissingParentVerificationOk(t *testi
 	dh.multiparty = true
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action) // Just wait for the verification to come in later
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action) // Just wait for the verification to come in later
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -414,7 +414,7 @@ func TestHandleDefinitionIdentityClaimCustomParentVerificationFail(t *testing.T)
 	dh.multiparty = true
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -441,7 +441,7 @@ func TestHandleDefinitionIdentityClaimVerifierClash(t *testing.T) {
 	dh.multiparty = true
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
@@ -466,7 +466,7 @@ func TestHandleDefinitionIdentityClaimVerifierError(t *testing.T) {
 	dh.multiparty = true
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -493,7 +493,7 @@ func TestHandleDefinitionIdentityClaimIdentityClash(t *testing.T) {
 	dh.multiparty = true
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
@@ -517,7 +517,7 @@ func TestHandleDefinitionIdentityClaimIdentityError(t *testing.T) {
 	dh.multiparty = true
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -538,7 +538,7 @@ func TestHandleDefinitionIdentityMissingAuthor(t *testing.T) {
 	dh.multiparty = true
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
@@ -558,7 +558,7 @@ func TestHandleDefinitionIdentityClaimBadSignature(t *testing.T) {
 	dh.multiparty = true
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
@@ -576,7 +576,7 @@ func TestHandleDefinitionIdentityVerifyChainFail(t *testing.T) {
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, true, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -594,7 +594,7 @@ func TestHandleDefinitionIdentityVerifyChainInvalid(t *testing.T) {
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, false, fmt.Errorf("wrong"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionWait}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionWait}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -609,7 +609,7 @@ func TestHandleDefinitionIdentityClaimBadData(t *testing.T) {
 	claimMsg.Header.Author = org1.DID // should be the child for the claim
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
 	bs.assertNoFinalizers()

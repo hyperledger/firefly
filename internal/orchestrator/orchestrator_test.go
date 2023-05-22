@@ -231,7 +231,8 @@ func TestInitOK(t *testing.T) {
 	or.mti.On("SetHandler", "ns", mock.Anything).Return(nil)
 	or.mti.On("SetOperationHandler", "ns", mock.Anything).Return()
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
-	err := or.Init(or.ctx, or.cancelCtx)
+	or.PreInit(or.ctx, or.cancelCtx)
+	err := or.Init()
 	assert.NoError(t, err)
 
 	assert.Equal(t, or.mba, or.BatchManager())
@@ -263,13 +264,9 @@ func TestCacheInitFail(t *testing.T) {
 func TestInitDataexchangeLookupNodesFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
-	or.mbi.On("SetHandler", "ns", mock.Anything).Return()
-	or.mbi.On("SetOperationHandler", "ns", mock.Anything).Return()
-	or.mps.On("SetHandler", "ns", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	ctx := context.Background()
-	err := or.initHandlers(ctx)
+	err := or.initMultiParty(ctx)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -281,14 +278,10 @@ func TestInitDataexchangeAddNodesFail(t *testing.T) {
 			Name: "node1",
 		},
 	}
-	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
-	or.mbi.On("SetHandler", "ns", mock.Anything).Return()
-	or.mbi.On("SetOperationHandler", "ns", mock.Anything).Return()
-	or.mps.On("SetHandler", "ns", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{node}, nil, nil)
 	or.mdx.On("AddNode", mock.Anything, "ns", "node1", mock.Anything).Return(fmt.Errorf("pop"))
 	ctx := context.Background()
-	err := or.initHandlers(ctx)
+	err := or.initMultiParty(ctx)
 	assert.EqualError(t, err, "pop")
 }
 

@@ -18,6 +18,7 @@ package sqlcommon
 
 import (
 	"context"
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -78,9 +79,15 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	subReadJson, _ := json.Marshal(subs[0])
 	assert.Equal(t, string(subJson), string(subReadJson))
 
+	// Update by backend ID
+	err = s.UpdateContractListener(ctx, "ns", sub.ID, database.ContractListenerQueryFactory.NewUpdate(ctx).Set("backendid", "sb-234"))
+	assert.NoError(t, err)
+
 	// Query back the listener (by name)
 	subRead, err := s.GetContractListener(ctx, "ns", "sub1")
 	assert.NoError(t, err)
+	sub.BackendID = "sb-234"
+	subJson, _ = json.Marshal(&sub)
 	subReadJson, _ = json.Marshal(subRead)
 	assert.Equal(t, string(subJson), string(subReadJson))
 
@@ -235,4 +242,44 @@ func TestContractListenerOptions(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, l.Options, li.Options)
+}
+
+func TestUpdateContractListenerFailFilter(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	err := s.UpdateContractListener(context.Background(), "ns1", fftypes.NewUUID(),
+		database.ContractListenerQueryFactory.NewUpdate(context.Background()).Set("wrong", "sb-234"))
+	assert.Regexp(t, "FF00142", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateContractListenerFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.UpdateContractListener(context.Background(), "ns1", fftypes.NewUUID(),
+		database.ContractListenerQueryFactory.NewUpdate(context.Background()).Set("backendid", "sb-234"))
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateContractListenerFailUpdate(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.UpdateContractListener(context.Background(), "ns1", fftypes.NewUUID(),
+		database.ContractListenerQueryFactory.NewUpdate(context.Background()).Set("backendid", "sb-234"))
+	assert.Regexp(t, "FF00178", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateContractListenerNotFount(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE .*").WillReturnResult(driver.ResultNoRows)
+	mock.ExpectRollback()
+	err := s.UpdateContractListener(context.Background(), "ns1", fftypes.NewUUID(),
+		database.ContractListenerQueryFactory.NewUpdate(context.Background()).Set("backendid", "sb-234"))
+	assert.Regexp(t, "FF10143", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

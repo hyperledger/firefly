@@ -714,15 +714,6 @@ func TestEnsureLocalGroupNewOk(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestEnsureLocalGroupNil(t *testing.T) {
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	ok, err := pm.EnsureLocalGroup(pm.ctx, nil, &core.Member{})
-	assert.Regexp(t, "FF10344", err)
-	assert.False(t, ok)
-}
-
 func TestEnsureLocalGroupExistingOk(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()

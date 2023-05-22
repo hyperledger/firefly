@@ -34,25 +34,25 @@ func (_m *Manager) Authorize(ctx context.Context, authReq *fftypes.AuthReq) erro
 	return r0
 }
 
-// GetNamespaces provides a mock function with given fields: ctx
-func (_m *Manager) GetNamespaces(ctx context.Context) ([]*core.Namespace, error) {
-	ret := _m.Called(ctx)
+// GetNamespaces provides a mock function with given fields: ctx, includeInitializing
+func (_m *Manager) GetNamespaces(ctx context.Context, includeInitializing bool) ([]*core.NamespaceWithInitStatus, error) {
+	ret := _m.Called(ctx, includeInitializing)
 
-	var r0 []*core.Namespace
+	var r0 []*core.NamespaceWithInitStatus
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]*core.Namespace, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) ([]*core.NamespaceWithInitStatus, error)); ok {
+		return rf(ctx, includeInitializing)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []*core.Namespace); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) []*core.NamespaceWithInitStatus); ok {
+		r0 = rf(ctx, includeInitializing)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*core.Namespace)
+			r0 = ret.Get(0).([]*core.NamespaceWithInitStatus)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
+		r1 = rf(ctx, includeInitializing)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -116,25 +116,25 @@ func (_m *Manager) MustOrchestrator(ns string) orchestrator.Orchestrator {
 	return r0
 }
 
-// Orchestrator provides a mock function with given fields: ctx, ns
-func (_m *Manager) Orchestrator(ctx context.Context, ns string) (orchestrator.Orchestrator, error) {
-	ret := _m.Called(ctx, ns)
+// Orchestrator provides a mock function with given fields: ctx, ns, includeInitializing
+func (_m *Manager) Orchestrator(ctx context.Context, ns string, includeInitializing bool) (orchestrator.Orchestrator, error) {
+	ret := _m.Called(ctx, ns, includeInitializing)
 
 	var r0 orchestrator.Orchestrator
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (orchestrator.Orchestrator, error)); ok {
-		return rf(ctx, ns)
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) (orchestrator.Orchestrator, error)); ok {
+		return rf(ctx, ns, includeInitializing)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) orchestrator.Orchestrator); ok {
-		r0 = rf(ctx, ns)
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) orchestrator.Orchestrator); ok {
+		r0 = rf(ctx, ns, includeInitializing)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orchestrator.Orchestrator)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, ns)
+	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
+		r1 = rf(ctx, ns, includeInitializing)
 	} else {
 		r1 = ret.Error(1)
 	}

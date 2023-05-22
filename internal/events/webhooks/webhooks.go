@@ -25,6 +25,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -40,9 +42,14 @@ import (
 type WebHooks struct {
 	ctx          context.Context
 	capabilities *events.Capabilities
-	callbacks    map[string]events.Callbacks
+	callbacks    callbacks
 	client       *resty.Client
 	connID       string
+}
+
+type callbacks struct {
+	writeLock sync.Mutex
+	handlers  map[string]events.Callbacks
 }
 
 type whRequest struct {
@@ -64,18 +71,27 @@ func (wh *WebHooks) Name() string { return "webhooks" }
 
 func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error) {
 	connID := fftypes.ShortID()
+
+	client, err := ffresty.New(ctx, config)
+	if err != nil {
+		return err
+	}
 	*wh = WebHooks{
 		ctx:          log.WithLogField(ctx, "webhook", wh.connID),
 		capabilities: &events.Capabilities{},
-		callbacks:    make(map[string]events.Callbacks),
-		client:       ffresty.New(ctx, config),
-		connID:       connID,
+		callbacks: callbacks{
+			handlers: make(map[string]events.Callbacks),
+		},
+		client: client,
+		connID: connID,
 	}
 	return nil
 }
 
 func (wh *WebHooks) SetHandler(namespace string, handler events.Callbacks) error {
-	wh.callbacks[namespace] = handler
+	wh.callbacks.writeLock.Lock()
+	defer wh.callbacks.writeLock.Unlock()
+	wh.callbacks.handlers[namespace] = handler
 	// We have a single logical connection, that matches all subscriptions
 	return handler.RegisterConnection(wh.connID, func(sr core.SubscriptionRef) bool { return true })
 }
@@ -298,7 +314,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 		if req != nil && req.replyTx != "" {
 			txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
 		}
-		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+		if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
 			log.L(wh.ctx).Debugf("Sending reply message for %s CID=%s", event.ID, event.Message.Header.ID)
 			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 				ID:           event.ID,
@@ -322,7 +338,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 			})
 		}
 	} else if !fastAck {
-		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+		if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
 			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 				ID:           event.ID,
 				Rejected:     false,
@@ -339,7 +355,7 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event
 		// avoid loops - and there's no way for us to detect here if a user has configured correctly
 		// to avoid a loop.
 		log.L(wh.ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
-		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+		if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
 			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 				ID:           event.ID,
 				Rejected:     false,
@@ -353,7 +369,7 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event
 	// NOTE: We cannot use this with reply mode, as when we're sending a reply the `DeliveryResponse`
 	//       callback must include the reply in-line.
 	if !reply && sub.Options.TransportOptions().GetBool("fastack") {
-		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+		if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
 			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 				ID:           event.ID,
 				Rejected:     false,
@@ -366,4 +382,8 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event
 
 	wh.doDelivery(connID, reply, sub, event, data, false)
 	return nil
+}
+
+func (wh *WebHooks) NamespaceRestarted(ns string, startTime time.Time) {
+	// no-op
 }

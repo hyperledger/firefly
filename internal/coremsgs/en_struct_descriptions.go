@@ -115,6 +115,7 @@ var (
 	BlobRefHash   = ffm("BlobRef.hash", "The hash of the binary blob data")
 	BlobRefSize   = ffm("BlobRef.size", "The size of the binary data")
 	BlobRefName   = ffm("BlobRef.name", "The name field from the metadata attached to the blob, commonly used as a path/filename, and indexed for search")
+	BlobRefPath   = ffm("BlobRef.path", "If a name is specified, this field stores the '/' prefixed and separated path extracted from the full name")
 	BlobRefPublic = ffm("BlobRef.public", "If the blob data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)")
 
 	// Data field descriptions
@@ -411,6 +412,10 @@ var (
 	MultipartyContractInfo         = ffm("MultipartyContract.info", "Additional info about the current status of the multi-party contract")
 	NetworkActionType              = ffm("NetworkAction.type", "The action to be performed")
 
+	// NamespaceWithInitStatus field descriptions
+	NamespaceWithInitStatusInitializing        = ffm("NamespaceWithInitStatus.initializing", "Set to true if the namespace is still initializing")
+	NamespaceWithInitStatusInitializationError = ffm("NamespaceWithInitStatus.initializationError", "Set to a non-empty string in the case that the namespace is currently failing to initialize")
+
 	// NamespaceStatus field descriptions
 	NodeNamespace       = ffm("NamespaceStatus.namespace", "The namespace that this status applies to")
 	NamespaceStatusNode = ffm("NamespaceStatus.node", "Details of the local node")
@@ -527,7 +532,7 @@ var (
 	SubscriptionBlockchainEventFilterListener = ffm("SubscriptionBlockchainEventFilter.listener", "Regular expression to apply to the blockchain event 'listener' field, which is the UUID of the event listener. So you can restrict your subscription to certain blockchain listeners. Alternatively to avoid your application need to know listener UUIDs you can set the 'topic' field of blockchain event listeners, and use a topic filter on your subscriptions")
 
 	// SubscriptionCoreOptions field descriptions
-	SubscriptionCoreOptionsFirstEvent = ffm("SubscriptionCoreOptions.firstEvent", "Whether your appplication would like to receive events from the 'oldest' event emitted by your FireFly node (from the beginning of time), or the 'newest' event (from now), or a specific event sequence. Default is 'newest'")
+	SubscriptionCoreOptionsFirstEvent = ffm("SubscriptionCoreOptions.firstEvent", "Whether your application would like to receive events from the 'oldest' event emitted by your FireFly node (from the beginning of time), or the 'newest' event (from now), or a specific event sequence. Default is 'newest'")
 	SubscriptionCoreOptionsReadAhead  = ffm("SubscriptionCoreOptions.readAhead", "The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts")
 	SubscriptionCoreOptionsWithData   = ffm("SubscriptionCoreOptions.withData", "Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data. May not be supported on some transports.")
 
@@ -649,6 +654,7 @@ var (
 	ContractCallRequestErrors     = ffm("ContractCallRequest.errors", "An in-line FFI errors definition for the method to invoke. Alternative to specifying FFI")
 	ContractCallRequestInput      = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
 	ContractCallRequestOptions    = ffm("ContractCallRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
+	ContractCallMessage           = ffm("ContractCallRequest.message", "You can specify a message to correlate with the invocation, which can be of type broadcast or private. Your specified method must support on-chain/off-chain correlation by taking a data input on the call")
 	ContractCallIdempotencyKey    = ffm("ContractCallRequest.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
 
 	// WebSocketStatus field descriptions
@@ -665,6 +671,8 @@ var (
 	WSSubscriptionStatusEphemeral = ffm("WSSubscriptionStatus.ephemeral", "Indicates whether the subscription is ephemeral (vs durable)")
 	WSSubscriptionStatusNamespace = ffm("WSSubscriptionStatus.namespace", "The subscription namespace")
 	WSSubscriptionStatusName      = ffm("WSSubscriptionStatus.name", "The subscription name (for durable subscriptions only)")
+	WSSubscriptionStatusFilter    = ffm("WSSubscriptionStatus.filter", "The subscription filter specification")
+	WSSubscriptionStatusStartTime = ffm("WSSubscriptionStatus.startTime", "The time the subscription started (reset on dynamic namespace reload)")
 
 	WebhooksOptJSON         = ffm("WebhookSubOptions.json", "Webhooks only: Whether to assume the response body is JSON, regardless of the returned Content-Type")
 	WebhooksOptReply        = ffm("WebhookSubOptions.reply", "Webhooks only: Whether to automatically send a reply event, using the body returned by the webhook")

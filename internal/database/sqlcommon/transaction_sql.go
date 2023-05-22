@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,6 +48,15 @@ var (
 
 const transactionsTable = "transactions"
 
+type IdempotencyError struct {
+	ExistingTXID  *fftypes.UUID
+	OriginalError error
+}
+
+func (e *IdempotencyError) Error() string {
+	return e.OriginalError.Error()
+}
+
 func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *core.Transaction) (err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
@@ -78,7 +87,8 @@ func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *core.Tra
 			fb := database.TransactionQueryFactory.NewFilter(ctx)
 			existing, _, _ := s.GetTransactions(ctx, transaction.Namespace, fb.Eq("idempotencykey", (string)(transaction.IdempotencyKey)))
 			if len(existing) > 0 {
-				return i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateTransaction, transaction.IdempotencyKey, existing[0].ID)
+				newErr := &IdempotencyError{existing[0].ID, i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateTransaction, transaction.IdempotencyKey, existing[0].ID)}
+				return newErr
 			} else if err == nil {
 				// If we don't have an error, and we didn't find an existing idempotency key match, then we don't know the reason for the conflict
 				return i18n.NewError(ctx, coremsgs.MsgNonIdempotencyKeyConflictTxInsert, transaction.ID, transaction.IdempotencyKey)

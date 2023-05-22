@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -57,17 +57,21 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *core.ContractAPI
 	rows, _, err := s.QueryTx(ctx, contractapisTable, tx,
 		sq.Select("id").
 			From(contractapisTable).
-			Where(sq.Eq{
-				"namespace": api.Namespace,
-				"name":      api.Name,
+			Where(sq.And{
+				sq.Eq{"namespace": api.Namespace},
+				sq.Or{
+					sq.Eq{"id": api.ID},
+					sq.Eq{"name": api.Name},
+				},
 			}),
 	)
 	if err != nil {
 		return err
 	}
-	existing := rows.Next()
 
-	if existing {
+	existing := false
+	for rows.Next() {
+		existing = true
 		var id fftypes.UUID
 		_ = rows.Scan(&id)
 		if api.ID != nil && *api.ID != id {
@@ -81,11 +85,14 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *core.ContractAPI
 	if existing {
 		if _, err = s.UpdateTx(ctx, contractapisTable, tx,
 			sq.Update(contractapisTable).
-				Set("id", api.ID).
 				Set("interface_id", api.Interface.ID).
 				Set("location", api.Location).
 				Set("name", api.Name).
-				Set("message_id", api.Message),
+				Set("message_id", api.Message).
+				Where(sq.Eq{
+					"namespace": api.Namespace,
+					"id":        api.ID,
+				}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, core.ChangeEventTypeUpdated, api.Namespace, api.ID)
 			},

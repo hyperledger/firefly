@@ -112,9 +112,10 @@ type Message struct {
 // Fields such as the state/confirmed do NOT transfer, as these are calculated individually by each member.
 func (m *Message) BatchMessage() *Message {
 	return &Message{
-		Header: m.Header,
-		Hash:   m.Hash,
-		Data:   m.Data,
+		Header:        m.Header,
+		Hash:          m.Hash,
+		Data:          m.Data,
+		TransactionID: m.TransactionID,
 		// The pins are immutable once assigned by the sender, which happens before the batch is sealed
 		Pins: m.Pins,
 	}
@@ -124,7 +125,7 @@ func (m *Message) BatchMessage() *Message {
 // will be broken out and stored separately during the call.
 type MessageInOut struct {
 	Message
-	InlineData InlineData  `ffstruct:"MessageInOut" json:"data"`
+	InlineData InlineData  `ffstruct:"MessageInOut" json:"data,omitempty"`
 	Group      *InputGroup `ffstruct:"MessageInOut" json:"group,omitempty" ffexclude:"postNewMessageBroadcast"`
 }
 
@@ -232,8 +233,9 @@ func (m *Message) DupDataCheck(ctx context.Context) (err error) {
 
 func (m *Message) VerifyFields(ctx context.Context) error {
 	switch m.Header.TxType {
-	case TransactionTypeBatchPin:
-	case TransactionTypeUnpinned:
+	case TransactionTypeBatchPin,
+		TransactionTypeUnpinned,
+		TransactionTypeContractInvokePin:
 	default:
 		return i18n.NewError(ctx, i18n.MsgInvalidTXTypeForMessage, m.Header.TxType)
 	}
@@ -266,4 +268,36 @@ func (m *Message) Verify(ctx context.Context) error {
 
 func (m *Message) LocalSequence() int64 {
 	return m.Sequence
+}
+
+// MessageAction is an action to be taken on a message during processing
+type MessageAction int
+
+const (
+	// ActionReject the message was successfully processed, but was malformed/invalid and should be marked as rejected
+	ActionReject MessageAction = iota
+
+	// ActionConfirm the message was valid and should be confirmed
+	ActionConfirm
+
+	// ActionRetry a recoverable error was encountered - batch should be halted and then re-processed from the start
+	ActionRetry
+
+	// ActionWait the message is still awaiting further pieces for aggregation and should be held in pending state
+	ActionWait
+)
+
+func (dma MessageAction) String() string {
+	switch dma {
+	case ActionReject:
+		return "reject"
+	case ActionConfirm:
+		return "confirm"
+	case ActionRetry:
+		return "retry"
+	case ActionWait:
+		return "wait"
+	default:
+		return "unknown"
+	}
 }

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -17,6 +17,8 @@
 package ffdx
 
 import (
+	"time"
+
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 )
@@ -26,10 +28,17 @@ const (
 	DataExchangeManifestEnabled = "manifestEnabled"
 	// DataExchangeInitEnabled instructs FireFly to always post all current nodes to the /init API before connecting or reconnecting to the connector
 	DataExchangeInitEnabled = "initEnabled"
+
+	DataExchangeEventRetryInitialDelay = "eventRetry.initialDelay"
+	DataExchangeEventRetryMaxDelay     = "eventRetry.maxDelay"
+	DataExchangeEventRetryFactor       = "eventRetry.factor"
 )
 
 func (h *FFDX) InitConfig(config config.Section) {
 	wsclient.InitConfig(config)
 	config.AddKnownKey(DataExchangeManifestEnabled, false)
 	config.AddKnownKey(DataExchangeInitEnabled, false)
+	config.AddKnownKey(DataExchangeEventRetryInitialDelay, 50*time.Millisecond)
+	config.AddKnownKey(DataExchangeEventRetryMaxDelay, 30*time.Second)
+	config.AddKnownKey(DataExchangeEventRetryFactor, 2.0)
 }

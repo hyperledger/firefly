@@ -39,8 +39,17 @@ func (_m *Callbacks) SharedStorageBatchDownloaded(payloadRef string, data []byte
 }
 
 // SharedStorageBlobDownloaded provides a mock function with given fields: hash, size, payloadRef, dataID
-func (_m *Callbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) {
-	_m.Called(hash, size, payloadRef, dataID)
+func (_m *Callbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string, dataID *fftypes.UUID) error {
+	ret := _m.Called(hash, size, payloadRef, dataID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(fftypes.Bytes32, int64, string, *fftypes.UUID) error); ok {
+		r0 = rf(hash, size, payloadRef, dataID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 type mockConstructorTestingTNewCallbacks interface {

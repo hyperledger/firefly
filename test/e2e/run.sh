@@ -2,7 +2,7 @@
 
 set -o pipefail
 
- if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
+if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
 
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
@@ -51,18 +51,23 @@ DATABASE_TYPE=${DATABASE_TYPE:-sqlite3}
 STACK_TYPE=${STACK_TYPE:-ethereum}
 TOKENS_PROVIDER=${TOKENS_PROVIDER:-erc20_erc721}
 
-BLOCKCHAIN_CONNECTOR_FLAG=""
+EXTRA_FLAGS=""
 if [ -n "${BLOCKCHAIN_CONNECTOR}" ]; then
-  BLOCKCHAIN_CONNECTOR_FLAG="--blockchain-connector ${BLOCKCHAIN_CONNECTOR}"
+  EXTRA_FLAGS="${EXTRA_FLAGS} --blockchain-connector ${BLOCKCHAIN_CONNECTOR}"
 fi
 
-BLOCKCHAIN_NODE_FLAG=""
 if [ "${STACK_TYPE}" != "fabric" ]; then
   if [ -n "${BLOCKCHAIN_NODE}" ]; then
-    BLOCKCHAIN_CONNECTOR_FLAG="--blockchain-node ${BLOCKCHAIN_NODE}"
+    EXTRA_FLAGS="${EXTRA_FLAGS} --blockchain-node ${BLOCKCHAIN_NODE}"
   fi
 fi
 
+if [ "${TEST_SUITE}" == "TestFabricMultipartyCustomPinE2ESuite" ]; then
+  # Special config for this one test suite
+  EXTRA_FLAGS="${EXTRA_FLAGS} --custom-pin-support"
+fi
+
+# Pick a default suite if none was explicitly set
 if [ -z "${TEST_SUITE}" ]; then
   if [ "${STACK_TYPE}" == "fabric" ]; then
     if [ "${MULTIPARTY_ENABLED}" == "true" ]; then
@@ -93,7 +98,7 @@ fi
 
 if [ "$CREATE_STACK" == "true" ]; then
   $CLI remove -f $STACK_NAME
-  $CLI init $STACK_TYPE --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 $BLOCKCHAIN_CONNECTOR_FLAG $BLOCKCHAIN_NODE_FLAG --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false --multiparty=$MULTIPARTY_ENABLED
+  $CLI init $STACK_TYPE --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 $EXTRA_FLAGS --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false --multiparty=$MULTIPARTY_ENABLED
   checkOk $?
 
   $CLI pull $STACK_NAME -r 3

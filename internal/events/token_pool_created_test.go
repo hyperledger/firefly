@@ -35,7 +35,6 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
-	operations := []*core.Operation{}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
 		Type:        core.TokenTypeFungible,
@@ -53,7 +52,7 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil, nil)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
+	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(nil, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)
@@ -216,9 +215,9 @@ func TestTokenPoolCreatedConfirmFailBadSymbol(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(storedPool, nil)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return([]*core.Operation{{
+	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(&core.Operation{
 		ID: opID,
-	}}, nil, nil)
+	}, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, chainPool)
 	assert.NoError(t, err)
@@ -331,14 +330,12 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 
 	poolID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
-	operations := []*core.Operation{
-		{
-			ID: fftypes.NewUUID(),
-			Input: fftypes.JSONObject{
-				"id":        poolID.String(),
-				"namespace": "ns1",
-				"name":      "my-pool",
-			},
+	operation := &core.Operation{
+		ID: fftypes.NewUUID(),
+		Input: fftypes.JSONObject{
+			"id":        poolID.String(),
+			"namespace": "ns1",
+			"name":      "my-pool",
 		},
 	}
 	info := fftypes.JSONObject{"some": "info"}
@@ -358,8 +355,8 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil).Once()
+	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(nil, fmt.Errorf("pop")).Once()
+	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil).Once()
 	em.mds.On("DefineTokenPool", em.ctx, mock.MatchedBy(func(pool *core.TokenPoolAnnouncement) bool {
 		return pool.Pool.Namespace == "ns1" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
 	}), false).Return(nil, nil)
@@ -378,16 +375,14 @@ func TestTokenPoolCreatedAnnounceBadInterface(t *testing.T) {
 	poolID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
 	interfaceID := fftypes.NewUUID()
-	operations := []*core.Operation{
-		{
-			ID: fftypes.NewUUID(),
-			Input: fftypes.JSONObject{
-				"id":        poolID.String(),
-				"namespace": "ns1",
-				"name":      "my-pool",
-				"interface": fftypes.JSONObject{
-					"id": interfaceID.String(),
-				},
+	operation := &core.Operation{
+		ID: fftypes.NewUUID(),
+		Input: fftypes.JSONObject{
+			"id":        poolID.String(),
+			"namespace": "ns1",
+			"name":      "my-pool",
+			"interface": fftypes.JSONObject{
+				"id": interfaceID.String(),
 			},
 		},
 	}
@@ -409,8 +404,8 @@ func TestTokenPoolCreatedAnnounceBadInterface(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil).Once()
+	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(nil, fmt.Errorf("pop")).Once()
+	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil).Once()
 	em.mam.On("ResolvePoolMethods", em.ctx, mock.MatchedBy(func(pool *core.TokenPool) bool {
 		return pool.Locator == "123" && pool.Name == "my-pool"
 	})).Return(fmt.Errorf("pop"))
@@ -427,12 +422,10 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
-	operations := []*core.Operation{
-		{
-			ID:    fftypes.NewUUID(),
-			Type:  core.OpTypeTokenCreatePool,
-			Input: fftypes.JSONObject{},
-		},
+	operation := &core.Operation{
+		ID:    fftypes.NewUUID(),
+		Type:  core.OpTypeTokenCreatePool,
+		Input: fftypes.JSONObject{},
 	}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
@@ -451,7 +444,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
+	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)
@@ -464,13 +457,11 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
-	operations := []*core.Operation{
-		{
-			ID:   fftypes.NewUUID(),
-			Type: core.OpTypeTokenCreatePool,
-			Input: fftypes.JSONObject{
-				"id": fftypes.NewUUID().String(),
-			},
+	operation := &core.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: core.OpTypeTokenCreatePool,
+		Input: fftypes.JSONObject{
+			"id": fftypes.NewUUID().String(),
 		},
 	}
 	info := fftypes.JSONObject{"some": "info"}
@@ -490,7 +481,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
+	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)
@@ -504,15 +495,13 @@ func TestTokenPoolCreatedAnnounceBadSymbol(t *testing.T) {
 
 	poolID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
-	operations := []*core.Operation{
-		{
-			ID: fftypes.NewUUID(),
-			Input: fftypes.JSONObject{
-				"id":        poolID.String(),
-				"namespace": "test-ns",
-				"name":      "my-pool",
-				"symbol":    "FFT",
-			},
+	operation := &core.Operation{
+		ID: fftypes.NewUUID(),
+		Input: fftypes.JSONObject{
+			"id":        poolID.String(),
+			"namespace": "test-ns",
+			"name":      "my-pool",
+			"symbol":    "FFT",
 		},
 	}
 	info := fftypes.JSONObject{"some": "info"}
@@ -533,8 +522,8 @@ func TestTokenPoolCreatedAnnounceBadSymbol(t *testing.T) {
 	}
 
 	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
-	em.mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil).Once()
+	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(nil, fmt.Errorf("pop")).Once()
+	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil).Once()
 
 	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)

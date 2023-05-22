@@ -615,7 +615,7 @@ func TestGetDefaultVerifierNoBlockchain(t *testing.T) {
 	im.blockchain = nil
 	im.defaultKey = "test"
 
-	verifier, err := im.getDefaultVerifier(ctx)
+	verifier, err := im.getDefaultVerifier(ctx, blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10417", err)
 	assert.Nil(t, verifier)
 }
@@ -649,6 +649,19 @@ func TestResolveInputSigningKeyDefaultNoBlockchainDefaultKeyFallback(t *testing.
 	mbi.On("ResolveSigningKey", ctx, "key123", blockchain.ResolveKeyIntentSign).Return("fullkey123", nil)
 
 	resolvedKey, err := im.ResolveInputSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
+	assert.NoError(t, err)
+	assert.Equal(t, "fullkey123", resolvedKey)
+}
+
+func TestResolveQuerySigningKeyDefaultNoBlockchainDefaultKeyFallback(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	im.defaultKey = "key123"
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key123", blockchain.ResolveKeyIntentQuery).Return("fullkey123", nil)
+
+	resolvedKey, err := im.ResolveQuerySigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
 	assert.NoError(t, err)
 	assert.Equal(t, "fullkey123", resolvedKey)
 }

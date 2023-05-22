@@ -71,6 +71,7 @@ var routes = append(
 		getContractListeners,
 		getData,
 		getDataBlob,
+		getDataSubPaths,
 		getDataValue,
 		getDataByID,
 		getDataMsgs,

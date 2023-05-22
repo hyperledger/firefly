@@ -61,8 +61,10 @@ const (
 	NamespaceMultipartyContract = "contract"
 	// NamespaceMultipartyContractFirstEvent is the first event to process for this contract
 	NamespaceMultipartyContractFirstEvent = "firstEvent"
-	// NamespaceMultipartyContractLocation is an object containing blockchain specific configuration
+	// NamespaceMultipartyContractLocation is an object specifying the blockchain-specific location of the contract
 	NamespaceMultipartyContractLocation = "location"
+	// NamespaceMultipartyContractOptions is an object of additional blockchain-specific configuration
+	NamespaceMultipartyContractOptions = "options"
 )
 
 // The following keys can be access from the root configuration.
@@ -276,6 +278,12 @@ var (
 	NamespacesDefault = ffc("namespaces.default")
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
 	NamespacesPredefined = ffc("namespaces.predefined")
+	// NamespacesRetryFactor is the retry backoff factor for starting/restarting individual namespaces
+	NamespacesRetryFactor = ffc("namespaces.retry.factor")
+	// NamespacesRetryInitDelay is the retry initial delay for starting/restarting individual namespaces
+	NamespacesRetryInitDelay = ffc("namespaces.retry.initDelay")
+	// NamespacesRetryMaxDelay is the maximum delay between retry attempts
+	NamespacesRetryMaxDelay = ffc("namespaces.retry.maxDelay")
 	// NodeName is the short name for the node
 	NodeName = ffc("node.name")
 	// NodeDescription is a description for the node
@@ -400,6 +408,9 @@ func setDefaults() {
 	viper.SetDefault(string(MessageWriterBatchTimeout), "10ms")
 	viper.SetDefault(string(MessageWriterCount), 5)
 	viper.SetDefault(string(NamespacesDefault), "default")
+	viper.SetDefault(string(NamespacesRetryFactor), 2.0)
+	viper.SetDefault(string(NamespacesRetryMaxDelay), "1m")
+	viper.SetDefault(string(NamespacesRetryInitDelay), "5s")
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
 	viper.SetDefault(string(OpUpdateRetryInitDelay), "250ms")
 	viper.SetDefault(string(OpUpdateRetryMaxDelay), "1m")

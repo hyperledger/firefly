@@ -154,7 +154,9 @@ func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobDa
 	log.L(ctx).Infof("Transferred blob '%s' (%s) from shared storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(blobSize), 2), data.PayloadRef, dxPayloadRef)
 
 	// then callback to store metadata
-	dm.callbacks.SharedStorageBlobDownloaded(*hash, blobSize, dxPayloadRef, data.DataID)
+	if err := dm.callbacks.SharedStorageBlobDownloaded(*hash, blobSize, dxPayloadRef, data.DataID); err != nil {
+		return nil, false, err
+	}
 
 	return getDownloadBlobOutputs(hash, blobSize, dxPayloadRef), true, nil
 }

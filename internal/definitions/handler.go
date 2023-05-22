@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,40 +40,8 @@ type Handler interface {
 }
 
 type HandlerResult struct {
-	Action           DefinitionMessageAction
+	Action           core.MessageAction
 	CustomCorrelator *fftypes.UUID
-}
-
-// DefinitionMessageAction is the action to be taken on an individual definition message
-type DefinitionMessageAction int
-
-const (
-	// ActionReject the message was successfully processed, but was malformed/invalid and should be marked as rejected
-	ActionReject DefinitionMessageAction = iota
-
-	// ActionConfirm the message was valid and should be confirmed
-	ActionConfirm
-
-	// ActionRetry a recoverable error was encountered - batch should be halted and then re-processed from the start
-	ActionRetry
-
-	// ActionWait the message is still awaiting further pieces for aggregation and should be held in pending state
-	ActionWait
-)
-
-func (dma DefinitionMessageAction) String() string {
-	switch dma {
-	case ActionReject:
-		return "reject"
-	case ActionConfirm:
-		return "confirm"
-	case ActionRetry:
-		return "retry"
-	case ActionWait:
-		return "wait"
-	default:
-		return "unknown"
-	}
 }
 
 type definitionHandler struct {
@@ -130,7 +98,7 @@ func (dh *definitionHandler) HandleDefinitionBroadcast(ctx context.Context, stat
 	case core.SystemTagDefineContractAPI:
 		return dh.handleContractAPIBroadcast(ctx, state, msg, data, tx)
 	default:
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unknown system tag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
+		return HandlerResult{Action: core.ActionReject}, fmt.Errorf("unknown system tag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 	}
 }
 

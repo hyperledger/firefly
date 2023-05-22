@@ -13,8 +13,17 @@ type Callbacks struct {
 }
 
 // DXEvent provides a mock function with given fields: plugin, event
-func (_m *Callbacks) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) {
-	_m.Called(plugin, event)
+func (_m *Callbacks) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) error {
+	ret := _m.Called(plugin, event)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, dataexchange.DXEvent) error); ok {
+		r0 = rf(plugin, event)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 type mockConstructorTestingTNewCallbacks interface {

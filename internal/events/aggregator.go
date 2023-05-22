@@ -406,7 +406,7 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*core.Pin, state *
 	return nil
 }
 
-func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Message, pin *core.Pin) (valid bool, err error) {
+func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Message, pin *core.Pin) (action core.MessageAction, err error) {
 	l := log.L(ctx)
 
 	verifierRef := &core.VerifierRef{
@@ -416,34 +416,44 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 
 	if msg.Header.Key == "" || msg.Header.Key != pin.Signer {
 		l.Errorf("Invalid message '%s'. Key '%s' does not match the signer of the pin: %s", msg.Header.ID, msg.Header.Key, pin.Signer)
-		return false, nil // This is not retryable. skip this message
+		return core.ActionReject, nil // This is not retryable. Reject this message
 	}
 
-	// Verify that we can resolve the signing key back to the identity that is claimed in the batch.
+	// Verify that we can resolve the signing key back to the identity that is claimed in the batch
 	resolvedAuthor, err := ag.identity.FindIdentityForVerifier(ctx, []core.IdentityType{
 		core.IdentityTypeOrg,
 		core.IdentityTypeCustom,
 	}, verifierRef)
 	if err != nil {
-		return false, err
+		return core.ActionRetry, err
 	}
+
 	if resolvedAuthor == nil {
-		if msg.Header.Type == core.MessageTypeDefinition &&
-			(msg.Header.Tag == core.SystemTagIdentityClaim || msg.Header.Tag == core.DeprecatedSystemTagDefineNode || msg.Header.Tag == core.DeprecatedSystemTagDefineOrganization) {
-			// We defer detailed checking of this identity to the system handler
-			return true, nil
-		} else if msg.Header.Type != core.MessageTypePrivate {
-			// Only private messages, or root org broadcasts can have an unregistered key
-			l.Errorf("Invalid message '%s'. Author '%s' cound not be resolved: %s", msg.Header.ID, msg.Header.Author, err)
-			return false, nil // This is not retryable. skip this batch
+		switch {
+		case msg.Header.Type == core.MessageTypeDefinition &&
+			(msg.Header.Tag == core.SystemTagIdentityClaim ||
+				msg.Header.Tag == core.DeprecatedSystemTagDefineNode ||
+				msg.Header.Tag == core.DeprecatedSystemTagDefineOrganization):
+			// Identity claims can have an unregistered identity at this point
+			// We defer detailed checking of the identity to the system handler
+			return core.ActionConfirm, nil
+
+		case msg.Header.Type == core.MessageTypePrivate || msg.Header.Type == core.MessageTypeGroupInit:
+			// Private messages (and their associated group init) can always use an unregistered verifier
+			return core.ActionConfirm, nil
+
+		default:
+			// Everything else (broadcasts, non-identity definitions) will not be processed from an unregistered identity
+			l.Warnf("Skipping message '%s'. Author '%s' could not be resolved: %s", msg.Header.ID, msg.Header.Author, err)
+			return core.ActionWait, nil // Wait in case the identity is resolved later
 		}
-	} else if msg.Header.Author == "" || resolvedAuthor.DID != msg.Header.Author {
+	}
+	if msg.Header.Author == "" || resolvedAuthor.DID != msg.Header.Author {
 		l.Errorf("Invalid message '%s'. Author '%s' does not match identity registered to %s: %s (%s)", msg.Header.ID, msg.Header.Author, verifierRef.Value, resolvedAuthor.DID, resolvedAuthor.ID)
-		return false, nil // This is not retryable. skip this batch
+		return core.ActionReject, nil // This is not retryable. Reject this message
 
 	}
-
-	return true, nil
+	return core.ActionConfirm, nil
 }
 
 func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchManifest, pin *core.Pin, msgBaseIndex int64, msgEntry *core.MessageManifestEntry, batch *core.BatchPersisted, state *batchState) (err error) {
@@ -451,8 +461,8 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 
 	unmaskedContexts := make([]*fftypes.Bytes32, 0)
 	nextPins := make([]*nextPinState, 0)
-	var newState core.MessageState
-	var dispatched bool
+	action := core.ActionWait
+	var correlator *fftypes.UUID
 
 	var cro data.CacheReadOption
 	if pin.Masked {
@@ -469,6 +479,12 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 	case !dataAvailable:
 		l.Errorf("Message '%s' in batch '%s' is missing data", msgEntry.ID, manifest.ID)
 	default:
+		// Check the pin signer is valid for the message
+		action, err = ag.checkOnchainConsistency(ctx, msg, pin)
+		if action != core.ActionConfirm {
+			break
+		}
+
 		// Check if it's ready to be processed
 		if pin.Masked {
 			// Private messages have one or more masked "pin" hashes that allow us to work
@@ -509,26 +525,26 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		}
 
 		l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
-		newState, dispatched, err = ag.attemptMessageDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
-		if err != nil {
-			return err
-		}
+		action, correlator, err = ag.readyForDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
 	}
 
-	// Mark all message pins dispatched true/false
-	// - dispatched=true: we need to write them dispatched in the DB at the end of the batch, and increment all nextPins
-	// - dispatched=false: we need to prevent dispatch of any subsequent messages on the same topic in the batch
-	if dispatched {
-		for _, np := range nextPins {
-			np.IncrementNextPin(ctx, ag.namespace)
-		}
-		state.markMessageDispatched(manifest.ID, msg, msgBaseIndex, newState)
-	} else {
+	if action == core.ActionRetry {
+		return err
+	} else if action == core.ActionWait {
+		// We need to prevent dispatch of any subsequent messages on the same topic in the batch
 		for _, unmaskedContext := range unmaskedContexts {
 			state.SetContextBlockedBy(ctx, *unmaskedContext, pin.Sequence)
 		}
+		return nil
 	}
 
+	newState := ag.completeDispatch(action, correlator, msg, manifest.TX.ID, state)
+
+	// Mark all message pins dispatched, and increment all nextPins
+	for _, np := range nextPins {
+		np.IncrementNextPin(ctx, ag.namespace)
+	}
+	state.markMessageDispatched(manifest.ID, msg, msgBaseIndex, newState)
 	return nil
 }
 
@@ -544,84 +560,91 @@ func needsTokenApproval(msg *core.Message) bool {
 		msg.Header.Type == core.MessageTypeDeprecatedApprovalPrivate
 }
 
-func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState, pin *core.Pin) (newState core.MessageState, dispatched bool, err error) {
-	var customCorrelator *fftypes.UUID
-
-	// Check the pin signer is valid for the message
-	valid, err := ag.checkOnchainConsistency(ctx, msg, pin)
-	if err != nil {
-		return "", false, err
+func (ag *aggregator) readyForDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState, pin *core.Pin) (action core.MessageAction, correlator *fftypes.UUID, err error) {
+	// Verify we have all the blobs for the data
+	if resolved, err := ag.resolveBlobs(ctx, data); err != nil {
+		return core.ActionRetry, nil, err
+	} else if !resolved {
+		return core.ActionWait, nil, nil
 	}
 
-	if valid {
-		// Verify we have all the blobs for the data
-		if resolved, err := ag.resolveBlobs(ctx, data); err != nil || !resolved {
-			return "", false, err
+	// For transfers, verify the transfer has come through
+	if needsTokenTransfer(msg) {
+		fb := database.TokenTransferQueryFactory.NewFilter(ctx)
+		filter := fb.And(
+			fb.Eq("message", msg.Header.ID),
+		)
+		transfers, _, err := ag.database.GetTokenTransfers(ctx, ag.namespace, filter)
+		if err != nil {
+			return core.ActionRetry, nil, err
 		}
-
-		// For transfers, verify the transfer has come through
-		if needsTokenTransfer(msg) {
-			fb := database.TokenTransferQueryFactory.NewFilter(ctx)
-			filter := fb.And(
-				fb.Eq("message", msg.Header.ID),
-			)
-			if transfers, _, err := ag.database.GetTokenTransfers(ctx, ag.namespace, filter); err != nil || len(transfers) == 0 {
-				log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
-				return "", false, err
-			} else if !msg.Hash.Equals(transfers[0].MessageHash) {
-				log.L(ctx).Errorf("Message hash %s does not match hash recorded in transfer: %s", msg.Hash, transfers[0].MessageHash)
-				return "", false, nil
-			}
+		if len(transfers) == 0 {
+			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
+			return core.ActionWait, nil, nil
 		}
-
-		// For approvals, verify the approval has come through
-		if needsTokenApproval(msg) {
-			fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
-			filter := fb.And(
-				fb.Eq("message", msg.Header.ID),
-			)
-			if approvals, _, err := ag.database.GetTokenApprovals(ctx, ag.namespace, filter); err != nil || len(approvals) == 0 {
-				log.L(ctx).Debugf("Approval for message %s not yet available", msg.Header.ID)
-				return "", false, err
-			} else if !msg.Hash.Equals(approvals[0].MessageHash) {
-				log.L(ctx).Errorf("Message hash %s does not match hash recorded in approval: %s", msg.Hash, approvals[0].MessageHash)
-				return "", false, nil
-			}
-		}
-
-		// Validate the message data
-		switch {
-		case msg.Header.Type == core.MessageTypeDefinition:
-			// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
-			// dispatched subsequent events before we have processed the definition events they depend on.
-			handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
-			log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
-			if handlerResult.Action == definitions.ActionRetry {
-				return "", false, err
-			}
-			if handlerResult.Action == definitions.ActionWait {
-				return "", false, nil
-			}
-			if handlerResult.Action == definitions.ActionReject {
-				log.L(ctx).Warnf("Definition broadcast rejected: %s", err)
-			}
-			customCorrelator = handlerResult.CustomCorrelator
-			valid = handlerResult.Action == definitions.ActionConfirm
-
-		case msg.Header.Type == core.MessageTypeGroupInit:
-			// Already handled as part of resolving the context - do nothing.
-
-		case len(msg.Data) > 0:
-			valid, err = ag.data.ValidateAll(ctx, data)
-			if err != nil {
-				return "", false, err
-			}
+		if !msg.Hash.Equals(transfers[0].MessageHash) {
+			log.L(ctx).Errorf("Message hash %s does not match hash recorded in transfer: %s", msg.Hash, transfers[0].MessageHash)
+			return core.ActionWait, nil, nil
 		}
 	}
 
-	newState = core.MessageStateConfirmed
+	// For approvals, verify the approval has come through
+	if needsTokenApproval(msg) {
+		fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
+		filter := fb.And(
+			fb.Eq("message", msg.Header.ID),
+		)
+		approvals, _, err := ag.database.GetTokenApprovals(ctx, ag.namespace, filter)
+		if err != nil {
+			return core.ActionRetry, nil, err
+		}
+		if len(approvals) == 0 {
+			log.L(ctx).Debugf("Approval for message %s not yet available", msg.Header.ID)
+			return core.ActionWait, nil, nil
+		}
+		if !msg.Hash.Equals(approvals[0].MessageHash) {
+			log.L(ctx).Errorf("Message hash %s does not match hash recorded in approval: %s", msg.Hash, approvals[0].MessageHash)
+			return core.ActionWait, nil, nil
+		}
+	}
+
+	// Validate the message data
+	switch {
+	case msg.Header.Type == core.MessageTypeDefinition:
+		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
+		// dispatched subsequent events before we have processed the definition events they depend on.
+		var handlerResult definitions.HandlerResult
+		handlerResult, err = ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
+		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
+		if handlerResult.Action == core.ActionReject {
+			log.L(ctx).Infof("Definition broadcast '%s' rejected: %s", msg.Header.ID, err)
+			err = nil
+		}
+		correlator = handlerResult.CustomCorrelator
+		action = handlerResult.Action
+
+	case msg.Header.Type == core.MessageTypeGroupInit:
+		// Already handled as part of resolving the context
+		action = core.ActionConfirm
+
+	case len(msg.Data) > 0:
+		var valid bool
+		valid, err = ag.data.ValidateAll(ctx, data)
+		action = core.ActionReject
+		if err != nil {
+			action = core.ActionRetry
+		} else if valid {
+			action = core.ActionConfirm
+		}
+	}
+
+	return action, correlator, err
+}
+
+func (ag *aggregator) completeDispatch(action core.MessageAction, correlator *fftypes.UUID, msg *core.Message, tx *fftypes.UUID, state *batchState) core.MessageState {
+	newState := core.MessageStateConfirmed
 	eventType := core.EventTypeMessageConfirmed
-	if valid {
+	if action == core.ActionConfirm {
 		state.AddPendingConfirm(msg.Header.ID, msg)
 	} else {
 		newState = core.MessageStateRejected
@@ -633,11 +656,11 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		for _, topic := range msg.Header.Topics {
 			event := core.NewEvent(eventType, ag.namespace, msg.Header.ID, tx, topic)
 			event.Correlator = msg.Header.CID
-			if customCorrelator != nil {
+			if correlator != nil {
 				// Definition handlers can set a custom event correlator (such as a token pool ID)
-				event.Correlator = customCorrelator
+				event.Correlator = correlator
 			}
-			if err = ag.database.InsertEvent(ctx, event); err != nil {
+			if err := ag.database.InsertEvent(ctx, event); err != nil {
 				return err
 			}
 		}
@@ -646,8 +669,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 	if ag.metrics.IsMetricsEnabled() {
 		ag.metrics.MessageConfirmed(msg, eventType)
 	}
-
-	return newState, true, nil
+	return newState
 }
 
 // resolveBlobs ensures that the blobs for all the attachments in the data array, have been received into the

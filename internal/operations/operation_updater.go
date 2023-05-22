@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -342,6 +343,16 @@ func (ou *operationUpdater) close() {
 }
 
 func (ou *operationUpdater) resolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error) {
+	// Never move an operation from Succeeded/Failed back to Pending
+	fb := database.OperationQueryFactory.NewFilter(ctx)
+	var filter ffapi.AndFilter
+	if status == core.OpStatusPending {
+		filter = fb.And(
+			fb.Neq("status", core.OpStatusSucceeded),
+			fb.Neq("status", core.OpStatusFailed),
+		)
+	}
+
 	update := database.OperationQueryFactory.NewUpdate(ctx).S()
 	if status != "" {
 		update = update.Set("status", status)
@@ -352,6 +363,9 @@ func (ou *operationUpdater) resolveOperation(ctx context.Context, ns string, id 
 	if output != nil {
 		update = update.Set("output", output)
 	}
-	ou.manager.updateCachedOperation(id, status, errorMsg, output, nil)
-	return ou.database.UpdateOperation(ctx, ns, id, update)
+	ok, err := ou.database.UpdateOperation(ctx, ns, id, filter, update)
+	if ok && err == nil {
+		ou.manager.updateCachedOperation(id, status, errorMsg, output, nil)
+	}
+	return err
 }

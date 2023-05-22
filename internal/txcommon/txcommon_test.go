@@ -633,3 +633,43 @@ func TestInsertBlockchainEventErr(t *testing.T) {
 	mdi.AssertExpectations(t)
 
 }
+
+func TestFindOperationInTransaction(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	txID := fftypes.NewUUID()
+	ops := []*core.Operation{{
+		ID: fftypes.NewUUID(),
+	}}
+	mdi.On("GetOperations", ctx, "ns1", mock.Anything).Return(ops, nil, nil)
+
+	result, err := txHelper.FindOperationInTransaction(ctx, txID, core.OpTypeTokenTransfer)
+
+	assert.NoError(t, err)
+	assert.Equal(t, ops[0].ID, result.ID)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestFindOperationInTransactionFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	txID := fftypes.NewUUID()
+	mdi.On("GetOperations", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := txHelper.FindOperationInTransaction(ctx, txID, core.OpTypeTokenTransfer)
+
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+}
