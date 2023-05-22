@@ -297,6 +297,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## events.websockets
 
@@ -343,6 +344,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## log
 
@@ -418,6 +420,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## namespaces
 
@@ -600,6 +603,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## plugins.blockchain[].ethereum.ethconnect
 
@@ -653,6 +657,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## plugins.blockchain[].ethereum.ethconnect.ws
 
@@ -709,6 +714,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## plugins.blockchain[].fabric.fabconnect
 
@@ -763,6 +769,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## plugins.blockchain[].fabric.fabconnect.ws
 
@@ -877,6 +884,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## plugins.dataexchange[].ffdx.ws
 
@@ -947,6 +955,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## plugins.sharedstorage[].ipfs.gateway
 
@@ -993,6 +1002,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## plugins.tokens[]
 
@@ -1055,6 +1065,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## plugins.tokens[].fftokens.ws
 
@@ -1116,6 +1127,7 @@ nav_order: 2
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
 ## spi.ws
 

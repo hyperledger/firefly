@@ -83,7 +83,7 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *core.BatchState, ffi *fftypes.FFI, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 	ffi.Namespace = dh.namespace.Name
-	if err := ffi.Validate(ctx, true); err != nil {
+	if err := ffi.Validate(ctx); err != nil {
 		return HandlerResult{Action: core.ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID)
 	}
 
