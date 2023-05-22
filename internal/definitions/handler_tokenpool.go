@@ -42,13 +42,19 @@ func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, pool.Connector, "token")
 	}
 
+	org, err := dh.identity.GetMultipartyRootOrg(ctx)
+	if err != nil {
+		return HandlerResult{Action: core.ActionRetry}, err
+	}
+	isAuthor := org.DID == msg.Header.Author
+
 	pool.Message = msg.Header.ID
 	pool.Name = pool.NetworkName
 	pool.Published = true
-	return dh.handleTokenPoolDefinition(ctx, state, pool, msg.Header.Author)
+	return dh.handleTokenPoolDefinition(ctx, state, pool, isAuthor)
 }
 
-func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, state *core.BatchState, pool *core.TokenPool, author string) (HandlerResult, error) {
+func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, state *core.BatchState, pool *core.TokenPool, isAuthor bool) (HandlerResult, error) {
 	// Set an event correlator, so that if we reject then the sync-async bridge action can know
 	// from the event (without downloading and parsing the msg)
 	correlator := pool.ID
@@ -75,7 +81,7 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 		if pool.Published {
 			if existing.ID.Equals(pool.ID) {
 				// ID conflict - check if this matches (or should overwrite) the existing record
-				action, err := dh.reconcilePublishedPool(ctx, existing, pool, author)
+				action, err := dh.reconcilePublishedPool(ctx, existing, pool, isAuthor)
 				return HandlerResult{Action: action, CustomCorrelator: correlator}, err
 			}
 
@@ -102,7 +108,7 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 	return HandlerResult{Action: core.ActionWait, CustomCorrelator: correlator}, nil
 }
 
-func (dh *definitionHandler) reconcilePublishedPool(ctx context.Context, existing, pool *core.TokenPool, author string) (core.MessageAction, error) {
+func (dh *definitionHandler) reconcilePublishedPool(ctx context.Context, existing, pool *core.TokenPool, isAuthor bool) (core.MessageAction, error) {
 	if existing.Message.Equals(pool.Message) {
 		if existing.State == core.TokenPoolStateConfirmed {
 			// Pool was previously activated - this must be a rewind to confirm the message
@@ -113,19 +119,13 @@ func (dh *definitionHandler) reconcilePublishedPool(ctx context.Context, existin
 		}
 	}
 
-	if existing.Message == nil {
+	if existing.Message == nil && isAuthor {
 		// Pool was previously unpublished - if it was now published by this node, upsert the new version
-		org, err := dh.identity.GetMultipartyRootOrg(ctx)
-		if err != nil {
+		pool.Name = existing.Name
+		if err := dh.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
 			return core.ActionRetry, err
 		}
-		if org.DID == author {
-			pool.Name = existing.Name
-			if err := dh.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
-				return core.ActionRetry, err
-			}
-			return core.ActionConfirm, nil
-		}
+		return core.ActionConfirm, nil
 	}
 
 	return core.ActionReject, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "token pool", pool.ID, existing.ID)
