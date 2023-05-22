@@ -138,7 +138,7 @@ type dispatcher struct {
 }
 
 func (bm *batchManager) getProcessorKey(identity *core.SignerRef, groupID *fftypes.Bytes32) string {
-	return fmt.Sprintf("%s|%s|%v", identity.Author, identity.Key, groupID)
+	return fmt.Sprintf("%s|%v", identity.Author, groupID)
 }
 
 func (bm *batchManager) getDispatcherKey(txType core.TransactionType, msgType core.MessageType) string {
