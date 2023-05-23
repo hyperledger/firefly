@@ -423,6 +423,62 @@ func TestAddWorkBatchOfOne(t *testing.T) {
 	}, bp.assemblyQueue)
 }
 
+func TestAddWorkDifferentKeys(t *testing.T) {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
+		return nil
+	})
+	defer cancel()
+
+	msg1 := &core.Message{
+		Sequence: 200,
+		Header: core.MessageHeader{
+			SignerRef: core.SignerRef{
+				Key: "0x1",
+			},
+		},
+	}
+	msg2 := &core.Message{
+		Sequence: 201,
+		Header: core.MessageHeader{
+			SignerRef: core.SignerRef{
+				Key: "0x2",
+			},
+		},
+	}
+	msg3 := &core.Message{
+		Sequence: 202,
+		Header: core.MessageHeader{
+			SignerRef: core.SignerRef{
+				Key: "0x1",
+			},
+		},
+	}
+
+	full, overflow := bp.addWork(&batchWork{msg: msg1})
+	assert.False(t, full)
+	assert.False(t, overflow)
+	assert.Equal(t, []*batchWork{
+		{msg: msg1},
+	}, bp.assemblyQueue)
+
+	full, overflow = bp.addWork(&batchWork{msg: msg3})
+	assert.False(t, full)
+	assert.False(t, overflow)
+	assert.Equal(t, []*batchWork{
+		{msg: msg1},
+		{msg: msg3},
+	}, bp.assemblyQueue)
+
+	full, overflow = bp.addWork(&batchWork{msg: msg2})
+	assert.True(t, full)
+	assert.True(t, overflow)
+	assert.Equal(t, []*batchWork{
+		{msg: msg1},
+		{msg: msg3},
+		{msg: msg2},
+	}, bp.assemblyQueue)
+}
+
 func TestAddWorkAbandonedBatch(t *testing.T) {
 	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		return nil
