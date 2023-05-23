@@ -595,6 +595,13 @@ paths:
                   namespace:
                     description: The namespace of the FFI
                     type: string
+                  networkName:
+                    description: The shared interface name within the multiparty network
+                    type: string
+                  published:
+                    description: True if the interface has been published to a multiparty
+                      network
+                    type: boolean
                   version:
                     description: A version for the FFI - use of semantic versioning
                       such as 'v1.0.1' is encouraged
@@ -2678,6 +2685,14 @@ paths:
                     namespace:
                       description: The namespace of the FFI
                       type: string
+                    networkName:
+                      description: The shared interface name within the multiparty
+                        network
+                      type: string
+                    published:
+                      description: True if the interface has been published to a multiparty
+                        network
+                      type: boolean
                     version:
                       description: A version for the FFI - use of semantic versioning
                         such as 'v1.0.1' is encouraged
@@ -2846,6 +2861,9 @@ paths:
                 name:
                   description: The name of the FFI - usually matching the smart contract
                     name
+                  type: string
+                networkName:
+                  description: The shared interface name within the multiparty network
                   type: string
                 version:
                   description: A version for the FFI - use of semantic versioning
@@ -3065,6 +3083,13 @@ paths:
                   namespace:
                     description: The namespace of the FFI
                     type: string
+                  networkName:
+                    description: The shared interface name within the multiparty network
+                    type: string
+                  published:
+                    description: True if the interface has been published to a multiparty
+                      network
+                    type: boolean
                   version:
                     description: A version for the FFI - use of semantic versioning
                       such as 'v1.0.1' is encouraged
@@ -3313,6 +3338,13 @@ paths:
                   namespace:
                     description: The namespace of the FFI
                     type: string
+                  networkName:
+                    description: The shared interface name within the multiparty network
+                    type: string
+                  published:
+                    description: True if the interface has been published to a multiparty
+                      network
+                    type: boolean
                   version:
                     description: A version for the FFI - use of semantic versioning
                       such as 'v1.0.1' is encouraged
@@ -3567,6 +3599,13 @@ paths:
                   namespace:
                     description: The namespace of the FFI
                     type: string
+                  networkName:
+                    description: The shared interface name within the multiparty network
+                    type: string
+                  published:
+                    description: True if the interface has been published to a multiparty
+                      network
+                    type: boolean
                   version:
                     description: A version for the FFI - use of semantic versioning
                       such as 'v1.0.1' is encouraged
@@ -3828,6 +3867,13 @@ paths:
                   namespace:
                     description: The namespace of the FFI
                     type: string
+                  networkName:
+                    description: The shared interface name within the multiparty network
+                    type: string
+                  published:
+                    description: True if the interface has been published to a multiparty
+                      network
+                    type: boolean
                   version:
                     description: A version for the FFI - use of semantic versioning
                       such as 'v1.0.1' is encouraged
@@ -11286,6 +11332,13 @@ paths:
                   namespace:
                     description: The namespace of the FFI
                     type: string
+                  networkName:
+                    description: The shared interface name within the multiparty network
+                    type: string
+                  published:
+                    description: True if the interface has been published to a multiparty
+                      network
+                    type: boolean
                   version:
                     description: A version for the FFI - use of semantic versioning
                       such as 'v1.0.1' is encouraged
@@ -13852,6 +13905,14 @@ paths:
                     namespace:
                       description: The namespace of the FFI
                       type: string
+                    networkName:
+                      description: The shared interface name within the multiparty
+                        network
+                      type: string
+                    published:
+                      description: True if the interface has been published to a multiparty
+                        network
+                      type: boolean
                     version:
                       description: A version for the FFI - use of semantic versioning
                         such as 'v1.0.1' is encouraged
@@ -14027,6 +14088,9 @@ paths:
                 name:
                   description: The name of the FFI - usually matching the smart contract
                     name
+                  type: string
+                networkName:
+                  description: The shared interface name within the multiparty network
                   type: string
                 version:
                   description: A version for the FFI - use of semantic versioning
@@ -14246,6 +14310,13 @@ paths:
                   namespace:
                     description: The namespace of the FFI
                     type: string
+                  networkName:
+                    description: The shared interface name within the multiparty network
+                    type: string
+                  published:
+                    description: True if the interface has been published to a multiparty
+                      network
+                    type: boolean
                   version:
                     description: A version for the FFI - use of semantic versioning
                       such as 'v1.0.1' is encouraged
@@ -14501,6 +14572,13 @@ paths:
                   namespace:
                     description: The namespace of the FFI
                     type: string
+                  networkName:
+                    description: The shared interface name within the multiparty network
+                    type: string
+                  published:
+                    description: True if the interface has been published to a multiparty
+                      network
+                    type: boolean
                   version:
                     description: A version for the FFI - use of semantic versioning
                       such as 'v1.0.1' is encouraged
@@ -14762,6 +14840,13 @@ paths:
                   namespace:
                     description: The namespace of the FFI
                     type: string
+                  networkName:
+                    description: The shared interface name within the multiparty network
+                    type: string
+                  published:
+                    description: True if the interface has been published to a multiparty
+                      network
+                    type: boolean
                   version:
                     description: A version for the FFI - use of semantic versioning
                       such as 'v1.0.1' is encouraged
@@ -15030,6 +15115,13 @@ paths:
                   namespace:
                     description: The namespace of the FFI
                     type: string
+                  networkName:
+                    description: The shared interface name within the multiparty network
+                    type: string
+                  published:
+                    description: True if the interface has been published to a multiparty
+                      network
+                    type: boolean
                   version:
                     description: A version for the FFI - use of semantic versioning
                       such as 'v1.0.1' is encouraged
