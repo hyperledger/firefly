@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/cache"
@@ -346,6 +347,182 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	fromServer <- `!json`
 	fromServer <- `{"not": "a reply"}`
 	fromServer <- `42`
+
+}
+
+func TestBackgroundStart(t *testing.T) {
+
+	log.SetLevel("trace")
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	toServer, fromServer, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utEthconnectConf.Set(EthconnectBackgroundStart, true)
+	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://ethc.example.com:12345")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "ethereum", e.Name())
+	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
+
+	assert.NoError(t, err)
+
+	assert.NotNil(t, e.Capabilities())
+
+	err = e.Start()
+	assert.NoError(t, err)
+
+	assert.Eventually(t, func() bool { return httpmock.GetTotalCallCount() == 2 }, time.Second*5, time.Microsecond)
+	assert.Eventually(t, func() bool { return e.streamID == "es12345" }, time.Second*5, time.Microsecond)
+
+	startupMessage := <-toServer
+	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	startupMessage = <-toServer
+	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
+	fromServer <- `[]` // empty batch, will be ignored, but acked
+	reply := <-toServer
+	assert.Equal(t, `{"type":"ack","topic":"topic1"}`, reply)
+
+	// Bad data will be ignored
+	fromServer <- `!json`
+	fromServer <- `{"not": "a reply"}`
+	fromServer <- `42`
+
+}
+
+func TestBackgroundStartFail(t *testing.T) {
+
+	log.SetLevel("trace")
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	_, _, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, "Failed to get eventstreams"))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utEthconnectConf.Set(EthconnectBackgroundStart, true)
+	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://ethc.example.com:12345")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "ethereum", e.Name())
+	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
+
+	assert.NoError(t, err)
+
+	err = e.Start()
+	assert.NoError(t, err)
+
+	var capturedErr error
+	e.backgroundRetry = &retry.Retry{
+		ErrCallback: func(err error) {
+			capturedErr = err
+		},
+	}
+
+	err = e.Start()
+	assert.NoError(t, err)
+
+	assert.Eventually(t, func() bool {
+		return assert.Regexp(t, "FF10111", capturedErr)
+	}, time.Second*5, time.Second)
+
+}
+
+func TestBackgroundStartWSFail(t *testing.T) {
+
+	log.SetLevel("trace")
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	u, _ := url.Parse("http://localhost:12345")
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utEthconnectConf.Set(EthconnectBackgroundStart, true)
+	utEthconnectConf.Set(wsclient.WSConfigKeyInitialConnectAttempts, 1)
+	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://ethc.example.com:12345")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	originalContext := e.ctx
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		originalContext,
+		coreconfig.CacheBlockchainLimit,
+		coreconfig.CacheBlockchainTTL,
+		"",
+	))
+	assert.NoError(t, err)
+
+	var capturedErr error
+	e.backgroundRetry = &retry.Retry{
+		ErrCallback: func(err error) {
+			capturedErr = err
+		},
+	}
+
+	err = e.Start()
+	assert.NoError(t, err)
+
+	assert.Eventually(t, func() bool {
+		return assert.Regexp(t, "FF00148", capturedErr)
+	}, time.Second*5, time.Second)
 
 }
 

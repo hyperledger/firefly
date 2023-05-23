@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/cache"
@@ -62,7 +63,7 @@ func resetConf(e *Fabric) {
 func newTestFabric() (*Fabric, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	wsm := &wsmocks.WSClient{}
-	e := &Fabric{
+	f := &Fabric{
 		ctx:            ctx,
 		cancelCtx:      cancel,
 		client:         resty.New().SetBaseURL("http://localhost:12345"),
@@ -75,11 +76,11 @@ func newTestFabric() (*Fabric, func()) {
 		callbacks:      common.NewBlockchainCallbacks(),
 		subs:           common.NewFireflySubscriptions(),
 	}
-	return e, func() {
+	return f, func() {
 		cancel()
-		if e.closed != nil {
+		if f.closed != nil {
 			// We've init'd, wait to close
-			<-e.closed
+			<-f.closed
 		}
 	}
 }
@@ -148,6 +149,33 @@ func TestInitMissingURL(t *testing.T) {
 	cmi := &cachemocks.Manager{}
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.Regexp(t, "FF10138.*url", err)
+}
+
+func TestInitBackgroundStart(t *testing.T) {
+	f, cancel := newTestFabric()
+	defer cancel()
+	resetConf(f)
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams", func(r *http.Request) (*http.Response, error) {
+		assert.Fail(t, "Should not call event streams on init")
+		return &http.Response{}, nil
+	})
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectBackgroundStart, true)
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(f.ctx, 100, 5*time.Minute), nil)
+	err := f.Init(f.ctx, f.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+
+	assert.NoError(t, err)
+	assert.Empty(t, f.streamID)
 }
 
 func TestGenerateErrorSignatureNoOp(t *testing.T) {
@@ -263,6 +291,208 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	fromServer <- `!json`
 	fromServer <- `{"not": "a reply"}`
 	fromServer <- `42`
+
+}
+
+func TestBackgroundStart(t *testing.T) {
+
+	log.SetLevel("trace")
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	toServer, fromServer, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utFabconnectConf.Set(FabconnectBackgroundStart, true)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	originalContext := e.ctx
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		originalContext,
+		coreconfig.CacheBlockchainLimit,
+		coreconfig.CacheBlockchainTTL,
+		"",
+	))
+	assert.NoError(t, err)
+
+	msb := &blockchaincommonmocks.FireflySubscriptions{}
+	e.subs = msb
+	msb.On("GetSubscription", mock.Anything).Return(&common.SubscriptionInfo{
+		Version: 2,
+		Extra:   "channel1",
+	})
+
+	assert.Equal(t, "fabric", e.Name())
+	assert.Equal(t, core.VerifierTypeMSPIdentity, e.VerifierType())
+
+	assert.NoError(t, err)
+	err = e.Start()
+	assert.NoError(t, err)
+
+	assert.Eventually(t, func() bool { return httpmock.GetTotalCallCount() == 2 }, time.Second, time.Microsecond)
+	assert.Eventually(t, func() bool { return e.streamID == "es12345" }, time.Second, time.Microsecond)
+	assert.NotNil(t, e.Capabilities())
+
+	startupMessage := <-toServer
+	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	startupMessage = <-toServer
+	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
+	fromServer <- `{"bad":"receipt"}` // will be ignored - no ack\
+	fromServer <- `[]`                // empty batch, will be ignored, but acked
+	reply := <-toServer
+	assert.Equal(t, `{"topic":"topic1","type":"ack"}`, reply)
+	fromServer <- `[{}]` // bad batch, which will be nack'd
+	reply = <-toServer
+	assert.Regexp(t, `{\"message\":\"FF10310: .*\",\"topic\":\"topic1\",\"type\":\"error\"}`, reply)
+
+	// Bad data will be ignored
+	fromServer <- `!json`
+	fromServer <- `{"not": "a reply"}`
+	fromServer <- `42`
+
+}
+
+func TestBackgroundStartFail(t *testing.T) {
+
+	log.SetLevel("trace")
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	_, _, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, "Failed to get eventstreams"))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utFabconnectConf.Set(FabconnectBackgroundStart, true)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	originalContext := e.ctx
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		originalContext,
+		coreconfig.CacheBlockchainLimit,
+		coreconfig.CacheBlockchainTTL,
+		"",
+	))
+	assert.NoError(t, err)
+
+	var capturedErr error
+	e.backgroundRetry = &retry.Retry{
+		ErrCallback: func(err error) {
+			capturedErr = err
+		},
+	}
+
+	err = e.Start()
+	assert.NoError(t, err)
+
+	assert.Eventually(t, func() bool {
+		return assert.Regexp(t, "FF10284", capturedErr)
+	}, time.Second, time.Millisecond)
+}
+
+func TestBackgroundStartWSFail(t *testing.T) {
+
+	log.SetLevel("trace")
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	u, err := url.Parse("http://localhost:12345")
+	assert.NoError(t, err)
+
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utFabconnectConf.Set(FabconnectBackgroundStart, true)
+	utFabconnectConf.Set(wsclient.WSConfigKeyInitialConnectAttempts, 1)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	originalContext := e.ctx
+	err = e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
+		originalContext,
+		coreconfig.CacheBlockchainLimit,
+		coreconfig.CacheBlockchainTTL,
+		"",
+	))
+	assert.NoError(t, err)
+
+	msb := &blockchaincommonmocks.FireflySubscriptions{}
+	e.subs = msb
+	msb.On("GetSubscription", mock.Anything).Return(&common.SubscriptionInfo{
+		Version: 2,
+		Extra:   "channel1",
+	})
+
+	assert.Equal(t, "fabric", e.Name())
+	assert.Equal(t, core.VerifierTypeMSPIdentity, e.VerifierType())
+
+	var capturedErr error
+	e.backgroundRetry = &retry.Retry{
+		ErrCallback: func(err error) {
+			capturedErr = err
+		},
+	}
+
+	err = e.Start()
+	assert.NoError(t, err)
+
+	assert.Eventually(t, func() bool {
+		return assert.Regexp(t, "FF00148", capturedErr)
+	}, time.Second*5, time.Second)
 
 }
 

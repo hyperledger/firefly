@@ -51,6 +51,8 @@ const (
 	EthconnectConfigInstanceDeprecated = "instance"
 	// EthconnectConfigFromBlockDeprecated is the configuration of the first block to listen to when creating the listener for the FireFly contract
 	EthconnectConfigFromBlockDeprecated = "fromBlock"
+	// EthconnectBackgroundStart is used to not fail the ethereum plugin on init and retry to start it in the background
+	EthconnectBackgroundStart = "backgroundStart"
 
 	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
 	AddressResolverConfigKey = "addressResolver"
@@ -76,6 +78,7 @@ func (e *Ethereum) InitConfig(config config.Section) {
 	wsclient.InitConfig(e.ethconnectConf)
 
 	e.ethconnectConf.AddKnownKey(EthconnectConfigTopic)
+	e.ethconnectConf.AddKnownKey(EthconnectBackgroundStart)
 	e.ethconnectConf.AddKnownKey(EthconnectConfigBatchSize, defaultBatchSize)
 	e.ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeout, defaultBatchTimeout)
 	e.ethconnectConf.AddKnownKey(EthconnectPrefixShort, defaultPrefixShort)

@@ -49,6 +49,8 @@ const (
 	FabconnectPrefixLong = "prefixLong"
 	// FabconnectConfigChaincodeDeprecated is the Fabric Firefly chaincode deployed to the Firefly channels
 	FabconnectConfigChaincodeDeprecated = "chaincode"
+	// FabconnectBackgroundStart is used to not fail the fabconnect plugin on init and retry to start in the background
+	FabconnectBackgroundStart = "backgroundStart"
 )
 
 func (f *Fabric) InitConfig(config config.Section) {
@@ -62,4 +64,5 @@ func (f *Fabric) InitConfig(config config.Section) {
 	f.fabconnectConf.AddKnownKey(FabconnectConfigBatchTimeout, defaultBatchTimeout)
 	f.fabconnectConf.AddKnownKey(FabconnectPrefixShort, defaultPrefixShort)
 	f.fabconnectConf.AddKnownKey(FabconnectPrefixLong, defaultPrefixLong)
+	f.fabconnectConf.AddKnownKey(FabconnectBackgroundStart)
 }
