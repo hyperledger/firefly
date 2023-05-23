@@ -414,7 +414,8 @@
                 </span><span class="p">}</span><span class="w">
             </span><span class="p">]</span><span class="w">
         </span><span class="p">}</span><span class="w">
-    </span><span class="p">]</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"published"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
       <h3 id="field-descriptions">
@@ -456,6 +457,11 @@
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
     <tr>
+      <td><code class="language-plaintext highlighter-rouge">networkName</code></td>
+      <td>The shared interface name within the multiparty network</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
       <td><code class="language-plaintext highlighter-rouge">description</code></td>
       <td>A description of the smart contract this FFI represents</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
@@ -479,6 +485,11 @@
       <td><code class="language-plaintext highlighter-rouge">errors</code></td>
       <td>An array of smart contract error definitions</td>
       <td><a href="#ffierror"><code class="language-plaintext highlighter-rouge">FFIError[]</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">published</code></td>
+      <td>True if the interface has been published to a multiparty network</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
     </tr>
   </tbody>
 </table>
