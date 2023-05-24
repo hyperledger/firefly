@@ -22,20 +22,15 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/contractmocks"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestDefineFFIResolveFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	ffi := &fftypes.FFI{
@@ -47,19 +42,15 @@ func TestDefineFFIResolveFail(t *testing.T) {
 		Published: true,
 	}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(nil, nil)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(fmt.Errorf("pop"))
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(fmt.Errorf("pop"))
 
 	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.EqualError(t, err, "pop")
-
-	mcm.AssertExpectations(t)
 }
 
 func TestDefineFFIFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	ffi := &fftypes.FFI{
@@ -68,23 +59,17 @@ func TestDefineFFIFail(t *testing.T) {
 		Published: true,
 	}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(nil, nil)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1", "1.0").Return(nil, nil)
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 
 	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.EqualError(t, err, "pop")
-
-	mcm.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestDefineFFIExists(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	ffi := &fftypes.FFI{
@@ -93,18 +78,34 @@ func TestDefineFFIExists(t *testing.T) {
 		Published: true,
 	}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(&fftypes.FFI{}, nil)
+	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1", "1.0").Return(&fftypes.FFI{}, nil)
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
 
 	err := ds.DefineFFI(context.Background(), ffi, false)
-	assert.Regexp(t, "FF10302", err)
+	assert.Regexp(t, "FF10448", err)
+}
 
-	mcm.AssertExpectations(t)
+func TestDefineFFIQueryFail(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = true
+
+	ffi := &fftypes.FFI{
+		Name:      "ffi1",
+		Version:   "1.0",
+		Published: true,
+	}
+
+	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1", "1.0").Return(nil, fmt.Errorf("pop"))
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
+
+	err := ds.DefineFFI(context.Background(), ffi, false)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestDefineFFIOk(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	ffi := &fftypes.FFI{
@@ -113,35 +114,28 @@ func TestDefineFFIOk(t *testing.T) {
 		Published: true,
 	}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(nil, nil)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1", "1.0").Return(nil, nil)
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
+	ds.mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
 
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
 	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.NoError(t, err)
 
-	mcm.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
 func TestDefineFFIConfirm(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	ffi := &fftypes.FFI{
@@ -150,35 +144,28 @@ func TestDefineFFIConfirm(t *testing.T) {
 		Published: true,
 	}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(nil, nil)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1", "1.0").Return(nil, nil)
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
+	ds.mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
 
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", context.Background()).Return(nil)
 
 	err := ds.DefineFFI(context.Background(), ffi, true)
 	assert.NoError(t, err)
 
-	mcm.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
 func TestDefineFFIPublishNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	ffi := &fftypes.FFI{
@@ -187,132 +174,100 @@ func TestDefineFFIPublishNonMultiparty(t *testing.T) {
 		Published: true,
 	}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(nil, nil)
-
 	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.Regexp(t, "FF10414", err)
-
-	mcm.AssertExpectations(t)
 }
 
 func TestDefineFFINonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	ffi := &fftypes.FFI{
 		Name:    "ffi1",
 		Version: "1.0",
 	}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(nil, nil)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-
-	mdi := ds.database.(*databasemocks.Plugin)
-	mdi.On("InsertOrGetFFI", context.Background(), ffi).Return(nil, nil)
-	mdi.On("InsertEvent", context.Background(), mock.Anything).Return(nil)
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
+	ds.mdi.On("InsertOrGetFFI", context.Background(), ffi).Return(nil, nil)
+	ds.mdi.On("InsertEvent", context.Background(), mock.Anything).Return(nil)
 
 	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.NoError(t, err)
-
-	mcm.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestDefineFFINonMultipartyFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	ffi := &fftypes.FFI{
 		Name:    "ffi1",
 		Version: "1.0",
 	}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(nil, nil)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(fmt.Errorf("pop"))
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(fmt.Errorf("pop"))
 
 	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.Regexp(t, "FF10403", err)
-
-	mcm.AssertExpectations(t)
 }
 
 func TestDefineContractAPIResolveFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	url := "http://firefly"
 	api := &core.ContractAPI{}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("ResolveContractAPI", context.Background(), url, api).Return(fmt.Errorf("pop"))
+	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(fmt.Errorf("pop"))
 
 	err := ds.DefineContractAPI(context.Background(), url, api, false)
 	assert.EqualError(t, err, "pop")
-
-	mcm.AssertExpectations(t)
 }
 
 func TestDefineContractAPIFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	url := "http://firefly"
 	api := &core.ContractAPI{}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
-
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 
 	err := ds.DefineContractAPI(context.Background(), url, api, false)
 	assert.EqualError(t, err, "pop")
-
-	mcm.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestDefineContractAPIOk(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	url := "http://firefly"
 	api := &core.ContractAPI{}
 
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
-
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
+	ds.mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
 
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
 	err := ds.DefineContractAPI(context.Background(), url, api, false)
 	assert.NoError(t, err)
 
-	mcm.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
 func TestDefineContractAPINonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	url := "http://firefly"
 	api := &core.ContractAPI{}
@@ -322,14 +277,10 @@ func TestDefineContractAPINonMultiparty(t *testing.T) {
 }
 
 func TestPublishFFI(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mdi := ds.database.(*databasemocks.Plugin)
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
 	ffi := &fftypes.FFI{
@@ -339,57 +290,63 @@ func TestPublishFFI(t *testing.T) {
 		Published: false,
 	}
 
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(ffi, nil)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1-shared", "1.0").Return(nil, nil)
+	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(ffi, nil)
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(nil)
-	mdi.On("UpsertFFI", context.Background(), ffi, database.UpsertOptimizationExisting).Return(nil)
-	mockRunAsGroupPassthrough(mdi)
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	result, err := ds.PublishFFI(context.Background(), "ffi1", "1.0", "ffi1-shared", false)
 	assert.NoError(t, err)
 	assert.Equal(t, ffi, result)
 	assert.True(t, ffi.Published)
 
-	mdi.AssertExpectations(t)
-	mcm.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
+}
+
+func TestPublishFFIAlreadyPublished(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = true
+
+	ffi := &fftypes.FFI{
+		Name:      "ffi1",
+		Version:   "1.0",
+		Namespace: "ns1",
+		Published: true,
+	}
+
+	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(ffi, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
+
+	_, err := ds.PublishFFI(context.Background(), "ffi1", "1.0", "ffi1-shared", false)
+	assert.Regexp(t, "FF10450", err)
 }
 
 func TestPublishFFIQueryFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mdi := ds.database.(*databasemocks.Plugin)
-	mcm := ds.contracts.(*contractmocks.Manager)
-
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(nil, fmt.Errorf("pop"))
-	mockRunAsGroupPassthrough(mdi)
+	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(nil, fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishFFI(context.Background(), "ffi1", "1.0", "ffi1-shared", false)
 	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-	mcm.AssertExpectations(t)
 }
 
 func TestPublishFFIResolveFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
-
-	mdi := ds.database.(*databasemocks.Plugin)
-	mcm := ds.contracts.(*contractmocks.Manager)
 
 	ffi := &fftypes.FFI{
 		Name:      "ffi1",
@@ -398,26 +355,19 @@ func TestPublishFFIResolveFail(t *testing.T) {
 		Published: false,
 	}
 
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(ffi, nil)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(fmt.Errorf("pop"))
-	mockRunAsGroupPassthrough(mdi)
+	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(ffi, nil)
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishFFI(context.Background(), "ffi1", "1.0", "ffi1-shared", false)
 	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-	mcm.AssertExpectations(t)
 }
 
 func TestPublishFFIPrepareFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mdi := ds.database.(*databasemocks.Plugin)
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
 	ffi := &fftypes.FFI{
@@ -427,72 +377,28 @@ func TestPublishFFIPrepareFail(t *testing.T) {
 		Published: false,
 	}
 
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(ffi, nil)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1-shared", "1.0").Return(nil, nil)
+	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(ffi, nil)
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
-	mockRunAsGroupPassthrough(mdi)
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishFFI(context.Background(), "ffi1", "1.0", "ffi1-shared", false)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
-	mcm.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
-	mms.AssertExpectations(t)
-}
-
-func TestPublishFFIUpsertFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
-	ds.multiparty = true
-
-	mdi := ds.database.(*databasemocks.Plugin)
-	mcm := ds.contracts.(*contractmocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &syncasyncmocks.Sender{}
-
-	ffi := &fftypes.FFI{
-		Name:      "ffi1",
-		Version:   "1.0",
-		Namespace: "ns1",
-		Published: false,
-	}
-
-	mcm.On("GetFFI", context.Background(), "ffi1", "", "1.0").Return(ffi, nil)
-	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
-	mms.On("Prepare", context.Background()).Return(nil)
-	mdi.On("UpsertFFI", context.Background(), ffi, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
-	mockRunAsGroupPassthrough(mdi)
-
-	_, err := ds.PublishFFI(context.Background(), "ffi1", "1.0", "ffi1-shared", false)
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-	mcm.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
 func TestPublishFFINonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	_, err := ds.PublishFFI(context.Background(), "ffi1", "1.0", "ffi1-shared", false)

@@ -101,6 +101,15 @@ func TestFFIE2EWithDB(t *testing.T) {
 	assert.Equal(t, ffi.Version, dataRead.Version)
 	assert.Equal(t, ffi.Message, dataRead.Message)
 
+	dataRead, err = s.GetFFIByNetworkName(ctx, "ns1", "math", "v1.1.0")
+	assert.NoError(t, err)
+	assert.NotNil(t, dataRead)
+	assert.Equal(t, ffi.ID, dataRead.ID)
+	assert.Equal(t, ffi.Namespace, dataRead.Namespace)
+	assert.Equal(t, ffi.Name, dataRead.Name)
+	assert.Equal(t, ffi.Version, dataRead.Version)
+	assert.Equal(t, ffi.Message, dataRead.Message)
+
 	// Cannot insert again with same name or network name
 	existing, err := s.InsertOrGetFFI(ctx, &fftypes.FFI{
 		ID:        fftypes.NewUUID(),
@@ -258,7 +267,7 @@ func TestGetFFI(t *testing.T) {
 	rows := sqlmock.NewRows(ffiColumns).
 		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "math", "v1.0.0", "super mathy things", "acfe07a2-117f-46b7-8d47-e3beb7cc382f", false)
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
-	ffi, err := s.GetFFI(context.Background(), "ns1", "math", "math", "v1.0.0")
+	ffi, err := s.GetFFI(context.Background(), "ns1", "math", "v1.0.0")
 	assert.NoError(t, err)
 	assert.Equal(t, "ns1", ffi.Namespace)
 	assert.Equal(t, "math", ffi.Name)

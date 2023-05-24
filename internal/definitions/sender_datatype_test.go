@@ -32,8 +32,8 @@ import (
 )
 
 func TestDefineDatatypeBadType(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 	err := ds.DefineDatatype(context.Background(), &core.Datatype{
 		Validator: core.ValidatorType("wrong"),
@@ -42,8 +42,8 @@ func TestDefineDatatypeBadType(t *testing.T) {
 }
 
 func TestBroadcastDatatypeBadValue(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 	mdm := ds.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
@@ -67,14 +67,11 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 }
 
 func TestDefineDatatypeInvalid(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
-	mdm := ds.data.(*datamocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
 
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ds.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := ds.DefineDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
@@ -83,13 +80,11 @@ func TestDefineDatatypeInvalid(t *testing.T) {
 		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
 	}, false)
 	assert.EqualError(t, err, "pop")
-
-	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastOk(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 	mdm := ds.data.(*datamocks.Manager)
 	mim := ds.identity.(*identitymanagermocks.Manager)
@@ -121,8 +116,8 @@ func TestBroadcastOk(t *testing.T) {
 }
 
 func TestDefineDatatypeNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	err := ds.DefineDatatype(context.Background(), &core.Datatype{

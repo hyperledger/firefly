@@ -924,25 +924,25 @@ func (_m *Plugin) GetEvents(ctx context.Context, namespace string, filter ffapi.
 	return r0, r1, r2
 }
 
-// GetFFI provides a mock function with given fields: ctx, namespace, name, networkName, version
-func (_m *Plugin) GetFFI(ctx context.Context, namespace string, name string, networkName string, version string) (*fftypes.FFI, error) {
-	ret := _m.Called(ctx, namespace, name, networkName, version)
+// GetFFI provides a mock function with given fields: ctx, namespace, name, version
+func (_m *Plugin) GetFFI(ctx context.Context, namespace string, name string, version string) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, namespace, name, version)
 
 	var r0 *fftypes.FFI
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) (*fftypes.FFI, error)); ok {
-		return rf(ctx, namespace, name, networkName, version)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*fftypes.FFI, error)); ok {
+		return rf(ctx, namespace, name, version)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) *fftypes.FFI); ok {
-		r0 = rf(ctx, namespace, name, networkName, version)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFI); ok {
+		r0 = rf(ctx, namespace, name, version)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.FFI)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
-		r1 = rf(ctx, namespace, name, networkName, version)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, namespace, name, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -969,6 +969,32 @@ func (_m *Plugin) GetFFIByID(ctx context.Context, namespace string, id *fftypes.
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, namespace, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetFFIByNetworkName provides a mock function with given fields: ctx, namespace, networkName, version
+func (_m *Plugin) GetFFIByNetworkName(ctx context.Context, namespace string, networkName string, version string) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, namespace, networkName, version)
+
+	var r0 *fftypes.FFI
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*fftypes.FFI, error)); ok {
+		return rf(ctx, namespace, networkName, version)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFI); ok {
+		r0 = rf(ctx, namespace, networkName, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFI)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, namespace, networkName, version)
 	} else {
 		r1 = ret.Error(1)
 	}

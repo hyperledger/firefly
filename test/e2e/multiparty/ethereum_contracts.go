@@ -343,6 +343,13 @@ func (suite *EthereumContractTestSuite) TestContractPublish() {
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeContractInterfaceConfirmed, result.ID)
 
+	// Delete and recreate
+	suite.testState.client1.DeleteFFI(suite.T(), result.ID, 204)
+	result, err = suite.testState.client1.CreateFFI(suite.T(), ffi, false)
+	assert.NoError(suite.T(), err)
+
+	e2e.WaitForEvent(suite.T(), received1, core.EventTypeContractInterfaceConfirmed, result.ID)
+
 	suite.testState.client1.PublishFFI(suite.T(), ffi.Name, ffi.Version, networkName, false)
 
 	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeDefinition)

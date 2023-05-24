@@ -28,30 +28,37 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *fftypes.FFI) (retry bool, err error) {
-	if err = dh.contracts.ResolveFFI(ctx, ffi); err != nil {
-		return false, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID)
-	}
-
+func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *fftypes.FFI, isAuthor bool) (retry bool, err error) {
 	for i := 1; ; i++ {
+		if err = dh.contracts.ResolveFFI(ctx, ffi); err != nil {
+			return false, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID)
+		}
+
+		// Check if this conflicts with an existing FFI
 		existing, err := dh.database.InsertOrGetFFI(ctx, ffi)
 		if err != nil {
 			return true, err
-		} else if existing == nil {
+		}
+
+		if existing == nil {
+			// No conflict - new FFI was inserted successfully
 			break
 		}
 
 		if ffi.Published {
-			if existing.ID.Equals(ffi.ID) && existing.Message.Equals(ffi.Message) {
-				// If this is a publish for an existing FFI, confirm the message now
-				return false, nil
+			if existing.ID.Equals(ffi.ID) {
+				// ID conflict - check if this matches (or should overwrite) the existing record
+				return dh.reconcilePublishedFFI(ctx, existing, ffi, isAuthor)
 			}
+
 			if existing.Name == ffi.Name && existing.Version == ffi.Version {
-				// Received FFIs get a unique name generated from the network name
+				// Local name conflict - generate a unique name and try again
 				ffi.Name = fmt.Sprintf("%s-%d", ffi.NetworkName, i)
 				continue
 			}
 		}
+
+		// Any other conflict - reject
 		return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "contract interface", ffi.ID, existing.ID)
 	}
 
@@ -72,6 +79,24 @@ func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *fftypes.FFI) (
 	}
 
 	return false, nil
+}
+
+func (dh *definitionHandler) reconcilePublishedFFI(ctx context.Context, existing, ffi *fftypes.FFI, isAuthor bool) (retry bool, err error) {
+	if existing.Message.Equals(ffi.Message) {
+		// Message already recorded
+		return false, nil
+	}
+
+	if existing.Message == nil && isAuthor {
+		// FFI was previously unpublished - if it was now published by this node, upsert the new version
+		ffi.Name = existing.Name
+		if err := dh.database.UpsertFFI(ctx, ffi, database.UpsertOptimizationExisting); err != nil {
+			return true, err
+		}
+		return false, nil
+	}
+
+	return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "contract interface", ffi.ID, existing.ID)
 }
 
 func (dh *definitionHandler) persistContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) (retry bool, err error) {
@@ -95,17 +120,23 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
 	}
 
+	org, err := dh.identity.GetMultipartyRootOrg(ctx)
+	if err != nil {
+		return HandlerResult{Action: core.ActionRetry}, err
+	}
+	isAuthor := org.DID == msg.Header.Author
+
 	ffi.Message = msg.Header.ID
 	ffi.Name = ffi.NetworkName
 	ffi.Published = true
-	return dh.handleFFIDefinition(ctx, state, &ffi, tx)
+	return dh.handleFFIDefinition(ctx, state, &ffi, tx, isAuthor)
 }
 
-func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *core.BatchState, ffi *fftypes.FFI, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *core.BatchState, ffi *fftypes.FFI, tx *fftypes.UUID, isAuthor bool) (HandlerResult, error) {
 	l := log.L(ctx)
 
 	ffi.Namespace = dh.namespace.Name
-	if retry, err := dh.persistFFI(ctx, ffi); err != nil {
+	if retry, err := dh.persistFFI(ctx, ffi, isAuthor); err != nil {
 		if retry {
 			return HandlerResult{Action: core.ActionRetry}, err
 		}

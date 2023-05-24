@@ -30,8 +30,8 @@ import (
 )
 
 func TestClaimIdentity(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
@@ -56,8 +56,8 @@ func TestClaimIdentity(t *testing.T) {
 }
 
 func TestClaimIdentityFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
@@ -82,8 +82,8 @@ func TestClaimIdentityFail(t *testing.T) {
 }
 
 func TestClaimIdentityFailKey(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 
@@ -102,8 +102,8 @@ func TestClaimIdentityFailKey(t *testing.T) {
 }
 
 func TestClaimIdentityChild(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
@@ -136,8 +136,8 @@ func TestClaimIdentityChild(t *testing.T) {
 }
 
 func TestClaimIdentityChildFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
@@ -170,8 +170,8 @@ func TestClaimIdentityChildFail(t *testing.T) {
 }
 
 func TestClaimIdentityNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	dh := ds.handler
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
@@ -190,8 +190,8 @@ func TestClaimIdentityNonMultiparty(t *testing.T) {
 }
 
 func TestUpdateIdentity(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
@@ -219,8 +219,8 @@ func TestUpdateIdentity(t *testing.T) {
 }
 
 func TestUpdateIdentityNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	ds.multiparty = false
 

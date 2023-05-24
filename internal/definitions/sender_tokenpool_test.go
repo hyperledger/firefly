@@ -34,8 +34,8 @@ import (
 )
 
 func TestBroadcastTokenPoolInvalid(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdm := ds.data.(*datamocks.Manager)
@@ -57,8 +57,8 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 }
 
 func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	mdm := ds.data.(*datamocks.Manager)
@@ -80,8 +80,8 @@ func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
 }
 
 func TestBroadcastTokenPoolPublishNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	pool := &core.TokenPool{
@@ -99,8 +99,8 @@ func TestBroadcastTokenPoolPublishNonMultiparty(t *testing.T) {
 }
 
 func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdm := ds.data.(*datamocks.Manager)
@@ -123,8 +123,8 @@ func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
 }
 
 func TestDefineTokenPoolOk(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdi := ds.database.(*databasemocks.Plugin)
@@ -165,8 +165,8 @@ func TestDefineTokenPoolOk(t *testing.T) {
 }
 
 func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	mdb := ds.database.(*databasemocks.Plugin)
@@ -195,8 +195,8 @@ func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 }
 
 func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mdi := ds.database.(*databasemocks.Plugin)
 
@@ -220,8 +220,8 @@ func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 }
 
 func TestDefineTokenPoolBadName(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	pool := &core.TokenPool{
@@ -240,8 +240,8 @@ func TestDefineTokenPoolBadName(t *testing.T) {
 }
 
 func TestPublishTokenPool(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdi := ds.database.(*databasemocks.Plugin)
@@ -287,8 +287,8 @@ func TestPublishTokenPool(t *testing.T) {
 }
 
 func TestPublishTokenPoolNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
@@ -296,8 +296,8 @@ func TestPublishTokenPoolNonMultiparty(t *testing.T) {
 }
 
 func TestPublishTokenPoolAlreadyPublished(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
@@ -325,8 +325,8 @@ func TestPublishTokenPoolAlreadyPublished(t *testing.T) {
 }
 
 func TestPublishTokenPoolQueryFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
@@ -343,8 +343,8 @@ func TestPublishTokenPoolQueryFail(t *testing.T) {
 }
 
 func TestPublishTokenPoolNetworkNameError(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
@@ -373,8 +373,8 @@ func TestPublishTokenPoolNetworkNameError(t *testing.T) {
 }
 
 func TestPublishTokenPoolNetworkNameConflict(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
@@ -403,8 +403,8 @@ func TestPublishTokenPoolNetworkNameConflict(t *testing.T) {
 }
 
 func TestPublishTokenPoolResolveFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
@@ -436,8 +436,8 @@ func TestPublishTokenPoolResolveFail(t *testing.T) {
 }
 
 func TestPublishTokenPoolPrepareFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdi := ds.database.(*databasemocks.Plugin)
@@ -481,8 +481,8 @@ func TestPublishTokenPoolPrepareFail(t *testing.T) {
 }
 
 func TestPublishTokenPoolSendFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdi := ds.database.(*databasemocks.Plugin)
@@ -527,8 +527,8 @@ func TestPublishTokenPoolSendFail(t *testing.T) {
 }
 
 func TestPublishTokenPoolConfirm(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdi := ds.database.(*databasemocks.Plugin)

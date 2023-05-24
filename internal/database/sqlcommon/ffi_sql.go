@@ -128,8 +128,15 @@ func (s *SQLCommon) InsertOrGetFFI(ctx context.Context, ffi *fftypes.FFI) (exist
 		return nil, s.CommitTx(ctx, tx, autoCommit)
 	}
 
-	// Do a select within the transaction to determine if the FFI already exists
-	existing, queryErr := s.GetFFI(ctx, ffi.Namespace, ffi.Name, ffi.NetworkName, ffi.Version)
+	// Do a select within the transaction to determine if the pool already exists
+	existing, queryErr := s.getFFIPred(ctx, ffi.Namespace+":"+ffi.Name, sq.And{
+		sq.Eq{"namespace": ffi.Namespace},
+		sq.Or{
+			sq.Eq{"id": ffi.ID},
+			sq.Eq{"name": ffi.Name},
+			sq.Eq{"network_name": ffi.NetworkName},
+		},
+	})
 	if queryErr != nil || existing != nil {
 		return existing, queryErr
 	}
@@ -249,22 +256,20 @@ func (s *SQLCommon) GetFFIByID(ctx context.Context, namespace string, id *fftype
 	return s.getFFIPred(ctx, id.String(), sq.Eq{"id": id, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetFFI(ctx context.Context, namespace, name, networkName, version string) (*fftypes.FFI, error) {
-	nameQuery := sq.Or{}
-	if name != "" {
-		nameQuery = append(nameQuery, sq.Eq{"name": name})
-	}
-	if networkName != "" {
-		nameQuery = append(nameQuery, sq.Eq{"network_name": networkName})
-	}
-	query := sq.And{
-		sq.Eq{
-			"namespace": namespace,
-			"version":   version,
-		},
-		nameQuery,
-	}
-	return s.getFFIPred(ctx, namespace+":"+name+":"+version, query)
+func (s *SQLCommon) GetFFI(ctx context.Context, namespace, name, version string) (*fftypes.FFI, error) {
+	return s.getFFIPred(ctx, namespace+":"+name+":"+version, sq.Eq{
+		"namespace": namespace,
+		"name":      name,
+		"version":   version,
+	})
+}
+
+func (s *SQLCommon) GetFFIByNetworkName(ctx context.Context, namespace, networkName, version string) (*fftypes.FFI, error) {
+	return s.getFFIPred(ctx, namespace+":"+networkName+":"+version, sq.Eq{
+		"namespace":    namespace,
+		"network_name": networkName,
+		"version":      version,
+	})
 }
 
 func (s *SQLCommon) DeleteFFI(ctx context.Context, namespace string, id *fftypes.UUID) error {

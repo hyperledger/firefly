@@ -446,9 +446,11 @@ type iFFICollection interface {
 	// GetFFIByID - Get an FFI by ID
 	GetFFIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*fftypes.FFI, error)
 
-	// GetFFI - Get an FFI by name (or network name) and version
-	// Only one name (local name or network name) must match in order to be returned
-	GetFFI(ctx context.Context, namespace, name, networkName, version string) (*fftypes.FFI, error)
+	// GetFFI - Get an FFI by name and version
+	GetFFI(ctx context.Context, namespace, name, version string) (*fftypes.FFI, error)
+
+	// GetFFIByNetworkName - Get an FFI by network name and version
+	GetFFIByNetworkName(ctx context.Context, namespace, networkName, version string) (*fftypes.FFI, error)
 
 	// DeleteFFI - Delete an FFI
 	DeleteFFI(ctx context.Context, namespace string, id *fftypes.UUID) error

@@ -24,7 +24,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (ds *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm bool) error {
@@ -39,11 +38,6 @@ func (ds *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, wai
 		errorDef.ID = fftypes.NewUUID()
 	}
 
-	existing, err := ds.contracts.GetFFI(ctx, ffi.Name, ffi.NetworkName, ffi.Version)
-	if existing != nil && err == nil {
-		return i18n.NewError(ctx, coremsgs.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
-	}
-
 	if ffi.Published {
 		if !ds.multiparty {
 			return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
@@ -55,7 +49,7 @@ func (ds *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, wai
 	ffi.NetworkName = ""
 
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		hr, err := ds.handler.handleFFIDefinition(ctx, state, ffi, nil)
+		hr, err := ds.handler.handleFFIDefinition(ctx, state, ffi, nil, true)
 		if err != nil {
 			if innerErr := errors.Unwrap(err); innerErr != nil {
 				return hr, innerErr
@@ -70,14 +64,22 @@ func (ds *definitionSender) getFFISender(ctx context.Context, ffi *fftypes.FFI) 
 		return wrapSendError(err)
 	}
 
+	if ffi.NetworkName == "" {
+		ffi.NetworkName = ffi.Name
+	}
+
+	existing, err := ds.database.GetFFIByNetworkName(ctx, ds.namespace, ffi.NetworkName, ffi.Version)
+	if err != nil {
+		return wrapSendError(err)
+	} else if existing != nil {
+		return wrapSendError(i18n.NewError(ctx, coremsgs.MsgNetworkNameExists))
+	}
+
 	// Prepare the FFI definition to be serialized for broadcast
 	localName := ffi.Name
 	ffi.Name = ""
 	ffi.Namespace = ""
 	ffi.Published = true
-	if ffi.NetworkName == "" {
-		ffi.NetworkName = localName
-	}
 
 	sender := ds.getSenderDefault(ctx, ffi, core.SystemTagDefineFFI)
 	if sender.message != nil {
@@ -96,26 +98,18 @@ func (ds *definitionSender) PublishFFI(ctx context.Context, name, version, netwo
 
 	var sender *sendWrapper
 	err = ds.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		if ffi, err = ds.contracts.GetFFI(ctx, name, "", version); err != nil {
+		if ffi, err = ds.contracts.GetFFI(ctx, name, version); err != nil {
 			return err
 		}
-		if networkName != "" {
-			ffi.NetworkName = networkName
+		if ffi.Published {
+			return i18n.NewError(ctx, coremsgs.MsgAlreadyPublished)
 		}
-
+		ffi.NetworkName = networkName
 		sender = ds.getFFISender(ctx, ffi)
 		if sender.err != nil {
 			return sender.err
 		}
-		if !waitConfirm {
-			if err = sender.sender.Prepare(ctx); err != nil {
-				return err
-			}
-			if err = ds.database.UpsertFFI(ctx, ffi, database.UpsertOptimizationExisting); err != nil {
-				return err
-			}
-		}
-		return nil
+		return sender.sender.Prepare(ctx)
 	})
 	if err != nil {
 		return nil, err

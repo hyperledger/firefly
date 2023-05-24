@@ -35,7 +35,33 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
+type testDefinitionSender struct {
+	definitionSender
+
+	cancel func()
+	mdi    *databasemocks.Plugin
+	mbi    *blockchainmocks.Plugin
+	mdx    *dataexchangemocks.Plugin
+	mbm    *broadcastmocks.Manager
+	mim    *identitymanagermocks.Manager
+	mdm    *datamocks.Manager
+	mam    *assetmocks.Manager
+	mcm    *contractmocks.Manager
+}
+
+func (tds *testDefinitionSender) cleanup(t *testing.T) {
+	tds.cancel()
+	tds.mdi.AssertExpectations(t)
+	tds.mbi.AssertExpectations(t)
+	tds.mdx.AssertExpectations(t)
+	tds.mbm.AssertExpectations(t)
+	tds.mim.AssertExpectations(t)
+	tds.mdm.AssertExpectations(t)
+	tds.mam.AssertExpectations(t)
+	tds.mcm.AssertExpectations(t)
+}
+
+func newTestDefinitionSender(t *testing.T) *testDefinitionSender {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
@@ -51,7 +77,19 @@ func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	ds, _, err := NewDefinitionSender(ctx, ns, false, mdi, mbi, mdx, mbm, mim, mdm, mam, mcm, tokenBroadcastNames)
 	assert.NoError(t, err)
-	return ds.(*definitionSender), cancel
+
+	return &testDefinitionSender{
+		definitionSender: *ds.(*definitionSender),
+		cancel:           cancel,
+		mdi:              mdi,
+		mbi:              mbi,
+		mdx:              mdx,
+		mbm:              mbm,
+		mim:              mim,
+		mdm:              mdm,
+		mam:              mam,
+		mcm:              mcm,
+	}
 }
 
 func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
@@ -68,14 +106,14 @@ func TestInitSenderFail(t *testing.T) {
 }
 
 func TestName(t *testing.T) {
-	bm, cancel := newTestDefinitionSender(t)
-	defer cancel()
-	assert.Equal(t, "DefinitionSender", bm.Name())
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	assert.Equal(t, "DefinitionSender", ds.Name())
 }
 
 func TestCreateDefinitionConfirm(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
@@ -100,8 +138,8 @@ func TestCreateDefinitionConfirm(t *testing.T) {
 }
 
 func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
@@ -127,8 +165,8 @@ func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 }
 
 func TestCreateDefinitionBadIdentity(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	ds.multiparty = true
 

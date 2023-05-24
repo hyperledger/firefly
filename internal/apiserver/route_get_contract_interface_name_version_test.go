@@ -41,7 +41,7 @@ func TestGetContractInterfaceNameVersion(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetFFI", mock.Anything, "banana", "", "v1.0.0").
+	mcm.On("GetFFI", mock.Anything, "banana", "v1.0.0").
 		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
