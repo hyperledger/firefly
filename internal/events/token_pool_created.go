@@ -32,6 +32,7 @@ import (
 func addPoolDetailsFromPlugin(ffPool *core.TokenPool, pluginPool *tokens.TokenPool) error {
 	ffPool.Type = pluginPool.Type
 	ffPool.Locator = pluginPool.PoolLocator
+	ffPool.PluginData = pluginPool.PluginData
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
 	ffPool.InterfaceFormat = (core.TokenInterfaceFormat)(pluginPool.InterfaceFormat)

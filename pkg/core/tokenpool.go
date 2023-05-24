@@ -73,6 +73,7 @@ type TokenPool struct {
 	InterfaceFormat TokenInterfaceFormat  `ffstruct:"TokenPool" json:"interfaceFormat,omitempty" ffenum:"tokeninterfaceformat" ffexcludeinput:"true"`
 	Methods         *fftypes.JSONAny      `ffstruct:"TokenPool" json:"methods,omitempty" ffexcludeinput:"true"`
 	Published       bool                  `ffstruct:"TokenPool" json:"published" ffexcludeinput:"true"`
+	PluginData      string                `ffstruct:"TokenPool" json:"-" ffexcludeinput:"true"` // reserved for internal plugin use (not returned on API)
 }
 
 type TokenPoolDefinition struct {

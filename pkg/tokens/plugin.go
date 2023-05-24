@@ -110,7 +110,7 @@ type TokenPool struct {
 	// ID is the ID assigned to this pool by FireFly (if known)
 	ID *fftypes.UUID
 
-	// PoolLocator is the ID assigned to this pool by the connector (must be unique for this connector)
+	// PoolLocator is the identifier assigned to this pool by the token connector (includes the contract address or other location info)
 	PoolLocator string
 
 	// TX is the FireFly-assigned information to correlate this to a transaction (optional)
@@ -133,6 +133,9 @@ type TokenPool struct {
 
 	// Info is any other connector-specific info on the pool that may be worth saving (optional)
 	Info fftypes.JSONObject
+
+	// PluginData is any other data that the plugin would like to save with the pool (optional)
+	PluginData string
 
 	// Event contains info on the underlying blockchain event for this pool creation
 	Event *blockchain.Event

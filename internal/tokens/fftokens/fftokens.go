@@ -384,7 +384,8 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, eventData fftypes
 	decimals := eventData.GetInt64("decimals")
 	info := eventData.GetObject("info")
 	blockchainEvent := eventData.GetObject("blockchain")
-	namespace, poolID := unpackPoolData(ctx, eventData.GetString("poolData"))
+	poolData := eventData.GetString("poolData")
+	namespace, poolID := unpackPoolData(ctx, poolData)
 
 	dataString := eventData.GetString("data")
 	if txData == nil {
@@ -408,6 +409,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, eventData fftypes
 		ID:          poolID,
 		Type:        fftypes.FFEnum(tokenType),
 		PoolLocator: poolLocator,
+		PluginData:  poolData,
 		TX: core.TransactionRef{
 			ID:   txData.TX,
 			Type: txType,

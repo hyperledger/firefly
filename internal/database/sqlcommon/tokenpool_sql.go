@@ -53,6 +53,7 @@ var (
 		"interface_format",
 		"methods",
 		"published",
+		"plugin_data",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
 		"message":         "message_id",
@@ -93,6 +94,7 @@ func (s *SQLCommon) attemptTokenPoolUpdate(ctx context.Context, tx *dbsql.TXWrap
 			Set("interface_format", pool.InterfaceFormat).
 			Set("methods", pool.Methods).
 			Set("published", pool.Published).
+			Set("plugin_data", pool.PluginData).
 			Where(sq.Eq{"id": pool.ID}),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
@@ -130,6 +132,7 @@ func (s *SQLCommon) setTokenPoolInsertValues(query sq.InsertBuilder, pool *core.
 		pool.InterfaceFormat,
 		pool.Methods,
 		pool.Published,
+		pool.PluginData,
 	)
 }
 
@@ -250,6 +253,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.T
 		&pool.InterfaceFormat,
 		&pool.Methods,
 		&pool.Published,
+		&pool.PluginData,
 	)
 	if iface.ID != nil {
 		pool.Interface = &iface
