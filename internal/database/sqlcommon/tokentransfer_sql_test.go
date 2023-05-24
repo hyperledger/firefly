@@ -100,22 +100,6 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	transferReadJson, _ = json.Marshal(transfers[0])
 	assert.Equal(t, string(transferJson), string(transferReadJson))
 
-	// Update the token transfer
-	transfer.Type = core.TokenTransferTypeMint
-	transfer.Amount.Int().SetInt64(1)
-	transfer.To = "0x03"
-	existing, err = s.InsertOrGetTokenTransfer(ctx, transfer)
-	assert.NoError(t, err)
-	assert.NotNil(t, existing)
-
-	// Query back the token transfer (by ID)
-	transferRead, err = s.GetTokenTransferByID(ctx, "ns1", transfer.LocalID)
-	assert.NoError(t, err)
-	assert.NotNil(t, transferRead)
-	transferJson, _ = json.Marshal(&transfer)
-	transferReadJson, _ = json.Marshal(&transferRead)
-	assert.Equal(t, string(transferJson), string(transferReadJson))
-
 	// Delete the token transfer
 	err = s.DeleteTokenTransfers(ctx, "ns1", transfer.Pool)
 	assert.NoError(t, err)
@@ -149,32 +133,6 @@ func InsertOrGetTokenTransfer(t *testing.T) {
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	_, err := s.InsertOrGetBlockchainEvent(context.Background(), &core.BlockchainEvent{})
 	assert.Regexp(t, "FF00180", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestInsertOrGetTokenTransferFailUpdate(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
-	rows := sqlmock.NewRows(tokenTransferColumns).
-		AddRow(core.TokenTransferTypeMint,
-			fftypes.NewUUID().String(),
-			fftypes.NewUUID().String(),
-			"", "", "", "", "", "", "",
-			fftypes.NewFFBigInt(10),
-			"",
-			fftypes.NewUUID().String(),
-			&fftypes.Bytes32{},
-			core.TransactionTypeTokenTransfer,
-			fftypes.NewUUID().String(),
-			fftypes.NewUUID().String(),
-			fftypes.Now())
-	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop2"))
-	mock.ExpectRollback()
-	existing, err := s.InsertOrGetTokenTransfer(context.Background(), &core.TokenTransfer{})
-	assert.Regexp(t, "FF00178", err)
-	assert.Nil(t, existing)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

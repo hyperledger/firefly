@@ -120,36 +120,7 @@ func (s *SQLCommon) InsertOrGetTokenTransfer(ctx context.Context, transfer *core
 	// Do a select within the transaction to determine if the protocolID already exists
 	existing, err = s.GetTokenTransferByProtocolID(ctx, transfer.Namespace, transfer.Pool, transfer.ProtocolID)
 	if err != nil || existing != nil {
-
-		if existing != nil {
-			if _, err = s.UpdateTx(ctx, tokentransferTable, tx,
-				sq.Update(tokentransferTable).
-					Set("type", transfer.Type).
-					Set("local_id", transfer.LocalID).
-					Set("pool_id", transfer.Pool).
-					Set("token_index", transfer.TokenIndex).
-					Set("uri", transfer.URI).
-					Set("connector", transfer.Connector).
-					Set("key", transfer.Key).
-					Set("from_key", transfer.From).
-					Set("to_key", transfer.To).
-					Set("amount", transfer.Amount).
-					Set("message_id", transfer.Message).
-					Set("message_hash", transfer.MessageHash).
-					Set("tx_type", transfer.TX.Type).
-					Set("tx_id", transfer.TX.ID).
-					Set("blockchain_event", transfer.BlockchainEvent).
-					Where(sq.Eq{"protocol_id": transfer.ProtocolID}),
-				func() {
-					s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenTransfers, core.ChangeEventTypeUpdated, transfer.Namespace, transfer.LocalID)
-				},
-			); err != nil {
-				return nil, err
-			}
-			existing = transfer
-		}
-
-		return existing, s.CommitTx(ctx, tx, autoCommit)
+		return existing, err
 	}
 	// Error was apparently not a protocolID conflict - must have been something else
 	return nil, opErr
