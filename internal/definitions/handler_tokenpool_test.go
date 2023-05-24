@@ -23,9 +23,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/assetmocks"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -74,40 +71,33 @@ func buildPoolDefinitionMessage(definition *core.TokenPoolDefinition) (*core.Mes
 }
 
 func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
 	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mam := sh.assets.(*assetmocks.Manager)
-	mim := sh.identity.(*identitymanagermocks.Manager)
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID && p.Connector == "connector1"
 	})).Return(nil, nil)
-	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	err = bs.RunPreFinalize(context.Background())
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolBadConnector(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
@@ -115,25 +105,22 @@ func TestHandleDefinitionBroadcastTokenPoolBadConnector(t *testing.T) {
 	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
-	mim := sh.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionReject, CustomCorrelator: pool.ID}, action)
 	assert.Regexp(t, "FF10403", err)
 
 	err = bs.RunPreFinalize(context.Background())
 	assert.NoError(t, err)
-
-	mim.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolNameExists(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
@@ -144,30 +131,25 @@ func TestHandleDefinitionBroadcastTokenPoolNameExists(t *testing.T) {
 		Name: "name1",
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mim := sh.identity.(*identitymanagermocks.Manager)
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID && p.Name == "name1"
 	})).Return(existing, nil)
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID && p.Name == "name1-1"
 	})).Return(nil, nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestHandleDefinitionLocalTokenPoolNameExists(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
@@ -177,21 +159,19 @@ func TestHandleDefinitionLocalTokenPoolNameExists(t *testing.T) {
 		Name: "name1",
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Name == "name1"
 	})).Return(existing, nil)
 
-	action, err := sh.handleTokenPoolDefinition(context.Background(), &bs.BatchState, pool, true)
+	action, err := dh.handleTokenPoolDefinition(context.Background(), &bs.BatchState, pool, true)
 	assert.Equal(t, HandlerResult{Action: core.ActionReject, CustomCorrelator: pool.ID}, action)
 	assert.Error(t, err)
 
-	mdi.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastTokenPoolNetworkNameExists(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
@@ -202,28 +182,24 @@ func TestHandleDefinitionBroadcastTokenPoolNetworkNameExists(t *testing.T) {
 		NetworkName: "name1",
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mim := sh.identity.(*identitymanagermocks.Manager)
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionReject, CustomCorrelator: pool.ID}, action)
 	assert.Error(t, err)
 
-	mdi.AssertExpectations(t)
-	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
@@ -236,27 +212,22 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 		Message: msg.Header.ID,
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mim := sh.identity.(*identitymanagermocks.Manager)
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionConfirm, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolExistingWaiting(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
@@ -269,27 +240,22 @@ func TestHandleDefinitionBroadcastTokenPoolExistingWaiting(t *testing.T) {
 		Message: msg.Header.ID,
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mim := sh.identity.(*identitymanagermocks.Manager)
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolExistingPublish(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
@@ -308,29 +274,23 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublish(t *testing.T) {
 	newPool.Message = msg.Header.ID
 	newPool.State = core.TokenPoolStatePending
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mim := sh.identity.(*identitymanagermocks.Manager)
-
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	mdi.On("UpsertTokenPool", context.Background(), &newPool, database.UpsertOptimizationExisting).Return(nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mdi.On("UpsertTokenPool", context.Background(), &newPool, database.UpsertOptimizationExisting).Return(nil)
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionConfirm, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolExistingPublishUpsertFail(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
@@ -349,29 +309,23 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishUpsertFail(t *testing.
 	newPool.Message = msg.Header.ID
 	newPool.State = core.TokenPoolStatePending
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mim := sh.identity.(*identitymanagermocks.Manager)
-
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	mdi.On("UpsertTokenPool", context.Background(), &newPool, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mdi.On("UpsertTokenPool", context.Background(), &newPool, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry, CustomCorrelator: pool.ID}, action)
 	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolExistingPublishOrgFail(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
@@ -390,19 +344,15 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishOrgFail(t *testing.T) 
 	newPool.Message = msg.Header.ID
 	newPool.State = core.TokenPoolStatePending
 
-	mim := sh.identity.(*identitymanagermocks.Manager)
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
-
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
-
-	mim.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolExistingPublishOrgMismatch(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
@@ -421,89 +371,72 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishOrgMismatch(t *testing
 	newPool.Message = msg.Header.ID
 	newPool.State = core.TokenPoolStatePending
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mim := sh.identity.(*identitymanagermocks.Manager)
-
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org2",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionReject, CustomCorrelator: pool.ID}, action)
 	assert.Regexp(t, "FF10407", err)
-
-	mdi.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
 	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mim := sh.identity.(*identitymanagermocks.Manager)
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil, fmt.Errorf("pop"))
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
-	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := newPoolDefinition()
 	pool := definition.Pool
 	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mam := sh.assets.(*assetmocks.Manager)
-	mim := sh.identity.(*identitymanagermocks.Manager)
-	mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
+	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil, nil)
-	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(fmt.Errorf("pop"))
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(fmt.Errorf("pop"))
+	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	err = bs.RunPreFinalize(context.Background())
 	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	definition := &core.TokenPoolDefinition{
 		Pool: &core.TokenPool{},
@@ -511,14 +444,14 @@ func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {
-	sh, bs := newTestDefinitionHandler(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	msg := &core.Message{
 		Header: core.MessageHeader{
@@ -527,7 +460,7 @@ func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {
 		},
 	}
 
-	action, err := sh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, nil, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, nil, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 	bs.assertNoFinalizers()

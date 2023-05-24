@@ -22,11 +22,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/assetmocks"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -37,8 +32,6 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 	ds := newTestDefinitionSender(t)
 	defer ds.cleanup(t)
 	ds.multiparty = true
-
-	mdm := ds.data.(*datamocks.Manager)
 
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
@@ -52,16 +45,12 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "FF10420", err)
-
-	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
 	ds := newTestDefinitionSender(t)
 	defer ds.cleanup(t)
 	ds.multiparty = false
-
-	mdm := ds.data.(*datamocks.Manager)
 
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
@@ -75,8 +64,6 @@ func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "FF00140", err)
-
-	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastTokenPoolPublishNonMultiparty(t *testing.T) {
@@ -103,8 +90,6 @@ func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mdm := ds.data.(*datamocks.Manager)
-
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Namespace: "",
@@ -118,8 +103,6 @@ func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "FF00140", err)
-
-	mdm.AssertExpectations(t)
 }
 
 func TestDefineTokenPoolOk(t *testing.T) {
@@ -127,10 +110,6 @@ func TestDefineTokenPoolOk(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mdi := ds.database.(*databasemocks.Plugin)
-	mdm := ds.data.(*datamocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
 	pool := &core.TokenPool{
@@ -144,33 +123,26 @@ func TestDefineTokenPoolOk(t *testing.T) {
 		Published: true,
 	}
 
-	mim.On("GetMultipartyRootOrg", ds.ctx).Return(&core.Identity{
+	ds.mim.On("GetMultipartyRootOrg", ds.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", ds.ctx).Return(nil)
-	mdi.On("GetTokenPoolByNetworkName", ds.ctx, "ns1", "mypool").Return(nil, nil)
+	ds.mdi.On("GetTokenPoolByNetworkName", ds.ctx, "ns1", "mypool").Return(nil, nil)
 
 	err := ds.DefineTokenPool(ds.ctx, pool, false)
 	assert.NoError(t, err)
 
-	mdm.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 	ds := newTestDefinitionSender(t)
 	defer ds.cleanup(t)
 	ds.multiparty = false
-
-	mdb := ds.database.(*databasemocks.Plugin)
-	mam := ds.assets.(*assetmocks.Manager)
 
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
@@ -184,21 +156,16 @@ func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 		Published: false,
 	}
 
-	mdb.On("InsertOrGetTokenPool", mock.Anything, pool).Return(nil, nil)
-	mam.On("ActivateTokenPool", mock.Anything, pool).Return(nil)
+	ds.mdi.On("InsertOrGetTokenPool", mock.Anything, pool).Return(nil, nil)
+	ds.mam.On("ActivateTokenPool", mock.Anything, pool).Return(nil)
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
-
-	mdb.AssertExpectations(t)
-	mam.AssertExpectations(t)
 }
 
 func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 	ds := newTestDefinitionSender(t)
 	defer ds.cleanup(t)
-
-	mdi := ds.database.(*databasemocks.Plugin)
 
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
@@ -211,12 +178,10 @@ func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 		Published: false,
 	}
 
-	mdi.On("InsertOrGetTokenPool", mock.Anything, pool).Return(nil, fmt.Errorf("pop"))
+	ds.mdi.On("InsertOrGetTokenPool", mock.Anything, pool).Return(nil, fmt.Errorf("pop"))
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "pop", err)
-
-	mdi.AssertExpectations(t)
 }
 
 func TestDefineTokenPoolBadName(t *testing.T) {
@@ -244,10 +209,6 @@ func TestPublishTokenPool(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mdi := ds.database.(*databasemocks.Plugin)
-	mam := ds.assets.(*assetmocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
 	pool := &core.TokenPool{
@@ -261,28 +222,24 @@ func TestPublishTokenPool(t *testing.T) {
 		Published: false,
 	}
 
-	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(nil)
-	mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
-	mockRunAsGroupPassthrough(mdi)
+	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	result, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.NoError(t, err)
 	assert.Equal(t, pool, result)
 	assert.True(t, pool.Published)
 
-	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
@@ -300,9 +257,6 @@ func TestPublishTokenPoolAlreadyPublished(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mam := ds.assets.(*assetmocks.Manager)
-	mdi := ds.database.(*databasemocks.Plugin)
-
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
@@ -314,14 +268,11 @@ func TestPublishTokenPoolAlreadyPublished(t *testing.T) {
 		Published: true,
 	}
 
-	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	mockRunAsGroupPassthrough(mdi)
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.Regexp(t, "FF10450", err)
-
-	mam.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestPublishTokenPoolQueryFail(t *testing.T) {
@@ -329,17 +280,11 @@ func TestPublishTokenPoolQueryFail(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mam := ds.assets.(*assetmocks.Manager)
-	mdi := ds.database.(*databasemocks.Plugin)
-
-	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(nil, fmt.Errorf("pop"))
-	mockRunAsGroupPassthrough(mdi)
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(nil, fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.EqualError(t, err, "pop")
-
-	mam.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestPublishTokenPoolNetworkNameError(t *testing.T) {
@@ -347,9 +292,6 @@ func TestPublishTokenPoolNetworkNameError(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mam := ds.assets.(*assetmocks.Manager)
-	mdi := ds.database.(*databasemocks.Plugin)
-
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
@@ -361,15 +303,12 @@ func TestPublishTokenPoolNetworkNameError(t *testing.T) {
 		Published: false,
 	}
 
-	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, fmt.Errorf("pop"))
-	mockRunAsGroupPassthrough(mdi)
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.EqualError(t, err, "pop")
-
-	mam.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestPublishTokenPoolNetworkNameConflict(t *testing.T) {
@@ -377,9 +316,6 @@ func TestPublishTokenPoolNetworkNameConflict(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mam := ds.assets.(*assetmocks.Manager)
-	mdi := ds.database.(*databasemocks.Plugin)
-
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
@@ -391,15 +327,12 @@ func TestPublishTokenPoolNetworkNameConflict(t *testing.T) {
 		Published: false,
 	}
 
-	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(&core.TokenPool{}, nil)
-	mockRunAsGroupPassthrough(mdi)
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(&core.TokenPool{}, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.Regexp(t, "FF10448", err)
-
-	mam.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestPublishTokenPoolResolveFail(t *testing.T) {
@@ -407,10 +340,6 @@ func TestPublishTokenPoolResolveFail(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mam := ds.assets.(*assetmocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mdi := ds.database.(*databasemocks.Plugin)
-
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
@@ -422,17 +351,13 @@ func TestPublishTokenPoolResolveFail(t *testing.T) {
 		Published: false,
 	}
 
-	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
-	mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
-	mockRunAsGroupPassthrough(mdi)
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.EqualError(t, err, "pop")
-
-	mam.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestPublishTokenPoolPrepareFail(t *testing.T) {
@@ -440,10 +365,6 @@ func TestPublishTokenPoolPrepareFail(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mdi := ds.database.(*databasemocks.Plugin)
-	mam := ds.assets.(*assetmocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
 	pool := &core.TokenPool{
@@ -457,25 +378,21 @@ func TestPublishTokenPoolPrepareFail(t *testing.T) {
 		Published: false,
 	}
 
-	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
-	mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
-	mockRunAsGroupPassthrough(mdi)
+	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
@@ -484,10 +401,6 @@ func TestPublishTokenPoolSendFail(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mdi := ds.database.(*databasemocks.Plugin)
-	mam := ds.assets.(*assetmocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
 	pool := &core.TokenPool{
@@ -501,26 +414,22 @@ func TestPublishTokenPoolSendFail(t *testing.T) {
 		Published: false,
 	}
 
-	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
-	mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
-	mockRunAsGroupPassthrough(mdi)
+	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
@@ -529,10 +438,6 @@ func TestPublishTokenPoolConfirm(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	mdi := ds.database.(*databasemocks.Plugin)
-	mam := ds.assets.(*assetmocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
 	pool := &core.TokenPool{
@@ -546,27 +451,23 @@ func TestPublishTokenPoolConfirm(t *testing.T) {
 		Published: false,
 	}
 
-	mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("SendAndWait", context.Background()).Return(nil)
-	mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
-	mockRunAsGroupPassthrough(mdi)
+	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", true)
 	assert.NoError(t, err)
 	assert.True(t, pool.Published)
 
-	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 

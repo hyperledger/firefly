@@ -23,8 +23,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -32,6 +30,7 @@ import (
 
 func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
 
 	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -48,12 +47,11 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-	mbi := dh.database.(*databasemocks.Plugin)
-	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
-	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
-	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+	dh.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
+	dh.mdi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
+	dh.mdi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
+	dh.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
@@ -63,13 +61,11 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 	assert.NoError(t, err)
 	err = bs.RunFinalize(context.Background())
 	assert.NoError(t, err)
-
-	mdm.AssertExpectations(t)
-	mbi.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
 
 	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -86,12 +82,10 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-	mbi := dh.database.(*databasemocks.Plugin)
-	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
-	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
-	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	dh.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
+	dh.mdi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
+	dh.mdi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
+	dh.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
@@ -101,13 +95,11 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 	assert.NoError(t, err)
 	err = bs.RunFinalize(context.Background())
 	assert.EqualError(t, err, "pop")
-
-	mdm.AssertExpectations(t)
-	mbi.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
 
 	dt := &core.Datatype{
 		Validator: core.ValidatorTypeJSON,
@@ -135,6 +127,7 @@ func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 
 func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
 
 	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -151,8 +144,7 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	dh.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
@@ -161,12 +153,12 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
-	mdm.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
 
 	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -190,6 +182,7 @@ func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 
 func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
 
 	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -206,10 +199,8 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-	mbi := dh.database.(*databasemocks.Plugin)
-	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, fmt.Errorf("pop"))
+	dh.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
+	dh.mdi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, fmt.Errorf("pop"))
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Namespace: "ns1",
@@ -219,13 +210,12 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
-	mdm.AssertExpectations(t)
-	mbi.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
 
 	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -242,11 +232,9 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-	mbi := dh.database.(*databasemocks.Plugin)
-	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
-	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	dh.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
+	dh.mdi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
+	dh.mdi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
@@ -255,13 +243,12 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
-	mdm.AssertExpectations(t)
-	mbi.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
 
 	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -278,10 +265,8 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-	mbi := dh.database.(*databasemocks.Plugin)
-	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(dt, nil)
+	dh.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
+	dh.mdi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(dt, nil)
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
@@ -290,7 +275,5 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
-	mdm.AssertExpectations(t)
-	mbi.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
