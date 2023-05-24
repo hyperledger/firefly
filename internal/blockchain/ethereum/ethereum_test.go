@@ -454,20 +454,18 @@ func TestBackgroundStartFail(t *testing.T) {
 	err = e.Start()
 	assert.NoError(t, err)
 
-	var capturedErr error
+	capturedErr := make(chan error)
 	e.backgroundRetry = &retry.Retry{
 		ErrCallback: func(err error) {
-			capturedErr = err
+			capturedErr <- err
 		},
 	}
 
 	err = e.Start()
 	assert.NoError(t, err)
 
-	assert.Eventually(t, func() bool {
-		return assert.Regexp(t, "FF10111", capturedErr)
-	}, time.Second*5, time.Second)
-
+	err = <-capturedErr
+	assert.Regexp(t, "FF10111", err)
 }
 
 func TestBackgroundStartWSFail(t *testing.T) {
@@ -510,20 +508,18 @@ func TestBackgroundStartWSFail(t *testing.T) {
 	))
 	assert.NoError(t, err)
 
-	var capturedErr error
+	capturedErr := make(chan error)
 	e.backgroundRetry = &retry.Retry{
 		ErrCallback: func(err error) {
-			capturedErr = err
+			capturedErr <- err
 		},
 	}
 
 	err = e.Start()
 	assert.NoError(t, err)
 
-	assert.Eventually(t, func() bool {
-		return assert.Regexp(t, "FF00148", capturedErr)
-	}, time.Second*5, time.Second)
-
+	err = <-capturedErr
+	assert.Regexp(t, "FF00148", err)
 }
 
 func TestWSInitFail(t *testing.T) {

@@ -400,6 +400,7 @@ func TestBackgroundStartFail(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 	utFabconnectConf.Set(FabconnectBackgroundStart, true)
+	utFabconnectConf.Set(wsclient.WSConfigKeyInitialConnectAttempts, 1)
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
@@ -414,19 +415,18 @@ func TestBackgroundStartFail(t *testing.T) {
 	))
 	assert.NoError(t, err)
 
-	var capturedErr error
+	capturedErr := make(chan error)
 	e.backgroundRetry = &retry.Retry{
 		ErrCallback: func(err error) {
-			capturedErr = err
+			capturedErr <- err
 		},
 	}
 
 	err = e.Start()
 	assert.NoError(t, err)
 
-	assert.Eventually(t, func() bool {
-		return assert.Regexp(t, "FF10284", capturedErr)
-	}, time.Second, time.Millisecond)
+	err = <-capturedErr
+	assert.Regexp(t, "FF10284", err)
 }
 
 func TestBackgroundStartWSFail(t *testing.T) {
@@ -480,20 +480,18 @@ func TestBackgroundStartWSFail(t *testing.T) {
 	assert.Equal(t, "fabric", e.Name())
 	assert.Equal(t, core.VerifierTypeMSPIdentity, e.VerifierType())
 
-	var capturedErr error
+	capturedErr := make(chan error)
 	e.backgroundRetry = &retry.Retry{
 		ErrCallback: func(err error) {
-			capturedErr = err
+			capturedErr <- err
 		},
 	}
 
 	err = e.Start()
 	assert.NoError(t, err)
 
-	assert.Eventually(t, func() bool {
-		return assert.Regexp(t, "FF00148", capturedErr)
-	}, time.Second*5, time.Second)
-
+	err = <-capturedErr
+	assert.Regexp(t, "FF00148", err)
 }
 
 func TestWSInitFail(t *testing.T) {

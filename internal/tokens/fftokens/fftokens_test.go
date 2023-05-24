@@ -25,7 +25,6 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
-	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
@@ -965,19 +964,18 @@ func TestBackgroundStartFailWS(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, h.backgroundRetry)
 
-	var capturedErr error
+	capturedErr := make(chan error)
 	h.backgroundRetry = &retry.Retry{
 		ErrCallback: func(err error) {
-			capturedErr = err
+			capturedErr <- err
 		},
 	}
 
 	err = h.Start()
 	assert.NoError(t, err)
 
-	assert.Eventually(t, func() bool {
-		return assert.Regexp(t, "FF00148", capturedErr)
-	}, time.Second*5, time.Second)
+	err = <-capturedErr
+	assert.Regexp(t, "FF00148", err)
 }
 func TestReceiptEventsBackgroundStart(t *testing.T) {
 
