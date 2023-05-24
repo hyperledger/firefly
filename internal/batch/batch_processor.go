@@ -43,7 +43,7 @@ type batchProcessorConf struct {
 	name           string
 	dispatcherName string
 	txType         core.TransactionType
-	signer         core.SignerRef
+	author         string
 	group          *fftypes.Bytes32
 	dispatch       DispatchHandler
 }
@@ -175,31 +175,40 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 		log.L(bp.ctx).Warnf("Adding message to a new batch when one was already assigned. Old batch %s is likely abandoned.", newWork.msg.BatchID)
 	}
 
-	// Build the new sorted work list
-	for _, work := range bp.assemblyQueue {
-		if !added && newWork.msg.Sequence < work.msg.Sequence {
-			newQueue = append(newQueue, newWork)
-			added = true
-		}
-		newQueue = append(newQueue, work)
+	// Check for conditions that prevent this piece of work from going into the current batch
+	// (i.e. the new work is specifically assigned a separate transaction or signing key)
+	batchOfOne := bp.conf.txType == core.TransactionTypeContractInvokePin
+	if batchOfOne {
+		full = true
+		overflow = len(bp.assemblyQueue) > 0
+	} else if len(bp.assemblyQueue) > 0 {
+		full = newWork.msg.Header.Key != bp.assemblyQueue[0].msg.Header.Key
+		overflow = true
 	}
-	if !added {
-		newQueue = append(newQueue, newWork)
+
+	// Build the new sorted work list
+	if full {
+		bp.assemblyQueue = append(bp.assemblyQueue, newWork)
+	} else {
+		for _, work := range bp.assemblyQueue {
+			if !added && newWork.msg.Sequence < work.msg.Sequence {
+				newQueue = append(newQueue, newWork)
+				added = true
+			}
+			newQueue = append(newQueue, work)
+		}
+		if !added {
+			newQueue = append(newQueue, newWork)
+		}
+
+		bp.assemblyQueueBytes += newWork.estimateSize()
+		bp.assemblyQueue = newQueue
+
+		full = len(bp.assemblyQueue) >= int(bp.conf.BatchMaxSize) || bp.assemblyQueueBytes >= bp.conf.BatchMaxBytes
+		overflow = len(bp.assemblyQueue) > 1 && (batchOfOne || bp.assemblyQueueBytes > bp.conf.BatchMaxBytes)
 	}
 
 	log.L(bp.ctx).Debugf("Added message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
-	bp.assemblyQueueBytes += newWork.estimateSize()
-	bp.assemblyQueue = newQueue
-
-	batchOfOne := bp.conf.txType == core.TransactionTypeContractInvokePin
-	if batchOfOne {
-		// Special handling for processors that allow only one message per batch
-		full = true
-		overflow = len(bp.assemblyQueue) > 1
-	} else {
-		full = len(bp.assemblyQueue) >= int(bp.conf.BatchMaxSize) || (bp.assemblyQueueBytes >= bp.conf.BatchMaxBytes)
-		overflow = len(bp.assemblyQueue) > 1 && (bp.assemblyQueueBytes > bp.conf.BatchMaxBytes)
-	}
 	return full, overflow
 }
 
@@ -390,9 +399,12 @@ func (bp *batchProcessor) initPayload(id *fftypes.UUID, flushWork []*batchWork) 
 				ID:        id,
 				Type:      bp.conf.DispatcherOptions.BatchType,
 				Namespace: bp.bm.namespace,
-				SignerRef: bp.conf.signer,
-				Group:     bp.conf.group,
-				Created:   fftypes.Now(),
+				SignerRef: core.SignerRef{
+					Author: bp.conf.author,
+					Key:    flushWork[0].msg.Header.Key,
+				},
+				Group:   bp.conf.group,
+				Created: fftypes.Now(),
 			},
 		},
 	}

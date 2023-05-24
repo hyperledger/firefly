@@ -60,7 +60,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 		if err != nil {
 			return nil, err
 		}
-		pool, err := am.database.GetTokenPoolByID(ctx, am.namespace, poolID)
+		pool, err := am.GetTokenPoolByID(ctx, poolID)
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
@@ -73,7 +73,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 		if err != nil {
 			return nil, err
 		}
-		pool, err := am.database.GetTokenPoolByID(ctx, am.namespace, transfer.Pool)
+		pool, err := am.GetTokenPoolByID(ctx, transfer.Pool)
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
@@ -86,7 +86,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 		if err != nil {
 			return nil, err
 		}
-		pool, err := am.database.GetTokenPoolByID(ctx, am.namespace, approval.Pool)
+		pool, err := am.GetTokenPoolByID(ctx, approval.Pool)
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
@@ -114,7 +114,7 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		if err != nil {
 			return nil, false, err
 		}
-		complete, err = plugin.ActivateTokenPool(ctx, op.NamespacedIDString(), data.Pool)
+		complete, err = plugin.ActivateTokenPool(ctx, data.Pool)
 		return nil, complete, err
 
 	case transferData:

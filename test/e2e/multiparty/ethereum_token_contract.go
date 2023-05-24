@@ -431,7 +431,7 @@ func (suite *EthereumTokenContractTestSuite) TestTokensWithInterface() {
 			Version: contractVersion,
 		},
 	}
-	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, false)
+	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, true, false)
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolResp.ID)
 
 	poolResp = suite.testState.client1.GetTokenPool(suite.T(), poolResp.ID)

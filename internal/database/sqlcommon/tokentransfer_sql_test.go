@@ -76,7 +76,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(transferJson), string(transferReadJson))
 
 	// Query back the token transfer (by protocol ID)
-	transferRead, err = s.GetTokenTransferByProtocolID(ctx, "ns1", transfer.Connector, transfer.ProtocolID)
+	transferRead, err = s.GetTokenTransferByProtocolID(ctx, "ns1", transfer.Pool, transfer.ProtocolID)
 	assert.NoError(t, err)
 	assert.NotNil(t, transferRead)
 	transferReadJson, _ = json.Marshal(&transferRead)
@@ -113,6 +113,10 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	transferJson, _ = json.Marshal(&transfer)
 	transferReadJson, _ = json.Marshal(&transferRead)
 	assert.Equal(t, string(transferJson), string(transferReadJson))
+
+	// Delete the token transfer
+	err = s.DeleteTokenTransfers(ctx, "ns1", transfer.Pool)
+	assert.NoError(t, err)
 }
 
 func TestUpsertTokenTransferFailBegin(t *testing.T) {
@@ -212,5 +216,23 @@ func TestGetTokenTransfersScanFail(t *testing.T) {
 	f := database.TokenTransferQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
 	_, _, err := s.GetTokenTransfers(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteTokenTransfersFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteTokenTransfers(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteTokenTransfersFailDelete(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteTokenTransfers(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00179", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

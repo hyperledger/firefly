@@ -123,6 +123,62 @@ func (_m *Plugin) DeleteSubscriptionByID(ctx context.Context, namespace string, 
 	return r0
 }
 
+// DeleteTokenApprovals provides a mock function with given fields: ctx, namespace, poolID
+func (_m *Plugin) DeleteTokenApprovals(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, poolID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, poolID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteTokenBalances provides a mock function with given fields: ctx, namespace, poolID
+func (_m *Plugin) DeleteTokenBalances(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, poolID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, poolID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteTokenPool provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) DeleteTokenPool(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteTokenTransfers provides a mock function with given fields: ctx, namespace, poolID
+func (_m *Plugin) DeleteTokenTransfers(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, poolID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, poolID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetBatchByID provides a mock function with given fields: ctx, namespace, id
 func (_m *Plugin) GetBatchByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.BatchPersisted, error) {
 	ret := _m.Called(ctx, namespace, id)
@@ -1882,25 +1938,25 @@ func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, namespace string, lo
 	return r0, r1
 }
 
-// GetTokenApprovalByProtocolID provides a mock function with given fields: ctx, namespace, connector, protocolID
-func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, namespace string, connector string, protocolID string) (*core.TokenApproval, error) {
-	ret := _m.Called(ctx, namespace, connector, protocolID)
+// GetTokenApprovalByProtocolID provides a mock function with given fields: ctx, namespace, poolID, protocolID
+func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenApproval, error) {
+	ret := _m.Called(ctx, namespace, poolID, protocolID)
 
 	var r0 *core.TokenApproval
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*core.TokenApproval, error)); ok {
-		return rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) (*core.TokenApproval, error)); ok {
+		return rf(ctx, namespace, poolID, protocolID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.TokenApproval); ok {
-		r0 = rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *core.TokenApproval); ok {
+		r0 = rf(ctx, namespace, poolID, protocolID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenApproval)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
+		r1 = rf(ctx, namespace, poolID, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2056,25 +2112,25 @@ func (_m *Plugin) GetTokenPoolByID(ctx context.Context, namespace string, id *ff
 	return r0, r1
 }
 
-// GetTokenPoolByLocator provides a mock function with given fields: ctx, namespace, connector, locator
-func (_m *Plugin) GetTokenPoolByLocator(ctx context.Context, namespace string, connector string, locator string) (*core.TokenPool, error) {
-	ret := _m.Called(ctx, namespace, connector, locator)
+// GetTokenPoolByNetworkName provides a mock function with given fields: ctx, namespace, networkName
+func (_m *Plugin) GetTokenPoolByNetworkName(ctx context.Context, namespace string, networkName string) (*core.TokenPool, error) {
+	ret := _m.Called(ctx, namespace, networkName)
 
 	var r0 *core.TokenPool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*core.TokenPool, error)); ok {
-		return rf(ctx, namespace, connector, locator)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*core.TokenPool, error)); ok {
+		return rf(ctx, namespace, networkName)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.TokenPool); ok {
-		r0 = rf(ctx, namespace, connector, locator)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenPool); ok {
+		r0 = rf(ctx, namespace, networkName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenPool)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, namespace, connector, locator)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, namespace, networkName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2143,25 +2199,25 @@ func (_m *Plugin) GetTokenTransferByID(ctx context.Context, namespace string, lo
 	return r0, r1
 }
 
-// GetTokenTransferByProtocolID provides a mock function with given fields: ctx, namespace, connector, protocolID
-func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, namespace string, connector string, protocolID string) (*core.TokenTransfer, error) {
-	ret := _m.Called(ctx, namespace, connector, protocolID)
+// GetTokenTransferByProtocolID provides a mock function with given fields: ctx, namespace, poolID, protocolID
+func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenTransfer, error) {
+	ret := _m.Called(ctx, namespace, poolID, protocolID)
 
 	var r0 *core.TokenTransfer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*core.TokenTransfer, error)); ok {
-		return rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) (*core.TokenTransfer, error)); ok {
+		return rf(ctx, namespace, poolID, protocolID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.TokenTransfer); ok {
-		r0 = rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *core.TokenTransfer); ok {
+		r0 = rf(ctx, namespace, poolID, protocolID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenTransfer)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, namespace, connector, protocolID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
+		r1 = rf(ctx, namespace, poolID, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2556,6 +2612,32 @@ func (_m *Plugin) InsertOrGetBlockchainEvent(ctx context.Context, event *core.Bl
 
 	if rf, ok := ret.Get(1).(func(context.Context, *core.BlockchainEvent) error); ok {
 		r1 = rf(ctx, event)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// InsertOrGetTokenPool provides a mock function with given fields: ctx, pool
+func (_m *Plugin) InsertOrGetTokenPool(ctx context.Context, pool *core.TokenPool) (*core.TokenPool, error) {
+	ret := _m.Called(ctx, pool)
+
+	var r0 *core.TokenPool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) (*core.TokenPool, error)); ok {
+		return rf(ctx, pool)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) *core.TokenPool); ok {
+		r0 = rf(ctx, pool)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.TokenPool)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenPool) error); ok {
+		r1 = rf(ctx, pool)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -3061,13 +3143,13 @@ func (_m *Plugin) UpsertTokenApproval(ctx context.Context, approval *core.TokenA
 	return r0
 }
 
-// UpsertTokenPool provides a mock function with given fields: ctx, pool
-func (_m *Plugin) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) error {
-	ret := _m.Called(ctx, pool)
+// UpsertTokenPool provides a mock function with given fields: ctx, pool, optimization
+func (_m *Plugin) UpsertTokenPool(ctx context.Context, pool *core.TokenPool, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, pool, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) error); ok {
-		r0 = rf(ctx, pool)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, pool, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -17,13 +17,13 @@ type Sender struct {
 	mock.Mock
 }
 
-// ClaimIdentity provides a mock function with given fields: ctx, def, signingIdentity, parentSigner, waitConfirm
-func (_m *Sender) ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error {
-	ret := _m.Called(ctx, def, signingIdentity, parentSigner, waitConfirm)
+// ClaimIdentity provides a mock function with given fields: ctx, def, signingIdentity, parentSigner
+func (_m *Sender) ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef) error {
+	ret := _m.Called(ctx, def, signingIdentity, parentSigner)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityClaim, *core.SignerRef, *core.SignerRef, bool) error); ok {
-		r0 = rf(ctx, def, signingIdentity, parentSigner, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityClaim, *core.SignerRef, *core.SignerRef) error); ok {
+		r0 = rf(ctx, def, signingIdentity, parentSigner)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -74,11 +74,11 @@ func (_m *Sender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm b
 }
 
 // DefineTokenPool provides a mock function with given fields: ctx, pool, waitConfirm
-func (_m *Sender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
+func (_m *Sender) DefineTokenPool(ctx context.Context, pool *core.TokenPool, waitConfirm bool) error {
 	ret := _m.Called(ctx, pool, waitConfirm)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPoolAnnouncement, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool, bool) error); ok {
 		r0 = rf(ctx, pool, waitConfirm)
 	} else {
 		r0 = ret.Error(0)
@@ -99,6 +99,32 @@ func (_m *Sender) Name() string {
 	}
 
 	return r0
+}
+
+// PublishTokenPool provides a mock function with given fields: ctx, poolNameOrID, networkName, waitConfirm
+func (_m *Sender) PublishTokenPool(ctx context.Context, poolNameOrID string, networkName string, waitConfirm bool) (*core.TokenPool, error) {
+	ret := _m.Called(ctx, poolNameOrID, networkName, waitConfirm)
+
+	var r0 *core.TokenPool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) (*core.TokenPool, error)); ok {
+		return rf(ctx, poolNameOrID, networkName, waitConfirm)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) *core.TokenPool); ok {
+		r0 = rf(ctx, poolNameOrID, networkName, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.TokenPool)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, bool) error); ok {
+		r1 = rf(ctx, poolNameOrID, networkName, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // UpdateIdentity provides a mock function with given fields: ctx, identity, def, signingIdentity, waitConfirm

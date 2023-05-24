@@ -96,7 +96,7 @@ func (suite *TokensOnlyTestSuite) TestTokensOnlyNamespaces() {
 		Key:  suite.key,
 		Type: core.TokenTypeFungible,
 	}
-	poolResp := client1.CreateTokenPool(suite.T(), pool, false)
+	poolResp := client1.CreateTokenPool(suite.T(), pool, false, false)
 	poolID := poolResp.ID
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolID)

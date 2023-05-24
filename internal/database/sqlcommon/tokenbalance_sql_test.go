@@ -131,6 +131,10 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(pools))
 	assert.Equal(t, *transfer.Pool, *pools[0].Pool)
+
+	// Delete the token balances
+	err = s.DeleteTokenBalances(ctx, "ns1", transfer.Pool)
+	assert.NoError(t, err)
 }
 
 func TestUpdateTokenBalancesFailBegin(t *testing.T) {
@@ -283,5 +287,23 @@ func TestGetTokenAccountPoolsScanFail(t *testing.T) {
 	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).And()
 	_, _, err := s.GetTokenAccountPools(context.Background(), "ns1", "0x1", f)
 	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteTokenBalancesFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteTokenBalances(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteTokenBalancesFailDelete(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteTokenBalances(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00179", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -103,6 +103,38 @@ func TestDefineFFIOk(t *testing.T) {
 	mms.AssertExpectations(t)
 }
 
+func TestDefineFFIConfirm(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = true
+
+	ffi := &fftypes.FFI{}
+
+	mcm := ds.contracts.(*contractmocks.Manager)
+	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
+
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			DID: "firefly:org1",
+		},
+	}, nil)
+	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(nil)
+
+	mbm := ds.broadcast.(*broadcastmocks.Manager)
+	mms := &syncasyncmocks.Sender{}
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	mms.On("SendAndWait", context.Background()).Return(nil)
+
+	err := ds.DefineFFI(context.Background(), ffi, true)
+	assert.NoError(t, err)
+
+	mcm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
 func TestDefineFFINonMultiparty(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()

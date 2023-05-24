@@ -18,6 +18,7 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -27,12 +28,12 @@ import (
 )
 
 func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
-	var announce core.TokenPoolAnnouncement
-	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
+	var definition core.TokenPoolDefinition
+	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &definition); !valid {
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "token pool", msg.Header.ID)
 	}
 
-	pool := announce.Pool
+	pool := definition.Pool
 	// Map remote connector name -> local name
 	if localName, ok := dh.tokenNames[pool.Connector]; ok {
 		pool.Connector = localName
@@ -41,34 +42,58 @@ func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, pool.Connector, "token")
 	}
 
+	org, err := dh.identity.GetMultipartyRootOrg(ctx)
+	if err != nil {
+		return HandlerResult{Action: core.ActionRetry}, err
+	}
+	isAuthor := org.DID == msg.Header.Author
+
 	pool.Message = msg.Header.ID
-	return dh.handleTokenPoolDefinition(ctx, state, pool)
+	pool.Name = pool.NetworkName
+	pool.Published = true
+	return dh.handleTokenPoolDefinition(ctx, state, pool, isAuthor)
 }
 
-func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, state *core.BatchState, pool *core.TokenPool) (HandlerResult, error) {
+func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, state *core.BatchState, pool *core.TokenPool, isAuthor bool) (HandlerResult, error) {
 	// Set an event correlator, so that if we reject then the sync-async bridge action can know
 	// from the event (without downloading and parsing the msg)
 	correlator := pool.ID
 
+	// Attempt to create the pool in pending state
 	pool.Namespace = dh.namespace.Name
-	if err := pool.Validate(ctx); err != nil {
-		return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID)
-	}
-
-	// Check if pool has already been confirmed on chain (and confirm the message if so)
-	if existingPool, err := dh.database.GetTokenPoolByID(ctx, dh.namespace.Name, pool.ID); err != nil {
-		return HandlerResult{Action: core.ActionRetry}, err
-	} else if existingPool != nil && existingPool.State == core.TokenPoolStateConfirmed {
-		return HandlerResult{Action: core.ActionConfirm, CustomCorrelator: correlator}, nil
-	}
-
-	// Create the pool in pending state
 	pool.State = core.TokenPoolStatePending
-	if err := dh.database.UpsertTokenPool(ctx, pool); err != nil {
-		if err == database.IDMismatch {
-			return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIDMismatch, "token pool", pool.ID)
+	for i := 1; ; i++ {
+		if err := pool.Validate(ctx); err != nil {
+			return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID)
 		}
-		return HandlerResult{Action: core.ActionRetry}, err
+
+		// Check if the pool conflicts with an existing pool
+		existing, err := dh.database.InsertOrGetTokenPool(ctx, pool)
+		if err != nil {
+			return HandlerResult{Action: core.ActionRetry}, err
+		}
+
+		if existing == nil {
+			// No conflict - new pool was inserted successfully
+			break
+		}
+
+		if pool.Published {
+			if existing.ID.Equals(pool.ID) {
+				// ID conflict - check if this matches (or should overwrite) the existing record
+				action, err := dh.reconcilePublishedPool(ctx, existing, pool, isAuthor)
+				return HandlerResult{Action: action, CustomCorrelator: correlator}, err
+			}
+
+			if existing.Name == pool.Name {
+				// Local name conflict - generate a unique name and try again
+				pool.Name = fmt.Sprintf("%s-%d", pool.NetworkName, i)
+				continue
+			}
+		}
+
+		// Any other conflict - reject
+		return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "token pool", pool.ID, existing.ID)
 	}
 
 	// Message will remain unconfirmed, but plugin will be notified to activate the pool
@@ -81,4 +106,27 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 		return nil
 	})
 	return HandlerResult{Action: core.ActionWait, CustomCorrelator: correlator}, nil
+}
+
+func (dh *definitionHandler) reconcilePublishedPool(ctx context.Context, existing, pool *core.TokenPool, isAuthor bool) (core.MessageAction, error) {
+	if existing.Message.Equals(pool.Message) {
+		if existing.State == core.TokenPoolStateConfirmed {
+			// Pool was previously activated - this must be a rewind to confirm the message
+			return core.ActionConfirm, nil
+		} else {
+			// Pool is still awaiting activation
+			return core.ActionWait, nil
+		}
+	}
+
+	if existing.Message == nil && isAuthor {
+		// Pool was previously unpublished - if it was now published by this node, upsert the new version
+		pool.Name = existing.Name
+		if err := dh.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
+			return core.ActionRetry, err
+		}
+		return core.ActionConfirm, nil
+	}
+
+	return core.ActionReject, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "token pool", pool.ID, existing.ID)
 }

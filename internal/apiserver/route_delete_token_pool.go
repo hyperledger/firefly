@@ -18,33 +18,26 @@ package apiserver
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postTokenPool = &ffapi.Route{
-	Name:       "postTokenPool",
-	Path:       "tokens/pools",
-	Method:     http.MethodPost,
-	PathParams: nil,
-	QueryParams: []*ffapi.QueryParam{
-		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
-		{Name: "publish", Description: coremsgs.APIPublishQueryParam, IsBool: true},
+var deleteTokenPool = &ffapi.Route{
+	Name:   "deleteTokenPool",
+	Path:   "tokens/pools/{nameOrId}",
+	Method: http.MethodDelete,
+	PathParams: []*ffapi.PathParam{
+		{Name: "nameOrId", Description: coremsgs.APIParamsTokenPoolNameOrID},
 	},
-	Description:     coremsgs.APIEndpointsPostTokenPool,
-	JSONInputValue:  func() interface{} { return &core.TokenPoolInput{} },
-	JSONOutputValue: func() interface{} { return &core.TokenPool{} },
-	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
+	QueryParams:     nil,
+	Description:     coremsgs.APIEndpointsDeleteTokenPool,
+	JSONInputValue:  nil,
+	JSONOutputValue: nil,
+	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
-			r.SuccessStatus = syncRetcode(waitConfirm)
-			pool := r.Input.(*core.TokenPoolInput)
-			pool.Published = strings.EqualFold(r.QP["publish"], "true")
-			return cr.or.Assets().CreateTokenPool(cr.ctx, pool, waitConfirm)
+			return nil, cr.or.Assets().DeleteTokenPool(cr.ctx, r.PP["nameOrId"])
 		},
 	},
 }

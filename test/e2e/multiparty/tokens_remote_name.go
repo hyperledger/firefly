@@ -89,7 +89,7 @@ func (suite *TokensRemoteNameTestSuite) TestE2EFungibleTokensWithRemoteNameAsync
 		Config: fftypes.JSONObject{},
 	}
 
-	poolResp := client1.CreateTokenPool(suite.T(), pool, false)
+	poolResp := client1.CreateTokenPool(suite.T(), pool, true, false)
 	poolID := poolResp.ID
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolID)
