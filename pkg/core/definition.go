@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -24,4 +24,8 @@ type Definition interface {
 	Topic() string
 	// SetBroadcastMessage sets the message that broadcast the definition
 	SetBroadcastMessage(msgID *fftypes.UUID)
+}
+
+type DefinitionPublish struct {
+	NetworkName string `ffstruct:"DefinitionPublish" json:"networkName,omitempty"`
 }

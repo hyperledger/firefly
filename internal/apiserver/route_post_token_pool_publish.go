@@ -25,26 +25,26 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postTokenPool = &ffapi.Route{
-	Name:       "postTokenPool",
-	Path:       "tokens/pools",
-	Method:     http.MethodPost,
-	PathParams: nil,
+var postTokenPoolPublish = &ffapi.Route{
+	Name:   "postTokenPoolPublish",
+	Path:   "tokens/pools/{nameOrId}/publish",
+	Method: http.MethodPost,
+	PathParams: []*ffapi.PathParam{
+		{Name: "nameOrId", Description: coremsgs.APIParamsTokenPoolNameOrID},
+	},
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
-		{Name: "publish", Description: coremsgs.APIPublishQueryParam, IsBool: true},
 	},
-	Description:     coremsgs.APIEndpointsPostTokenPool,
-	JSONInputValue:  func() interface{} { return &core.TokenPoolInput{} },
+	Description:     coremsgs.APIEndpointsPostTokenPoolPublish,
+	JSONInputValue:  func() interface{} { return &core.DefinitionPublish{} },
 	JSONOutputValue: func() interface{} { return &core.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			pool := r.Input.(*core.TokenPoolInput)
-			pool.Published = strings.EqualFold(r.QP["publish"], "true")
-			return cr.or.Assets().CreateTokenPool(cr.ctx, pool, waitConfirm)
+			input := r.Input.(*core.DefinitionPublish)
+			return cr.or.DefinitionSender().PublishTokenPool(cr.ctx, r.PP["nameOrId"], input.NetworkName, waitConfirm)
 		},
 	},
 }

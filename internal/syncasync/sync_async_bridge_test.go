@@ -820,7 +820,7 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	pool := &core.TokenPoolAnnouncement{
+	pool := &core.TokenPoolDefinition{
 		Pool: &core.TokenPool{
 			ID: fftypes.NewUUID(),
 		},

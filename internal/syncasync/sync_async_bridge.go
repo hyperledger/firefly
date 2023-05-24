@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -219,7 +219,7 @@ func (sa *syncAsyncBridge) getPoolFromMessage(msg *core.Message) (*core.TokenPoo
 		if err != nil || data == nil {
 			return nil, err
 		}
-		var pool core.TokenPoolAnnouncement
+		var pool core.TokenPoolDefinition
 		if err := json.Unmarshal(data.Value.Bytes(), &pool); err == nil {
 			return pool.Pool, nil
 		}
