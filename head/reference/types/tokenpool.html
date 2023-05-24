@@ -379,7 +379,8 @@ as long as it can support the basic operations described here (create pool, mint
     </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
         </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"token_pool"</span><span class="p">,</span><span class="w">
         </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a23ffc87-81a2-4cbc-97d6-f53d320c36cd"</span><span class="w">
-    </span><span class="p">}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"published"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
       <h3 id="field-descriptions">
@@ -418,6 +419,11 @@ as long as it can support the basic operations described here (create pool, mint
     <tr>
       <td><code class="language-plaintext highlighter-rouge">name</code></td>
       <td>The name of the token pool. Note the name is not validated against the description of the token on the blockchain</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">networkName</code></td>
+      <td>The published name of the token pool within the multiparty network</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
     <tr>
@@ -494,6 +500,11 @@ as long as it can support the basic operations described here (create pool, mint
       <td><code class="language-plaintext highlighter-rouge">methods</code></td>
       <td>The method definitions resolved by the token connector to be used by each token operation</td>
       <td><a href="simpletypes#jsonany"><code class="language-plaintext highlighter-rouge">JSONAny</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">published</code></td>
+      <td>Indicates if the token pool is published to other members of the multiparty network</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
     </tr>
   </tbody>
 </table>
