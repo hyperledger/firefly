@@ -71,11 +71,22 @@ func (ds *definitionSender) getTokenPoolSender(ctx context.Context, pool *core.T
 	if err := pool.Validate(ctx); err != nil {
 		return wrapSendError(err)
 	}
-	existing, err := ds.database.GetTokenPoolByNetworkName(ctx, pool.Namespace, pool.NetworkName)
+	existing, err := ds.database.GetTokenPoolByNetworkName(ctx, ds.namespace, pool.NetworkName)
 	if err != nil {
 		return wrapSendError(err)
 	} else if existing != nil {
 		return wrapSendError(i18n.NewError(ctx, coremsgs.MsgNetworkNameExists))
+	}
+	if pool.Interface != nil && pool.Interface.ID != nil {
+		iface, err := ds.database.GetFFIByID(ctx, ds.namespace, pool.Interface.ID)
+		switch {
+		case err != nil:
+			return wrapSendError(err)
+		case iface == nil:
+			return wrapSendError(i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotFound, pool.Interface.ID))
+		case !iface.Published:
+			return wrapSendError(i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotPublished, pool.Interface.ID))
+		}
 	}
 
 	// Prepare the pool definition to be serialized for broadcast

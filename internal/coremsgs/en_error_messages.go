@@ -287,4 +287,5 @@ var (
 	MsgNetworkNameExists                  = ffe("FF10448", "Network name already exists", 409)
 	MsgCannotDeletePublished              = ffe("FF10449", "Cannot delete an item that has been published", 409)
 	MsgAlreadyPublished                   = ffe("FF10450", "Item has already been published", 409)
+	MsgContractInterfaceNotPublished      = ffe("FF10451", "Contract interface '%s' has not been published", 409)
 )
