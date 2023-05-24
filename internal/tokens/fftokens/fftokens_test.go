@@ -84,8 +84,10 @@ func TestUnsetHandler(t *testing.T) {
 	h.SetOperationHandler("ns1", mocb1)
 	assert.Equal(t, 1, len(h.callbacks.handlers))
 	assert.Equal(t, 1, len(h.callbacks.opHandlers))
-	h.UnsetHandler("ns1")
-	h.UnsetOperationHandler("ns1")
+	h.SetHandler("ns1", nil)
+	assert.Empty(t, h.callbacks.handlers)
+	h.SetOperationHandler("ns1", nil)
+	assert.Empty(t, h.callbacks.opHandlers)
 	assert.Equal(t, 0, len(h.callbacks.handlers))
 	assert.Equal(t, 0, len(h.callbacks.opHandlers))
 }

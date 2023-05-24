@@ -73,6 +73,11 @@ func TestCallbackBlockchainEvent(t *testing.T) {
 	err = cb.BlockchainEvent(context.Background(), "", event)
 	assert.EqualError(t, err, "pop")
 
+	cb.SetHandler("ns1", nil)
+	assert.Empty(t, cb.(*callbacks).handlers)
+	cb.SetOperationalHandler("ns1", nil)
+	assert.Empty(t, cb.(*callbacks).opHandlers)
+
 	mcb.AssertExpectations(t)
 }
 

@@ -94,6 +94,9 @@ func TestDeliveryRequestOk(t *testing.T) {
 	assert.Equal(t, 1, called)
 	cbs.AssertExpectations(t)
 
+	se.SetHandler("ns1", nil)
+	assert.Empty(t, se.callbacks.handlers)
+
 }
 
 func TestDeliveryRequestFail(t *testing.T) {

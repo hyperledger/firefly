@@ -244,6 +244,11 @@ func (or *orchestrator) Init() (err error) {
 	return err
 }
 
+func Purge(ctx context.Context, ns *core.Namespace, plugins *Plugins, dxNodeName string) {
+	// Clear all handlers on all plugins, as this namespace is never coming back
+	setHandlers(ctx, plugins, ns, dxNodeName, nil, nil)
+}
+
 func (or *orchestrator) database() database.Plugin {
 	return or.plugins.Database.Plugin
 }
@@ -318,10 +323,6 @@ func (or *orchestrator) WaitStop() {
 		or.operations.WaitStop()
 		or.operations = nil
 	}
-	for _, tok := range or.tokens() {
-		tok.UnsetHandler(or.namespace.Name)
-		tok.UnsetOperationHandler(or.namespace.Name)
-	}
 	or.startedLock.Lock()
 	defer or.startedLock.Unlock()
 	or.started = false
@@ -382,25 +383,36 @@ func (or *orchestrator) Identity() identity.Manager {
 }
 
 func (or *orchestrator) initHandlers(ctx context.Context) {
-	or.plugins.Database.Plugin.SetHandler(or.namespace.Name, or)
+	// Update all the handlers to point to this instance of the orchestrator
+	setHandlers(ctx, or.plugins, or.namespace, or.config.Multiparty.Node.Name, or, &or.bc)
+}
 
-	if or.plugins.Blockchain.Plugin != nil {
-		or.plugins.Blockchain.Plugin.SetHandler(or.namespace.Name, &or.bc)
-		or.plugins.Blockchain.Plugin.SetOperationHandler(or.namespace.Name, &or.bc)
+func setHandlers(ctx context.Context,
+	plugins *Plugins,
+	namespace *core.Namespace,
+	dxNodeName string,
+	dbc database.Callbacks,
+	bc *boundCallbacks,
+) {
+	plugins.Database.Plugin.SetHandler(namespace.Name, dbc)
+
+	if plugins.Blockchain.Plugin != nil {
+		plugins.Blockchain.Plugin.SetHandler(namespace.Name, bc)
+		plugins.Blockchain.Plugin.SetOperationHandler(namespace.Name, bc)
 	}
 
-	if or.plugins.SharedStorage.Plugin != nil {
-		or.plugins.SharedStorage.Plugin.SetHandler(or.namespace.Name, &or.bc)
+	if plugins.SharedStorage.Plugin != nil {
+		plugins.SharedStorage.Plugin.SetHandler(namespace.Name, bc)
 	}
 
-	if or.plugins.DataExchange.Plugin != nil {
-		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.NetworkName, or.config.Multiparty.Node.Name, &or.bc)
-		or.plugins.DataExchange.Plugin.SetOperationHandler(or.namespace.Name, &or.bc)
+	if plugins.DataExchange.Plugin != nil {
+		plugins.DataExchange.Plugin.SetHandler(namespace.NetworkName, dxNodeName, bc)
+		plugins.DataExchange.Plugin.SetOperationHandler(namespace.Name, bc)
 	}
 
-	for _, token := range or.plugins.Tokens {
-		token.Plugin.SetHandler(or.namespace.Name, &or.bc)
-		token.Plugin.SetOperationHandler(or.namespace.Name, &or.bc)
+	for _, token := range plugins.Tokens {
+		token.Plugin.SetHandler(namespace.Name, bc)
+		token.Plugin.SetOperationHandler(namespace.Name, bc)
 	}
 
 }

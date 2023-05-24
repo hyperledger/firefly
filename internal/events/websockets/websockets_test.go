@@ -111,6 +111,10 @@ func TestValidateOptionsOk(t *testing.T) {
 	err := ws.ValidateOptions(opts)
 	assert.NoError(t, err)
 	assert.False(t, *opts.WithData)
+
+	ws.SetHandler("ns1", nil)
+	assert.Empty(t, ws.callbacks.handlers)
+
 }
 
 func TestSendBadData(t *testing.T) {

@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/spf13/viper"
 )
 
@@ -94,6 +95,15 @@ func (nm *namespaceManager) configReloaded(ctx context.Context) {
 
 	// Stop all defunct plugins - now the namespaces using them are all stopped
 	nm.stopDefunctPlugins(ctx, pluginsToStop)
+
+	// If there are any namespaces that are completely gone at this point we need to purge
+	// them from the system (all the handlers/callback registrations), before we update the
+	// namespace list and lose track of the old orchestrator
+	for oldNSName, oldNS := range nm.namespaces {
+		if _, stillExists := availableNS[oldNSName]; !stillExists && oldNS.orchestrator != nil {
+			orchestrator.Purge(ctx, &oldNS.Namespace, oldNS.plugins, oldNS.config.Multiparty.Node.Name)
+		}
+	}
 
 	// Update the new lists
 	nm.plugins = availablePlugins

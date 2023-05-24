@@ -95,6 +95,9 @@ func TestValidateOptionsWithDataDefaulTrue(t *testing.T) {
 	err := wh.ValidateOptions(opts)
 	assert.NoError(t, err)
 	assert.True(t, *opts.WithData)
+
+	wh.SetHandler("ns1", nil)
+	assert.Empty(t, wh.callbacks.handlers)
 }
 
 func TestValidateOptionsBadURL(t *testing.T) {

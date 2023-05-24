@@ -91,6 +91,10 @@ func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error)
 func (wh *WebHooks) SetHandler(namespace string, handler events.Callbacks) error {
 	wh.callbacks.writeLock.Lock()
 	defer wh.callbacks.writeLock.Unlock()
+	if handler == nil {
+		delete(wh.callbacks.handlers, namespace)
+		return nil
+	}
 	wh.callbacks.handlers[namespace] = handler
 	// We have a single logical connection, that matches all subscriptions
 	return handler.RegisterConnection(wh.connID, func(sr core.SubscriptionRef) bool { return true })

@@ -73,6 +73,10 @@ func (se *Events) Init(ctx context.Context, config config.Section) (err error) {
 func (se *Events) SetHandler(namespace string, handler events.Callbacks) error {
 	se.callbacks.writeLock.Lock()
 	defer se.callbacks.writeLock.Unlock()
+	if handler == nil {
+		delete(se.callbacks.handlers, namespace)
+		return nil
+	}
 	se.callbacks.handlers[namespace] = handler
 	// We have a single logical connection, that matches all subscriptions
 	return handler.RegisterConnection(se.connID, func(sr core.SubscriptionRef) bool { return true })

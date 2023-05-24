@@ -75,6 +75,10 @@ func (ws *WebSockets) SetAuthorizer(auth core.Authorizer) {
 func (ws *WebSockets) SetHandler(namespace string, handler events.Callbacks) error {
 	ws.callbacks.writeLock.Lock()
 	defer ws.callbacks.writeLock.Unlock()
+	if handler == nil {
+		delete(ws.callbacks.handlers, namespace)
+		return nil
+	}
 	ws.callbacks.handlers[namespace] = handler
 	return nil
 }
