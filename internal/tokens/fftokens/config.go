@@ -27,6 +27,7 @@ const (
 	FFTEventRetryInitialDelay = "eventRetry.initialDelay"
 	FFTEventRetryMaxDelay     = "eventRetry.maxDelay"
 	FFTEventRetryFactor       = "eventRetry.factor"
+	FFTBackgroundStart        = "backgroundStart"
 )
 
 func (ft *FFTokens) InitConfig(config config.Section) {
@@ -35,4 +36,5 @@ func (ft *FFTokens) InitConfig(config config.Section) {
 	config.AddKnownKey(FFTEventRetryInitialDelay, 50*time.Millisecond)
 	config.AddKnownKey(FFTEventRetryMaxDelay, 30*time.Second)
 	config.AddKnownKey(FFTEventRetryFactor, 2.0)
+	config.AddKnownKey(FFTBackgroundStart, false)
 }

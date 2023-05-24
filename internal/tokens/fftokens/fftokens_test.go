@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
@@ -85,6 +86,20 @@ func TestInitBadURL(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
 	assert.Regexp(t, "FF00149", err)
+}
+
+func TestInitBackgroundStart1(t *testing.T) {
+	coreconfig.Reset()
+	h := &FFTokens{}
+	h.InitConfig(ffTokensConfig)
+
+	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "http://localhost:8080")
+	ffTokensConfig.Set(FFTBackgroundStart, true)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
+	assert.NoError(t, err)
+	assert.NotNil(t, h.backgroundRetry)
 }
 
 func TestInitBadTLS(t *testing.T) {
@@ -900,6 +915,131 @@ func TestIgnoredEvents(t *testing.T) {
 	}.String()
 }
 
+func TestBackgroundStartFailWS(t *testing.T) {
+	h := &FFTokens{}
+	h.InitConfig(ffTokensConfig)
+
+	// Bad url for WS should fail and retry
+	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "http://localhost:8080")
+	ffTokensConfig.Set(FFTBackgroundStart, true)
+	ffTokensConfig.Set(wsclient.WSConfigKeyInitialConnectAttempts, 1)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
+	assert.NoError(t, err)
+	assert.NotNil(t, h.backgroundRetry)
+
+	var capturedErr error
+	h.backgroundRetry = &retry.Retry{
+		ErrCallback: func(err error) {
+			capturedErr = err
+		},
+	}
+
+	err = h.Start()
+	assert.NoError(t, err)
+
+	assert.Eventually(t, func() bool {
+		return assert.Regexp(t, "FF00148", capturedErr)
+	}, time.Second*5, time.Second)
+}
+func TestReceiptEventsBackgroundStart(t *testing.T) {
+
+	h, _, fromServer, _, done := newTestFFTokens(t)
+	defer done()
+
+	ffTokensConfig.Set(FFTBackgroundStart, true)
+
+	err := h.Init(h.ctx, h.cancelCtx, "testtokens", ffTokensConfig)
+	assert.NoError(t, err)
+
+	err = h.Start()
+	assert.NoError(t, err)
+
+	mcb := &coremocks.OperationCallbacks{}
+	h.SetOperationHandler("ns1", mcb)
+	opID := fftypes.NewUUID()
+	mockCalled := make(chan bool)
+
+	// receipt: bad ID - passed through
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:wrong" &&
+			update.Status == core.OpStatusPending &&
+			update.Plugin == "fftokens"
+	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
+	fromServer <- fftypes.JSONObject{
+		"id":    "3",
+		"event": "receipt",
+		"data": fftypes.JSONObject{
+			"headers": fftypes.JSONObject{
+				"requestId": "ns1:wrong", // passed through to OperationUpdate to ignore
+				"type":      "TransactionUpdate",
+			},
+		},
+	}.String()
+	<-mockCalled
+
+	// receipt: success
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:"+opID.String() &&
+			update.Status == core.OpStatusSucceeded &&
+			update.BlockchainTXID == "0xffffeeee" &&
+			update.Plugin == "fftokens"
+	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
+	fromServer <- fftypes.JSONObject{
+		"id":    "4",
+		"event": "receipt",
+		"data": fftypes.JSONObject{
+			"headers": fftypes.JSONObject{
+				"requestId": "ns1:" + opID.String(),
+				"type":      "TransactionSuccess",
+			},
+			"transactionHash": "0xffffeeee",
+		},
+	}.String()
+	<-mockCalled
+
+	// receipt: update
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:"+opID.String() &&
+			update.Status == core.OpStatusPending &&
+			update.BlockchainTXID == "0xffffeeee"
+	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
+	fromServer <- fftypes.JSONObject{
+		"id":    "5",
+		"event": "receipt",
+		"data": fftypes.JSONObject{
+			"headers": fftypes.JSONObject{
+				"requestId": "ns1:" + opID.String(),
+				"type":      "TransactionUpdate",
+			},
+			"transactionHash": "0xffffeeee",
+		},
+	}.String()
+	<-mockCalled
+
+	// receipt: failure
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:"+opID.String() &&
+			update.Status == core.OpStatusFailed &&
+			update.BlockchainTXID == "0xffffeeee" &&
+			update.Plugin == "fftokens"
+	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
+	fromServer <- fftypes.JSONObject{
+		"id":    "5",
+		"event": "receipt",
+		"data": fftypes.JSONObject{
+			"headers": fftypes.JSONObject{
+				"requestId": "ns1:" + opID.String(),
+				"type":      "TransactionFailed",
+			},
+			"transactionHash": "0xffffeeee",
+		},
+	}.String()
+	<-mockCalled
+
+	mcb.AssertExpectations(t)
+}
 func TestReceiptEvents(t *testing.T) {
 	h, _, fromServer, _, done := newTestFFTokens(t)
 	defer done()

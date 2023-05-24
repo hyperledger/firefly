@@ -67,6 +67,7 @@ type Fabric struct {
 	subs            common.FireflySubscriptions
 	cache           cache.CInterface
 	backgroundRetry *retry.Retry
+	backgroundStart bool
 }
 
 type eventStreamWebsocket struct {
@@ -248,28 +249,30 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 	}
 	f.cache = cache
 
-	f.streams = newStreamManager(f.client, f.signer, f.cache)
+	f.streams = newStreamManager(f.client, f.signer, f.cache, f.fabconnectConf.GetUint(FabconnectConfigBatchSize), uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds()))
 
-	if !f.fabconnectConf.GetBool(FabconnectBackgroundStart) {
-		batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
-		batchTimeout := uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
-		stream, err := f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout)
-		if err != nil {
-			return err
-		}
-		f.streamID = stream.ID
-		log.L(f.ctx).Infof("Event stream: %s", f.streamID)
-		f.closed = make(chan struct{})
+	f.backgroundStart = f.fabconnectConf.GetBool(FabconnectBackgroundStart)
 
-		go f.eventLoop()
-	} else {
+	if f.backgroundStart {
 		// TODO fix these configs
 		f.backgroundRetry = &retry.Retry{
 			InitialDelay: config.GetDuration(coreconfig.NamespacesRetryInitDelay),
 			MaximumDelay: config.GetDuration(coreconfig.NamespacesRetryMaxDelay),
 			Factor:       config.GetFloat64(coreconfig.NamespacesRetryFactor),
 		}
+
+		return nil
 	}
+
+	stream, err := f.streams.ensureEventStream(f.ctx, f.topic)
+	if err != nil {
+		return err
+	}
+	f.streamID = stream.ID
+	log.L(f.ctx).Infof("Event stream: %s", f.streamID)
+
+	f.closed = make(chan struct{})
+	go f.eventLoop()
 
 	return nil
 }
@@ -282,12 +285,9 @@ func (f *Fabric) SetOperationHandler(namespace string, handler core.OperationCal
 	f.callbacks.SetOperationalHandler(namespace, handler)
 }
 
-func (f *Fabric) startBackground() {
-	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
-	batchTimeout := uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
-
+func (f *Fabric) backgroundStartLoop() {
 	_ = f.backgroundRetry.Do(f.ctx, fmt.Sprintf("fabric connector %s", f.Name()), func(attempt int) (retry bool, err error) {
-		stream, err := f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout)
+		stream, err := f.streams.ensureEventStream(f.ctx, f.topic)
 		if err != nil {
 			return true, err
 		}
@@ -295,21 +295,21 @@ func (f *Fabric) startBackground() {
 		f.streamID = stream.ID
 		log.L(f.ctx).Infof("Event stream: %s (topic=%s)", f.streamID, f.topic)
 
-		f.closed = make(chan struct{})
-		go f.eventLoop()
-
 		err = f.wsconn.Connect()
 		if err != nil {
 			return true, err
 		}
+
+		f.closed = make(chan struct{})
+		go f.eventLoop()
 
 		return false, nil
 	})
 }
 
 func (f *Fabric) Start() (err error) {
-	if f.fabconnectConf.GetBool(FabconnectBackgroundStart) {
-		go f.startBackground()
+	if f.backgroundStart {
+		go f.backgroundStartLoop()
 		return nil
 	}
 	return f.wsconn.Connect()

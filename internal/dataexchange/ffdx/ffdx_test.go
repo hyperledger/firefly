@@ -25,11 +25,13 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/coremocks"
@@ -149,6 +151,19 @@ func acker() func(args mock.Arguments) {
 	return func(args mock.Arguments) {
 		args[1].(*dxEvent).Ack()
 	}
+}
+
+func TestInitWithBackgroundStart(t *testing.T) {
+	h, _, _, _, done := newTestFFDX(t, false)
+	defer done()
+	utConfig.Set(DataExchangeBackgroundStart, true)
+
+	h.InitConfig(utConfig)
+	ctx, cancel := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancel, utConfig)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, h.backgroundRetry)
 }
 
 func manifestAcker(manifest string) func(args mock.Arguments) {
@@ -420,6 +435,108 @@ func TestBadEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
 
+}
+
+func TestBackgroundStartWSFail(t *testing.T) {
+	h := &FFDX{initialized: true}
+	coreconfig.Reset()
+
+	u, _ := url.Parse("http://localhost:12345")
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	h.InitConfig(utConfig)
+
+	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
+	utConfig.Set(wsclient.WSConfigKeyInitialConnectAttempts, 1)
+	utConfig.Set(DataExchangeBackgroundStart, true)
+	h.InitConfig(utConfig)
+
+	dxCtx, dxCancel := context.WithCancel(context.Background())
+	defer dxCancel()
+	err := h.Init(dxCtx, dxCancel, utConfig)
+	assert.NoError(t, err)
+	assert.Equal(t, "ffdx", h.Name())
+	assert.NotNil(t, h.Capabilities())
+
+	var capturedErr error
+	h.backgroundRetry = &retry.Retry{
+		ErrCallback: func(err error) {
+			capturedErr = err
+		},
+	}
+
+	err = h.Start()
+	assert.NoError(t, err)
+
+	assert.Eventually(t, func() bool {
+		return assert.Regexp(t, "FF00148", capturedErr)
+	}, time.Second*20, time.Second)
+}
+
+func TestMessageEventsBackgroundStart(t *testing.T) {
+
+	h, toServer, fromServer, _, done := newTestFFDX(t, false)
+	defer done()
+
+	// Starting in background mode and making sure the event loop are started as well
+	// to listen to messages
+	utConfig.Set(DataExchangeBackgroundStart, true)
+	h.Init(h.ctx, h.cancelCtx, utConfig)
+
+	mcb := &dataexchangemocks.Callbacks{}
+	h.SetHandler("ns1", "node1", mcb)
+	ocb := &coremocks.OperationCallbacks{}
+	h.SetOperationHandler("ns1", ocb)
+	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{"id": "peer1"})
+
+	err := h.Start()
+	assert.NoError(t, err)
+
+	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID1 &&
+			ev.Status == core.OpStatusFailed &&
+			ev.ErrorMessage == "pop" &&
+			ev.Plugin == "ffdx"
+	})).Run(opAcker()).Return(nil)
+	fromServer <- `{"id":"1","type":"message-failed","requestID":"` + namespacedID1 + `","error":"pop"}`
+	msg := <-toServer
+	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
+
+	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID2 &&
+			ev.Status == core.OpStatusSucceeded &&
+			ev.Plugin == "ffdx"
+	})).Run(opAcker()).Return(nil)
+	fromServer <- `{"id":"2","type":"message-delivered","requestID":"` + namespacedID2 + `"}`
+	msg = <-toServer
+	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
+
+	namespacedID3 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+		return ev.NamespacedOpID == namespacedID3 &&
+			ev.Status == core.OpStatusSucceeded &&
+			ev.DXManifest == `{"manifest":true}` &&
+			ev.Output.String() == `{"signatures":"and stuff"}` &&
+			ev.Plugin == "ffdx"
+	})).Run(opAcker()).Return(nil)
+	fromServer <- `{"id":"3","type":"message-acknowledged","requestID":"` + namespacedID3 + `","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
+	msg = <-toServer
+	assert.Equal(t, `{"action":"ack","id":"3"}`, string(msg))
+
+	mcb.On("DXEvent", h, mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.EventID() == "4" &&
+			ev.Type() == dataexchange.DXEventTypeMessageReceived &&
+			ev.MessageReceived().PeerID == "peer2"
+	})).Run(manifestAcker(`{"manifest":true}`)).Return(nil)
+	fromServer <- `{"id":"4","type":"message-received","sender":"peer2","recipient":"peer1","message":"{\"batch\":{\"namespace\":\"ns1\"}}"}`
+	msg = <-toServer
+	assert.Equal(t, `{"action":"ack","id":"4","manifest":"{\"manifest\":true}"}`, string(msg))
+
+	mcb.AssertExpectations(t)
+	ocb.AssertExpectations(t)
 }
 
 func TestMessageEvents(t *testing.T) {

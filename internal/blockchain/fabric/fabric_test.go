@@ -86,7 +86,7 @@ func newTestFabric() (*Fabric, func()) {
 }
 
 func newTestStreamManager(client *resty.Client, signer string) *streamManager {
-	return newStreamManager(client, signer, cache.NewUmanagedCache(context.Background(), 100, 5*time.Minute))
+	return newStreamManager(client, signer, cache.NewUmanagedCache(context.Background(), 100, 5*time.Minute), defaultBatchSize, defaultBatchTimeout)
 }
 
 func testFFIMethod() *fftypes.FFIMethod {

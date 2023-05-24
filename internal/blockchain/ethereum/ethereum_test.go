@@ -148,7 +148,7 @@ func newTestEthereum() (*Ethereum, func()) {
 }
 
 func newTestStreamManager(client *resty.Client) *streamManager {
-	return newStreamManager(client, cache.NewUmanagedCache(context.Background(), 100, 5*time.Minute))
+	return newStreamManager(client, cache.NewUmanagedCache(context.Background(), 100, 5*time.Minute), defaultBatchSize, defaultBatchTimeout)
 }
 
 func mockNetworkVersion(t *testing.T, version int) func(req *http.Request) (*http.Response, error) {

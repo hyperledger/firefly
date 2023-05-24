@@ -77,6 +77,7 @@ type Ethereum struct {
 	subs                 common.FireflySubscriptions
 	cache                cache.CInterface
 	backgroundRetry      *retry.Retry
+	backgroundStart      bool
 }
 
 type eventStreamWebsocket struct {
@@ -201,29 +202,30 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	}
 	e.cache = cache
 
-	e.streams = newStreamManager(e.client, e.cache)
+	e.streams = newStreamManager(e.client, e.cache, e.ethconnectConf.GetUint(EthconnectConfigBatchSize), uint(e.ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds()))
 
-	if !e.ethconnectConf.GetBool(EthconnectBackgroundStart) {
-		batchSize := e.ethconnectConf.GetUint(EthconnectConfigBatchSize)
-		batchTimeout := uint(e.ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
-		stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)
-		if err != nil {
-			return err
-		}
-
-		e.streamID = stream.ID
-		log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
-
-		e.closed = make(chan struct{})
-		go e.eventLoop()
-	} else {
+	e.backgroundStart = e.ethconnectConf.GetBool(EthconnectBackgroundStart)
+	if e.backgroundStart {
 		// TODO fix these configs
 		e.backgroundRetry = &retry.Retry{
 			InitialDelay: config.GetDuration(coreconfig.NamespacesRetryInitDelay),
 			MaximumDelay: config.GetDuration(coreconfig.NamespacesRetryMaxDelay),
 			Factor:       config.GetFloat64(coreconfig.NamespacesRetryFactor),
 		}
+
+		return nil
 	}
+
+	stream, err := e.streams.ensureEventStream(e.ctx, e.topic)
+	if err != nil {
+		return err
+	}
+
+	e.streamID = stream.ID
+	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
+
+	e.closed = make(chan struct{})
+	go e.eventLoop()
 
 	return nil
 }
@@ -236,34 +238,30 @@ func (e *Ethereum) SetOperationHandler(namespace string, handler core.OperationC
 	e.callbacks.SetOperationalHandler(namespace, handler)
 }
 
-func (e *Ethereum) startBackground() {
-	batchSize := e.ethconnectConf.GetUint(EthconnectConfigBatchSize)
-	batchTimeout := uint(e.ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
-
+func (e *Ethereum) startBackgroundLoop() {
 	_ = e.backgroundRetry.Do(e.ctx, fmt.Sprintf("ethereum connector %s", e.Name()), func(attempt int) (retry bool, err error) {
-		stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)
+		stream, err := e.streams.ensureEventStream(e.ctx, e.topic)
 		if err != nil {
 			return true, err
 		}
 
 		e.streamID = stream.ID
 		log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
-
-		e.closed = make(chan struct{})
-		go e.eventLoop()
-
 		err = e.wsconn.Connect()
 		if err != nil {
 			return true, err
 		}
+
+		e.closed = make(chan struct{})
+		go e.eventLoop()
 
 		return false, nil
 	})
 }
 
 func (e *Ethereum) Start() (err error) {
-	if e.ethconnectConf.GetBool(EthconnectBackgroundStart) {
-		go e.startBackground()
+	if e.backgroundStart {
+		go e.startBackgroundLoop()
 		return nil
 	}
 

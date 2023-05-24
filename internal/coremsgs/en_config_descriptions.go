@@ -224,6 +224,7 @@ var (
 	ConfigPluginDataexchangeFfdxInitEnabled     = ffc("config.plugins.dataexchange[].ffdx.initEnabled", "Instructs FireFly to always post all current nodes to the `/init` API before connecting or reconnecting to the connector", i18n.BooleanType)
 	ConfigPluginDataexchangeFfdxManifestEnabled = ffc("config.plugins.dataexchange[].ffdx.manifestEnabled", "Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector", i18n.StringType)
 	ConfigPluginDataexchangeFfdxURL             = ffc("config.plugins.dataexchange[].ffdx.url", "The URL of the Data Exchange instance", "URL "+i18n.StringType)
+	ConfigPluginDataexchangeFfdxBackgroundStart = ffc("config.plugins.dataexchange[].ffdx.backgroundStart", "Start the data exchange plugin in the background and enter retry loop if failed to start", i18n.BooleanType)
 
 	ConfigPluginDataexchangeFfdxProxyURL = ffc("config.plugins.dataexchange[].ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", "URL "+i18n.StringType)
 
@@ -346,12 +347,13 @@ var (
 	ConfigTokensURL      = ffc("config.tokens[].url", "The URL of the token connector", "URL "+i18n.StringType)
 	ConfigTokensProxyURL = ffc("config.tokens[].proxy.url", "Optional HTTP proxy server to use when connecting to the token connector", "URL "+i18n.StringType)
 
-	ConfigPluginTokens              = ffc("config.plugins.tokens", "The token plugin configurations", i18n.StringType)
-	ConfigPluginTokensName          = ffc("config.plugins.tokens[].name", "A name to identify this token plugin", i18n.StringType)
-	ConfigPluginTokensBroadcastName = ffc("config.plugins.tokens[].broadcastName", "The name to be used in broadcast messages related to this token plugin, if it differs from the local plugin name", i18n.StringType)
-	ConfigPluginTokensType          = ffc("config.plugins.tokens[].type", "The type of the token plugin to use", i18n.StringType)
-	ConfigPluginTokensURL           = ffc("config.plugins.tokens[].fftokens.url", "The URL of the token connector", "URL "+i18n.StringType)
-	ConfigPluginTokensProxyURL      = ffc("config.plugins.tokens[].fftokens.proxy.url", "Optional HTTP proxy server to use when connecting to the token connector", "URL "+i18n.StringType)
+	ConfigPluginTokens                = ffc("config.plugins.tokens", "The token plugin configurations", i18n.StringType)
+	ConfigPluginTokensName            = ffc("config.plugins.tokens[].name", "A name to identify this token plugin", i18n.StringType)
+	ConfigPluginTokensBroadcastName   = ffc("config.plugins.tokens[].broadcastName", "The name to be used in broadcast messages related to this token plugin, if it differs from the local plugin name", i18n.StringType)
+	ConfigPluginTokensType            = ffc("config.plugins.tokens[].type", "The type of the token plugin to use", i18n.StringType)
+	ConfigPluginTokensURL             = ffc("config.plugins.tokens[].fftokens.url", "The URL of the token connector", "URL "+i18n.StringType)
+	ConfigPluginTokensProxyURL        = ffc("config.plugins.tokens[].fftokens.proxy.url", "Optional HTTP proxy server to use when connecting to the token connector", "URL "+i18n.StringType)
+	ConfigPluginTokensBackgroundStart = ffc("config.plugins.tokens[].fftokens.backgroundStart", "Start the tokens plugin in the background and enter retry loop if failed to start", i18n.BooleanType)
 
 	ConfigUIEnabled = ffc("config.ui.enabled", "Enables the web user interface", i18n.BooleanType)
 	ConfigUIPath    = ffc("config.ui.path", "The file system path which contains the static HTML, CSS, and JavaScript files for the user interface", i18n.StringType)
