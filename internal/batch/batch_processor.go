@@ -43,7 +43,7 @@ type batchProcessorConf struct {
 	name           string
 	dispatcherName string
 	txType         core.TransactionType
-	signer         core.SignerRef
+	author         string
 	group          *fftypes.Bytes32
 	dispatch       DispatchHandler
 }
@@ -399,9 +399,12 @@ func (bp *batchProcessor) initPayload(id *fftypes.UUID, flushWork []*batchWork) 
 				ID:        id,
 				Type:      bp.conf.DispatcherOptions.BatchType,
 				Namespace: bp.bm.namespace,
-				SignerRef: bp.conf.signer,
-				Group:     bp.conf.group,
-				Created:   fftypes.Now(),
+				SignerRef: core.SignerRef{
+					Author: bp.conf.author,
+					Key:    flushWork[0].msg.Header.Key,
+				},
+				Group:   bp.conf.group,
+				Created: fftypes.Now(),
 			},
 		},
 	}
