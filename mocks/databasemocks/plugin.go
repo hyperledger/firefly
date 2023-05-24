@@ -81,6 +81,20 @@ func (_m *Plugin) DeleteData(ctx context.Context, namespace string, id *fftypes.
 	return r0
 }
 
+// DeleteFFI provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) DeleteFFI(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteNonce provides a mock function with given fields: ctx, hash
 func (_m *Plugin) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) error {
 	ret := _m.Called(ctx, hash)

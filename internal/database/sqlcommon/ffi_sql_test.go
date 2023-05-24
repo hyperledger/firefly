@@ -72,6 +72,7 @@ func TestFFIE2EWithDB(t *testing.T) {
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIs, core.ChangeEventTypeCreated, "ns1", ffi.ID).Return()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIs, core.ChangeEventTypeUpdated, "ns1", ffi.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIs, core.ChangeEventTypeDeleted, "ns1", ffi.ID).Return()
 
 	_, err := s.InsertOrGetFFI(ctx, ffi)
 	assert.NoError(t, err)
@@ -117,6 +118,10 @@ func TestFFIE2EWithDB(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, ffi.ID, existing.ID)
+
+	// Delete the FFI
+	err = s.DeleteFFI(ctx, "ns1", ffi.ID)
+	assert.NoError(t, err)
 }
 
 func TestFFIDBFailBeginTransaction(t *testing.T) {
@@ -258,5 +263,23 @@ func TestGetFFI(t *testing.T) {
 	assert.Equal(t, "ns1", ffi.Namespace)
 	assert.Equal(t, "math", ffi.Name)
 	assert.Equal(t, "v1.0.0", ffi.Version)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteFFIFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteFFI(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteFFIFailDelete(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteFFI(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00179", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -347,4 +347,7 @@ func (suite *EthereumContractTestSuite) TestContractPublish() {
 
 	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeDefinition)
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypeContractInterfaceConfirmed, result.ID)
+
+	// Cannot delete published interfaces
+	suite.testState.client1.DeleteFFI(suite.T(), result.ID, 409)
 }

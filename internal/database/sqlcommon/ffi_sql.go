@@ -266,3 +266,22 @@ func (s *SQLCommon) GetFFI(ctx context.Context, namespace, name, networkName, ve
 	}
 	return s.getFFIPred(ctx, namespace+":"+name+":"+version, query)
 }
+
+func (s *SQLCommon) DeleteFFI(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	err = s.DeleteTx(ctx, ffiTable, tx, sq.Delete(ffiTable).Where(sq.Eq{
+		"id": id, "namespace": namespace,
+	}), func() {
+		s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, core.ChangeEventTypeDeleted, namespace, id)
+	})
+	if err != nil {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
+}

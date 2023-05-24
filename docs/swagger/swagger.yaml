@@ -3120,6 +3120,32 @@ paths:
       tags:
       - Default Namespace
   /contracts/interfaces/{interfaceId}:
+    delete:
+      description: Delete a contract interface
+      operationId: deleteContractInterface
+      parameters:
+      - description: The ID of the contract interface
+        in: path
+        name: interfaceId
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
     get:
       description: Gets a contract interface by its ID
       operationId: getContractInterface
@@ -14866,6 +14892,39 @@ paths:
       tags:
       - Non-Default Namespace
   /namespaces/{ns}/contracts/interfaces/{interfaceId}:
+    delete:
+      description: Delete a contract interface
+      operationId: deleteContractInterfaceNamespace
+      parameters:
+      - description: The ID of the contract interface
+        in: path
+        name: interfaceId
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
     get:
       description: Gets a contract interface by its ID
       operationId: getContractInterfaceNamespace

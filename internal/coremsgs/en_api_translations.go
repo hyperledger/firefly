@@ -76,8 +76,10 @@ var (
 	APIEndpointsAdminGetListenerByID    = ffm("api.endpoints.adminGetListenerByID", "Gets a contract listener by ID")
 	APIEndpointsAdminGetListeners       = ffm("api.endpoints.adminGetListeners", "Lists contract listeners")
 
+	APIEndpointsDeleteContractInterface         = ffm("api.endpoints.deleteContractInterface", "Delete a contract interface")
 	APIEndpointsDeleteContractListener          = ffm("api.endpoints.deleteContractListener", "Deletes a contract listener referenced by its name or its ID")
 	APIEndpointsDeleteSubscription              = ffm("api.endpoints.deleteSubscription", "Deletes a subscription")
+	APIEndpointsDeleteTokenPool                 = ffm("api.endpoints.deleteTokenPool", "Delete a token pool")
 	APIEndpointsGetBatchBbyID                   = ffm("api.endpoints.getBatchByID", "Gets a message batch")
 	APIEndpointsGetBatches                      = ffm("api.endpoints.getBatches", "Gets a list of message batches")
 	APIEndpointsGetBlockchainEventByID          = ffm("api.endpoints.getBlockchainEventByID", "Gets a blockchain event")
@@ -180,7 +182,6 @@ var (
 	APIEndpointsPostTokenMint                   = ffm("api.endpoints.postTokenMint", "Mints some tokens")
 	APIEndpointsPostTokenPool                   = ffm("api.endpoints.postTokenPool", "Creates a new token pool")
 	APIEndpointsPostTokenPoolPublish            = ffm("api.endpoints.postTokenPoolPublish", "Publish a token pool to all other members of the multiparty network")
-	APIEndpointsDeleteTokenPool                 = ffm("api.endpoints.deleteTokenPool", "Delete a token pool")
 	APIEndpointsPostTokenTransfer               = ffm("api.endpoints.postTokenTransfer", "Transfers some tokens")
 	APIEndpointsPutContractAPI                  = ffm("api.endpoints.putContractAPI", "Updates an existing contract API")
 	APIEndpointsPutSubscription                 = ffm("api.endpoints.putSubscription", "Update an existing subscription")
