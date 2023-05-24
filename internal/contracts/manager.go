@@ -562,7 +562,7 @@ func (cm *contractManager) uniquePathName(name string, usedNames map[string]bool
 }
 
 func (cm *contractManager) ResolveFFI(ctx context.Context, ffi *fftypes.FFI) error {
-	if err := ffi.Validate(ctx, false); err != nil {
+	if err := ffi.Validate(ctx); err != nil {
 		return err
 	}
 

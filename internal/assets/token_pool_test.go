@@ -1076,8 +1076,30 @@ func TestDeletePoolSuccess(t *testing.T) {
 	mdi.On("DeleteTokenApprovals", context.Background(), "ns1", pool.ID).Return(nil)
 	mdi.On("DeleteTokenBalances", context.Background(), "ns1", pool.ID).Return(nil)
 
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mti.On("DeactivateTokenPool", context.Background(), pool).Return(nil)
+
 	err := am.DeleteTokenPool(context.Background(), "pool1")
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}
+
+func TestDeletePoolBadPlugin(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "BAD",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.Regexp(t, "FF10272", err)
 
 	mdi.AssertExpectations(t)
 }

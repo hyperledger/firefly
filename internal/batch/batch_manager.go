@@ -137,8 +137,8 @@ type dispatcher struct {
 	options    DispatcherOptions
 }
 
-func (bm *batchManager) getProcessorKey(identity *core.SignerRef, groupID *fftypes.Bytes32) string {
-	return fmt.Sprintf("%s|%s|%v", identity.Author, identity.Key, groupID)
+func (bm *batchManager) getProcessorKey(author string, groupID *fftypes.Bytes32) string {
+	return fmt.Sprintf("%s|%v", author, groupID)
 }
 
 func (bm *batchManager) getDispatcherKey(txType core.TransactionType, msgType core.MessageType) string {
@@ -172,7 +172,7 @@ func (bm *batchManager) NewMessages() chan<- int64 {
 	return bm.newMessages
 }
 
-func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.MessageType, group *fftypes.Bytes32, signer *core.SignerRef) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.MessageType, group *fftypes.Bytes32, author string) (*batchProcessor, error) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
@@ -181,7 +181,7 @@ func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.M
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, coremsgs.MsgUnregisteredBatchType, dispatcherKey)
 	}
-	name := bm.getProcessorKey(signer, group)
+	name := bm.getProcessorKey(author, group)
 	processor, ok := dispatcher.processors[name]
 	if !ok {
 		processor = newBatchProcessor(
@@ -191,7 +191,7 @@ func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.M
 				name:              name,
 				txType:            txType,
 				dispatcherName:    dispatcher.name,
-				signer:            *signer,
+				author:            author,
 				group:             group,
 				dispatch:          dispatcher.handler,
 			},
@@ -320,7 +320,7 @@ func (bm *batchManager) messageSequencer() {
 				// the database store. Meaning we cannot rely on the sequence having been set.
 				msg.Sequence = entry.Sequence
 
-				processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, &msg.Header.SignerRef)
+				processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.SignerRef.Author)
 				if err != nil {
 					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
 					continue

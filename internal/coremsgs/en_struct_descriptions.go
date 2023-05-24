@@ -249,6 +249,8 @@ var (
 	FFIMethods     = ffm("FFI.methods", "An array of smart contract method definitions")
 	FFIEvents      = ffm("FFI.events", "An array of smart contract event definitions")
 	FFIErrors      = ffm("FFI.errors", "An array of smart contract error definitions")
+	FFINetworkName = ffm("FFI.networkName", "The shared interface name within the multiparty network")
+	FFIPublished   = ffm("FFI.published", "True if the interface has been published to a multiparty network")
 
 	// FFIMethod field descriptions
 	FFIMethodID          = ffm("FFIMethod.id", "The UUID of the FFI method definition")

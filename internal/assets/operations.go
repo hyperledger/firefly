@@ -114,7 +114,7 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		if err != nil {
 			return nil, false, err
 		}
-		complete, err = plugin.ActivateTokenPool(ctx, op.NamespacedIDString(), data.Pool)
+		complete, err = plugin.ActivateTokenPool(ctx, data.Pool)
 		return nil, complete, err
 
 	case transferData:

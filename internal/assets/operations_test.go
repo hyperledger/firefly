@@ -78,7 +78,7 @@ func TestPrepareAndRunActivatePool(t *testing.T) {
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
-	mti.On("ActivateTokenPool", context.Background(), "ns1:"+op.ID.String(), pool).Return(true, nil)
+	mti.On("ActivateTokenPool", context.Background(), pool).Return(true, nil)
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)

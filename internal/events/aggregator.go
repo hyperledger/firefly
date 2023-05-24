@@ -624,7 +624,8 @@ func (ag *aggregator) readyForDispatch(ctx context.Context, msg *core.Message, d
 		action = handlerResult.Action
 
 	case msg.Header.Type == core.MessageTypeGroupInit:
-		// Already handled as part of resolving the context - do nothing.
+		// Already handled as part of resolving the context
+		action = core.ActionConfirm
 
 	case len(msg.Data) > 0:
 		var valid bool
