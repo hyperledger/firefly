@@ -75,6 +75,21 @@ func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan strin
 	}
 }
 
+func TestUnsetHandler(t *testing.T) {
+	h, _, _, _, done := newTestFFTokens(t)
+	defer done()
+	mcb1 := &tokenmocks.Callbacks{}
+	h.SetHandler("ns1", mcb1)
+	mocb1 := &coremocks.OperationCallbacks{}
+	h.SetOperationHandler("ns1", mocb1)
+	assert.Equal(t, 1, len(h.callbacks.handlers))
+	assert.Equal(t, 1, len(h.callbacks.opHandlers))
+	h.UnsetHandler("ns1")
+	h.UnsetOperationHandler("ns1")
+	assert.Equal(t, 0, len(h.callbacks.handlers))
+	assert.Equal(t, 0, len(h.callbacks.opHandlers))
+}
+
 func TestInitBadURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFTokens{}

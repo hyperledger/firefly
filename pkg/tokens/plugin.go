@@ -43,6 +43,14 @@ type Plugin interface {
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
 	SetOperationHandler(namespace string, handler core.OperationCallbacks)
 
+	// UnsetHandler removes a handler from receiving callbacks
+	// Used when shutting down a namespace
+	UnsetHandler(namespace string)
+
+	// UnsetOperationHandler removes a handler from receiving async operation status
+	// Used when shutting down a namespace
+	UnsetOperationHandler(namespace string)
+
 	// Token interface must not deliver any events until start is called
 	Start() error
 

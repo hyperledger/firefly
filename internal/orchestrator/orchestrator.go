@@ -318,6 +318,10 @@ func (or *orchestrator) WaitStop() {
 		or.operations.WaitStop()
 		or.operations = nil
 	}
+	for _, tok := range or.tokens() {
+		tok.UnsetHandler(or.namespace.Name)
+		tok.UnsetOperationHandler(or.namespace.Name)
+	}
 	or.startedLock.Lock()
 	defer or.startedLock.Unlock()
 	or.started = false

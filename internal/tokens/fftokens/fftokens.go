@@ -300,10 +300,22 @@ func (ft *FFTokens) SetHandler(namespace string, handler tokens.Callbacks) {
 	ft.callbacks.handlers[namespace] = handler
 }
 
+func (ft *FFTokens) UnsetHandler(namespace string) {
+	ft.callbacks.writeLock.Lock()
+	defer ft.callbacks.writeLock.Unlock()
+	delete(ft.callbacks.handlers, namespace)
+}
+
 func (ft *FFTokens) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
 	ft.callbacks.writeLock.Lock()
 	defer ft.callbacks.writeLock.Unlock()
 	ft.callbacks.opHandlers[namespace] = handler
+}
+
+func (ft *FFTokens) UnsetOperationHandler(namespace string) {
+	ft.callbacks.writeLock.Lock()
+	defer ft.callbacks.writeLock.Unlock()
+	delete(ft.callbacks.opHandlers, namespace)
 }
 
 func (ft *FFTokens) Start() error {
