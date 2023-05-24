@@ -53,7 +53,10 @@ type Plugin interface {
 	CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error)
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error)
+	ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (complete bool, err error)
+
+	// DectivateTokenPool deactivates a pool in order to stop receiving events and remove underlying listeners
+	DeactivateTokenPool(ctx context.Context, pool *core.TokenPool) error
 
 	// CheckInterface checks which methods of a contract interface are supported by this connector
 	CheckInterface(ctx context.Context, pool *core.TokenPool, methods []*fftypes.FFIMethod) (*fftypes.JSONAny, error)

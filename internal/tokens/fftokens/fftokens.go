@@ -162,7 +162,12 @@ type activatePool struct {
 	PoolData    string             `json:"poolData"`
 	PoolLocator string             `json:"poolLocator"`
 	Config      fftypes.JSONObject `json:"config"`
-	RequestID   string             `json:"requestId,omitempty"`
+}
+
+type deactivatePool struct {
+	PoolData    string             `json:"poolData"`
+	PoolLocator string             `json:"poolLocator"`
+	Config      fftypes.JSONObject `json:"config"`
 }
 
 type tokenInterface struct {
@@ -690,11 +695,10 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *co
 	return false, nil
 }
 
-func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error) {
+func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (complete bool, err error) {
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
-			RequestID:   nsOpID,
 			PoolData:    packPoolData(pool.Namespace, pool.ID),
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
@@ -721,6 +725,22 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *
 	}
 	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
 	return false, nil
+}
+
+func (ft *FFTokens) DeactivateTokenPool(ctx context.Context, pool *core.TokenPool) error {
+	var errRes tokenError
+	res, err := ft.client.R().SetContext(ctx).
+		SetBody(&deactivatePool{
+			PoolData:    pool.PluginData,
+			PoolLocator: pool.Locator,
+			Config:      pool.Config,
+		}).
+		SetError(&errRes).
+		Post("/api/v1/deactivatepool")
+	if err == nil && (res.IsSuccess() || res.StatusCode() == 404) {
+		return nil
+	}
+	return wrapError(ctx, &errRes, res, err)
 }
 
 func (ft *FFTokens) prepareABI(ctx context.Context, methods []*fftypes.FFIMethod) ([]*abi.Entry, error) {
