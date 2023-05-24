@@ -124,7 +124,7 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.ethIdentity = account["address"].(string)
 	suite.contractAddress = deployContract(suite.T(), stack.Name, "simplestorage/simple_storage.json")
 
-	res, err := suite.testState.client1.CreateFFI(suite.T(), simpleStorageFFI())
+	res, err := suite.testState.client1.CreateFFI(suite.T(), simpleStorageFFI(), false)
 	suite.interfaceID = res.ID
 	suite.T().Logf("interfaceID: %s", suite.interfaceID)
 	assert.NoError(suite.T(), err)

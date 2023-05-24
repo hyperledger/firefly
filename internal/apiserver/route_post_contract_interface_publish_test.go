@@ -22,13 +22,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostTokenPoolPublish(t *testing.T) {
+func TestPostContractInterfacePublish(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mds := &definitionsmocks.Sender{}
@@ -36,12 +37,12 @@ func TestPostTokenPoolPublish(t *testing.T) {
 	input := core.TokenPool{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/pools/pool1/publish", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/contracts/interfaces/ffi1/1.0/publish", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
-	pool := &core.TokenPool{}
+	ffi := &fftypes.FFI{}
 
-	mds.On("PublishTokenPool", mock.Anything, "pool1", "", false).Return(pool, nil)
+	mds.On("PublishFFI", mock.Anything, "ffi1", "1.0", "", false).Return(ffi, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

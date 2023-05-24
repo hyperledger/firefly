@@ -172,9 +172,6 @@ func TestResolveFFI(t *testing.T) {
 
 func TestBroadcastFFIInvalid(t *testing.T) {
 	cm := newTestContractManager()
-	mdb := cm.database.(*databasemocks.Plugin)
-
-	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(nil, nil)
 
 	ffi := &fftypes.FFI{
 		Namespace: "ns1",
@@ -196,37 +193,6 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 
 	err := cm.ResolveFFI(context.Background(), ffi)
 	assert.Regexp(t, "does not validate", err)
-
-	mdb.AssertExpectations(t)
-}
-
-func TestResolveFFIExists(t *testing.T) {
-	cm := newTestContractManager()
-	mdb := cm.database.(*databasemocks.Plugin)
-
-	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(&fftypes.FFI{}, nil)
-
-	ffi := &fftypes.FFI{
-		Namespace: "ns1",
-		Name:      "test",
-		Version:   "1.0.0",
-		ID:        fftypes.NewUUID(),
-		Methods: []*fftypes.FFIMethod{
-			{
-				Name: "sum",
-			},
-		},
-		Events: []*fftypes.FFIEvent{
-			{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
-					Name: "changed",
-				},
-			},
-		},
-	}
-
-	err := cm.ResolveFFI(context.Background(), ffi)
-	assert.Regexp(t, "FF10302", err)
 }
 
 func TestValidateInvokeContractRequest(t *testing.T) {
@@ -1426,9 +1392,25 @@ func TestAddContractAPIListenerFail(t *testing.T) {
 func TestGetFFI(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
-	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&fftypes.FFI{}, nil)
-	_, err := cm.GetFFI(context.Background(), "ffi", "v1.0.0")
+	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "", "v1.0.0").Return(&fftypes.FFI{}, nil)
+	_, err := cm.GetFFI(context.Background(), "ffi", "", "v1.0.0")
 	assert.NoError(t, err)
+}
+
+func TestGetFFINotFound(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "", "v1.0.0").Return(nil, nil)
+	_, err := cm.GetFFI(context.Background(), "ffi", "", "v1.0.0")
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestGetFFIFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "", "v1.0.0").Return(nil, fmt.Errorf("pop"))
+	_, err := cm.GetFFI(context.Background(), "ffi", "", "v1.0.0")
+	assert.EqualError(t, err, "pop")
 }
 
 func TestGetFFIWithChildren(t *testing.T) {
@@ -1437,7 +1419,7 @@ func TestGetFFIWithChildren(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&fftypes.FFI{ID: cid}, nil)
+	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "", "v1.0.0").Return(&fftypes.FFI{ID: cid}, nil)
 	mdb.On("GetFFIMethods", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIMethod{
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
@@ -3143,7 +3125,7 @@ func TestResolveContractAPIInterfaceName(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(&fftypes.FFI{ID: interfaceID}, nil)
+	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "", "1").Return(&fftypes.FFI{ID: interfaceID}, nil)
 
 	err := cm.ResolveContractAPI(context.Background(), "http://localhost/api", api)
 	assert.NoError(t, err)
@@ -3244,7 +3226,7 @@ func TestResolveContractAPIInterfaceNameFail(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(nil, fmt.Errorf("pop"))
+	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "", "1").Return(nil, fmt.Errorf("pop"))
 
 	err := cm.ResolveContractAPI(context.Background(), "http://localhost/api", api)
 	assert.EqualError(t, err, "pop")
@@ -3271,7 +3253,7 @@ func TestResolveContractAPIInterfaceNameNotFound(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeCall, api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(nil, nil)
+	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "", "1").Return(nil, nil)
 
 	err := cm.ResolveContractAPI(context.Background(), "http://localhost/api", api)
 	assert.Regexp(t, "FF10303.*my-ffi", err)

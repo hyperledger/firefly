@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -35,67 +36,135 @@ var (
 		"id",
 		"namespace",
 		"name",
+		"network_name",
 		"version",
 		"description",
 		"message_id",
+		"published",
 	}
 	ffiFilterFieldMap = map[string]string{
-		"message": "message_id",
+		"message":     "message_id",
+		"networkname": "network_name",
 	}
 )
 
 const ffiTable = "ffi"
 
-func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error) {
+func (s *SQLCommon) attemptFFIUpdate(ctx context.Context, tx *dbsql.TXWrapper, ffi *fftypes.FFI) (int64, error) {
+	var networkName *string
+	if ffi.NetworkName != "" {
+		networkName = &ffi.NetworkName
+	}
+	return s.UpdateTx(ctx, ffiTable, tx,
+		sq.Update(ffiTable).
+			Set("name", ffi.Name).
+			Set("network_name", networkName).
+			Set("version", ffi.Version).
+			Set("description", ffi.Description).
+			Set("message_id", ffi.Message).
+			Set("published", ffi.Published).
+			Where(sq.Eq{"id": ffi.ID}),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, core.ChangeEventTypeUpdated, ffi.Namespace, ffi.ID)
+		},
+	)
+}
+
+func (s *SQLCommon) setFFIInsertValues(query sq.InsertBuilder, ffi *fftypes.FFI) sq.InsertBuilder {
+	var networkName *string
+	if ffi.NetworkName != "" {
+		networkName = &ffi.NetworkName
+	}
+	return query.Values(
+		ffi.ID,
+		ffi.Namespace,
+		ffi.Name,
+		networkName,
+		ffi.Version,
+		ffi.Description,
+		ffi.Message,
+		ffi.Published,
+	)
+}
+
+func (s *SQLCommon) attemptFFIInsert(ctx context.Context, tx *dbsql.TXWrapper, ffi *fftypes.FFI, requestConflictEmptyResult bool) error {
+	_, err := s.InsertTxExt(ctx, ffiTable, tx,
+		s.setFFIInsertValues(sq.Insert(ffiTable).Columns(ffiColumns...), ffi),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, core.ChangeEventTypeCreated, ffi.Namespace, ffi.ID)
+		}, requestConflictEmptyResult)
+	return err
+}
+
+func (s *SQLCommon) ffiExists(ctx context.Context, tx *dbsql.TXWrapper, ffi *fftypes.FFI) (bool, error) {
+	rows, _, err := s.QueryTx(ctx, tokenpoolTable, tx,
+		sq.Select("id").From(ffiTable).Where(sq.And{
+			sq.Eq{
+				"namespace": ffi.Namespace,
+				"version":   ffi.Version,
+			},
+			sq.Or{
+				sq.Eq{"name": ffi.Name},
+				sq.Eq{"network_name": ffi.NetworkName},
+			},
+		}),
+	)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	return rows.Next(), nil
+}
+
+func (s *SQLCommon) InsertOrGetFFI(ctx context.Context, ffi *fftypes.FFI) (existing *fftypes.FFI, err error) {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	insertErr := s.attemptFFIInsert(ctx, tx, ffi, true /* we want a failure here we can progress past */)
+	if insertErr == nil {
+		return nil, s.CommitTx(ctx, tx, autoCommit)
+	}
+
+	// Do a select within the transaction to determine if the FFI already exists
+	existing, queryErr := s.GetFFI(ctx, ffi.Namespace, ffi.Name, ffi.NetworkName, ffi.Version)
+	if queryErr != nil || existing != nil {
+		return existing, queryErr
+	}
+
+	// Error was apparently not an index conflict - must have been something else
+	return nil, insertErr
+}
+
+func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI, optimization database.UpsertOptimization) error {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.QueryTx(ctx, ffiTable, tx,
-		sq.Select("id").
-			From(ffiTable).
-			Where(sq.Eq{
-				"namespace": ffi.Namespace,
-				"id":        ffi.ID,
-			}),
-	)
-	if err != nil {
-		return err
+	optimized := false
+	if optimization == database.UpsertOptimizationNew {
+		opErr := s.attemptFFIInsert(ctx, tx, ffi, true /* we want a failure here we can progress past */)
+		optimized = opErr == nil
+	} else if optimization == database.UpsertOptimizationExisting {
+		rowsAffected, opErr := s.attemptFFIUpdate(ctx, tx, ffi)
+		optimized = opErr == nil && rowsAffected == 1
 	}
-	existing := rows.Next()
-	rows.Close()
 
-	if existing {
-		if _, err = s.UpdateTx(ctx, ffiTable, tx,
-			sq.Update(ffiTable).
-				Set("name", ffi.Name).
-				Set("version", ffi.Version).
-				Set("description", ffi.Description).
-				Set("message_id", ffi.Message),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, core.ChangeEventTypeUpdated, ffi.Namespace, ffi.ID)
-			},
-		); err != nil {
+	if !optimized {
+		// Do a select within the transaction to determine if the FFI already exists
+		exists, err := s.ffiExists(ctx, tx, ffi)
+		if err != nil {
 			return err
+		} else if exists {
+			if _, err := s.attemptFFIUpdate(ctx, tx, ffi); err != nil {
+				return err
+			}
 		}
-	} else {
-		if _, err = s.InsertTx(ctx, ffiTable, tx,
-			sq.Insert(ffiTable).
-				Columns(ffiColumns...).
-				Values(
-					ffi.ID,
-					ffi.Namespace,
-					ffi.Name,
-					ffi.Version,
-					ffi.Description,
-					ffi.Message,
-				),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, core.ChangeEventTypeCreated, ffi.Namespace, ffi.ID)
-			},
-		); err != nil {
+		if err := s.attemptFFIInsert(ctx, tx, ffi, false); err != nil {
 			return err
 		}
 	}
@@ -105,14 +174,20 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 
 func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*fftypes.FFI, error) {
 	ffi := fftypes.FFI{}
+	var networkName *string
 	err := row.Scan(
 		&ffi.ID,
 		&ffi.Namespace,
 		&ffi.Name,
+		&networkName,
 		&ffi.Version,
 		&ffi.Description,
 		&ffi.Message,
+		&ffi.Published,
 	)
+	if networkName != nil {
+		ffi.NetworkName = *networkName
+	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, ffiTable)
 	}
@@ -174,6 +249,20 @@ func (s *SQLCommon) GetFFIByID(ctx context.Context, namespace string, id *fftype
 	return s.getFFIPred(ctx, id.String(), sq.Eq{"id": id, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetFFI(ctx context.Context, namespace, name, version string) (*fftypes.FFI, error) {
-	return s.getFFIPred(ctx, namespace+":"+name+":"+version, sq.Eq{"namespace": namespace, "name": name, "version": version})
+func (s *SQLCommon) GetFFI(ctx context.Context, namespace, name, networkName, version string) (*fftypes.FFI, error) {
+	nameQuery := sq.Or{}
+	if name != "" {
+		nameQuery = append(nameQuery, sq.Eq{"name": name})
+	}
+	if networkName != "" {
+		nameQuery = append(nameQuery, sq.Eq{"network_name": networkName})
+	}
+	query := sq.And{
+		sq.Eq{
+			"namespace": namespace,
+			"version":   version,
+		},
+		nameQuery,
+	}
+	return s.getFFIPred(ctx, namespace+":"+name+":"+version, query)
 }

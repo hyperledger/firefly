@@ -44,7 +44,7 @@ import (
 type Manager interface {
 	core.Named
 
-	GetFFI(ctx context.Context, name, version string) (*fftypes.FFI, error)
+	GetFFI(ctx context.Context, name, networkName, version string) (*fftypes.FFI, error)
 	GetFFIWithChildren(ctx context.Context, name, version string) (*fftypes.FFI, error)
 	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
 	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
@@ -140,12 +140,18 @@ func (cm *contractManager) newFFISchemaCompiler() *jsonschema.Compiler {
 	return c
 }
 
-func (cm *contractManager) GetFFI(ctx context.Context, name, version string) (*fftypes.FFI, error) {
-	return cm.database.GetFFI(ctx, cm.namespace, name, version)
+func (cm *contractManager) GetFFI(ctx context.Context, name, networkName, version string) (*fftypes.FFI, error) {
+	ffi, err := cm.database.GetFFI(ctx, cm.namespace, name, networkName, version)
+	if err != nil {
+		return nil, err
+	} else if ffi == nil {
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
+	}
+	return ffi, nil
 }
 
 func (cm *contractManager) GetFFIWithChildren(ctx context.Context, name, version string) (*fftypes.FFI, error) {
-	ffi, err := cm.GetFFI(ctx, name, version)
+	ffi, err := cm.GetFFI(ctx, name, "", version)
 	if err == nil {
 		err = cm.getFFIChildren(ctx, ffi)
 	}
@@ -535,7 +541,7 @@ func (cm *contractManager) ResolveFFIReference(ctx context.Context, ref *fftypes
 		return nil
 
 	case ref.Name != "" && ref.Version != "":
-		ffi, err := cm.database.GetFFI(ctx, cm.namespace, ref.Name, ref.Version)
+		ffi, err := cm.database.GetFFI(ctx, cm.namespace, ref.Name, "", ref.Version)
 		if err != nil {
 			return err
 		} else if ffi == nil {
@@ -564,11 +570,6 @@ func (cm *contractManager) uniquePathName(name string, usedNames map[string]bool
 func (cm *contractManager) ResolveFFI(ctx context.Context, ffi *fftypes.FFI) error {
 	if err := ffi.Validate(ctx); err != nil {
 		return err
-	}
-
-	existing, err := cm.database.GetFFI(ctx, cm.namespace, ffi.Name, ffi.Version)
-	if existing != nil && err == nil {
-		return i18n.NewError(ctx, coremsgs.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
 	}
 
 	methodPathNames := map[string]bool{}

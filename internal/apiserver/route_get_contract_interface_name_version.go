@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -49,7 +49,7 @@ var getContractInterfaceNameVersion = &ffapi.Route{
 			if strings.EqualFold(r.QP["fetchchildren"], "true") {
 				return cr.or.Contracts().GetFFIWithChildren(cr.ctx, r.PP["name"], r.PP["version"])
 			}
-			return cr.or.Contracts().GetFFI(cr.ctx, r.PP["name"], r.PP["version"])
+			return cr.or.Contracts().GetFFI(cr.ctx, r.PP["name"], "", r.PP["version"])
 		},
 	},
 }

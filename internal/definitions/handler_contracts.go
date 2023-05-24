@@ -18,6 +18,7 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -32,9 +33,26 @@ func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *fftypes.FFI) (
 		return false, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID)
 	}
 
-	err = dh.database.UpsertFFI(ctx, ffi)
-	if err != nil {
-		return true, err
+	for i := 1; ; i++ {
+		existing, err := dh.database.InsertOrGetFFI(ctx, ffi)
+		if err != nil {
+			return true, err
+		} else if existing == nil {
+			break
+		}
+
+		if ffi.Published {
+			if existing.ID.Equals(ffi.ID) && existing.Message.Equals(ffi.Message) {
+				// If this is a publish for an existing FFI, confirm the message now
+				return false, nil
+			}
+			if existing.Name == ffi.Name && existing.Version == ffi.Version {
+				// Received FFIs get a unique name generated from the network name
+				ffi.Name = fmt.Sprintf("%s-%d", ffi.NetworkName, i)
+				continue
+			}
+		}
+		return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "contract interface", ffi.ID, existing.ID)
 	}
 
 	for _, method := range ffi.Methods {
@@ -76,17 +94,17 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ffi); !valid {
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
 	}
+
 	ffi.Message = msg.Header.ID
+	ffi.Name = ffi.NetworkName
+	ffi.Published = true
 	return dh.handleFFIDefinition(ctx, state, &ffi, tx)
 }
 
 func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *core.BatchState, ffi *fftypes.FFI, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
-	ffi.Namespace = dh.namespace.Name
-	if err := ffi.Validate(ctx); err != nil {
-		return HandlerResult{Action: core.ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID)
-	}
 
+	ffi.Namespace = dh.namespace.Name
 	if retry, err := dh.persistFFI(ctx, ffi); err != nil {
 		if retry {
 			return HandlerResult{Action: core.ActionRetry}, err

@@ -54,10 +54,10 @@ func (suite *EthereumContractWithMessageTestSuite) TestCustomContractWithMessage
 
 	ffi := suite.testState.client1.GenerateFFIFromABI(suite.T(), &fftypes.FFIGenerationRequest{
 		Name:    "CustomPin",
-		Version: contractVersion,
+		Version: contractVersion(),
 		Input:   fftypes.JSONAnyPtr(`{"abi":` + suite.contractJSON.GetObjectArray("abi").String() + `}`),
 	})
-	iface, err := suite.testState.client1.CreateFFI(suite.T(), ffi)
+	iface, err := suite.testState.client1.CreateFFI(suite.T(), ffi, true)
 	assert.NoError(suite.T(), err)
 
 	status, _, err := suite.testState.client1.GetStatus()

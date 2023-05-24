@@ -410,13 +410,14 @@ func (suite *EthereumTokenContractTestSuite) TestTokensWithInterface() {
 	suite.T().Logf("contract: %s", suite.contract)
 	contractAddress := deployContract(suite.T(), suite.testState.stackName, suite.contract)
 	contractJSON := readContractJSON(suite.T(), suite.contract)
+	version := contractVersion()
 
 	ffi := suite.testState.client1.GenerateFFIFromABI(suite.T(), &fftypes.FFIGenerationRequest{
 		Name:    "ERC20",
-		Version: contractVersion,
+		Version: version,
 		Input:   fftypes.JSONAnyPtr(`{"abi":` + contractJSON.GetObjectArray("abi").String() + `}`),
 	})
-	_, err := suite.testState.client1.CreateFFI(suite.T(), ffi)
+	_, err := suite.testState.client1.CreateFFI(suite.T(), ffi, true)
 	assert.NoError(suite.T(), err)
 
 	poolName := fmt.Sprintf("pool_%s", e2e.RandomName(suite.T()))
@@ -428,7 +429,7 @@ func (suite *EthereumTokenContractTestSuite) TestTokensWithInterface() {
 		},
 		Interface: &fftypes.FFIReference{
 			Name:    "ERC20",
-			Version: contractVersion,
+			Version: version,
 		},
 	}
 	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, true, false)

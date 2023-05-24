@@ -84,8 +84,6 @@ func TestBroadcastTokenPoolPublishNonMultiparty(t *testing.T) {
 	defer cancel()
 	ds.multiparty = false
 
-	mdm := ds.data.(*datamocks.Manager)
-
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Namespace: "",
@@ -98,8 +96,6 @@ func TestBroadcastTokenPoolPublishNonMultiparty(t *testing.T) {
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "FF10414", err)
-
-	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {

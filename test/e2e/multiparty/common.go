@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -181,7 +181,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Org1: ID=%s DID=%s Key=%s", ts.org1.ID, ts.org1.DID, ts.org1key.Value)
 	t.Logf("Org2: ID=%s DID=%s Key=%s", ts.org2.ID, ts.org2.DID, ts.org2key.Value)
 
-	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed|message_rejected"
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed|message_rejected|contract_interface_confirmed"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", ts.namespace, eventNames)
 	ts.ws1 = ts.client1.WebSocket(t, queryString, authHeader1)
 	ts.ws2 = ts.client2.WebSocket(t, queryString, authHeader2)

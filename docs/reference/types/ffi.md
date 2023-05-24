@@ -122,13 +122,13 @@ nav_order: 9
 | `message` | The UUID of the broadcast message that was used to publish this FFI to the network | [`UUID`](simpletypes#uuid) |
 | `namespace` | The namespace of the FFI | `string` |
 | `name` | The name of the FFI - usually matching the smart contract name | `string` |
-| `networkName` | The shared interface name within the multiparty network | `string` |
+| `networkName` | The published name of the FFI within the multiparty network | `string` |
 | `description` | A description of the smart contract this FFI represents | `string` |
 | `version` | A version for the FFI - use of semantic versioning such as 'v1.0.1' is encouraged | `string` |
 | `methods` | An array of smart contract method definitions | [`FFIMethod[]`](#ffimethod) |
 | `events` | An array of smart contract event definitions | [`FFIEvent[]`](#ffievent) |
 | `errors` | An array of smart contract error definitions | [`FFIError[]`](#ffierror) |
-| `published` | True if the interface has been published to a multiparty network | `bool` |
+| `published` | Indicates if the FFI is published to other members of the multiparty network | `bool` |
 
 ## FFIMethod
 

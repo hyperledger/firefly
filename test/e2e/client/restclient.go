@@ -860,17 +860,34 @@ func (client *FireFlyClient) GenerateFFIFromABI(t *testing.T, req *fftypes.FFIGe
 	return &res
 }
 
-func (client *FireFlyClient) CreateFFI(t *testing.T, ffi *fftypes.FFI) (*fftypes.FFI, error) {
+func (client *FireFlyClient) CreateFFI(t *testing.T, ffi *fftypes.FFI, publish bool) (*fftypes.FFI, error) {
 	var res fftypes.FFI
 	path := client.namespaced(urlContractInterface)
 	resp, err := client.Client.R().
 		SetBody(ffi).
 		SetResult(&res).
 		SetQueryParam("confirm", "true").
+		SetQueryParam("publish", strconv.FormatBool(publish)).
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &res, err
+}
+
+func (client *FireFlyClient) PublishFFI(t *testing.T, name, version, networkName string, confirm bool) {
+	path := client.namespaced(urlContractInterface + "/" + name + "/" + version + "/publish")
+	resp, err := client.Client.R().
+		SetBody(&core.DefinitionPublish{
+			NetworkName: networkName,
+		}).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		Post(path)
+	require.NoError(t, err)
+	expected := 202
+	if confirm {
+		expected = 200
+	}
+	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
 func (client *FireFlyClient) CreateContractAPI(t *testing.T, name string, ffiReference *fftypes.FFIReference, location *fftypes.JSONAny) (interface{}, error) {

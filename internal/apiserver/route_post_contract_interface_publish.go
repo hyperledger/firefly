@@ -23,33 +23,30 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/orchestrator"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNewContractInterface = &ffapi.Route{
-	Name:       "postNewContractInterface",
-	Path:       "contracts/interfaces",
-	Method:     http.MethodPost,
-	PathParams: nil,
-	QueryParams: []*ffapi.QueryParam{
-		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
-		{Name: "publish", Description: coremsgs.APIPublishQueryParam, IsBool: true},
+var postContractInterfacePublish = &ffapi.Route{
+	Name:   "postContractInterfacePublish",
+	Path:   "contracts/interfaces/{name}/{version}/publish",
+	Method: http.MethodPost,
+	PathParams: []*ffapi.PathParam{
+		{Name: "name", Description: coremsgs.APIParamsContractInterfaceName},
+		{Name: "version", Description: coremsgs.APIParamsContractInterfaceVersion},
 	},
-	Description:     coremsgs.APIEndpointsPostNewContractInterface,
-	JSONInputValue:  func() interface{} { return &fftypes.FFI{} },
+	QueryParams: []*ffapi.QueryParam{
+		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
+	},
+	Description:     coremsgs.APIEndpointsPostContractInterfacePublish,
+	JSONInputValue:  func() interface{} { return &core.DefinitionPublish{} },
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
-	JSONOutputCodes: []int{http.StatusOK},
+	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	Extensions: &coreExtensions{
-		EnabledIf: func(or orchestrator.Orchestrator) bool {
-			return or.Contracts() != nil
-		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			ffi := r.Input.(*fftypes.FFI)
-			ffi.Published = strings.EqualFold(r.QP["publish"], "true")
-			err = cr.or.DefinitionSender().DefineFFI(cr.ctx, ffi, waitConfirm)
-			return ffi, err
+			input := r.Input.(*core.DefinitionPublish)
+			return cr.or.DefinitionSender().PublishFFI(cr.ctx, r.PP["name"], r.PP["version"], input.NetworkName, waitConfirm)
 		},
 	},
 }

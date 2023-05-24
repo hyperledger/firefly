@@ -44,6 +44,7 @@ type Sender interface {
 	DefineTokenPool(ctx context.Context, pool *core.TokenPool, waitConfirm bool) error
 	PublishTokenPool(ctx context.Context, poolNameOrID, networkName string, waitConfirm bool) (*core.TokenPool, error)
 	DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm bool) error
+	PublishFFI(ctx context.Context, name, version, networkName string, waitConfirm bool) (*fftypes.FFI, error)
 	DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error
 }
 
