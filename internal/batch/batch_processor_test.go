@@ -48,7 +48,7 @@ func newTestBatchProcessor(t *testing.T, dispatch DispatchHandler) (func(), *dat
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bp := newBatchProcessor(bm, &batchProcessorConf{
 		txType:   core.TransactionTypeBatchPin,
-		signer:   core.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
+		author:   "did:firefly:org/abcd",
 		dispatch: dispatch,
 		DispatcherOptions: DispatcherOptions{
 			BatchMaxSize:   10,
