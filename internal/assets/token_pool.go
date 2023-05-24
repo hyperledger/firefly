@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, pool *core.TokenPoolInput, waitConfirm bool) (*core.TokenPool, error) {
@@ -157,31 +158,6 @@ func (am *assetManager) GetTokenPools(ctx context.Context, filter ffapi.AndFilte
 	return am.database.GetTokenPools(ctx, am.namespace, filter)
 }
 
-func (am *assetManager) GetTokenPool(ctx context.Context, connector, poolName string) (*core.TokenPool, error) {
-	cacheKey := fmt.Sprintf("ns=%s,connector=%s,pool=%s", am.namespace, connector, poolName)
-	if cachedValue := am.cache.Get(cacheKey); cachedValue != nil {
-		log.L(ctx).Debugf("Token pool cache hit: %s", cacheKey)
-		return cachedValue.(*core.TokenPool), nil
-	}
-	log.L(ctx).Debugf("Token pool cache miss: %s", cacheKey)
-	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
-		return nil, err
-	}
-	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, poolName, "name"); err != nil {
-		return nil, err
-	}
-	pool, err := am.database.GetTokenPool(ctx, am.namespace, poolName)
-	if err != nil {
-		return nil, err
-	}
-	if pool == nil {
-		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
-	}
-	// Cache the result
-	am.cache.Set(cacheKey, pool)
-	return pool, nil
-}
-
 func (am *assetManager) GetTokenPoolByLocator(ctx context.Context, connector, poolLocator string) (*core.TokenPool, error) {
 	cacheKey := fmt.Sprintf("ns=%s,connector=%s,poollocator=%s", am.namespace, connector, poolLocator)
 	if cachedValue := am.cache.Get(cacheKey); cachedValue != nil {
@@ -192,16 +168,19 @@ func (am *assetManager) GetTokenPoolByLocator(ctx context.Context, connector, po
 	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
 		return nil, err
 	}
-	pool, err := am.database.GetTokenPoolByLocator(ctx, am.namespace, connector, poolLocator)
-	if err != nil {
+
+	fb := database.TokenPoolQueryFactory.NewFilter(ctx)
+	results, _, err := am.database.GetTokenPools(ctx, am.namespace, fb.And(
+		fb.Eq("connector", connector),
+		fb.Eq("locator", poolLocator),
+	))
+	if err != nil || len(results) == 0 {
 		return nil, err
 	}
-	if pool == nil {
-		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
-	}
+
 	// Cache the result
-	am.cache.Set(cacheKey, pool)
-	return pool, nil
+	am.cache.Set(cacheKey, results[0])
+	return results[0], nil
 }
 
 func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error) {
@@ -221,7 +200,7 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 		if pool, err = am.database.GetTokenPool(ctx, am.namespace, poolNameOrID); err != nil {
 			return nil, err
 		}
-	} else if pool, err = am.database.GetTokenPoolByID(ctx, am.namespace, poolID); err != nil {
+	} else if pool, err = am.GetTokenPoolByID(ctx, poolID); err != nil {
 		return nil, err
 	}
 	if pool == nil {
@@ -230,6 +209,10 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 	// Cache the result
 	am.cache.Set(cacheKey, pool)
 	return pool, nil
+}
+
+func (am *assetManager) GetTokenPoolByID(ctx context.Context, poolID *fftypes.UUID) (*core.TokenPool, error) {
+	return am.database.GetTokenPoolByID(ctx, am.namespace, poolID)
 }
 
 func (am *assetManager) ResolvePoolMethods(ctx context.Context, pool *core.TokenPool) error {
@@ -242,4 +225,33 @@ func (am *assetManager) ResolvePoolMethods(ctx context.Context, pool *core.Token
 		}
 	}
 	return err
+}
+
+func (am *assetManager) DeleteTokenPool(ctx context.Context, poolNameOrID string) error {
+	return am.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		pool, err := am.GetTokenPoolByNameOrID(ctx, poolNameOrID)
+		if err != nil {
+			return err
+		}
+		if pool.Published {
+			return i18n.NewError(ctx, coremsgs.MsgCannotDeletePublished)
+		}
+		plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
+		if err != nil {
+			return err
+		}
+		if err = am.database.DeleteTokenPool(ctx, am.namespace, pool.ID); err != nil {
+			return err
+		}
+		if err = am.database.DeleteTokenTransfers(ctx, am.namespace, pool.ID); err != nil {
+			return err
+		}
+		if err = am.database.DeleteTokenApprovals(ctx, am.namespace, pool.ID); err != nil {
+			return err
+		}
+		if err = am.database.DeleteTokenBalances(ctx, am.namespace, pool.ID); err != nil {
+			return err
+		}
+		return plugin.DeactivateTokenPool(ctx, pool)
+	})
 }

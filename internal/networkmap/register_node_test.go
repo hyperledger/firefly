@@ -55,7 +55,7 @@ func TestRegisterNodeOk(t *testing.T) {
 		mock.AnythingOfType("*core.IdentityClaim"),
 		signerRef,
 		(*core.SignerRef)(nil),
-		false).Return(nil)
+	).Return(nil)
 
 	mmp := nm.multiparty.(*multipartymocks.Manager)
 	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"})

@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -35,6 +36,7 @@ var (
 		"id",
 		"namespace",
 		"name",
+		"network_name",
 		"standard",
 		"locator",
 		"type",
@@ -50,107 +52,175 @@ var (
 		"interface",
 		"interface_format",
 		"methods",
+		"published",
+		"plugin_data",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
 		"message":         "message_id",
 		"tx.type":         "tx_type",
 		"tx.id":           "tx_id",
 		"interfaceformat": "interface_format",
+		"networkname":     "network_name",
 	}
 )
 
 const tokenpoolTable = "tokenpool"
 
-func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (err error) {
+func (s *SQLCommon) attemptTokenPoolUpdate(ctx context.Context, tx *dbsql.TXWrapper, pool *core.TokenPool) (int64, error) {
+	var interfaceID *fftypes.UUID
+	if pool.Interface != nil {
+		interfaceID = pool.Interface.ID
+	}
+	var networkName *string
+	if pool.NetworkName != "" {
+		networkName = &pool.NetworkName
+	}
+	return s.UpdateTx(ctx, tokenpoolTable, tx,
+		sq.Update(tokenpoolTable).
+			Set("name", pool.Name).
+			Set("network_name", networkName).
+			Set("standard", pool.Standard).
+			Set("locator", pool.Locator).
+			Set("type", pool.Type).
+			Set("connector", pool.Connector).
+			Set("symbol", pool.Symbol).
+			Set("decimals", pool.Decimals).
+			Set("message_id", pool.Message).
+			Set("state", pool.State).
+			Set("tx_type", pool.TX.Type).
+			Set("tx_id", pool.TX.ID).
+			Set("info", pool.Info).
+			Set("interface", interfaceID).
+			Set("interface_format", pool.InterfaceFormat).
+			Set("methods", pool.Methods).
+			Set("published", pool.Published).
+			Set("plugin_data", pool.PluginData).
+			Where(sq.Eq{"id": pool.ID}),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
+		},
+	)
+}
+
+func (s *SQLCommon) setTokenPoolInsertValues(query sq.InsertBuilder, pool *core.TokenPool, created *fftypes.FFTime) sq.InsertBuilder {
+	var interfaceID *fftypes.UUID
+	if pool.Interface != nil {
+		interfaceID = pool.Interface.ID
+	}
+	var networkName *string
+	if pool.NetworkName != "" {
+		networkName = &pool.NetworkName
+	}
+	return query.Values(
+		pool.ID,
+		pool.Namespace,
+		pool.Name,
+		networkName,
+		pool.Standard,
+		pool.Locator,
+		pool.Type,
+		pool.Connector,
+		pool.Symbol,
+		pool.Decimals,
+		pool.Message,
+		pool.State,
+		created,
+		pool.TX.Type,
+		pool.TX.ID,
+		pool.Info,
+		interfaceID,
+		pool.InterfaceFormat,
+		pool.Methods,
+		pool.Published,
+		pool.PluginData,
+	)
+}
+
+func (s *SQLCommon) attemptTokenPoolInsert(ctx context.Context, tx *dbsql.TXWrapper, pool *core.TokenPool, requestConflictEmptyResult bool) error {
+	created := fftypes.Now()
+	_, err := s.InsertTxExt(ctx, tokenpoolTable, tx,
+		s.setTokenPoolInsertValues(sq.Insert(tokenpoolTable).Columns(tokenPoolColumns...), pool, created),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeCreated, pool.Namespace, pool.ID)
+		}, requestConflictEmptyResult)
+	if err == nil {
+		pool.Created = created
+	}
+	return err
+}
+
+func (s *SQLCommon) tokenPoolExists(ctx context.Context, tx *dbsql.TXWrapper, pool *core.TokenPool) (bool, error) {
+	rows, _, err := s.QueryTx(ctx, tokenpoolTable, tx,
+		sq.Select("id").From(tokenpoolTable).Where(sq.And{
+			sq.Eq{"namespace": pool.Namespace},
+			sq.Or{
+				sq.Eq{"name": pool.Name},
+				sq.Eq{"network_name": pool.NetworkName},
+			},
+		}),
+	)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	return rows.Next(), nil
+}
+
+func (s *SQLCommon) InsertOrGetTokenPool(ctx context.Context, pool *core.TokenPool) (existing *core.TokenPool, err error) {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	insertErr := s.attemptTokenPoolInsert(ctx, tx, pool, true /* we want a failure here we can progress past */)
+	if insertErr == nil {
+		return nil, s.CommitTx(ctx, tx, autoCommit)
+	}
+
+	// Do a select within the transaction to determine if the pool already exists
+	existing, queryErr := s.getTokenPoolPred(ctx, pool.Namespace+":"+pool.Name, sq.And{
+		sq.Eq{"namespace": pool.Namespace},
+		sq.Or{
+			sq.Eq{"id": pool.ID},
+			sq.Eq{"name": pool.Name},
+			sq.Eq{"network_name": pool.NetworkName},
+		},
+	})
+	if queryErr != nil || existing != nil {
+		return existing, queryErr
+	}
+
+	// Error was apparently not an index conflict - must have been something else
+	return nil, insertErr
+}
+
+func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool, optimization database.UpsertOptimization) (err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.QueryTx(ctx, tokenpoolTable, tx,
-		sq.Select("id").
-			From(tokenpoolTable).
-			Where(sq.Eq{
-				"namespace": pool.Namespace,
-				"name":      pool.Name,
-			}),
-	)
-	if err != nil {
-		return err
-	}
-	existing := rows.Next()
-
-	if existing {
-		var id fftypes.UUID
-		_ = rows.Scan(&id)
-		if pool.ID != nil && *pool.ID != id {
-			rows.Close()
-			return database.IDMismatch
-		}
-		pool.ID = &id // Update on returned object
-	}
-	rows.Close()
-
-	var interfaceID *fftypes.UUID
-	if pool.Interface != nil {
-		interfaceID = pool.Interface.ID
+	optimized := false
+	if optimization == database.UpsertOptimizationNew {
+		opErr := s.attemptTokenPoolInsert(ctx, tx, pool, true /* we want a failure here we can progress past */)
+		optimized = opErr == nil
+	} else if optimization == database.UpsertOptimizationExisting {
+		rowsAffected, opErr := s.attemptTokenPoolUpdate(ctx, tx, pool)
+		optimized = opErr == nil && rowsAffected == 1
 	}
 
-	if existing {
-		if _, err = s.UpdateTx(ctx, tokenpoolTable, tx,
-			sq.Update(tokenpoolTable).
-				Set("name", pool.Name).
-				Set("standard", pool.Standard).
-				Set("locator", pool.Locator).
-				Set("type", pool.Type).
-				Set("connector", pool.Connector).
-				Set("symbol", pool.Symbol).
-				Set("decimals", pool.Decimals).
-				Set("message_id", pool.Message).
-				Set("state", pool.State).
-				Set("tx_type", pool.TX.Type).
-				Set("tx_id", pool.TX.ID).
-				Set("info", pool.Info).
-				Set("interface", interfaceID).
-				Set("interface_format", pool.InterfaceFormat).
-				Set("methods", pool.Methods).
-				Where(sq.Eq{"id": pool.ID}),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
-			},
-		); err != nil {
+	if !optimized {
+		// Do a select within the transaction to determine if the pool already exists
+		exists, err := s.tokenPoolExists(ctx, tx, pool)
+		if err != nil {
 			return err
-		}
-	} else {
-		pool.Created = fftypes.Now()
-		if _, err = s.InsertTx(ctx, tokenpoolTable, tx,
-			sq.Insert(tokenpoolTable).
-				Columns(tokenPoolColumns...).
-				Values(
-					pool.ID,
-					pool.Namespace,
-					pool.Name,
-					pool.Standard,
-					pool.Locator,
-					pool.Type,
-					pool.Connector,
-					pool.Symbol,
-					pool.Decimals,
-					pool.Message,
-					pool.State,
-					pool.Created,
-					pool.TX.Type,
-					pool.TX.ID,
-					pool.Info,
-					interfaceID,
-					pool.InterfaceFormat,
-					pool.Methods,
-				),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeCreated, pool.Namespace, pool.ID)
-			},
-		); err != nil {
+		} else if exists {
+			if _, err := s.attemptTokenPoolUpdate(ctx, tx, pool); err != nil {
+				return err
+			}
+		} else if err := s.attemptTokenPoolInsert(ctx, tx, pool, false); err != nil {
 			return err
 		}
 	}
@@ -161,10 +231,12 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) (
 func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.TokenPool, error) {
 	pool := core.TokenPool{}
 	iface := fftypes.FFIReference{}
+	var networkName *string
 	err := row.Scan(
 		&pool.ID,
 		&pool.Namespace,
 		&pool.Name,
+		&networkName,
 		&pool.Standard,
 		&pool.Locator,
 		&pool.Type,
@@ -180,9 +252,14 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.T
 		&iface.ID,
 		&pool.InterfaceFormat,
 		&pool.Methods,
+		&pool.Published,
+		&pool.PluginData,
 	)
 	if iface.ID != nil {
 		pool.Interface = &iface
+	}
+	if networkName != nil {
+		pool.NetworkName = *networkName
 	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, tokenpoolTable)
@@ -222,12 +299,8 @@ func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, namespace string, id *
 	return s.getTokenPoolPred(ctx, id.String(), sq.Eq{"id": id, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetTokenPoolByLocator(ctx context.Context, namespace, connector, locator string) (*core.TokenPool, error) {
-	return s.getTokenPoolPred(ctx, locator, sq.And{
-		sq.Eq{"namespace": namespace},
-		sq.Eq{"connector": connector},
-		sq.Eq{"locator": locator},
-	})
+func (s *SQLCommon) GetTokenPoolByNetworkName(ctx context.Context, namespace, networkName string) (*core.TokenPool, error) {
+	return s.getTokenPoolPred(ctx, networkName, sq.Eq{"namespace": namespace, "network_name": networkName})
 }
 
 func (s *SQLCommon) GetTokenPools(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.TokenPool, fr *ffapi.FilterResult, err error) {
@@ -253,4 +326,23 @@ func (s *SQLCommon) GetTokenPools(ctx context.Context, namespace string, filter 
 	}
 
 	return pools, s.QueryRes(ctx, tokenpoolTable, tx, fop, fi), err
+}
+
+func (s *SQLCommon) DeleteTokenPool(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	err = s.DeleteTx(ctx, "tokenpool", tx, sq.Delete("tokenpool").Where(sq.Eq{
+		"id": id, "namespace": namespace,
+	}), func() {
+		s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, core.ChangeEventTypeDeleted, namespace, id)
+	})
+	if err != nil {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
 }

@@ -26,6 +26,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
@@ -57,6 +58,35 @@ func TestInitMissingGWURL(t *testing.T) {
 	utConfig.SubSection(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	err := i.Init(context.Background(), utConfig)
 	assert.Regexp(t, "FF10138", err)
+}
+
+func TestBadTLSConfigAPI(t *testing.T) {
+	i := &IPFS{}
+	resetConf()
+
+	apiConf := utConfig.SubSection(IPFSConfAPISubconf)
+	apiConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	tlsConf := apiConf.SubSection("tls")
+	tlsConf.Set(fftls.HTTPConfTLSEnabled, true)
+	tlsConf.Set(fftls.HTTPConfTLSCAFile, "!!!!!badness")
+	err := i.Init(context.Background(), utConfig)
+	assert.Regexp(t, "FF00153", err)
+}
+
+func TestBadTLSConfigGW(t *testing.T) {
+	i := &IPFS{}
+	resetConf()
+
+	apiConf := utConfig.SubSection(IPFSConfAPISubconf)
+	apiConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+
+	gwConf := utConfig.SubSection(IPFSConfGatewaySubconf)
+	gwConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	tlsConf := gwConf.SubSection("tls")
+	tlsConf.Set(fftls.HTTPConfTLSEnabled, true)
+	tlsConf.Set(fftls.HTTPConfTLSCAFile, "!!!!!badness")
+	err := i.Init(context.Background(), utConfig)
+	assert.Regexp(t, "FF00153", err)
 }
 
 func TestInit(t *testing.T) {

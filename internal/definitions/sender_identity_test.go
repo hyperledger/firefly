@@ -39,7 +39,7 @@ func TestClaimIdentity(t *testing.T) {
 
 	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
-	mms.On("SendAndWait", mock.Anything).Return(nil)
+	mms.On("Send", mock.Anything).Return(nil)
 
 	ds.multiparty = true
 
@@ -47,7 +47,7 @@ func TestClaimIdentity(t *testing.T) {
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, true)
+	}, nil)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -65,7 +65,7 @@ func TestClaimIdentityFail(t *testing.T) {
 
 	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
-	mms.On("SendAndWait", mock.Anything).Return(fmt.Errorf("pop"))
+	mms.On("Send", mock.Anything).Return(fmt.Errorf("pop"))
 
 	ds.multiparty = true
 
@@ -73,7 +73,7 @@ func TestClaimIdentityFail(t *testing.T) {
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, true)
+	}, nil)
 	assert.EqualError(t, err, "pop")
 
 	mim.AssertExpectations(t)
@@ -95,7 +95,7 @@ func TestClaimIdentityFailKey(t *testing.T) {
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, true)
+	}, nil)
 	assert.EqualError(t, err, "pop")
 
 	mim.AssertExpectations(t)
@@ -113,7 +113,7 @@ func TestClaimIdentityChild(t *testing.T) {
 	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms1).Once()
 	mbm.On("NewBroadcast", mock.Anything).Return(mms2).Once()
-	mms1.On("SendAndWait", mock.Anything).Return(nil)
+	mms1.On("Send", mock.Anything).Return(nil)
 	mms2.On("Send", mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.MatchedBy(func(signer *core.SignerRef) bool {
 		return signer.Key == "0x2345"
@@ -127,7 +127,7 @@ func TestClaimIdentityChild(t *testing.T) {
 		Key: "0x1234",
 	}, &core.SignerRef{
 		Key: "0x2345",
-	}, true)
+	})
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -147,7 +147,7 @@ func TestClaimIdentityChildFail(t *testing.T) {
 	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms1).Once()
 	mbm.On("NewBroadcast", mock.Anything).Return(mms2).Once()
-	mms1.On("SendAndWait", mock.Anything).Return(nil)
+	mms1.On("Send", mock.Anything).Return(nil)
 	mms2.On("Send", mock.Anything).Return(fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.MatchedBy(func(signer *core.SignerRef) bool {
 		return signer.Key == "0x2345"
@@ -161,7 +161,7 @@ func TestClaimIdentityChildFail(t *testing.T) {
 		Key: "0x1234",
 	}, &core.SignerRef{
 		Key: "0x2345",
-	}, true)
+	})
 	assert.EqualError(t, err, "pop")
 
 	mim.AssertExpectations(t)
@@ -183,7 +183,7 @@ func TestClaimIdentityNonMultiparty(t *testing.T) {
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, true)
+	}, nil)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)

@@ -62,7 +62,7 @@ func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, ap
 
 func (em *eventManager) persistTokenApproval(ctx context.Context, approval *tokens.TokenApproval) (valid bool, err error) {
 	// Check that this is from a known pool
-	pool, err := em.assets.GetTokenPoolByLocator(ctx, approval.Connector, approval.PoolLocator)
+	pool, err := em.getPoolByIDOrLocator(ctx, approval.Pool, approval.Connector, approval.PoolLocator)
 	if err != nil {
 		return false, err
 	}
@@ -74,7 +74,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 	approval.Pool = pool.ID
 
 	// Check that approval has not already been recorded
-	if existing, err := em.database.GetTokenApprovalByProtocolID(ctx, em.namespace.Name, approval.Connector, approval.ProtocolID); err != nil {
+	if existing, err := em.database.GetTokenApprovalByProtocolID(ctx, em.namespace.Name, approval.Pool, approval.ProtocolID); err != nil {
 		return false, err
 	} else if existing != nil {
 		log.L(ctx).Warnf("Token approval '%s' has already been recorded - ignoring", approval.ProtocolID)

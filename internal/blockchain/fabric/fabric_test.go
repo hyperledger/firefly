@@ -30,6 +30,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
@@ -169,6 +170,22 @@ func TestInitMissingTopic(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.Regexp(t, "FF10138.*topic", err)
+}
+
+func TestBadTLS(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+
+	tlsConf := utFabconnectConf.SubSection("tls")
+	tlsConf.Set(fftls.HTTPConfTLSEnabled, true)
+	tlsConf.Set(fftls.HTTPConfTLSCAFile, "!!!!!badness")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+	assert.Regexp(t, "FF00153", err)
 }
 
 func TestInitAllNewStreamsAndWSEvent(t *testing.T) {

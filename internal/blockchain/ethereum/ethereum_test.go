@@ -29,6 +29,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
@@ -173,6 +174,20 @@ func TestInitMissingURL(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.Regexp(t, "FF10138.*url", err)
+}
+
+func TestBadTLSConfig(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	tlsConf := utEthconnectConf.SubSection("tls")
+	tlsConf.Set(fftls.HTTPConfTLSEnabled, true)
+	tlsConf.Set(fftls.HTTPConfTLSCAFile, "!!!!!badness")
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.Regexp(t, "FF00153", err)
 }
 
 func TestInitBadAddressResolver(t *testing.T) {
@@ -2871,9 +2886,11 @@ func TestGetContractAddressBadJSON(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	e.client = ffresty.New(e.ctx, utEthconnectConf)
+	var err error
+	e.client, err = ffresty.New(e.ctx, utEthconnectConf)
+	assert.Nil(t, err)
 
-	_, err := e.getContractAddress(context.Background(), "/contracts/firefly")
+	_, err = e.getContractAddress(context.Background(), "/contracts/firefly")
 
 	assert.Regexp(t, "invalid character 'n' looking for beginning of object key string", err)
 }
@@ -3437,7 +3454,9 @@ func TestConvertDeprecatedContractConfigContractURL(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	e.client = ffresty.New(e.ctx, utEthconnectConf)
+	var err error
+	e.client, err = ffresty.New(e.ctx, utEthconnectConf)
+	assert.Nil(t, err)
 
 	locationBytes, fromBlock, err := e.GetAndConvertDeprecatedContractConfig(e.ctx)
 	assert.NoError(t, err)
@@ -3466,9 +3485,11 @@ func TestConvertDeprecatedContractConfigContractURLBadQuery(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	e.client = ffresty.New(e.ctx, utEthconnectConf)
+	var err error
+	e.client, err = ffresty.New(e.ctx, utEthconnectConf)
+	assert.Nil(t, err)
 
-	_, _, err := e.GetAndConvertDeprecatedContractConfig(e.ctx)
+	_, _, err = e.GetAndConvertDeprecatedContractConfig(e.ctx)
 	assert.Regexp(t, "FFEC100148", err)
 }
 

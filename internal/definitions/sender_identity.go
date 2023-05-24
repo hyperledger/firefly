@@ -25,16 +25,16 @@ import (
 
 // ClaimIdentity is a special form of CreateDefinition where the signing identity does not need to have been pre-registered
 // The blockchain "key" will be normalized, but the "author" will pass through unchecked
-func (bm *definitionSender) ClaimIdentity(ctx context.Context, claim *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error {
-	if bm.multiparty {
+func (ds *definitionSender) ClaimIdentity(ctx context.Context, claim *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef) error {
+	if ds.multiparty {
 		var err error
-		signingIdentity.Key, err = bm.identity.ResolveInputSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
+		signingIdentity.Key, err = ds.identity.ResolveInputSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
 		if err != nil {
 			return err
 		}
 
 		claim.Identity.Namespace = ""
-		claimMsg, err := bm.sendDefinitionCommon(ctx, claim, signingIdentity, core.SystemTagIdentityClaim, waitConfirm)
+		claimMsg, err := ds.getSenderResolved(ctx, claim, signingIdentity, core.SystemTagIdentityClaim).send(ctx, false)
 		if err != nil {
 			return err
 		}
@@ -42,13 +42,13 @@ func (bm *definitionSender) ClaimIdentity(ctx context.Context, claim *core.Ident
 
 		// Send the verification if one is required.
 		if parentSigner != nil {
-			verifyMsg, err := bm.sendDefinition(ctx, &core.IdentityVerification{
+			verifyMsg, err := ds.getSender(ctx, &core.IdentityVerification{
 				Claim: core.MessageRef{
 					ID:   claimMsg.Header.ID,
 					Hash: claimMsg.Hash,
 				},
 				Identity: claim.Identity.IdentityBase,
-			}, parentSigner, core.SystemTagIdentityVerification, false)
+			}, parentSigner, core.SystemTagIdentityVerification).send(ctx, false)
 			if err != nil {
 				return err
 			}
@@ -58,20 +58,20 @@ func (bm *definitionSender) ClaimIdentity(ctx context.Context, claim *core.Ident
 		return nil
 	}
 
-	claim.Identity.Namespace = bm.namespace
+	claim.Identity.Namespace = ds.namespace
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		return bm.handler.handleIdentityClaim(ctx, state, &identityMsgInfo{SignerRef: *signingIdentity}, claim)
+		return ds.handler.handleIdentityClaim(ctx, state, &identityMsgInfo{SignerRef: *signingIdentity}, claim)
 	})
 }
 
-func (bm *definitionSender) UpdateIdentity(ctx context.Context, identity *core.Identity, def *core.IdentityUpdate, signingIdentity *core.SignerRef, waitConfirm bool) error {
-	if bm.multiparty {
-		updateMsg, err := bm.sendDefinition(ctx, def, signingIdentity, core.SystemTagIdentityUpdate, waitConfirm)
+func (ds *definitionSender) UpdateIdentity(ctx context.Context, identity *core.Identity, def *core.IdentityUpdate, signingIdentity *core.SignerRef, waitConfirm bool) error {
+	if ds.multiparty {
+		updateMsg, err := ds.getSender(ctx, def, signingIdentity, core.SystemTagIdentityUpdate).send(ctx, waitConfirm)
 		identity.Messages.Update = updateMsg.Header.ID
 		return err
 	}
 
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		return bm.handler.handleIdentityUpdate(ctx, state, &identityUpdateMsgInfo{}, def)
+		return ds.handler.handleIdentityUpdate(ctx, state, &identityUpdateMsgInfo{}, def)
 	})
 }

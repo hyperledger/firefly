@@ -19,6 +19,7 @@ package fftokens
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"sync"
 
 	"github.com/go-resty/resty/v2"
@@ -27,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
@@ -44,6 +46,7 @@ type FFTokens struct {
 	configuredName string
 	client         *resty.Client
 	wsconn         wsclient.WSClient
+	retry          *retry.Retry
 }
 
 type callbacks struct {
@@ -69,12 +72,19 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, nsOpID string, status 
 	}
 }
 
-func (cb *callbacks) TokenPoolCreated(ctx context.Context, pool *tokens.TokenPool) error {
-	// Deliver token pool creation events to every handler
-	for _, handler := range cb.handlers {
-		if err := handler.TokenPoolCreated(ctx, cb.plugin, pool); err != nil {
-			return err
+func (cb *callbacks) TokenPoolCreated(ctx context.Context, namespace string, pool *tokens.TokenPool) error {
+	if namespace == "" {
+		// Some pool creation subscriptions don't populate namespace, so deliver the event to every handler
+		for _, handler := range cb.handlers {
+			if err := handler.TokenPoolCreated(ctx, cb.plugin, pool); err != nil {
+				return err
+			}
 		}
+	} else {
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.TokenPoolCreated(ctx, cb.plugin, pool)
+		}
+		log.L(ctx).Errorf("No handler found for token pool event on namespace '%s'", namespace)
 	}
 	return nil
 }
@@ -152,7 +162,12 @@ type activatePool struct {
 	PoolData    string             `json:"poolData"`
 	PoolLocator string             `json:"poolLocator"`
 	Config      fftypes.JSONObject `json:"config"`
-	RequestID   string             `json:"requestId,omitempty"`
+}
+
+type deactivatePool struct {
+	PoolData    string             `json:"poolData"`
+	PoolLocator string             `json:"poolLocator"`
+	Config      fftypes.JSONObject `json:"config"`
 }
 
 type tokenInterface struct {
@@ -219,6 +234,23 @@ type tokenError struct {
 	Message string `json:"message,omitempty"`
 }
 
+func packPoolData(namespace string, id *fftypes.UUID) string {
+	if id == nil {
+		return namespace
+	}
+	return namespace + "|" + id.String()
+}
+
+func unpackPoolData(ctx context.Context, data string) (namespace string, id *fftypes.UUID) {
+	pieces := strings.Split(data, "|")
+	if len(pieces) > 1 {
+		if id, err := fftypes.ParseUUID(ctx, pieces[1]); err == nil {
+			return pieces[0], id
+		}
+	}
+	return pieces[0], nil
+}
+
 func (ft *FFTokens) Name() string {
 	return "fftokens"
 }
@@ -237,9 +269,16 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "tokens.fftokens")
 	}
-	ft.client = ffresty.New(ft.ctx, config)
 
-	wsConfig := wsclient.GenerateConfig(config)
+	wsConfig, err := wsclient.GenerateConfig(ctx, config)
+	if err == nil {
+		ft.client, err = ffresty.New(ft.ctx, config)
+	}
+
+	if err != nil {
+		return err
+	}
+
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/api/ws"
 	}
@@ -247,6 +286,12 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 	ft.wsconn, err = wsclient.New(ctx, wsConfig, nil, nil)
 	if err != nil {
 		return err
+	}
+
+	ft.retry = &retry.Retry{
+		InitialDelay: config.GetDuration(FFTEventRetryInitialDelay),
+		MaximumDelay: config.GetDuration(FFTEventRetryMaxDelay),
+		Factor:       config.GetFloat64(FFTEventRetryFactor),
 	}
 
 	go ft.eventLoop()
@@ -327,44 +372,51 @@ func (ft *FFTokens) buildBlockchainEvent(eventData fftypes.JSONObject) *blockcha
 	return nil
 }
 
-func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject, poolData *tokenData) (err error) {
+func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, eventData fftypes.JSONObject, txData *tokenData) (err error) {
 
-	tokenType := data.GetString("type")
-	poolLocator := data.GetString("poolLocator")
+	tokenType := eventData.GetString("type")
+	poolLocator := eventData.GetString("poolLocator")
 
 	if tokenType == "" || poolLocator == "" {
-		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
+		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", eventData)
 		return nil // move on
 	}
 
 	// These fields are optional
-	standard := data.GetString("standard")
-	interfaceFormat := data.GetString("interfaceFormat")
-	symbol := data.GetString("symbol")
-	decimals := data.GetInt64("decimals")
-	info := data.GetObject("info")
-	blockchainEvent := data.GetObject("blockchain")
+	standard := eventData.GetString("standard")
+	interfaceFormat := eventData.GetString("interfaceFormat")
+	symbol := eventData.GetString("symbol")
+	decimals := eventData.GetInt64("decimals")
+	info := eventData.GetObject("info")
+	blockchainEvent := eventData.GetObject("blockchain")
+	poolData := eventData.GetString("poolData")
+	namespace, poolID := unpackPoolData(ctx, poolData)
 
-	poolDataString := data.GetString("data")
-	if poolData == nil && poolDataString != "" {
-		// We want to process all events, even those not initiated by FireFly.
-		// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
-		if err = json.Unmarshal([]byte(poolDataString), &poolData); err != nil {
-			log.L(ctx).Warnf("TokenPool event data could not be parsed - continuing anyway (%s): %+v", err, data)
-			poolData = &tokenData{}
+	dataString := eventData.GetString("data")
+	if txData == nil {
+		txData = &tokenData{}
+		if dataString != "" {
+			// We want to process all events, even those not initiated by FireFly.
+			// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
+			if err = json.Unmarshal([]byte(dataString), &txData); err != nil {
+				log.L(ctx).Warnf("TokenPool event data could not be parsed - continuing anyway (%s): %+v", err, eventData)
+				txData = &tokenData{}
+			}
 		}
 	}
 
-	txType := poolData.TXType
+	txType := txData.TXType
 	if txType == "" {
 		txType = core.TransactionTypeTokenPool
 	}
 
 	pool := &tokens.TokenPool{
+		ID:          poolID,
 		Type:        fftypes.FFEnum(tokenType),
 		PoolLocator: poolLocator,
+		PluginData:  poolData,
 		TX: core.TransactionRef{
-			ID:   poolData.TX,
+			ID:   txData.TX,
 			Type: txType,
 		},
 		Connector:       ft.configuredName,
@@ -377,18 +429,18 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	log.L(ctx).Debugf("Calling TokenPoolCreated callback. Locator='%s' TX=%s/%s", pool.PoolLocator, txType, poolData.TX)
-	return ft.callbacks.TokenPoolCreated(ctx, pool)
+	log.L(ctx).Debugf("Calling TokenPoolCreated callback. Locator='%s' TX=%s/%s", pool.PoolLocator, txType, txData.TX)
+	return ft.callbacks.TokenPoolCreated(ctx, namespace, pool)
 }
 
-func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransferType, data fftypes.JSONObject) (err error) {
-	protocolID := data.GetString("id")
-	poolLocator := data.GetString("poolLocator")
-	signerAddress := data.GetString("signer")
-	fromAddress := data.GetString("from")
-	toAddress := data.GetString("to")
-	value := data.GetString("amount")
-	blockchainEvent := ft.buildBlockchainEvent(data.GetObject("blockchain"))
+func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransferType, eventData fftypes.JSONObject) (err error) {
+	protocolID := eventData.GetString("id")
+	poolLocator := eventData.GetString("poolLocator")
+	signerAddress := eventData.GetString("signer")
+	fromAddress := eventData.GetString("from")
+	toAddress := eventData.GetString("to")
+	value := eventData.GetString("amount")
+	blockchainEvent := ft.buildBlockchainEvent(eventData.GetObject("blockchain"))
 
 	if protocolID == "" ||
 		poolLocator == "" ||
@@ -396,28 +448,28 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 		(t != core.TokenTransferTypeMint && fromAddress == "") ||
 		(t != core.TokenTransferTypeBurn && toAddress == "") ||
 		blockchainEvent == nil {
-		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", t, data)
+		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", t, eventData)
 		return nil // move on
 	}
 
 	// These fields are optional
-	tokenIndex := data.GetString("tokenIndex")
-	uri := data.GetString("uri")
-	namespace := data.GetString("poolData")
+	tokenIndex := eventData.GetString("tokenIndex")
+	uri := eventData.GetString("uri")
+	namespace, poolID := unpackPoolData(ctx, eventData.GetString("poolData"))
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
-	transferDataString := data.GetString("data")
+	transferDataString := eventData.GetString("data")
 	var transferData tokenData
 	if err = json.Unmarshal([]byte(transferDataString), &transferData); err != nil {
-		log.L(ctx).Infof("%s event data could not be parsed - continuing anyway (%s): %+v", t, err, data)
+		log.L(ctx).Infof("%s event data could not be parsed - continuing anyway (%s): %+v", t, err, eventData)
 		transferData = tokenData{}
 	}
 
 	var amount fftypes.FFBigInt
 	_, ok := amount.Int().SetString(value, 10)
 	if !ok {
-		log.L(ctx).Errorf("%s event is not valid - invalid amount: %+v", t, data)
+		log.L(ctx).Errorf("%s event is not valid - invalid amount: %+v", t, eventData)
 		return nil // move on
 	}
 
@@ -430,6 +482,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 		PoolLocator: poolLocator,
 		TokenTransfer: core.TokenTransfer{
 			Type:        t,
+			Pool:        poolID,
 			TokenIndex:  tokenIndex,
 			URI:         uri,
 			Connector:   ft.configuredName,
@@ -452,34 +505,34 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 	return ft.callbacks.TokensTransferred(ctx, namespace, transfer)
 }
 
-func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONObject) (err error) {
-	protocolID := data.GetString("id")
-	subject := data.GetString("subject")
-	signerAddress := data.GetString("signer")
-	poolLocator := data.GetString("poolLocator")
-	operatorAddress := data.GetString("operator")
-	approved := data.GetBool("approved")
-	blockchainEvent := ft.buildBlockchainEvent(data.GetObject("blockchain"))
+func (ft *FFTokens) handleTokenApproval(ctx context.Context, eventData fftypes.JSONObject) (err error) {
+	protocolID := eventData.GetString("id")
+	subject := eventData.GetString("subject")
+	signerAddress := eventData.GetString("signer")
+	poolLocator := eventData.GetString("poolLocator")
+	operatorAddress := eventData.GetString("operator")
+	approved := eventData.GetBool("approved")
+	blockchainEvent := ft.buildBlockchainEvent(eventData.GetObject("blockchain"))
 
 	if protocolID == "" ||
 		subject == "" ||
 		poolLocator == "" ||
 		operatorAddress == "" ||
 		blockchainEvent == nil {
-		log.L(ctx).Errorf("Approval event is not valid - missing data: %+v", data)
+		log.L(ctx).Errorf("Approval event is not valid - missing data: %+v", eventData)
 		return nil // move on
 	}
 
 	// These fields are optional
-	info := data.GetObject("info")
-	namespace := data.GetString("poolData")
+	info := eventData.GetObject("info")
+	namespace, poolID := unpackPoolData(ctx, eventData.GetString("poolData"))
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
-	approvalDataString := data.GetString("data")
+	approvalDataString := eventData.GetString("data")
 	var approvalData tokenData
 	if err = json.Unmarshal([]byte(approvalDataString), &approvalData); err != nil {
-		log.L(ctx).Infof("TokenApproval event data could not be parsed - continuing anyway (%s): %+v", err, data)
+		log.L(ctx).Infof("TokenApproval event data could not be parsed - continuing anyway (%s): %+v", err, eventData)
 		approvalData = tokenData{}
 	}
 
@@ -492,6 +545,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 		PoolLocator: poolLocator,
 		TokenApproval: core.TokenApproval{
 			Connector:   ft.configuredName,
+			Pool:        poolID,
 			Key:         signerAddress,
 			Operator:    operatorAddress,
 			Approved:    approved,
@@ -511,54 +565,60 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	return ft.callbacks.TokensApproved(ctx, namespace, approval)
 }
 
-func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (err error) {
-	l := log.L(ctx)
-
-	var msg wsEvent
+func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (retry bool, err error) {
+	var msg *wsEvent
 	if err = json.Unmarshal(msgBytes, &msg); err != nil {
-		l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
-		return nil // Swallow this and move on
+		log.L(ctx).Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
+		return false, nil // Swallow this and move on
 	}
-
-	l.Debugf("Received %s event %s", msg.Event, msg.ID)
-	eventCtx, done := context.WithCancel(ctx)
-	defer done()
-
+	log.L(ctx).Debugf("Received %s event %s", msg.Event, msg.ID)
 	switch msg.Event {
 	case messageReceipt:
-		ft.handleReceipt(eventCtx, msg.Data)
+		ft.handleReceipt(ctx, msg.Data)
 	case messageBatch:
 		for _, msg := range msg.Data.GetObjectArray("events") {
-			if err = ft.handleMessage(eventCtx, []byte(msg.String())); err != nil {
-				break
+			if retry, err = ft.handleMessage(ctx, []byte(msg.String())); err != nil {
+				return retry, err
 			}
 		}
 	case messageTokenPool:
-		err = ft.handleTokenPoolCreate(eventCtx, msg.Data, nil /* need to extract poolData from event */)
+		err = ft.handleTokenPoolCreate(ctx, msg.Data, nil /* need to extract poolData from event */)
 	case messageTokenMint:
-		err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeMint, msg.Data)
+		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeMint, msg.Data)
 	case messageTokenBurn:
-		err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeBurn, msg.Data)
+		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeBurn, msg.Data)
 	case messageTokenTransfer:
-		err = ft.handleTokenTransfer(eventCtx, core.TokenTransferTypeTransfer, msg.Data)
+		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeTransfer, msg.Data)
 	case messageTokenApproval:
-		err = ft.handleTokenApproval(eventCtx, msg.Data)
+		err = ft.handleTokenApproval(ctx, msg.Data)
 	default:
-		l.Errorf("Message unexpected: %s", msg.Event)
+		log.L(ctx).Errorf("Message unexpected: %s", msg.Event)
+		// do not set error here - we will never be able to process this message so log+swallow it.
 	}
-
-	if err == nil && msg.Event != messageReceipt && msg.ID != "" {
-		l.Debugf("Sending ack %s", msg.ID)
+	if err != nil {
+		// All errors above are retryable
+		return true, err
+	}
+	if msg.Event != messageReceipt && msg.ID != "" {
+		log.L(ctx).Debugf("Sending ack %s", msg.ID)
 		ack, _ := json.Marshal(fftypes.JSONObject{
 			"event": "ack",
 			"data": fftypes.JSONObject{
 				"id": msg.ID,
 			},
 		})
-		err = ft.wsconn.Send(ctx, ack)
+		// Do not retry this
+		return false, ft.wsconn.Send(ctx, ack)
 	}
+	return false, nil
+}
 
-	return err
+func (ft *FFTokens) handleMessageRetry(ctx context.Context, msgBytes []byte) (err error) {
+	eventCtx, done := context.WithCancel(ctx)
+	defer done()
+	return ft.retry.Do(eventCtx, "fftokens event", func(attempt int) (retry bool, err error) {
+		return ft.handleMessage(eventCtx, msgBytes) // We keep retrying on error until the context ends
+	})
 }
 
 func (ft *FFTokens) eventLoop() {
@@ -576,7 +636,7 @@ func (ft *FFTokens) eventLoop() {
 				ft.cancelCtx()
 				return
 			}
-			if err := ft.handleMessage(ctx, msgBytes); err != nil {
+			if err := ft.handleMessageRetry(ctx, msgBytes); err != nil {
 				l.Errorf("Event loop exiting (%s). Terminating server!", err)
 				ft.cancelCtx()
 				return
@@ -628,18 +688,18 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *co
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
 			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
+		obj["poolData"] = packPoolData(pool.Namespace, pool.ID)
 		return true, ft.handleTokenPoolCreate(ctx, obj, tokenData)
 	}
 	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
 	return false, nil
 }
 
-func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error) {
+func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (complete bool, err error) {
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
-			RequestID:   nsOpID,
-			PoolData:    pool.Namespace,
+			PoolData:    packPoolData(pool.Namespace, pool.ID),
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
 		}).
@@ -665,6 +725,22 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *
 	}
 	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
 	return false, nil
+}
+
+func (ft *FFTokens) DeactivateTokenPool(ctx context.Context, pool *core.TokenPool) error {
+	var errRes tokenError
+	res, err := ft.client.R().SetContext(ctx).
+		SetBody(&deactivatePool{
+			PoolData:    pool.PluginData,
+			PoolLocator: pool.Locator,
+			Config:      pool.Config,
+		}).
+		SetError(&errRes).
+		Post("/api/v1/deactivatepool")
+	if err == nil && (res.IsSuccess() || res.StatusCode() == 404) {
+		return nil
+	}
+	return wrapError(ctx, &errRes, res, err)
 }
 
 func (ft *FFTokens) prepareABI(ctx context.Context, methods []*fftypes.FFIMethod) ([]*abi.Entry, error) {

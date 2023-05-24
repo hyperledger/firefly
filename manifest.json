@@ -21,13 +21,13 @@
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v1.2.2",
-    "sha": "3d259bd4b68dad4634704c9a58c20bdf80457e8bc58ee7ded73292e10702aceb"
+    "tag": "v1.2.4",
+    "sha": "cd65eab2e5836b52dfed29a517049e21e2bacd534203b191cee7df42544847f7"
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
-    "tag": "v1.2.3",
-    "sha": "e1c65bdf95bd5cd88102e539c0aa193edeaefc73fd268606c5550e2d1aae6b31"
+    "tag": "v1.2.5",
+    "sha": "47c620cf71eff5918e6a4f5b9e9c03082d1ca724a59f94b4579a28f7d3ef668e"
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",
@@ -36,10 +36,10 @@
   },
   "build": {
     "firefly-builder": {
-      "image": "golang:1.18-alpine3.16"
+      "image": "golang:1.19-alpine3.16"
     },
     "fabric-builder": {
-      "image": "golang:1.18-alpine3.16",
+      "image": "golang:1.19-alpine3.16",
       "platform": "linux/x86_64"
     },
     "solidity-builder": {

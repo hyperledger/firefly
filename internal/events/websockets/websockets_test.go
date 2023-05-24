@@ -73,9 +73,10 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, authorizer core
 		qs = fmt.Sprintf("?%s", strings.Join(queryParams, "&"))
 	}
 	clientConfig.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s%s", svr.Listener.Addr(), qs))
-	wsConfig := wsclient.GenerateConfig(clientConfig)
+	wsConfig, err := wsclient.GenerateConfig(ctx, clientConfig)
+	assert.NoError(t, err)
 
-	wsc, err := wsclient.New(ctx, wsConfig, nil, nil)
+	wsc, err = wsclient.New(ctx, wsConfig, nil, nil)
 	assert.NoError(t, err)
 	err = wsc.Connect()
 	assert.NoError(t, err)

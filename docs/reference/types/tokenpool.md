@@ -43,7 +43,8 @@ nav_order: 11
     "tx": {
         "type": "token_pool",
         "id": "a23ffc87-81a2-4cbc-97d6-f53d320c36cd"
-    }
+    },
+    "published": false
 }
 ```
 
@@ -55,6 +56,7 @@ nav_order: 11
 | `type` | The type of token the pool contains, such as fungible/non-fungible | `FFEnum`:<br/>`"fungible"`<br/>`"nonfungible"` |
 | `namespace` | The namespace for the token pool | `string` |
 | `name` | The name of the token pool. Note the name is not validated against the description of the token on the blockchain | `string` |
+| `networkName` | The published name of the token pool within the multiparty network | `string` |
 | `standard` | The ERC standard the token pool conforms to, as reported by the token connector | `string` |
 | `locator` | A unique identifier for the pool, as provided by the token connector | `string` |
 | `key` | The signing key used to create the token pool. On input for token connectors that support on-chain deployment of new tokens (vs. only index existing ones) this determines the signing key used to create the token on-chain | `string` |
@@ -70,6 +72,7 @@ nav_order: 11
 | `interface` | A reference to an existing FFI, containing pre-registered type information for the token contract | [`FFIReference`](#ffireference) |
 | `interfaceFormat` | The interface encoding format supported by the connector for this token pool | `FFEnum`:<br/>`"abi"`<br/>`"ffi"` |
 | `methods` | The method definitions resolved by the token connector to be used by each token operation | [`JSONAny`](simpletypes#jsonany) |
+| `published` | Indicates if the token pool is published to other members of the multiparty network | `bool` |
 
 ## TransactionRef
 
