@@ -249,6 +249,8 @@ var (
 	FFIMethods     = ffm("FFI.methods", "An array of smart contract method definitions")
 	FFIEvents      = ffm("FFI.events", "An array of smart contract event definitions")
 	FFIErrors      = ffm("FFI.errors", "An array of smart contract error definitions")
+	FFINetworkName = ffm("FFI.networkName", "The shared interface name within the multiparty network")
+	FFIPublished   = ffm("FFI.published", "True if the interface has been published to a multiparty network")
 
 	// FFIMethod field descriptions
 	FFIMethodID          = ffm("FFIMethod.id", "The UUID of the FFI method definition")
@@ -578,6 +580,7 @@ var (
 	TokenPoolType            = ffm("TokenPool.type", "The type of token the pool contains, such as fungible/non-fungible")
 	TokenPoolNamespace       = ffm("TokenPool.namespace", "The namespace for the token pool")
 	TokenPoolName            = ffm("TokenPool.name", "The name of the token pool. Note the name is not validated against the description of the token on the blockchain")
+	TokenPoolNetworkName     = ffm("TokenPool.networkName", "The published name of the token pool within the multiparty network")
 	TokenPoolStandard        = ffm("TokenPool.standard", "The ERC standard the token pool conforms to, as reported by the token connector")
 	TokenPoolLocator         = ffm("TokenPool.locator", "A unique identifier for the pool, as provided by the token connector")
 	TokenPoolKey             = ffm("TokenPool.key", "The signing key used to create the token pool. On input for token connectors that support on-chain deployment of new tokens (vs. only index existing ones) this determines the signing key used to create the token on-chain")
@@ -593,6 +596,7 @@ var (
 	TokenPoolInterface       = ffm("TokenPool.interface", "A reference to an existing FFI, containing pre-registered type information for the token contract")
 	TokenPoolInterfaceFormat = ffm("TokenPool.interfaceFormat", "The interface encoding format supported by the connector for this token pool")
 	TokenPoolMethods         = ffm("TokenPool.methods", "The method definitions resolved by the token connector to be used by each token operation")
+	TokenPoolPublished       = ffm("TokenPool.published", "Indicates if the token pool is published to other members of the multiparty network")
 
 	// TokenPoolInput field descriptions
 	TokenPoolInputIdempotencyKey = ffm("TokenPoolInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
@@ -692,4 +696,7 @@ var (
 
 	// PublishInput field descriptions
 	PublishInputIdempotencyKey = ffm("PublishInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
+
+	// DefinitionPublish field descriptions
+	DefinitionPublishNetworkName = ffm("DefinitionPublish.networkName", "An optional name to be used for publishing this definition to the multiparty network, which may differ from the local name")
 )

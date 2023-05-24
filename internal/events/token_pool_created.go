@@ -25,12 +25,14 @@ import (
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 func addPoolDetailsFromPlugin(ffPool *core.TokenPool, pluginPool *tokens.TokenPool) error {
 	ffPool.Type = pluginPool.Type
 	ffPool.Locator = pluginPool.PoolLocator
+	ffPool.PluginData = pluginPool.PluginData
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
 	ffPool.InterfaceFormat = (core.TokenInterfaceFormat)(pluginPool.InterfaceFormat)
@@ -69,7 +71,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 		return err
 	}
 	pool.Active = true
-	if err := em.database.UpsertTokenPool(ctx, pool); err != nil {
+	if err := em.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
 		return err
 	}
 	log.L(ctx).Infof("Token pool confirmed, id=%s", pool.ID)
@@ -77,8 +79,15 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 	return em.database.InsertEvent(ctx, event)
 }
 
+func (em *eventManager) getPoolByIDOrLocator(ctx context.Context, id *fftypes.UUID, connector, locator string) (*core.TokenPool, error) {
+	if id != nil {
+		return em.assets.GetTokenPoolByID(ctx, id)
+	}
+	return em.assets.GetTokenPoolByLocator(ctx, connector, locator)
+}
+
 func (em *eventManager) loadExisting(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
-	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace.Name, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
+	if existingPool, err = em.getPoolByIDOrLocator(ctx, pool.ID, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
 		log.L(ctx).Debugf("Pool not found with ns=%s connector=%s locator=%s (err=%v)", em.namespace.Name, pool.Connector, pool.PoolLocator, err)
 		return existingPool, err
 	}
@@ -90,7 +99,7 @@ func (em *eventManager) loadExisting(ctx context.Context, pool *tokens.TokenPool
 	return existingPool, nil
 }
 
-func (em *eventManager) loadFromOperation(ctx context.Context, pool *tokens.TokenPool) (announcePool *core.TokenPool, err error) {
+func (em *eventManager) loadFromOperation(ctx context.Context, pool *tokens.TokenPool) (stagedPool *core.TokenPool, err error) {
 	op, err := em.txHelper.FindOperationInTransaction(ctx, pool.TX.ID, core.OpTypeTokenCreatePool)
 	if err != nil {
 		return nil, err
@@ -99,30 +108,30 @@ func (em *eventManager) loadFromOperation(ctx context.Context, pool *tokens.Toke
 		return nil, nil
 	}
 
-	announcePool, err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op)
-	if err != nil || announcePool.ID == nil || announcePool.Namespace == "" || announcePool.Name == "" {
+	stagedPool, err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op)
+	if err != nil || stagedPool.ID == nil || stagedPool.Namespace == "" || stagedPool.Name == "" {
 		log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TX.ID, err, op.Input)
 		return nil, nil
 	}
 
-	if err = addPoolDetailsFromPlugin(announcePool, pool); err != nil {
+	if err = addPoolDetailsFromPlugin(stagedPool, pool); err != nil {
 		log.L(ctx).Errorf("Error processing pool for transaction '%s' (%s) - ignoring", pool.TX.ID, err)
 		return nil, nil
 	}
-	return announcePool, nil
+	return stagedPool, nil
 }
 
 // It is expected that this method might be invoked twice for each pool, depending on the behavior of the connector.
-// It will be at least invoked on the submitter when the pool is first created, to trigger the submitter to announce it.
-// It will be invoked on every node (including the submitter) after the pool is announced+activated, to trigger confirmation of the pool.
+// It will be at least invoked on the submitter when the pool is first created, to trigger the submitter to publish it.
+// It will be invoked on every node (including the submitter) after the pool is published+activated, to trigger confirmation of the pool.
 // When received in any other scenario, it should be ignored.
 //
 // The context passed to this callback is dependent on what phase it is called in.
-// In the case that it is called synchronously on the submitter, in order to trigger the announcement, the original context
+// In the case that it is called synchronously on the submitter, in order to trigger the publish, the original context
 // of the REST API will be propagated (so it can be used for the resolution of the org signing key).
 func (em *eventManager) TokenPoolCreated(ctx context.Context, ti tokens.Plugin, pool *tokens.TokenPool) (err error) {
 	var msgIDforRewind *fftypes.UUID
-	var announcePool *core.TokenPool
+	var stagedPool *core.TokenPool
 
 	err = em.retry.Do(ctx, "persist token pool transaction", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(ctx, func(ctx context.Context) error {
@@ -147,11 +156,11 @@ func (em *eventManager) TokenPoolCreated(ctx context.Context, ti tokens.Plugin, 
 				return nil // move on
 			}
 
-			// See if this pool was submitted locally and needs to be announced
-			if announcePool, err = em.loadFromOperation(ctx, pool); err != nil {
+			// See if this pool was submitted locally and needs to be published
+			if stagedPool, err = em.loadFromOperation(ctx, pool); err != nil {
 				return err
-			} else if announcePool != nil {
-				return nil // trigger announce after completion of database transaction
+			} else if stagedPool != nil {
+				return nil // trigger publish after completion of database transaction
 			}
 
 			// Otherwise this event can be ignored
@@ -171,21 +180,19 @@ func (em *eventManager) TokenPoolCreated(ctx context.Context, ti tokens.Plugin, 
 			em.aggregator.queueMessageRewind(msgIDforRewind)
 		}
 
-		if announcePool != nil {
+		if stagedPool != nil {
 			// If the pool is tied to a contract interface, resolve the methods to be used for later operations
-			if announcePool.Interface != nil && announcePool.Interface.ID != nil && announcePool.InterfaceFormat != "" {
-				log.L(ctx).Infof("Querying token connector interface, id=%s", announcePool.ID)
-				if err := em.assets.ResolvePoolMethods(ctx, announcePool); err != nil {
+			if stagedPool.Interface != nil && stagedPool.Interface.ID != nil && stagedPool.InterfaceFormat != "" {
+				log.L(ctx).Infof("Querying token connector interface, id=%s", stagedPool.ID)
+				if err := em.assets.ResolvePoolMethods(ctx, stagedPool); err != nil {
 					return err
 				}
 			}
 
-			// Announce the details of the new token pool
+			// Publish the details of the new token pool
 			// Other nodes will pass these details to their own token connector for validation/activation of the pool
-			log.L(ctx).Infof("Announcing token pool, id=%s", announcePool.ID)
-			err = em.defsender.DefineTokenPool(ctx, &core.TokenPoolAnnouncement{
-				Pool: announcePool,
-			}, false)
+			log.L(ctx).Infof("Defining token pool, id=%s", stagedPool.ID)
+			err = em.defsender.DefineTokenPool(ctx, stagedPool, false)
 		}
 	}
 

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -81,6 +81,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *core.Toke
 			From(tokentransferTable).
 			Where(sq.Eq{
 				"protocol_id": transfer.ProtocolID,
+				"pool_id":     transfer.Pool,
 				"namespace":   transfer.Namespace,
 			}),
 	)
@@ -207,10 +208,10 @@ func (s *SQLCommon) GetTokenTransferByID(ctx context.Context, namespace string, 
 	return s.getTokenTransferPred(ctx, localID.String(), sq.Eq{"local_id": localID, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenTransfer, error) {
+func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenTransfer, error) {
 	return s.getTokenTransferPred(ctx, protocolID, sq.And{
 		sq.Eq{"namespace": namespace},
-		sq.Eq{"connector": connector},
+		sq.Eq{"pool_id": poolID},
 		sq.Eq{"protocol_id": protocolID},
 	})
 }
@@ -238,4 +239,22 @@ func (s *SQLCommon) GetTokenTransfers(ctx context.Context, namespace string, fil
 	}
 
 	return transfers, s.QueryRes(ctx, tokentransferTable, tx, fop, fi), err
+}
+
+func (s *SQLCommon) DeleteTokenTransfers(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	err = s.DeleteTx(ctx, tokentransferTable, tx, sq.Delete(tokentransferTable).Where(sq.Eq{
+		"namespace": namespace,
+		"pool_id":   poolID,
+	}), nil)
+	if err != nil && err != fftypes.DeleteRecordNotFound {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
 }

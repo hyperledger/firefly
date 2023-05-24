@@ -352,8 +352,12 @@ type iBlobCollection interface {
 }
 
 type iTokenPoolCollection interface {
+	// InsertTokenPool - Insert a new token pool
+	// If a pool with the same name has already been recorded, does not insert but returns the existing row
+	InsertOrGetTokenPool(ctx context.Context, pool *core.TokenPool) (existing *core.TokenPool, err error)
+
 	// UpsertTokenPool - Upsert a token pool
-	UpsertTokenPool(ctx context.Context, pool *core.TokenPool) error
+	UpsertTokenPool(ctx context.Context, pool *core.TokenPool, optimization UpsertOptimization) error
 
 	// GetTokenPool - Get a token pool by name
 	GetTokenPool(ctx context.Context, namespace, name string) (*core.TokenPool, error)
@@ -361,11 +365,14 @@ type iTokenPoolCollection interface {
 	// GetTokenPoolByID - Get a token pool by pool ID
 	GetTokenPoolByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.TokenPool, error)
 
-	// GetTokenPoolByLocator - Get a token pool by locator
-	GetTokenPoolByLocator(ctx context.Context, namespace, connector, locator string) (*core.TokenPool, error)
+	// GetTokenPoolByNetworkName - Get a token pool by network name
+	GetTokenPoolByNetworkName(ctx context.Context, namespace, networkName string) (*core.TokenPool, error)
 
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenPool, *ffapi.FilterResult, error)
+
+	// DeleteTokenPool - delete a token pool
+	DeleteTokenPool(ctx context.Context, namespace string, id *fftypes.UUID) error
 }
 
 type iTokenBalanceCollection interface {
@@ -383,6 +390,9 @@ type iTokenBalanceCollection interface {
 
 	// GetTokenAccountPools - Get the list of pools referenced by a given account
 	GetTokenAccountPools(ctx context.Context, namespace, key string, filter ffapi.Filter) ([]*core.TokenAccountPool, *ffapi.FilterResult, error)
+
+	// DeleteTokenBalances - Delete token balances from a particular pool
+	DeleteTokenBalances(ctx context.Context, namespace string, poolID *fftypes.UUID) error
 }
 
 type iTokenTransferCollection interface {
@@ -393,10 +403,13 @@ type iTokenTransferCollection interface {
 	GetTokenTransferByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenTransfer, error)
 
 	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenTransferByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenTransfer, error)
+	GetTokenTransferByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenTransfer, *ffapi.FilterResult, error)
+
+	// DeleteTokenTransfers - Delete token transfers from a particular pool
+	DeleteTokenTransfers(ctx context.Context, namespace string, poolID *fftypes.UUID) error
 }
 
 type iTokenApprovalCollection interface {
@@ -410,10 +423,13 @@ type iTokenApprovalCollection interface {
 	GetTokenApprovalByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenApproval, error)
 
 	// GetTokenTransferByProtocolID - Get a token approval by protocol ID
-	GetTokenApprovalByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenApproval, error)
+	GetTokenApprovalByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
 	GetTokenApprovals(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenApproval, *ffapi.FilterResult, error)
+
+	// DeleteTokenApprovals - Delete token approvals from a particular pool
+	DeleteTokenApprovals(ctx context.Context, namespace string, poolID *fftypes.UUID) error
 }
 
 type iFFICollection interface {
@@ -883,6 +899,7 @@ var TokenPoolQueryFactory = &ffapi.QueryFields{
 	"id":              &ffapi.UUIDField{},
 	"type":            &ffapi.StringField{},
 	"name":            &ffapi.StringField{},
+	"networkname":     &ffapi.StringField{},
 	"standard":        &ffapi.StringField{},
 	"locator":         &ffapi.StringField{},
 	"symbol":          &ffapi.StringField{},
@@ -895,6 +912,7 @@ var TokenPoolQueryFactory = &ffapi.QueryFields{
 	"tx.id":           &ffapi.UUIDField{},
 	"interface":       &ffapi.UUIDField{},
 	"interfaceformat": &ffapi.StringField{},
+	"published":       &ffapi.BoolField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances

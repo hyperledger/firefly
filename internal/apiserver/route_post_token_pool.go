@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -32,6 +32,7 @@ var postTokenPool = &ffapi.Route{
 	PathParams: nil,
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
+		{Name: "publish", Description: coremsgs.APIPublishQueryParam, IsBool: true},
 	},
 	Description:     coremsgs.APIEndpointsPostTokenPool,
 	JSONInputValue:  func() interface{} { return &core.TokenPoolInput{} },
@@ -41,7 +42,9 @@ var postTokenPool = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			return cr.or.Assets().CreateTokenPool(cr.ctx, r.Input.(*core.TokenPoolInput), waitConfirm)
+			pool := r.Input.(*core.TokenPoolInput)
+			pool.Published = strings.EqualFold(r.QP["publish"], "true")
+			return cr.or.Assets().CreateTokenPool(cr.ctx, pool, waitConfirm)
 		},
 	},
 }

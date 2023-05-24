@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -51,7 +52,7 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil, nil)
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(nil, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, pool)
@@ -76,7 +77,7 @@ func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, pool)
 	assert.NoError(t, err)
@@ -119,8 +120,8 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(storedPool, nil).Once()
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(storedPool, nil).Once()
 	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Name == chainPool.Event.Name
 	})).Return(nil, nil).Once()
@@ -128,7 +129,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil).Once()
 	em.mth.On("PersistTransaction", mock.Anything, txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
-	em.mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
+	em.mdi.On("UpsertTokenPool", em.ctx, storedPool, database.UpsertOptimizationExisting).Return(nil).Once()
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
 	})).Return(nil).Once()
@@ -173,7 +174,7 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(storedPool, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(storedPool, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, chainPool)
 	assert.NoError(t, err)
@@ -214,7 +215,7 @@ func TestTokenPoolCreatedConfirmFailBadSymbol(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(storedPool, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(storedPool, nil)
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(&core.Operation{
 		ID: opID,
 	}, nil)
@@ -316,14 +317,14 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil)
 	em.mth.On("PersistTransaction", mock.Anything, txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
-	em.mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(fmt.Errorf("pop"))
+	em.mdi.On("UpsertTokenPool", em.ctx, storedPool, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
 	err := em.confirmPool(em.ctx, storedPool, event)
 	assert.EqualError(t, err, "pop")
 
 }
 
-func TestTokenPoolCreatedAnnounce(t *testing.T) {
+func TestTokenPoolCreatedPublish(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	mti := &tokenmocks.Plugin{}
@@ -354,11 +355,11 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(nil, fmt.Errorf("pop")).Once()
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil).Once()
-	em.mds.On("DefineTokenPool", em.ctx, mock.MatchedBy(func(pool *core.TokenPoolAnnouncement) bool {
-		return pool.Pool.Namespace == "ns1" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
+	em.mds.On("DefineTokenPool", em.ctx, mock.MatchedBy(func(pool *core.TokenPool) bool {
+		return pool.Namespace == "ns1" && pool.Name == "my-pool" && *pool.ID == *poolID
 	}), false).Return(nil, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, pool)
@@ -367,7 +368,7 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
-func TestTokenPoolCreatedAnnounceBadInterface(t *testing.T) {
+func TestTokenPoolCreatedPublishBadInterface(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	mti := &tokenmocks.Plugin{}
@@ -403,7 +404,7 @@ func TestTokenPoolCreatedAnnounceBadInterface(t *testing.T) {
 		InterfaceFormat: "abi",
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(nil, fmt.Errorf("pop")).Once()
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil).Once()
 	em.mam.On("ResolvePoolMethods", em.ctx, mock.MatchedBy(func(pool *core.TokenPool) bool {
@@ -416,7 +417,7 @@ func TestTokenPoolCreatedAnnounceBadInterface(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
-func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
+func TestTokenPoolCreatedPublishBadOpInputID(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	mti := &tokenmocks.Plugin{}
@@ -443,7 +444,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil)
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, pool)
@@ -451,7 +452,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 
 }
 
-func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
+func TestTokenPoolCreatedPublishBadOpInputNS(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	mti := &tokenmocks.Plugin{}
@@ -480,7 +481,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil)
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil)
 
 	err := em.TokenPoolCreated(em.ctx, mti, pool)
@@ -488,7 +489,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 
 }
 
-func TestTokenPoolCreatedAnnounceBadSymbol(t *testing.T) {
+func TestTokenPoolCreatedPublishBadSymbol(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	mti := &tokenmocks.Plugin{}
@@ -521,7 +522,7 @@ func TestTokenPoolCreatedAnnounceBadSymbol(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(nil, fmt.Errorf("pop")).Once()
 	em.mth.On("FindOperationInTransaction", em.ctx, txID, core.OpTypeTokenCreatePool).Return(operation, nil).Once()
 
