@@ -71,6 +71,20 @@ func (_m *Manager) AddContractListener(ctx context.Context, listener *core.Contr
 	return r0, r1
 }
 
+// DeleteContractAPI provides a mock function with given fields: ctx, apiName
+func (_m *Manager) DeleteContractAPI(ctx context.Context, apiName string) error {
+	ret := _m.Called(ctx, apiName)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, apiName)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteContractListenerByNameOrID provides a mock function with given fields: ctx, nameOrID
 func (_m *Manager) DeleteContractListenerByNameOrID(ctx context.Context, nameOrID string) error {
 	ret := _m.Called(ctx, nameOrID)

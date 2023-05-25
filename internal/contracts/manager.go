@@ -62,6 +62,7 @@ type Manager interface {
 	GetContractAPIInterface(ctx context.Context, apiName string) (*fftypes.FFI, error)
 	GetContractAPIs(ctx context.Context, httpServerURL string, filter ffapi.AndFilter) ([]*core.ContractAPI, *ffapi.FilterResult, error)
 	ResolveContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) error
+	DeleteContractAPI(ctx context.Context, apiName string) error
 
 	AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error)
 	AddContractAPIListener(ctx context.Context, apiName, eventPath string, listener *core.ContractListener) (output *core.ContractListener, err error)
@@ -968,5 +969,21 @@ func (cm *contractManager) DeleteFFI(ctx context.Context, id *fftypes.UUID) erro
 			return i18n.NewError(ctx, coremsgs.MsgCannotDeletePublished)
 		}
 		return cm.database.DeleteFFI(ctx, cm.namespace, id)
+	})
+}
+
+func (cm *contractManager) DeleteContractAPI(ctx context.Context, apiName string) error {
+	return cm.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		api, err := cm.GetContractAPI(ctx, "", apiName)
+		if err != nil {
+			return err
+		}
+		if api == nil {
+			return i18n.NewError(ctx, coremsgs.Msg404NotFound)
+		}
+		if api.Published {
+			return i18n.NewError(ctx, coremsgs.MsgCannotDeletePublished)
+		}
+		return cm.database.DeleteContractAPI(ctx, cm.namespace, api.ID)
 	})
 }

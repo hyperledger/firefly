@@ -53,6 +53,20 @@ func (_m *Plugin) DeleteBlob(ctx context.Context, sequence int64) error {
 	return r0
 }
 
+// DeleteContractAPI provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) DeleteContractAPI(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteContractListenerByID provides a mock function with given fields: ctx, namespace, id
 func (_m *Plugin) DeleteContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) error {
 	ret := _m.Called(ctx, namespace, id)

@@ -56,6 +56,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, core.ChangeEventTypeCreated, "ns1", apiID, mock.Anything).Return()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, core.ChangeEventTypeUpdated, "ns1", apiID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, core.ChangeEventTypeDeleted, "ns1", apiID, mock.Anything).Return()
 
 	existing, err := s.InsertOrGetContractAPI(ctx, contractAPI)
 	assert.NoError(t, err)
@@ -109,6 +110,10 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, contractAPI.ID, existing.ID)
+
+	// Delete the API
+	err = s.DeleteContractAPI(ctx, "ns1", contractAPI.ID)
+	assert.NoError(t, err)
 }
 
 func TestContractAPIInsertOrGetFailBeginTransaction(t *testing.T) {
@@ -252,5 +257,23 @@ func TestGetContractAPIByName(t *testing.T) {
 	api, err := s.GetContractAPIByName(context.Background(), "ns1", "banana")
 	assert.NotNil(t, api)
 	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteContractFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteContractAPI(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteContractAPIFailDelete(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteContractAPI(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00179", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

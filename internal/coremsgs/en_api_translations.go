@@ -76,6 +76,7 @@ var (
 	APIEndpointsAdminGetListenerByID    = ffm("api.endpoints.adminGetListenerByID", "Gets a contract listener by ID")
 	APIEndpointsAdminGetListeners       = ffm("api.endpoints.adminGetListeners", "Lists contract listeners")
 
+	APIEndpointsDeleteContractAPI               = ffm("api.endpoints.deleteContractAPI", "Delete a contract API")
 	APIEndpointsDeleteContractInterface         = ffm("api.endpoints.deleteContractInterface", "Delete a contract interface")
 	APIEndpointsDeleteContractListener          = ffm("api.endpoints.deleteContractListener", "Deletes a contract listener referenced by its name or its ID")
 	APIEndpointsDeleteSubscription              = ffm("api.endpoints.deleteSubscription", "Deletes a subscription")

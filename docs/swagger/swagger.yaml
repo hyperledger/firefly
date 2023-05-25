@@ -331,6 +331,32 @@ paths:
       tags:
       - Default Namespace
   /apis/{apiName}:
+    delete:
+      description: Delete a contract API
+      operationId: deleteContractAPI
+      parameters:
+      - description: The name of the contract API
+        in: path
+        name: apiName
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
     get:
       description: Gets information about a contract API, including the URLs for the
         OpenAPI Spec and Swagger UI for the API
@@ -12161,6 +12187,39 @@ paths:
       tags:
       - Non-Default Namespace
   /namespaces/{ns}/apis/{apiName}:
+    delete:
+      description: Delete a contract API
+      operationId: deleteContractAPINamespace
+      parameters:
+      - description: The name of the contract API
+        in: path
+        name: apiName
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
     get:
       description: Gets information about a contract API, including the URLs for the
         OpenAPI Spec and Swagger UI for the API

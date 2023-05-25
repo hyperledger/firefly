@@ -191,16 +191,20 @@ func (s *SQLCommon) contractAPIResult(ctx context.Context, row *sql.Rows) (*core
 	api := core.ContractAPI{
 		Interface: &fftypes.FFIReference{},
 	}
+	var networkName *string
 	err := row.Scan(
 		&api.ID,
 		&api.Interface.ID,
 		&api.Location,
 		&api.Name,
-		&api.NetworkName,
+		&networkName,
 		&api.Namespace,
 		&api.Message,
 		&api.Published,
 	)
+	if networkName != nil {
+		api.NetworkName = *networkName
+	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "contract")
 	}
@@ -268,4 +272,23 @@ func (s *SQLCommon) GetContractAPIByName(ctx context.Context, namespace, name st
 
 func (s *SQLCommon) GetContractAPIByNetworkName(ctx context.Context, namespace, networkName string) (*core.ContractAPI, error) {
 	return s.getContractAPIPred(ctx, namespace+":"+networkName, sq.Eq{"namespace": namespace, "network_name": networkName})
+}
+
+func (s *SQLCommon) DeleteContractAPI(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	err = s.DeleteTx(ctx, contractapisTable, tx, sq.Delete(contractapisTable).Where(sq.Eq{
+		"id": id, "namespace": namespace,
+	}), func() {
+		s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, core.ChangeEventTypeDeleted, namespace, id)
+	})
+	if err != nil {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
 }

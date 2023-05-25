@@ -28,6 +28,7 @@ import (
 
 func (ds *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm bool) error {
 	ffi.ID = fftypes.NewUUID()
+	ffi.Namespace = ds.namespace
 	for _, method := range ffi.Methods {
 		method.ID = fftypes.NewUUID()
 	}
@@ -123,6 +124,7 @@ func (ds *definitionSender) DefineContractAPI(ctx context.Context, httpServerURL
 	if api.ID == nil {
 		api.ID = fftypes.NewUUID()
 	}
+	api.Namespace = ds.namespace
 
 	if api.Published {
 		if !ds.multiparty {

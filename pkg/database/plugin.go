@@ -505,6 +505,9 @@ type iContractAPICollection interface {
 
 	// GetContractAPIByNetworkName - Get a contract API by network name
 	GetContractAPIByNetworkName(ctx context.Context, namespace, networkName string) (*core.ContractAPI, error)
+
+	// DeleteContractAPI - Delete a contract API
+	DeleteContractAPI(ctx context.Context, namespace string, id *fftypes.UUID) error
 }
 
 type iContractListenerCollection interface {
