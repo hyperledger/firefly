@@ -28,6 +28,10 @@ const (
 	FFTEventRetryMaxDelay     = "eventRetry.maxDelay"
 	FFTEventRetryFactor       = "eventRetry.factor"
 	FFTBackgroundStart        = "backgroundStart"
+
+	defaultBackgroundInitialDelay = "5s"
+	defaultBackgroundRetryFactor  = 2.0
+	defaultBackgroundMaxDelay     = "1m"
 )
 
 func (ft *FFTokens) InitConfig(config config.Section) {

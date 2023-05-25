@@ -254,13 +254,11 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 	f.backgroundStart = f.fabconnectConf.GetBool(FabconnectBackgroundStart)
 
 	if f.backgroundStart {
-		// TODO fix these configs
 		f.backgroundRetry = &retry.Retry{
-			InitialDelay: config.GetDuration(coreconfig.NamespacesRetryInitDelay),
-			MaximumDelay: config.GetDuration(coreconfig.NamespacesRetryMaxDelay),
-			Factor:       config.GetFloat64(coreconfig.NamespacesRetryFactor),
+			InitialDelay: fftypes.ParseToDuration(defaultBackgroundInitialDelay),
+			MaximumDelay: fftypes.ParseToDuration(defaultBackgroundMaxDelay),
+			Factor:       defaultBackgroundRetryFactor,
 		}
-
 		return nil
 	}
 

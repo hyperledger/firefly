@@ -34,6 +34,10 @@ const (
 	DataExchangeEventRetryFactor       = "eventRetry.factor"
 
 	DataExchangeBackgroundStart = "backgroundStart"
+
+	defaultBackgroundInitialDelay = "5s"
+	defaultBackgroundRetryFactor  = 2.0
+	defaultBackgroundMaxDelay     = "1m"
 )
 
 func (h *FFDX) InitConfig(config config.Section) {

@@ -300,12 +300,12 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 	ft.backgroundStart = config.GetBool(FFTBackgroundStart)
 
 	if ft.backgroundStart {
-		// TODO change this config
 		ft.backgroundRetry = &retry.Retry{
-			InitialDelay: config.GetDuration(FFTEventRetryInitialDelay),
-			MaximumDelay: config.GetDuration(FFTEventRetryMaxDelay),
-			Factor:       config.GetFloat64(FFTEventRetryFactor),
+			InitialDelay: fftypes.ParseToDuration(defaultBackgroundInitialDelay),
+			MaximumDelay: fftypes.ParseToDuration(defaultBackgroundMaxDelay),
+			Factor:       defaultBackgroundRetryFactor,
 		}
+		return nil
 	}
 
 	go ft.eventLoop()
@@ -331,6 +331,8 @@ func (ft *FFTokens) backgroundStartLoop() {
 		if err != nil {
 			return true, err
 		}
+
+		go ft.eventLoop()
 
 		return false, nil
 	})

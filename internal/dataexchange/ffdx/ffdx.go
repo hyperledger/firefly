@@ -214,7 +214,11 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 	h.backgroundStart = config.GetBool(DataExchangeBackgroundStart)
 
 	if h.backgroundStart {
-		h.backgroundRetry = &retry.Retry{}
+		h.backgroundRetry = &retry.Retry{
+			InitialDelay: fftypes.ParseToDuration(defaultBackgroundInitialDelay),
+			MaximumDelay: fftypes.ParseToDuration(defaultBackgroundMaxDelay),
+			Factor:       defaultBackgroundRetryFactor,
+		}
 		return nil
 	}
 

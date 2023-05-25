@@ -987,6 +987,9 @@ func TestReceiptEventsBackgroundStart(t *testing.T) {
 	err := h.Init(h.ctx, h.cancelCtx, "testtokens", ffTokensConfig)
 	assert.NoError(t, err)
 
+	// Reset the retry to be quicker
+	h.backgroundRetry = &retry.Retry{}
+
 	err = h.Start()
 	assert.NoError(t, err)
 

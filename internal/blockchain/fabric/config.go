@@ -26,6 +26,10 @@ const (
 	defaultBatchTimeout = 500
 	defaultPrefixShort  = "fly"
 	defaultPrefixLong   = "firefly"
+
+	defaultBackgroundInitialDelay = "5s"
+	defaultBackgroundRetryFactor  = 2.0
+	defaultBackgroundMaxDelay     = "1m"
 )
 
 const (

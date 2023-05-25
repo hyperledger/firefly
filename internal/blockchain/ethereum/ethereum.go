@@ -206,11 +206,10 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 
 	e.backgroundStart = e.ethconnectConf.GetBool(EthconnectBackgroundStart)
 	if e.backgroundStart {
-		// TODO fix these configs
 		e.backgroundRetry = &retry.Retry{
-			InitialDelay: config.GetDuration(coreconfig.NamespacesRetryInitDelay),
-			MaximumDelay: config.GetDuration(coreconfig.NamespacesRetryMaxDelay),
-			Factor:       config.GetFloat64(coreconfig.NamespacesRetryFactor),
+			InitialDelay: fftypes.ParseToDuration(defaultBackgroundInitialDelay),
+			MaximumDelay: fftypes.ParseToDuration(defaultBackgroundMaxDelay),
+			Factor:       defaultBackgroundRetryFactor,
 		}
 
 		return nil
