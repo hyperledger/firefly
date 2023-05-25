@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -802,6 +803,23 @@ namespaces:
 
 }
 
+func mockPurge(nmm *nmMocks, nsName string) {
+	matchNil := mock.MatchedBy(func(i interface{}) bool {
+		return i == nil || reflect.ValueOf(i).IsNil()
+	})
+	nmm.mdi.On("SetHandler", nsName, matchNil).Return()
+	nmm.mbi.On("SetHandler", nsName, matchNil).Return()
+	nmm.mbi.On("SetOperationHandler", nsName, matchNil).Return()
+	nmm.mps.On("SetHandler", nsName, matchNil).Return().Maybe()
+	nmm.mps.On("SetOperationHandler", nsName, matchNil).Return().Maybe()
+	nmm.mdx.On("SetHandler", nsName, mock.Anything, matchNil).Return().Maybe()
+	nmm.mdx.On("SetOperationHandler", nsName, matchNil).Return().Maybe()
+	for _, mti := range nmm.mti {
+		mti.On("SetHandler", nsName, matchNil).Return().Maybe()
+		mti.On("SetOperationHandler", nsName, matchNil).Return().Maybe()
+	}
+}
+
 func TestConfigDownToNothingOk(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel)
 
@@ -816,6 +834,10 @@ func TestConfigDownToNothingOk(t *testing.T) {
 	defer cancelCtx()
 
 	mockInitConfig(nmm)
+
+	// Because the namespaces are deleted, we should get calls with nil on all the plugins
+	mockPurge(nmm, "ns1")
+	mockPurge(nmm, "ns2")
 	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })
@@ -863,6 +885,9 @@ func TestConfigStartPluginsFails(t *testing.T) {
 	defer cancelCtx()
 
 	mockInitConfig(nmm)
+	mockPurge(nmm, "ns1")
+	mockPurge(nmm, "ns2")
+
 	waitInit := namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
 
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error { return nil })

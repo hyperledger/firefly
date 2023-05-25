@@ -593,6 +593,11 @@ func TestMessageEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"4","manifest":"{\"manifest\":true}"}`, string(msg))
 
+	h.SetHandler("ns1", "node1", nil)
+	assert.Empty(t, h.callbacks.handlers)
+	h.SetOperationHandler("ns1", nil)
+	assert.Empty(t, h.callbacks.opHandlers)
+
 	mcb.AssertExpectations(t)
 	ocb.AssertExpectations(t)
 }

@@ -104,13 +104,21 @@ func NewFireflySubscriptions() FireflySubscriptions {
 func (cb *callbacks) SetHandler(namespace string, handler blockchain.Callbacks) {
 	cb.writeLock.Lock()
 	defer cb.writeLock.Unlock()
-	cb.handlers[namespace] = handler
+	if handler == nil {
+		delete(cb.handlers, namespace)
+	} else {
+		cb.handlers[namespace] = handler
+	}
 }
 
 func (cb *callbacks) SetOperationalHandler(namespace string, handler core.OperationCallbacks) {
 	cb.writeLock.Lock()
 	defer cb.writeLock.Unlock()
-	cb.opHandlers[namespace] = handler
+	if handler == nil {
+		delete(cb.opHandlers, namespace)
+	} else {
+		cb.opHandlers[namespace] = handler
+	}
 }
 
 func (cb *callbacks) OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {

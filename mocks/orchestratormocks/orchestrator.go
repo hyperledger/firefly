@@ -1466,6 +1466,11 @@ func (_m *Orchestrator) PrivateMessaging() privatemessaging.Manager {
 	return r0
 }
 
+// Purge provides a mock function with given fields:
+func (_m *Orchestrator) Purge() {
+	_m.Called()
+}
+
 // RequestReply provides a mock function with given fields: ctx, msg
 func (_m *Orchestrator) RequestReply(ctx context.Context, msg *core.MessageInOut) (*core.MessageInOut, error) {
 	ret := _m.Called(ctx, msg)

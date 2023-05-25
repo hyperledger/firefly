@@ -92,11 +92,12 @@ func TestTXConcurrency(t *testing.T) {
 
 func TestNamespaceCallbacks(t *testing.T) {
 	tcb := &databasemocks.Callbacks{}
-	cb := callbacks{
-		handlers: map[string]database.Callbacks{
-			"ns1": tcb,
+	s := &SQLCommon{
+		callbacks: callbacks{
+			handlers: map[string]database.Callbacks{},
 		},
 	}
+	s.SetHandler("ns1", tcb)
 	id := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
 
@@ -105,8 +106,11 @@ func TestNamespaceCallbacks(t *testing.T) {
 	tcb.On("UUIDCollectionNSEvent", database.CollectionOperations, core.ChangeEventTypeCreated, "ns1", id).Return()
 	tcb.On("HashCollectionNSEvent", database.CollectionGroups, core.ChangeEventTypeUpdated, "ns1", hash).Return()
 
-	cb.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, "ns1", id, 1)
-	cb.OrderedCollectionNSEvent(database.CollectionPins, core.ChangeEventTypeCreated, "ns1", 1)
-	cb.UUIDCollectionNSEvent(database.CollectionOperations, core.ChangeEventTypeCreated, "ns1", id)
-	cb.HashCollectionNSEvent(database.CollectionGroups, core.ChangeEventTypeUpdated, "ns1", hash)
+	s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, "ns1", id, 1)
+	s.callbacks.OrderedCollectionNSEvent(database.CollectionPins, core.ChangeEventTypeCreated, "ns1", 1)
+	s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, core.ChangeEventTypeCreated, "ns1", id)
+	s.callbacks.HashCollectionNSEvent(database.CollectionGroups, core.ChangeEventTypeUpdated, "ns1", hash)
+
+	s.SetHandler("ns1", nil)
+	assert.Empty(t, s.callbacks.handlers)
 }

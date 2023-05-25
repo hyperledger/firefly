@@ -88,7 +88,11 @@ func (s *SQLCommon) SetHandler(namespace string, handler database.Callbacks) {
 	if s.callbacks.handlers == nil {
 		s.callbacks.handlers = make(map[string]database.Callbacks)
 	}
-	s.callbacks.handlers[namespace] = handler
+	if handler == nil {
+		delete(s.callbacks.handlers, namespace)
+	} else {
+		s.callbacks.handlers[namespace] = handler
+	}
 }
 
 func (s *SQLCommon) Capabilities() *database.Capabilities { return s.capabilities }

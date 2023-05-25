@@ -316,13 +316,21 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 func (ft *FFTokens) SetHandler(namespace string, handler tokens.Callbacks) {
 	ft.callbacks.writeLock.Lock()
 	defer ft.callbacks.writeLock.Unlock()
-	ft.callbacks.handlers[namespace] = handler
+	if handler == nil {
+		delete(ft.callbacks.handlers, namespace)
+	} else {
+		ft.callbacks.handlers[namespace] = handler
+	}
 }
 
 func (ft *FFTokens) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
 	ft.callbacks.writeLock.Lock()
 	defer ft.callbacks.writeLock.Unlock()
-	ft.callbacks.opHandlers[namespace] = handler
+	if handler == nil {
+		delete(ft.callbacks.opHandlers, namespace)
+	} else {
+		ft.callbacks.opHandlers[namespace] = handler
+	}
 }
 
 func (ft *FFTokens) backgroundStartLoop() {

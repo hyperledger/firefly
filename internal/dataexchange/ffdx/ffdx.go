@@ -231,13 +231,21 @@ func (h *FFDX) SetHandler(networkNamespace, nodeName string, handler dataexchang
 	h.callbacks.writeLock.Lock()
 	defer h.callbacks.writeLock.Unlock()
 	key := networkNamespace + ":" + nodeName
-	h.callbacks.handlers[key] = handler
+	if handler == nil {
+		delete(h.callbacks.handlers, key)
+	} else {
+		h.callbacks.handlers[key] = handler
+	}
 }
 
 func (h *FFDX) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
 	h.callbacks.writeLock.Lock()
 	defer h.callbacks.writeLock.Unlock()
-	h.callbacks.opHandlers[namespace] = handler
+	if handler == nil {
+		delete(h.callbacks.opHandlers, namespace)
+	} else {
+		h.callbacks.opHandlers[namespace] = handler
+	}
 }
 
 func (h *FFDX) backgroundStartLoop() {
