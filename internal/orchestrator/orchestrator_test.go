@@ -453,6 +453,22 @@ func TestStartStopOk(t *testing.T) {
 	or.WaitStop() // swallows dups
 }
 
+func TestPurge(t *testing.T) {
+	coreconfig.Reset()
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	// Note additional testing of this happens in namespace manager
+	or.mdi.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("SetHandler", mock.Anything, "Test1", mock.Anything).Return(nil)
+	or.mdx.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mti.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mti.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	Purge(context.Background(), or.namespace, or.plugins, "Test1")
+}
+
 func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
 	or.namespace.Name = core.LegacySystemNamespace
