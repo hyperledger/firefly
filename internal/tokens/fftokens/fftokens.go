@@ -301,9 +301,9 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 
 	if ft.backgroundStart {
 		ft.backgroundRetry = &retry.Retry{
-			InitialDelay: fftypes.ParseToDuration(defaultBackgroundInitialDelay),
-			MaximumDelay: fftypes.ParseToDuration(defaultBackgroundMaxDelay),
-			Factor:       defaultBackgroundRetryFactor,
+			InitialDelay: config.GetDuration(FFTBackgroundStartInitialDelay),
+			MaximumDelay: config.GetDuration(FFTBackgroundStartMaxDelay),
+			Factor:       config.GetFloat64(FFTBackgroundStartFactor),
 		}
 		return nil
 	}

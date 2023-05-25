@@ -33,11 +33,13 @@ const (
 	DataExchangeEventRetryMaxDelay     = "eventRetry.maxDelay"
 	DataExchangeEventRetryFactor       = "eventRetry.factor"
 
-	DataExchangeBackgroundStart = "backgroundStart"
-
-	defaultBackgroundInitialDelay = "5s"
-	defaultBackgroundRetryFactor  = 2.0
-	defaultBackgroundMaxDelay     = "1m"
+	DataExchangeBackgroundStart             = "backgroundStart.enabled"
+	DataExchangeBackgroundStartInitialDelay = "backgroundStart.initialDelay"
+	DataExchangeBackgroundStartMaxDelay     = "backgroundStart.maxDelay"
+	DataExchangeBackgroundStartFactor       = "backgroundStart.factor"
+	defaultBackgroundInitialDelay           = "5s"
+	defaultBackgroundRetryFactor            = 2.0
+	defaultBackgroundMaxDelay               = "1m"
 )
 
 func (h *FFDX) InitConfig(config config.Section) {
@@ -48,4 +50,7 @@ func (h *FFDX) InitConfig(config config.Section) {
 	config.AddKnownKey(DataExchangeEventRetryMaxDelay, 30*time.Second)
 	config.AddKnownKey(DataExchangeEventRetryFactor, 2.0)
 	config.AddKnownKey(DataExchangeBackgroundStart, false)
+	config.AddKnownKey(DataExchangeBackgroundStartInitialDelay, defaultBackgroundInitialDelay)
+	config.AddKnownKey(DataExchangeBackgroundStartMaxDelay, defaultBackgroundMaxDelay)
+	config.AddKnownKey(DataExchangeBackgroundStartFactor, defaultBackgroundRetryFactor)
 }

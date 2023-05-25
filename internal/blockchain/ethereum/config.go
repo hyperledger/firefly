@@ -56,7 +56,13 @@ const (
 	// EthconnectConfigFromBlockDeprecated is the configuration of the first block to listen to when creating the listener for the FireFly contract
 	EthconnectConfigFromBlockDeprecated = "fromBlock"
 	// EthconnectBackgroundStart is used to not fail the ethereum plugin on init and retry to start it in the background
-	EthconnectBackgroundStart = "backgroundStart"
+	EthconnectBackgroundStart = "backgroundStart.enabled"
+	// EthconnectBackgroundStartInitialDelay is delay between restarts in the case where we retry to restart in the ethereum plugin
+	EthconnectBackgroundStartInitialDelay = "backgroundStart.initialDelay"
+	// EthconnectBackgroundStartMaxDelay is the max delay between restarts in the case where we retry to restart in the ethereum plugin
+	EthconnectBackgroundStartMaxDelay = "backgroundStart.maxDelay"
+	// EthconnectBackgroundStartFactor is to set the factor by which the delay increases when retrying
+	EthconnectBackgroundStartFactor = "backgroundStart.factor"
 
 	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
 	AddressResolverConfigKey = "addressResolver"
@@ -83,6 +89,9 @@ func (e *Ethereum) InitConfig(config config.Section) {
 
 	e.ethconnectConf.AddKnownKey(EthconnectConfigTopic)
 	e.ethconnectConf.AddKnownKey(EthconnectBackgroundStart)
+	e.ethconnectConf.AddKnownKey(EthconnectBackgroundStartInitialDelay, defaultBackgroundInitialDelay)
+	e.ethconnectConf.AddKnownKey(EthconnectBackgroundStartFactor, defaultBackgroundRetryFactor)
+	e.ethconnectConf.AddKnownKey(EthconnectBackgroundStartMaxDelay, defaultBackgroundMaxDelay)
 	e.ethconnectConf.AddKnownKey(EthconnectConfigBatchSize, defaultBatchSize)
 	e.ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeout, defaultBatchTimeout)
 	e.ethconnectConf.AddKnownKey(EthconnectPrefixShort, defaultPrefixShort)

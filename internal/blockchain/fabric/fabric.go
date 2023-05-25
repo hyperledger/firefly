@@ -255,9 +255,9 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 
 	if f.backgroundStart {
 		f.backgroundRetry = &retry.Retry{
-			InitialDelay: fftypes.ParseToDuration(defaultBackgroundInitialDelay),
-			MaximumDelay: fftypes.ParseToDuration(defaultBackgroundMaxDelay),
-			Factor:       defaultBackgroundRetryFactor,
+			InitialDelay: f.fabconnectConf.GetDuration(FabconnectBackgroundStartInitialDelay),
+			MaximumDelay: f.fabconnectConf.GetDuration(FabconnectBackgroundStartMaxDelay),
+			Factor:       f.fabconnectConf.GetFloat64(FabconnectBackgroundStartFactor),
 		}
 		return nil
 	}
