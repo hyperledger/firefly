@@ -21,36 +21,31 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNewContractAPI = &ffapi.Route{
-	Name:       "postNewContractAPI",
-	Path:       "apis",
-	Method:     http.MethodPost,
-	PathParams: nil,
-	QueryParams: []*ffapi.QueryParam{
-		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
-		{Name: "publish", Description: coremsgs.APIPublishQueryParam, IsBool: true},
+var postContractAPIPublish = &ffapi.Route{
+	Name:   "postContractAPIPublish",
+	Path:   "apis/{apiName}/publish",
+	Method: http.MethodPost,
+	PathParams: []*ffapi.PathParam{
+		{Name: "apiName", Description: coremsgs.APIParamsContractAPIName},
 	},
-	Description:     coremsgs.APIEndpointsPostNewContractAPI,
-	JSONInputValue:  func() interface{} { return &core.ContractAPI{} },
-	JSONOutputValue: func() interface{} { return &core.ContractAPI{} },
-	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},
+	QueryParams: []*ffapi.QueryParam{
+		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
+	},
+	Description:     coremsgs.APIEndpointsPostContractAPIPublish,
+	JSONInputValue:  func() interface{} { return &core.DefinitionPublish{} },
+	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
+	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	Extensions: &coreExtensions{
-		EnabledIf: func(or orchestrator.Orchestrator) bool {
-			return or.Contracts() != nil
-		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			api := r.Input.(*core.ContractAPI)
-			api.ID = nil
-			api.Published = strings.EqualFold(r.QP["publish"], "true")
-			err = cr.or.DefinitionSender().DefineContractAPI(cr.ctx, cr.apiBaseURL, api, waitConfirm)
-			return api, err
+			input := r.Input.(*core.DefinitionPublish)
+			return cr.or.DefinitionSender().PublishContractAPI(cr.ctx, cr.apiBaseURL, r.PP["apiName"], input.NetworkName, waitConfirm)
 		},
 	},
 }

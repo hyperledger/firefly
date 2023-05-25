@@ -487,8 +487,12 @@ type iFFIErrorCollection interface {
 }
 
 type iContractAPICollection interface {
+	// InsertOrGetContractAPI - Insert a contract API
+	// If an API with the same name has already been recorded, does not insert but returns the existing row
+	InsertOrGetContractAPI(ctx context.Context, api *core.ContractAPI) (*core.ContractAPI, error)
+
 	// UpsertFFIEvent - Upsert a contract API
-	UpsertContractAPI(ctx context.Context, cd *core.ContractAPI) error
+	UpsertContractAPI(ctx context.Context, api *core.ContractAPI, optimization UpsertOptimization) error
 
 	// GetContractAPIs - Get contract APIs
 	GetContractAPIs(ctx context.Context, namespace string, filter ffapi.AndFilter) ([]*core.ContractAPI, *ffapi.FilterResult, error)
@@ -498,6 +502,9 @@ type iContractAPICollection interface {
 
 	// GetContractAPIByName - Get a contract API by name
 	GetContractAPIByName(ctx context.Context, namespace, name string) (*core.ContractAPI, error)
+
+	// GetContractAPIByNetworkName - Get a contract API by network name
+	GetContractAPIByNetworkName(ctx context.Context, namespace, networkName string) (*core.ContractAPI, error)
 }
 
 type iContractListenerCollection interface {
@@ -1052,7 +1059,9 @@ var BlockchainEventQueryFactory = &ffapi.QueryFields{
 
 // ContractAPIQueryFactory filter fields for Contract APIs
 var ContractAPIQueryFactory = &ffapi.QueryFields{
-	"id":        &ffapi.UUIDField{},
-	"name":      &ffapi.StringField{},
-	"interface": &ffapi.UUIDField{},
+	"id":          &ffapi.UUIDField{},
+	"name":        &ffapi.StringField{},
+	"networkname": &ffapi.StringField{},
+	"interface":   &ffapi.UUIDField{},
+	"published":   &ffapi.BoolField{},
 }

@@ -126,6 +126,7 @@ var routes = append(
 		getVerifiers,
 		patchUpdateIdentity,
 		postContractAPIInvoke,
+		postContractAPIPublish,
 		postContractAPIQuery,
 		postContractAPIListeners,
 		postContractInterfaceGenerate,

@@ -3049,6 +3049,22 @@ func TestResolveContractAPI(t *testing.T) {
 	mdb.AssertExpectations(t)
 }
 
+func TestResolveContractAPIValidateFail(t *testing.T) {
+	cm := newTestContractManager()
+
+	api := &core.ContractAPI{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "BAD***BAD",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	err := cm.ResolveContractAPI(context.Background(), "http://localhost/api", api)
+	assert.Regexp(t, "FF00140", err)
+}
+
 func TestResolveContractAPIBadLocation(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)

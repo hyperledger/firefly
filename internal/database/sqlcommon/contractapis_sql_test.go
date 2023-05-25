@@ -24,7 +24,6 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -43,9 +42,10 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 	interfaceID := fftypes.NewUUID()
 
 	contractAPI := &core.ContractAPI{
-		ID:        apiID,
-		Namespace: "ns1",
-		Name:      "banana",
+		ID:          apiID,
+		Namespace:   "ns1",
+		Name:        "banana",
+		NetworkName: "banana-net",
 		Interface: &fftypes.FFIReference{
 			ID:      interfaceID,
 			Name:    "banana",
@@ -57,8 +57,9 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, core.ChangeEventTypeCreated, "ns1", apiID, mock.Anything).Return()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, core.ChangeEventTypeUpdated, "ns1", apiID, mock.Anything).Return()
 
-	err := s.UpsertContractAPI(ctx, contractAPI)
+	existing, err := s.InsertOrGetContractAPI(ctx, contractAPI)
 	assert.NoError(t, err)
+	assert.Nil(t, existing)
 
 	// Check we get the exact same ContractAPI back
 	dataRead, err := s.GetContractAPIByID(ctx, "ns1", apiID)
@@ -68,7 +69,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 
 	contractAPI.Interface.Version = "v1.1.0"
 
-	err = s.UpsertContractAPI(ctx, contractAPI)
+	err = s.UpsertContractAPI(ctx, contractAPI, database.UpsertOptimizationExisting)
 	assert.NoError(t, err)
 
 	// Check we get the exact same ContractAPI back
@@ -76,12 +77,66 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, dataRead)
 	assert.Equal(t, *apiID, *dataRead.ID)
+
+	dataRead, err = s.GetContractAPIByName(ctx, "ns1", "banana")
+	assert.NoError(t, err)
+	assert.NotNil(t, dataRead)
+	assert.Equal(t, *apiID, *dataRead.ID)
+
+	dataRead, err = s.GetContractAPIByNetworkName(ctx, "ns1", "banana-net")
+	assert.NoError(t, err)
+	assert.NotNil(t, dataRead)
+	assert.Equal(t, *apiID, *dataRead.ID)
+
+	// Cannot insert again with same name or network name
+	existing, err = s.InsertOrGetContractAPI(ctx, &core.ContractAPI{
+		ID:        fftypes.NewUUID(),
+		Name:      "banana",
+		Namespace: "ns1",
+		Interface: &fftypes.FFIReference{
+			ID: interfaceID,
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, contractAPI.ID, existing.ID)
+	existing, err = s.InsertOrGetContractAPI(ctx, &core.ContractAPI{
+		ID:          fftypes.NewUUID(),
+		NetworkName: "banana-net",
+		Namespace:   "ns1",
+		Interface: &fftypes.FFIReference{
+			ID: interfaceID,
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, contractAPI.ID, existing.ID)
+}
+
+func TestContractAPIInsertOrGetFailBeginTransaction(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	_, err := s.InsertOrGetContractAPI(context.Background(), &core.ContractAPI{})
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestContractAPIInsertOrGetFailInsert(t *testing.T) {
+	rows := sqlmock.NewRows([]string{"id", "interface_id", "ledger", "location", "name", "network_name", "namespace", "message_id", "published"})
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
+	api := &core.ContractAPI{
+		Interface: &fftypes.FFIReference{},
+	}
+	_, err := s.InsertOrGetContractAPI(context.Background(), api)
+	assert.Regexp(t, "FF00177", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestContractAPIDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractAPI(context.Background(), &core.ContractAPI{})
+	err := s.UpsertContractAPI(context.Background(), &core.ContractAPI{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -90,21 +145,21 @@ func TestContractAPIDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractAPI(context.Background(), &core.ContractAPI{})
+	err := s.UpsertContractAPI(context.Background(), &core.ContractAPI{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestContractAPIDBFailInsert(t *testing.T) {
-	rows := sqlmock.NewRows([]string{"id", "interface_id", "ledger", "location", "name", "namespace", "message_id"})
+	rows := sqlmock.NewRows([]string{"id", "interface_id", "ledger", "location", "name", "network_name", "namespace", "message_id", "published"})
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
-	// mock.ExpectQuery("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	api := &core.ContractAPI{
 		Interface: &fftypes.FFIReference{},
 	}
-	err := s.UpsertContractAPI(context.Background(), api)
+	err := s.UpsertContractAPI(context.Background(), api, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -119,26 +174,8 @@ func TestContractAPIDBFailUpdate(t *testing.T) {
 	api := &core.ContractAPI{
 		Interface: &fftypes.FFIReference{},
 	}
-	err := s.UpsertContractAPI(context.Background(), api)
+	err := s.UpsertContractAPI(context.Background(), api, database.UpsertOptimizationNew)
 	assert.Regexp(t, "pop", err)
-}
-
-func TestUpsertContractAPIIDMismatch(t *testing.T) {
-	s, db := newMockProvider().init()
-	callbacks := &databasemocks.Callbacks{}
-	s.SetHandler("ns1", callbacks)
-	apiID := fftypes.NewUUID()
-	api := &core.ContractAPI{
-		ID:        apiID,
-		Namespace: "ns1",
-	}
-
-	db.ExpectBegin()
-	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
-	db.ExpectRollback()
-	err := s.UpsertContractAPI(context.Background(), api)
-	assert.Equal(t, database.IDMismatch, err)
-	assert.NoError(t, db.ExpectationsWereMet())
 }
 
 func TestContractAPIDBFailScan(t *testing.T) {
@@ -162,7 +199,7 @@ func TestContractAPIDBSelectFail(t *testing.T) {
 func TestContractAPIDBNoRows(t *testing.T) {
 	s, mock := newMockProvider().init()
 	apiID := fftypes.NewUUID()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id", "interface_id", "ledger", "location", "name", "namespace", "message_id"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id", "interface_id", "ledger", "location", "name", "network_name", "namespace", "message_id", "published"}))
 	_, err := s.GetContractAPIByID(context.Background(), "ns1", apiID)
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -171,8 +208,8 @@ func TestContractAPIDBNoRows(t *testing.T) {
 func TestGetContractAPIs(t *testing.T) {
 	fb := database.ContractAPIQueryFactory.NewFilter(context.Background())
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "interface_id", "location", "name", "namespace", "message_id"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, "banana", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
+	rows := sqlmock.NewRows([]string{"id", "interface_id", "location", "name", "network_name", "namespace", "message_id", "published"}).
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, "banana", "banana", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f", true)
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	_, _, err := s.GetContractAPIs(context.Background(), "ns1", fb.And())
 	assert.NoError(t, err)
@@ -198,9 +235,9 @@ func TestGetContractAPIsQueryFail(t *testing.T) {
 func TestGetContractAPIsQueryResultFail(t *testing.T) {
 	fb := database.ContractAPIQueryFactory.NewFilter(context.Background())
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "interface_id", "location", "name", "namespace", "message_id"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, "apple", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f").
-		AddRow("69851ca3-e9f9-489b-8731-dc6a7d990291", "4db4952e-4669-4243-a387-8f0f609e92bd", nil, "orange", nil, "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
+	rows := sqlmock.NewRows([]string{"id", "interface_id", "location", "name", "network_name", "namespace", "message_id", "published"}).
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, "apple", "apple", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f", false).
+		AddRow("69851ca3-e9f9-489b-8731-dc6a7d990291", "4db4952e-4669-4243-a387-8f0f609e92bd", nil, "orange", "orange", nil, "acfe07a2-117f-46b7-8d47-e3beb7cc382f", false)
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	_, _, err := s.GetContractAPIs(context.Background(), "ns1", fb.And())
 	assert.Regexp(t, "FF10121", err)
@@ -209,8 +246,8 @@ func TestGetContractAPIsQueryResultFail(t *testing.T) {
 
 func TestGetContractAPIByName(t *testing.T) {
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "interface_id", "location", "name", "namespace", "message_id"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, "banana", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
+	rows := sqlmock.NewRows([]string{"id", "interface_id", "location", "name", "network_name", "namespace", "message_id", "published"}).
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, "banana", "banana", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f", true)
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	api, err := s.GetContractAPIByName(context.Background(), "ns1", "banana")
 	assert.NotNil(t, api)

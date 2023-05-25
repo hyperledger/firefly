@@ -152,6 +152,7 @@ var (
 	APIEndpointsPatchUpdateIdentity             = ffm("api.endpoints.patchUpdateIdentity", "Updates an identity")
 	APIEndpointsPostContractDeploy              = ffm("api.endpoints.postContractDeploy", "Deploy a new smart contract")
 	APIEndpointsPostContractAPIInvoke           = ffm("api.endpoints.postContractAPIInvoke", "Invokes a method on a smart contract API. Performs a blockchain transaction.")
+	APIEndpointsPostContractAPIPublish          = ffm("api.endpoints.postContractAPIPublish", "Publish a contract API to all other members of the multiparty network")
 	APIEndpointsPostContractAPIQuery            = ffm("api.endpoints.postContractAPIQuery", "Queries a method on a smart contract API. Performs a read-only query.")
 	APIEndpointsPostContractInterfaceGenerate   = ffm("api.endpoints.postContractInterfaceGenerate", "A convenience method to convert a blockchain specific smart contract format into a FireFly Interface format. The specific blockchain plugin in use must support this functionality.")
 	APIEndpointsPostContractInterfaceInvoke     = ffm("api.endpoints.postContractInterfaceInvoke", "Invokes a method on a smart contract that matches a given contract interface. Performs a blockchain transaction.")

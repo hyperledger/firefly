@@ -498,6 +498,10 @@ func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL st
 }
 
 func (cm *contractManager) ResolveContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) (err error) {
+	if err := api.Validate(ctx); err != nil {
+		return err
+	}
+
 	if api.Location != nil {
 		if api.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeCall, api.Location); err != nil {
 			return err

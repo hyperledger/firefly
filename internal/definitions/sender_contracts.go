@@ -124,21 +124,77 @@ func (ds *definitionSender) DefineContractAPI(ctx context.Context, httpServerURL
 		api.ID = fftypes.NewUUID()
 	}
 
-	if ds.multiparty {
-		if err := ds.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
-			return err
+	if api.Published {
+		if !ds.multiparty {
+			return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
 		}
-
-		api.Namespace = ""
-		msg, err := ds.getSenderDefault(ctx, api, core.SystemTagDefineContractAPI).send(ctx, waitConfirm)
-		if msg != nil {
-			api.Message = msg.Header.ID
-		}
-		api.Namespace = ds.namespace
+		_, err := ds.getContractAPISender(ctx, httpServerURL, api).send(ctx, waitConfirm)
 		return err
 	}
 
+	api.NetworkName = ""
+
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		return ds.handler.handleContractAPIDefinition(ctx, state, httpServerURL, api, nil)
+		return ds.handler.handleContractAPIDefinition(ctx, state, httpServerURL, api, nil, true)
 	})
+}
+
+func (ds *definitionSender) getContractAPISender(ctx context.Context, httpServerURL string, api *core.ContractAPI) *sendWrapper {
+	if err := ds.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
+		return wrapSendError(err)
+	}
+
+	if api.NetworkName == "" {
+		api.NetworkName = api.Name
+	}
+
+	existing, err := ds.database.GetContractAPIByNetworkName(ctx, ds.namespace, api.NetworkName)
+	if err != nil {
+		return wrapSendError(err)
+	} else if existing != nil {
+		return wrapSendError(i18n.NewError(ctx, coremsgs.MsgNetworkNameExists))
+	}
+
+	// Prepare the API definition to be serialized for broadcast
+	localName := api.Name
+	api.Name = ""
+	api.Namespace = ""
+	api.Published = true
+
+	sender := ds.getSenderDefault(ctx, api, core.SystemTagDefineContractAPI)
+	if sender.message != nil {
+		api.Message = sender.message.Header.ID
+	}
+
+	api.Name = localName
+	api.Namespace = ds.namespace
+	return sender
+}
+
+func (ds *definitionSender) PublishContractAPI(ctx context.Context, httpServerURL, name, networkName string, waitConfirm bool) (api *core.ContractAPI, err error) {
+	if !ds.multiparty {
+		return nil, i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
+	}
+
+	var sender *sendWrapper
+	err = ds.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		if api, err = ds.contracts.GetContractAPI(ctx, httpServerURL, name); err != nil {
+			return err
+		}
+		if api.Published {
+			return i18n.NewError(ctx, coremsgs.MsgAlreadyPublished)
+		}
+		api.NetworkName = networkName
+		sender = ds.getContractAPISender(ctx, httpServerURL, api)
+		if sender.err != nil {
+			return sender.err
+		}
+		return sender.sender.Prepare(ctx)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sender.send(ctx, waitConfirm)
+	return api, err
 }

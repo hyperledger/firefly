@@ -37,7 +37,8 @@ nav_order: 4
     "urls": {
         "openapi": "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api/swagger.json",
         "ui": "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api"
-    }
+    },
+    "published": false
 }
 ```
 
@@ -50,8 +51,10 @@ nav_order: 4
 | `interface` | Reference to the FireFly Interface definition associated with the contract API | [`FFIReference`](#ffireference) |
 | `location` | If this API is tied to an individual instance of a smart contract, this field can include a blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel | [`JSONAny`](simpletypes#jsonany) |
 | `name` | The name that is used in the URL to access the API | `string` |
+| `networkName` | The published name of the API within the multiparty network | `string` |
 | `message` | The UUID of the broadcast message that was used to publish this API to the network | [`UUID`](simpletypes#uuid) |
 | `urls` | The URLs to use to access the API | [`ContractURLs`](#contracturls) |
+| `published` | Indicates if the API is published to other members of the multiparty network | `bool` |
 
 ## FFIReference
 

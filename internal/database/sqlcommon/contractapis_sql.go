@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -36,85 +37,149 @@ var (
 		"interface_id",
 		"location",
 		"name",
+		"network_name",
 		"namespace",
 		"message_id",
+		"published",
 	}
 	contractAPIsFilterFieldMap = map[string]string{
-		"interface": "interface_id",
-		"message":   "message_id",
+		"interface":   "interface_id",
+		"message":     "message_id",
+		"networkname": "network_name",
 	}
 )
 
 const contractapisTable = "contractapis"
 
-func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *core.ContractAPI) (err error) {
+func (s *SQLCommon) attemptContractAPIUpdate(ctx context.Context, tx *dbsql.TXWrapper, api *core.ContractAPI) (int64, error) {
+	var networkName *string
+	if api.NetworkName != "" {
+		networkName = &api.NetworkName
+	}
+	var ifaceID *fftypes.UUID
+	if api.Interface != nil {
+		ifaceID = api.Interface.ID
+	}
+	return s.UpdateTx(ctx, contractapisTable, tx,
+		sq.Update(contractapisTable).
+			Set("interface_id", ifaceID).
+			Set("location", api.Location).
+			Set("name", api.Name).
+			Set("network_name", networkName).
+			Set("message_id", api.Message).
+			Set("published", api.Published).
+			Where(sq.Eq{"id": api.ID}),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, core.ChangeEventTypeUpdated, api.Namespace, api.ID)
+		},
+	)
+}
+
+func (s *SQLCommon) setContractAPIInsertValues(query sq.InsertBuilder, api *core.ContractAPI) sq.InsertBuilder {
+	var networkName *string
+	if api.NetworkName != "" {
+		networkName = &api.NetworkName
+	}
+	var ifaceID *fftypes.UUID
+	if api.Interface != nil {
+		ifaceID = api.Interface.ID
+	}
+	return query.Values(
+		api.ID,
+		ifaceID,
+		api.Location,
+		api.Name,
+		networkName,
+		api.Namespace,
+		api.Message,
+		api.Published,
+	)
+}
+
+func (s *SQLCommon) attemptContractAPIInsert(ctx context.Context, tx *dbsql.TXWrapper, api *core.ContractAPI, requestConflictEmptyResult bool) error {
+	_, err := s.InsertTxExt(ctx, contractapisTable, tx,
+		s.setContractAPIInsertValues(sq.Insert(contractapisTable).Columns(contractAPIsColumns...), api),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, core.ChangeEventTypeCreated, api.Namespace, api.ID)
+		}, requestConflictEmptyResult)
+	return err
+}
+
+func (s *SQLCommon) contractAPIExists(ctx context.Context, tx *dbsql.TXWrapper, api *core.ContractAPI) (bool, error) {
+	rows, _, err := s.QueryTx(ctx, contractapisTable, tx,
+		sq.Select("id").From(contractapisTable).Where(sq.And{
+			sq.Eq{
+				"namespace": api.Namespace,
+			},
+			sq.Or{
+				sq.Eq{"name": api.Name},
+				sq.Eq{"network_name": api.NetworkName},
+			},
+		}),
+	)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	return rows.Next(), nil
+}
+
+func (s *SQLCommon) InsertOrGetContractAPI(ctx context.Context, api *core.ContractAPI) (*core.ContractAPI, error) {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	insertErr := s.attemptContractAPIInsert(ctx, tx, api, true /* we want a failure here we can progress past */)
+	if insertErr == nil {
+		return nil, s.CommitTx(ctx, tx, autoCommit)
+	}
+
+	// Do a select within the transaction to determine if the API already exists
+	existing, queryErr := s.getContractAPIPred(ctx, api.Namespace+":"+api.Name, sq.And{
+		sq.Eq{"namespace": api.Namespace},
+		sq.Or{
+			sq.Eq{"id": api.ID},
+			sq.Eq{"name": api.Name},
+			sq.Eq{"network_name": api.NetworkName},
+		},
+	})
+	if queryErr != nil || existing != nil {
+		return existing, queryErr
+	}
+
+	// Error was apparently not an index conflict - must have been something else
+	return nil, insertErr
+}
+
+func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *core.ContractAPI, optimization database.UpsertOptimization) (err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.QueryTx(ctx, contractapisTable, tx,
-		sq.Select("id").
-			From(contractapisTable).
-			Where(sq.And{
-				sq.Eq{"namespace": api.Namespace},
-				sq.Or{
-					sq.Eq{"id": api.ID},
-					sq.Eq{"name": api.Name},
-				},
-			}),
-	)
-	if err != nil {
-		return err
+	optimized := false
+	if optimization == database.UpsertOptimizationNew {
+		opErr := s.attemptContractAPIInsert(ctx, tx, api, true /* we want a failure here we can progress past */)
+		optimized = opErr == nil
+	} else if optimization == database.UpsertOptimizationExisting {
+		rowsAffected, opErr := s.attemptContractAPIUpdate(ctx, tx, api)
+		optimized = opErr == nil && rowsAffected == 1
 	}
 
-	existing := false
-	for rows.Next() {
-		existing = true
-		var id fftypes.UUID
-		_ = rows.Scan(&id)
-		if api.ID != nil && *api.ID != id {
-			rows.Close()
-			return database.IDMismatch
-		}
-		api.ID = &id // Update on returned object
-	}
-	rows.Close()
-
-	if existing {
-		if _, err = s.UpdateTx(ctx, contractapisTable, tx,
-			sq.Update(contractapisTable).
-				Set("interface_id", api.Interface.ID).
-				Set("location", api.Location).
-				Set("name", api.Name).
-				Set("message_id", api.Message).
-				Where(sq.Eq{
-					"namespace": api.Namespace,
-					"id":        api.ID,
-				}),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, core.ChangeEventTypeUpdated, api.Namespace, api.ID)
-			},
-		); err != nil {
+	if !optimized {
+		// Do a select within the transaction to determine if the API already exists
+		exists, err := s.contractAPIExists(ctx, tx, api)
+		if err != nil {
 			return err
+		} else if exists {
+			if _, err := s.attemptContractAPIUpdate(ctx, tx, api); err != nil {
+				return err
+			}
 		}
-	} else {
-		if _, err = s.InsertTx(ctx, contractapisTable, tx,
-			sq.Insert(contractapisTable).
-				Columns(contractAPIsColumns...).
-				Values(
-					api.ID,
-					api.Interface.ID,
-					api.Location,
-					api.Name,
-					api.Namespace,
-					api.Message,
-				),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, core.ChangeEventTypeCreated, api.Namespace, api.ID)
-			},
-		); err != nil {
+		if err := s.attemptContractAPIInsert(ctx, tx, api, false); err != nil {
 			return err
 		}
 	}
@@ -131,8 +196,10 @@ func (s *SQLCommon) contractAPIResult(ctx context.Context, row *sql.Rows) (*core
 		&api.Interface.ID,
 		&api.Location,
 		&api.Name,
+		&api.NetworkName,
 		&api.Namespace,
 		&api.Message,
+		&api.Published,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "contract")
@@ -197,4 +264,8 @@ func (s *SQLCommon) GetContractAPIByID(ctx context.Context, namespace string, id
 
 func (s *SQLCommon) GetContractAPIByName(ctx context.Context, namespace, name string) (*core.ContractAPI, error) {
 	return s.getContractAPIPred(ctx, namespace+":"+name, sq.Eq{"namespace": namespace, "name": name})
+}
+
+func (s *SQLCommon) GetContractAPIByNetworkName(ctx context.Context, namespace, networkName string) (*core.ContractAPI, error) {
+	return s.getContractAPIPred(ctx, namespace+":"+networkName, sq.Eq{"namespace": namespace, "network_name": networkName})
 }
