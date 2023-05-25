@@ -3322,6 +3322,51 @@
     </tr>
   </tbody>
 </table>
+      <h2 id="pluginsblockchainethereumethconnectbackgroundstart">
+        
+        
+          <a href="#pluginsblockchainethereumethconnectbackgroundstart" class="anchor-heading" aria-labelledby="pluginsblockchainethereumethconnectbackgroundstart"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.blockchain[].ethereum.ethconnect.backgroundStart
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>enabled</td>
+      <td>Start the Ethconnect plugin in the background and enter retry loop if failed to start</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>factor</td>
+      <td>Set the factor by which the delay increases when retrying</td>
+      <td><code class="language-plaintext highlighter-rouge">float32</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
+    </tr>
+    <tr>
+      <td>initialDelay</td>
+      <td>Delay between restarts in the case where we retry to restart the ethereum plugin</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">5s</code></td>
+    </tr>
+    <tr>
+      <td>maxDelay</td>
+      <td>Max delay between restarts in the case where we retry to restart the ethereum plugin</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">1m</code></td>
+    </tr>
+  </tbody>
+</table>
       <h2 id="pluginsblockchainethereumethconnectproxy">
         
         
@@ -3895,6 +3940,51 @@
     </tr>
   </tbody>
 </table>
+      <h2 id="pluginsblockchainfabricfabconnectbackgroundstart">
+        
+        
+          <a href="#pluginsblockchainfabricfabconnectbackgroundstart" class="anchor-heading" aria-labelledby="pluginsblockchainfabricfabconnectbackgroundstart"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.blockchain[].fabric.fabconnect.backgroundStart
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>enabled</td>
+      <td>Start the fabric plugin in the background and enter retry loop if failed to start</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>factor</td>
+      <td>Set the factor by which the delay increases when retrying</td>
+      <td><code class="language-plaintext highlighter-rouge">float32</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
+    </tr>
+    <tr>
+      <td>initialDelay</td>
+      <td>Delay between restarts in the case where we retry to restart the fabric plugin</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">5s</code></td>
+    </tr>
+    <tr>
+      <td>maxDelay</td>
+      <td>Max delay between restarts in the case where we retry to restart the fabric plugin</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">1m</code></td>
+    </tr>
+  </tbody>
+</table>
       <h2 id="pluginsblockchainfabricfabconnectproxy">
         
         
@@ -4426,6 +4516,51 @@
       <td>Username</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="pluginsdataexchangeffdxbackgroundstart">
+        
+        
+          <a href="#pluginsdataexchangeffdxbackgroundstart" class="anchor-heading" aria-labelledby="pluginsdataexchangeffdxbackgroundstart"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.dataexchange[].ffdx.backgroundStart
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>enabled</td>
+      <td>Start the data exchange plugin in the background and enter retry loop if failed to start</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>factor</td>
+      <td>Set the factor by which the delay increases when retrying</td>
+      <td><code class="language-plaintext highlighter-rouge">float32</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
+    </tr>
+    <tr>
+      <td>initialDelay</td>
+      <td>Delay between restarts in the case where we retry to restart the data exchange plugin</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">5s</code></td>
+    </tr>
+    <tr>
+      <td>maxDelay</td>
+      <td>Max delay between restarts in the case where we retry to restart the data exchange plugin</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">1m</code></td>
     </tr>
   </tbody>
 </table>
@@ -5332,6 +5467,51 @@
       <td>Username</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="pluginstokensfftokensbackgroundstart">
+        
+        
+          <a href="#pluginstokensfftokensbackgroundstart" class="anchor-heading" aria-labelledby="pluginstokensfftokensbackgroundstart"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.tokens[].fftokens.backgroundStart
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>enabled</td>
+      <td>Start the tokens plugin in the background and enter retry loop if failed to start</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>factor</td>
+      <td>Set the factor by which the delay increases when retrying</td>
+      <td><code class="language-plaintext highlighter-rouge">float32</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
+    </tr>
+    <tr>
+      <td>initialDelay</td>
+      <td>Delay between restarts in the case where we retry to restart the token plugin</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">5s</code></td>
+    </tr>
+    <tr>
+      <td>maxDelay</td>
+      <td>Max delay between restarts in the case where we retry to restart the token plugin</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">1m</code></td>
     </tr>
   </tbody>
 </table>
