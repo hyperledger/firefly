@@ -633,6 +633,15 @@ nav_order: 2
 |password|Password|`string`|`<nil>`
 |username|Username|`string`|`<nil>`
 
+## plugins.blockchain[].ethereum.ethconnect.backgroundStart
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Start the Ethconnect plugin in the background and enter retry loop if failed to start|`boolean`|`<nil>`
+|factor|Set the factor by which the delay increases when retrying|`float32`|`2`
+|initialDelay|Delay between restarts in the case where we retry to restart the ethereum plugin|[`time.Duration`](https://pkg.go.dev/time#Duration)|`5s`
+|maxDelay|Max delay between restarts in the case where we retry to restart the ethereum plugin|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
+
 ## plugins.blockchain[].ethereum.ethconnect.proxy
 
 |Key|Description|Type|Default Value|
@@ -745,6 +754,15 @@ nav_order: 2
 |password|Password|`string`|`<nil>`
 |username|Username|`string`|`<nil>`
 
+## plugins.blockchain[].fabric.fabconnect.backgroundStart
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Start the fabric plugin in the background and enter retry loop if failed to start|`boolean`|`<nil>`
+|factor|Set the factor by which the delay increases when retrying|`float32`|`2`
+|initialDelay|Delay between restarts in the case where we retry to restart the fabric plugin|[`time.Duration`](https://pkg.go.dev/time#Duration)|`5s`
+|maxDelay|Max delay between restarts in the case where we retry to restart the fabric plugin|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
+
 ## plugins.blockchain[].fabric.fabconnect.proxy
 
 |Key|Description|Type|Default Value|
@@ -851,6 +869,15 @@ nav_order: 2
 |---|-----------|----|-------------|
 |password|Password|`string`|`<nil>`
 |username|Username|`string`|`<nil>`
+
+## plugins.dataexchange[].ffdx.backgroundStart
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Start the data exchange plugin in the background and enter retry loop if failed to start|`boolean`|`false`
+|factor|Set the factor by which the delay increases when retrying|`float32`|`2`
+|initialDelay|Delay between restarts in the case where we retry to restart the data exchange plugin|[`time.Duration`](https://pkg.go.dev/time#Duration)|`5s`
+|maxDelay|Max delay between restarts in the case where we retry to restart the data exchange plugin|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
 
 ## plugins.dataexchange[].ffdx.eventRetry
 
@@ -1032,6 +1059,15 @@ nav_order: 2
 |---|-----------|----|-------------|
 |password|Password|`string`|`<nil>`
 |username|Username|`string`|`<nil>`
+
+## plugins.tokens[].fftokens.backgroundStart
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Start the tokens plugin in the background and enter retry loop if failed to start|`boolean`|`false`
+|factor|Set the factor by which the delay increases when retrying|`float32`|`2`
+|initialDelay|Delay between restarts in the case where we retry to restart the token plugin|[`time.Duration`](https://pkg.go.dev/time#Duration)|`5s`
+|maxDelay|Max delay between restarts in the case where we retry to restart the token plugin|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
 
 ## plugins.tokens[].fftokens.eventRetry
 

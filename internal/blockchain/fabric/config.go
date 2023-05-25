@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,6 +26,10 @@ const (
 	defaultBatchTimeout = 500
 	defaultPrefixShort  = "fly"
 	defaultPrefixLong   = "firefly"
+
+	defaultBackgroundInitialDelay = "5s"
+	defaultBackgroundRetryFactor  = 2.0
+	defaultBackgroundMaxDelay     = "1m"
 )
 
 const (
@@ -49,6 +53,14 @@ const (
 	FabconnectPrefixLong = "prefixLong"
 	// FabconnectConfigChaincodeDeprecated is the Fabric Firefly chaincode deployed to the Firefly channels
 	FabconnectConfigChaincodeDeprecated = "chaincode"
+	// FabconnectBackgroundStart is used to not fail the fabric plugin on init and retry to start it in the background
+	FabconnectBackgroundStart = "backgroundStart.enabled"
+	// FabconnectBackgroundStartInitialDelay is delay between restarts in the case where we retry to restart in the fabric plugin
+	FabconnectBackgroundStartInitialDelay = "backgroundStart.initialDelay"
+	// FabconnectBackgroundStartMaxDelay is the max delay between restarts in the case where we retry to restart in the fabric plugin
+	FabconnectBackgroundStartMaxDelay = "backgroundStart.maxDelay"
+	// FabconnectBackgroundStartFactor is to set the factor by which the delay increases when retrying
+	FabconnectBackgroundStartFactor = "backgroundStart.factor"
 )
 
 func (f *Fabric) InitConfig(config config.Section) {
@@ -62,4 +74,8 @@ func (f *Fabric) InitConfig(config config.Section) {
 	f.fabconnectConf.AddKnownKey(FabconnectConfigBatchTimeout, defaultBatchTimeout)
 	f.fabconnectConf.AddKnownKey(FabconnectPrefixShort, defaultPrefixShort)
 	f.fabconnectConf.AddKnownKey(FabconnectPrefixLong, defaultPrefixLong)
+	f.fabconnectConf.AddKnownKey(FabconnectBackgroundStart)
+	f.fabconnectConf.AddKnownKey(FabconnectBackgroundStartFactor, defaultBackgroundRetryFactor)
+	f.fabconnectConf.AddKnownKey(FabconnectBackgroundStartInitialDelay, defaultBackgroundInitialDelay)
+	f.fabconnectConf.AddKnownKey(FabconnectBackgroundStartMaxDelay, defaultBackgroundMaxDelay)
 }

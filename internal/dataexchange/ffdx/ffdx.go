@@ -40,18 +40,20 @@ import (
 const DXIDSeparator = "/"
 
 type FFDX struct {
-	ctx          context.Context
-	cancelCtx    context.CancelFunc
-	capabilities *dataexchange.Capabilities
-	callbacks    callbacks
-	client       *resty.Client
-	wsconn       wsclient.WSClient
-	needsInit    bool
-	initialized  bool
-	initMutex    sync.Mutex
-	nodes        map[string]*dxNode
-	ackChannel   chan *ack
-	retry        *retry.Retry
+	ctx             context.Context
+	cancelCtx       context.CancelFunc
+	capabilities    *dataexchange.Capabilities
+	callbacks       callbacks
+	client          *resty.Client
+	wsconn          wsclient.WSClient
+	needsInit       bool
+	initialized     bool
+	initMutex       sync.Mutex
+	nodes           map[string]*dxNode
+	ackChannel      chan *ack
+	retry           *retry.Retry
+	backgroundStart bool
+	backgroundRetry *retry.Retry
 }
 
 type dxNode struct {
@@ -208,6 +210,18 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 	if err != nil {
 		return err
 	}
+
+	h.backgroundStart = config.GetBool(DataExchangeBackgroundStart)
+
+	if h.backgroundStart {
+		h.backgroundRetry = &retry.Retry{
+			InitialDelay: config.GetDuration(DataExchangeBackgroundStartInitialDelay),
+			MaximumDelay: config.GetDuration(DataExchangeBackgroundStartMaxDelay),
+			Factor:       config.GetFloat64(DataExchangeBackgroundStartFactor),
+		}
+		return nil
+	}
+
 	go h.eventLoop()
 	go h.ackLoop()
 	return nil
@@ -226,7 +240,24 @@ func (h *FFDX) SetOperationHandler(namespace string, handler core.OperationCallb
 	h.callbacks.opHandlers[namespace] = handler
 }
 
+func (h *FFDX) backgroundStartLoop() {
+	_ = h.backgroundRetry.Do(h.ctx, fmt.Sprintf("Background start %s", h.Name()), func(attempt int) (retry bool, err error) {
+		err = h.wsconn.Connect()
+		if err != nil {
+			return true, err
+		}
+
+		go h.eventLoop()
+		go h.ackLoop()
+		return false, nil
+	})
+}
+
 func (h *FFDX) Start() error {
+	if h.backgroundStart {
+		go h.backgroundStartLoop()
+		return nil
+	}
 	return h.wsconn.Connect()
 }
 

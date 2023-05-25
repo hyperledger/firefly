@@ -19,6 +19,7 @@ package fftokens
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -39,14 +40,16 @@ import (
 )
 
 type FFTokens struct {
-	ctx            context.Context
-	cancelCtx      context.CancelFunc
-	capabilities   *tokens.Capabilities
-	callbacks      callbacks
-	configuredName string
-	client         *resty.Client
-	wsconn         wsclient.WSClient
-	retry          *retry.Retry
+	ctx             context.Context
+	cancelCtx       context.CancelFunc
+	capabilities    *tokens.Capabilities
+	callbacks       callbacks
+	configuredName  string
+	client          *resty.Client
+	wsconn          wsclient.WSClient
+	retry           *retry.Retry
+	backgroundRetry *retry.Retry
+	backgroundStart bool
 }
 
 type callbacks struct {
@@ -294,6 +297,17 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 		Factor:       config.GetFloat64(FFTEventRetryFactor),
 	}
 
+	ft.backgroundStart = config.GetBool(FFTBackgroundStart)
+
+	if ft.backgroundStart {
+		ft.backgroundRetry = &retry.Retry{
+			InitialDelay: config.GetDuration(FFTBackgroundStartInitialDelay),
+			MaximumDelay: config.GetDuration(FFTBackgroundStartMaxDelay),
+			Factor:       config.GetFloat64(FFTBackgroundStartFactor),
+		}
+		return nil
+	}
+
 	go ft.eventLoop()
 
 	return nil
@@ -311,7 +325,24 @@ func (ft *FFTokens) SetOperationHandler(namespace string, handler core.Operation
 	ft.callbacks.opHandlers[namespace] = handler
 }
 
+func (ft *FFTokens) backgroundStartLoop() {
+	_ = ft.backgroundRetry.Do(ft.ctx, fmt.Sprintf("Background start %s", ft.Name()), func(attempt int) (retry bool, err error) {
+		err = ft.wsconn.Connect()
+		if err != nil {
+			return true, err
+		}
+
+		go ft.eventLoop()
+
+		return false, nil
+	})
+}
+
 func (ft *FFTokens) Start() error {
+	if ft.backgroundStart {
+		go ft.backgroundStartLoop()
+		return nil
+	}
 	return ft.wsconn.Connect()
 }
 

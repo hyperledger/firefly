@@ -24,9 +24,17 @@ import (
 )
 
 const (
-	FFTEventRetryInitialDelay = "eventRetry.initialDelay"
-	FFTEventRetryMaxDelay     = "eventRetry.maxDelay"
-	FFTEventRetryFactor       = "eventRetry.factor"
+	FFTEventRetryInitialDelay      = "eventRetry.initialDelay"
+	FFTEventRetryMaxDelay          = "eventRetry.maxDelay"
+	FFTEventRetryFactor            = "eventRetry.factor"
+	FFTBackgroundStart             = "backgroundStart.enabled"
+	FFTBackgroundStartInitialDelay = "backgroundStart.initialDelay"
+	FFTBackgroundStartMaxDelay     = "backgroundStart.maxDelay"
+	FFTBackgroundStartFactor       = "backgroundStart.factor"
+
+	defaultBackgroundInitialDelay = "5s"
+	defaultBackgroundRetryFactor  = 2.0
+	defaultBackgroundMaxDelay     = "1m"
 )
 
 func (ft *FFTokens) InitConfig(config config.Section) {
@@ -35,4 +43,8 @@ func (ft *FFTokens) InitConfig(config config.Section) {
 	config.AddKnownKey(FFTEventRetryInitialDelay, 50*time.Millisecond)
 	config.AddKnownKey(FFTEventRetryMaxDelay, 30*time.Second)
 	config.AddKnownKey(FFTEventRetryFactor, 2.0)
+	config.AddKnownKey(FFTBackgroundStart, false)
+	config.AddKnownKey(FFTBackgroundStartInitialDelay, defaultBackgroundInitialDelay)
+	config.AddKnownKey(FFTBackgroundStartMaxDelay, defaultBackgroundMaxDelay)
+	config.AddKnownKey(FFTBackgroundStartFactor, defaultBackgroundRetryFactor)
 }

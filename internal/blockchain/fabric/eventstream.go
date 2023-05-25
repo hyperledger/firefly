@@ -30,9 +30,11 @@ import (
 )
 
 type streamManager struct {
-	client *resty.Client
-	signer string
-	cache  cache.CInterface
+	client         *resty.Client
+	signer         string
+	cache          cache.CInterface
+	batchSize      uint
+	batchTimeoutMS uint
 }
 
 type eventStream struct {
@@ -61,11 +63,13 @@ type eventFilter struct {
 	EventFilter string `json:"eventFilter"`
 }
 
-func newStreamManager(client *resty.Client, signer string, cache cache.CInterface) *streamManager {
+func newStreamManager(client *resty.Client, signer string, cache cache.CInterface, batchSize, batchTimeout uint) *streamManager {
 	return &streamManager{
-		client: client,
-		signer: signer,
-		cache:  cache,
+		client:         client,
+		signer:         signer,
+		cache:          cache,
+		batchSize:      batchSize,
+		batchTimeoutMS: batchTimeout,
 	}
 }
 
@@ -94,8 +98,8 @@ func buildEventStream(topic string, batchSize, batchTimeout uint) *eventStream {
 	}
 }
 
-func (s *streamManager) createEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
-	stream := buildEventStream(topic, batchSize, batchTimeout)
+func (s *streamManager) createEventStream(ctx context.Context, topic string) (*eventStream, error) {
+	stream := buildEventStream(topic, s.batchSize, s.batchTimeoutMS)
 	res, err := s.client.R().
 		SetContext(ctx).
 		SetBody(stream).
@@ -107,7 +111,7 @@ func (s *streamManager) createEventStream(ctx context.Context, topic string, bat
 	return stream, nil
 }
 
-func (s *streamManager) ensureEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+func (s *streamManager) ensureEventStream(ctx context.Context, topic string) (*eventStream, error) {
 	existingStreams, err := s.getEventStreams(ctx)
 	if err != nil {
 		return nil, err
@@ -117,7 +121,7 @@ func (s *streamManager) ensureEventStream(ctx context.Context, topic string, bat
 			return stream, nil
 		}
 	}
-	return s.createEventStream(ctx, topic, batchSize, batchTimeout)
+	return s.createEventStream(ctx, topic)
 }
 
 func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscription, err error) {
