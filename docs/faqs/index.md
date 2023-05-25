@@ -27,4 +27,4 @@ Yes! Before you set up MetaMask you'll likely want to create some tokens that yo
 
 ## 🚀 Connect with us on Discord
 
-If your question isn't answered here or if you have immediate questions please don't hesitate to reach out to us on [Discord](https://discord.gg/hyperledger_) in the `firefly` channel:
+If your question isn't answered here or if you have immediate questions please don't hesitate to reach out to us on [Discord](https://discord.gg/hyperledger) in the `firefly` channel:

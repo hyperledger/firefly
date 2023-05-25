@@ -26,7 +26,7 @@ FireFly CLI                   |  FireFly Explorer UI                | FireFly Sa
 
 ## Engage with the community
 
-- [Join us on Discord](https://discord.gg/Fy7MJuqw86)
+- [Join us on Discord](https://discord.gg/hyperledger)
 
 ## Technical architecture
 
