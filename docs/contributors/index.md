@@ -24,9 +24,9 @@ We welcome anyone to contribute to the FireFly project! If you're interested, th
 
 ## 🚀 Connect with us on Discord
 You can chat with maintainers and other contributors on Discord in the `firefly` channel:
-[https://discord.gg/hyperledger](https://discord.gg/nnQw2aGhX6)
+[https://discord.gg/hyperledger](https://discord.gg/hyperledger)
 
-[Join Discord Server](https://discord.gg/nnQw2aGhX6){: .btn .btn-purple .mb-5}
+[Join Discord Server](https://discord.gg/hyperledger){: .btn .btn-purple .mb-5}
 
 ## 📅 Join our Community Calls
 Community calls are a place to talk to other contributors, maintainers, and other people interested in FireFly. Maintainers often discuss upcoming changes and proposed new features on these calls. These calls are a great way for the community to give feedback on new ideas, ask questions about FireFly, and hear how others are using FireFly to solve real world problems.

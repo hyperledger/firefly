@@ -126,4 +126,4 @@ The Contracts section of the Sandbox lets you interact with custom smart contrac
 - Use the Swagger UI to call a smart contract function that emits an event. Verify that the event is received in the Sandbox and shows up in the FireFly Explorer.
 
 ## Go forth and build!
-At this point you should have a pretty good understanding of some of the major features of Hyperledger FireFly. Now, using what you've learned, you can go and build your own Web3 app! Don't forget to [join the Hyperledger Discord server](https://discord.gg/Fy7MJuqw86) and come chat with us in the #firefly channel.
+At this point you should have a pretty good understanding of some of the major features of Hyperledger FireFly. Now, using what you've learned, you can go and build your own Web3 app! Don't forget to [join the Hyperledger Discord server](https://discord.gg/hyperledger) and come chat with us in the #firefly channel.
