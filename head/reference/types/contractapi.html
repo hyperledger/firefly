@@ -31,14 +31,12 @@
 <meta name="generator" content="Jekyll v3.9.2" />
 <meta property="og:title" content="ContractAPI" />
 <meta property="og:locale" content="en" />
-<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
-<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
 <meta property="og:site_name" content="Hyperledger FireFly Docs" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="ContractAPI" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"ContractAPI","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/reference/types/contractapi.html"}</script>
+{"@context":"https://schema.org","@type":"WebPage","headline":"ContractAPI","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/reference/types/contractapi.html"}</script>
 <!-- End Jekyll SEO tag -->
 
 
@@ -433,7 +431,8 @@ be downloaded from:</p>
     </span><span class="nl">"urls"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
         </span><span class="nl">"openapi"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api/swagger.json"</span><span class="p">,</span><span class="w">
         </span><span class="nl">"ui"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api"</span><span class="w">
-    </span><span class="p">}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"published"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
       <h3 id="field-descriptions">
@@ -480,6 +479,11 @@ be downloaded from:</p>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
     <tr>
+      <td><code class="language-plaintext highlighter-rouge">networkName</code></td>
+      <td>The published name of the API within the multiparty network</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
       <td><code class="language-plaintext highlighter-rouge">message</code></td>
       <td>The UUID of the broadcast message that was used to publish this API to the network</td>
       <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
@@ -488,6 +492,11 @@ be downloaded from:</p>
       <td><code class="language-plaintext highlighter-rouge">urls</code></td>
       <td>The URLs to use to access the API</td>
       <td><a href="#contracturls"><code class="language-plaintext highlighter-rouge">ContractURLs</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">published</code></td>
+      <td>Indicates if the API is published to other members of the multiparty network</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
     </tr>
   </tbody>
 </table>
