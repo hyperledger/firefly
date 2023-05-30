@@ -481,7 +481,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 	default:
 		// Check the pin signer is valid for the message
 		action, err = ag.checkOnchainConsistency(ctx, msg, pin)
-		if action != core.ActionConfirm {
+		if action == core.ActionWait || action == core.ActionRetry {
 			break
 		}
 
@@ -524,8 +524,10 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 			}
 		}
 
-		l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
-		action, correlator, err = ag.readyForDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
+		if action == core.ActionConfirm {
+			l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
+			action, correlator, err = ag.readyForDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
+		}
 	}
 
 	if action == core.ActionRetry {
