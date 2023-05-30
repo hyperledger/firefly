@@ -53,7 +53,7 @@ Using the above configuration, we can place it under the `events.webhooks` confi
 Firefly has a set of HTTP clients and websockets that communicate the external endpoints and services that could be secured using TLS. 
 In order to configure these clients, we can use the same configuration as above in the respective places in the config which relate to those clients. 
 
-For example, if you wish to configure the ethereum blockchain connector with TLS you would look at [this config section](reference/config.html#pluginsblockchainethereumethconnecttls)
+For example, if you wish to configure the ethereum blockchain connector with TLS you would look at [this config section](config.html#pluginsblockchainethereumethconnecttls)
 
 For more clients, search in the [configuration reference](config.html) for a TLS section.
 
