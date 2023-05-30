@@ -52,7 +52,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, remoteOrg.DID).Return(remoteOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, localNode.ID).Return(localNode, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, remoteNode.ID).Return(remoteNode, nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("ValidateNodeOwner", pm.ctx, localNode, localOrg).Return(true, nil)
 	mim.On("ValidateNodeOwner", pm.ctx, remoteNode, remoteOrg).Return(true, nil)
@@ -125,7 +125,7 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(localOrg, false, nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
@@ -159,7 +159,7 @@ func TestResolveMemberListLookupFail(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(nil, true, fmt.Errorf("pop"))
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
@@ -195,7 +195,7 @@ func TestResolveMemberListGetGroupsFail(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(localOrg, false, nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
@@ -226,7 +226,7 @@ func TestResolveMemberListLocalOrgUnregistered(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(nil, fmt.Errorf("pop"))
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
@@ -257,7 +257,7 @@ func TestResolveMemberListLocalMemberLookupFailed(t *testing.T) {
 	localOrg := newTestOrg("localorg")
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
@@ -294,7 +294,7 @@ func TestResolveMemberListNodeNotFound(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(localOrg, false, nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
@@ -333,7 +333,7 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{localNode}, nil, nil)
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(parentOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(parentOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(childOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, parentOrg.ID).Return(parentOrg, nil)

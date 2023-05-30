@@ -118,7 +118,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	dh.mdi.On("UpsertFFIError", mock.Anything, mock.Anything).Return(nil)
 	dh.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	dh.mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
-	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -154,7 +154,7 @@ func TestHandleFFIBroadcastUpdate(t *testing.T) {
 	dh.mdi.On("InsertOrGetFFI", mock.Anything, mock.Anything).Return(existing, nil)
 	dh.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	dh.mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
-	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -198,7 +198,7 @@ func TestHandleFFIBroadcastNameExists(t *testing.T) {
 	dh.mdi.On("UpsertFFIError", mock.Anything, mock.Anything).Return(nil)
 	dh.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	dh.mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
-	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -381,7 +381,7 @@ func TestHandleFFIBroadcastOrgFail(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
@@ -406,7 +406,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	}
 	dh.mdi.On("InsertOrGetFFI", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	dh.mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
-	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -434,7 +434,7 @@ func TestHandleFFIBroadcastResolveFail(t *testing.T) {
 	}
 
 	dh.mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -464,7 +464,7 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 	dh.mdi.On("InsertOrGetContractAPI", mock.Anything, mock.Anything).Return(nil, nil)
 	dh.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	dh.mcm.On("ResolveContractAPI", context.Background(), "", mock.Anything).Return(nil)
-	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -510,7 +510,7 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 
 	dh.mdi.On("InsertOrGetContractAPI", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	dh.mcm.On("ResolveContractAPI", context.Background(), "", mock.Anything).Return(nil)
-	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -538,7 +538,7 @@ func TestHandleContractAPIBroadcastResolveFail(t *testing.T) {
 	}
 
 	dh.mcm.On("ResolveContractAPI", context.Background(), "", mock.Anything).Return(fmt.Errorf("pop"))
-	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -565,7 +565,7 @@ func TestHandleContractAPIBroadcastOrgFail(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	dh.mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{

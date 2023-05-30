@@ -842,7 +842,7 @@ func TestResolveDefaultSigningIdentitySystemFallback(t *testing.T) {
 
 }
 
-func TestGetMultipartyRootVerifierResolveFailed(t *testing.T) {
+func TestResolveMultipartyRootVerifierResolveFailed(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
@@ -852,7 +852,7 @@ func TestGetMultipartyRootVerifierResolveFailed(t *testing.T) {
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("ResolveSigningKey", ctx, "0x12345", blockchain.ResolveKeyIntentSign).Return("", fmt.Errorf("pop"))
 
-	_, err := im.GetMultipartyRootVerifier(ctx)
+	_, err := im.ResolveMultipartyRootVerifier(ctx)
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
@@ -860,21 +860,21 @@ func TestGetMultipartyRootVerifierResolveFailed(t *testing.T) {
 
 }
 
-func TestGetMultipartyRootVerifierNotSet(t *testing.T) {
+func TestResolveMultipartyRootVerifierNotSet(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
 	mmp := im.multiparty.(*multipartymocks.Manager)
 	mmp.On("RootOrg").Return(multiparty.RootOrg{})
 
-	_, err := im.GetMultipartyRootOrg(ctx)
+	_, err := im.ResolveMultipartyRootOrg(ctx)
 	assert.Regexp(t, "FF10354", err)
 
 	mmp.AssertExpectations(t)
 
 }
 
-func TestGetMultipartyRootOrgMismatch(t *testing.T) {
+func TestResolveMultipartyRootOrgMismatch(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
@@ -907,7 +907,7 @@ func TestGetMultipartyRootOrgMismatch(t *testing.T) {
 			},
 		}, nil)
 
-	_, err := im.GetMultipartyRootOrg(ctx)
+	_, err := im.ResolveMultipartyRootOrg(ctx)
 	assert.Regexp(t, "FF10281", err)
 
 	mmp.AssertExpectations(t)

@@ -40,7 +40,7 @@ func TestRegisterNodeOk(t *testing.T) {
 	signerRef := &core.SignerRef{Key: "0x23456"}
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", nm.ctx).Return(parentOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", nm.ctx).Return(parentOrg, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
@@ -78,7 +78,7 @@ func TestRegisterNodeMissingName(t *testing.T) {
 	parentOrg := testOrg("org1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", nm.ctx).Return(parentOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", nm.ctx).Return(parentOrg, nil)
 
 	mmp := nm.multiparty.(*multipartymocks.Manager)
 	mmp.On("LocalNode").Return(multiparty.LocalNode{})
@@ -98,7 +98,7 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 	parentOrg := testOrg("org1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", nm.ctx).Return(parentOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", nm.ctx).Return(parentOrg, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx, "node1").Return(fftypes.JSONObject{}, fmt.Errorf("pop"))
@@ -120,7 +120,7 @@ func TestRegisterNodeGetOwnerFail(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", nm.ctx).Return(nil, fmt.Errorf("pop"))
+	mim.On("ResolveMultipartyRootOrg", nm.ctx).Return(nil, fmt.Errorf("pop"))
 
 	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "pop", err)

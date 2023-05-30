@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,7 +26,7 @@ import (
 
 func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (identity *core.Identity, err error) {
 
-	nodeOwningOrg, err := nm.identity.GetMultipartyRootOrg(ctx)
+	nodeOwningOrg, err := nm.identity.ResolveMultipartyRootOrg(ctx)
 	if err != nil {
 		return nil, err
 	}

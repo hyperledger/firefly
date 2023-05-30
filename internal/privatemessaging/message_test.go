@@ -81,7 +81,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	intermediateOrg.Parent = rootOrg.ID
 	localNode := newTestNode("node1", intermediateOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(intermediateOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(intermediateOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(intermediateOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
@@ -224,7 +224,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	localOrg := newTestOrg("localorg")
 	localNode := newTestNode("node1", localOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[2].(*core.SignerRef)
@@ -341,7 +341,7 @@ func TestMessagePrepare(t *testing.T) {
 	localOrg := newTestOrg("localorg")
 	localNode := newTestNode("node1", localOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[1].(*core.SignerRef)
@@ -709,7 +709,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(node1, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -814,7 +814,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(node1, nil)
 
 	mom := pm.operations.(*operationmocks.Manager)

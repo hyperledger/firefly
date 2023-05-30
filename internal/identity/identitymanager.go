@@ -44,13 +44,13 @@ type Manager interface {
 	ResolveInputSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	ResolveQuerySigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error)
+	ResolveMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error)
+	ResolveMultipartyRootOrg(ctx context.Context) (*core.Identity, error)
 
 	FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, verifier *core.VerifierRef) (identity *core.Identity, err error)
 	CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *core.Identity, err error)
 	CachedIdentityLookupMustExist(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
 	CachedIdentityLookupNilOK(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
-	GetMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error)
-	GetMultipartyRootOrg(ctx context.Context) (*core.Identity, error)
 	GetLocalNode(ctx context.Context) (node *core.Identity, err error)
 	VerifyIdentityChain(ctx context.Context, identity *core.Identity) (immediateParent *core.Identity, retryable bool, err error)
 	ValidateNodeOwner(ctx context.Context, node *core.Identity, identity *core.Identity) (valid bool, err error)
@@ -273,7 +273,7 @@ func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, si
 	if err != nil {
 		return err
 	}
-	identity, err := im.GetMultipartyRootOrg(ctx)
+	identity, err := im.ResolveMultipartyRootOrg(ctx)
 	if err != nil {
 		return err
 	}
@@ -297,9 +297,9 @@ func (im *identityManager) getDefaultVerifier(ctx context.Context, intent blockc
 	return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 }
 
-// GetMultipartyRootVerifier gets the blockchain verifier of the root org via the configuration,
+// ResolveMultipartyRootVerifier gets the blockchain verifier of the root org via the configuration,
 // resolving it for use as a signing key for the purpose of signing a child identity
-func (im *identityManager) GetMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error) {
+func (im *identityManager) ResolveMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error) {
 	orgKey := im.multiparty.RootOrg().Key
 	if orgKey == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
@@ -339,9 +339,10 @@ func (im *identityManager) FindIdentityForVerifier(ctx context.Context, iTypes [
 	return nil, nil
 }
 
-// GetMultipartyRootOrg returns the identity of the organization that owns the node, if fully registered within the given namespace
-func (im *identityManager) GetMultipartyRootOrg(ctx context.Context) (*core.Identity, error) {
-	verifierRef, err := im.GetMultipartyRootVerifier(ctx)
+// ResolveMultipartyRootOrg gets the identity of the organization that owns the node, if fully registered
+// within the given namespace, also resolving its verifier for use as a signing key
+func (im *identityManager) ResolveMultipartyRootOrg(ctx context.Context) (*core.Identity, error) {
+	verifierRef, err := im.ResolveMultipartyRootVerifier(ctx)
 	if err != nil {
 		return nil, err
 	}

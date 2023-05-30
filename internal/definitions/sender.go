@@ -132,7 +132,7 @@ func (w *sendWrapper) send(ctx context.Context, waitConfirm bool) (*core.Message
 }
 
 func (ds *definitionSender) getSenderDefault(ctx context.Context, def core.Definition, tag string) *sendWrapper {
-	org, err := ds.identity.GetMultipartyRootOrg(ctx)
+	org, err := ds.identity.ResolveMultipartyRootOrg(ctx)
 	if err != nil {
 		return wrapSendError(err)
 	}
