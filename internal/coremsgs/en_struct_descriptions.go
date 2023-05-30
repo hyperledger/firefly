@@ -222,13 +222,15 @@ var (
 	ChartHistogramTypeType  = ffm("ChartHistogramType.type", "Name of the type")
 
 	// ContractAPI field descriptions
-	ContractAPIID        = ffm("ContractAPI.id", "The UUID of the contract API")
-	ContractAPINamespace = ffm("ContractAPI.namespace", "The namespace of the contract API")
-	ContractAPIInterface = ffm("ContractAPI.interface", "Reference to the FireFly Interface definition associated with the contract API")
-	ContractAPILocation  = ffm("ContractAPI.location", "If this API is tied to an individual instance of a smart contract, this field can include a blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
-	ContractAPIName      = ffm("ContractAPI.name", "The name that is used in the URL to access the API")
-	ContractAPIMessage   = ffm("ContractAPI.message", "The UUID of the broadcast message that was used to publish this API to the network")
-	ContractAPIURLs      = ffm("ContractAPI.urls", "The URLs to use to access the API")
+	ContractAPIID          = ffm("ContractAPI.id", "The UUID of the contract API")
+	ContractAPINamespace   = ffm("ContractAPI.namespace", "The namespace of the contract API")
+	ContractAPIInterface   = ffm("ContractAPI.interface", "Reference to the FireFly Interface definition associated with the contract API")
+	ContractAPILocation    = ffm("ContractAPI.location", "If this API is tied to an individual instance of a smart contract, this field can include a blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
+	ContractAPIName        = ffm("ContractAPI.name", "The name that is used in the URL to access the API")
+	ContractAPINetworkName = ffm("ContractAPI.networkName", "The published name of the API within the multiparty network")
+	ContractAPIMessage     = ffm("ContractAPI.message", "The UUID of the broadcast message that was used to publish this API to the network")
+	ContractAPIURLs        = ffm("ContractAPI.urls", "The URLs to use to access the API")
+	ContractAPIPublished   = ffm("ContractAPI.published", "Indicates if the API is published to other members of the multiparty network")
 
 	// ContractURLs field descriptions
 	ContractURLsOpenAPI = ffm("ContractURLs.openapi", "The URL to download the OpenAPI v3 (Swagger) description for the API generated in JSON or YAML format")

@@ -53,6 +53,20 @@ func (_m *Plugin) DeleteBlob(ctx context.Context, sequence int64) error {
 	return r0
 }
 
+// DeleteContractAPI provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) DeleteContractAPI(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteContractListenerByID provides a mock function with given fields: ctx, namespace, id
 func (_m *Plugin) DeleteContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) error {
 	ret := _m.Called(ctx, namespace, id)
@@ -499,6 +513,32 @@ func (_m *Plugin) GetContractAPIByName(ctx context.Context, namespace string, na
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, namespace, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContractAPIByNetworkName provides a mock function with given fields: ctx, namespace, networkName
+func (_m *Plugin) GetContractAPIByNetworkName(ctx context.Context, namespace string, networkName string) (*core.ContractAPI, error) {
+	ret := _m.Called(ctx, namespace, networkName)
+
+	var r0 *core.ContractAPI
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*core.ContractAPI, error)); ok {
+		return rf(ctx, namespace, networkName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.ContractAPI); ok {
+		r0 = rf(ctx, namespace, networkName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.ContractAPI)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, namespace, networkName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2659,6 +2699,32 @@ func (_m *Plugin) InsertOrGetBlockchainEvent(ctx context.Context, event *core.Bl
 	return r0, r1
 }
 
+// InsertOrGetContractAPI provides a mock function with given fields: ctx, api
+func (_m *Plugin) InsertOrGetContractAPI(ctx context.Context, api *core.ContractAPI) (*core.ContractAPI, error) {
+	ret := _m.Called(ctx, api)
+
+	var r0 *core.ContractAPI
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractAPI) (*core.ContractAPI, error)); ok {
+		return rf(ctx, api)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractAPI) *core.ContractAPI); ok {
+		r0 = rf(ctx, api)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.ContractAPI)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *core.ContractAPI) error); ok {
+		r1 = rf(ctx, api)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // InsertOrGetFFI provides a mock function with given fields: ctx, ffi
 func (_m *Plugin) InsertOrGetFFI(ctx context.Context, ffi *fftypes.FFI) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, ffi)
@@ -2992,13 +3058,13 @@ func (_m *Plugin) UpdateTransaction(ctx context.Context, namespace string, id *f
 	return r0
 }
 
-// UpsertContractAPI provides a mock function with given fields: ctx, cd
-func (_m *Plugin) UpsertContractAPI(ctx context.Context, cd *core.ContractAPI) error {
-	ret := _m.Called(ctx, cd)
+// UpsertContractAPI provides a mock function with given fields: ctx, api, optimization
+func (_m *Plugin) UpsertContractAPI(ctx context.Context, api *core.ContractAPI, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, api, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractAPI) error); ok {
-		r0 = rf(ctx, cd)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractAPI, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, api, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}

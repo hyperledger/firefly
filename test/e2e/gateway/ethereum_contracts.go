@@ -266,7 +266,7 @@ func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
 	}
 	locationBytes, _ := json.Marshal(location)
 
-	createContractAPIResult, err := suite.testState.client1.CreateContractAPI(suite.T(), APIName, ffiReference, fftypes.JSONAnyPtr(string(locationBytes)))
+	createContractAPIResult, err := suite.testState.client1.CreateContractAPI(suite.T(), APIName, ffiReference, fftypes.JSONAnyPtr(string(locationBytes)), false)
 	assert.NotNil(suite.T(), createContractAPIResult)
 	assert.NoError(suite.T(), err)
 

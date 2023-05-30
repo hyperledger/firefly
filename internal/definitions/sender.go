@@ -46,6 +46,7 @@ type Sender interface {
 	DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm bool) error
 	PublishFFI(ctx context.Context, name, version, networkName string, waitConfirm bool) (*fftypes.FFI, error)
 	DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error
+	PublishContractAPI(ctx context.Context, httpServerURL, name, networkName string, waitConfirm bool) (api *core.ContractAPI, err error)
 }
 
 type definitionSender struct {

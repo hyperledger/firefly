@@ -97,7 +97,7 @@ func (s *SQLCommon) attemptFFIInsert(ctx context.Context, tx *dbsql.TXWrapper, f
 }
 
 func (s *SQLCommon) ffiExists(ctx context.Context, tx *dbsql.TXWrapper, ffi *fftypes.FFI) (bool, error) {
-	rows, _, err := s.QueryTx(ctx, tokenpoolTable, tx,
+	rows, _, err := s.QueryTx(ctx, ffiTable, tx,
 		sq.Select("id").From(ffiTable).Where(sq.And{
 			sq.Eq{
 				"namespace": ffi.Namespace,
@@ -128,7 +128,7 @@ func (s *SQLCommon) InsertOrGetFFI(ctx context.Context, ffi *fftypes.FFI) (exist
 		return nil, s.CommitTx(ctx, tx, autoCommit)
 	}
 
-	// Do a select within the transaction to determine if the pool already exists
+	// Do a select within the transaction to determine if the FFI already exists
 	existing, queryErr := s.getFFIPred(ctx, ffi.Namespace+":"+ffi.Name, sq.And{
 		sq.Eq{"namespace": ffi.Namespace},
 		sq.Or{

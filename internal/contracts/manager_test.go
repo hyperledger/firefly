@@ -3049,6 +3049,22 @@ func TestResolveContractAPI(t *testing.T) {
 	mdb.AssertExpectations(t)
 }
 
+func TestResolveContractAPIValidateFail(t *testing.T) {
+	cm := newTestContractManager()
+
+	api := &core.ContractAPI{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "BAD***BAD",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	err := cm.ResolveContractAPI(context.Background(), "http://localhost/api", api)
+	assert.Regexp(t, "FF00140", err)
+}
+
 func TestResolveContractAPIBadLocation(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
@@ -3395,7 +3411,7 @@ func TestDeleteFFINotFound(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestDeleteFFIFail(t *testing.T) {
+func TestDeleteFFIFailGet(t *testing.T) {
 	cm := newTestContractManager()
 
 	id := fftypes.NewUUID()
@@ -3418,6 +3434,57 @@ func TestDeleteFFIPublished(t *testing.T) {
 	mdi.On("GetFFIByID", context.Background(), "ns1", id).Return(&fftypes.FFI{Published: true}, nil)
 
 	err := cm.DeleteFFI(context.Background(), id)
+	assert.Regexp(t, "FF10449", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeleteContractAPI(t *testing.T) {
+	cm := newTestContractManager()
+
+	id := fftypes.NewUUID()
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "banana").Return(&core.ContractAPI{ID: id}, nil)
+	mdi.On("DeleteContractAPI", context.Background(), "ns1", id).Return(nil)
+
+	err := cm.DeleteContractAPI(context.Background(), "banana")
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeleteContractAPIFailGet(t *testing.T) {
+	cm := newTestContractManager()
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "banana").Return(nil, fmt.Errorf("pop"))
+
+	err := cm.DeleteContractAPI(context.Background(), "banana")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeleteContractAPINotFound(t *testing.T) {
+	cm := newTestContractManager()
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "banana").Return(nil, nil)
+
+	err := cm.DeleteContractAPI(context.Background(), "banana")
+	assert.Regexp(t, "FF10109", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeleteContractAPIPublished(t *testing.T) {
+	cm := newTestContractManager()
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "banana").Return(&core.ContractAPI{Published: true}, nil)
+
+	err := cm.DeleteContractAPI(context.Background(), "banana")
 	assert.Regexp(t, "FF10449", err)
 
 	mdi.AssertExpectations(t)

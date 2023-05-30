@@ -29,7 +29,7 @@ func TestValidateContractAPI(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "banana",
 	}
-	err := api.Validate(context.Background(), false)
+	err := api.Validate(context.Background())
 	assert.NoError(t, err)
 }
 
@@ -38,14 +38,22 @@ func TestValidateInvalidContractAPI(t *testing.T) {
 		Namespace: "&%&^#()#",
 		Name:      "banana",
 	}
-	err := api.Validate(context.Background(), false)
+	err := api.Validate(context.Background())
 	assert.Regexp(t, "FF00140", err)
 
 	api = &ContractAPI{
 		Namespace: "ns1",
 		Name:      "(%&@!^%^)",
 	}
-	err = api.Validate(context.Background(), false)
+	err = api.Validate(context.Background())
+	assert.Regexp(t, "FF00140", err)
+
+	api = &ContractAPI{
+		Namespace:   "ns1",
+		Name:        "banana",
+		NetworkName: "(%&@!^%^)",
+	}
+	err = api.Validate(context.Background())
 	assert.Regexp(t, "FF00140", err)
 }
 

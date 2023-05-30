@@ -874,6 +874,16 @@ func (client *FireFlyClient) CreateFFI(t *testing.T, ffi *fftypes.FFI, publish b
 	return &res, err
 }
 
+func (client *FireFlyClient) GetFFI(t *testing.T, name, version string) (result *fftypes.FFI) {
+	path := client.namespaced(urlContractInterface + "/" + name + "/" + version)
+	resp, err := client.Client.R().
+		SetResult(&result).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return result
+}
+
 func (client *FireFlyClient) PublishFFI(t *testing.T, name, version, networkName string, confirm bool) {
 	path := client.namespaced(urlContractInterface + "/" + name + "/" + version + "/publish")
 	resp, err := client.Client.R().
@@ -897,23 +907,57 @@ func (client *FireFlyClient) DeleteFFI(t *testing.T, id *fftypes.UUID, expectedS
 	require.Equal(t, expectedStatus, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func (client *FireFlyClient) CreateContractAPI(t *testing.T, name string, ffiReference *fftypes.FFIReference, location *fftypes.JSONAny) (interface{}, error) {
+func (client *FireFlyClient) CreateContractAPI(t *testing.T, name string, ffiReference *fftypes.FFIReference, location *fftypes.JSONAny, publish bool) (*core.ContractAPI, error) {
 	apiReqBody := &core.ContractAPI{
 		Name:      name,
 		Interface: ffiReference,
 		Location:  location,
 	}
 
-	var res interface{}
+	var res core.ContractAPI
 	path := client.namespaced(urlContractAPI)
 	resp, err := client.Client.R().
 		SetBody(apiReqBody).
 		SetResult(&res).
 		SetQueryParam("confirm", "true").
+		SetQueryParam("publish", strconv.FormatBool(publish)).
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
+	return &res, err
+}
+
+func (client *FireFlyClient) GetContractAPI(t *testing.T, name string) (result *core.ContractAPI) {
+	path := client.namespaced(urlContractAPI + "/" + name)
+	resp, err := client.Client.R().
+		SetResult(&result).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return result
+}
+
+func (client *FireFlyClient) PublishContractAPI(t *testing.T, name, networkName string, confirm bool) {
+	path := client.namespaced(urlContractAPI + "/" + name + "/publish")
+	resp, err := client.Client.R().
+		SetBody(&core.DefinitionPublish{
+			NetworkName: networkName,
+		}).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		Post(path)
+	require.NoError(t, err)
+	expected := 202
+	if confirm {
+		expected = 200
+	}
+	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func (client *FireFlyClient) DeleteContractAPI(t *testing.T, name string, expectedStatus int) {
+	path := client.namespaced(urlContractAPI + "/" + name)
+	resp, err := client.Client.R().Delete(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
 func (client *FireFlyClient) InvokeContractAPIMethod(t *testing.T, apiName string, methodName string, input *fftypes.JSONAny) (interface{}, error) {

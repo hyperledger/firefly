@@ -99,19 +99,60 @@ func (dh *definitionHandler) reconcilePublishedFFI(ctx context.Context, existing
 	return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "contract interface", ffi.ID, existing.ID)
 }
 
-func (dh *definitionHandler) persistContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) (retry bool, err error) {
-	if err := dh.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
-		return false, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID)
+func (dh *definitionHandler) persistContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, isAuthor bool) (retry bool, err error) {
+	for i := 1; ; i++ {
+		if err := dh.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
+			return false, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID)
+		}
+
+		// Check if this conflicts with an existing API
+		existing, err := dh.database.InsertOrGetContractAPI(ctx, api)
+		if err != nil {
+			return true, err
+		}
+
+		if existing == nil {
+			// No conflict - new API was inserted successfully
+			break
+		}
+
+		if api.Published {
+			if existing.ID.Equals(api.ID) {
+				// ID conflict - check if this matches (or should overwrite) the existing record
+				return dh.reconcilePublishedContractAPI(ctx, existing, api, isAuthor)
+			}
+
+			if existing.Name == api.Name {
+				// Local name conflict - generate a unique name and try again
+				api.Name = fmt.Sprintf("%s-%d", api.NetworkName, i)
+				continue
+			}
+		}
+
+		// Any other conflict - reject
+		return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "contract API", api.ID, existing.ID)
+
 	}
 
-	err = dh.database.UpsertContractAPI(ctx, api)
-	if err != nil {
-		if err == database.IDMismatch {
-			return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedIDMismatch, "contract API", api.ID)
-		}
-		return true, err
-	}
 	return false, nil
+}
+
+func (dh *definitionHandler) reconcilePublishedContractAPI(ctx context.Context, existing, api *core.ContractAPI, isAuthor bool) (retry bool, err error) {
+	if existing.Message.Equals(api.Message) {
+		// Message already recorded
+		return false, nil
+	}
+
+	if existing.Message == nil && isAuthor {
+		// API was previously unpublished - if it was now published by this node, upsert the new version
+		api.Name = existing.Name
+		if err := dh.database.UpsertContractAPI(ctx, api, database.UpsertOptimizationExisting); err != nil {
+			return true, err
+		}
+		return false, nil
+	}
+
+	return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "contract API", api.ID, existing.ID)
 }
 
 func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
@@ -156,18 +197,24 @@ func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, sta
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &api); !valid {
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract API", msg.Header.ID)
 	}
+
+	org, err := dh.identity.GetMultipartyRootOrg(ctx)
+	if err != nil {
+		return HandlerResult{Action: core.ActionRetry}, err
+	}
+	isAuthor := org.DID == msg.Header.Author
+
 	api.Message = msg.Header.ID
-	return dh.handleContractAPIDefinition(ctx, state, "", &api, tx)
+	api.Name = api.NetworkName
+	api.Published = true
+	return dh.handleContractAPIDefinition(ctx, state, "", &api, tx, isAuthor)
 }
 
-func (dh *definitionHandler) handleContractAPIDefinition(ctx context.Context, state *core.BatchState, httpServerURL string, api *core.ContractAPI, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandler) handleContractAPIDefinition(ctx context.Context, state *core.BatchState, httpServerURL string, api *core.ContractAPI, tx *fftypes.UUID, isAuthor bool) (HandlerResult, error) {
 	l := log.L(ctx)
-	api.Namespace = dh.namespace.Name
-	if err := api.Validate(ctx, true); err != nil {
-		return HandlerResult{Action: core.ActionReject}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID)
-	}
 
-	if retry, err := dh.persistContractAPI(ctx, httpServerURL, api); err != nil {
+	api.Namespace = dh.namespace.Name
+	if retry, err := dh.persistContractAPI(ctx, httpServerURL, api, isAuthor); err != nil {
 		if retry {
 			return HandlerResult{Action: core.ActionRetry}, err
 		}
