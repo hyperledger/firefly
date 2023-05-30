@@ -172,9 +172,6 @@ func TestResolveFFI(t *testing.T) {
 
 func TestBroadcastFFIInvalid(t *testing.T) {
 	cm := newTestContractManager()
-	mdb := cm.database.(*databasemocks.Plugin)
-
-	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(nil, nil)
 
 	ffi := &fftypes.FFI{
 		Namespace: "ns1",
@@ -196,37 +193,6 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 
 	err := cm.ResolveFFI(context.Background(), ffi)
 	assert.Regexp(t, "does not validate", err)
-
-	mdb.AssertExpectations(t)
-}
-
-func TestResolveFFIExists(t *testing.T) {
-	cm := newTestContractManager()
-	mdb := cm.database.(*databasemocks.Plugin)
-
-	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(&fftypes.FFI{}, nil)
-
-	ffi := &fftypes.FFI{
-		Namespace: "ns1",
-		Name:      "test",
-		Version:   "1.0.0",
-		ID:        fftypes.NewUUID(),
-		Methods: []*fftypes.FFIMethod{
-			{
-				Name: "sum",
-			},
-		},
-		Events: []*fftypes.FFIEvent{
-			{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
-					Name: "changed",
-				},
-			},
-		},
-	}
-
-	err := cm.ResolveFFI(context.Background(), ffi)
-	assert.Regexp(t, "FF10302", err)
 }
 
 func TestValidateInvokeContractRequest(t *testing.T) {
@@ -1429,6 +1395,22 @@ func TestGetFFI(t *testing.T) {
 	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&fftypes.FFI{}, nil)
 	_, err := cm.GetFFI(context.Background(), "ffi", "v1.0.0")
 	assert.NoError(t, err)
+}
+
+func TestGetFFINotFound(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(nil, nil)
+	_, err := cm.GetFFI(context.Background(), "ffi", "v1.0.0")
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestGetFFIFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(nil, fmt.Errorf("pop"))
+	_, err := cm.GetFFI(context.Background(), "ffi", "v1.0.0")
+	assert.EqualError(t, err, "pop")
 }
 
 func TestGetFFIWithChildren(t *testing.T) {
@@ -3382,4 +3364,61 @@ func TestBuildInvokeMessageInvalidType(t *testing.T) {
 		},
 	})
 	assert.Regexp(t, "FF10287", err)
+}
+
+func TestDeleteFFI(t *testing.T) {
+	cm := newTestContractManager()
+
+	id := fftypes.NewUUID()
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetFFIByID", context.Background(), "ns1", id).Return(&fftypes.FFI{}, nil)
+	mdi.On("DeleteFFI", context.Background(), "ns1", id).Return(nil)
+
+	err := cm.DeleteFFI(context.Background(), id)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeleteFFINotFound(t *testing.T) {
+	cm := newTestContractManager()
+
+	id := fftypes.NewUUID()
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetFFIByID", context.Background(), "ns1", id).Return(nil, nil)
+
+	err := cm.DeleteFFI(context.Background(), id)
+	assert.Regexp(t, "FF10109", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeleteFFIFail(t *testing.T) {
+	cm := newTestContractManager()
+
+	id := fftypes.NewUUID()
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetFFIByID", context.Background(), "ns1", id).Return(nil, fmt.Errorf("pop"))
+
+	err := cm.DeleteFFI(context.Background(), id)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeleteFFIPublished(t *testing.T) {
+	cm := newTestContractManager()
+
+	id := fftypes.NewUUID()
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetFFIByID", context.Background(), "ns1", id).Return(&fftypes.FFI{Published: true}, nil)
+
+	err := cm.DeleteFFI(context.Background(), id)
+	assert.Regexp(t, "FF10449", err)
+
+	mdi.AssertExpectations(t)
 }

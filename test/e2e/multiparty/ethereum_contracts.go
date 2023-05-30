@@ -35,7 +35,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var contractVersion, _ = nanoid.Generate("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", nanoid.DefaultSize)
+func contractVersion() string {
+	versionAlphabet := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	version, _ := nanoid.Generate(versionAlphabet, nanoid.DefaultSize)
+	return version
+}
 
 func simpleStorageFFIChanged() *fftypes.FFIEvent {
 	return &fftypes.FFIEvent{
@@ -55,10 +59,10 @@ func simpleStorageFFIChanged() *fftypes.FFIEvent {
 	}
 }
 
-func simpleStorageFFI() *fftypes.FFI {
+func simpleStorageFFI(version string) *fftypes.FFI {
 	return &fftypes.FFI{
 		Name:    "SimpleStorage",
-		Version: contractVersion,
+		Version: version,
 		Methods: []*fftypes.FFIMethod{
 			simpleStorageFFISet(),
 			simpleStorageFFIGet(),
@@ -124,7 +128,7 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.ethIdentity = suite.testState.org1key.Value
 	suite.contractAddress = deployContract(suite.T(), stack.Name, "simplestorage/simple_storage.json")
 
-	res, err := suite.testState.client1.CreateFFI(suite.T(), simpleStorageFFI())
+	res, err := suite.testState.client1.CreateFFI(suite.T(), simpleStorageFFI(contractVersion()), true)
 	suite.interfaceID = res.ID
 	suite.T().Logf("interfaceID: %s", suite.interfaceID)
 	assert.NoError(suite.T(), err)
@@ -322,4 +326,35 @@ func readContractJSON(t *testing.T, contract string) fftypes.JSONObject {
 	err = json.Unmarshal(byteValue, &jsonValue)
 	assert.NoError(t, err)
 	return jsonValue
+}
+
+func (suite *EthereumContractTestSuite) TestContractPublish() {
+	received1 := e2e.WsReader(suite.testState.ws1)
+	received2 := e2e.WsReader(suite.testState.ws2)
+
+	ffi := simpleStorageFFI(contractVersion())
+	networkName := ffi.Name + "-shared"
+	suite.T().Logf("Interface local name: %s", ffi.Name)
+	suite.T().Logf("Interface network name: %s", networkName)
+	suite.T().Logf("Interface version: %s", ffi.Version)
+
+	result, err := suite.testState.client1.CreateFFI(suite.T(), ffi, false)
+	assert.NoError(suite.T(), err)
+
+	e2e.WaitForEvent(suite.T(), received1, core.EventTypeContractInterfaceConfirmed, result.ID)
+
+	// Delete and recreate
+	suite.testState.client1.DeleteFFI(suite.T(), result.ID, 204)
+	result, err = suite.testState.client1.CreateFFI(suite.T(), ffi, false)
+	assert.NoError(suite.T(), err)
+
+	e2e.WaitForEvent(suite.T(), received1, core.EventTypeContractInterfaceConfirmed, result.ID)
+
+	suite.testState.client1.PublishFFI(suite.T(), ffi.Name, ffi.Version, networkName, false)
+
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeDefinition)
+	e2e.WaitForEvent(suite.T(), received2, core.EventTypeContractInterfaceConfirmed, result.ID)
+
+	// Cannot delete published interfaces
+	suite.testState.client1.DeleteFFI(suite.T(), result.ID, 409)
 }

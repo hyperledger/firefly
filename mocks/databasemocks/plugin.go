@@ -81,6 +81,20 @@ func (_m *Plugin) DeleteData(ctx context.Context, namespace string, id *fftypes.
 	return r0
 }
 
+// DeleteFFI provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) DeleteFFI(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteNonce provides a mock function with given fields: ctx, hash
 func (_m *Plugin) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) error {
 	ret := _m.Called(ctx, hash)
@@ -955,6 +969,32 @@ func (_m *Plugin) GetFFIByID(ctx context.Context, namespace string, id *fftypes.
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, namespace, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetFFIByNetworkName provides a mock function with given fields: ctx, namespace, networkName, version
+func (_m *Plugin) GetFFIByNetworkName(ctx context.Context, namespace string, networkName string, version string) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, namespace, networkName, version)
+
+	var r0 *fftypes.FFI
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*fftypes.FFI, error)); ok {
+		return rf(ctx, namespace, networkName, version)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFI); ok {
+		r0 = rf(ctx, namespace, networkName, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFI)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, namespace, networkName, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2619,6 +2659,32 @@ func (_m *Plugin) InsertOrGetBlockchainEvent(ctx context.Context, event *core.Bl
 	return r0, r1
 }
 
+// InsertOrGetFFI provides a mock function with given fields: ctx, ffi
+func (_m *Plugin) InsertOrGetFFI(ctx context.Context, ffi *fftypes.FFI) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, ffi)
+
+	var r0 *fftypes.FFI
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) (*fftypes.FFI, error)); ok {
+		return rf(ctx, ffi)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) *fftypes.FFI); ok {
+		r0 = rf(ctx, ffi)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFI)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.FFI) error); ok {
+		r1 = rf(ctx, ffi)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // InsertOrGetTokenPool provides a mock function with given fields: ctx, pool
 func (_m *Plugin) InsertOrGetTokenPool(ctx context.Context, pool *core.TokenPool) (*core.TokenPool, error) {
 	ret := _m.Called(ctx, pool)
@@ -2968,13 +3034,13 @@ func (_m *Plugin) UpsertDatatype(ctx context.Context, datadef *core.Datatype, al
 	return r0
 }
 
-// UpsertFFI provides a mock function with given fields: ctx, cd
-func (_m *Plugin) UpsertFFI(ctx context.Context, cd *fftypes.FFI) error {
-	ret := _m.Called(ctx, cd)
+// UpsertFFI provides a mock function with given fields: ctx, ffi, optimization
+func (_m *Plugin) UpsertFFI(ctx context.Context, ffi *fftypes.FFI, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, ffi, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) error); ok {
-		r0 = rf(ctx, cd)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, ffi, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -53,6 +53,7 @@ type Manager interface {
 	GetFFIs(ctx context.Context, filter ffapi.AndFilter) ([]*fftypes.FFI, *ffapi.FilterResult, error)
 	ResolveFFI(ctx context.Context, ffi *fftypes.FFI) error
 	ResolveFFIReference(ctx context.Context, ref *fftypes.FFIReference) error
+	DeleteFFI(ctx context.Context, id *fftypes.UUID) error
 
 	DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (interface{}, error)
 	InvokeContract(ctx context.Context, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
@@ -141,7 +142,13 @@ func (cm *contractManager) newFFISchemaCompiler() *jsonschema.Compiler {
 }
 
 func (cm *contractManager) GetFFI(ctx context.Context, name, version string) (*fftypes.FFI, error) {
-	return cm.database.GetFFI(ctx, cm.namespace, name, version)
+	ffi, err := cm.database.GetFFI(ctx, cm.namespace, name, version)
+	if err != nil {
+		return nil, err
+	} else if ffi == nil {
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
+	}
+	return ffi, nil
 }
 
 func (cm *contractManager) GetFFIWithChildren(ctx context.Context, name, version string) (*fftypes.FFI, error) {
@@ -566,11 +573,6 @@ func (cm *contractManager) ResolveFFI(ctx context.Context, ffi *fftypes.FFI) err
 		return err
 	}
 
-	existing, err := cm.database.GetFFI(ctx, cm.namespace, ffi.Name, ffi.Version)
-	if existing != nil && err == nil {
-		return i18n.NewError(ctx, coremsgs.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
-	}
-
 	methodPathNames := map[string]bool{}
 	for _, method := range ffi.Methods {
 		method.Interface = ffi.ID
@@ -947,4 +949,20 @@ func (cm *contractManager) buildInvokeMessage(ctx context.Context, in *core.Mess
 	default:
 		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidMessageType, allowedTypes)
 	}
+}
+
+func (cm *contractManager) DeleteFFI(ctx context.Context, id *fftypes.UUID) error {
+	return cm.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		ffi, err := cm.GetFFIByID(ctx, id)
+		if err != nil {
+			return err
+		}
+		if ffi == nil {
+			return i18n.NewError(ctx, coremsgs.Msg404NotFound)
+		}
+		if ffi.Published {
+			return i18n.NewError(ctx, coremsgs.MsgCannotDeletePublished)
+		}
+		return cm.database.DeleteFFI(ctx, cm.namespace, id)
+	})
 }

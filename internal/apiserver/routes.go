@@ -52,6 +52,7 @@ var routes = append(
 		getWebSockets,
 	}),
 	namespacedRoutes([]*ffapi.Route{
+		deleteContractInterface,
 		deleteContractListener,
 		deleteData,
 		deleteSubscription,
@@ -128,6 +129,7 @@ var routes = append(
 		postContractAPIQuery,
 		postContractAPIListeners,
 		postContractInterfaceGenerate,
+		postContractInterfacePublish,
 		postContractDeploy,
 		postContractInvoke,
 		postContractQuery,

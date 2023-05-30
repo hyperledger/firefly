@@ -85,6 +85,20 @@ func (_m *Manager) DeleteContractListenerByNameOrID(ctx context.Context, nameOrI
 	return r0
 }
 
+// DeleteFFI provides a mock function with given fields: ctx, id
+func (_m *Manager) DeleteFFI(ctx context.Context, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeployContract provides a mock function with given fields: ctx, req, waitConfirm
 func (_m *Manager) DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (interface{}, error) {
 	ret := _m.Called(ctx, req, waitConfirm)

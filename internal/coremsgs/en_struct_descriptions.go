@@ -244,13 +244,13 @@ var (
 	FFIMessage     = ffm("FFI.message", "The UUID of the broadcast message that was used to publish this FFI to the network")
 	FFINamespace   = ffm("FFI.namespace", "The namespace of the FFI")
 	FFIName        = ffm("FFI.name", "The name of the FFI - usually matching the smart contract name")
+	FFINetworkName = ffm("FFI.networkName", "The published name of the FFI within the multiparty network")
 	FFIDescription = ffm("FFI.description", "A description of the smart contract this FFI represents")
 	FFIVersion     = ffm("FFI.version", "A version for the FFI - use of semantic versioning such as 'v1.0.1' is encouraged")
 	FFIMethods     = ffm("FFI.methods", "An array of smart contract method definitions")
 	FFIEvents      = ffm("FFI.events", "An array of smart contract event definitions")
 	FFIErrors      = ffm("FFI.errors", "An array of smart contract error definitions")
-	FFINetworkName = ffm("FFI.networkName", "The shared interface name within the multiparty network")
-	FFIPublished   = ffm("FFI.published", "True if the interface has been published to a multiparty network")
+	FFIPublished   = ffm("FFI.published", "Indicates if the FFI is published to other members of the multiparty network")
 
 	// FFIMethod field descriptions
 	FFIMethodID          = ffm("FFIMethod.id", "The UUID of the FFI method definition")

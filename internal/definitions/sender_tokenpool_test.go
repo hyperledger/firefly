@@ -34,8 +34,8 @@ import (
 )
 
 func TestBroadcastTokenPoolInvalid(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdm := ds.data.(*datamocks.Manager)
@@ -57,8 +57,8 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 }
 
 func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	mdm := ds.data.(*datamocks.Manager)
@@ -80,11 +80,9 @@ func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
 }
 
 func TestBroadcastTokenPoolPublishNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
-
-	mdm := ds.data.(*datamocks.Manager)
 
 	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
@@ -98,13 +96,11 @@ func TestBroadcastTokenPoolPublishNonMultiparty(t *testing.T) {
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "FF10414", err)
-
-	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdm := ds.data.(*datamocks.Manager)
@@ -127,8 +123,8 @@ func TestBroadcastTokenPoolInvalidNameMultiparty(t *testing.T) {
 }
 
 func TestDefineTokenPoolOk(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdi := ds.database.(*databasemocks.Plugin)
@@ -169,8 +165,8 @@ func TestDefineTokenPoolOk(t *testing.T) {
 }
 
 func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	mdb := ds.database.(*databasemocks.Plugin)
@@ -199,8 +195,8 @@ func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 }
 
 func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mdi := ds.database.(*databasemocks.Plugin)
 
@@ -224,8 +220,8 @@ func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 }
 
 func TestDefineTokenPoolBadName(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	pool := &core.TokenPool{
@@ -244,8 +240,8 @@ func TestDefineTokenPoolBadName(t *testing.T) {
 }
 
 func TestPublishTokenPool(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdi := ds.database.(*databasemocks.Plugin)
@@ -291,8 +287,8 @@ func TestPublishTokenPool(t *testing.T) {
 }
 
 func TestPublishTokenPoolNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
@@ -300,8 +296,8 @@ func TestPublishTokenPoolNonMultiparty(t *testing.T) {
 }
 
 func TestPublishTokenPoolAlreadyPublished(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
@@ -329,8 +325,8 @@ func TestPublishTokenPoolAlreadyPublished(t *testing.T) {
 }
 
 func TestPublishTokenPoolQueryFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
@@ -347,8 +343,8 @@ func TestPublishTokenPoolQueryFail(t *testing.T) {
 }
 
 func TestPublishTokenPoolNetworkNameError(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
@@ -377,8 +373,8 @@ func TestPublishTokenPoolNetworkNameError(t *testing.T) {
 }
 
 func TestPublishTokenPoolNetworkNameConflict(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
@@ -407,8 +403,8 @@ func TestPublishTokenPoolNetworkNameConflict(t *testing.T) {
 }
 
 func TestPublishTokenPoolResolveFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mam := ds.assets.(*assetmocks.Manager)
@@ -440,8 +436,8 @@ func TestPublishTokenPoolResolveFail(t *testing.T) {
 }
 
 func TestPublishTokenPoolPrepareFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdi := ds.database.(*databasemocks.Plugin)
@@ -475,7 +471,6 @@ func TestPublishTokenPoolPrepareFail(t *testing.T) {
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.EqualError(t, err, "pop")
-	assert.True(t, pool.Published)
 
 	mdi.AssertExpectations(t)
 	mam.AssertExpectations(t)
@@ -485,8 +480,8 @@ func TestPublishTokenPoolPrepareFail(t *testing.T) {
 }
 
 func TestPublishTokenPoolSendFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdi := ds.database.(*databasemocks.Plugin)
@@ -521,7 +516,6 @@ func TestPublishTokenPoolSendFail(t *testing.T) {
 
 	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
 	assert.EqualError(t, err, "pop")
-	assert.True(t, pool.Published)
 
 	mdi.AssertExpectations(t)
 	mam.AssertExpectations(t)
@@ -531,8 +525,8 @@ func TestPublishTokenPoolSendFail(t *testing.T) {
 }
 
 func TestPublishTokenPoolConfirm(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 
 	mdi := ds.database.(*databasemocks.Plugin)
@@ -574,4 +568,90 @@ func TestPublishTokenPoolConfirm(t *testing.T) {
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
+}
+
+func TestPublishTokenPoolInterfaceFail(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = true
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "pool1",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: false,
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
+	ds.mdi.On("GetFFIByID", context.Background(), "ns1", pool.Interface.ID).Return(nil, fmt.Errorf("pop"))
+
+	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestPublishTokenPoolInterfaceNotFound(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = true
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "pool1",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: false,
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
+	ds.mdi.On("GetFFIByID", context.Background(), "ns1", pool.Interface.ID).Return(nil, nil)
+
+	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
+	assert.Regexp(t, "FF10303", err)
+}
+
+func TestPublishTokenPoolInterfaceNotPublished(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = true
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "pool1",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: false,
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
+	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
+	mockRunAsGroupPassthrough(ds.mdi)
+	ds.mdi.On("GetFFIByID", context.Background(), "ns1", pool.Interface.ID).Return(&fftypes.FFI{
+		Published: false,
+	}, nil)
+
+	_, err := ds.PublishTokenPool(context.Background(), "pool1", "pool-shared", false)
+	assert.Regexp(t, "FF10451", err)
 }

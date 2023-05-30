@@ -101,6 +101,32 @@ func (_m *Sender) Name() string {
 	return r0
 }
 
+// PublishFFI provides a mock function with given fields: ctx, name, version, networkName, waitConfirm
+func (_m *Sender) PublishFFI(ctx context.Context, name string, version string, networkName string, waitConfirm bool) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, name, version, networkName, waitConfirm)
+
+	var r0 *fftypes.FFI
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, bool) (*fftypes.FFI, error)); ok {
+		return rf(ctx, name, version, networkName, waitConfirm)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, bool) *fftypes.FFI); ok {
+		r0 = rf(ctx, name, version, networkName, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFI)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, bool) error); ok {
+		r1 = rf(ctx, name, version, networkName, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PublishTokenPool provides a mock function with given fields: ctx, poolNameOrID, networkName, waitConfirm
 func (_m *Sender) PublishTokenPool(ctx context.Context, poolNameOrID string, networkName string, waitConfirm bool) (*core.TokenPool, error) {
 	ret := _m.Called(ctx, poolNameOrID, networkName, waitConfirm)

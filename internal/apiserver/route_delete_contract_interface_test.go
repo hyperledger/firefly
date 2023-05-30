@@ -17,32 +17,40 @@
 package apiserver
 
 import (
-	"bytes"
-	"encoding/json"
+	"fmt"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/definitionsmocks"
-	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostTokenPoolPublish(t *testing.T) {
+func TestDeleteContractInterface(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
-	mds := &definitionsmocks.Sender{}
-	o.On("DefinitionSender").Return(mds)
-	input := core.TokenPool{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/pools/pool1/publish", &buf)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
+	u := fftypes.NewUUID()
+	req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/namespaces/ns1/contracts/interfaces/%s", u), nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
-	pool := &core.TokenPool{}
 
-	mds.On("PublishTokenPool", mock.Anything, "pool1", "", false).Return(pool, nil)
+	mcm.On("DeleteFFI", mock.Anything, u).Return(nil)
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 202, res.Result().StatusCode)
+	assert.Equal(t, 204, res.Result().StatusCode)
+}
+
+func TestDeleteContractInterfaceBadID(t *testing.T) {
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/namespaces/ns1/contracts/interfaces/bad"), nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 400, res.Result().StatusCode)
 }

@@ -433,8 +433,12 @@ type iTokenApprovalCollection interface {
 }
 
 type iFFICollection interface {
+	// InsertOrGetFFI - Insert an FFI
+	// If an FFI with the same name has already been recorded, does not insert but returns the existing row
+	InsertOrGetFFI(ctx context.Context, ffi *fftypes.FFI) (*fftypes.FFI, error)
+
 	// UpsertFFI - Upsert an FFI
-	UpsertFFI(ctx context.Context, cd *fftypes.FFI) error
+	UpsertFFI(ctx context.Context, ffi *fftypes.FFI, optimization UpsertOptimization) error
 
 	// GetFFIs - Get FFIs
 	GetFFIs(ctx context.Context, namespace string, filter ffapi.Filter) ([]*fftypes.FFI, *ffapi.FilterResult, error)
@@ -444,6 +448,12 @@ type iFFICollection interface {
 
 	// GetFFI - Get an FFI by name and version
 	GetFFI(ctx context.Context, namespace, name, version string) (*fftypes.FFI, error)
+
+	// GetFFIByNetworkName - Get an FFI by network name and version
+	GetFFIByNetworkName(ctx context.Context, namespace, networkName, version string) (*fftypes.FFI, error)
+
+	// DeleteFFI - Delete an FFI
+	DeleteFFI(ctx context.Context, namespace string, id *fftypes.UUID) error
 }
 
 type iFFIMethodCollection interface {
@@ -979,9 +989,11 @@ var TokenApprovalQueryFactory = &ffapi.QueryFields{
 
 // FFIQueryFactory filter fields for contract definitions
 var FFIQueryFactory = &ffapi.QueryFields{
-	"id":      &ffapi.UUIDField{},
-	"name":    &ffapi.StringField{},
-	"version": &ffapi.StringField{},
+	"id":          &ffapi.UUIDField{},
+	"name":        &ffapi.StringField{},
+	"networkname": &ffapi.StringField{},
+	"version":     &ffapi.StringField{},
+	"published":   &ffapi.BoolField{},
 }
 
 // FFIMethodQueryFactory filter fields for contract methods
