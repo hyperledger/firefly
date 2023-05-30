@@ -156,6 +156,17 @@ func (ds *definitionSender) getContractAPISender(ctx context.Context, httpServer
 	} else if existing != nil {
 		return wrapSendError(i18n.NewError(ctx, coremsgs.MsgNetworkNameExists))
 	}
+	if api.Interface != nil && api.Interface.ID != nil {
+		iface, err := ds.database.GetFFIByID(ctx, ds.namespace, api.Interface.ID)
+		switch {
+		case err != nil:
+			return wrapSendError(err)
+		case iface == nil:
+			return wrapSendError(i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotFound, api.Interface.ID))
+		case !iface.Published:
+			return wrapSendError(i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotPublished, api.Interface.ID))
+		}
+	}
 
 	// Prepare the API definition to be serialized for broadcast
 	localName := api.Name

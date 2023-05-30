@@ -576,3 +576,80 @@ func TestPublishContractAPINetworkNameConflict(t *testing.T) {
 	_, err := ds.PublishContractAPI(context.Background(), url, "api", "api-shared", false)
 	assert.Regexp(t, "FF10448", err)
 }
+
+func TestPublishContractAPIInterfaceFail(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = true
+
+	url := "http://firefly"
+	api := &core.ContractAPI{
+		Name:      "ffi1",
+		Namespace: "ns1",
+		Published: false,
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	ds.mcm.On("GetContractAPI", context.Background(), url, "api").Return(api, nil)
+	ds.mdi.On("GetContractAPIByNetworkName", context.Background(), "ns1", "api-shared").Return(nil, nil)
+	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
+	mockRunAsGroupPassthrough(ds.mdi)
+	ds.mdi.On("GetFFIByID", context.Background(), "ns1", api.Interface.ID).Return(nil, fmt.Errorf("pop"))
+
+	_, err := ds.PublishContractAPI(context.Background(), url, "api", "api-shared", false)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestPublishContractAPIInterfaceNotFound(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = true
+
+	url := "http://firefly"
+	api := &core.ContractAPI{
+		Name:      "ffi1",
+		Namespace: "ns1",
+		Published: false,
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	ds.mcm.On("GetContractAPI", context.Background(), url, "api").Return(api, nil)
+	ds.mdi.On("GetContractAPIByNetworkName", context.Background(), "ns1", "api-shared").Return(nil, nil)
+	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
+	mockRunAsGroupPassthrough(ds.mdi)
+	ds.mdi.On("GetFFIByID", context.Background(), "ns1", api.Interface.ID).Return(nil, nil)
+
+	_, err := ds.PublishContractAPI(context.Background(), url, "api", "api-shared", false)
+	assert.Regexp(t, "FF10303", err)
+}
+
+func TestPublishContractAPIInterfaceNotPublished(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = true
+
+	url := "http://firefly"
+	api := &core.ContractAPI{
+		Name:      "ffi1",
+		Namespace: "ns1",
+		Published: false,
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	ds.mcm.On("GetContractAPI", context.Background(), url, "api").Return(api, nil)
+	ds.mdi.On("GetContractAPIByNetworkName", context.Background(), "ns1", "api-shared").Return(nil, nil)
+	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
+	mockRunAsGroupPassthrough(ds.mdi)
+	ds.mdi.On("GetFFIByID", context.Background(), "ns1", api.Interface.ID).Return(&fftypes.FFI{
+		Published: false,
+	}, nil)
+
+	_, err := ds.PublishContractAPI(context.Background(), url, "api", "api-shared", false)
+	assert.Regexp(t, "FF10451", err)
+}
