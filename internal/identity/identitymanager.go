@@ -45,13 +45,13 @@ type Manager interface {
 	ResolveQuerySigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error)
 	ResolveMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error)
-	ResolveMultipartyRootOrg(ctx context.Context) (*core.Identity, error)
 
 	FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, verifier *core.VerifierRef) (identity *core.Identity, err error)
 	CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *core.Identity, err error)
 	CachedIdentityLookupMustExist(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
 	CachedIdentityLookupNilOK(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
 	GetLocalNode(ctx context.Context) (node *core.Identity, err error)
+	GetRootOrg(ctx context.Context) (org *core.Identity, err error)
 	VerifyIdentityChain(ctx context.Context, identity *core.Identity) (immediateParent *core.Identity, retryable bool, err error)
 	ValidateNodeOwner(ctx context.Context, node *core.Identity, identity *core.Identity) (valid bool, err error)
 }
@@ -104,9 +104,26 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 
 func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identity, err error) {
 	nodeName := im.multiparty.LocalNode().Name
-	nodeDID := fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, nodeName)
-	node, _, err = im.CachedIdentityLookupNilOK(ctx, nodeDID)
+	if nodeName != "" {
+		nodeDID := fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, nodeName)
+		node, _, err = im.CachedIdentityLookupNilOK(ctx, nodeDID)
+	}
+	if err == nil && node == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgLocalNodeNotSet)
+	}
 	return node, err
+}
+
+func (im *identityManager) GetRootOrg(ctx context.Context) (org *core.Identity, err error) {
+	orgName := im.multiparty.RootOrg().Name
+	if orgName != "" {
+		orgDID := fmt.Sprintf("%s%s", core.FireFlyOrgDIDPrefix, orgName)
+		org, _, err = im.CachedIdentityLookupNilOK(ctx, orgDID)
+	}
+	if err == nil && org == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgNotSet)
+	}
+	return org, err
 }
 
 // ResolveInputSigningKey takes in only a "key" (which may be empty to use the default) to be resolved and returned.
@@ -273,7 +290,7 @@ func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, si
 	if err != nil {
 		return err
 	}
-	identity, err := im.ResolveMultipartyRootOrg(ctx)
+	identity, err := im.GetRootOrg(ctx)
 	if err != nil {
 		return err
 	}
@@ -337,26 +354,6 @@ func (im *identityManager) FindIdentityForVerifier(ctx context.Context, iTypes [
 		return identity, err
 	}
 	return nil, nil
-}
-
-// ResolveMultipartyRootOrg gets the identity of the organization that owns the node, if fully registered
-// within the given namespace, also resolving its verifier for use as a signing key
-func (im *identityManager) ResolveMultipartyRootOrg(ctx context.Context) (*core.Identity, error) {
-	verifierRef, err := im.ResolveMultipartyRootVerifier(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	orgName := im.multiparty.RootOrg().Name
-	identity, err := im.cachedIdentityLookupByVerifierRef(ctx, im.namespace, verifierRef)
-	if err != nil || identity == nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
-	}
-	// Confirm that the specified blockchain key is associated with the correct org
-	if identity.Type != core.IdentityTypeOrg || identity.Name != orgName {
-		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
-	}
-	return identity, nil
 }
 
 func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentity *core.Identity) (immediateParent *core.Identity, retryable bool, err error) {

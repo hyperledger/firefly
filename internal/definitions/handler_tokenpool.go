@@ -42,7 +42,7 @@ func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, pool.Connector, "token")
 	}
 
-	org, err := dh.identity.ResolveMultipartyRootOrg(ctx)
+	org, err := dh.identity.GetRootOrg(ctx)
 	if err != nil {
 		return HandlerResult{Action: core.ActionRetry}, err
 	}

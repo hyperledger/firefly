@@ -61,7 +61,7 @@ func TestDefineFFIFail(t *testing.T) {
 
 	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1", "1.0").Return(nil, nil)
 	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-	ds.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	ds.mim.On("GetRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 
 	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.EqualError(t, err, "pop")
@@ -116,7 +116,7 @@ func TestDefineFFIOk(t *testing.T) {
 
 	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1", "1.0").Return(nil, nil)
 	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-	ds.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -146,7 +146,7 @@ func TestDefineFFIConfirm(t *testing.T) {
 
 	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1", "1.0").Return(nil, nil)
 	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-	ds.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -239,7 +239,7 @@ func TestDefineContractAPIFail(t *testing.T) {
 	}
 
 	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
-	ds.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	ds.mim.On("GetRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 	ds.mdi.On("GetContractAPIByNetworkName", context.Background(), "ns1", "banana").Return(nil, nil)
 
 	err := ds.DefineContractAPI(context.Background(), url, api, false)
@@ -258,7 +258,7 @@ func TestDefineContractAPIOk(t *testing.T) {
 	}
 
 	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
-	ds.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -323,7 +323,7 @@ func TestPublishFFI(t *testing.T) {
 	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1-shared", "1.0").Return(nil, nil)
 	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(ffi, nil)
 	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-	ds.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -410,7 +410,7 @@ func TestPublishFFIPrepareFail(t *testing.T) {
 	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1-shared", "1.0").Return(nil, nil)
 	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(ffi, nil)
 	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
-	ds.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -452,7 +452,7 @@ func TestPublishContractAPI(t *testing.T) {
 	ds.mdi.On("GetContractAPIByNetworkName", context.Background(), "ns1", "api-shared").Return(nil, nil)
 	ds.mcm.On("GetContractAPI", context.Background(), url, "api").Return(api, nil)
 	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
-	ds.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},

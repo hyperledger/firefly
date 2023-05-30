@@ -119,7 +119,7 @@ func TestCreateDefinitionConfirm(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	mim.On("ResolveMultipartyRootOrg", ds.ctx).Return(&core.Identity{
+	mim.On("GetRootOrg", ds.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -145,7 +145,7 @@ func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	mim.On("ResolveMultipartyRootOrg", ds.ctx).Return(&core.Identity{
+	mim.On("GetRootOrg", ds.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},

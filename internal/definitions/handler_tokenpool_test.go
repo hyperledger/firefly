@@ -82,7 +82,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID && p.Connector == "connector1"
 	})).Return(nil, nil)
 	dh.mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -105,7 +105,7 @@ func TestHandleDefinitionBroadcastTokenPoolBadConnector(t *testing.T) {
 	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -137,7 +137,7 @@ func TestHandleDefinitionBroadcastTokenPoolNameExists(t *testing.T) {
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID && p.Name == "name1-1"
 	})).Return(nil, nil)
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -185,7 +185,7 @@ func TestHandleDefinitionBroadcastTokenPoolNetworkNameExists(t *testing.T) {
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -215,7 +215,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -243,7 +243,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingWaiting(t *testing.T) {
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -278,7 +278,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublish(t *testing.T) {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
 	dh.mdi.On("UpsertTokenPool", context.Background(), &newPool, database.UpsertOptimizationExisting).Return(nil)
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -313,7 +313,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishUpsertFail(t *testing.
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
 	dh.mdi.On("UpsertTokenPool", context.Background(), &newPool, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -344,7 +344,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishOrgFail(t *testing.T) 
 	newPool.Message = msg.Header.ID
 	newPool.State = core.TokenPoolStatePending
 
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	dh.mim.On("GetRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
@@ -374,7 +374,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishOrgMismatch(t *testing
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org2",
 		},
@@ -396,7 +396,7 @@ func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil, fmt.Errorf("pop"))
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -421,7 +421,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil, nil)
 	dh.mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(fmt.Errorf("pop"))
-	dh.mim.On("ResolveMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},

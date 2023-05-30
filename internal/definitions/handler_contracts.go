@@ -161,7 +161,7 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
 	}
 
-	org, err := dh.identity.ResolveMultipartyRootOrg(ctx)
+	org, err := dh.identity.GetRootOrg(ctx)
 	if err != nil {
 		return HandlerResult{Action: core.ActionRetry}, err
 	}
@@ -198,7 +198,7 @@ func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, sta
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract API", msg.Header.ID)
 	}
 
-	org, err := dh.identity.ResolveMultipartyRootOrg(ctx)
+	org, err := dh.identity.GetRootOrg(ctx)
 	if err != nil {
 		return HandlerResult{Action: core.ActionRetry}, err
 	}

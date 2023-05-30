@@ -26,7 +26,7 @@ import (
 
 func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (identity *core.Identity, err error) {
 
-	nodeOwningOrg, err := nm.identity.ResolveMultipartyRootOrg(ctx)
+	nodeOwningOrg, err := nm.identity.GetRootOrg(ctx)
 	if err != nil {
 		return nil, err
 	}
