@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -45,6 +45,10 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, subDef *co
 	}
 	if subDef.Transport == system.SystemEventsTransport {
 		return nil, i18n.NewError(ctx, coremsgs.MsgSystemTransportInternal)
+	}
+
+	if subDef.TLSConfigName != "" || or.namespace.TLSConfigs[subDef.TLSConfigName] != nil {
+		subDef.TLSConfig = or.namespace.TLSConfigs[subDef.TLSConfigName]
 	}
 
 	return subDef, or.events.CreateUpdateDurableSubscription(ctx, subDef, mustNew)

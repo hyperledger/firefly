@@ -18,6 +18,7 @@ package orchestrator
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"testing"
 
@@ -68,6 +69,30 @@ func TestCreateSubscriptionOk(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, s1, sub)
 	assert.Equal(t, "ns", sub.Namespace)
+}
+
+func TestCreateSubscriptionTLSConfigOk(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	mockTlSConfig := &tls.Config{}
+
+	or.namespace.TLSConfigs = map[string]*tls.Config{
+		"myconfig": mockTlSConfig,
+	}
+
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Name: "sub1",
+		},
+		TLSConfigName: "myconfig",
+	}
+	or.mem.On("CreateUpdateDurableSubscription", mock.Anything, mock.Anything, true).Return(nil)
+	s1, err := or.CreateSubscription(or.ctx, sub)
+	assert.NoError(t, err)
+	assert.Equal(t, s1, sub)
+	assert.Equal(t, "ns", sub.Namespace)
+	assert.Equal(t, mockTlSConfig, sub.TLSConfig)
 }
 
 func TestCreateUpdateSubscriptionOk(t *testing.T) {

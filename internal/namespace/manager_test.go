@@ -72,6 +72,7 @@ namespaces:
   predefined:
     - defaultKey: 0xbEa50Ec98776beF144Fc63078e7b15291Ac64cfA
       name: default
+      tlsConfigs: []
       plugins:
         - ethereum
         - postgres
@@ -1303,6 +1304,32 @@ func TestLoadNamespacesUseDefaults(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, newNS, 1)
 	assert.Equal(t, "oldest", newNS["ns1"].config.Multiparty.Contracts[0].FirstEvent)
+}
+
+// TODO fix why the read config doesn't override the test config!
+func TestLoadTLSConfigsForNamespace(t *testing.T) {
+	nm, _, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	coreconfig.Reset()
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+namespaces:
+  default: ns1
+  predefined:
+  - name: ns1
+    tlsConfigs:
+    - name: myconfig
+      tls:
+        ca: my-ca
+        cert: my-cert
+        key: my-key
+  `))
+	assert.NoError(t, err)
+
+	newNS, err := nm.loadNamespaces(context.Background(), nm.dumpRootConfig(), nm.plugins)
+	assert.NoError(t, err)
+	assert.Len(t, newNS, 1)
 }
 
 func TestLoadNamespacesNonMultipartyNoDatabase(t *testing.T) {

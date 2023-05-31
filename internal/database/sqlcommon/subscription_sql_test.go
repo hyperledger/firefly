@@ -85,9 +85,10 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 				Group: "group.*",
 			},
 		},
-		Options: subOpts,
-		Created: fftypes.Now(),
-		Updated: fftypes.Now(),
+		Options:       subOpts,
+		Created:       fftypes.Now(),
+		Updated:       fftypes.Now(),
+		TLSConfigName: "myconfig",
 	}
 
 	// Rejects attempt to update ID
@@ -107,6 +108,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	subscriptionReadJson, _ = json.Marshal(&subscriptionRead)
 	assert.Equal(t, string(subscriptionJson), string(subscriptionReadJson))
 	assert.Equal(t, true, subscriptionRead.Options.TransportOptions()["my-transport-option"])
+	assert.Equal(t, "myconfig", subscriptionRead.TLSConfigName)
 
 	// Query back the subscription
 	fb := database.SubscriptionQueryFactory.NewFilter(ctx)
@@ -260,7 +262,7 @@ func TestSubscriptionUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(subscriptionColumns).AddRow(
-		fftypes.NewUUID(), "ns1", "sub1", "websockets", `{}`, `{}`, fftypes.Now(), fftypes.Now()),
+		fftypes.NewUUID(), "ns1", "sub1", "websockets", `{}`, `{}`, fftypes.Now(), fftypes.Now(), ""),
 	)
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
 	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
@@ -291,7 +293,7 @@ func TestSubscriptionUpdateFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(subscriptionColumns).AddRow(
-		fftypes.NewUUID(), "ns1", "sub1", "websockets", `{}`, `{}`, fftypes.Now(), fftypes.Now()),
+		fftypes.NewUUID(), "ns1", "sub1", "websockets", `{}`, `{}`, fftypes.Now(), fftypes.Now(), ""),
 	)
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -311,7 +313,7 @@ func TestSubscriptionDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(subscriptionColumns).AddRow(
-		fftypes.NewUUID(), "ns1", "sub1", "websockets", `{}`, `{}`, fftypes.Now(), fftypes.Now()),
+		fftypes.NewUUID(), "ns1", "sub1", "websockets", `{}`, `{}`, fftypes.Now(), fftypes.Now(), ""),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteSubscriptionByID(context.Background(), "ns1", fftypes.NewUUID())

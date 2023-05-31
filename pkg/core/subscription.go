@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,6 +18,7 @@ package core
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql/driver"
 	"encoding/json"
 	"net/url"
@@ -114,12 +115,14 @@ type SubscriptionRef struct {
 type Subscription struct {
 	SubscriptionRef
 
-	Transport string              `ffstruct:"Subscription" json:"transport"`
-	Filter    SubscriptionFilter  `ffstruct:"Subscription" json:"filter"`
-	Options   SubscriptionOptions `ffstruct:"Subscription" json:"options"`
-	Ephemeral bool                `ffstruct:"Subscription" json:"ephemeral,omitempty" ffexcludeinput:"true"`
-	Created   *fftypes.FFTime     `ffstruct:"Subscription" json:"created" ffexcludeinput:"true"`
-	Updated   *fftypes.FFTime     `ffstruct:"Subscription" json:"updated" ffexcludeinput:"true"`
+	Transport     string              `ffstruct:"Subscription" json:"transport"`
+	Filter        SubscriptionFilter  `ffstruct:"Subscription" json:"filter"`
+	Options       SubscriptionOptions `ffstruct:"Subscription" json:"options"`
+	TLSConfigName string              `ffstruct:"Subscription" json:"tlsConfigName,omitempty"`
+	TLSConfig     *tls.Config         `ffstruct:"Subscription" json:"-" ffexcludeinput:"true"`
+	Ephemeral     bool                `ffstruct:"Subscription" json:"ephemeral,omitempty" ffexcludeinput:"true"`
+	Created       *fftypes.FFTime     `ffstruct:"Subscription" json:"created" ffexcludeinput:"true"`
+	Updated       *fftypes.FFTime     `ffstruct:"Subscription" json:"updated" ffexcludeinput:"true"`
 }
 
 type SubscriptionWithStatus struct {

@@ -76,6 +76,7 @@ func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error)
 	if err != nil {
 		return err
 	}
+
 	*wh = WebHooks{
 		ctx:          log.WithLogField(ctx, "webhook", wh.connID),
 		capabilities: &events.Capabilities{},
@@ -104,9 +105,9 @@ func (wh *WebHooks) Capabilities() *events.Capabilities {
 	return wh.capabilities
 }
 
-func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.JSONObject) (req *whRequest, err error) {
+func (wh *WebHooks) buildRequest(restyClient *resty.Client, options fftypes.JSONObject, firstData fftypes.JSONObject) (req *whRequest, err error) {
 	req = &whRequest{
-		r: wh.client.R().
+		r: restyClient.R().
 			SetDoNotParseResponse(true).
 			SetContext(wh.ctx),
 		url:       options.GetString("url"),
@@ -195,7 +196,7 @@ func (wh *WebHooks) ValidateOptions(options *core.SubscriptionOptions) error {
 		defaultTrue := true
 		options.WithData = &defaultTrue
 	}
-	_, err := wh.buildRequest(options.TransportOptions(), fftypes.JSONObject{})
+	_, err := wh.buildRequest(wh.client, options.TransportOptions(), fftypes.JSONObject{})
 	return err
 }
 
@@ -224,7 +225,18 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 		}
 	}
 
-	req, err = wh.buildRequest(sub.Options.TransportOptions(), firstData)
+	// Taking a copy of the global plugin client because
+	// 1) We do not want to modify that global instance
+	// 2) We want to keep the global configuration for webhooks
+	httpClient := *wh.client.GetClient()
+
+	newClient := resty.NewWithClient(&httpClient)
+
+	if sub.TLSConfig != nil {
+		newClient.SetTLSClientConfig(sub.TLSConfig)
+	}
+
+	req, err = wh.buildRequest(newClient, sub.Options.TransportOptions(), firstData)
 	if err != nil {
 		return nil, nil, err
 	}
