@@ -19,6 +19,7 @@ package tezos
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"regexp"
 
 	"github.com/go-resty/resty/v2"
@@ -46,8 +47,31 @@ type Tezos struct {
 	tezosconnectConf     config.Section
 }
 
+type tezosError struct {
+	Error string `json:"error,omitempty"`
+}
+
 type Location struct {
 	Address string `json:"address"`
+}
+
+type TezosconnectMessageHeaders struct {
+	Type string `json:"type,omitempty"`
+	ID   string `json:"id,omitempty"`
+}
+
+type PayloadSchema struct {
+	Type        string        `json:"type"`
+	PrefixItems []*PrefixItem `json:"prefixItems"`
+}
+
+type PrefixItem struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type ffiParamSchema struct {
+	Type string `json:"type,omitempty"`
 }
 
 var addressVerify = regexp.MustCompile("^(tz[1-4]|[Kk][Tt]1)[1-9A-Za-z]{33}$")
@@ -80,6 +104,11 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 
 	if tezosconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", tezosconnectConf)
+	}
+
+	t.client, err = ffresty.New(t.ctx, tezosconnectConf)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -141,19 +170,59 @@ func (t *Tezos) SubmitNetworkAction(ctx context.Context, nsOpID string, signingK
 }
 
 func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error {
-	// TODO: impl
-	return nil
+	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
 func (t *Tezos) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
-	// TODO: impl
+	// No additional validation beyond what is enforced by Contract Manager
 	return nil
 }
 
 func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
-	// TODO: impl
-	return nil
+	tezosLocation, err := t.parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	// Build the payload schema for the method parameters
+	prefixItems := make([]*PrefixItem, len(method.Params))
+	for i, param := range method.Params {
+		var paramSchema ffiParamSchema
+		if err := json.Unmarshal(param.Schema.Bytes(), &paramSchema); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, fmt.Sprintf("%s.schema", param.Name))
+		}
+
+		prefixItems[i] = &PrefixItem{
+			Name: param.Name,
+			Type: paramSchema.Type,
+		}
+	}
+
+	if batch != nil {
+		// TODO: add batch pin support
+	}
+
+	return t.invokeContractMethod(ctx, tezosLocation.Address, method.Name, signingKey, nsOpID, prefixItems, input, options)
 }
+
+// func (t *Tezos) prepareRequest(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError, input map[string]interface{}) (*michelson.Entry, []*michelson.Entry, []interface{}, error) {
+// 	errorsMichelson := make([]*michelson.Entry, len(errors))
+// 	orderedInput := make([]interface{}, len(method.Params))
+// 	michelson, err := ffi2michelson.ConvertFFIMethodToMichelson(ctx, method)
+// 	if err != nil {
+// 		return michelson, errorsMichelson, orderedInput, err
+// 	}
+// 	// for i, ffiError := range errors {
+// 	// 	michelson, err := ffi2abi.ConvertFFIErrorDefinitionToMichelson(ctx, &ffiError.FFIErrorDefinition)
+// 	// 	if err == nil {
+// 	// 		errorsMichelson[i] = michelson
+// 	// 	}
+// 	// }
+// 	for i, ffiParam := range method.Params {
+// 		orderedInput[i] = input[ffiParam.Name]
+// 	}
+// 	return michelson, errorsMichelson, orderedInput, nil
+// }
 
 func (t *Tezos) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
 	// TODO: impl
@@ -221,6 +290,88 @@ func (t *Tezos) GetTransactionStatus(ctx context.Context, operation *core.Operat
 	return nil, nil
 }
 
+func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName string, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) error {
+	if t.metrics.IsMetricsEnabled() {
+		t.metrics.BlockchainTransaction(address, methodName)
+	}
+	messageType := "SendTransaction"
+	body, err := t.buildTezosconnectRequestBody(ctx, messageType, address, methodName, signingKey, requestID, prefixItems, input, options)
+	if err != nil {
+		return err
+	}
+
+	var resErr tezosError
+	res, err := t.client.R().
+		SetContext(ctx).
+		SetBody(body).
+		SetError(&resErr).
+		Post("/")
+	if err != nil || !res.IsSuccess() {
+		return wrapError(ctx, &resErr, res, err)
+	}
+	return nil
+}
+
+func (t *Tezos) buildTezosconnectRequestBody(ctx context.Context, messageType, address, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (map[string]interface{}, error) {
+	headers := TezosconnectMessageHeaders{
+		Type: messageType,
+	}
+	if requestID != "" {
+		headers.ID = requestID
+	}
+	// All arguments must be JSON serialized
+	args, err := jsonEncodeInput(input)
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
+	}
+
+	body := map[string]interface{}{
+		"headers": &headers,
+		"to":      address,
+		"method":  methodName,
+		"args":    args,
+		"payloadSchema": &PayloadSchema{
+			Type:        "array",
+			PrefixItems: prefixItems,
+		},
+	}
+	if signingKey != "" {
+		body["from"] = signingKey
+	}
+
+	return t.applyOptions(ctx, body, options)
+}
+
+func jsonEncodeInput(params map[string]interface{}) (output map[string]interface{}, err error) {
+	output = make(map[string]interface{}, len(params))
+	for field, value := range params {
+		switch v := value.(type) {
+		case string:
+			output[field] = v
+		default:
+			encodedValue, err := json.Marshal(v)
+			if err != nil {
+				return nil, err
+			}
+			output[field] = string(encodedValue)
+		}
+
+	}
+	return
+}
+
+func (t *Tezos) applyOptions(ctx context.Context, body, options map[string]interface{}) (map[string]interface{}, error) {
+	for k, v := range options {
+		// Set the new field if it's not already set. Do not allow overriding of existing fields
+		if _, ok := body[k]; !ok {
+			body[k] = v
+		} else {
+			return nil, i18n.NewError(ctx, coremsgs.MsgOverrideExistingFieldCustomOption, k)
+		}
+	}
+	return body, nil
+}
+
 func (t *Tezos) parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
 	tezosLocation := Location{}
 	if err := json.Unmarshal(location.Bytes(), &tezosLocation); err != nil {
@@ -242,6 +393,13 @@ func (t *Tezos) encodeContractLocation(ctx context.Context, location *Location) 
 		result = fftypes.JSONAnyPtrBytes(normalized)
 	}
 	return result, err
+}
+
+func wrapError(ctx context.Context, errRes *tezosError, res *resty.Response, err error) error {
+	if errRes != nil && errRes.Error != "" {
+		return i18n.WrapError(ctx, err, coremsgs.MsgTezosconnectRESTErr, errRes.Error)
+	}
+	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTezosconnectRESTErr)
 }
 
 func formatTezosAddress(ctx context.Context, key string) (string, error) {
