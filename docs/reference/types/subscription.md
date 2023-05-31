@@ -55,6 +55,7 @@ nav_order: 3
 | `transport` | The transport plugin responsible for event delivery (WebSockets, Webhooks, JMS, NATS etc.) | `string` |
 | `filter` | Server-side filter to apply to events | [`SubscriptionFilter`](#subscriptionfilter) |
 | `options` | Subscription options | [`SubscriptionOptions`](#subscriptionoptions) |
+| `tlsConfigName` | The name of an existing TLS configuration associated to the namespace to use when performing the request in the case of webhooks | `string` |
 | `ephemeral` | Ephemeral subscriptions only exist as long as the application is connected, and as such will miss events that occur while the application is disconnected, and cannot be created administratively. You can create one over over a connected WebSocket connection | `bool` |
 | `created` | Creation time of the subscription | [`FFTime`](simpletypes#fftime) |
 | `updated` | Last time the subscription was updated | [`FFTime`](simpletypes#fftime) |

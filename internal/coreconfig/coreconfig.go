@@ -37,6 +37,12 @@ const (
 	NamespaceDescription = "description"
 	// NamespacePlugins is the list of namespace plugins
 	NamespacePlugins = "plugins"
+	// NamespaceTLSConfigName is the user-supplied name for the TLS Config
+	NamespaceTLSConfigName = "name"
+	// NamespaceTLSConfigs is the list of tls configs
+	NamespaceTLSConfigs = "tlsConfigs"
+	// NamespaceTLSConfigTLSSection is the section to provide the paths to CA , cert and key files
+	NamespaceTLSConfigTLSSection = "tls"
 	// NamespaceDefaultKey is the default signing key for blockchain transactions within this namespace
 	NamespaceDefaultKey = "defaultKey"
 	// NamespaceAssetKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization

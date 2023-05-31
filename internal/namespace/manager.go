@@ -18,6 +18,7 @@ package namespace
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"strconv"
 	"sync"
@@ -26,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/auth"
 	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -768,6 +770,34 @@ func (nm *namespaceManager) loadNamespaces(ctx context.Context, rawConfig fftype
 	return newNS, err
 }
 
+func (nm *namespaceManager) loadTLSConfig(ctx context.Context, tlsConfigs map[string]*tls.Config, conf config.ArraySection) (err error) {
+	tlsConfigArraySize := conf.ArraySize()
+
+	for i := 0; i < tlsConfigArraySize; i++ {
+		entry := conf.ArrayEntry(i)
+		name := entry.GetString(coreconfig.NamespaceTLSConfigName)
+		tlsConf := entry.SubSection(coreconfig.NamespaceTLSConfigTLSSection)
+
+		tlsConfig, err := fftls.ConstructTLSConfig(ctx, tlsConf, fftls.ClientType)
+		if err != nil {
+			return err
+		}
+
+		if tlsConfig == nil {
+			// Config not enabled
+			continue
+		}
+
+		if tlsConfigs[name] != nil {
+			return fmt.Errorf("Found duplicate TLS Configs with name: %s", name)
+		}
+
+		tlsConfigs[name] = tlsConfig
+	}
+
+	return nil
+}
+
 func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section, rawNSConfig fftypes.JSONObject, availablePlugins map[string]*plugin) (ns *namespace, err error) {
 	if err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
 		return nil, err
@@ -850,6 +880,16 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		}
 	}
 
+	//
+	// Handle TLS Configs
+	tlsConfigArray := conf.SubArray(coreconfig.NamespaceTLSConfigs)
+	tlsConfigs := make(map[string]*tls.Config)
+
+	err = nm.loadTLSConfig(ctx, tlsConfigs, tlsConfigArray)
+	if err != nil {
+		return nil, err
+	}
+
 	config := orchestrator.Config{
 		DefaultKey:          conf.GetString(coreconfig.NamespaceDefaultKey),
 		TokenBroadcastNames: nm.tokenBroadcastNames,
@@ -886,6 +926,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 			Name:        name,
 			NetworkName: networkName,
 			Description: conf.GetString(coreconfig.NamespaceDescription),
+			TLSConfigs:  tlsConfigs,
 		},
 		loadTime:    fftypes.Now(),
 		config:      config,

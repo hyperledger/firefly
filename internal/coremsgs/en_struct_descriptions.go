@@ -502,15 +502,16 @@ var (
 	NextPinNonce     = ffm("NextPin.nonce", "The numeric index - which is monotonically increasing for each member of the privacy group")
 
 	// Subscription field descriptions
-	SubscriptionID        = ffm("Subscription.id", "The UUID of the subscription")
-	SubscriptionNamespace = ffm("Subscription.namespace", "The namespace of the subscription. A subscription will only receive events generated in the namespace of the subscription")
-	SubscriptionName      = ffm("Subscription.name", "The name of the subscription. The application specifies this name when it connects, in order to attach to the subscription and receive events that arrived while it was disconnected. If multiple apps connect to the same subscription, events are workload balanced across the connected application instances")
-	SubscriptionTransport = ffm("Subscription.transport", "The transport plugin responsible for event delivery (WebSockets, Webhooks, JMS, NATS etc.)")
-	SubscriptionFilter    = ffm("Subscription.filter", "Server-side filter to apply to events")
-	SubscriptionOptions   = ffm("Subscription.options", "Subscription options")
-	SubscriptionEphemeral = ffm("Subscription.ephemeral", "Ephemeral subscriptions only exist as long as the application is connected, and as such will miss events that occur while the application is disconnected, and cannot be created administratively. You can create one over over a connected WebSocket connection")
-	SubscriptionCreated   = ffm("Subscription.created", "Creation time of the subscription")
-	SubscriptionUpdated   = ffm("Subscription.updated", "Last time the subscription was updated")
+	SubscriptionID            = ffm("Subscription.id", "The UUID of the subscription")
+	SubscriptionNamespace     = ffm("Subscription.namespace", "The namespace of the subscription. A subscription will only receive events generated in the namespace of the subscription")
+	SubscriptionName          = ffm("Subscription.name", "The name of the subscription. The application specifies this name when it connects, in order to attach to the subscription and receive events that arrived while it was disconnected. If multiple apps connect to the same subscription, events are workload balanced across the connected application instances")
+	SubscriptionTransport     = ffm("Subscription.transport", "The transport plugin responsible for event delivery (WebSockets, Webhooks, JMS, NATS etc.)")
+	SubscriptionFilter        = ffm("Subscription.filter", "Server-side filter to apply to events")
+	SubscriptionOptions       = ffm("Subscription.options", "Subscription options")
+	SubscriptionEphemeral     = ffm("Subscription.ephemeral", "Ephemeral subscriptions only exist as long as the application is connected, and as such will miss events that occur while the application is disconnected, and cannot be created administratively. You can create one over over a connected WebSocket connection")
+	SubscriptionCreated       = ffm("Subscription.created", "Creation time of the subscription")
+	SubscriptionUpdated       = ffm("Subscription.updated", "Last time the subscription was updated")
+	SubscriptionTLSConfigName = ffm("Subscription.tlsConfigName", "The name of an existing TLS configuration associated to the namespace to use when performing the request in the case of webhooks")
 
 	// SubscriptionFilter field descriptions
 	SubscriptionFilterEvents           = ffm("SubscriptionFilter.events", "Regular expression to apply to the event type, to subscribe to a subset of event types")

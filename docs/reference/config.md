@@ -474,6 +474,23 @@ nav_order: 2
 |key|The signing key allocated to the root organization within this namespace|`string`|`<nil>`
 |name|A short name for the local root organization within this namespace|`string`|`<nil>`
 
+## namespaces.predefined[].tlsConfigs[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|Name of the TLS Config|`string`|`<nil>`
+
+## namespaces.predefined[].tlsConfigs[].tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
+
 ## namespaces.retry
 
 |Key|Description|Type|Default Value|

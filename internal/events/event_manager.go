@@ -172,7 +172,7 @@ func NewEventManager(ctx context.Context, ns *core.Namespace, di database.Plugin
 
 	em.enricher = newEventEnricher(ns.Name, di, dm, om, txHelper)
 
-	if em.subManager, err = newSubscriptionManager(ctx, ns.Name, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, ns, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
 		return nil, err
 	}
 
