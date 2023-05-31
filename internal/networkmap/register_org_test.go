@@ -59,7 +59,7 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootVerifier", nm.ctx).Return(&core.VerifierRef{
+	mim.On("ResolveMultipartyRootVerifier", nm.ctx).Return(&core.VerifierRef{
 		Value: "0x12345",
 	}, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
@@ -91,7 +91,7 @@ func TestRegisterNodeOrgNoName(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootVerifier", nm.ctx).Return(&core.VerifierRef{
+	mim.On("ResolveMultipartyRootVerifier", nm.ctx).Return(&core.VerifierRef{
 		Value: "0x12345",
 	}, nil)
 
@@ -111,7 +111,7 @@ func TestRegisterNodeGetOwnerBlockchainKeyFail(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootVerifier", nm.ctx).Return(nil, fmt.Errorf("pop"))
+	mim.On("ResolveMultipartyRootVerifier", nm.ctx).Return(nil, fmt.Errorf("pop"))
 
 	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.Regexp(t, "pop", err)

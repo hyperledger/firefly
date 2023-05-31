@@ -85,7 +85,7 @@ func TestGetStatusRegistered(t *testing.T) {
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
 
-	or.mim.On("GetMultipartyRootOrg", or.ctx).Return(&core.Identity{
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -146,7 +146,7 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 
 	orgID := fftypes.NewUUID()
 
-	or.mim.On("GetMultipartyRootOrg", or.ctx).Return(&core.Identity{
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -173,7 +173,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
 
-	or.mim.On("GetMultipartyRootOrg", or.ctx).Return(&core.Identity{
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -223,7 +223,7 @@ func TestGetStatusUnregistered(t *testing.T) {
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
-	or.mim.On("GetMultipartyRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
+	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
 
 	or.config.Multiparty.Org.Name = "org1"
 	or.config.Multiparty.Node.Name = "node1"
@@ -252,7 +252,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 
 	orgID := fftypes.NewUUID()
 
-	or.mim.On("GetMultipartyRootOrg", or.ctx).Return(&core.Identity{
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -304,7 +304,7 @@ func TestGetStatusNodeError(t *testing.T) {
 
 	orgID := fftypes.NewUUID()
 
-	or.mim.On("GetMultipartyRootOrg", or.ctx).Return(&core.Identity{
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",

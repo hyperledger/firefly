@@ -44,7 +44,7 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	ds.multiparty = true
 
 	ds.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -82,7 +82,7 @@ func TestBroadcastOk(t *testing.T) {
 	ds.multiparty = true
 	mms := &syncasyncmocks.Sender{}
 
-	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},

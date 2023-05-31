@@ -163,8 +163,8 @@ func (_m *Manager) GetLocalNode(ctx context.Context) (*core.Identity, error) {
 	return r0, r1
 }
 
-// GetMultipartyRootOrg provides a mock function with given fields: ctx
-func (_m *Manager) GetMultipartyRootOrg(ctx context.Context) (*core.Identity, error) {
+// GetRootOrg provides a mock function with given fields: ctx
+func (_m *Manager) GetRootOrg(ctx context.Context) (*core.Identity, error) {
 	ret := _m.Called(ctx)
 
 	var r0 *core.Identity
@@ -177,32 +177,6 @@ func (_m *Manager) GetMultipartyRootOrg(ctx context.Context) (*core.Identity, er
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetMultipartyRootVerifier provides a mock function with given fields: ctx
-func (_m *Manager) GetMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error) {
-	ret := _m.Called(ctx)
-
-	var r0 *core.VerifierRef
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*core.VerifierRef, error)); ok {
-		return rf(ctx)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) *core.VerifierRef); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.VerifierRef)
 		}
 	}
 
@@ -298,6 +272,32 @@ func (_m *Manager) ResolveInputVerifierRef(ctx context.Context, inputKey *core.V
 
 	if rf, ok := ret.Get(1).(func(context.Context, *core.VerifierRef, blockchain.ResolveKeyIntent) error); ok {
 		r1 = rf(ctx, inputKey, intent)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResolveMultipartyRootVerifier provides a mock function with given fields: ctx
+func (_m *Manager) ResolveMultipartyRootVerifier(ctx context.Context) (*core.VerifierRef, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *core.VerifierRef
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*core.VerifierRef, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *core.VerifierRef); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.VerifierRef)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

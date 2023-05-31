@@ -123,7 +123,7 @@ func TestDefineTokenPoolOk(t *testing.T) {
 		Published: true,
 	}
 
-	ds.mim.On("GetMultipartyRootOrg", ds.ctx).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", ds.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -223,7 +223,7 @@ func TestPublishTokenPool(t *testing.T) {
 	}
 
 	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -352,7 +352,7 @@ func TestPublishTokenPoolResolveFail(t *testing.T) {
 	}
 
 	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	ds.mim.On("GetRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
 	ds.mdi.On("GetTokenPoolByNetworkName", mock.Anything, "ns1", "pool-shared").Return(nil, nil)
 	mockRunAsGroupPassthrough(ds.mdi)
 
@@ -379,7 +379,7 @@ func TestPublishTokenPoolPrepareFail(t *testing.T) {
 	}
 
 	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -415,7 +415,7 @@ func TestPublishTokenPoolSendFail(t *testing.T) {
 	}
 
 	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -452,7 +452,7 @@ func TestPublishTokenPoolConfirm(t *testing.T) {
 	}
 
 	ds.mam.On("GetTokenPoolByNameOrID", mock.Anything, "pool1").Return(pool, nil)
-	ds.mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},

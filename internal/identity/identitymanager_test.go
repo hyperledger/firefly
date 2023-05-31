@@ -211,6 +211,47 @@ func TestResolveInputSigningIdentityNoKey(t *testing.T) {
 
 }
 
+func TestResolveInputSigningIdentityNoRootOrg(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("RootOrg").Return(multiparty.RootOrg{Key: "key123"})
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key123", blockchain.ResolveKeyIntentSign).Return("fullkey123", nil)
+
+	msgIdentity := &core.SignerRef{}
+	err := im.ResolveInputSigningIdentity(ctx, msgIdentity)
+	assert.Regexp(t, "FF10281", err)
+
+	mbi.AssertExpectations(t)
+	mmp.AssertExpectations(t)
+
+}
+
+func TestResolveInputSigningIdentityRootOrgError(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("RootOrg").Return(multiparty.RootOrg{Name: "org1", Key: "key123"})
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key123", blockchain.ResolveKeyIntentSign).Return("fullkey123", nil)
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:org/org1").Return(nil, fmt.Errorf("pop"))
+
+	msgIdentity := &core.SignerRef{}
+	err := im.ResolveInputSigningIdentity(ctx, msgIdentity)
+	assert.Regexp(t, "pop", err)
+
+	mbi.AssertExpectations(t)
+	mmp.AssertExpectations(t)
+
+}
+
 func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
@@ -224,16 +265,7 @@ func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 	orgID := fftypes.NewUUID()
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
-		Return((&core.Verifier{
-			Identity:  orgID,
-			Namespace: "ns1",
-			VerifierRef: core.VerifierRef{
-				Type:  core.VerifierTypeEthAddress,
-				Value: "fullkey123",
-			},
-		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", orgID).
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:org/org1").
 		Return(&core.Identity{
 			IdentityBase: core.IdentityBase{
 				ID:        orgID,
@@ -774,75 +806,21 @@ func TestFirstVerifierForIdentityNotFound(t *testing.T) {
 
 }
 
-func TestResolveDefaultSigningIdentityNotFound(t *testing.T) {
+func TestResolveMultipartyRootVerifierKeyUnset(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
-	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mmp := im.multiparty.(*multipartymocks.Manager)
-	mmp.On("GetNetworkVersion").Return(1)
-	mmp.On("RootOrg").Return(multiparty.RootOrg{
-		Key: "key12345",
-	})
-	mbi.On("ResolveSigningKey", ctx, "key12345", blockchain.ResolveKeyIntentSign).Return("key12345", nil)
+	mmp.On("RootOrg").Return(multiparty.RootOrg{})
 
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "key12345").Return(nil, nil)
+	_, err := im.ResolveMultipartyRootVerifier(ctx)
+	assert.Regexp(t, "FF10354", err)
 
-	err := im.resolveDefaultSigningIdentity(ctx, &core.SignerRef{})
-	assert.Regexp(t, "FF10281", err)
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mmp.AssertExpectations(t)
 
 }
 
-func TestResolveDefaultSigningIdentitySystemFallback(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-
-	id := &core.Identity{
-		IdentityBase: core.IdentityBase{
-			ID:        fftypes.NewUUID(),
-			DID:       "did:firefly:org/org1",
-			Namespace: "ns1",
-			Name:      "org1",
-			Type:      core.IdentityTypeOrg,
-		},
-	}
-	verifier := &core.Verifier{
-		Identity: id.ID,
-		VerifierRef: core.VerifierRef{
-			Value: "key12345",
-		},
-	}
-
-	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mmp := im.multiparty.(*multipartymocks.Manager)
-	mmp.On("GetNetworkVersion").Return(1)
-	mmp.On("RootOrg").Return(multiparty.RootOrg{Name: "org1", Key: "key12345"})
-	mbi.On("ResolveSigningKey", ctx, "key12345", blockchain.ResolveKeyIntentSign).Return("key12345", nil)
-
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "key12345").Return(verifier, nil)
-	mdi.On("GetIdentityByID", ctx, core.LegacySystemNamespace, id.ID).Return(id, nil)
-
-	ref := &core.SignerRef{}
-	err := im.resolveDefaultSigningIdentity(ctx, ref)
-	assert.NoError(t, err)
-	assert.Equal(t, "did:firefly:org/org1", ref.Author)
-	assert.Equal(t, "key12345", ref.Key)
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mmp.AssertExpectations(t)
-
-}
-
-func TestGetMultipartyRootVerifierResolveFailed(t *testing.T) {
+func TestResolveMultipartyRootVerifierResolveFailed(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
@@ -852,64 +830,10 @@ func TestGetMultipartyRootVerifierResolveFailed(t *testing.T) {
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("ResolveSigningKey", ctx, "0x12345", blockchain.ResolveKeyIntentSign).Return("", fmt.Errorf("pop"))
 
-	_, err := im.GetMultipartyRootVerifier(ctx)
+	_, err := im.ResolveMultipartyRootVerifier(ctx)
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
-	mmp.AssertExpectations(t)
-
-}
-
-func TestGetMultipartyRootVerifierNotSet(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-
-	mmp := im.multiparty.(*multipartymocks.Manager)
-	mmp.On("RootOrg").Return(multiparty.RootOrg{})
-
-	_, err := im.GetMultipartyRootOrg(ctx)
-	assert.Regexp(t, "FF10354", err)
-
-	mmp.AssertExpectations(t)
-
-}
-
-func TestGetMultipartyRootOrgMismatch(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-
-	mmp := im.multiparty.(*multipartymocks.Manager)
-	mmp.On("RootOrg").Return(multiparty.RootOrg{
-		Key: "key12345",
-	})
-	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "key12345", blockchain.ResolveKeyIntentSign).Return("fullkey123", nil)
-
-	orgID := fftypes.NewUUID()
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
-		Return((&core.Verifier{
-			Identity:  orgID,
-			Namespace: "ns1",
-			VerifierRef: core.VerifierRef{
-				Type:  core.VerifierTypeEthAddress,
-				Value: "fullkey123",
-			},
-		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", orgID).
-		Return(&core.Identity{
-			IdentityBase: core.IdentityBase{
-				ID:        orgID,
-				DID:       "did:firefly:org/org2",
-				Namespace: "ns1",
-				Name:      "org2",
-				Type:      core.IdentityTypeOrg,
-			},
-		}, nil)
-
-	_, err := im.GetMultipartyRootOrg(ctx)
-	assert.Regexp(t, "FF10281", err)
-
 	mmp.AssertExpectations(t)
 
 }
@@ -1504,6 +1428,45 @@ func TestGetLocalNode(t *testing.T) {
 	result, err = im.GetLocalNode(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, node, result)
+
+	mmp.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestGetLocalNodeNotSet(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+
+	mmp.On("LocalNode").Return(multiparty.LocalNode{})
+
+	_, err := im.GetLocalNode(ctx)
+	assert.Regexp(t, "FF10225", err)
+
+	mmp.AssertExpectations(t)
+}
+
+func TestGetRootOrg(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mdi := im.database.(*databasemocks.Plugin)
+
+	org := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mmp.On("RootOrg").Return(multiparty.RootOrg{Name: "org1"}).Twice()
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:org/org1").Return(org, nil).Once()
+
+	result, err := im.GetRootOrg(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, org, result)
+
+	// second call is cached
+	result, err = im.GetRootOrg(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, org, result)
 
 	mmp.AssertExpectations(t)
 	mdi.AssertExpectations(t)

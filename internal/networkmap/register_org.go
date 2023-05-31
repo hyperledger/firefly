@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,7 +27,7 @@ import (
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
 func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (*core.Identity, error) {
 
-	key, err := nm.identity.GetMultipartyRootVerifier(ctx)
+	key, err := nm.identity.ResolveMultipartyRootVerifier(ctx)
 	if err != nil {
 		return nil, err
 	}
