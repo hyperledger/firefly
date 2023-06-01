@@ -175,6 +175,6 @@ func TestActionTerminateFail(t *testing.T) {
 
 	em.mmp.On("TerminateContract", em.ctx, location, mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
 
-	err := em.actionTerminate(location, &blockchain.Event{})
+	err := em.actionTerminate(em.ctx, location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
 }

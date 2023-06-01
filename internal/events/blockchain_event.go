@@ -133,7 +133,7 @@ func (em *eventManager) handleBlockchainEventForListener(ctx context.Context, ev
 		return nil // no retry
 	}
 	if listener.Namespace != em.namespace.Name {
-		log.L(em.ctx).Debugf("Ignoring blockchain event from different namespace '%s'", listener.Namespace)
+		log.L(ctx).Debugf("Ignoring blockchain event from different namespace '%s'", listener.Namespace)
 		return nil
 	}
 	listener.Namespace = em.namespace.Name

@@ -35,15 +35,15 @@ func (em *eventManager) handleBlockchainBatchPinEvent(ctx context.Context, event
 	batchPin := event.Batch
 
 	if em.multiparty == nil {
-		log.L(em.ctx).Errorf("Ignoring batch pin from non-multiparty network!")
+		log.L(ctx).Errorf("Ignoring batch pin from non-multiparty network!")
 		return nil
 	}
 	if batchPin.TransactionID == nil {
-		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
+		log.L(ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
 	}
 	if event.Namespace != em.namespace.Name {
-		log.L(em.ctx).Debugf("Ignoring batch pin from different namespace '%s'", event.Namespace)
+		log.L(ctx).Debugf("Ignoring batch pin from different namespace '%s'", event.Namespace)
 		return nil // move on
 	}
 
@@ -51,11 +51,11 @@ func (em *eventManager) handleBlockchainBatchPinEvent(ctx context.Context, event
 		batchPin.TransactionType = core.TransactionTypeBatchPin
 	}
 
-	log.L(em.ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, event.SigningKey.Value)
+	log.L(ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, event.SigningKey.Value)
 	defer func() {
-		log.L(em.ctx).Infof("<- BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, event.SigningKey.Value)
+		log.L(ctx).Infof("<- BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, event.SigningKey.Value)
 	}()
-	log.L(em.ctx).Tracef("BatchPinComplete batch=%s info: %+v", batchPin.BatchID, batchPin.Event.Info)
+	log.L(ctx).Tracef("BatchPinComplete batch=%s info: %+v", batchPin.BatchID, batchPin.Event.Info)
 
 	if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
 		return err
