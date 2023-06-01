@@ -53,7 +53,7 @@ func TestFlushPinsFailUpdateMessages(t *testing.T) {
 
 	ag.mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
 	ag.mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, msgID, core.MessageStateConfirmed, mock.Anything).Return()
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, msgID, core.MessageStateConfirmed, mock.Anything, "").Return()
 
 	bs.markMessageDispatched(fftypes.NewUUID(), &core.Message{
 		Header: core.MessageHeader{
