@@ -56,7 +56,7 @@ type FireflySubscriptions interface {
 }
 
 type callbacks struct {
-	writeLock  sync.Mutex
+	lock       sync.RWMutex
 	handlers   map[string]blockchain.Callbacks
 	opHandlers map[string]core.OperationCallbacks
 }
@@ -110,8 +110,8 @@ func NewFireflySubscriptions() FireflySubscriptions {
 }
 
 func (cb *callbacks) SetHandler(namespace string, handler blockchain.Callbacks) {
-	cb.writeLock.Lock()
-	defer cb.writeLock.Unlock()
+	cb.lock.Lock()
+	defer cb.lock.Unlock()
 	if handler == nil {
 		delete(cb.handlers, namespace)
 	} else {
@@ -120,8 +120,8 @@ func (cb *callbacks) SetHandler(namespace string, handler blockchain.Callbacks) 
 }
 
 func (cb *callbacks) SetOperationalHandler(namespace string, handler core.OperationCallbacks) {
-	cb.writeLock.Lock()
-	defer cb.writeLock.Unlock()
+	cb.lock.Lock()
+	defer cb.lock.Unlock()
 	if handler == nil {
 		delete(cb.opHandlers, namespace)
 	} else {
@@ -192,6 +192,8 @@ func (cb *callbacks) PrepareBatchPinOrNetworkAction(ctx context.Context, events 
 }
 
 func (cb *callbacks) addBatchPinComplete(ctx context.Context, events EventsToDispatch, namespaces []string, batch *blockchain.BatchPin, signingKey *core.VerifierRef) {
+	cb.lock.RLock()
+	defer cb.lock.RUnlock()
 	for _, namespace := range namespaces {
 		if _, ok := cb.handlers[namespace]; ok {
 			events[namespace] = append(events[namespace], &blockchain.EventToDispatch{
@@ -209,6 +211,8 @@ func (cb *callbacks) addBatchPinComplete(ctx context.Context, events EventsToDis
 }
 
 func (cb *callbacks) addNetworkAction(ctx context.Context, events EventsToDispatch, namespaces []string, action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) {
+	cb.lock.RLock()
+	defer cb.lock.RUnlock()
 	for _, namespace := range namespaces {
 		if _, ok := cb.handlers[namespace]; ok {
 			events[namespace] = append(events[namespace], &blockchain.EventToDispatch{
@@ -227,6 +231,8 @@ func (cb *callbacks) addNetworkAction(ctx context.Context, events EventsToDispat
 }
 
 func (cb *callbacks) PrepareBlockchainEvent(ctx context.Context, events EventsToDispatch, namespace string, event *blockchain.EventForListener) {
+	cb.lock.RLock()
+	defer cb.lock.RUnlock()
 	if namespace == "" {
 		// Older subscriptions don't populate namespace, so deliver the event to every handler
 		for namespace := range cb.handlers {
@@ -248,6 +254,8 @@ func (cb *callbacks) PrepareBlockchainEvent(ctx context.Context, events EventsTo
 }
 
 func (cb *callbacks) DispatchBlockchainEvents(ctx context.Context, events EventsToDispatch) error {
+	cb.lock.RLock()
+	defer cb.lock.RUnlock()
 	// The event batches for each namespace are already built, and ready to dispatch.
 	// Just run around the handlers dispatching the list of events for each.
 	for namespace, events := range events {
