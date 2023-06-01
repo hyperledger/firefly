@@ -31,7 +31,9 @@ import (
 //
 // We must block here long enough to get the payload from the sharedstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) BatchPinComplete(namespace string, batchPin *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+func (em *eventManager) handleBlockchainBatchPinEvent(ctx context.Context, event *blockchain.BatchPinCompleteEvent) error {
+	batchPin := event.Batch
+
 	if em.multiparty == nil {
 		log.L(em.ctx).Errorf("Ignoring batch pin from non-multiparty network!")
 		return nil
@@ -40,8 +42,8 @@ func (em *eventManager) BatchPinComplete(namespace string, batchPin *blockchain.
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
 	}
-	if namespace != em.namespace.Name {
-		log.L(em.ctx).Debugf("Ignoring batch pin from different namespace '%s'", namespace)
+	if event.Namespace != em.namespace.Name {
+		log.L(em.ctx).Debugf("Ignoring batch pin from different namespace '%s'", event.Namespace)
 		return nil // move on
 	}
 
@@ -49,52 +51,43 @@ func (em *eventManager) BatchPinComplete(namespace string, batchPin *blockchain.
 		batchPin.TransactionType = core.TransactionTypeBatchPin
 	}
 
-	log.L(em.ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, signingKey.Value)
+	log.L(em.ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, event.SigningKey.Value)
 	defer func() {
-		log.L(em.ctx).Infof("<- BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, signingKey.Value)
+		log.L(em.ctx).Infof("<- BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, event.SigningKey.Value)
 	}()
 	log.L(em.ctx).Tracef("BatchPinComplete batch=%s info: %+v", batchPin.BatchID, batchPin.Event.Info)
 
-	// Here we simple record all the pins as parked, and emit an event for the aggregator
-	// to check whether the messages in the batch have been written.
-	return em.retry.Do(em.ctx, "persist batch pins", func(attempt int) (bool, error) {
-		// We process the batch into the DB as a single transaction (if transactions are supported), both for
-		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
-		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
-				return err
-			}
-			chainEvent := buildBlockchainEvent(em.namespace.Name, nil, &batchPin.Event, &core.BlockchainTransactionRef{
-				Type:         batchPin.TransactionType,
-				ID:           batchPin.TransactionID,
-				BlockchainID: batchPin.Event.BlockchainTXID,
-			})
-			if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
-				return err
-			}
-			em.emitBlockchainEventMetric(&batchPin.Event)
-			private := batchPin.BatchPayloadRef == ""
-			if err := em.persistContexts(ctx, batchPin, signingKey, private); err != nil {
-				return err
-			}
-
-			batch, _, err := em.aggregator.GetBatchForPin(ctx, &core.Pin{
-				Batch:     batchPin.BatchID,
-				BatchHash: batchPin.BatchHash,
-			})
-			if err != nil {
-				return err
-			}
-			// Kick off a download for broadcast batches if the batch isn't already persisted
-			if !private && batch == nil {
-				if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		return err != nil, err // retry indefinitely (until context closes)
+	if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
+		return err
+	}
+	chainEvent := buildBlockchainEvent(em.namespace.Name, nil, &batchPin.Event, &core.BlockchainTransactionRef{
+		Type:         batchPin.TransactionType,
+		ID:           batchPin.TransactionID,
+		BlockchainID: batchPin.Event.BlockchainTXID,
 	})
+	if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
+		return err
+	}
+	em.emitBlockchainEventMetric(&batchPin.Event)
+	private := batchPin.BatchPayloadRef == ""
+	if err := em.persistContexts(ctx, batchPin, event.SigningKey, private); err != nil {
+		return err
+	}
+
+	batch, _, err := em.aggregator.GetBatchForPin(ctx, &core.Pin{
+		Batch:     batchPin.BatchID,
+		BatchHash: batchPin.BatchHash,
+	})
+	if err != nil {
+		return err
+	}
+	// Kick off a download for broadcast batches if the batch isn't already persisted
+	if !private && batch == nil {
+		if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin) error {

@@ -59,25 +59,11 @@ func (bc *boundCallbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size
 	return bc.o.events.SharedStorageBlobDownloaded(bc.o.sharedstorage(), hash, size, payloadRef, dataID)
 }
 
-func (bc *boundCallbacks) BatchPinComplete(namespace string, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+func (bc *boundCallbacks) BlockchainEventBatch(batch []*blockchain.EventToDispatch) error {
 	if err := bc.checkStopped(); err != nil {
 		return err
 	}
-	return bc.o.events.BatchPinComplete(namespace, batch, signingKey)
-}
-
-func (bc *boundCallbacks) BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	if err := bc.checkStopped(); err != nil {
-		return err
-	}
-	return bc.o.events.BlockchainNetworkAction(action, location, event, signingKey)
-}
-
-func (bc *boundCallbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	if err := bc.checkStopped(); err != nil {
-		return err
-	}
-	return bc.o.events.BlockchainEvent(event)
+	return bc.o.events.BlockchainEventBatch(batch)
 }
 
 func (bc *boundCallbacks) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) error {

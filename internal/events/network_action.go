@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -17,6 +17,8 @@
 package events
 
 import (
+	"context"
+
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -27,40 +29,38 @@ func (em *eventManager) actionTerminate(location *fftypes.JSONAny, event *blockc
 	return em.multiparty.TerminateContract(em.ctx, location, event)
 }
 
-func (em *eventManager) BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
+func (em *eventManager) handleBlockchainNetworkAction(ctx context.Context, event *blockchain.NetworkActionEvent) error {
 	if em.multiparty == nil {
 		log.L(em.ctx).Errorf("Ignoring network action from non-multiparty network!")
 		return nil
 	}
 
-	return em.retry.Do(em.ctx, "handle network action", func(attempt int) (retry bool, err error) {
-		// Verify that the action came from a registered root org
-		resolvedAuthor, err := em.identity.FindIdentityForVerifier(em.ctx, []core.IdentityType{core.IdentityTypeOrg}, signingKey)
-		if err != nil {
-			return true, err
-		}
-		if resolvedAuthor == nil {
-			log.L(em.ctx).Errorf("Ignoring network action %s from unknown identity %s", action, signingKey.Value)
-			return false, nil
-		}
-		if resolvedAuthor.Parent != nil {
-			log.L(em.ctx).Errorf("Ignoring network action %s from non-root identity %s", action, signingKey.Value)
-			return false, nil
-		}
+	// Verify that the action came from a registered root org
+	resolvedAuthor, err := em.identity.FindIdentityForVerifier(em.ctx, []core.IdentityType{core.IdentityTypeOrg}, event.SigningKey)
+	if err != nil {
+		return err
+	}
+	if resolvedAuthor == nil {
+		log.L(em.ctx).Errorf("Ignoring network action %s from unknown identity %s", event.Action, event.SigningKey.Value)
+		return nil
+	}
+	if resolvedAuthor.Parent != nil {
+		log.L(em.ctx).Errorf("Ignoring network action %s from non-root identity %s", event.Action, event.SigningKey.Value)
+		return nil
+	}
 
-		if action == core.NetworkActionTerminate.String() {
-			err = em.actionTerminate(location, event)
-		} else {
-			log.L(em.ctx).Errorf("Ignoring unrecognized network action: %s", action)
-			return false, nil
-		}
+	if event.Action == core.NetworkActionTerminate.String() {
+		err = em.actionTerminate(event.Location, event.Event)
+	} else {
+		log.L(em.ctx).Errorf("Ignoring unrecognized network action: %s", event.Action)
+		return nil
+	}
 
-		if err == nil {
-			chainEvent := buildBlockchainEvent(em.namespace.Name, nil, event, &core.BlockchainTransactionRef{
-				BlockchainID: event.BlockchainTXID,
-			})
-			err = em.maybePersistBlockchainEvent(em.ctx, chainEvent, nil)
-		}
-		return true, err
-	})
+	if err == nil {
+		chainEvent := buildBlockchainEvent(em.namespace.Name, nil, event.Event, &core.BlockchainTransactionRef{
+			BlockchainID: event.Event.BlockchainTXID,
+		})
+		err = em.maybePersistBlockchainEvent(em.ctx, chainEvent, nil)
+	}
+	return err
 }

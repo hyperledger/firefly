@@ -1435,25 +1435,27 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
-	em.On("BatchPinComplete", "ns1", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(nil)
+	em.On("BlockchainEventBatch", mock.MatchedBy(func(events []*blockchain.EventToDispatch) bool {
+		return len(events) == 2 &&
+			events[0].Type == blockchain.EventTypeBatchPinComplete &&
+			*events[0].BatchPinComplete.SigningKey == *expectedSigningKeyRef
+	})).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.NoError(t, err)
 
-	em.AssertExpectations(t)
-
-	b := em.Calls[0].Arguments[1].(*blockchain.BatchPin)
-	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
-	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
-	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
-	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
-	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[2])
-	assert.Len(t, b.Contexts, 2)
-	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
-	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
+	b := em.Calls[0].Arguments[0].([]*blockchain.EventToDispatch)[0].BatchPinComplete
+	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.Batch.TransactionID.String())
+	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.Batch.BatchID.String())
+	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.Batch.BatchHash.String())
+	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.Batch.BatchPayloadRef)
+	assert.Equal(t, expectedSigningKeyRef, b.SigningKey)
+	assert.Len(t, b.Batch.Contexts, 2)
+	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Batch.Contexts[0].String())
+	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Batch.Contexts[1].String())
 
 	info1 := fftypes.JSONObject{
 		"address":          "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -1465,9 +1467,9 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		"transactionIndex": "0x0",
 		"timestamp":        "1620576488",
 	}
-	assert.Equal(t, info1, b.Event.Info)
+	assert.Equal(t, info1, b.Batch.Event.Info)
 
-	b2 := em.Calls[1].Arguments[1].(*blockchain.BatchPin)
+	b2 := em.Calls[0].Arguments[0].([]*blockchain.EventToDispatch)[1].BatchPinComplete.Batch
 	info2 := fftypes.JSONObject{
 		"address":          "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"blockNumber":      "38011",
@@ -1479,6 +1481,8 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		"timestamp":        "1620576488",
 	}
 	assert.Equal(t, info2, b2.Event.Info)
+
+	em.AssertExpectations(t)
 
 }
 
@@ -1523,14 +1527,15 @@ func TestHandleMessageBatchPinMissingAddress(t *testing.T) {
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.Regexp(t, "FF10141", err)
 
 }
 
 func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	e := &Ethereum{
-		subs: common.NewFireflySubscriptions(),
+		subs:      common.NewFireflySubscriptions(),
+		callbacks: common.NewBlockchainCallbacks(),
 	}
 	e.subs.AddSubscription(
 		context.Background(),
@@ -1548,13 +1553,14 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 		}
 	]`), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.NoError(t, err)
 }
 
 func TestHandleMessageBatchMissingData(t *testing.T) {
 	e := &Ethereum{
-		subs: common.NewFireflySubscriptions(),
+		subs:      common.NewFireflySubscriptions(),
+		callbacks: common.NewBlockchainCallbacks(),
 	}
 	e.subs.AddSubscription(
 		context.Background(),
@@ -1573,7 +1579,7 @@ func TestHandleMessageBatchMissingData(t *testing.T) {
 		}
 	]`), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.NoError(t, err)
 }
 
@@ -1611,13 +1617,14 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.NoError(t, err)
 }
 
 func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	e := &Ethereum{
-		subs: common.NewFireflySubscriptions(),
+		subs:      common.NewFireflySubscriptions(),
+		callbacks: common.NewBlockchainCallbacks(),
 	}
 	e.subs.AddSubscription(
 		context.Background(),
@@ -1648,13 +1655,13 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.NoError(t, err)
 }
 
 func TestHandleMessageBatchBadJSON(t *testing.T) {
 	e := &Ethereum{}
-	err := e.handleMessageBatch(context.Background(), []interface{}{10, 20})
+	err := e.handleMessageBatch(context.Background(), 0, []interface{}{10, 20})
 	assert.NoError(t, err)
 }
 
@@ -2132,6 +2139,15 @@ func TestDeleteSubscriptionNotFound(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func matchBatchWithEvent(protocolID, blockchainTXID string) interface{} {
+	return mock.MatchedBy(func(batch []*blockchain.EventToDispatch) bool {
+		return len(batch) == 1 &&
+			batch[0].Type == blockchain.EventTypeForListener &&
+			batch[0].ForListener.ProtocolID == protocolID &&
+			batch[0].ForListener.BlockchainTXID == blockchainTXID
+	})
+}
+
 func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`
 [
@@ -2170,27 +2186,26 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 	)
 	e.streams = newTestStreamManager(e.client)
 
-	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
-		assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", e.BlockchainTXID)
-		assert.Equal(t, "000000038011/000000/000050", e.Event.ProtocolID)
-		return true
-	})).Return(nil)
+	em.On("BlockchainEventBatch", matchBatchWithEvent(
+		"000000038011/000000/000050",
+		"0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+	)).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.NoError(t, err)
 
-	ev := em.Calls[0].Arguments[0].(*blockchain.EventWithSubscription)
-	assert.Equal(t, "sub2", ev.Subscription)
-	assert.Equal(t, "Changed", ev.Event.Name)
+	ev := em.Calls[0].Arguments[0].([]*blockchain.EventToDispatch)[0]
+	assert.Equal(t, "sub2", ev.ForListener.ListenerID)
+	assert.Equal(t, "Changed", ev.ForListener.Event.Name)
 
 	outputs := fftypes.JSONObject{
 		"from":  "0x91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
 		"value": "1",
 	}
-	assert.Equal(t, outputs, ev.Event.Output)
+	assert.Equal(t, outputs, ev.ForListener.Event.Output)
 
 	info := fftypes.JSONObject{
 		"address":          "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -2202,7 +2217,7 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 		"transactionIndex": "0x0",
 		"timestamp":        "1640811383",
 	}
-	assert.Equal(t, info, ev.Event.Info)
+	assert.Equal(t, info, ev.ForListener.Event.Info)
 
 	em.AssertExpectations(t)
 }
@@ -2245,12 +2260,12 @@ func TestHandleMessageContractEventErrorOldSubscription(t *testing.T) {
 		1, "sb-b5b97a4e-a317-4053-6400-1474650efcb5", nil,
 	)
 	e.streams = newTestStreamManager(e.client)
-	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
+	em.On("BlockchainEventBatch", mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.EqualError(t, err, "pop")
 
 	em.AssertExpectations(t)
@@ -2309,26 +2324,25 @@ func TestHandleMessageContractEventWithNamespace(t *testing.T) {
 	)
 	e.streams = newTestStreamManager(e.client)
 
-	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
-		assert.Equal(t, "000000038011/000000/000050", e.Event.ProtocolID)
-		return true
+	em.On("BlockchainEventBatch", mock.MatchedBy(func(batch []*blockchain.EventToDispatch) bool {
+		return len(batch) == 2
 	})).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.NoError(t, err)
 
-	ev := em.Calls[0].Arguments[0].(*blockchain.EventWithSubscription)
-	assert.Equal(t, "sub2", ev.Subscription)
-	assert.Equal(t, "Changed", ev.Event.Name)
+	ev := em.Calls[0].Arguments[0].([]*blockchain.EventToDispatch)[0]
+	assert.Equal(t, "sub2", ev.ForListener.ListenerID)
+	assert.Equal(t, "Changed", ev.ForListener.Event.Name)
 
 	outputs := fftypes.JSONObject{
 		"from":  "0x91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
 		"value": "1",
 	}
-	assert.Equal(t, outputs, ev.Event.Output)
+	assert.Equal(t, outputs, ev.ForListener.Event.Output)
 
 	info := fftypes.JSONObject{
 		"address":          "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -2340,7 +2354,7 @@ func TestHandleMessageContractEventWithNamespace(t *testing.T) {
 		"transactionIndex": "0x0",
 		"timestamp":        "1640811383",
 	}
-	assert.Equal(t, info, ev.Event.Info)
+	assert.Equal(t, info, ev.ForListener.Event.Info)
 
 	em.AssertExpectations(t)
 }
@@ -2383,16 +2397,15 @@ func TestHandleMessageContractEventNoNamespaceHandlers(t *testing.T) {
 	)
 	e.streams = newTestStreamManager(e.client)
 
-	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
-		assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", e.BlockchainTXID)
-		assert.Equal(t, "000000038011/000000/000050", e.Event.ProtocolID)
-		return true
-	})).Return(nil)
+	em.On("BlockchainEventBatch", matchBatchWithEvent(
+		"000000038011/000000/000050",
+		"0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+	)).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(em.Calls))
 }
@@ -2437,7 +2450,7 @@ func TestHandleMessageContractEventSubNameError(t *testing.T) {
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.Regexp(t, "FF10111", err)
 
 	em.AssertExpectations(t)
@@ -2482,12 +2495,12 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	)
 	e.streams = newTestStreamManager(e.client)
 
-	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
+	em.On("BlockchainEventBatch", mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.EqualError(t, err, "pop")
 
 	em.AssertExpectations(t)
@@ -3339,6 +3352,15 @@ func TestSubmitNetworkActionVersionFail(t *testing.T) {
 	assert.Regexp(t, "FF10111", err)
 }
 
+func matchNetworkAction(action string, expectedSigningKey core.VerifierRef) interface{} {
+	return mock.MatchedBy(func(batch []*blockchain.EventToDispatch) bool {
+		return len(batch) == 1 &&
+			batch[0].Type == blockchain.EventTypeNetworkAction &&
+			batch[0].NetworkAction.Action == action &&
+			*batch[0].NetworkAction.SigningKey == expectedSigningKey
+	})
+}
+
 func TestHandleNetworkAction(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`
 [
@@ -3379,12 +3401,12 @@ func TestHandleNetworkAction(t *testing.T) {
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
-	em.On("BlockchainNetworkAction", "terminate", mock.AnythingOfType("*fftypes.JSONAny"), mock.AnythingOfType("*blockchain.Event"), expectedSigningKeyRef).Return(nil)
+	em.On("BlockchainEventBatch", matchNetworkAction("terminate", *expectedSigningKeyRef)).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.NoError(t, err)
 
 	em.AssertExpectations(t)
@@ -3431,12 +3453,12 @@ func TestHandleNetworkActionFail(t *testing.T) {
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
-	em.On("BlockchainNetworkAction", "terminate", mock.AnythingOfType("*fftypes.JSONAny"), mock.AnythingOfType("*blockchain.Event"), expectedSigningKeyRef).Return(fmt.Errorf("pop"))
+	em.On("BlockchainEventBatch", matchNetworkAction("terminate", *expectedSigningKeyRef)).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
+	err = e.handleMessageBatch(context.Background(), 0, events)
 	assert.EqualError(t, err, "pop")
 
 	em.AssertExpectations(t)

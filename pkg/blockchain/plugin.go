@@ -138,25 +138,59 @@ const (
 
 const FireFlyActionPrefix = "firefly:"
 
+type EventType int
+
+const (
+	EventTypeBatchPinComplete EventType = iota
+	EventTypeNetworkAction
+	EventTypeForListener
+)
+
+// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
+// submitted by us, or by any other authorized party in the network.
+type BatchPinCompleteEvent struct {
+	Namespace  string
+	Batch      *BatchPin
+	SigningKey *core.VerifierRef
+}
+
+// BlockchainNetworkAction notifies on the arrival of a network operator action
+type NetworkActionEvent struct {
+	Action     string
+	Location   *fftypes.JSONAny
+	Event      *Event
+	SigningKey *core.VerifierRef
+}
+
+// EventForListener notifies on the arrival of any event from a user-created listener.
+type EventForListener struct {
+	*Event
+	// ListenerID is the ID assigned to a custom contract listener by the connector
+	ListenerID string
+}
+
+// EventToDispatch is a wrapper around the other event types, to allow them to be dispatched as a group
+type EventToDispatch struct {
+	Type             EventType
+	BatchPinComplete *BatchPinCompleteEvent
+	NetworkAction    *NetworkActionEvent
+	ForListener      *EventForListener
+}
+
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
 //
 // Events must be delivered sequentially, such that event 2 is not delivered until the callback invoked for event 1
 // has completed. However, it does not matter if these events are workload balance between the firefly core
 // cluster instances of the node.
 type Callbacks interface {
-	// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
-	// submitted by us, or by any other authorized party in the network.
+	// BlockchainEventBatch notifies of a sequential batch of blockchain events received. Batching allows efficiency
+	// by grouping commits a the database level when processing these events.
 	//
-	// Error should only be returned in shutdown scenarios
-	BatchPinComplete(namespace string, batch *BatchPin, signingKey *core.VerifierRef) error
-
-	// BlockchainNetworkAction notifies on the arrival of a network operator action
-	//
-	// Error should only be returned in shutdown scenarios
-	BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *Event, signingKey *core.VerifierRef) error
-
-	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
-	BlockchainEvent(event *EventWithSubscription) error
+	// Errors are only returned in cases where the event appears valid, but a transient error has occurred that
+	// means FireFly core is unable to process the event batch right now, and the events should be pushed
+	// back to the connector for re-delivery. For example because the server is shutting down, or the namespace
+	// is currently reloading.
+	BlockchainEventBatch(batch []*EventToDispatch) error
 }
 
 // Capabilities the supported featureset of the blockchain
@@ -240,11 +274,4 @@ type Event struct {
 
 	// Signature is the event signature, including the event name and output types
 	Signature string
-}
-
-type EventWithSubscription struct {
-	Event
-
-	// Subscription is the ID assigned to a custom contract subscription by the connector
-	Subscription string
 }
