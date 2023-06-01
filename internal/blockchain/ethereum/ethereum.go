@@ -428,7 +428,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, batchID int64, messag
 		signature := msgJSON.GetString("signature")
 		sub := msgJSON.GetString("subId")
 		logger := log.L(ctx)
-		logger.Infof("[EVM:%d:%d/%d]: '%s' on '%s'", batchID, i, count, signature, sub)
+		logger.Infof("[EVM:%d:%d/%d]: '%s' on '%s'", batchID, i+1, count, signature, sub)
 		logger.Tracef("Message: %+v", msgJSON)
 
 		// Matches one of the active FireFly BatchPin subscriptions
