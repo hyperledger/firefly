@@ -131,9 +131,18 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	em.mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 	em.msd.On("InitiateDownloadBatch", mock.Anything, batchPin.TransactionID, batchPin.BatchPayloadRef).Return(nil)
 
-	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "0x12345",
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeBatchPinComplete,
+			BatchPinComplete: &blockchain.BatchPinCompleteEvent{
+				Namespace: "ns1",
+				Batch:     batchPin,
+				SigningKey: &core.VerifierRef{
+					Type:  core.VerifierTypeEthAddress,
+					Value: "0x12345",
+				},
+			},
+		},
 	})
 	assert.NoError(t, err)
 
@@ -194,9 +203,18 @@ func TestBatchPinCompleteOkBroadcastExistingBatch(t *testing.T) {
 	em.mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
 	em.mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(batchPersisted, nil)
 
-	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "0x12345",
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeBatchPinComplete,
+			BatchPinComplete: &blockchain.BatchPinCompleteEvent{
+				Namespace: "ns1",
+				Batch:     batchPin,
+				SigningKey: &core.VerifierRef{
+					Type:  core.VerifierTypeEthAddress,
+					Value: "0x12345",
+				},
+			},
+		},
 	})
 	assert.NoError(t, err)
 
@@ -225,9 +243,18 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	em.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	em.mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 
-	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "0xffffeeee",
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeBatchPinComplete,
+			BatchPinComplete: &blockchain.BatchPinCompleteEvent{
+				Namespace: "ns1",
+				Batch:     batchPin,
+				SigningKey: &core.VerifierRef{
+					Type:  core.VerifierTypeEthAddress,
+					Value: "0xffffeeee",
+				},
+			},
+		},
 	})
 	assert.NoError(t, err)
 
@@ -262,9 +289,18 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
-	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "0xffffeeee",
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeBatchPinComplete,
+			BatchPinComplete: &blockchain.BatchPinCompleteEvent{
+				Namespace: "ns1",
+				Batch:     batchPin,
+				SigningKey: &core.VerifierRef{
+					Type:  core.VerifierTypeEthAddress,
+					Value: "0xffffeeee",
+				},
+			},
+		},
 	})
 	assert.Regexp(t, "FF00154", err)
 
@@ -293,9 +329,18 @@ func TestBatchPinCompleteGetBatchByIDFails(t *testing.T) {
 	em.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	em.mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("batch lookup failed"))
 
-	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "0xffffeeee",
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeBatchPinComplete,
+			BatchPinComplete: &blockchain.BatchPinCompleteEvent{
+				Namespace: "ns1",
+				Batch:     batchPin,
+				SigningKey: &core.VerifierRef{
+					Type:  core.VerifierTypeEthAddress,
+					Value: "0xffffeeee",
+				},
+			},
+		},
 	})
 	assert.Regexp(t, "FF00154", err)
 
@@ -326,9 +371,18 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	em.mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 	em.msd.On("InitiateDownloadBatch", mock.Anything, batchPin.TransactionID, batchPin.BatchPayloadRef).Return(fmt.Errorf("pop"))
 
-	err := em.BatchPinComplete("ns1", batchPin, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "0xffffeeee",
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeBatchPinComplete,
+			BatchPinComplete: &blockchain.BatchPinCompleteEvent{
+				Namespace: "ns1",
+				Batch:     batchPin,
+				SigningKey: &core.VerifierRef{
+					Type:  core.VerifierTypeEthAddress,
+					Value: "0xffffeeee",
+				},
+			},
+		},
 	})
 	assert.Regexp(t, "FF00154", err)
 }
@@ -339,9 +393,18 @@ func TestBatchPinCompleteNoTX(t *testing.T) {
 
 	batch := &blockchain.BatchPin{}
 
-	err := em.BatchPinComplete("ns1", batch, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "0x12345",
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeBatchPinComplete,
+			BatchPinComplete: &blockchain.BatchPinCompleteEvent{
+				Namespace: "ns1",
+				Batch:     batch,
+				SigningKey: &core.VerifierRef{
+					Type:  core.VerifierTypeEthAddress,
+					Value: "0x12345",
+				},
+			},
+		},
 	})
 	assert.NoError(t, err)
 }
@@ -357,9 +420,18 @@ func TestBatchPinCompleteWrongNamespace(t *testing.T) {
 		},
 	}
 
-	err := em.BatchPinComplete("ns2", batch, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "0x12345",
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeBatchPinComplete,
+			BatchPinComplete: &blockchain.BatchPinCompleteEvent{
+				Namespace: "ns2",
+				Batch:     batch,
+				SigningKey: &core.VerifierRef{
+					Type:  core.VerifierTypeEthAddress,
+					Value: "0xffffeeee",
+				},
+			},
+		},
 	})
 	assert.NoError(t, err)
 }
@@ -376,9 +448,18 @@ func TestBatchPinCompleteNonMultiparty(t *testing.T) {
 		},
 	}
 
-	err := em.BatchPinComplete("ns1", batch, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "0x12345",
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeBatchPinComplete,
+			BatchPinComplete: &blockchain.BatchPinCompleteEvent{
+				Namespace: "ns1",
+				Batch:     batch,
+				SigningKey: &core.VerifierRef{
+					Type:  core.VerifierTypeEthAddress,
+					Value: "0x12345",
+				},
+			},
+		},
 	})
 	assert.NoError(t, err)
 }

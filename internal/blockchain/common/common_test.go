@@ -55,22 +55,40 @@ func TestCallbackOperationUpdate(t *testing.T) {
 	mcb.AssertExpectations(t)
 }
 
+func matchBatchWithEvent(protocolID string) interface{} {
+	return mock.MatchedBy(func(batch []*blockchain.EventToDispatch) bool {
+		return len(batch) == 1 &&
+			batch[0].Type == blockchain.EventTypeForListener &&
+			batch[0].ForListener.ProtocolID == protocolID
+	})
+}
+
 func TestCallbackBlockchainEvent(t *testing.T) {
-	event := &blockchain.EventWithSubscription{}
+	event := &blockchain.EventForListener{
+		Event: &blockchain.Event{
+			ProtocolID: "012345",
+		},
+	}
 
 	mcb := &blockchainmocks.Callbacks{}
 	cb := NewBlockchainCallbacks()
 	cb.SetHandler("ns1", mcb)
 
-	mcb.On("BlockchainEvent", event).Return(nil).Once()
-	err := cb.BlockchainEvent(context.Background(), "ns1", event)
+	mcb.On("BlockchainEventBatch", matchBatchWithEvent("012345")).Return(nil).Once()
+	events := make(EventsToDispatch)
+	cb.PrepareBlockchainEvent(context.Background(), events, "ns1", event)
+	err := cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.NoError(t, err)
 
-	err = cb.BlockchainEvent(context.Background(), "ns2", event)
+	events = make(EventsToDispatch)
+	cb.PrepareBlockchainEvent(context.Background(), events, "ns2", event)
+	err = cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.NoError(t, err)
 
-	mcb.On("BlockchainEvent", event).Return(fmt.Errorf("pop")).Once()
-	err = cb.BlockchainEvent(context.Background(), "", event)
+	mcb.On("BlockchainEventBatch", matchBatchWithEvent("012345")).Return(fmt.Errorf("pop")).Once()
+	events = make(EventsToDispatch)
+	cb.PrepareBlockchainEvent(context.Background(), events, "", event)
+	err = cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.EqualError(t, err, "pop")
 
 	cb.SetHandler("ns1", nil)
@@ -94,10 +112,21 @@ func TestCallbackBatchPinBadBatch(t *testing.T) {
 		Version:     2,
 		V2Namespace: "ns1",
 	}
-	err := cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	events := make(EventsToDispatch)
+	cb.PrepareBatchPinOrNetworkAction(context.Background(), events, sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err := cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
+}
+
+func matchBatchPinEvent(ns string, txType core.TransactionType) interface{} {
+	return mock.MatchedBy(func(batch []*blockchain.EventToDispatch) bool {
+		return len(batch) == 1 &&
+			batch[0].Type == blockchain.EventTypeBatchPinComplete &&
+			batch[0].BatchPinComplete.Namespace == ns &&
+			batch[0].BatchPinComplete.Batch.TransactionType == txType
+	})
 }
 
 func TestBatchPinContractInvokePin(t *testing.T) {
@@ -118,16 +147,15 @@ func TestBatchPinContractInvokePin(t *testing.T) {
 	cb := NewBlockchainCallbacks()
 	cb.SetHandler("ns1", mcb)
 
-	mcb.On("BatchPinComplete", "ns1", mock.MatchedBy(func(batchPin *blockchain.BatchPin) bool {
-		assert.Equal(t, core.TransactionTypeContractInvokePin, batchPin.TransactionType)
-		return true
-	}), mock.Anything).Return(nil)
+	mcb.On("BlockchainEventBatch", matchBatchPinEvent("ns1", core.TransactionTypeContractInvokePin)).Return(nil)
 
 	sub := &SubscriptionInfo{
 		Version:     2,
 		V2Namespace: "ns1",
 	}
-	err := cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	events := make(EventsToDispatch)
+	cb.PrepareBatchPinOrNetworkAction(context.Background(), events, sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err := cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -154,12 +182,16 @@ func TestCallbackBatchPin(t *testing.T) {
 		Version:     2,
 		V2Namespace: "ns1",
 	}
-	mcb.On("BatchPinComplete", "ns1", mock.Anything, verifier).Return(nil).Once()
-	err := cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	mcb.On("BlockchainEventBatch", matchBatchPinEvent("ns1", core.TransactionTypeBatchPin)).Return(nil).Once()
+	events := make(EventsToDispatch)
+	cb.PrepareBatchPinOrNetworkAction(context.Background(), events, sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err := cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.NoError(t, err)
 
-	mcb.On("BatchPinComplete", "ns1", mock.Anything, verifier).Return(fmt.Errorf("pop")).Once()
-	err = cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	mcb.On("BlockchainEventBatch", matchBatchPinEvent("ns1", core.TransactionTypeBatchPin)).Return(fmt.Errorf("pop")).Once()
+	events = make(EventsToDispatch)
+	cb.PrepareBatchPinOrNetworkAction(context.Background(), events, sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err = cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.EqualError(t, err, "pop")
 
 	sub = &SubscriptionInfo{
@@ -167,20 +199,35 @@ func TestCallbackBatchPin(t *testing.T) {
 		V1Namespace: map[string][]string{"ns2": {"ns1", "ns"}},
 	}
 	params.NsOrAction = "ns2"
-	mcb.On("BatchPinComplete", "ns1", mock.Anything, verifier).Return(nil).Once()
-	err = cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	mcb.On("BlockchainEventBatch", matchBatchPinEvent("ns1", "" /* no tx type for V1 */)).Return(nil).Once()
+	events = make(EventsToDispatch)
+	cb.PrepareBatchPinOrNetworkAction(context.Background(), events, sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err = cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.NoError(t, err)
 
 	params.NsOrAction = "ns3"
-	err = cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	events = make(EventsToDispatch)
+	cb.PrepareBatchPinOrNetworkAction(context.Background(), events, sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	err = cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
 }
 
+func matchNetworkActionEvent(action string, verifier core.VerifierRef) interface{} {
+	return mock.MatchedBy(func(batch []*blockchain.EventToDispatch) bool {
+		return len(batch) == 1 &&
+			batch[0].Type == blockchain.EventTypeNetworkAction &&
+			batch[0].NetworkAction.Action == action &&
+			*batch[0].NetworkAction.SigningKey == verifier
+	})
+}
+
 func TestCallbackNetworkAction(t *testing.T) {
 	event := &blockchain.Event{}
-	verifier := &core.VerifierRef{}
+	verifier := core.VerifierRef{
+		Value: "0x12345",
+	}
 	params := &BatchPinParams{
 		NsOrAction: "firefly:terminate",
 	}
@@ -193,20 +240,26 @@ func TestCallbackNetworkAction(t *testing.T) {
 		Version:     2,
 		V2Namespace: "ns1",
 	}
-	mcb.On("BlockchainNetworkAction", "terminate", mock.Anything, mock.Anything, verifier).Return(nil).Once()
-	err := cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	mcb.On("BlockchainEventBatch", matchNetworkActionEvent("terminate", verifier)).Return(nil).Once()
+	events := make(EventsToDispatch)
+	cb.PrepareBatchPinOrNetworkAction(context.Background(), events, sub, fftypes.JSONAnyPtr("{}"), event, &verifier, params)
+	err := cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.NoError(t, err)
 
-	mcb.On("BlockchainNetworkAction", "terminate", mock.Anything, mock.Anything, verifier).Return(fmt.Errorf("pop")).Once()
-	err = cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	mcb.On("BlockchainEventBatch", matchNetworkActionEvent("terminate", verifier)).Return(fmt.Errorf("pop")).Once()
+	events = make(EventsToDispatch)
+	cb.PrepareBatchPinOrNetworkAction(context.Background(), events, sub, fftypes.JSONAnyPtr("{}"), event, &verifier, params)
+	err = cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.EqualError(t, err, "pop")
 
 	sub = &SubscriptionInfo{
 		Version:     1,
 		V1Namespace: map[string][]string{"ns2": {"ns1", "ns"}},
 	}
-	mcb.On("BlockchainNetworkAction", "terminate", mock.Anything, mock.Anything, verifier).Return(nil).Once()
-	err = cb.BatchPinOrNetworkAction(context.Background(), sub, fftypes.JSONAnyPtr("{}"), event, verifier, params)
+	mcb.On("BlockchainEventBatch", matchNetworkActionEvent("terminate", verifier)).Return(nil).Once()
+	events = make(EventsToDispatch)
+	cb.PrepareBatchPinOrNetworkAction(context.Background(), events, sub, fftypes.JSONAnyPtr("{}"), event, &verifier, params)
+	err = cb.DispatchBlockchainEvents(context.Background(), events)
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)

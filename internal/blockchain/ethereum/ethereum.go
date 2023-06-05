@@ -356,10 +356,10 @@ func (e *Ethereum) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSO
 	}
 }
 
-func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *common.SubscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
+func (e *Ethereum) processBatchPinEvent(ctx context.Context, events common.EventsToDispatch, location *fftypes.JSONAny, subInfo *common.SubscriptionInfo, msgJSON fftypes.JSONObject) {
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
-		return nil // move on
+		return // move on
 	}
 
 	authorAddress := event.Output.GetString("author")
@@ -378,41 +378,45 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 
 	// Validate the ethereum address - it must already be a valid address, we do not
 	// engage the address resolve on this blockchain-driven path.
-	authorAddress, err = formatEthAddress(ctx, authorAddress)
+	authorAddress, err := formatEthAddress(ctx, authorAddress)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
-		return nil // move on
+		return // move on
 	}
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: authorAddress,
 	}
 
-	return e.callbacks.BatchPinOrNetworkAction(ctx, subInfo, location, event, verifier, params)
+	e.callbacks.PrepareBatchPinOrNetworkAction(ctx, events, subInfo, location, event, verifier, params)
 }
 
-func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
-	subName, err := e.streams.getSubscriptionName(ctx, msgJSON.GetString("subId"))
+func (e *Ethereum) processContractEvent(ctx context.Context, events common.EventsToDispatch, msgJSON fftypes.JSONObject) error {
+	subID := msgJSON.GetString("subId")
+	subName, err := e.streams.getSubscriptionName(ctx, subID)
 	if err != nil {
-		return err
+		return err // this is a problem - we should be able to find the listener that dispatched this to us
 	}
 
 	namespace := common.GetNamespaceFromSubName(subName)
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event != nil {
-		err = e.callbacks.BlockchainEvent(ctx, namespace, &blockchain.EventWithSubscription{
-			Event:        *event,
-			Subscription: msgJSON.GetString("subId"),
+		e.callbacks.PrepareBlockchainEvent(ctx, events, namespace, &blockchain.EventForListener{
+			Event:      event,
+			ListenerID: subID,
 		})
 	}
-	return err
+	return nil
 }
 
 func (e *Ethereum) buildEventLocationString(msgJSON fftypes.JSONObject) string {
 	return fmt.Sprintf("address=%s", msgJSON.GetString("address"))
 }
 
-func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{}) error {
+func (e *Ethereum) handleMessageBatch(ctx context.Context, batchID int64, messages []interface{}) error {
+	// Build the set of events that need handling
+	events := make(common.EventsToDispatch)
+	count := len(messages)
 	for i, msgI := range messages {
 		msgMap, ok := msgI.(map[string]interface{})
 		if !ok {
@@ -421,12 +425,10 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 		}
 		msgJSON := fftypes.JSONObject(msgMap)
 
-		logger := log.L(ctx).WithField("ethmsgidx", i)
-		eventCtx, done := context.WithCancel(log.WithLogger(ctx, logger))
-
 		signature := msgJSON.GetString("signature")
 		sub := msgJSON.GetString("subId")
-		logger.Infof("Received '%s' message on '%s'", signature, sub)
+		logger := log.L(ctx)
+		logger.Infof("[EVM:%d:%d/%d]: '%s' on '%s'", batchID, i+1, count, signature, sub)
 		logger.Tracef("Message: %+v", msgJSON)
 
 		// Matches one of the active FireFly BatchPin subscriptions
@@ -435,7 +437,6 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 				Address: msgJSON.GetString("address"),
 			})
 			if err != nil {
-				done()
 				return err
 			}
 
@@ -445,25 +446,21 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 			}
 			switch signature {
 			case broadcastBatchEventSignature:
-				if err := e.handleBatchPinEvent(eventCtx, location, subInfo, msgJSON); err != nil {
-					done()
-					return err
-				}
+				e.processBatchPinEvent(ctx, events, location, subInfo, msgJSON)
 			default:
 				log.L(ctx).Infof("Ignoring event with unknown signature: %s", signature)
 			}
 		} else {
 			// Subscription not recognized - assume it's from a custom contract listener
 			// (event manager will reject it if it's not)
-			if err := e.handleContractEvent(eventCtx, msgJSON); err != nil {
-				done()
+			if err := e.processContractEvent(ctx, events, msgJSON); err != nil {
 				return err
 			}
 		}
-		done()
 	}
-
-	return nil
+	// Dispatch all the events from this patch that were successfully parsed and routed to namespaces
+	// (could be zero - that's ok)
+	return e.callbacks.DispatchBlockchainEvents(ctx, events)
 }
 
 func (e *Ethereum) eventLoop() {
@@ -491,7 +488,7 @@ func (e *Ethereum) eventLoop() {
 			}
 			switch msgTyped := msgParsed.(type) {
 			case []interface{}:
-				err = e.handleMessageBatch(ctx, msgTyped)
+				err = e.handleMessageBatch(ctx, 0, msgTyped)
 				if err == nil {
 					ack, _ := json.Marshal(&ethWSCommandPayload{
 						Type:  "ack",
@@ -505,7 +502,7 @@ func (e *Ethereum) eventLoop() {
 					if events, ok := msgTyped["events"].([]interface{}); ok {
 						// FFTM delivery with a batch number to use in the ack
 						isBatch = true
-						err = e.handleMessageBatch(ctx, events)
+						err = e.handleMessageBatch(ctx, (int64)(batchNumber), events)
 						// Errors processing messages are converted into nacks
 						ackOrNack := &ethWSCommandPayload{
 							Topic:       e.topic,

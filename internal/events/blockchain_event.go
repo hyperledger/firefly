@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -99,32 +99,51 @@ func (em *eventManager) emitBlockchainEventMetric(event *blockchain.Event) {
 	}
 }
 
-func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription) error {
+func (em *eventManager) BlockchainEventBatch(batch []*blockchain.EventToDispatch) error {
 	return em.retry.Do(em.ctx, "persist blockchain event", func(attempt int) (bool, error) {
-		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			listener, err := em.getChainListenerByProtocolIDCached(ctx, event.Subscription)
-			if err != nil {
-				return err
+		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+			for _, event := range batch {
+				switch event.Type {
+				case blockchain.EventTypeForListener:
+					if err := em.handleBlockchainEventForListener(ctx, event.ForListener); err != nil {
+						return err
+					}
+				case blockchain.EventTypeBatchPinComplete:
+					if err := em.handleBlockchainBatchPinEvent(ctx, event.BatchPinComplete); err != nil {
+						return err
+					}
+				case blockchain.EventTypeNetworkAction:
+					if err := em.handleBlockchainNetworkAction(ctx, event.NetworkAction); err != nil {
+						return err
+					}
+				}
 			}
-			if listener == nil {
-				log.L(ctx).Warnf("Event received from unknown subscription %s", event.Subscription)
-				return nil // no retry
-			}
-			if listener.Namespace != em.namespace.Name {
-				log.L(em.ctx).Debugf("Ignoring blockchain event from different namespace '%s'", listener.Namespace)
-				return nil
-			}
-			listener.Namespace = em.namespace.Name
-
-			chainEvent := buildBlockchainEvent(listener.Namespace, listener.ID, &event.Event, &core.BlockchainTransactionRef{
-				BlockchainID: event.BlockchainTXID,
-			})
-			if err := em.maybePersistBlockchainEvent(ctx, chainEvent, listener); err != nil {
-				return err
-			}
-			em.emitBlockchainEventMetric(&event.Event)
 			return nil
 		})
-		return err != nil, err
 	})
+}
+
+func (em *eventManager) handleBlockchainEventForListener(ctx context.Context, event *blockchain.EventForListener) error {
+	listener, err := em.getChainListenerByProtocolIDCached(ctx, event.ListenerID)
+	if err != nil {
+		return err
+	}
+	if listener == nil {
+		log.L(ctx).Warnf("Event received from unknown subscription %s", event.ListenerID)
+		return nil // no retry
+	}
+	if listener.Namespace != em.namespace.Name {
+		log.L(ctx).Debugf("Ignoring blockchain event from different namespace '%s'", listener.Namespace)
+		return nil
+	}
+	listener.Namespace = em.namespace.Name
+
+	chainEvent := buildBlockchainEvent(listener.Namespace, listener.ID, event.Event, &core.BlockchainTransactionRef{
+		BlockchainID: event.BlockchainTXID,
+	})
+	if err := em.maybePersistBlockchainEvent(ctx, chainEvent, listener); err != nil {
+		return err
+	}
+	em.emitBlockchainEventMetric(event.Event)
+	return nil
 }

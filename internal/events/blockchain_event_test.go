@@ -31,9 +31,9 @@ func TestContractEventWithRetries(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 
-	ev := &blockchain.EventWithSubscription{
-		Subscription: "sb-1",
-		Event: blockchain.Event{
+	ev := &blockchain.EventForListener{
+		ListenerID: "sb-1",
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xabcd1234",
 			ProtocolID:     "10/20/30",
 			Name:           "Changed",
@@ -64,7 +64,12 @@ func TestContractEventWithRetries(t *testing.T) {
 		return e.Type == core.EventTypeBlockchainEventReceived && e.Reference != nil && e.Reference == eventID && e.Topic == "topic1"
 	})).Return(nil).Once()
 
-	err := em.BlockchainEvent(ev)
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type:        blockchain.EventTypeForListener,
+			ForListener: ev,
+		},
+	})
 	assert.NoError(t, err)
 
 }
@@ -73,9 +78,9 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 
-	ev := &blockchain.EventWithSubscription{
-		Subscription: "sb-1",
-		Event: blockchain.Event{
+	ev := &blockchain.EventForListener{
+		ListenerID: "sb-1",
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xabcd1234",
 			Name:           "Changed",
 			Output: fftypes.JSONObject{
@@ -89,7 +94,12 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 
 	em.mdi.On("GetContractListenerByBackendID", mock.Anything, "ns1", "sb-1").Return(nil, nil)
 
-	err := em.BlockchainEvent(ev)
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type:        blockchain.EventTypeForListener,
+			ForListener: ev,
+		},
+	})
 	assert.NoError(t, err)
 
 }
@@ -98,9 +108,9 @@ func TestContractEventWrongNS(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 
-	ev := &blockchain.EventWithSubscription{
-		Subscription: "sb-1",
-		Event: blockchain.Event{
+	ev := &blockchain.EventForListener{
+		ListenerID: "sb-1",
+		Event: &blockchain.Event{
 			BlockchainTXID: "0xabcd1234",
 			Name:           "Changed",
 			Output: fftypes.JSONObject{
@@ -119,7 +129,12 @@ func TestContractEventWrongNS(t *testing.T) {
 
 	em.mdi.On("GetContractListenerByBackendID", mock.Anything, "ns1", "sb-1").Return(sub, nil)
 
-	err := em.BlockchainEvent(ev)
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type:        blockchain.EventTypeForListener,
+			ForListener: ev,
+		},
+	})
 	assert.NoError(t, err)
 
 }

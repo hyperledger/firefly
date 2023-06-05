@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 
@@ -971,8 +972,13 @@ func TestBackgroundStartFailWS(t *testing.T) {
 	h := &FFTokens{}
 	h.InitConfig(ffTokensConfig)
 
+	// Create a listener and close it - to grab a port we know is not in use
+	badListener := httptest.NewServer(&http.ServeMux{})
+	badURL := badListener.URL
+	badListener.Close()
+
 	// Bad url for WS should fail and retry
-	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "http://localhost:8080")
+	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, badURL)
 	ffTokensConfig.Set(FFTBackgroundStart, true)
 	ffTokensConfig.Set(wsclient.WSConfigKeyInitialConnectAttempts, 1)
 
@@ -994,6 +1000,7 @@ func TestBackgroundStartFailWS(t *testing.T) {
 	err = <-capturedErr
 	assert.Regexp(t, "FF00148", err)
 }
+
 func TestReceiptEventsBackgroundStart(t *testing.T) {
 
 	h, _, fromServer, _, done := newTestFFTokens(t)

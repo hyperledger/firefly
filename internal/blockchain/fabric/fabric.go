@@ -377,10 +377,10 @@ func (f *Fabric) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONO
 	}
 }
 
-func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *common.SubscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
+func (f *Fabric) processBatchPinEvent(ctx context.Context, events common.EventsToDispatch, location *fftypes.JSONAny, subInfo *common.SubscriptionInfo, msgJSON fftypes.JSONObject) {
 	event := f.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
-		return nil // move on
+		return // move on
 	}
 
 	signer := event.Output.GetString("signer")
@@ -398,27 +398,28 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSON
 		Value: signer,
 	}
 
-	return f.callbacks.BatchPinOrNetworkAction(ctx, subInfo, location, event, verifier, params)
+	f.callbacks.PrepareBatchPinOrNetworkAction(ctx, events, subInfo, location, event, verifier, params)
 }
 
 func (f *Fabric) buildEventLocationString(chaincode string) string {
 	return fmt.Sprintf("chaincode=%s", chaincode)
 }
 
-func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
-	subName, err := f.streams.getSubscriptionName(ctx, msgJSON.GetString("subId"))
+func (f *Fabric) processContractEvent(ctx context.Context, events common.EventsToDispatch, msgJSON fftypes.JSONObject) (err error) {
+	subID := msgJSON.GetString("subId")
+	subName, err := f.streams.getSubscriptionName(ctx, subID)
 	if err != nil {
-		return err
+		return err // this is a problem - we should be able to find the listener that dispatched this to us
 	}
 	namespace := common.GetNamespaceFromSubName(subName)
 	event := f.parseBlockchainEvent(ctx, msgJSON)
-	if event == nil {
-		return nil // move on
+	if event != nil {
+		f.callbacks.PrepareBlockchainEvent(ctx, events, namespace, &blockchain.EventForListener{
+			Event:      event,
+			ListenerID: subID,
+		})
 	}
-	return f.callbacks.BlockchainEvent(ctx, namespace, &blockchain.EventWithSubscription{
-		Event:        *event,
-		Subscription: msgJSON.GetString("subId"),
-	})
+	return nil
 }
 
 func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
@@ -460,6 +461,9 @@ func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) {
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {
+	// Build the set of events that need handling
+	events := make(common.EventsToDispatch)
+	count := len(messages)
 	for i, msgI := range messages {
 		msgMap, ok := msgI.(map[string]interface{})
 		if !ok {
@@ -468,12 +472,10 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 		}
 		msgJSON := fftypes.JSONObject(msgMap)
 
-		logger := log.L(ctx).WithField("fabmsgidx", i)
-		eventCtx, done := context.WithCancel(log.WithLogger(ctx, logger))
-
 		eventName := msgJSON.GetString("eventName")
 		sub := msgJSON.GetString("subId")
-		logger.Infof("Received '%s' message on '%s'", eventName, sub)
+		logger := log.L(ctx)
+		logger.Infof("[Fabric:%d/%d]: '%s' on '%s'", i+1, count, eventName, sub)
 		logger.Tracef("Message: %+v", msgJSON)
 
 		// Matches one of the active FireFly BatchPin subscriptions
@@ -483,31 +485,26 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 				Channel:   subInfo.Extra.(string),
 			})
 			if err != nil {
-				done()
 				return err
 			}
 
 			switch eventName {
 			case broadcastBatchEventName:
-				if err := f.handleBatchPinEvent(eventCtx, location, subInfo, msgJSON); err != nil {
-					done()
-					return err
-				}
+				f.processBatchPinEvent(ctx, events, location, subInfo, msgJSON)
 			default:
 				log.L(ctx).Infof("Ignoring event with unknown name: %s", eventName)
 			}
 		} else {
 			// Subscription not recognized - assume it's from a custom contract listener
 			// (event manager will reject it if it's not)
-			if err := f.handleContractEvent(ctx, msgJSON); err != nil {
-				done()
+			if err := f.processContractEvent(ctx, events, msgJSON); err != nil {
 				return err
 			}
 		}
-		done()
 	}
-
-	return nil
+	// Dispatch all the events from this patch that were successfully parsed and routed to namespaces
+	// (could be zero - that's ok)
+	return f.callbacks.DispatchBlockchainEvents(ctx, events)
 }
 
 func (f *Fabric) eventLoop() {

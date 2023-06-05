@@ -86,16 +86,8 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.SharedStorageBlobDownloaded(*hash, 12345, "payload1", dataID)
 	assert.NoError(t, err)
 
-	mei.On("BatchPinComplete", "ns1", &blockchain.BatchPin{}, &core.VerifierRef{}).Return(nil)
-	err = bc.BatchPinComplete("ns1", &blockchain.BatchPin{}, &core.VerifierRef{})
-	assert.NoError(t, err)
-
-	mei.On("BlockchainNetworkAction", "action", fftypes.JSONAnyPtr("{}"), &blockchain.Event{}, &core.VerifierRef{}).Return(nil)
-	err = bc.BlockchainNetworkAction("action", fftypes.JSONAnyPtr("{}"), &blockchain.Event{}, &core.VerifierRef{})
-	assert.NoError(t, err)
-
-	mei.On("BlockchainEvent", &blockchain.EventWithSubscription{}).Return(nil)
-	err = bc.BlockchainEvent(&blockchain.EventWithSubscription{})
+	mei.On("BlockchainEventBatch", []*blockchain.EventToDispatch{{Type: blockchain.EventTypeBatchPinComplete}}).Return(nil)
+	err = bc.BlockchainEventBatch([]*blockchain.EventToDispatch{{Type: blockchain.EventTypeBatchPinComplete}})
 	assert.NoError(t, err)
 
 	mei.On("DXEvent", mdx, &dataexchangemocks.DXEvent{}).Return(nil)
@@ -130,13 +122,7 @@ func TestBoundCallbacksStopped(t *testing.T) {
 	err = bc.SharedStorageBlobDownloaded(*fftypes.NewRandB32(), 12345, "payload1", nil)
 	assert.Regexp(t, "FF10446", err)
 
-	err = bc.BatchPinComplete("ns1", &blockchain.BatchPin{}, &core.VerifierRef{})
-	assert.Regexp(t, "FF10446", err)
-
-	err = bc.BlockchainNetworkAction("action", fftypes.JSONAnyPtr("{}"), &blockchain.Event{}, &core.VerifierRef{})
-	assert.Regexp(t, "FF10446", err)
-
-	err = bc.BlockchainEvent(&blockchain.EventWithSubscription{})
+	err = bc.BlockchainEventBatch([]*blockchain.EventToDispatch{})
 	assert.Regexp(t, "FF10446", err)
 
 	err = bc.DXEvent(nil, &dataexchangemocks.DXEvent{})
