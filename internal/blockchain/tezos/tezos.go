@@ -66,12 +66,18 @@ type PayloadSchema struct {
 }
 
 type PrefixItem struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name    string       `json:"name"`
+	Type    string       `json:"type"`
+	Details paramDetails `json:"details,omitempty"`
 }
 
+type paramDetails struct {
+	Kind         string `json:"kind"`
+	InternalType string `json:"internalType"`
+}
 type ffiParamSchema struct {
-	Type string `json:"type,omitempty"`
+	Type    string       `json:"type,omitempty"`
+	Details paramDetails `json:"details,omitempty"`
 }
 
 var addressVerify = regexp.MustCompile("^(tz[1-4]|[Kk][Tt]1)[1-9A-Za-z]{33}$")
@@ -193,8 +199,9 @@ func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey st
 		}
 
 		prefixItems[i] = &PrefixItem{
-			Name: param.Name,
-			Type: paramSchema.Type,
+			Name:    param.Name,
+			Type:    paramSchema.Type,
+			Details: paramSchema.Details,
 		}
 	}
 
@@ -204,25 +211,6 @@ func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey st
 
 	return t.invokeContractMethod(ctx, tezosLocation.Address, method.Name, signingKey, nsOpID, prefixItems, input, options)
 }
-
-// func (t *Tezos) prepareRequest(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError, input map[string]interface{}) (*michelson.Entry, []*michelson.Entry, []interface{}, error) {
-// 	errorsMichelson := make([]*michelson.Entry, len(errors))
-// 	orderedInput := make([]interface{}, len(method.Params))
-// 	michelson, err := ffi2michelson.ConvertFFIMethodToMichelson(ctx, method)
-// 	if err != nil {
-// 		return michelson, errorsMichelson, orderedInput, err
-// 	}
-// 	// for i, ffiError := range errors {
-// 	// 	michelson, err := ffi2abi.ConvertFFIErrorDefinitionToMichelson(ctx, &ffiError.FFIErrorDefinition)
-// 	// 	if err == nil {
-// 	// 		errorsMichelson[i] = michelson
-// 	// 	}
-// 	// }
-// 	for i, ffiParam := range method.Params {
-// 		orderedInput[i] = input[ffiParam.Name]
-// 	}
-// 	return michelson, errorsMichelson, orderedInput, nil
-// }
 
 func (t *Tezos) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
 	// TODO: impl
