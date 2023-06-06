@@ -301,6 +301,6 @@ func (suite *EthereumCouponTestSuite) TestDirectInvokeMethod() {
 	assert.NoError(suite.T(), err)
 	resJSON, err := json.Marshal(res)
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), `{"output":{"allCreatedIds":["1"]}}`, string(resJSON))
+	assert.Equal(suite.T(), `{"allCreatedIds":["1"]}`, string(resJSON))
 	suite.testState.client1.DeleteContractListener(suite.T(), listener.ID)
 }
