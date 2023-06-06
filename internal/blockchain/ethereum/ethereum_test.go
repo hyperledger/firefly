@@ -2895,6 +2895,103 @@ func TestQueryContractOK(t *testing.T) {
 	assert.Equal(t, `{"output":"3"}`, string(j))
 }
 
+func TestQueryContractMultipleUnnamedOutputOK(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	errors := testFFIErrors()
+	params := map[string]interface{}{}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+
+	outputStruct := struct {
+		Test  string `json:"test"`
+		Value int    `json:"value"`
+	}{
+		Test:  "myvalue",
+		Value: 3,
+	}
+
+	output := map[string]interface{}{
+		"output":   "foo",
+		"output1":  outputStruct,
+		"anything": 3,
+	}
+
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			assert.Equal(t, "customValue", body["customOption"].(string))
+			assert.Equal(t, "0x12345", body["to"].(string))
+			assert.Equal(t, "0x01020304", body["from"].(string))
+			return httpmock.NewJsonResponderOrPanic(200, output)(req)
+		})
+	result, err := e.QueryContract(context.Background(), "0x01020304", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	assert.NoError(t, err)
+	j, err := json.Marshal(result)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"anything":3,"output":"foo","output1":{"test":"myvalue","value":3}}`, string(j))
+}
+
+func TestQueryContractNamedOutputOK(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	errors := testFFIErrors()
+	params := map[string]interface{}{}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+
+	outputStruct := struct {
+		Test  string `json:"test"`
+		Value int    `json:"value"`
+	}{
+		Test:  "myvalue",
+		Value: 3,
+	}
+
+	output := map[string]interface{}{
+		"mynamedparam":  "foo",
+		"mynamedstruct": outputStruct,
+	}
+
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			assert.Equal(t, "customValue", body["customOption"].(string))
+			assert.Equal(t, "0x12345", body["to"].(string))
+			assert.Equal(t, "0x01020304", body["from"].(string))
+			return httpmock.NewJsonResponderOrPanic(200, output)(req)
+		})
+	result, err := e.QueryContract(context.Background(), "0x01020304", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	assert.NoError(t, err)
+	j, err := json.Marshal(result)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"output":{"mynamedparam":"foo","mynamedstruct":{"test":"myvalue","value":3}}}`, string(j))
+}
+
 func TestQueryContractInvalidOption(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
