@@ -25,6 +25,7 @@ import (
 
 func TestEthereumGatewayE2ESuite(t *testing.T) {
 	suite.Run(t, new(gateway.TokensTestSuite))
-	suite.Run(t, new(gateway.EthereumContractTestSuite))
+	suite.Run(t, new(gateway.EthereumCouponTestSuite))
+	suite.Run(t, new(gateway.EthereumSimpleStorageTestSuite))
 	suite.Run(t, new(gateway.TokensOnlyTestSuite))
 }

@@ -33,7 +33,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var contractVersion, _ = nanoid.Generate("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", nanoid.DefaultSize)
+var simpleStorageContractVersion, _ = nanoid.Generate("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", nanoid.DefaultSize)
 
 func simpleStorageFFIChanged() *fftypes.FFIEvent {
 	return &fftypes.FFIEvent{
@@ -56,7 +56,7 @@ func simpleStorageFFIChanged() *fftypes.FFIEvent {
 func simpleStorageFFI() *fftypes.FFI {
 	return &fftypes.FFI{
 		Name:    "SimpleStorage",
-		Version: contractVersion,
+		Version: simpleStorageContractVersion,
 		Methods: []*fftypes.FFIMethod{
 			simpleStorageFFISet(),
 			simpleStorageFFIGet(),
@@ -93,7 +93,7 @@ func simpleStorageFFIGet() *fftypes.FFIMethod {
 	}
 }
 
-func deployContract(t *testing.T, stackName, contract string) string {
+func deploySimpleStorageContract(t *testing.T, stackName, contract string) string {
 	path := "../../data/contracts/" + contract
 	out, err := exec.Command("ff", "deploy", "ethereum", stackName, path).Output()
 	require.NoError(t, err)
@@ -105,7 +105,7 @@ func deployContract(t *testing.T, stackName, contract string) string {
 	return address
 }
 
-type EthereumContractTestSuite struct {
+type EthereumSimpleStorageTestSuite struct {
 	suite.Suite
 	testState       *testState
 	contractAddress string
@@ -114,7 +114,7 @@ type EthereumContractTestSuite struct {
 	ethIdentity     string
 }
 
-func (suite *EthereumContractTestSuite) SetupSuite() {
+func (suite *EthereumSimpleStorageTestSuite) SetupSuite() {
 	suite.testState = beforeE2ETest(suite.T())
 	stack := e2e.ReadStack(suite.T())
 	stackState := e2e.ReadStackState(suite.T())
@@ -122,7 +122,7 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
 	account := stackState.Accounts[0].(map[string]interface{})
 	suite.ethIdentity = account["address"].(string)
-	suite.contractAddress = deployContract(suite.T(), stack.Name, "simplestorage/simple_storage.json")
+	suite.contractAddress = deploySimpleStorageContract(suite.T(), stack.Name, "simplestorage/simple_storage.json")
 
 	res, err := suite.testState.client1.CreateFFI(suite.T(), simpleStorageFFI(), false)
 	suite.interfaceID = res.ID
@@ -130,15 +130,15 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	assert.NoError(suite.T(), err)
 }
 
-func (suite *EthereumContractTestSuite) BeforeTest(suiteName, testName string) {
+func (suite *EthereumSimpleStorageTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testState = beforeE2ETest(suite.T())
 }
 
-func (suite *EthereumContractTestSuite) AfterTest(suiteName, testName string) {
+func (suite *EthereumSimpleStorageTestSuite) AfterTest(suiteName, testName string) {
 	e2e.VerifyAllOperationsSucceeded(suite.T(), []*client.FireFlyClient{suite.testState.client1}, suite.testState.startTime)
 }
 
-func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
+func (suite *EthereumSimpleStorageTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.Done()
 
 	received1 := e2e.WsReader(suite.testState.ws1)
@@ -192,7 +192,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	suite.testState.client1.DeleteContractListener(suite.T(), listener.ID)
 }
 
-func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
+func (suite *EthereumSimpleStorageTestSuite) TestFFIInvokeMethod() {
 	defer suite.testState.Done()
 
 	received1 := e2e.WsReader(suite.testState.ws1)
@@ -251,7 +251,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	suite.testState.client1.DeleteContractListener(suite.T(), listener.ID)
 }
 
-func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
+func (suite *EthereumSimpleStorageTestSuite) TestContractAPIMethod() {
 	defer suite.testState.Done()
 
 	received1 := e2e.WsReader(suite.testState.ws1)
