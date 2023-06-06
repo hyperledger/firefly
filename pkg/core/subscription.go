@@ -18,7 +18,6 @@ package core
 
 import (
 	"context"
-	"crypto/tls"
 	"database/sql/driver"
 	"encoding/json"
 	"net/url"
@@ -115,14 +114,12 @@ type SubscriptionRef struct {
 type Subscription struct {
 	SubscriptionRef
 
-	Transport     string              `ffstruct:"Subscription" json:"transport"`
-	Filter        SubscriptionFilter  `ffstruct:"Subscription" json:"filter"`
-	Options       SubscriptionOptions `ffstruct:"Subscription" json:"options"`
-	TLSConfigName string              `ffstruct:"Subscription" json:"tlsConfigName,omitempty"`
-	TLSConfig     *tls.Config         `ffstruct:"Subscription" json:"-" ffexcludeinput:"true"`
-	Ephemeral     bool                `ffstruct:"Subscription" json:"ephemeral,omitempty" ffexcludeinput:"true"`
-	Created       *fftypes.FFTime     `ffstruct:"Subscription" json:"created" ffexcludeinput:"true"`
-	Updated       *fftypes.FFTime     `ffstruct:"Subscription" json:"updated" ffexcludeinput:"true"`
+	Transport string              `ffstruct:"Subscription" json:"transport"`
+	Filter    SubscriptionFilter  `ffstruct:"Subscription" json:"filter"`
+	Options   SubscriptionOptions `ffstruct:"Subscription" json:"options"`
+	Ephemeral bool                `ffstruct:"Subscription" json:"ephemeral,omitempty" ffexcludeinput:"true"`
+	Created   *fftypes.FFTime     `ffstruct:"Subscription" json:"created" ffexcludeinput:"true"`
+	Updated   *fftypes.FFTime     `ffstruct:"Subscription" json:"updated" ffexcludeinput:"true"`
 }
 
 type SubscriptionWithStatus struct {
@@ -139,6 +136,9 @@ func (so *SubscriptionOptions) UnmarshalJSON(b []byte) error {
 	err := json.Unmarshal(b, &so.additionalOptions)
 	if err == nil {
 		err = json.Unmarshal(b, &so.SubscriptionCoreOptions)
+	}
+	if err == nil {
+		err = json.Unmarshal(b, &so.WebhookSubOptions)
 	}
 	if err != nil {
 		return err
@@ -162,6 +162,10 @@ func (so SubscriptionOptions) MarshalJSON() ([]byte, error) {
 	if so.ReadAhead != nil {
 		so.additionalOptions["readAhead"] = float64(*so.ReadAhead)
 	}
+	if so.TLSConfigName != "" {
+		so.additionalOptions["tlsConfigName"] = so.TLSConfigName
+	}
+
 	return json.Marshal(&so.additionalOptions)
 }
 

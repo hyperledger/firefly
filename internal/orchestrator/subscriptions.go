@@ -47,8 +47,8 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, subDef *co
 		return nil, i18n.NewError(ctx, coremsgs.MsgSystemTransportInternal)
 	}
 
-	if subDef.TLSConfigName != "" || or.namespace.TLSConfigs[subDef.TLSConfigName] != nil {
-		subDef.TLSConfig = or.namespace.TLSConfigs[subDef.TLSConfigName]
+	if subDef.Options.TLSConfigName != "" && or.namespace.TLSConfigs[subDef.Options.TLSConfigName] != nil {
+		subDef.Options.TLSConfig = or.namespace.TLSConfigs[subDef.Options.TLSConfigName]
 	}
 
 	return subDef, or.events.CreateUpdateDurableSubscription(ctx, subDef, mustNew)

@@ -789,7 +789,7 @@ func (nm *namespaceManager) loadTLSConfig(ctx context.Context, tlsConfigs map[st
 		}
 
 		if tlsConfigs[name] != nil {
-			return fmt.Errorf("Found duplicate TLS Configs with name: %s", name)
+			return i18n.NewError(ctx, coremsgs.MsgDuplicateTLSConfig, name)
 		}
 
 		tlsConfigs[name] = tlsConfig
@@ -880,7 +880,6 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		}
 	}
 
-	//
 	// Handle TLS Configs
 	tlsConfigArray := conf.SubArray(coreconfig.NamespaceTLSConfigs)
 	tlsConfigs := make(map[string]*tls.Config)

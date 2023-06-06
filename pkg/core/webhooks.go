@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,17 +16,21 @@
 
 package core
 
+import "crypto/tls"
+
 type WebhookSubOptions struct {
-	Fastack  bool                `ffstruct:"WebhookSubOptions" json:"fastack,omitempty"`
-	URL      string              `ffstruct:"WebhookSubOptions" json:"url,omitempty"`
-	Method   string              `ffstruct:"WebhookSubOptions" json:"method,omitempty"`
-	JSON     bool                `ffstruct:"WebhookSubOptions" json:"json,omitempty"`
-	Reply    bool                `ffstruct:"WebhookSubOptions" json:"reply,omitempty"`
-	ReplyTag string              `ffstruct:"WebhookSubOptions" json:"replytag,omitempty"`
-	ReplyTX  string              `ffstruct:"WebhookSubOptions" json:"replytx,omitempty"`
-	Headers  map[string]string   `ffstruct:"WebhookSubOptions" json:"headers,omitempty"`
-	Query    map[string]string   `ffstruct:"WebhookSubOptions" json:"query,omitempty"`
-	Input    WebhookInputOptions `ffstruct:"WebhookSubOptions" json:"input,omitempty"`
+	Fastack       bool                `ffstruct:"WebhookSubOptions" json:"fastack,omitempty"`
+	URL           string              `ffstruct:"WebhookSubOptions" json:"url,omitempty"`
+	Method        string              `ffstruct:"WebhookSubOptions" json:"method,omitempty"`
+	JSON          bool                `ffstruct:"WebhookSubOptions" json:"json,omitempty"`
+	Reply         bool                `ffstruct:"WebhookSubOptions" json:"reply,omitempty"`
+	ReplyTag      string              `ffstruct:"WebhookSubOptions" json:"replytag,omitempty"`
+	ReplyTX       string              `ffstruct:"WebhookSubOptions" json:"replytx,omitempty"`
+	Headers       map[string]string   `ffstruct:"WebhookSubOptions" json:"headers,omitempty"`
+	Query         map[string]string   `ffstruct:"WebhookSubOptions" json:"query,omitempty"`
+	TLSConfigName string              `ffstruct:"WebhookSubOptions" json:"tlsConfigName,omitempty"`
+	TLSConfig     *tls.Config         `ffstruct:"WebhookSubOptions" json:"-" ffexcludeinput:"true"`
+	Input         WebhookInputOptions `ffstruct:"WebhookSubOptions" json:"input,omitempty"`
 }
 
 type WebhookInputOptions struct {

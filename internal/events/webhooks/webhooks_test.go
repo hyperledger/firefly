@@ -361,8 +361,10 @@ func TestRequestWithBodyReplyEndToEndWithTLS(t *testing.T) {
 			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
 			},
+			WebhookSubOptions: core.WebhookSubOptions{
+				TLSConfig: clientTLSConfig,
+			},
 		},
-		TLSConfig: clientTLSConfig,
 	}
 	to := sub.Options.TransportOptions()
 	to["reply"] = true

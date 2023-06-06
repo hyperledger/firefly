@@ -18,7 +18,16 @@ package namespace
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
+	"log"
+	"math/big"
+	"net"
 	"os"
 	"strings"
 	"testing"
@@ -1306,8 +1315,7 @@ func TestLoadNamespacesUseDefaults(t *testing.T) {
 	assert.Equal(t, "oldest", newNS["ns1"].config.Multiparty.Contracts[0].FirstEvent)
 }
 
-// TODO fix why the read config doesn't override the test config!
-func TestLoadTLSConfigsForNamespace(t *testing.T) {
+func TestLoadTLSConfigsBadTLS(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
@@ -1321,15 +1329,190 @@ namespaces:
     tlsConfigs:
     - name: myconfig
       tls:
-        ca: my-ca
-        cert: my-cert
-        key: my-key
+        enabled: true
+        caFile: my-ca
+        certFile: my-cert
+        keyFile: my-key
   `))
 	assert.NoError(t, err)
 
-	newNS, err := nm.loadNamespaces(context.Background(), nm.dumpRootConfig(), nm.plugins)
+	// RawConfig to Section!
+	tlsConfigArray := namespacePredefined.ArrayEntry(0).SubArray(coreconfig.NamespaceTLSConfigs)
+	tlsConfigs := make(map[string]*tls.Config)
+	err = nm.loadTLSConfig(nm.ctx, tlsConfigs, tlsConfigArray)
+	assert.Regexp(t, "FF00153", err)
+}
+
+func TestLoadTLSConfigsNotEnabled(t *testing.T) {
+	nm, _, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	coreconfig.Reset()
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+namespaces:
+  default: ns1
+  predefined:
+  - name: ns1
+    tlsConfigs:
+    - name: myconfig
+      tls:
+        enabled: false
+        caFile: my-ca
+        certFile: my-cert
+        keyFile: my-key
+  `))
 	assert.NoError(t, err)
-	assert.Len(t, newNS, 1)
+
+	// RawConfig to Section!
+	tlsConfigArray := namespacePredefined.ArrayEntry(0).SubArray(coreconfig.NamespaceTLSConfigs)
+	tlsConfigs := make(map[string]*tls.Config)
+	err = nm.loadTLSConfig(nm.ctx, tlsConfigs, tlsConfigArray)
+	assert.NoError(t, err)
+	assert.Nil(t, tlsConfigs["myconfig"])
+}
+
+func generateTestCertificates() (*os.File, *os.File, func()) {
+	// Create an X509 certificate pair
+	privatekey, _ := rsa.GenerateKey(rand.Reader, 2048)
+	publickey := &privatekey.PublicKey
+	var privateKeyBytes []byte = x509.MarshalPKCS1PrivateKey(privatekey)
+	privateKeyFile, _ := os.CreateTemp("", "key.pem")
+	privateKeyBlock := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: privateKeyBytes}
+	pem.Encode(privateKeyFile, privateKeyBlock)
+	serialNumber, _ := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	x509Template := &x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization: []string{"Unit Tests"},
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(1000 * time.Second),
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+		BasicConstraintsValid: true,
+		IPAddresses:           []net.IP{net.IPv4(127, 0, 0, 1)},
+	}
+	derBytes, _ := x509.CreateCertificate(rand.Reader, x509Template, x509Template, publickey, privatekey)
+	publicKeyFile, _ := os.CreateTemp("", "cert.pem")
+	pem.Encode(publicKeyFile, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+
+	return publicKeyFile, privateKeyFile, func() {
+		os.Remove(publicKeyFile.Name())
+		os.Remove(privateKeyFile.Name())
+	}
+}
+
+func TestLoadTLSConfigs(t *testing.T) {
+	nm, _, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	publicKeyFile, privateKeyFile, cleanCertificates := generateTestCertificates()
+	defer cleanCertificates()
+
+	caCert, err := os.ReadFile(publicKeyFile.Name())
+	if err != nil {
+		log.Fatal(err)
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	cert, err := tls.LoadX509KeyPair(publicKeyFile.Name(), privateKeyFile.Name())
+	assert.NoError(t, err)
+	expectedTLSConfig := &tls.Config{
+		RootCAs:      caCertPool,
+		Certificates: []tls.Certificate{cert},
+	}
+
+	coreconfig.Reset()
+	viper.SetConfigType("yaml")
+	err = viper.ReadConfig(strings.NewReader(fmt.Sprintf(`
+namespaces:
+  default: ns1
+  predefined:
+  - name: ns1
+    tlsConfigs:
+    - name: myconfig
+      tls:
+        enabled: true
+        caFile: %s
+        certFile: %s
+        keyFile: %s 
+  `, publicKeyFile.Name(), publicKeyFile.Name(), privateKeyFile.Name())))
+	assert.NoError(t, err)
+
+	// RawConfig to Section!
+	tlsConfigArray := namespacePredefined.ArrayEntry(0).SubArray(coreconfig.NamespaceTLSConfigs)
+	tlsConfigs := make(map[string]*tls.Config)
+	err = nm.loadTLSConfig(nm.ctx, tlsConfigs, tlsConfigArray)
+	assert.NoError(t, err)
+	assert.NotNil(t, tlsConfigs["myconfig"])
+	assert.True(t, tlsConfigs["myconfig"].RootCAs.Equal(expectedTLSConfig.RootCAs))
+	assert.Equal(t, tlsConfigs["myconfig"].Certificates, expectedTLSConfig.Certificates)
+}
+
+func TestLoadTLSConfigsDuplicateConfigs(t *testing.T) {
+	nm, _, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	publicKeyFile, privateKeyFile, cleanCertificates := generateTestCertificates()
+	defer cleanCertificates()
+
+	coreconfig.Reset()
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(fmt.Sprintf(`
+namespaces:
+  default: ns1
+  predefined:
+  - name: ns1
+    tlsConfigs:
+    - name: myconfig
+      tls:
+        enabled: true
+        caFile: %s
+        certFile: %s
+        keyFile: %s 
+    - name: myconfig
+      tls:
+        enabled: true
+        caFile: %s
+        certFile: %s
+        keyFile: %s 
+  `, publicKeyFile.Name(), publicKeyFile.Name(), privateKeyFile.Name(),
+		publicKeyFile.Name(), publicKeyFile.Name(), privateKeyFile.Name())))
+	assert.NoError(t, err)
+
+	// RawConfig to Section!
+	tlsConfigArray := namespacePredefined.ArrayEntry(0).SubArray(coreconfig.NamespaceTLSConfigs)
+	tlsConfigs := make(map[string]*tls.Config)
+	err = nm.loadTLSConfig(nm.ctx, tlsConfigs, tlsConfigArray)
+	assert.Regexp(t, "FF10452", err)
+}
+
+func TestLoadNamespacesWithErrorTLSConfigs(t *testing.T) {
+	nm, _, cleanup := newTestNamespaceManager(t, true)
+	defer cleanup()
+
+	coreconfig.Reset()
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+namespaces:
+  default: ns1
+  predefined:
+  - name: ns1
+    tlsConfigs:
+    - name: myconfig
+      tls:
+        enabled: true
+        caFile: my-ca
+        certFile: my-cert
+        keyFile: my-key
+  `))
+	assert.NoError(t, err)
+
+	nm.namespaces, err = nm.loadNamespaces(context.Background(), nm.dumpRootConfig(), nm.plugins)
+
+	assert.Regexp(t, "FF00153", err)
 }
 
 func TestLoadNamespacesNonMultipartyNoDatabase(t *testing.T) {
