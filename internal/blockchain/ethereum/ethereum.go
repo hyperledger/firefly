@@ -742,11 +742,25 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	if err != nil || !res.IsSuccess() {
 		return nil, err
 	}
-	output := &queryOutput{}
-	if err = json.Unmarshal(res.Body(), output); err != nil {
+
+	queryOutput := make(map[string]interface{})
+	if err = json.Unmarshal(res.Body(), &queryOutput); err != nil {
 		return nil, err
 	}
-	return output, nil
+
+	// Keep format for non-named outputs
+	// Single output will be {"output": "value"}
+	// Multiple outputs will be {"output": "value", "output1": "value1", "output2": "value2", ... , "outputN": "valueN"}
+	if queryOutput["output"] != nil {
+		return queryOutput, nil
+	}
+
+	// Keep interface and wrap result in output field
+	wrapped := map[string]interface{}{
+		"output": queryOutput,
+	}
+
+	return wrapped, nil
 }
 
 func (e *Ethereum) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
@@ -924,6 +938,8 @@ func (e *Ethereum) queryNetworkVersion(ctx context.Context, address string) (ver
 		}
 		return 0, err
 	}
+
+	// Leave as queryOutput as it only has one value
 	output := &queryOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {
 		return 0, err
