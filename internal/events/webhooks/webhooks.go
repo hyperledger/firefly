@@ -232,8 +232,8 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 
 	newClient := resty.NewWithClient(&httpClient)
 
-	if sub.TLSConfig != nil {
-		newClient.SetTLSClientConfig(sub.TLSConfig)
+	if sub.Options.TLSConfig != nil {
+		newClient.SetTLSClientConfig(sub.Options.TLSConfig)
 	}
 
 	req, err = wh.buildRequest(newClient, sub.Options.TransportOptions(), firstData)

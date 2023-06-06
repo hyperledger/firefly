@@ -41,7 +41,6 @@ var (
 		"options",
 		"created",
 		"updated",
-		"tls_config_name",
 	}
 	subscriptionFilterFieldMap = map[string]string{}
 )
@@ -96,7 +95,6 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *core.S
 				Set("options", subscription.Options).
 				Set("created", subscription.Created).
 				Set("updated", subscription.Updated).
-				Set("tls_config_name", subscription.TLSConfigName).
 				Where(sq.Eq{
 					"namespace": subscription.Namespace,
 					"name":      subscription.Name,
@@ -124,7 +122,6 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *core.S
 					subscription.Options,
 					subscription.Created,
 					subscription.Updated,
-					subscription.TLSConfigName,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, core.ChangeEventTypeCreated, subscription.Namespace, subscription.ID)
@@ -149,7 +146,6 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*cor
 		&subscription.Options,
 		&subscription.Created,
 		&subscription.Updated,
-		&subscription.TLSConfigName,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, subscriptionsTable)

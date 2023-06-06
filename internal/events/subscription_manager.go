@@ -249,6 +249,7 @@ func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
 	}
 }
 
+// nolint: gocyclo
 func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef *core.Subscription) (sub *subscription, err error) {
 	filter := subDef.Filter
 
@@ -336,6 +337,10 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		}
 	}
 
+	if subDef.Options.TLSConfigName != "" && sm.namespace.TLSConfigs[subDef.Options.TLSConfigName] != nil {
+		subDef.Options.TLSConfig = sm.namespace.TLSConfigs[subDef.Options.TLSConfigName]
+	}
+
 	sub = &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition:         subDef,
@@ -346,10 +351,6 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 			groupFilter:  groupFilter,
 			authorFilter: authorFilter,
 		},
-	}
-
-	if subDef.TLSConfigName != "" && sm.namespace.TLSConfigs[subDef.TLSConfigName] != nil {
-		subDef.TLSConfig = sm.namespace.TLSConfigs[subDef.TLSConfigName]
 	}
 
 	if (filter.BlockchainEvent != core.BlockchainEventFilter{}) {

@@ -85,14 +85,18 @@ func TestCreateSubscriptionTLSConfigOk(t *testing.T) {
 		SubscriptionRef: core.SubscriptionRef{
 			Name: "sub1",
 		},
-		TLSConfigName: "myconfig",
+		Options: core.SubscriptionOptions{
+			WebhookSubOptions: core.WebhookSubOptions{
+				TLSConfigName: "myconfig",
+			},
+		},
 	}
 	or.mem.On("CreateUpdateDurableSubscription", mock.Anything, mock.Anything, true).Return(nil)
 	s1, err := or.CreateSubscription(or.ctx, sub)
 	assert.NoError(t, err)
 	assert.Equal(t, s1, sub)
 	assert.Equal(t, "ns", sub.Namespace)
-	assert.Equal(t, mockTlSConfig, sub.TLSConfig)
+	assert.Equal(t, mockTlSConfig, sub.Options.TLSConfig)
 }
 
 func TestCreateUpdateSubscriptionOk(t *testing.T) {
