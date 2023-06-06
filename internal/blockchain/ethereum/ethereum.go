@@ -837,12 +837,11 @@ func (e *Ethereum) QueryContract(ctx context.Context, signingKey string, locatio
 		return nil, err
 	}
 
-	output := make(map[string]interface{})
+	var output interface{}
 	if err = json.Unmarshal(res.Body(), &output); err != nil {
 		return nil, err
 	}
-
-	return output, nil
+	return output, nil // note UNLIKE fabric this is just `output`, not `output.Result` - but either way the top level of what we return to the end user, is whatever the Connector sent us
 }
 
 func (e *Ethereum) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
