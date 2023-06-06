@@ -2989,7 +2989,7 @@ func TestQueryContractNamedOutputOK(t *testing.T) {
 	assert.NoError(t, err)
 	j, err := json.Marshal(result)
 	assert.NoError(t, err)
-	assert.Equal(t, `{"output":{"mynamedparam":"foo","mynamedstruct":{"test":"myvalue","value":3}}}`, string(j))
+	assert.Equal(t, `{"mynamedparam":"foo","mynamedstruct":{"test":"myvalue","value":3}}`, string(j))
 }
 
 func TestQueryContractInvalidOption(t *testing.T) {
