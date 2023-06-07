@@ -5,7 +5,7 @@ parent: pages.architecture
 nav_order: 2
 ---
 
-# Multiparty Event Sequencing
+# Blockchain Connector Toolkit
 {: .no_toc }
 
 ## Table of contents
