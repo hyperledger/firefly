@@ -375,7 +375,7 @@ itself idempotent?</p>
 <p>FireFly provides an idempotent interface downstream to connectors.</p>
 
 <p>Each <a href="../reference/types/operation.html">operation</a> within a FireFly <a href="../reference/types/transaction.html">transaction</a>
-receives a unique ID within the overall that is used as an idempotency key when invoking that connector.</p>
+receives a unique ID within the overall transaction that is used as an idempotency key when invoking that connector.</p>
 
 <p>Well formed connectors honor this idempotency key internally, ensuring that the end-to-end transaction submission is
 idempotent.</p>
