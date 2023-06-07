@@ -62,7 +62,7 @@ Examples of how an app might construct such an idempotencyKey include:
 FireFly provides an idempotent interface downstream to connectors.
 
 Each [operation](../reference/types/operation.html) within a FireFly [transaction](../reference/types/transaction.html)
-receives a unique ID within the overall that is used as an idempotency key when invoking that connector.
+receives a unique ID within the overall transaction that is used as an idempotency key when invoking that connector.
 
 Well formed connectors honor this idempotency key internally, ensuring that the end-to-end transaction submission is
 idempotent.
