@@ -6743,6 +6743,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -7020,6 +7025,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -7242,6 +7252,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -7340,6 +7354,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: pins
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: rejectreason
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -9542,6 +9561,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -9766,6 +9790,10 @@ paths:
                           is assigned for each topic
                         type: string
                       type: array
+                    rejectReason:
+                      description: If a message was rejected, provides details on
+                        the rejection reason
+                      type: string
                     state:
                       description: The current state of the message
                       enum:
@@ -10041,6 +10069,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -10677,6 +10709,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -10832,6 +10868,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -11158,6 +11198,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -11319,6 +11363,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -11726,6 +11774,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -19375,6 +19427,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -19666,6 +19723,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -19888,6 +19950,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -19993,6 +20059,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: pins
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: rejectreason
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -22314,6 +22385,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -22538,6 +22614,10 @@ paths:
                           is assigned for each topic
                         type: string
                       type: array
+                    rejectReason:
+                      description: If a message was rejected, provides details on
+                        the rejection reason
+                      type: string
                     state:
                       description: The current state of the message
                       enum:
@@ -22820,6 +22900,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -23528,6 +23612,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -23689,6 +23777,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -24022,6 +24114,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -24183,6 +24279,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -24597,6 +24697,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
