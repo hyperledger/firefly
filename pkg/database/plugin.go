@@ -742,6 +742,7 @@ var MessageQueryFactory = &ffapi.QueryFields{
 	"pins":           &ffapi.FFStringArrayField{},
 	"state":          &ffapi.StringField{},
 	"confirmed":      &ffapi.TimeField{},
+	"rejectreason":   &ffapi.StringField{},
 	"sequence":       &ffapi.Int64Field{},
 	"txtype":         &ffapi.StringField{},
 	"batch":          &ffapi.UUIDField{},

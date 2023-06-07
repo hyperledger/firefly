@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -76,6 +76,7 @@ type dispatchedMessage struct {
 	topicCount    int
 	msgPins       fftypes.FFStringArray
 	newState      core.MessageState
+	rejectReason  string
 }
 
 // batchState is the object that tracks the in-memory state that builds up while processing a batch of pins,
@@ -203,6 +204,7 @@ func (bs *batchState) markMessageDispatched(batchID *fftypes.UUID, msg *core.Mes
 		topicCount:    len(msg.Header.Topics),
 		msgPins:       msg.Pins,
 		newState:      newState,
+		rejectReason:  msg.RejectReason,
 	})
 }
 
@@ -215,6 +217,24 @@ func (bs *batchState) SetContextBlockedBy(ctx context.Context, unmaskedContext f
 		// Do not update an existing block, as we want the earliest entry to be the block
 		ucs.blockedBy = blockedBy
 	}
+}
+
+func (bs *batchState) confirmMessages(ctx context.Context, msgIDs []*fftypes.UUID, msgState core.MessageState, confirmTime *fftypes.FFTime, rejectReason string) error {
+	values := make([]driver.Value, len(msgIDs))
+	for i, msgID := range msgIDs {
+		bs.data.UpdateMessageStateIfCached(ctx, msgID, msgState, confirmTime, rejectReason)
+		values[i] = msgID
+	}
+	fb := database.MessageQueryFactory.NewFilter(ctx)
+	filter := fb.In("id", values)
+	setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).
+		Set("confirmed", confirmTime).
+		Set("state", msgState).
+		Set("rejectreason", rejectReason)
+	if err := bs.database.UpdateMessages(ctx, bs.namespace, filter, setConfirmed); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (bs *batchState) flushPins(ctx context.Context) error {
@@ -238,6 +258,10 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 		}
 	}
 
+	// All messages get the same confirmed timestamp
+	// The Events (not Messages directly) should be used for confirm sequence
+	confirmTime := fftypes.Now()
+
 	// Update all the pins that have been dispatched
 	// It's important we don't re-process the message, so we update all pins for a message to dispatched in one go,
 	// using the index range of pins it owns within the batch it is a part of.
@@ -254,7 +278,14 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 		if len(batchDispatched) > 0 {
 			pinsDispatched[*dm.batchID] = batchDispatched
 		}
-		msgStateUpdates[dm.newState] = append(msgStateUpdates[dm.newState], dm.msgID)
+
+		if dm.newState == core.MessageStateRejected {
+			if err := bs.confirmMessages(ctx, []*fftypes.UUID{dm.msgID}, dm.newState, confirmTime, dm.rejectReason); err != nil {
+				return err
+			}
+		} else {
+			msgStateUpdates[dm.newState] = append(msgStateUpdates[dm.newState], dm.msgID)
+		}
 	}
 
 	// Build one uber update for DB efficiency
@@ -274,19 +305,8 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	}
 
 	// Also do the same for each type of state update, to mark messages dispatched with a new state
-	confirmTime := fftypes.Now() // All messages get the same confirmed timestamp the Events (not Messages directly) should be used for confirm sequence
 	for msgState, msgIDs := range msgStateUpdates {
-		values := make([]driver.Value, len(msgIDs))
-		for i, msgID := range msgIDs {
-			bs.data.UpdateMessageStateIfCached(ctx, msgID, msgState, confirmTime)
-			values[i] = msgID
-		}
-		fb := database.MessageQueryFactory.NewFilter(ctx)
-		filter := fb.In("id", values)
-		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).
-			Set("confirmed", confirmTime).
-			Set("state", msgState)
-		if err := bs.database.UpdateMessages(ctx, bs.namespace, filter, setConfirmed); err != nil {
+		if err := bs.confirmMessages(ctx, msgIDs, msgState, confirmTime, ""); err != nil {
 			return err
 		}
 	}

@@ -42,7 +42,7 @@ type Manager interface {
 	PeekMessageCache(ctx context.Context, id *fftypes.UUID, options ...CacheReadOption) (msg *core.Message, data core.DataArray)
 	UpdateMessageCache(msg *core.Message, data core.DataArray)
 	UpdateMessageIfCached(ctx context.Context, msg *core.Message)
-	UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state core.MessageState, confirmed *fftypes.FFTime)
+	UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state core.MessageState, confirmed *fftypes.FFTime, rejectReason string)
 	ResolveInlineData(ctx context.Context, msg *NewMessage) error
 	WriteNewMessage(ctx context.Context, newMsg *NewMessage) error
 	BlobsEnabled() bool
@@ -287,11 +287,12 @@ func (dm *dataManager) UpdateMessageIfCached(ctx context.Context, msg *core.Mess
 	}
 }
 
-func (dm *dataManager) UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state core.MessageState, confirmed *fftypes.FFTime) {
+func (dm *dataManager) UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state core.MessageState, confirmed *fftypes.FFTime, rejectReason string) {
 	mce := dm.queryMessageCache(ctx, id)
 	if mce != nil {
 		mce.msg.State = state
 		mce.msg.Confirmed = confirmed
+		mce.msg.RejectReason = rejectReason
 	}
 }
 

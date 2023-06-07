@@ -98,6 +98,7 @@ type Message struct {
 	TransactionID  *fftypes.UUID         `ffstruct:"Message" json:"txid,omitempty" ffexcludeinput:"true"`
 	State          MessageState          `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate" ffexcludeinput:"true"`
 	Confirmed      *fftypes.FFTime       `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
+	RejectReason   string                `ffstruct:"Message" json:"rejectReason,omitempty" ffexcludeinput:"true"`
 	Data           DataRefs              `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
 	Pins           fftypes.FFStringArray `ffstruct:"Message" json:"pins,omitempty" ffexcludeinput:"true"`
 	IdempotencyKey IdempotencyKey        `ffstruct:"Message" json:"idempotencyKey,omitempty"`
