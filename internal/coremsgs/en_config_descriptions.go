@@ -127,6 +127,8 @@ var (
 	ConfigCacheBlockchainTTL           = ffc("config.cache.blockchain.ttl", "Time to live of cached items for blockchain", i18n.StringType)
 	ConfigCacheOperationsLimit         = ffc("config.cache.operations.limit", "Max number of cached items for operations", i18n.IntType)
 	ConfigCacheOperationsTTL           = ffc("config.cache.operations.ttl", "Time to live of cached items for operations", i18n.StringType)
+	ConfigCacheTokenPoolLimit          = ffc("config.cache.tokenpool.limit", "Max number of cached items for token pools", i18n.IntType)
+	ConfigCacheTokenPoolTTL            = ffc("config.cache.tokenpool.ttl", "Time to live of cached items for token pool", i18n.StringType)
 
 	ConfigPluginDatabase     = ffc("config.plugins.database", "The list of configured Database plugins", i18n.StringType)
 	ConfigPluginDatabaseName = ffc("config.plugins.database[].name", "The name of the Database plugin", i18n.StringType)

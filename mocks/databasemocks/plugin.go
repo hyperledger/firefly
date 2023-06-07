@@ -2777,6 +2777,32 @@ func (_m *Plugin) InsertOrGetTokenPool(ctx context.Context, pool *core.TokenPool
 	return r0, r1
 }
 
+// InsertOrGetTokenTransfer provides a mock function with given fields: ctx, approval
+func (_m *Plugin) InsertOrGetTokenTransfer(ctx context.Context, approval *core.TokenTransfer) (*core.TokenTransfer, error) {
+	ret := _m.Called(ctx, approval)
+
+	var r0 *core.TokenTransfer
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenTransfer) (*core.TokenTransfer, error)); ok {
+		return rf(ctx, approval)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenTransfer) *core.TokenTransfer); ok {
+		r0 = rf(ctx, approval)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.TokenTransfer)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenTransfer) error); ok {
+		r1 = rf(ctx, approval)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // InsertPins provides a mock function with given fields: ctx, pins
 func (_m *Plugin) InsertPins(ctx context.Context, pins []*core.Pin) error {
 	ret := _m.Called(ctx, pins)
@@ -3282,20 +3308,6 @@ func (_m *Plugin) UpsertTokenPool(ctx context.Context, pool *core.TokenPool, opt
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool, database.UpsertOptimization) error); ok {
 		r0 = rf(ctx, pool, optimization)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpsertTokenTransfer provides a mock function with given fields: ctx, transfer
-func (_m *Plugin) UpsertTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) error {
-	ret := _m.Called(ctx, transfer)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenTransfer) error); ok {
-		r0 = rf(ctx, transfer)
 	} else {
 		r0 = ret.Error(0)
 	}

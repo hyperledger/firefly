@@ -18,6 +18,7 @@ package assets
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -158,6 +159,12 @@ func (am *assetManager) GetTokenPools(ctx context.Context, filter ffapi.AndFilte
 }
 
 func (am *assetManager) GetTokenPoolByLocator(ctx context.Context, connector, poolLocator string) (*core.TokenPool, error) {
+	cacheKey := fmt.Sprintf("ns=%s,connector=%s,poollocator=%s", am.namespace, connector, poolLocator)
+	if cachedValue := am.cache.Get(cacheKey); cachedValue != nil {
+		log.L(ctx).Debugf("Token pool cache hit: %s", cacheKey)
+		return cachedValue.(*core.TokenPool), nil
+	}
+	log.L(ctx).Debugf("Token pool cache miss: %s", cacheKey)
 	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
 		return nil, err
 	}
@@ -170,11 +177,20 @@ func (am *assetManager) GetTokenPoolByLocator(ctx context.Context, connector, po
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
+
+	// Cache the result
+	am.cache.Set(cacheKey, results[0])
 	return results[0], nil
 }
 
 func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error) {
 	var pool *core.TokenPool
+	cacheKey := fmt.Sprintf("ns=%s,poolnameorid=%s", am.namespace, poolNameOrID)
+	if cachedValue := am.cache.Get(cacheKey); cachedValue != nil {
+		log.L(ctx).Debugf("Token pool cache hit: %s", cacheKey)
+		return cachedValue.(*core.TokenPool), nil
+	}
+	log.L(ctx).Debugf("Token pool cache miss: %s", cacheKey)
 
 	poolID, err := fftypes.ParseUUID(ctx, poolNameOrID)
 	if err != nil {
@@ -190,6 +206,8 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 	if pool == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
+	// Cache the result
+	am.cache.Set(cacheKey, pool)
 	return pool, nil
 }
 
