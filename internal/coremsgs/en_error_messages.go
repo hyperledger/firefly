@@ -289,4 +289,5 @@ var (
 	MsgAlreadyPublished                   = ffe("FF10450", "Item has already been published", 409)
 	MsgContractInterfaceNotPublished      = ffe("FF10451", "Contract interface '%s' has not been published", 409)
 	MsgDuplicateTLSConfig                 = ffe("FF10452", "Found duplicate TLS Config '%s'", 400)
+	MsgNotFoundTLSConfig                  = ffe("FF10453", "Provided TLS Config name '%s' not found for namespace '%s'", 400)
 )

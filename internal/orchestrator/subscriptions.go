@@ -47,7 +47,12 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, subDef *co
 		return nil, i18n.NewError(ctx, coremsgs.MsgSystemTransportInternal)
 	}
 
-	if subDef.Options.TLSConfigName != "" && or.namespace.TLSConfigs[subDef.Options.TLSConfigName] != nil {
+	if subDef.Options.TLSConfigName != "" {
+		if or.namespace.TLSConfigs[subDef.Options.TLSConfigName] == nil {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNotFoundTLSConfig, subDef.Options.TLSConfigName, subDef.Namespace)
+
+		}
+
 		subDef.Options.TLSConfig = or.namespace.TLSConfigs[subDef.Options.TLSConfigName]
 	}
 
