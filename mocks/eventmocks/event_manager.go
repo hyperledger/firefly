@@ -41,41 +41,13 @@ func (_m *EventManager) AddSystemEventListener(ns string, el system.EventListene
 	return r0
 }
 
-// BatchPinComplete provides a mock function with given fields: namespace, batch, signingKey
-func (_m *EventManager) BatchPinComplete(namespace string, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	ret := _m.Called(namespace, batch, signingKey)
+// BlockchainEventBatch provides a mock function with given fields: batch
+func (_m *EventManager) BlockchainEventBatch(batch []*blockchain.EventToDispatch) error {
+	ret := _m.Called(batch)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *blockchain.BatchPin, *core.VerifierRef) error); ok {
-		r0 = rf(namespace, batch, signingKey)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// BlockchainEvent provides a mock function with given fields: event
-func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	ret := _m.Called(event)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.EventWithSubscription) error); ok {
-		r0 = rf(event)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// BlockchainNetworkAction provides a mock function with given fields: action, location, event, signingKey
-func (_m *EventManager) BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	ret := _m.Called(action, location, event, signingKey)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *fftypes.JSONAny, *blockchain.Event, *core.VerifierRef) error); ok {
-		r0 = rf(action, location, event, signingKey)
+	if rf, ok := ret.Get(0).(func([]*blockchain.EventToDispatch) error); ok {
+		r0 = rf(batch)
 	} else {
 		r0 = ret.Error(0)
 	}

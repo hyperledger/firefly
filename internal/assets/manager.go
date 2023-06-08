@@ -23,7 +23,9 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/contracts"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
@@ -84,13 +86,15 @@ type assetManager struct {
 	metrics          metrics.Manager
 	operations       operations.Manager
 	contracts        contracts.Manager
+	cache            cache.CInterface
 	keyNormalization int
 }
 
-func NewAssetManager(ctx context.Context, ns, keyNormalization string, di database.Plugin, ti map[string]tokens.Plugin, im identity.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, mm metrics.Manager, om operations.Manager, cm contracts.Manager, txHelper txcommon.Helper) (Manager, error) {
+func NewAssetManager(ctx context.Context, ns, keyNormalization string, di database.Plugin, ti map[string]tokens.Plugin, im identity.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, mm metrics.Manager, om operations.Manager, cm contracts.Manager, txHelper txcommon.Helper, cacheManager cache.Manager) (Manager, error) {
 	if di == nil || im == nil || sa == nil || ti == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "AssetManager")
 	}
+	var err error
 	am := &assetManager{
 		ctx:              ctx,
 		namespace:        ns,
@@ -105,6 +109,19 @@ func NewAssetManager(ctx context.Context, ns, keyNormalization string, di databa
 		metrics:          mm,
 		operations:       om,
 		contracts:        cm,
+	}
+	if cacheManager != nil {
+		am.cache, err = cacheManager.GetCache(
+			cache.NewCacheConfig(
+				ctx,
+				coreconfig.CacheTokenPoolLimit,
+				coreconfig.CacheTokenPoolTTL,
+				"",
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	om.RegisterHandler(ctx, am, []core.OpType{
 		core.OpTypeTokenCreatePool,

@@ -782,6 +782,18 @@ func TestGetTokenPoolByLocatorBadPlugin(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestGetTokenPoolByLocatorCached(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	am.cache.Set("ns=ns1,connector=magic-tokens,poollocator=abc", &core.TokenPool{})
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestGetTokenPoolByLocatorNotFound(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -814,6 +826,20 @@ func TestGetTokenPoolByID(t *testing.T) {
 	u := fftypes.NewUUID()
 	mdi := am.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", u).Return(&core.TokenPool{}, nil)
+	_, err := am.GetTokenPoolByNameOrID(context.Background(), u.String())
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByIDCached(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	mdi := am.database.(*databasemocks.Plugin)
+
+	am.cache.Set(fmt.Sprintf("ns=ns1,poolnameorid=%s", u.String()), &core.TokenPool{})
 	_, err := am.GetTokenPoolByNameOrID(context.Background(), u.String())
 	assert.NoError(t, err)
 

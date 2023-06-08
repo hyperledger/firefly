@@ -160,6 +160,11 @@ var (
 	// DataManager Message cache config
 	CacheMessageSize = ffc("cache.message.size")
 	CacheMessageTTL  = ffc("cache.message.ttl")
+
+	// Token pool cache config
+	CacheTokenPoolTTL   = ffc("cache.tokenpool.ttl")
+	CacheTokenPoolLimit = ffc("cache.tokenpool.limit")
+
 	// DataManager Validator cache config
 	CacheValidatorSize = ffc("cache.validator.size")
 	CacheValidatorTTL  = ffc("cache.validator.ttl")
@@ -444,6 +449,8 @@ func setDefaults() {
 	viper.SetDefault(string(CacheValidatorTTL), "1h")
 	viper.SetDefault(string(CacheIdentityLimit), 100)
 	viper.SetDefault(string(CacheIdentityTTL), "1h")
+	viper.SetDefault(string(CacheTokenPoolLimit), 100)
+	viper.SetDefault(string(CacheTokenPoolTTL), "1h")
 }
 
 func Reset() {

@@ -396,8 +396,9 @@ type iTokenBalanceCollection interface {
 }
 
 type iTokenTransferCollection interface {
-	// UpsertTokenTransfer - Upsert a token transfer
-	UpsertTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) error
+	// InsertOrGetTokenTransfer - insert a token transfer event from the blockchain
+	// If the ProtocolID has already been recorded, it does not insert but returns the existing row
+	InsertOrGetTokenTransfer(ctx context.Context, approval *core.TokenTransfer) (existing *core.TokenTransfer, err error)
 
 	// GetTokenTransferByID - Get a token transfer by ID
 	GetTokenTransferByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenTransfer, error)
@@ -741,6 +742,7 @@ var MessageQueryFactory = &ffapi.QueryFields{
 	"pins":           &ffapi.FFStringArrayField{},
 	"state":          &ffapi.StringField{},
 	"confirmed":      &ffapi.TimeField{},
+	"rejectreason":   &ffapi.StringField{},
 	"sequence":       &ffapi.Int64Field{},
 	"txtype":         &ffapi.StringField{},
 	"batch":          &ffapi.UUIDField{},

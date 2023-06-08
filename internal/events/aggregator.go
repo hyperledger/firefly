@@ -26,10 +26,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/identity"
@@ -415,8 +417,7 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 	}
 
 	if msg.Header.Key == "" || msg.Header.Key != pin.Signer {
-		l.Errorf("Invalid message '%s'. Key '%s' does not match the signer of the pin: %s", msg.Header.ID, msg.Header.Key, pin.Signer)
-		return core.ActionReject, nil // This is not retryable. Reject this message
+		return core.ActionReject, i18n.NewError(ctx, coremsgs.MsgInvalidMessageSigner, msg.Header.ID, msg.Header.Key, pin.Signer)
 	}
 
 	// Verify that we can resolve the signing key back to the identity that is claimed in the batch
@@ -449,9 +450,7 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 		}
 	}
 	if msg.Header.Author == "" || resolvedAuthor.DID != msg.Header.Author {
-		l.Errorf("Invalid message '%s'. Author '%s' does not match identity registered to %s: %s (%s)", msg.Header.ID, msg.Header.Author, verifierRef.Value, resolvedAuthor.DID, resolvedAuthor.ID)
-		return core.ActionReject, nil // This is not retryable. Reject this message
-
+		return core.ActionReject, i18n.NewError(ctx, coremsgs.MsgInvalidMessageIdentity, msg.Header.ID, msg.Header.Author, verifierRef.Value, resolvedAuthor.DID, resolvedAuthor.ID)
 	}
 	return core.ActionConfirm, nil
 }
@@ -540,6 +539,11 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		return nil
 	}
 
+	if action == core.ActionReject && err != nil {
+		log.L(ctx).Warnf("Message '%s' rejected: %s", msg.Header.ID, err)
+		msg.RejectReason = err.Error()
+	}
+
 	newState := ag.completeDispatch(action, correlator, msg, manifest.TX.ID, state)
 
 	// Mark all message pins dispatched, and increment all nextPins
@@ -618,10 +622,6 @@ func (ag *aggregator) readyForDispatch(ctx context.Context, msg *core.Message, d
 		var handlerResult definitions.HandlerResult
 		handlerResult, err = ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
 		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
-		if handlerResult.Action == core.ActionReject {
-			log.L(ctx).Infof("Definition broadcast '%s' rejected: %s", msg.Header.ID, err)
-			err = nil
-		}
 		correlator = handlerResult.CustomCorrelator
 		action = handlerResult.Action
 
