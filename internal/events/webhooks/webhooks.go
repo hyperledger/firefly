@@ -45,6 +45,7 @@ type WebHooks struct {
 	callbacks    callbacks
 	client       *resty.Client
 	connID       string
+	conf         config.Section
 }
 
 type callbacks struct {
@@ -85,6 +86,7 @@ func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error)
 		},
 		client: client,
 		connID: connID,
+		conf:   config,
 	}
 	return nil
 }
@@ -225,18 +227,18 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 		}
 	}
 
-	// Taking a copy of the global plugin client because
+	// Create a new ffresty client from the config
 	// 1) We do not want to modify that global instance
 	// 2) We want to keep the global configuration for webhooks
-	httpClient := *wh.client.GetClient()
-
-	newClient := resty.NewWithClient(&httpClient)
+	// NOTE: this can not error without the webhook plugin failing
+	// to initialise so we ignore the error
+	client, _ := ffresty.New(wh.ctx, wh.conf)
 
 	if sub.Options.TLSConfig != nil {
-		newClient.SetTLSClientConfig(sub.Options.TLSConfig)
+		client.SetTLSClientConfig(sub.Options.TLSConfig)
 	}
 
-	req, err = wh.buildRequest(newClient, sub.Options.TransportOptions(), firstData)
+	req, err = wh.buildRequest(client, sub.Options.TransportOptions(), firstData)
 	if err != nil {
 		return nil, nil, err
 	}

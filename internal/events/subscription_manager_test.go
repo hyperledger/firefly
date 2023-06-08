@@ -18,6 +18,7 @@ package events
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"testing"
 	"time"
@@ -521,6 +522,27 @@ func TestCreateSubscriptionSuccessBlockchainEvent(t *testing.T) {
 		Transport: "ut",
 	})
 	assert.NoError(t, err)
+}
+
+func TestCreateSubscriptionSuccessTLSConfig(t *testing.T) {
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	sm.namespace.TLSConfigs = map[string]*tls.Config{
+		"myconfig": {},
+	}
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	sub, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
+		Transport: "ut",
+		Options: core.SubscriptionOptions{
+			WebhookSubOptions: core.WebhookSubOptions{
+				TLSConfigName: "myconfig",
+			},
+		},
+	})
+	assert.NoError(t, err)
+
+	assert.NotNil(t, sub.definition.Options.TLSConfig)
 }
 
 func TestCreateSubscriptionWithDeprecatedFilters(t *testing.T) {
