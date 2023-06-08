@@ -99,6 +99,25 @@ func TestCreateSubscriptionTLSConfigOk(t *testing.T) {
 	assert.Equal(t, mockTlSConfig, sub.Options.TLSConfig)
 }
 
+func TestCreateSubscriptionTLSConfigNotFound(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Name: "sub1",
+		},
+		Options: core.SubscriptionOptions{
+			WebhookSubOptions: core.WebhookSubOptions{
+				TLSConfigName: "myconfig",
+			},
+		},
+	}
+	_, err := or.CreateSubscription(or.ctx, sub)
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10453", err)
+}
+
 func TestCreateUpdateSubscriptionOk(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
