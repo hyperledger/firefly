@@ -1712,19 +1712,13 @@ func TestReadyForDispatchApprovalMismatch(t *testing.T) {
 
 }
 
-func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
+func TestDefinitionBroadcastActionRejectFailUpdate(t *testing.T) {
 	ag := newTestAggregator()
 	defer ag.cleanup(t)
 	bs := newBatchState(&ag.aggregator)
 	org1 := newTestOrg("org1")
 
-	customCorrelator := fftypes.NewUUID()
-
-	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(event *core.Event) bool {
-		return event.Type == core.EventTypeMessageRejected && event.Correlator.Equals(customCorrelator)
-	})).Return(nil)
-
-	newState := ag.completeDispatch(core.ActionReject, customCorrelator, &core.Message{
+	msg := &core.Message{
 		Header: core.MessageHeader{
 			Type:      core.MessageTypeDefinition,
 			ID:        fftypes.NewUUID(),
@@ -1736,10 +1730,22 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 		Data: core.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, bs)
+	}
+	customCorrelator := fftypes.NewUUID()
+
+	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeMessageRejected && event.Correlator.Equals(customCorrelator)
+	})).Return(nil)
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, msg.Header.ID, core.MessageStateRejected, mock.Anything, "reject-reason").Return()
+	ag.mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	newState := ag.completeDispatch(core.ActionReject, customCorrelator, msg, nil, bs)
 	assert.Equal(t, core.MessageStateRejected, newState)
+	msg.RejectReason = "reject-reason"
+
+	bs.markMessageDispatched(fftypes.NewUUID(), msg, 0, newState)
 	err := bs.RunFinalize(ag.ctx)
-	assert.NoError(t, err)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestDispatchBroadcastQueuesLaterDispatch(t *testing.T) {

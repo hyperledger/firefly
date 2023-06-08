@@ -231,10 +231,7 @@ func (bs *batchState) confirmMessages(ctx context.Context, msgIDs []*fftypes.UUI
 		Set("confirmed", confirmTime).
 		Set("state", msgState).
 		Set("rejectreason", rejectReason)
-	if err := bs.database.UpdateMessages(ctx, bs.namespace, filter, setConfirmed); err != nil {
-		return err
-	}
-	return nil
+	return bs.database.UpdateMessages(ctx, bs.namespace, filter, setConfirmed)
 }
 
 func (bs *batchState) flushPins(ctx context.Context) error {
