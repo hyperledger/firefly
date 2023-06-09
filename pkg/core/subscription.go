@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -137,6 +137,9 @@ func (so *SubscriptionOptions) UnmarshalJSON(b []byte) error {
 	if err == nil {
 		err = json.Unmarshal(b, &so.SubscriptionCoreOptions)
 	}
+	if err == nil {
+		err = json.Unmarshal(b, &so.WebhookSubOptions)
+	}
 	if err != nil {
 		return err
 	}
@@ -159,6 +162,10 @@ func (so SubscriptionOptions) MarshalJSON() ([]byte, error) {
 	if so.ReadAhead != nil {
 		so.additionalOptions["readAhead"] = float64(*so.ReadAhead)
 	}
+	if so.TLSConfigName != "" {
+		so.additionalOptions["tlsConfigName"] = so.TLSConfigName
+	}
+
 	return json.Marshal(&so.additionalOptions)
 }
 

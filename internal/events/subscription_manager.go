@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -73,7 +73,7 @@ type connection struct {
 
 type subscriptionManager struct {
 	ctx                       context.Context
-	namespace                 string
+	namespace                 *core.Namespace
 	enricher                  *eventEnricher
 	database                  database.Plugin
 	data                      data.Manager
@@ -92,7 +92,7 @@ type subscriptionManager struct {
 	retry                     retry.Retry
 }
 
-func newSubscriptionManager(ctx context.Context, ns string, enricher *eventEnricher, di database.Plugin, dm data.Manager, en *eventNotifier, bm broadcast.Manager, pm privatemessaging.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin) (*subscriptionManager, error) {
+func newSubscriptionManager(ctx context.Context, ns *core.Namespace, enricher *eventEnricher, di database.Plugin, dm data.Manager, en *eventNotifier, bm broadcast.Manager, pm privatemessaging.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin) (*subscriptionManager, error) {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	sm := &subscriptionManager{
 		ctx:                       ctx,
@@ -119,7 +119,7 @@ func newSubscriptionManager(ctx context.Context, ns string, enricher *eventEnric
 	}
 
 	for _, ei := range sm.transports {
-		if err := ei.SetHandler(sm.namespace, &boundCallbacks{sm: sm, ei: ei}); err != nil {
+		if err := ei.SetHandler(sm.namespace.Name, &boundCallbacks{sm: sm, ei: ei}); err != nil {
 			return nil, err
 		}
 	}
@@ -130,7 +130,7 @@ func newSubscriptionManager(ctx context.Context, ns string, enricher *eventEnric
 func (sm *subscriptionManager) start() error {
 	fb := database.SubscriptionQueryFactory.NewFilter(sm.ctx)
 	filter := fb.And().Limit(sm.maxSubs)
-	persistedSubs, _, err := sm.database.GetSubscriptions(sm.ctx, sm.namespace, filter)
+	persistedSubs, _, err := sm.database.GetSubscriptions(sm.ctx, sm.namespace.Name, filter)
 	if err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func (sm *subscriptionManager) subscriptionEventListener() {
 func (sm *subscriptionManager) newOrUpdatedDurableSubscription(id *fftypes.UUID) {
 	var subDef *core.Subscription
 	err := sm.retry.Do(sm.ctx, "retrieve subscription", func(attempt int) (retry bool, err error) {
-		subDef, err = sm.database.GetSubscriptionByID(sm.ctx, sm.namespace, id)
+		subDef, err = sm.database.GetSubscriptionByID(sm.ctx, sm.namespace.Name, id)
 		return err != nil, err // indefinite retry
 	})
 	if err != nil || subDef == nil {
@@ -249,6 +249,7 @@ func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
 	}
 }
 
+// nolint: gocyclo
 func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef *core.Subscription) (sub *subscription, err error) {
 	filter := subDef.Filter
 
@@ -334,6 +335,10 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		if err != nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgRegexpCompileFailed, "filter.message.author", filter.Message.Author)
 		}
+	}
+
+	if subDef.Options.TLSConfigName != "" && sm.namespace.TLSConfigs[subDef.Options.TLSConfigName] != nil {
+		subDef.Options.TLSConfig = sm.namespace.TLSConfigs[subDef.Options.TLSConfigName]
 	}
 
 	sub = &subscription{

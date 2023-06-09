@@ -27682,6 +27682,10 @@ paths:
                           description: 'Webhooks only: The transaction type to set
                             on the reply message'
                           type: string
+                        tlsConfigName:
+                          description: The name of an existing TLS configuration associated
+                            to the namespace to use
+                          type: string
                         url:
                           description: 'Webhooks only: HTTP url to invoke. Can be
                             relative if a base URL is set in the webhook plugin config'
@@ -27901,6 +27905,10 @@ paths:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
                       type: string
+                    tlsConfigName:
+                      description: The name of an existing TLS configuration associated
+                        to the namespace to use
+                      type: string
                     url:
                       description: 'Webhooks only: HTTP url to invoke. Can be relative
                         if a base URL is set in the webhook plugin config'
@@ -28107,6 +28115,10 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -28325,6 +28337,10 @@ paths:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
                       type: string
+                    tlsConfigName:
+                      description: The name of an existing TLS configuration associated
+                        to the namespace to use
+                      type: string
                     url:
                       description: 'Webhooks only: HTTP url to invoke. Can be relative
                         if a base URL is set in the webhook plugin config'
@@ -28531,6 +28547,10 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -28811,6 +28831,10 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -36231,6 +36255,10 @@ paths:
                           description: 'Webhooks only: The transaction type to set
                             on the reply message'
                           type: string
+                        tlsConfigName:
+                          description: The name of an existing TLS configuration associated
+                            to the namespace to use
+                          type: string
                         url:
                           description: 'Webhooks only: HTTP url to invoke. Can be
                             relative if a base URL is set in the webhook plugin config'
@@ -36443,6 +36471,10 @@ paths:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
                       type: string
+                    tlsConfigName:
+                      description: The name of an existing TLS configuration associated
+                        to the namespace to use
+                      type: string
                     url:
                       description: 'Webhooks only: HTTP url to invoke. Can be relative
                         if a base URL is set in the webhook plugin config'
@@ -36649,6 +36681,10 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -36860,6 +36896,10 @@ paths:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
                       type: string
+                    tlsConfigName:
+                      description: The name of an existing TLS configuration associated
+                        to the namespace to use
+                      type: string
                     url:
                       description: 'Webhooks only: HTTP url to invoke. Can be relative
                         if a base URL is set in the webhook plugin config'
@@ -37066,6 +37106,10 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -37332,6 +37376,10 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
