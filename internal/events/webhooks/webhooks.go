@@ -40,12 +40,12 @@ import (
 )
 
 type WebHooks struct {
-	ctx          context.Context
-	capabilities *events.Capabilities
-	callbacks    callbacks
-	client       *resty.Client
-	connID       string
-	conf         config.Section
+	ctx           context.Context
+	capabilities  *events.Capabilities
+	callbacks     callbacks
+	client        *resty.Client
+	connID        string
+	ffrestyConfig *ffresty.Config
 }
 
 type callbacks struct {
@@ -73,10 +73,12 @@ func (wh *WebHooks) Name() string { return "webhooks" }
 func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error) {
 	connID := fftypes.ShortID()
 
-	client, err := ffresty.New(ctx, config)
+	ffrestyConfig, err := ffresty.GenerateConfig(ctx, config)
 	if err != nil {
 		return err
 	}
+
+	client := ffresty.NewWithConfig(ctx, *ffrestyConfig)
 
 	*wh = WebHooks{
 		ctx:          log.WithLogField(ctx, "webhook", wh.connID),
@@ -84,9 +86,9 @@ func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error)
 		callbacks: callbacks{
 			handlers: make(map[string]events.Callbacks),
 		},
-		client: client,
-		connID: connID,
-		conf:   config,
+		client:        client,
+		connID:        connID,
+		ffrestyConfig: ffrestyConfig,
 	}
 	return nil
 }
@@ -230,13 +232,12 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 	// Create a new ffresty client from the config
 	// 1) We do not want to modify that global instance
 	// 2) We want to keep the global configuration for webhooks
-	// NOTE: this can not error without the webhook plugin failing
-	// to initialise so we ignore the error
-	client, _ := ffresty.New(wh.ctx, wh.conf)
-
+	copyFFrestyConfig := *wh.ffrestyConfig
 	if sub.Options.TLSConfig != nil {
-		client.SetTLSClientConfig(sub.Options.TLSConfig)
+		copyFFrestyConfig.TLSClientConfig = sub.Options.TLSConfig
 	}
+
+	client := ffresty.NewWithConfig(wh.ctx, copyFFrestyConfig)
 
 	req, err = wh.buildRequest(client, sub.Options.TransportOptions(), firstData)
 	if err != nil {
