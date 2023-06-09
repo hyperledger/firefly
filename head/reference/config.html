@@ -2554,6 +2554,90 @@
     </tr>
   </tbody>
 </table>
+      <h2 id="namespacespredefinedtlsconfigs">
+        
+        
+          <a href="#namespacespredefinedtlsconfigs" class="anchor-heading" aria-labelledby="namespacespredefinedtlsconfigs"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> namespaces.predefined[].tlsConfigs[]
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>name</td>
+      <td>Name of the TLS Config</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="namespacespredefinedtlsconfigstls">
+        
+        
+          <a href="#namespacespredefinedtlsconfigstls" class="anchor-heading" aria-labelledby="namespacespredefinedtlsconfigstls"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> namespaces.predefined[].tlsConfigs[].tls
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>caFile</td>
+      <td>The path to the CA file for TLS on this API</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>certFile</td>
+      <td>The path to the certificate file for TLS on this API</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>clientAuth</td>
+      <td>Enables or disables client auth for TLS on this API</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>enabled</td>
+      <td>Enables or disables TLS on this API</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>keyFile</td>
+      <td>The path to the private key file for TLS on this API</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>requiredDNAttributes</td>
+      <td>A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)</td>
+      <td><code class="language-plaintext highlighter-rouge">map[string]string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
       <h2 id="namespacesretry">
         
         
@@ -3549,6 +3633,12 @@
   </thead>
   <tbody>
     <tr>
+      <td>connectionTimeout</td>
+      <td>The amount of time to wait while establishing a connection (or auto-reconnection)</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">45s</code></td>
+    </tr>
+    <tr>
       <td>heartbeatInterval</td>
       <td>The amount of time to wait between heartbeat signals on the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -4167,6 +4257,12 @@
   </thead>
   <tbody>
     <tr>
+      <td>connectionTimeout</td>
+      <td>The amount of time to wait while establishing a connection (or auto-reconnection)</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">45s</code></td>
+    </tr>
+    <tr>
       <td>heartbeatInterval</td>
       <td>The amount of time to wait between heartbeat signals on the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -4784,6 +4880,12 @@
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td>connectionTimeout</td>
+      <td>The amount of time to wait while establishing a connection (or auto-reconnection)</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">45s</code></td>
+    </tr>
     <tr>
       <td>heartbeatInterval</td>
       <td>The amount of time to wait between heartbeat signals on the WebSocket connection</td>
@@ -5735,6 +5837,12 @@
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td>connectionTimeout</td>
+      <td>The amount of time to wait while establishing a connection (or auto-reconnection)</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">45s</code></td>
+    </tr>
     <tr>
       <td>heartbeatInterval</td>
       <td>The amount of time to wait between heartbeat signals on the WebSocket connection</td>
