@@ -114,6 +114,7 @@ nav_order: 3
 | `replytx` | Webhooks only: The transaction type to set on the reply message | `string` |
 | `headers` | Webhooks only: Static headers to set on the webhook request | `` |
 | `query` | Webhooks only: Static query params to set on the webhook request | `` |
+| `tlsConfigName` | The name of an existing TLS configuration associated to the namespace to use | `string` |
 | `input` | Webhooks only: A set of options to extract data from the first JSON input data in the incoming message. Only applies if withData=true | [`WebhookInputOptions`](#webhookinputoptions) |
 
 ## WebhookInputOptions

@@ -18,6 +18,7 @@ package events
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"testing"
 	"time"
@@ -62,7 +63,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.Plugin) (*subscriptionMana
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything).Return(&core.Offset{RowID: 3333333, Current: 0}, nil).Maybe()
-	sm, err := newSubscriptionManager(ctx, "ns1", enricher, mdi, mdm, newEventNotifier(ctx, "ut"), mbm, mpm, txHelper, nil)
+	sm, err := newSubscriptionManager(ctx, &core.Namespace{Name: "ns1"}, enricher, mdi, mdm, newEventNotifier(ctx, "ut"), mbm, mpm, txHelper, nil)
 	assert.NoError(t, err)
 	sm.transports = map[string]events.Plugin{
 		"ut": mei,
@@ -521,6 +522,27 @@ func TestCreateSubscriptionSuccessBlockchainEvent(t *testing.T) {
 		Transport: "ut",
 	})
 	assert.NoError(t, err)
+}
+
+func TestCreateSubscriptionSuccessTLSConfig(t *testing.T) {
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	sm.namespace.TLSConfigs = map[string]*tls.Config{
+		"myconfig": {},
+	}
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	sub, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
+		Transport: "ut",
+		Options: core.SubscriptionOptions{
+			WebhookSubOptions: core.WebhookSubOptions{
+				TLSConfigName: "myconfig",
+			},
+		},
+	})
+	assert.NoError(t, err)
+
+	assert.NotNil(t, sub.definition.Options.TLSConfig)
 }
 
 func TestCreateSubscriptionWithDeprecatedFilters(t *testing.T) {
