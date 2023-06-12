@@ -26,6 +26,7 @@ var spiRoutes = append(globalRoutes([]*ffapi.Route{
 	spiGetOpByID,
 	spiPatchOpByID,
 	spiPostReset,
+	spiPostAddNamespaces,
 }),
 	namespacedRoutes([]*ffapi.Route{
 		spiGetOps,

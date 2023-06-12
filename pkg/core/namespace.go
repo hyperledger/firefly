@@ -26,6 +26,38 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 )
 
+// NamespaceCreateRequest is a replica of firefly-cli/types.Namespace struct as we need to
+// modify config file per request
+type NamespaceCreateRequest struct {
+	Name        string            `ffstruct:"NamespaceCreateRequest" json:"name"`
+	Description string            `ffstruct:"NamespaceCreateRequest" json:"description,omitempty"`
+	Plugins     []string          `ffstruct:"NamespaceCreateRequest" json:"plugins"`
+	Multiparty  *MultipartyConfig `ffstruct:"NamespaceCreateRequest" json:"multiparty,omitempty"`
+	DefaultKey  interface{}       `ffstruct:"NamespaceCreateRequest" json:"defaultKey"`
+}
+
+type MultipartyConfig struct {
+	Enabled  bool              `ffstruct:"MultipartyConfig" json:"enabled"`
+	Org      *OrgConfig        `ffstruct:"MultipartyConfig" json:"org"`
+	Node     *NodeConfig       `ffstruct:"MultipartyConfig" json:"node"`
+	Contract []*ContractConfig `ffstruct:"MultipartyConfig" json:"contract"`
+}
+
+type OrgConfig struct {
+	Name string `ffstruct:"OrgConfig" json:"name,omitempty"`
+	Key  string `ffstruct:"OrgConfig" json:"key,omitempty"`
+}
+
+type NodeConfig struct {
+	Name string `ffstruct:"NodeConfig" json:"name,omitempty"`
+}
+
+type ContractConfig struct {
+	Location   interface{} `ffstruct:"ContractConfig" json:"location"`
+	FirstEvent string      `ffstruct:"ContractConfig" json:"firstEvent,omitempty"`
+	Options    interface{} `ffstruct:"ContractConfig" json:"options"`
+}
+
 // Namespace is an isolated set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {

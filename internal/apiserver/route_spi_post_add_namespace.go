@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -17,32 +17,25 @@
 package apiserver
 
 import (
-	"net/http"
-
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
+	"net/http"
 )
 
-var spiGetNamespaceByName = &ffapi.Route{
-	Name:   "spiGetNamespaceByName",
-	Path:   "namespaces/{ns}",
-	Method: http.MethodGet,
-	PathParams: []*ffapi.PathParam{
-		{Name: "ns", Description: coremsgs.APIParamsNamespace},
-	},
+var spiPostAddNamespaces = &ffapi.Route{
+	Name:            "spiPostAddNamespaces",
+	Path:            "namespaces",
+	Method:          http.MethodPost,
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsAdminGetNamespaceByName,
-	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &core.Namespace{} },
+	FilterFactory:   nil,
+	Description:     coremsgs.APIEndpointsPostNewNamespace,
+	JSONInputValue:  func() interface{} { return &core.NamespaceCreateRequest{} },
+	JSONOutputValue: func() interface{} { return []*core.NamespaceWithInitStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			or, err := getOrchestrator(cr.ctx, cr.mgr, routeTagNonDefaultNamespace, r)
-			if err == nil {
-				output = or.GetNamespace(cr.ctx)
-			}
-			return output, err
+			return cr.mgr.AddNamespace(cr.ctx, r.Input.(*core.NamespaceCreateRequest))
 		},
 	},
 }

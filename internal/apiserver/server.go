@@ -324,9 +324,13 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 	r.HandleFunc(`/api`, hf.APIWrapper(hf.SwaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
-	ws, _ := eifactory.GetPlugin(ctx, "websockets")
-	ws.(*websockets.WebSockets).SetAuthorizer(mgr)
-	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
+	w, _ := eifactory.GetPlugin(ctx, "websockets")
+	ws, ok := w.(*websockets.WebSockets)
+	if !ok {
+		//TODO: log interface cast error
+	}
+	ws.SetAuthorizer(mgr)
+	r.HandleFunc(`/ws`, ws.ServeHTTP)
 
 	uiPath := config.GetString(coreconfig.UIPath)
 	if uiPath != "" && config.GetBool(coreconfig.UIEnabled) {

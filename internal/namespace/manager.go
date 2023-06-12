@@ -20,10 +20,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"os"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly-cli/pkg/types"
 	"github.com/hyperledger/firefly-common/pkg/auth"
 	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -55,6 +57,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
 )
 
 type Manager interface {
@@ -67,6 +70,7 @@ type Manager interface {
 	MustOrchestrator(ns string) orchestrator.Orchestrator
 	SPIEvents() spievents.Manager
 	GetNamespaces(ctx context.Context, includeInitializing bool) ([]*core.NamespaceWithInitStatus, error)
+	AddNamespace(ctx context.Context, newNamespace *core.NamespaceCreateRequest) ([]*core.NamespaceWithInitStatus, error)
 	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
 	ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error
 	Authorize(ctx context.Context, authReq *fftypes.AuthReq) error
@@ -1083,6 +1087,81 @@ func (nm *namespaceManager) GetNamespaces(ctx context.Context, includeInitializi
 			})
 		}
 	}
+	return results, nil
+}
+
+func (nm *namespaceManager) AddNamespace(ctx context.Context, newNSData *core.NamespaceCreateRequest) ([]*core.NamespaceWithInitStatus, error) {
+	ffConfig := new(types.FireflyConfig)
+	readConfigBytes, err := os.ReadFile(viper.ConfigFileUsed())
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(readConfigBytes, ffConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, predefinedNS := range ffConfig.Namespaces.Predefined {
+		if predefinedNS.Name == newNSData.Name {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceAlreadyExists)
+		}
+	}
+
+	newNS := &types.Namespace{
+		Name:        newNSData.Name,
+		Description: newNSData.Description,
+		Plugins:     newNSData.Plugins,
+		DefaultKey:  newNSData.DefaultKey,
+	}
+
+	if newNSData.Multiparty != nil {
+		newNS.Multiparty = &types.MultipartyConfig{
+			Enabled: newNSData.Multiparty.Enabled,
+			Org: &types.OrgConfig{
+				Name: newNSData.Multiparty.Org.Name,
+				Key:  newNSData.Multiparty.Org.Key,
+			},
+			Node:     &types.NodeConfig{Name: newNSData.Multiparty.Node.Name},
+			Contract: make([]*types.ContractConfig, 0),
+		}
+
+		for _, contract := range newNSData.Multiparty.Contract {
+			newNS.Multiparty.Contract = append(newNS.Multiparty.Contract, &types.ContractConfig{
+				Location:   contract.Location,
+				FirstEvent: contract.FirstEvent,
+				Options:    contract.Options,
+			})
+		}
+	}
+
+	ffConfig.Namespaces.Predefined = append(ffConfig.Namespaces.Predefined, newNS)
+
+	updatedConfigBytes, err := yaml.Marshal(ffConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.WriteFile(viper.ConfigFileUsed(), updatedConfigBytes, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reload config even if the config.autoReload is not enabled
+	nm.configFileChanged()
+
+	nm.nsMux.Lock()
+	defer nm.nsMux.Unlock()
+
+	results := make([]*core.NamespaceWithInitStatus, 0, len(nm.namespaces))
+	for _, ns := range nm.namespaces {
+		results = append(results, &core.NamespaceWithInitStatus{
+			Namespace:           &ns.Namespace,
+			Initializing:        !ns.started,
+			InitializationError: ns.initError,
+		})
+	}
+
 	return results, nil
 }
 

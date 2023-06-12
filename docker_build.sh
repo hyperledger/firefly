@@ -41,6 +41,7 @@ echo GIT_REF=$GIT_REF
 docker buildx create --name firefly --use
 docker buildx build \
     -t hyperledger/firefly \
+    -o type=docker \
     --build-arg FIREFLY_BUILDER_TAG=$FIREFLY_BUILDER_TAG \
     --build-arg FABRIC_BUILDER_TAG=$FABRIC_BUILDER_TAG \
     --build-arg FABRIC_BUILDER_PLATFORM=$FABRIC_BUILDER_PLATFORM \

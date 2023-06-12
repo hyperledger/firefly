@@ -292,4 +292,6 @@ var (
 	MsgInvalidMessageIdentity             = ffe("FF10453", "Invalid message '%s'. Author '%s' does not match identity registered to %s: %s (%s)")
 	MsgDuplicateTLSConfig                 = ffe("FF10454", "Found duplicate TLS Config '%s'", 400)
 	MsgNotFoundTLSConfig                  = ffe("FF10455", "Provided TLS Config name '%s' not found for namespace '%s'", 400)
+	MsgCannotWriteNewNamespaceToConfig    = ffe("FF10456", "Cannot write new namespace to config file: %s", 500)
+	MsgNamespaceAlreadyExists             = ffe("FF10457", "Namespace already exists")
 )
