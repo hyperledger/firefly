@@ -40,8 +40,9 @@ type Postgres struct {
 }
 
 func (psql *Postgres) Init(ctx context.Context, config config.Section) error {
-	capabilities := &database.Capabilities{
-		Concurrency: true,
+	capabilities := &database.Capabilities{}
+	if config.GetInt(dbsql.SQLConfMaxConnections) > 1 {
+		capabilities.Concurrency = true
 	}
 	return psql.SQLCommon.Init(ctx, psql, config, capabilities)
 }
