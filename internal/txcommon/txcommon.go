@@ -33,7 +33,7 @@ type Helper interface {
 	SubmitNewTransaction(ctx context.Context, txType core.TransactionType, idempotencyKey core.IdempotencyKey) (*fftypes.UUID, error)
 	PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error
-	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
+	InsertNewBlockchainEvents(ctx context.Context, events []*core.BlockchainEvent) (inserted []*core.BlockchainEvent, err error)
 	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error)
 	GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
 	FindOperationInTransaction(ctx context.Context, tx *fftypes.UUID, opType core.OpType) (*core.Operation, error)
@@ -202,17 +202,34 @@ func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id
 	return chainEvent, nil
 }
 
-func (t *transactionHelper) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error) {
-	existing, err = t.database.InsertOrGetBlockchainEvent(ctx, event)
-	if err != nil {
-		return nil, err
+func (t *transactionHelper) InsertNewBlockchainEvents(ctx context.Context, events []*core.BlockchainEvent) (inserted []*core.BlockchainEvent, err error) {
+	// First we try and insert the whole bundle using batch insert
+	err = t.database.InsertBlockchainEvents(ctx, events, func() {
+		for _, event := range events {
+			t.addBlockchainEventToCache(event)
+		}
+	})
+	if err == nil {
+		// happy path worked - all new events
+		return events, nil
 	}
-	if existing != nil {
-		t.addBlockchainEventToCache(existing)
-		return existing, nil
+	// Fall back to insert-or-get
+	log.L(ctx).Warnf("Blockchain event insert-many optimization failed: %s", err)
+	inserted = make([]*core.BlockchainEvent, 0, len(events))
+	for _, event := range events {
+		existing, err := t.database.InsertOrGetBlockchainEvent(ctx, event)
+		if err != nil {
+			return nil, err
+		}
+		if existing != nil {
+			log.L(ctx).Debugf("Ignoring duplicate blockchain event %s", existing.ProtocolID)
+			t.addBlockchainEventToCache(existing)
+		} else {
+			inserted = append(inserted, event)
+			t.addBlockchainEventToCache(event)
+		}
 	}
-	t.addBlockchainEventToCache(event)
-	return nil, nil
+	return inserted, nil
 }
 
 func (t *transactionHelper) FindOperationInTransaction(ctx context.Context, tx *fftypes.UUID, opType core.OpType) (*core.Operation, error) {
