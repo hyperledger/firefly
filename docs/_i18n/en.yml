@@ -47,6 +47,7 @@ pages:
   remote_fabric_network: Remote Fabric Network
   release_notes: Release Notes
   security: Security
+  tls: TLS
   tools: Tools
   tutorials: Tutorials
   understanding_firefly: Understanding FireFly

@@ -67,6 +67,7 @@ var (
 	MessageBatchID        = ffm("Message.batch", "The UUID of the batch in which the message was pinned/transferred")
 	MessageState          = ffm("Message.state", "The current state of the message")
 	MessageConfirmed      = ffm("Message.confirmed", "The timestamp of when the message was confirmed/rejected")
+	MessageRejectReason   = ffm("Message.rejectReason", "If a message was rejected, provides details on the rejection reason")
 	MessageData           = ffm("Message.data", "The list of data elements attached to the message")
 	MessagePins           = ffm("Message.pins", "For private messages, a unique pin hash:nonce is assigned for each topic")
 	MessageTransactionID  = ffm("Message.txid", "The ID of the transaction used to order/deliver this message")
