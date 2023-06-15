@@ -115,7 +115,7 @@ func TestCreateSubscriptionTLSConfigNotFound(t *testing.T) {
 	}
 	_, err := or.CreateSubscription(or.ctx, sub)
 	assert.Error(t, err)
-	assert.Regexp(t, "FF10453", err)
+	assert.Regexp(t, "FF10455", err)
 }
 
 func TestCreateUpdateSubscriptionOk(t *testing.T) {

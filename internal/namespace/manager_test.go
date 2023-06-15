@@ -1486,7 +1486,7 @@ namespaces:
 	tlsConfigArray := namespacePredefined.ArrayEntry(0).SubArray(coreconfig.NamespaceTLSConfigs)
 	tlsConfigs := make(map[string]*tls.Config)
 	err = nm.loadTLSConfig(nm.ctx, tlsConfigs, tlsConfigArray)
-	assert.Regexp(t, "FF10452", err)
+	assert.Regexp(t, "FF10454", err)
 }
 
 func TestLoadNamespacesWithErrorTLSConfigs(t *testing.T) {
