@@ -72,8 +72,11 @@ type PrefixItem struct {
 }
 
 type paramDetails struct {
-	Kind         string `json:"kind"`
-	InternalType string `json:"internalType"`
+	Type           string             `json:"type"`
+	InternalType   string             `json:"internalType"`
+	InternalSchema fftypes.JSONObject `json:"internalSchema"`
+	Kind           string             `json:"kind"`
+	Variants       []string           `json:"variants"`
 }
 type ffiParamSchema struct {
 	Type    string       `json:"type,omitempty"`
@@ -334,8 +337,8 @@ func jsonEncodeInput(params map[string]interface{}) (output map[string]interface
 	output = make(map[string]interface{}, len(params))
 	for field, value := range params {
 		switch v := value.(type) {
-		case string:
-			output[field] = v
+		// case string:
+		// 	output[field] = v
 		default:
 			encodedValue, err := json.Marshal(v)
 			if err != nil {
@@ -343,7 +346,6 @@ func jsonEncodeInput(params map[string]interface{}) (output map[string]interface
 			}
 			output[field] = string(encodedValue)
 		}
-
 	}
 	return
 }
