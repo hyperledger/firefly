@@ -108,7 +108,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		IdempotencyKey: core.IdempotencyKey(fftypes.NewUUID().String()),
 	}
 	transferOut := suite.testState.client1.MintTokens(suite.T(), transfer, false)
-	_ = suite.testState.client1.MintTokens(suite.T(), transfer, false, 409) // check for idempotency key rejection
+	_ = suite.testState.client1.MintTokens(suite.T(), transfer, false, 409, 500) // check for idempotency key rejection. Note: may return 500 if the request goes all the way to the chain
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypeTransferConfirmed, transferOut.LocalID)
 	transfers := suite.testState.client1.GetTokenTransfers(suite.T(), poolID)

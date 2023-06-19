@@ -21,6 +21,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -569,10 +570,16 @@ func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string, intent blo
 }
 
 func wrapError(ctx context.Context, errRes *ethError, res *resty.Response, err error) error {
-	if errRes != nil && errRes.Error != "" {
-		return i18n.WrapError(ctx, err, coremsgs.MsgEthConnectorRESTErr, errRes.Error)
+	var errMsgKey i18n.ErrorMessageKey
+	if res != nil && res.StatusCode() == http.StatusConflict {
+		errMsgKey = coremsgs.MsgEthConnectorRESTErrConflict
+	} else {
+		errMsgKey = coremsgs.MsgEthConnectorRESTErr
 	}
-	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
+	if errRes != nil && errRes.Error != "" {
+		return i18n.WrapError(ctx, err, errMsgKey, errRes.Error)
+	}
+	return ffresty.WrapRestErr(ctx, res, err, errMsgKey)
 }
 
 func (e *Ethereum) buildEthconnectRequestBody(ctx context.Context, messageType, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (map[string]interface{}, error) {
