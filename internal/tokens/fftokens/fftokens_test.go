@@ -27,6 +27,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftls"
@@ -1895,4 +1896,14 @@ func TestHandleEventRetryableFailure(t *testing.T) {
 	}`))
 	assert.Regexp(t, "pop", err)
 	assert.True(t, retry)
+}
+
+func TestErrorWrapping(t *testing.T) {
+	ctx := context.Background()
+	res := &resty.Response{
+		RawResponse: &http.Response{StatusCode: 409},
+	}
+	err := wrapError(ctx, nil, res, fmt.Errorf("pop"))
+	assert.Regexp(t, "FF10456", err)
+	assert.Regexp(t, "pop", err)
 }
