@@ -4264,3 +4264,13 @@ func TestValidateInvokeRequest(t *testing.T) {
 	err = e.ValidateInvokeRequest(context.Background(), testFFIMethod(), nil, nil, true)
 	assert.Regexp(t, "FF10443", err)
 }
+
+func TestErrorWrapping(t *testing.T) {
+	ctx := context.Background()
+	res := &resty.Response{
+		RawResponse: &http.Response{StatusCode: 409},
+	}
+	err := wrapError(ctx, nil, res, fmt.Errorf("pop"))
+	assert.Regexp(t, "FF10456", err)
+	assert.Regexp(t, "pop", err)
+}

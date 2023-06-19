@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 
@@ -690,13 +691,19 @@ func (ft *FFTokens) eventLoop() {
 //
 //	"Bad Request: Field 'x' is required"
 func wrapError(ctx context.Context, errRes *tokenError, res *resty.Response, err error) error {
+	var errMsgKey i18n.ErrorMessageKey
+	if res != nil && res.StatusCode() == http.StatusConflict {
+		errMsgKey = coremsgs.MsgTokensRESTErrConflict
+	} else {
+		errMsgKey = coremsgs.MsgTokensRESTErr
+	}
 	if errRes != nil && errRes.Message != "" {
 		if errRes.Error != "" {
-			return i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErr, errRes.Error+": "+errRes.Message)
+			return i18n.WrapError(ctx, err, errMsgKey, errRes.Error+": "+errRes.Message)
 		}
-		return i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErr, errRes.Message)
+		return i18n.WrapError(ctx, err, errMsgKey, errRes.Message)
 	}
-	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+	return ffresty.WrapRestErr(ctx, res, err, errMsgKey)
 }
 
 func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error) {
