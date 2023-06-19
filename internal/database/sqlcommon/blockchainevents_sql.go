@@ -83,6 +83,47 @@ func (s *SQLCommon) attemptBlockchainEventInsert(ctx context.Context, tx *dbsql.
 	return err
 }
 
+func (s *SQLCommon) InsertBlockchainEvents(ctx context.Context, events []*core.BlockchainEvent, hooks ...database.PostCompletionHook) (err error) {
+
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+	if s.Features().MultiRowInsert {
+		query := sq.Insert(blockchaineventsTable).Columns(blockchainEventColumns...)
+		for _, event := range events {
+			query = s.setBlockchainEventInsertValues(query, event)
+		}
+		sequences := make([]int64, len(events))
+
+		// Use a single multi-row insert for the messages
+		err := s.InsertTxRows(ctx, blockchaineventsTable, tx, query, func() {
+			for _, event := range events {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, event.Namespace, event.ID)
+			}
+		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Fall back to individual inserts grouped in a TX
+		for _, event := range events {
+			err := s.attemptBlockchainEventInsert(ctx, tx, event, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	for _, hook := range hooks {
+		tx.AddPostCommitHook(hook)
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
+
+}
+
 func (s *SQLCommon) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {

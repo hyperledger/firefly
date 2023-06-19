@@ -559,7 +559,7 @@ func TestGetBlockchainEventByIDErr(t *testing.T) {
 
 }
 
-func TestInsertGetBlockchainEventCached(t *testing.T) {
+func TestInsertNewBlockchainEventsOptimized(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -573,9 +573,42 @@ func TestInsertGetBlockchainEventCached(t *testing.T) {
 		ID:        evID,
 		Namespace: "ns1",
 	}
+	mdi.On("InsertBlockchainEvents", ctx, []*core.BlockchainEvent{chainEvent}, mock.Anything).
+		Run(func(args mock.Arguments) {
+			cb := args[2].(database.PostCompletionHook)
+			cb()
+		}).
+		Return(nil)
+
+	_, err := txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
+	assert.NoError(t, err)
+
+	cached, err := txHelper.GetBlockchainEventByIDCached(ctx, evID)
+	assert.NoError(t, err)
+	assert.Equal(t, chainEvent, cached)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestInsertNewBlockchainEventsEventCached(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	evID := fftypes.NewUUID()
+	chainEvent := &core.BlockchainEvent{
+		ID:        evID,
+		Namespace: "ns1",
+	}
+	mdi.On("InsertBlockchainEvents", ctx, []*core.BlockchainEvent{chainEvent}, mock.Anything).Return(fmt.Errorf("optimization bypass"))
 	mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(nil, nil)
 
-	_, err := txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
+	_, err := txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
 	assert.NoError(t, err)
 
 	cached, err := txHelper.GetBlockchainEventByIDCached(ctx, evID)
@@ -601,11 +634,12 @@ func TestInsertBlockchainEventDuplicate(t *testing.T) {
 		Namespace: "ns1",
 	}
 	existingEvent := &core.BlockchainEvent{}
+	mdi.On("InsertBlockchainEvents", ctx, []*core.BlockchainEvent{chainEvent}, mock.Anything).Return(fmt.Errorf("optimization bypass"))
 	mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(existingEvent, nil)
 
-	result, err := txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
+	result, err := txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
 	assert.NoError(t, err)
-	assert.Equal(t, existingEvent, result)
+	assert.Empty(t, result)
 
 	mdi.AssertExpectations(t)
 
@@ -625,9 +659,10 @@ func TestInsertBlockchainEventErr(t *testing.T) {
 		ID:        evID,
 		Namespace: "ns1",
 	}
+	mdi.On("InsertBlockchainEvents", ctx, []*core.BlockchainEvent{chainEvent}, mock.Anything).Return(fmt.Errorf("optimization bypass"))
 	mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(nil, fmt.Errorf("pop"))
 
-	_, err := txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
+	_, err := txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
