@@ -1620,8 +1620,6 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 		"chaincodeId": "basic",
 		"blockNumber": 10,
 		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
-		"transactionIndex": 20,
-		"eventIndex": 30,
 		"eventName": "AssetCreated",
 		"payload": "eyJBcHByYWlzZWRWYWx1ZSI6MTAsIkNvbG9yIjoicmVkIiwiSUQiOiIxMjM0IiwiT3duZXIiOiJtZSIsIlNpemUiOjN9",
 		"subId": "sb-cb37cc07-e873-4f58-44ab-55add6bba320"
@@ -1645,7 +1643,7 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
 		assert.Equal(t, "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d", e.BlockchainTXID)
-		assert.Equal(t, "000000000010/000020/000030", e.Event.ProtocolID)
+		assert.Contains(t, []string{"000000000010/4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d", "000000000010/4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746f"}, e.Event.ProtocolID)
 		return true
 	})).Return(nil)
 
@@ -1669,13 +1667,11 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 	assert.Equal(t, outputs, ev.Event.Output)
 
 	info := fftypes.JSONObject{
-		"blockNumber":      float64(10),
-		"chaincodeId":      "basic",
-		"eventName":        "AssetCreated",
-		"subId":            "sb-cb37cc07-e873-4f58-44ab-55add6bba320",
-		"transactionId":    "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
-		"transactionIndex": float64(20),
-		"eventIndex":       float64(30),
+		"blockNumber":   float64(10),
+		"chaincodeId":   "basic",
+		"eventName":     "AssetCreated",
+		"subId":         "sb-cb37cc07-e873-4f58-44ab-55add6bba320",
+		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
 	}
 	assert.Equal(t, info, ev.Event.Info)
 
@@ -1689,8 +1685,6 @@ func TestHandleMessageContractEventNamespacedHandlers(t *testing.T) {
 		"chaincodeId": "basic",
 	  "blockNumber": 10,
 		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
-		"transactionIndex": 20,
-		"eventIndex": 30,
 		"eventName": "AssetCreated",
 		"payload": "eyJBcHByYWlzZWRWYWx1ZSI6MTAsIkNvbG9yIjoicmVkIiwiSUQiOiIxMjM0IiwiT3duZXIiOiJtZSIsIlNpemUiOjN9",
 		"subId": "sb-cb37cc07-e873-4f58-44ab-55add6bba320"
@@ -1699,8 +1693,6 @@ func TestHandleMessageContractEventNamespacedHandlers(t *testing.T) {
 		"chaincodeId": "basic",
 	  "blockNumber": 10,
 		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746f",
-		"transactionIndex": 20,
-		"eventIndex": 30,
 		"eventName": "AssetCreated",
 		"payload": "eyJBcHByYWlzZWRWYWx1ZSI6MTAsIkNvbG9yIjoicmVkIiwiSUQiOiIxMjM0IiwiT3duZXIiOiJtZSIsIlNpemUiOjN9",
 		"subId": "sb-cb37cc07-e873-4f58-44ab-55add6bba320"
@@ -1723,7 +1715,7 @@ func TestHandleMessageContractEventNamespacedHandlers(t *testing.T) {
 	e.SetHandler("ns1", em)
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
-		assert.Equal(t, "000000000010/000020/000030", e.Event.ProtocolID)
+		assert.Contains(t, []string{"000000000010/4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d", "000000000010/4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746f"}, e.Event.ProtocolID)
 		return true
 	})).Return(nil)
 
@@ -1747,13 +1739,11 @@ func TestHandleMessageContractEventNamespacedHandlers(t *testing.T) {
 	assert.Equal(t, outputs, ev.Event.Output)
 
 	info := fftypes.JSONObject{
-		"blockNumber":      float64(10),
-		"chaincodeId":      "basic",
-		"eventName":        "AssetCreated",
-		"subId":            "sb-cb37cc07-e873-4f58-44ab-55add6bba320",
-		"transactionId":    "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
-		"transactionIndex": float64(20),
-		"eventIndex":       float64(30),
+		"blockNumber":   float64(10),
+		"chaincodeId":   "basic",
+		"eventName":     "AssetCreated",
+		"subId":         "sb-cb37cc07-e873-4f58-44ab-55add6bba320",
+		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
 	}
 	assert.Equal(t, info, ev.Event.Info)
 
@@ -1767,8 +1757,6 @@ func TestHandleMessageContractEventNoNamespacedHandlers(t *testing.T) {
 		"chaincodeId": "basic",
 	  "blockNumber": 10,
 		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
-		"transactionIndex": 20,
-		"eventIndex": 30,
 		"eventName": "AssetCreated",
 		"payload": "eyJBcHByYWlzZWRWYWx1ZSI6MTAsIkNvbG9yIjoicmVkIiwiSUQiOiIxMjM0IiwiT3duZXIiOiJtZSIsIlNpemUiOjN9",
 		"subId": "sb-cb37cc07-e873-4f58-44ab-55add6bba320"
@@ -1792,7 +1780,7 @@ func TestHandleMessageContractEventNoNamespacedHandlers(t *testing.T) {
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
 		assert.Equal(t, "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d", e.BlockchainTXID)
-		assert.Equal(t, "000000000010/000020/000030", e.Event.ProtocolID)
+		assert.Equal(t, "000000000010/4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d", e.Event.ProtocolID)
 		return true
 	})).Return(nil)
 
@@ -1811,8 +1799,6 @@ func TestHandleMessageContractEventNoPayload(t *testing.T) {
 		"chaincodeId": "basic",
 	  "blockNumber": 10,
 		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
-		"transactionIndex": 20,
-		"eventIndex": 30,
 		"eventName": "AssetCreated",
 		"subId": "sb-cb37cc07-e873-4f58-44ab-55add6bba320"
 	}
@@ -2367,8 +2353,6 @@ func TestHandleNetworkAction(t *testing.T) {
 		"chaincodeId": "firefly",
 		"blockNumber": 91,
 		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
-		"transactionIndex": 2,
-		"eventIndex": 50,
 		"eventName": "BatchPin",
 		"payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMxNjY3LCJuYW5vcyI6NzkxNDk5MDAwfSwibmFtZXNwYWNlIjoiZmlyZWZseTp0ZXJtaW5hdGUiLCJ1dWlkcyI6IjB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsImJhdGNoSGFzaCI6IjB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsInBheWxvYWRSZWYiOiIiLCJjb250ZXh0cyI6W119",
 		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
@@ -2411,8 +2395,6 @@ func TestHandleNetworkActionFail(t *testing.T) {
 		"chaincodeId": "firefly",
 		"blockNumber": 91,
 		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
-		"transactionIndex": 2,
-		"eventIndex": 50,
 		"eventName": "BatchPin",
 		"payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMxNjY3LCJuYW5vcyI6NzkxNDk5MDAwfSwibmFtZXNwYWNlIjoiZmlyZWZseTp0ZXJtaW5hdGUiLCJ1dWlkcyI6IjB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsImJhdGNoSGFzaCI6IjB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsInBheWxvYWRSZWYiOiIiLCJjb250ZXh0cyI6W119",
 		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
