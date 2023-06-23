@@ -50,8 +50,8 @@ func TestTokenPoolValidation(t *testing.T) {
 
 func TestTokenPoolDefinition(t *testing.T) {
 	pool := &TokenPool{
-		Namespace: "ok",
-		Name:      "ok",
+		Namespace:   "ok",
+		NetworkName: "ok",
 	}
 	var def Definition = &TokenPoolDefinition{Pool: pool}
 	assert.Equal(t, "73008386c5579b7015385528eb892f7773e13a20015c692f6b90b26e413fe8a4", def.Topic())
