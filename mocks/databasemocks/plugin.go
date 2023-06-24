@@ -2838,13 +2838,27 @@ func (_m *Plugin) InsertPins(ctx context.Context, pins []*core.Pin) error {
 	return r0
 }
 
-// InsertTransaction provides a mock function with given fields: ctx, data
-func (_m *Plugin) InsertTransaction(ctx context.Context, data *core.Transaction) error {
-	ret := _m.Called(ctx, data)
+// InsertTransaction provides a mock function with given fields: ctx, txn
+func (_m *Plugin) InsertTransaction(ctx context.Context, txn *core.Transaction) error {
+	ret := _m.Called(ctx, txn)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *core.Transaction) error); ok {
-		r0 = rf(ctx, data)
+		r0 = rf(ctx, txn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertTransactions provides a mock function with given fields: ctx, txns
+func (_m *Plugin) InsertTransactions(ctx context.Context, txns []*core.Transaction) error {
+	ret := _m.Called(ctx, txns)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.Transaction) error); ok {
+		r0 = rf(ctx, txns)
 	} else {
 		r0 = ret.Error(0)
 	}

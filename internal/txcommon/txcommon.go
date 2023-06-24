@@ -47,6 +47,18 @@ type transactionHelper struct {
 	blockchainEventCache cache.CInterface
 }
 
+type BatchedTransactionInsert struct {
+	Input struct {
+		Namespace      string
+		Type           core.TransactionType
+		IdempotencyKey core.IdempotencyKey
+	}
+	Output struct {
+		IdempotencyError error
+		Transaction      *core.Transaction
+	}
+}
+
 func NewTransactionHelper(ctx context.Context, ns string, di database.Plugin, dm data.Manager, cacheManager cache.Manager) (Helper, error) {
 	t := &transactionHelper{
 		namespace: ns,
@@ -110,6 +122,36 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType cor
 		Namespace:      t.namespace,
 		Type:           txType,
 		IdempotencyKey: idempotencyKey,
+	}
+
+	// Note that InsertTransaction is responsible for idempotency key duplicate detection and helpful error creation.
+	// (In cases where one or more operations have not yet left 'initialized' state then we need to resubmit them even if
+	// we've seen this idempotency key before.)
+	if err := t.database.InsertTransaction(ctx, tx); err != nil {
+		return nil, err
+	}
+
+	if err := t.database.InsertEvent(ctx, core.NewEvent(core.EventTypeTransactionSubmitted, tx.Namespace, tx.ID, tx.ID, tx.Type.String())); err != nil {
+		return nil, err
+	}
+
+	t.updateTransactionsCache(tx)
+	return tx.ID, nil
+}
+
+// SubmitTransactionBatch is called to do a batch insertion of a set of transactions, and returns an array of the transaction
+// result. Each is either a transaction, or an idempotency failure. The overall action fails for DB errors other than idempotency.
+func (t *transactionHelper) SubmitTransactionBatch(ctx context.Context, batch []*BatchedTransactionInsert) error {
+
+	txInserts := make([]*core.Transaction, len(batch))
+	for i, t := range batch {
+		t.Output.Transaction = &core.Transaction{
+			ID:             fftypes.NewUUID(),
+			Namespace:      t.Input.Namespace,
+			Type:           t.Input.Type,
+			IdempotencyKey: t.Input.IdempotencyKey,
+		}
+		txInserts[i] = t.Output.Transaction
 	}
 
 	// Note that InsertTransaction is responsible for idempotency key duplicate detection and helpful error creation.
