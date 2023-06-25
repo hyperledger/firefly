@@ -18,12 +18,15 @@ package txcommon
 
 import (
 	"context"
+	"database/sql/driver"
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -31,6 +34,7 @@ import (
 
 type Helper interface {
 	SubmitNewTransaction(ctx context.Context, txType core.TransactionType, idempotencyKey core.IdempotencyKey) (*fftypes.UUID, error)
+	SubmitNewTransactionBatch(ctx context.Context, namespace string, batch []*BatchedTransactionInsert) error
 	PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error
 	InsertNewBlockchainEvents(ctx context.Context, events []*core.BlockchainEvent) (inserted []*core.BlockchainEvent, err error)
@@ -48,15 +52,16 @@ type transactionHelper struct {
 }
 
 type BatchedTransactionInsert struct {
-	Input struct {
-		Namespace      string
-		Type           core.TransactionType
-		IdempotencyKey core.IdempotencyKey
-	}
+	Input  TransactionInsertInput
 	Output struct {
 		IdempotencyError error
 		Transaction      *core.Transaction
 	}
+}
+
+type TransactionInsertInput struct {
+	Type           core.TransactionType
+	IdempotencyKey core.IdempotencyKey
 }
 
 func NewTransactionHelper(ctx context.Context, ns string, di database.Plugin, dm data.Manager, cacheManager cache.Manager) (Helper, error) {
@@ -141,32 +146,88 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType cor
 
 // SubmitTransactionBatch is called to do a batch insertion of a set of transactions, and returns an array of the transaction
 // result. Each is either a transaction, or an idempotency failure. The overall action fails for DB errors other than idempotency.
-func (t *transactionHelper) SubmitTransactionBatch(ctx context.Context, batch []*BatchedTransactionInsert) error {
+func (t *transactionHelper) SubmitNewTransactionBatch(ctx context.Context, namespace string, batch []*BatchedTransactionInsert) error {
 
-	txInserts := make([]*core.Transaction, len(batch))
-	for i, t := range batch {
+	// Sort our transactions into those with/without idempotency keys, and do a pre-check for duplicate
+	// idempotency keys within the batch.
+	plainTxInserts := make([]*core.Transaction, 0, len(batch))
+	idempotentTxInserts := make([]*core.Transaction, 0, len(batch))
+	idempotencyKeyMap := make(map[core.IdempotencyKey]*BatchedTransactionInsert)
+	for _, t := range batch {
 		t.Output.Transaction = &core.Transaction{
 			ID:             fftypes.NewUUID(),
-			Namespace:      t.Input.Namespace,
+			Namespace:      namespace,
 			Type:           t.Input.Type,
 			IdempotencyKey: t.Input.IdempotencyKey,
 		}
-		txInserts[i] = t.Output.Transaction
+		if t.Input.IdempotencyKey == "" {
+			plainTxInserts = append(plainTxInserts, t.Output.Transaction)
+		} else {
+			if existing := idempotencyKeyMap[t.Input.IdempotencyKey]; existing != nil {
+				// We've got the same idempotency key twice in our batch. Fail the second one as a dup of the first
+				log.L(ctx).Warnf("Idempotency key exists twice in insert batch '%s'", t.Input.IdempotencyKey)
+				t.Output.IdempotencyError = i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateTransaction, t.Input.IdempotencyKey, existing.Output.Transaction.ID)
+			} else {
+				idempotencyKeyMap[t.Input.IdempotencyKey] = t
+				idempotentTxInserts = append(idempotentTxInserts, t.Output.Transaction)
+			}
+		}
 	}
 
-	// Note that InsertTransaction is responsible for idempotency key duplicate detection and helpful error creation.
-	// (In cases where one or more operations have not yet left 'initialized' state then we need to resubmit them even if
-	// we've seen this idempotency key before.)
-	if err := t.database.InsertTransaction(ctx, tx); err != nil {
-		return nil, err
+	// First attempt to insert any transactions without an idempotency key. These should all work
+	if len(plainTxInserts) > 0 {
+		if insertErr := t.database.InsertTransactions(ctx, plainTxInserts); insertErr != nil {
+			return insertErr
+		}
 	}
 
-	if err := t.database.InsertEvent(ctx, core.NewEvent(core.EventTypeTransactionSubmitted, tx.Namespace, tx.ID, tx.ID, tx.Type.String())); err != nil {
-		return nil, err
+	// Then attempt to insert all the transactions with idempotency keys, which might result in
+	// partial success.
+	if len(idempotentTxInserts) > 0 {
+		if insertErr := t.database.InsertTransactions(ctx, idempotentTxInserts); insertErr != nil {
+			// We have either an error, or a mixed result. Do a query to find all the idempotencyKeys.
+			// If we find them all, then we're good to continue, after we've used UUID comparison
+			// to check which idempotency keys clashed.
+			log.L(ctx).Warnf("Insert transaction batch failed. Checking for idempotencyKey duplicates: %s", insertErr)
+			idempotencyKeys := make([]driver.Value, len(idempotentTxInserts))
+			for i := 0; i < len(idempotentTxInserts); i++ {
+				idempotencyKeys[i] = idempotentTxInserts[i].IdempotencyKey
+			}
+			fb := database.TransactionQueryFactory.NewFilter(ctx)
+			resolvedTxns, _, queryErr := t.database.GetTransactions(ctx, namespace, fb.In("idempotencykey", idempotencyKeys))
+			if queryErr != nil {
+				log.L(ctx).Errorf("idempotencyKey duplicate check abandoned, due to query error (%s). Returning original insert err: %s", queryErr, insertErr)
+				return insertErr
+			}
+			if len(resolvedTxns) != len(idempotencyKeys) {
+				log.L(ctx).Errorf("idempotencyKey duplicate check abandoned, due to query not returning all transactions - len=%d, expected=%d. Returning original insert err: %s", len(resolvedTxns), len(idempotencyKeys), insertErr)
+				return insertErr
+			}
+			for _, resolvedTxn := range resolvedTxns {
+				// Processing above makes it safe for us to do this
+				expectedEntry := idempotencyKeyMap[resolvedTxn.IdempotencyKey]
+				if !resolvedTxn.ID.Equals(expectedEntry.Output.Transaction.ID) {
+					log.L(ctx).Warnf("Idempotency key '%s' already existed in database for transaction %s", resolvedTxn.IdempotencyKey, resolvedTxn.ID)
+					expectedEntry.Output.IdempotencyError = i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateTransaction, resolvedTxn.IdempotencyKey, resolvedTxn.ID)
+				}
+			}
+		}
 	}
 
-	t.updateTransactionsCache(tx)
-	return tx.ID, nil
+	// Insert events for all transactions that did not have an idempotency key failure
+	// Note event insertion is already optimized within the database layer.
+	for _, entry := range batch {
+		if entry.Output.IdempotencyError == nil {
+			tx := entry.Output.Transaction
+			if err := t.database.InsertEvent(ctx, core.NewEvent(core.EventTypeTransactionSubmitted, tx.Namespace, tx.ID, tx.ID, tx.Type.String())); err != nil {
+				return err
+			}
+			t.updateTransactionsCache(tx)
+		}
+	}
+
+	// Ok - we're done
+	return nil
 }
 
 // PersistTransaction is called when we need to ensure a transaction exists in the DB, and optionally associate a new BlockchainTXID to it

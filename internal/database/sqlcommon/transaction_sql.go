@@ -119,6 +119,7 @@ func (s *SQLCommon) InsertTransactions(ctx context.Context, txns []*core.Transac
 	// It does not make sense to invoke this function outside of a wider transaction boundary.
 	// It relies on being able to return an idempotency error, without calling commit, after inserting some of the transactions
 	if !autoCommit {
+		s.RollbackTx(ctx, tx, autoCommit)
 		return i18n.NewError(ctx, coremsgs.MsgSQLInsertManyOutsideTransaction)
 	}
 
