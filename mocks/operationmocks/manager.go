@@ -41,6 +41,27 @@ func (_m *Manager) AddOrReuseOperation(ctx context.Context, op *core.Operation, 
 	return r0
 }
 
+// BulkInsertOperations provides a mock function with given fields: ctx, ops
+func (_m *Manager) BulkInsertOperations(ctx context.Context, ops ...*core.Operation) error {
+	_va := make([]interface{}, len(ops))
+	for _i := range ops {
+		_va[_i] = ops[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, ...*core.Operation) error); ok {
+		r0 = rf(ctx, ops...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetOperationByIDCached provides a mock function with given fields: ctx, opID
 func (_m *Manager) GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error) {
 	ret := _m.Called(ctx, opID)

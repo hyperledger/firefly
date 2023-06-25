@@ -331,6 +331,12 @@ var (
 	SubscriptionsRetryMaxDelay = ffc("subscription.retry.maxDelay")
 	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
 	SubscriptionsRetryFactor = ffc("subscription.retry.factor")
+	// TransactionWriterCount
+	TransactionWriterCount = ffc("transaction.writer.count")
+	// TransactionWriterBatchTimeout
+	TransactionWriterBatchTimeout = ffc("transaction.writer.batchTimeout")
+	// TransactionWriterBatchMaxTransactions
+	TransactionWriterBatchMaxTransactions = ffc("transaction.writer.batchMaxTransactions")
 
 	// AssetManagerKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization
 	AssetManagerKeyNormalization = ffc("asset.manager.keyNormalization")
@@ -442,6 +448,9 @@ func setDefaults() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
+	viper.SetDefault(string(TransactionWriterBatchMaxTransactions), 100)
+	viper.SetDefault(string(TransactionWriterBatchTimeout), "10ms")
+	viper.SetDefault(string(TransactionWriterCount), 5)
 	viper.SetDefault(string(CacheTransactionSize), "1Mb")
 	viper.SetDefault(string(CacheTransactionTTL), "5m")
 	viper.SetDefault(string(UIEnabled), true)

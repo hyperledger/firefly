@@ -160,7 +160,7 @@ type iTransactionCollection interface {
 	// InsertTransaction - Insert a new transaction
 	InsertTransaction(ctx context.Context, txn *core.Transaction) (err error)
 
-	// InsertBlockchainEvents performs a batch insert of transactions - returns error if idempotency keys clash while inserting the non-clashing ones, so caller can query to find the existing ones
+	// InsertTransactions performs a batch insert of transactions - returns error if idempotency keys clash while inserting the non-clashing ones, so caller can query to find the existing ones
 	InsertTransactions(ctx context.Context, txns []*core.Transaction) (err error)
 
 	// UpdateTransaction - Update transaction
@@ -221,6 +221,9 @@ type iPinCollection interface {
 type iOperationCollection interface {
 	// InsertOperation - Insert an operation
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
+
+	// InsertOperations bulk insert operations - all must succeed/fail together (idempotency clashes are handled by containing transaction)
+	InsertOperations(ctx context.Context, ops []*core.Operation) (err error)
 
 	// UpdateOperation - Update an operation
 	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, filter ffapi.Filter, update ffapi.Update) (updated bool, err error)

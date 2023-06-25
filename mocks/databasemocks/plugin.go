@@ -2668,6 +2668,20 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *core.Operation
 	return r0
 }
 
+// InsertOperations provides a mock function with given fields: ctx, ops
+func (_m *Plugin) InsertOperations(ctx context.Context, ops []*core.Operation) error {
+	ret := _m.Called(ctx, ops)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.Operation) error); ok {
+		r0 = rf(ctx, ops)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertOrGetBatch provides a mock function with given fields: ctx, data
 func (_m *Plugin) InsertOrGetBatch(ctx context.Context, data *core.BatchPersisted) (*core.BatchPersisted, error) {
 	ret := _m.Called(ctx, data)

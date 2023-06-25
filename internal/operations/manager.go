@@ -46,6 +46,7 @@ type Manager interface {
 	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (*core.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
+	BulkInsertOperations(ctx context.Context, ops ...*core.Operation) error
 	SubmitOperationUpdate(update *core.OperationUpdate)
 	GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
