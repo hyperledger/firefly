@@ -223,7 +223,7 @@ type iOperationCollection interface {
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
 
 	// InsertOperations bulk insert operations - all must succeed/fail together (idempotency clashes are handled by containing transaction)
-	InsertOperations(ctx context.Context, ops []*core.Operation) (err error)
+	InsertOperations(ctx context.Context, ops []*core.Operation, hooks ...PostCompletionHook) (err error)
 
 	// UpdateOperation - Update an operation
 	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, filter ffapi.Filter, update ffapi.Update) (updated bool, err error)

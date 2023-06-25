@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -138,12 +139,14 @@ func TestBatchOfOneAsyncSuccess(t *testing.T) {
 		return len(ops) == 1 && ops[0].ID.Equals(inputOpID)
 	})).Return(nil)
 
-	tx, err := txw.WriteTransactionAndOps(ctx, core.TransactionTypeContractInvoke, "", &core.Operation{
+	op := &core.Operation{
 		ID: inputOpID,
-	})
+	}
+	tx, err := txw.WriteTransactionAndOps(ctx, core.TransactionTypeContractInvoke, "", op)
 	assert.NoError(t, err)
 	assert.NotNil(t, tx)
-	assert.NotNil(t, tx.ID) // generated for us
+	assert.NotNil(t, tx.ID)                // generated for us
+	assert.Equal(t, op.Transaction, tx.ID) // assigned for us
 
 }
 
@@ -199,6 +202,7 @@ func TestMixedIdempotencyResult(t *testing.T) {
 
 	mdi := txw.database.(*databasemocks.Plugin)
 	var firstTXID *fftypes.UUID
+	existingTXID := fftypes.NewUUID()
 	mdi.On("InsertTransactions", mock.Anything, mock.MatchedBy(func(txns []*core.Transaction) bool {
 		return len(txns) == 2
 	})).Run(func(args mock.Arguments) {
@@ -210,7 +214,7 @@ func TestMixedIdempotencyResult(t *testing.T) {
 		mockGet.Return(
 			[]*core.Transaction{
 				{ID: firstTXID, IdempotencyKey: "idem1"},
-				{ID: fftypes.NewUUID() /* existing */, IdempotencyKey: "idem2"},
+				{ID: existingTXID /* existing */, IdempotencyKey: "idem2"},
 			},
 			nil, nil)
 	})
@@ -239,5 +243,8 @@ func TestMixedIdempotencyResult(t *testing.T) {
 	assert.NoError(t, res1.err)
 	assert.Equal(t, firstTXID, res1.transaction.ID)
 	assert.Regexp(t, "FF10431.*idem2", res2.err)
+	idemErr, ok := res2.err.(*sqlcommon.IdempotencyError)
+	assert.True(t, ok)
+	assert.Equal(t, existingTXID, idemErr.ExistingTXID)
 
 }

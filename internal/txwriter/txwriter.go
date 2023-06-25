@@ -206,8 +206,13 @@ func (tw *txWriter) processBatch(ctx context.Context, batch *txWriterBatch) erro
 		if insertResult.Output.IdempotencyError != nil {
 			results[i] = &result{err: insertResult.Output.IdempotencyError}
 		} else {
-			results[i] = &result{transaction: insertResult.Output.Transaction}
-			operations = append(operations, req.operations...)
+			txn := insertResult.Output.Transaction
+			results[i] = &result{transaction: txn}
+			// Set the transaction ID on all ops, and add to list for insertion
+			for _, op := range req.operations {
+				op.Transaction = txn.ID
+				operations = append(operations, op)
+			}
 		}
 	}
 

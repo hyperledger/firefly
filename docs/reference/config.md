@@ -142,6 +142,13 @@ nav_order: 2
 |size|Max size of cached messages for data manager|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
 |ttl|Time to live of cached messages for data manager|`string`|`<nil>`
 
+## cache.methods
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|limit|Max number of cached items for schema validations on blockchain methods|`int`|`<nil>`
+|ttl|Time to live of cached items for schema validations on blockchain methods|`string`|`<nil>`
+
 ## cache.operations
 
 |Key|Description|Type|Default Value|
@@ -1221,6 +1228,14 @@ nav_order: 2
 |factor|The retry backoff factor|`float32`|`<nil>`
 |initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+
+## transaction.writer
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|batchMaxTransactions|The maximum number of transaction inserts to include in a batch|`int`|`<nil>`
+|batchTimeout|How long to wait for more transactions to arrive before flushing the batch|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|count|The number of message writer workers|`int`|`<nil>`
 
 ## ui
 

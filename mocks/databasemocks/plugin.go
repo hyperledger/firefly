@@ -2668,13 +2668,20 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *core.Operation
 	return r0
 }
 
-// InsertOperations provides a mock function with given fields: ctx, ops
-func (_m *Plugin) InsertOperations(ctx context.Context, ops []*core.Operation) error {
-	ret := _m.Called(ctx, ops)
+// InsertOperations provides a mock function with given fields: ctx, ops, hooks
+func (_m *Plugin) InsertOperations(ctx context.Context, ops []*core.Operation, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, ops)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*core.Operation) error); ok {
-		r0 = rf(ctx, ops)
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.Operation, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, ops, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}

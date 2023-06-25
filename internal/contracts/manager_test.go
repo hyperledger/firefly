@@ -45,6 +45,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/mocks/txwritermocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -62,6 +63,7 @@ func newTestContractManager() *contractManager {
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
+	txw := &txwritermocks.Writer{}
 	ctx := context.Background()
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
@@ -79,13 +81,13 @@ func newTestContractManager() *contractManager {
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	cm, _ := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, msa)
+	cm, _ := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, txw, msa, cmi)
 	cm.(*contractManager).txHelper = &txcommonmocks.Helper{}
 	return cm.(*contractManager)
 }
 
 func TestNewContractManagerFail(t *testing.T) {
-	_, err := NewContractManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewContractManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -103,13 +105,33 @@ func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
+	txw := &txwritermocks.Writer{}
 	ctx := context.Background()
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	msa := &syncasyncmocks.Bridge{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, fmt.Errorf("pop"))
-	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, msa)
+	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, txw, msa, cmi)
+	assert.Regexp(t, "pop", err)
+}
+
+func TestNewContractManagerCacheConfigFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mbp := &batchmocks.Manager{}
+	mim := &identitymanagermocks.Manager{}
+	mbi := &blockchainmocks.Plugin{}
+	mom := &operationmocks.Manager{}
+	txw := &txwritermocks.Writer{}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, fmt.Errorf("pop"))
+	txHelper := &txcommonmocks.Helper{}
+	msa := &syncasyncmocks.Bridge{}
+	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, nil)
+	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, txw, msa, cmi)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -122,6 +144,7 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
+	txw := &txwritermocks.Writer{}
 	ctx := context.Background()
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
@@ -130,7 +153,7 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	mdi.On("GetContractListeners", mock.Anything, "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ffi2abi.ParamValidator{}, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
-	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, msa)
+	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, txw, msa, cmi)
 	assert.NoError(t, err)
 }
 
@@ -1584,6 +1607,7 @@ func TestDeployContract(t *testing.T) {
 	mdi := cm.database.(*databasemocks.Plugin)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 	signingKey := "0x2468"
 	req := &core.ContractDeployRequest{
 		Key:            signingKey,
@@ -1593,11 +1617,10 @@ func TestDeployContract(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
-	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainContractDeploy && op.Plugin == "mockblockchain"
-	})).Return(nil)
+	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(blockchainContractDeployData)
 		return op.Type == core.OpTypeBlockchainContractDeploy && data.Request == req
@@ -1619,6 +1642,7 @@ func TestDeployContractIdempotentResubmitOperation(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 	signingKey := "0x2468"
 	req := &core.ContractDeployRequest{
 		Key:            signingKey,
@@ -1628,7 +1652,9 @@ func TestDeployContractIdempotentResubmitOperation(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainContractDeploy && op.Plugin == "mockblockchain"
+	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(&core.Operation{}, nil)
@@ -1649,6 +1675,7 @@ func TestDeployContractIdempotentNoOperationToResubmit(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 	signingKey := "0x2468"
 	req := &core.ContractDeployRequest{
 		Key:            signingKey,
@@ -1658,7 +1685,9 @@ func TestDeployContractIdempotentNoOperationToResubmit(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainContractDeploy && op.Plugin == "mockblockchain"
+	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
@@ -1680,6 +1709,7 @@ func TestDeployContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 	signingKey := "0x2468"
 	req := &core.ContractDeployRequest{
 		Key:            signingKey,
@@ -1689,7 +1719,9 @@ func TestDeployContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainContractDeploy && op.Plugin == "mockblockchain"
+	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
@@ -1711,6 +1743,7 @@ func TestDeployContractSync(t *testing.T) {
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
 	sam := cm.syncasync.(*syncasyncmocks.Bridge)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 	signingKey := "0x2468"
 	req := &core.ContractDeployRequest{
 		Key:            signingKey,
@@ -1720,11 +1753,10 @@ func TestDeployContractSync(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
-	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainContractDeploy && op.Plugin == "mockblockchain"
-	})).Return(nil)
+	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
 	sam.On("WaitForDeployOperation", mock.Anything, mock.Anything, mock.Anything).Return(&core.Operation{Status: core.OpStatusSucceeded}, nil)
 
@@ -1769,6 +1801,7 @@ func TestDeployContractSubmitNewTransactionFail(t *testing.T) {
 	mdi := cm.database.(*databasemocks.Plugin)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 	signingKey := "0x2468"
 	req := &core.ContractDeployRequest{
 		Key:            signingKey,
@@ -1778,7 +1811,9 @@ func TestDeployContractSubmitNewTransactionFail(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1")).Return(nil, errors.New("pop"))
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractDeploy, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainContractDeploy && op.Plugin == "mockblockchain"
+	})).Return(nil, errors.New("pop"))
 	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
 	_, err := cm.DeployContract(context.Background(), req, false)
@@ -1798,6 +1833,7 @@ func TestInvokeContract(t *testing.T) {
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -1812,16 +1848,64 @@ func TestInvokeContract(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
-	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
-	})).Return(nil)
+	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
+
+	_, err := cm.InvokeContract(context.Background(), req, false)
+
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+
+func TestInvokeContractViaFFI(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mom := cm.operations.(*operationmocks.Manager)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	txw := cm.txWriter.(*txwritermocks.Writer)
+
+	req := &core.ContractCallRequest{
+		Type:           core.CallTypeInvoke,
+		Interface:      fftypes.NewUUID(),
+		Location:       fftypes.JSONAnyPtr(""),
+		MethodPath:     "doStuff",
+		IdempotencyKey: "idem1",
+	}
+
+	method := &fftypes.FFIMethod{
+		Name:    "doStuff",
+		ID:      fftypes.NewUUID(),
+		Params:  fftypes.FFIParams{},
+		Returns: fftypes.FFIParams{},
+	}
+	errors := []*fftypes.FFIError{}
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
+	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(txcommon.BlockchainInvokeData)
+		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
+	})).Return(nil, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, method, req.Input, errors, false).Return(nil)
+
+	mdb := cm.database.(*databasemocks.Plugin)
+	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.MethodPath).Return(method, nil)
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return(errors, nil, nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
@@ -1842,6 +1926,7 @@ func TestInvokeContractWithBroadcast(t *testing.T) {
 	mom := cm.operations.(*operationmocks.Manager)
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 	sender := &syncasyncmocks.Sender{}
 
 	req := &core.ContractCallRequest{
@@ -1867,11 +1952,10 @@ func TestInvokeContractWithBroadcast(t *testing.T) {
 		},
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvokePin, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
-	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvokePin, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
-	})).Return(nil)
+	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, true).Return(nil)
 	mbm.On("NewBroadcast", req.Message).Return(sender, nil)
 	sender.On("Prepare", mock.Anything).Return(nil)
@@ -1898,6 +1982,7 @@ func TestInvokeContractWithBroadcastConfirm(t *testing.T) {
 	mom := cm.operations.(*operationmocks.Manager)
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 	sender := &syncasyncmocks.Sender{}
 
 	req := &core.ContractCallRequest{
@@ -1923,11 +2008,10 @@ func TestInvokeContractWithBroadcastConfirm(t *testing.T) {
 		},
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvokePin, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
-	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvokePin, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
-	})).Return(nil)
+	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, true).Return(nil)
 	mbm.On("NewBroadcast", req.Message).Return(sender, nil)
 	sender.On("Prepare", mock.Anything).Return(nil)
@@ -2186,6 +2270,7 @@ func TestInvokeContractIdempotentResubmitOperation(t *testing.T) {
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
 	mbm := cm.blockchain.(*blockchainmocks.Plugin)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2200,7 +2285,9 @@ func TestInvokeContractIdempotentResubmitOperation(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
+	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(&core.Operation{}, nil)
@@ -2224,6 +2311,7 @@ func TestInvokeContractIdempotentNoOperationToResubmit(t *testing.T) {
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
 	mbm := cm.blockchain.(*blockchainmocks.Plugin)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2238,7 +2326,9 @@ func TestInvokeContractIdempotentNoOperationToResubmit(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
+	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
@@ -2263,6 +2353,7 @@ func TestInvokeContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
 	mbm := cm.blockchain.(*blockchainmocks.Plugin)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2277,7 +2368,9 @@ func TestInvokeContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
+	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
@@ -2303,6 +2396,7 @@ func TestInvokeContractConfirm(t *testing.T) {
 	mom := cm.operations.(*operationmocks.Manager)
 	msa := cm.syncasync.(*syncasyncmocks.Bridge)
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2317,11 +2411,10 @@ func TestInvokeContractConfirm(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
-	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
-	})).Return(nil)
+	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
@@ -2353,6 +2446,7 @@ func TestInvokeContractFail(t *testing.T) {
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2367,11 +2461,10 @@ func TestInvokeContractFail(t *testing.T) {
 		IdempotencyKey: "idem1",
 	}
 
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
-	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
-	})).Return(nil)
+	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
+	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
@@ -2387,6 +2480,37 @@ func TestInvokeContractFail(t *testing.T) {
 	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
 	mbi.AssertExpectations(t)
+}
+
+func TestInvokeContractBadInput(t *testing.T) {
+	cm := newTestContractManager()
+
+	req := &core.ContractCallRequest{
+		Type:      core.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Location:  fftypes.JSONAnyPtr(""),
+		Input: map[string]interface{}{
+			"badness": map[bool]bool{false: true}, // cannot be serialized to JSON
+		},
+	}
+
+	_, err := cm.writeInvokeTransaction(context.Background(), req)
+
+	assert.Regexp(t, "json", err)
+}
+
+func TestDeployContractBadInput(t *testing.T) {
+	cm := newTestContractManager()
+
+	req := &core.ContractDeployRequest{
+		Options: map[string]interface{}{
+			"badness": map[bool]bool{false: true}, // cannot be serialized to JSON
+		},
+	}
+
+	_, err := cm.writeDeployTransaction(context.Background(), req)
+
+	assert.Regexp(t, "json", err)
 }
 
 func TestInvokeContractFailResolveInputSigningKey(t *testing.T) {
@@ -2430,6 +2554,7 @@ func TestInvokeContractTXFail(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2445,7 +2570,9 @@ func TestInvokeContractTXFail(t *testing.T) {
 	}
 
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(nil, fmt.Errorf("pop"))
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
+	})).Return(nil, fmt.Errorf("pop"))
 	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
@@ -2848,6 +2975,7 @@ func TestInvokeContractAPI(t *testing.T) {
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	txw := cm.txWriter.(*txwritermocks.Writer)
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
@@ -2869,10 +2997,9 @@ func TestInvokeContractAPI(t *testing.T) {
 
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
-	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), nil)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
-	})).Return(nil)
+	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
@@ -3309,28 +3436,8 @@ func TestValidateFFIParamBadSchemaJSON(t *testing.T) {
 		Name:   "x",
 		Schema: fftypes.JSONAnyPtr(`{"type": "integer"`),
 	}
-	err := cm.validateFFIParam(context.Background(), param)
+	_, err := cm.validateFFIParam(context.Background(), param)
 	assert.Regexp(t, "unexpected EOF", err)
-}
-
-func TestCheckParamSchemaBadSchema(t *testing.T) {
-	cm := newTestContractManager()
-	param := &fftypes.FFIParam{
-		Name:   "x",
-		Schema: fftypes.JSONAnyPtr(`{"type": "integer"`),
-	}
-	err := cm.checkParamSchema(context.Background(), 1, param)
-	assert.Regexp(t, "unexpected EOF", err)
-}
-
-func TestCheckParamSchemaCompileFail(t *testing.T) {
-	cm := newTestContractManager()
-	param := &fftypes.FFIParam{
-		Name:   "x",
-		Schema: fftypes.JSONAnyPtr(``),
-	}
-	err := cm.checkParamSchema(context.Background(), 1, param)
-	assert.Regexp(t, "compilation failed", err)
 }
 
 func TestAddJSONSchemaExtension(t *testing.T) {
@@ -3488,4 +3595,51 @@ func TestDeleteContractAPIPublished(t *testing.T) {
 	assert.Regexp(t, "FF10449", err)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestResolveInvokeContractRequestCache(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
+	mth := cm.txHelper.(*txcommonmocks.Helper)
+	mom := cm.operations.(*operationmocks.Manager)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+
+	method := &fftypes.FFIMethod{
+		Name:    "doStuff",
+		ID:      fftypes.NewUUID(),
+		Params:  fftypes.FFIParams{},
+		Returns: fftypes.FFIParams{},
+	}
+	errors := []*fftypes.FFIError{}
+
+	mdb := cm.database.(*databasemocks.Plugin)
+	mdb.On("GetFFIMethod", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(method, nil).Once()
+	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return(errors, nil, nil).Once()
+
+	interfaceID := fftypes.NewUUID()
+	err := cm.resolveInvokeContractRequest(context.Background(), &core.ContractCallRequest{
+		Type:           core.CallTypeInvoke,
+		Interface:      interfaceID,
+		Location:       fftypes.JSONAnyPtr("location1"),
+		MethodPath:     "doStuff",
+		IdempotencyKey: "idem1",
+	})
+	assert.NoError(t, err)
+
+	// Test with Once() that the second is cached
+	err = cm.resolveInvokeContractRequest(context.Background(), &core.ContractCallRequest{
+		Type:           core.CallTypeInvoke,
+		Interface:      interfaceID,
+		Location:       fftypes.JSONAnyPtr("location2"),
+		MethodPath:     "doStuff",
+		IdempotencyKey: "idem2",
+	})
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }

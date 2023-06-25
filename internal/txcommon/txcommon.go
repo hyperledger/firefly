@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -166,7 +167,10 @@ func (t *transactionHelper) SubmitNewTransactionBatch(ctx context.Context, names
 			if existing := idempotencyKeyMap[t.Input.IdempotencyKey]; existing != nil {
 				// We've got the same idempotency key twice in our batch. Fail the second one as a dup of the first
 				log.L(ctx).Warnf("Idempotency key exists twice in insert batch '%s'", t.Input.IdempotencyKey)
-				t.Output.IdempotencyError = i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateTransaction, t.Input.IdempotencyKey, existing.Output.Transaction.ID)
+				t.Output.IdempotencyError = &sqlcommon.IdempotencyError{
+					ExistingTXID:  existing.Output.Transaction.ID,
+					OriginalError: i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateTransaction, t.Input.IdempotencyKey, existing.Output.Transaction.ID),
+				}
 			} else {
 				idempotencyKeyMap[t.Input.IdempotencyKey] = t
 				idempotentTxInserts = append(idempotentTxInserts, t.Output.Transaction)
@@ -208,7 +212,10 @@ func (t *transactionHelper) SubmitNewTransactionBatch(ctx context.Context, names
 				expectedEntry := idempotencyKeyMap[resolvedTxn.IdempotencyKey]
 				if !resolvedTxn.ID.Equals(expectedEntry.Output.Transaction.ID) {
 					log.L(ctx).Warnf("Idempotency key '%s' already existed in database for transaction %s", resolvedTxn.IdempotencyKey, resolvedTxn.ID)
-					expectedEntry.Output.IdempotencyError = i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateTransaction, resolvedTxn.IdempotencyKey, resolvedTxn.ID)
+					expectedEntry.Output.IdempotencyError = &sqlcommon.IdempotencyError{
+						ExistingTXID:  resolvedTxn.ID,
+						OriginalError: i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateTransaction, resolvedTxn.IdempotencyKey, resolvedTxn.ID),
+					}
 				}
 			}
 		}

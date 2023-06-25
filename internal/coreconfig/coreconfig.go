@@ -177,6 +177,10 @@ var (
 	CacheOperationsLimit = ffc("cache.operations.limit")
 	CacheOperationsTTL   = ffc("cache.operations.ttl")
 
+	// Invoke methods cache config
+	CacheMethodsLimit = ffc("cache.methods.limit")
+	CacheMethodsTTL   = ffc("cache.methods.ttl")
+
 	// DownloadWorkerCount is the number of download workers created to pull data from shared storage to the local DX
 	DownloadWorkerCount = ffc("download.worker.count")
 	// DownloadWorkerQueueLength is the length of the work queue in the channel to the workers - defaults to 2x the worker count
@@ -386,6 +390,8 @@ func setDefaults() {
 	viper.SetDefault(string(CacheEnabled), true)
 	viper.SetDefault(string(CacheOperationsLimit), 200)
 	viper.SetDefault(string(CacheOperationsTTL), "5m")
+	viper.SetDefault(string(CacheMethodsLimit), 200)
+	viper.SetDefault(string(CacheMethodsTTL), "5m")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DebugAddress), "localhost")
