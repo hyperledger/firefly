@@ -699,7 +699,7 @@ var (
 	WebhooksOptInputBody                = ffm("WebhookInputOptions.body", "A top-level property of the first data input, to use for the request body. Default is the whole first body")
 	WebhooksOptInputPath                = ffm("WebhookInputOptions.path", "A top-level property of the first data input, to use for a path to append with escaping to the webhook path")
 	WebhooksOptInputReplyTx             = ffm("WebhookInputOptions.replytx", "A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose)")
-	WebhooksOptRetryEnabled             = ffm("WebhookRetryOptions.enabled", "A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose)")
+	WebhooksOptRetryEnabled             = ffm("WebhookRetryOptions.enabled", "Enables retry on HTTP calls, defaults to false")
 	WebhooksOptRetryCount               = ffm("WebhookRetryOptions.count", "Number of times to retry the webhook call in case of failure")
 	WebhooksOptRetryInitialDelay        = ffm("WebhookRetryOptions.initialDelay", "Initial delay between retries when we retry the webhook call")
 	WebhooksOptRetryMaxDelay            = ffm("WebhookRetryOptions.maxDelay", "Max delay between retries when we retry the webhookcall")
