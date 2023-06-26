@@ -248,9 +248,11 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 	}
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ValidateInvokeRequest", context.Background(), req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", context.Background(), opaqueData, req.Input, false).Return(nil)
 
-	err := cm.validateInvokeContractRequest(context.Background(), req)
+	_, err := cm.validateInvokeContractRequest(context.Background(), req, true)
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
@@ -279,11 +281,24 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 				},
 			},
 		},
+		Errors: []*fftypes.FFIError{
+			{
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
+					Name: "u",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "t",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+						},
+					},
+				},
+			},
+		},
 		Input: map[string]interface{}{
 			"x": float64(1),
 		},
 	}
-	err := cm.validateInvokeContractRequest(context.Background(), req)
+	_, err := cm.validateInvokeContractRequest(context.Background(), req, true)
 	assert.Regexp(t, "Missing required input argument 'y'", err)
 }
 
@@ -315,8 +330,53 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 			"y": "two",
 		},
 	}
-	err := cm.validateInvokeContractRequest(context.Background(), req)
+	_, err := cm.validateInvokeContractRequest(context.Background(), req, true)
 	assert.Regexp(t, "expected integer, but got string", err)
+}
+
+func TestValidateInvokeContractRequestErrorInvalid(t *testing.T) {
+	cm := newTestContractManager()
+	req := &core.ContractCallRequest{
+		Type: core.CallTypeInvoke,
+		Method: &fftypes.FFIMethod{
+			Name: "sum",
+			Params: []*fftypes.FFIParam{
+				{
+					Name:   "x",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+				},
+				{
+					Name:   "y",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+				},
+			},
+			Returns: []*fftypes.FFIParam{
+				{
+					Name:   "z",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+				},
+			},
+		},
+		Errors: []*fftypes.FFIError{
+			{
+				FFIErrorDefinition: fftypes.FFIErrorDefinition{
+					Name: "u",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "t",
+							Schema: fftypes.JSONAnyPtr(`{"type": "wrong"}`),
+						},
+					},
+				},
+			},
+		},
+		Input: map[string]interface{}{
+			"x": float64(1),
+			"y": "two",
+		},
+	}
+	_, err := cm.validateInvokeContractRequest(context.Background(), req, true)
+	assert.Regexp(t, "FF10333", err)
 }
 
 func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
@@ -348,7 +408,7 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 		},
 	}
 
-	err := cm.validateInvokeContractRequest(context.Background(), req)
+	_, err := cm.validateInvokeContractRequest(context.Background(), req, true)
 	assert.Regexp(t, "does not validate", err)
 }
 
@@ -381,7 +441,7 @@ func TestValidateInvokeContractRequestInvalidReturn(t *testing.T) {
 		},
 	}
 
-	err := cm.validateInvokeContractRequest(context.Background(), req)
+	_, err := cm.validateInvokeContractRequest(context.Background(), req, true)
 	assert.Regexp(t, "does not validate", err)
 }
 
@@ -1856,7 +1916,9 @@ func TestInvokeContract(t *testing.T) {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
-	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
@@ -1901,7 +1963,9 @@ func TestInvokeContractViaFFI(t *testing.T) {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
-	mbi.On("ValidateInvokeRequest", mock.Anything, method, req.Input, errors, false).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), method, errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
 
 	mdb := cm.database.(*databasemocks.Plugin)
 	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.MethodPath).Return(method, nil)
@@ -1956,7 +2020,9 @@ func TestInvokeContractWithBroadcast(t *testing.T) {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, true).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, true).Return(nil)
 	mbm.On("NewBroadcast", req.Message).Return(sender, nil)
 	sender.On("Prepare", mock.Anything).Return(nil)
 	sender.On("Send", mock.Anything).Return(nil)
@@ -2012,7 +2078,9 @@ func TestInvokeContractWithBroadcastConfirm(t *testing.T) {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(&core.Transaction{ID: fftypes.NewUUID()}, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, true).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, true).Return(nil)
 	mbm.On("NewBroadcast", req.Message).Return(sender, nil)
 	sender.On("Prepare", mock.Anything).Return(nil)
 	sender.On("SendAndWait", mock.Anything).Return(nil)
@@ -2062,7 +2130,9 @@ func TestInvokeContractWithBroadcastPrepareFail(t *testing.T) {
 	}
 
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, true).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, true).Return(nil)
 	mbm.On("NewBroadcast", req.Message).Return(sender, nil)
 	sender.On("Prepare", mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -2292,7 +2362,9 @@ func TestInvokeContractIdempotentResubmitOperation(t *testing.T) {
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(&core.Operation{}, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mbm.On("ValidateInvokeRequest", context.Background(), req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbm.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbm.On("ValidateInvokeRequest", context.Background(), opaqueData, req.Input, false).Return(nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
 	_, err := cm.InvokeContract(context.Background(), req, false)
@@ -2333,7 +2405,9 @@ func TestInvokeContractIdempotentNoOperationToResubmit(t *testing.T) {
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mbm.On("ValidateInvokeRequest", context.Background(), req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbm.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbm.On("ValidateInvokeRequest", context.Background(), opaqueData, req.Input, false).Return(nil)
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
 	_, err := cm.InvokeContract(context.Background(), req, false)
@@ -2375,7 +2449,9 @@ func TestInvokeContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
 	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mbm.On("ValidateInvokeRequest", context.Background(), req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbm.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbm.On("ValidateInvokeRequest", context.Background(), opaqueData, req.Input, false).Return(nil)
 
 	// If ResubmitOperations returns an error trying to resubmit an operation we expect that back, not a 409 conflict
 	_, err := cm.InvokeContract(context.Background(), req, false)
@@ -2425,7 +2501,9 @@ func TestInvokeContractConfirm(t *testing.T) {
 			send(context.Background())
 		}).
 		Return(&core.Operation{}, nil)
-	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, true)
 
@@ -2469,7 +2547,9 @@ func TestInvokeContractFail(t *testing.T) {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, fmt.Errorf("pop"))
-	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
@@ -2573,7 +2653,9 @@ func TestInvokeContractTXFail(t *testing.T) {
 	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil, fmt.Errorf("pop"))
-	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
@@ -2680,8 +2762,10 @@ func TestQueryContract(t *testing.T) {
 	}
 
 	mim.On("ResolveQuerySigningKey", mock.Anything, "key-unresolved", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mbi.On("QueryContract", mock.Anything, "key-resolved", req.Location, req.Method, req.Input, req.Errors, req.Options).Return(struct{}{}, nil)
-	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
+	mbi.On("QueryContract", mock.Anything, "key-resolved", req.Location, opaqueData, req.Input, req.Options).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), req, false)
 
@@ -2713,7 +2797,9 @@ func TestCallContractInvalidType(t *testing.T) {
 	mom.On("AddOrReuseOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
-	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
 
 	assert.PanicsWithValue(t, "unknown call type: ", func() {
 		cm.InvokeContract(context.Background(), req, false)
@@ -3004,7 +3090,9 @@ func TestInvokeContractAPI(t *testing.T) {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
-	mbi.On("ValidateInvokeRequest", mock.Anything, req.Method, req.Input, req.Errors, false).Return(nil)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
+	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
 
 	_, err := cm.InvokeContractAPI(context.Background(), "banana", "peel", req, false)
 
@@ -3436,7 +3524,7 @@ func TestValidateFFIParamBadSchemaJSON(t *testing.T) {
 		Name:   "x",
 		Schema: fftypes.JSONAnyPtr(`{"type": "integer"`),
 	}
-	_, err := cm.validateFFIParam(context.Background(), param)
+	_, _, err := cm.validateFFIParam(context.Background(), param)
 	assert.Regexp(t, "unexpected EOF", err)
 }
 

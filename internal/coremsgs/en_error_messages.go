@@ -293,4 +293,5 @@ var (
 	MsgDuplicateTLSConfig                 = ffe("FF10454", "Found duplicate TLS Config '%s'", 400)
 	MsgNotFoundTLSConfig                  = ffe("FF10455", "Provided TLS Config name '%s' not found for namespace '%s'", 400)
 	MsgSQLInsertManyOutsideTransaction    = ffe("FF10456", "Attempt to perform insert many outside of a transaction", 500)
+	MsgUnexpectedInterfaceType            = ffe("FF10457", "Unexpected interface type: %T", 500)
 )

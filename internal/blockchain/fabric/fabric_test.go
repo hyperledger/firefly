@@ -2400,7 +2400,9 @@ func TestInvokeContractOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 	var errors []*fftypes.FFIError
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.NoError(t, err)
 }
 
@@ -2438,7 +2440,9 @@ func TestInvokeContractWithBatchOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, nil, nil, nil, batch)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, nil)
+	assert.NoError(t, err)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, nil, nil, batch)
 	assert.NoError(t, err)
 }
 
@@ -2503,7 +2507,9 @@ func TestInvokeContractBadSchema(t *testing.T) {
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	var errors []*fftypes.FFIError
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -2526,7 +2532,9 @@ func TestInvokeContractInvalidOption(t *testing.T) {
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	var errors []*fftypes.FFIError
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF10398", err)
 }
 
@@ -2544,7 +2552,9 @@ func TestInvokeContractChaincodeNotSet(t *testing.T) {
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	var errors []*fftypes.FFIError
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -2571,7 +2581,9 @@ func TestInvokeContractFabconnectError(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
 	var errors []*fftypes.FFIError
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF10284", err)
 }
 
@@ -2608,7 +2620,9 @@ func TestQueryContractOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, &fabQueryNamedOutput{})(req)
 		})
 	var errors []*fftypes.FFIError
-	_, err = e.QueryContract(context.Background(), signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	_, err = e.QueryContract(context.Background(), signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options)
 	assert.NoError(t, err)
 }
 
@@ -2631,7 +2645,9 @@ func TestQueryContractInputNotJSON(t *testing.T) {
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	var errors []*fftypes.FFIError
-	_, err = e.QueryContract(context.Background(), "", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	_, err = e.QueryContract(context.Background(), "", fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -2649,7 +2665,9 @@ func TestQueryContractBadLocation(t *testing.T) {
 	}
 	options := map[string]interface{}{}
 	var errors []*fftypes.FFIError
-	_, err := e.QueryContract(context.Background(), "", fftypes.JSONAnyPtr(`{"validLocation": false}`), method, params, errors, options)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	_, err = e.QueryContract(context.Background(), "", fftypes.JSONAnyPtr(`{"validLocation": false}`), parsedMethod, params, options)
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -2675,7 +2693,9 @@ func TestQueryContractFabconnectError(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(400, &fabQueryNamedOutput{})(req)
 		})
 	var errors []*fftypes.FFIError
-	_, err = e.QueryContract(context.Background(), "", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	_, err = e.QueryContract(context.Background(), "", fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options)
 	assert.Regexp(t, "FF10284", err)
 }
 
@@ -2707,7 +2727,9 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
 	var errors []*fftypes.FFIError
-	_, err = e.QueryContract(context.Background(), "", fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	_, err = e.QueryContract(context.Background(), "", fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options)
 	assert.Regexp(t, "invalid character", err)
 }
 
@@ -2771,7 +2793,9 @@ func TestInvokeJSONEncodeParamsError(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
 	var errors []*fftypes.FFIError
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, errors, options, nil)
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -3292,6 +3316,24 @@ func TestValidateInvokeRequest(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 
-	err := e.ValidateInvokeRequest(context.Background(), nil, nil, nil, false)
+	err := e.ValidateInvokeRequest(context.Background(), &ffiMethodAndErrors{
+		method: &fftypes.FFIMethod{},
+	}, nil, false)
 	assert.NoError(t, err)
+}
+
+func TestInvokeContractBadFFI(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	err := e.InvokeContract(context.Background(), "", "", nil, nil, nil, nil, nil)
+	assert.Regexp(t, "FF10457", err)
+}
+
+func TestQueryContractBadFFI(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	_, err := e.QueryContract(context.Background(), "", nil, nil, nil, nil)
+	assert.Regexp(t, "FF10457", err)
 }

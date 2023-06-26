@@ -8,5 +8,7 @@
 /smart_contracts/ethereum/solidity_firefly/cache
 /firefly
 /firefly-nocgo
+/docs/vendor
+/docs/_site
 coverage.txt
 codecov.yml
