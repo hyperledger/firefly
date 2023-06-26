@@ -27,155 +27,155 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|defaultFilterLimit|The maximum number of rows to return if no limit is specified on an API request|`int`|`<nil>`
-|maxFilterLimit|The largest value of `limit` that an HTTP client can specify in a request|`int`|`<nil>`
-|passthroughHeaders|A list of HTTP request headers to pass through to dependency microservices|`[]string`|`<nil>`
-|requestMaxTimeout|The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|defaultFilterLimit|The maximum number of rows to return if no limit is specified on an API request|`int`|`25`
+|maxFilterLimit|The largest value of `limit` that an HTTP client can specify in a request|`int`|`1000`
+|passthroughHeaders|A list of HTTP request headers to pass through to dependency microservices|`[]string`|`[]`
+|requestMaxTimeout|The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10m`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`120s`
 
 ## asset.manager
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|keyNormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keyNormalization)|`string`|`<nil>`
+|keyNormalization|Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keyNormalization)|`string`|`blockchain_plugin`
 
 ## batch.manager
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|minimumPollDelay|The minimum time the batch manager waits between polls on the DB - to prevent thrashing|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|pollTimeout|How long to wait without any notifications of new messages before doing a page query|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|readPageSize|The size of each page of messages read from the database into memory when assembling batches|`int`|`<nil>`
+|minimumPollDelay|The minimum time the batch manager waits between polls on the DB - to prevent thrashing|[`time.Duration`](https://pkg.go.dev/time#Duration)|`100ms`
+|pollTimeout|How long to wait without any notifications of new messages before doing a page query|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|readPageSize|The size of each page of messages read from the database into memory when assembling batches|`int`|`100`
 
 ## batch.retry
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`float32`|`<nil>`
-|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|factor|The retry backoff factor|`float32`|`2`
+|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
 ## blobreceiver.retry
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`float32`|`<nil>`
-|initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|factor|The retry backoff factor|`float32`|`2`
+|initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
 
 ## blobreceiver.worker
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchMaxInserts|The maximum number of items the blob receiver worker will insert in a batch|`int`|`<nil>`
-|batchTimeout|The maximum amount of the the blob receiver worker will wait|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|count|The number of blob receiver workers|`int`|`<nil>`
+|batchMaxInserts|The maximum number of items the blob receiver worker will insert in a batch|`int`|`200`
+|batchTimeout|The maximum amount of the the blob receiver worker will wait|[`time.Duration`](https://pkg.go.dev/time#Duration)|`50ms`
+|count|The number of blob receiver workers|`int`|`5`
 
 ## broadcast.batch
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|agentTimeout|How long to keep around a batching agent for a sending identity before disposal|`string`|`<nil>`
-|payloadLimit|The maximum payload size of a batch for broadcast messages|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|size|The maximum number of messages that can be packed into a batch|`int`|`<nil>`
-|timeout|The timeout to wait for a batch to fill, before sending|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|agentTimeout|How long to keep around a batching agent for a sending identity before disposal|`string`|`2m`
+|payloadLimit|The maximum payload size of a batch for broadcast messages|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`800Kb`
+|size|The maximum number of messages that can be packed into a batch|`int`|`200`
+|timeout|The timeout to wait for a batch to fill, before sending|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
 
 ## cache
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|enabled|Enables caching, defaults to true|`boolean`|`<nil>`
+|enabled|Enables caching, defaults to true|`boolean`|`true`
 
 ## cache.addressresolver
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached items for address resolver|`int`|`<nil>`
-|ttl|Time to live of cached items for address resolver|`string`|`<nil>`
+|limit|Max number of cached items for address resolver|`int`|`1000`
+|ttl|Time to live of cached items for address resolver|`string`|`24h`
 
 ## cache.batch
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached items for batches|`int`|`<nil>`
-|ttl|Time to live of cache items for batches|`string`|`<nil>`
+|limit|Max number of cached items for batches|`int`|`100`
+|ttl|Time to live of cache items for batches|`string`|`5m`
 
 ## cache.blockchain
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached items for blockchain|`int`|`<nil>`
-|ttl|Time to live of cached items for blockchain|`string`|`<nil>`
+|limit|Max number of cached items for blockchain|`int`|`100`
+|ttl|Time to live of cached items for blockchain|`string`|`5m`
 
 ## cache.blockchainevent
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached blockchain events for transactions|`int`|`<nil>`
-|ttl|Time to live of cached blockchain events for transactions|`string`|`<nil>`
+|limit|Max number of cached blockchain events for transactions|`int`|`1000`
+|ttl|Time to live of cached blockchain events for transactions|`string`|`5m`
 
 ## cache.eventlistenertopic
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached items for blockchain listener topics|`int`|`<nil>`
-|ttl|Time to live of cached items for blockchain listener topics|`string`|`<nil>`
+|limit|Max number of cached items for blockchain listener topics|`int`|`100`
+|ttl|Time to live of cached items for blockchain listener topics|`string`|`5m`
 
 ## cache.group
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached items for groups|`int`|`<nil>`
-|ttl|Time to live of cached items for groups|`string`|`<nil>`
+|limit|Max number of cached items for groups|`int`|`50`
+|ttl|Time to live of cached items for groups|`string`|`1h`
 
 ## cache.identity
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached identities for identity manager|`int`|`<nil>`
-|ttl|Time to live of cached identities for identity manager|`string`|`<nil>`
+|limit|Max number of cached identities for identity manager|`int`|`100`
+|ttl|Time to live of cached identities for identity manager|`string`|`1h`
 
 ## cache.message
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|Max size of cached messages for data manager|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|ttl|Time to live of cached messages for data manager|`string`|`<nil>`
+|size|Max size of cached messages for data manager|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`50Mb`
+|ttl|Time to live of cached messages for data manager|`string`|`5m`
 
 ## cache.methods
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached items for schema validations on blockchain methods|`int`|`<nil>`
-|ttl|Time to live of cached items for schema validations on blockchain methods|`string`|`<nil>`
+|limit|Max number of cached items for schema validations on blockchain methods|`int`|`200`
+|ttl|Time to live of cached items for schema validations on blockchain methods|`string`|`5m`
 
 ## cache.operations
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached items for operations|`int`|`<nil>`
-|ttl|Time to live of cached items for operations|`string`|`<nil>`
+|limit|Max number of cached items for operations|`int`|`1000`
+|ttl|Time to live of cached items for operations|`string`|`5m`
 
 ## cache.tokenpool
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|limit|Max number of cached items for token pools|`int`|`<nil>`
-|ttl|Time to live of cached items for token pool|`string`|`<nil>`
+|limit|Max number of cached items for token pools|`int`|`100`
+|ttl|Time to live of cached items for token pool|`string`|`1h`
 
 ## cache.transaction
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|Max size of cached transactions|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|ttl|Time to live of cached transactions|`string`|`<nil>`
+|size|Max size of cached transactions|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`1Mb`
+|ttl|Time to live of cached transactions|`string`|`5m`
 
 ## cache.validator
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|Max size of cached validators for data manager|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|ttl|Time to live of cached validators for data manager|`string`|`<nil>`
+|size|Max size of cached validators for data manager|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`1Mb`
+|ttl|Time to live of cached validators for data manager|`string`|`1h`
 
 ## config
 
@@ -199,58 +199,58 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|address|The HTTP interface the go debugger binds to|`string`|`<nil>`
-|port|An HTTP port on which to enable the go debugger|`int`|`<nil>`
+|address|The HTTP interface the go debugger binds to|`string`|`localhost`
+|port|An HTTP port on which to enable the go debugger|`int`|`-1`
 
 ## download.retry
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`float32`|`<nil>`
-|initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxAttempts|The maximum number attempts|`int`|`<nil>`
-|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|factor|The retry backoff factor|`float32`|`2`
+|initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`100ms`
+|maxAttempts|The maximum number attempts|`int`|`100`
+|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
 
 ## download.worker
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|count|The number of download workers|`int`|`<nil>`
+|count|The number of download workers|`int`|`10`
 |queueLength|The length of the work queue in the channel to the workers - defaults to 2x the worker count|`int`|`<nil>`
 
 ## event.aggregator
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchSize|The maximum number of records to read from the DB before performing an aggregation run|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|batchTimeout|How long to wait for new events to arrive before performing aggregation on a page of events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|firstEvent|The first event the aggregator should process, if no previous offest is stored in the DB. Valid options are `oldest` or `newest`|`string`|`<nil>`
-|pollTimeout|The time to wait without a notification of new events, before trying a select on the table|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|rewindQueryLimit|Safety limit on the maximum number of records to search when performing queries to search for rewinds|`int`|`<nil>`
-|rewindQueueLength|The size of the queue into the rewind dispatcher|`int`|`<nil>`
-|rewindTimeout|The minimum time to wait for rewinds to accumulate before resolving them|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|batchSize|The maximum number of records to read from the DB before performing an aggregation run|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`200`
+|batchTimeout|How long to wait for new events to arrive before performing aggregation on a page of events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|firstEvent|The first event the aggregator should process, if no previous offest is stored in the DB. Valid options are `oldest` or `newest`|`string`|`oldest`
+|pollTimeout|The time to wait without a notification of new events, before trying a select on the table|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|rewindQueryLimit|Safety limit on the maximum number of records to search when performing queries to search for rewinds|`int`|`1000`
+|rewindQueueLength|The size of the queue into the rewind dispatcher|`int`|`10`
+|rewindTimeout|The minimum time to wait for rewinds to accumulate before resolving them|[`time.Duration`](https://pkg.go.dev/time#Duration)|`50ms`
 
 ## event.aggregator.retry
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`float32`|`<nil>`
-|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|factor|The retry backoff factor|`float32`|`2`
+|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`100ms`
+|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
 ## event.dbevents
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|bufferSize|The size of the buffer of change events|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|bufferSize|The size of the buffer of change events|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`100`
 
 ## event.dispatcher
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchTimeout|A short time to wait for new events to arrive before re-polling for new events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|bufferLength|The number of events + attachments an individual dispatcher should hold in memory ready for delivery to the subscription|`int`|`<nil>`
-|pollTimeout|The time to wait without a notification of new events, before trying a select on the table|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|batchTimeout|A short time to wait for new events to arrive before re-polling for new events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|bufferLength|The number of events + attachments an individual dispatcher should hold in memory ready for delivery to the subscription|`int`|`5`
+|pollTimeout|The time to wait without a notification of new events, before trying a select on the table|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
 ## event.dispatcher.retry
 
@@ -264,8 +264,8 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|default|The default event transport for new subscriptions|`string`|`<nil>`
-|enabled|Which event interface plugins are enabled|`boolean`|`<nil>`
+|default|The default event transport for new subscriptions|`string`|`websockets`
+|enabled|Which event interface plugins are enabled|`boolean`|`[websockets webhooks]`
 
 ## events.webhooks
 
@@ -324,7 +324,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|maxChartRows|The maximum rows to fetch for each histogram bucket|`int`|`<nil>`
+|maxChartRows|The maximum rows to fetch for each histogram bucket|`int`|`100`
 
 ## http
 
@@ -366,39 +366,39 @@ nav_order: 2
 |---|-----------|----|-------------|
 |compress|Determines if the rotated log files should be compressed using gzip|`boolean`|`<nil>`
 |filename|Filename is the file to write logs to.  Backup log files will be retained in the same directory|`string`|`<nil>`
-|filesize|MaxSize is the maximum size the log file before it gets rotated|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|filesize|MaxSize is the maximum size the log file before it gets rotated|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`100m`
 |forceColor|Force color to be enabled, even when a non-TTY output is detected|`boolean`|`<nil>`
-|includeCodeInfo|Enables the report caller for including the calling file and line number, and the calling function. If using text logs, it uses the logrus text format rather than the default prefix format.|`boolean`|`<nil>`
-|level|The log level - error, warn, info, debug, trace|`string`|`<nil>`
-|maxAge|The maximum time to retain old log files based on the timestamp encoded in their filename|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxBackups|Maximum number of old log files to retain|`int`|`<nil>`
+|includeCodeInfo|Enables the report caller for including the calling file and line number, and the calling function. If using text logs, it uses the logrus text format rather than the default prefix format.|`boolean`|`false`
+|level|The log level - error, warn, info, debug, trace|`string`|`info`
+|maxAge|The maximum time to retain old log files based on the timestamp encoded in their filename|[`time.Duration`](https://pkg.go.dev/time#Duration)|`24h`
+|maxBackups|Maximum number of old log files to retain|`int`|`2`
 |noColor|Force color to be disabled, event when TTY output is detected|`boolean`|`<nil>`
-|timeFormat|Custom time format for logs|[Time format](https://pkg.go.dev/time#pkg-constants) `string`|`<nil>`
-|utc|Use UTC timestamps for logs|`boolean`|`<nil>`
+|timeFormat|Custom time format for logs|[Time format](https://pkg.go.dev/time#pkg-constants) `string`|`2006-01-02T15:04:05.000Z07:00`
+|utc|Use UTC timestamps for logs|`boolean`|`false`
 
 ## log.json
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|enabled|Enables JSON formatted logs rather than text. All log color settings are ignored when enabled.|`boolean`|`<nil>`
+|enabled|Enables JSON formatted logs rather than text. All log color settings are ignored when enabled.|`boolean`|`false`
 
 ## log.json.fields
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|file|configures the JSON key containing the calling file|`string`|`<nil>`
-|func|Configures the JSON key containing the calling function|`string`|`<nil>`
-|level|Configures the JSON key containing the log level|`string`|`<nil>`
-|message|Configures the JSON key containing the log message|`string`|`<nil>`
-|timestamp|Configures the JSON key containing the timestamp of the log|`string`|`<nil>`
+|file|configures the JSON key containing the calling file|`string`|`file`
+|func|Configures the JSON key containing the calling function|`string`|`func`
+|level|Configures the JSON key containing the log level|`string`|`level`
+|message|Configures the JSON key containing the log message|`string`|`message`
+|timestamp|Configures the JSON key containing the timestamp of the log|`string`|`@timestamp`
 
 ## message.writer
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchMaxInserts|The maximum number of database inserts to include when writing a single batch of messages + data|`int`|`<nil>`
-|batchTimeout|How long to wait for more messages to arrive before flushing the batch|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|count|The number of message writer workers|`int`|`<nil>`
+|batchMaxInserts|The maximum number of database inserts to include when writing a single batch of messages + data|`int`|`200`
+|batchTimeout|How long to wait for more messages to arrive before flushing the batch|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10ms`
+|count|The number of message writer workers|`int`|`5`
 
 ## metrics
 
@@ -440,7 +440,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|default|The default namespace - must be in the predefined list|`string`|`<nil>`
+|default|The default namespace - must be in the predefined list|`string`|`default`
 |predefined|A list of namespaces to ensure exists, without requiring a broadcast from the network|List `string`|`<nil>`
 
 ## namespaces.predefined[]
@@ -509,9 +509,9 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`float32`|`<nil>`
-|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|factor|The retry backoff factor|`float32`|`2`
+|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`5s`
+|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
 
 ## node
 
@@ -524,24 +524,24 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`float32`|`<nil>`
-|initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|factor|The retry backoff factor|`float32`|`2`
+|initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
 
 ## opupdate.worker
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchMaxInserts|The maximum number of database inserts to include when writing a single batch of messages + data|`int`|`<nil>`
-|batchTimeout|How long to wait for more messages to arrive before flushing the batch|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|count|The number of operation update works|`int`|`<nil>`
-|queueLength|The size of the queue for the Operation Update worker|`int`|`<nil>`
+|batchMaxInserts|The maximum number of database inserts to include when writing a single batch of messages + data|`int`|`200`
+|batchTimeout|How long to wait for more messages to arrive before flushing the batch|[`time.Duration`](https://pkg.go.dev/time#Duration)|`50ms`
+|count|The number of operation update works|`int`|`5`
+|queueLength|The size of the queue for the Operation Update worker|`int`|`50`
 
 ## orchestrator
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|startupAttempts|The number of times to attempt to connect to core infrastructure on startup|`string`|`<nil>`
+|startupAttempts|The number of times to attempt to connect to core infrastructure on startup|`string`|`5`
 
 ## org
 
@@ -1152,25 +1152,25 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|agentTimeout|How long to keep around a batching agent for a sending identity before disposal|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|payloadLimit|The maximum payload size of a private message Data Exchange payload|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|size|The maximum number of messages in a batch for private messages|`int`|`<nil>`
-|timeout|The timeout to wait for a batch to fill, before sending|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|agentTimeout|How long to keep around a batching agent for a sending identity before disposal|[`time.Duration`](https://pkg.go.dev/time#Duration)|`2m`
+|payloadLimit|The maximum payload size of a private message Data Exchange payload|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`800Kb`
+|size|The maximum number of messages in a batch for private messages|`int`|`200`
+|timeout|The timeout to wait for a batch to fill, before sending|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
 
 ## privatemessaging.retry
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`float32`|`<nil>`
-|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|factor|The retry backoff factor|`float32`|`2`
+|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`100ms`
+|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
 ## spi
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |address|The IP address on which the admin HTTP API should listen|IP Address `string`|`127.0.0.1`
-|enabled|Enables the admin HTTP API|`boolean`|`<nil>`
+|enabled|Enables the admin HTTP API|`boolean`|`false`
 |port|The port on which the admin HTTP API should listen|`int`|`5001`
 |publicURL|The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
@@ -1204,42 +1204,42 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|blockedWarnInterval|How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|eventQueueLength|Server-side queue length for events waiting for delivery over an admin change event listener websocket|`int`|`<nil>`
-|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|blockedWarnInterval|How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
+|eventQueueLength|Server-side queue length for events waiting for delivery over an admin change event listener websocket|`int`|`250`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 
 ## subscription
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|max|The maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)|`int`|`<nil>`
+|max|The maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)|`int`|`500`
 
 ## subscription.defaults
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchSize|Default read ahead to enable for subscriptions that do not explicitly configure readahead|`int`|`<nil>`
+|batchSize|Default read ahead to enable for subscriptions that do not explicitly configure readahead|`int`|`0`
 
 ## subscription.retry
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|factor|The retry backoff factor|`float32`|`<nil>`
-|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|factor|The retry backoff factor|`float32`|`2`
+|initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
 ## transaction.writer
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchMaxTransactions|The maximum number of transaction inserts to include in a batch|`int`|`<nil>`
-|batchTimeout|How long to wait for more transactions to arrive before flushing the batch|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|count|The number of message writer workers|`int`|`<nil>`
+|batchMaxTransactions|The maximum number of transaction inserts to include in a batch|`int`|`100`
+|batchTimeout|How long to wait for more transactions to arrive before flushing the batch|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10ms`
+|count|The number of message writer workers|`int`|`5`
 
 ## ui
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|enabled|Enables the web user interface|`boolean`|`<nil>`
+|enabled|Enables the web user interface|`boolean`|`true`
 |path|The file system path which contains the static HTML, CSS, and JavaScript files for the user interface|`string`|`<nil>`
