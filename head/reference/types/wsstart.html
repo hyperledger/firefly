@@ -308,6 +308,8 @@
   <li><a href="#blockchaineventfilter" id="markdown-toc-blockchaineventfilter">BlockchainEventFilter</a></li>
   <li><a href="#subscriptionoptions" id="markdown-toc-subscriptionoptions">SubscriptionOptions</a></li>
   <li><a href="#webhookinputoptions" id="markdown-toc-webhookinputoptions">WebhookInputOptions</a></li>
+  <li><a href="#webhookretryoptions" id="markdown-toc-webhookretryoptions">WebhookRetryOptions</a></li>
+  <li><a href="#webhookhttpoptions" id="markdown-toc-webhookhttpoptions">WebhookHTTPOptions</a></li>
 </ol><hr />
       <h2 id="wsstart-1">
         
@@ -648,6 +650,16 @@ subscription that lasts only for the duration that the connection is active.</p>
       <td>Webhooks only: A set of options to extract data from the first JSON input data in the incoming message. Only applies if withData=true</td>
       <td><a href="#webhookinputoptions"><code class="language-plaintext highlighter-rouge">WebhookInputOptions</code></a></td>
     </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">retry</code></td>
+      <td>Webhooks only: a set of options for retrying the webhook call</td>
+      <td><a href="#webhookretryoptions"><code class="language-plaintext highlighter-rouge">WebhookRetryOptions</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">httpOptions</code></td>
+      <td>Webhooks only: a set of options for HTTP</td>
+      <td><a href="#webhookhttpoptions"><code class="language-plaintext highlighter-rouge">WebhookHTTPOptions</code></a></td>
+    </tr>
   </tbody>
 </table>
       <h2 id="webhookinputoptions">
@@ -691,6 +703,96 @@ subscription that lasts only for the duration that the connection is active.</p>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">replytx</code></td>
       <td>A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose)</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="webhookretryoptions">
+        
+        
+          <a href="#webhookretryoptions" class="anchor-heading" aria-labelledby="webhookretryoptions"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> WebhookRetryOptions
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">enabled</code></td>
+      <td>Enables retry on HTTP calls, defaults to false</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">count</code></td>
+      <td>Number of times to retry the webhook call in case of failure</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">initialDelay</code></td>
+      <td>Initial delay between retries when we retry the webhook call</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">maxDelay</code></td>
+      <td>Max delay between retries when we retry the webhookcall</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="webhookhttpoptions">
+        
+        
+          <a href="#webhookhttpoptions" class="anchor-heading" aria-labelledby="webhookhttpoptions"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> WebhookHTTPOptions
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tlsHandshakeTimeout</code></td>
+      <td>The max duration to hold a TLS handshake alive</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">requestTimeout</code></td>
+      <td>The max duration to hold a TLS handshake alive</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">maxIdleConns</code></td>
+      <td>The max number of idle connections to hold pooled</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">idleTimeout</code></td>
+      <td>The max duration to hold a HTTP keepalive connection between calls</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">connectionTimeout</code></td>
+      <td> </td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">expectContinueTimeout</code></td>
+      <td>See <a href="https://pkg.go.dev/net/http#Transport">ExpectContinueTimeout in the Go docs</a></td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
   </tbody>
