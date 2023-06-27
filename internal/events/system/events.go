@@ -86,7 +86,7 @@ func (se *Events) Capabilities() *events.Capabilities {
 	return se.capabilities
 }
 
-func (se *Events) ValidateOptions(options *core.SubscriptionOptions) error {
+func (se *Events) ValidateOptions(ctx context.Context, options *core.SubscriptionOptions) error {
 	return nil
 }
 
@@ -111,7 +111,7 @@ func (se *Events) AddListener(ns string, el EventListener) error {
 	return nil
 }
 
-func (se *Events) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
+func (se *Events) DeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	se.mux.Lock()
 	defer se.mux.Unlock()
 	for ns, listeners := range se.listeners {

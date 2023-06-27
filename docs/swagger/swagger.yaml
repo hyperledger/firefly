@@ -27720,6 +27720,31 @@ paths:
                           description: 'Webhooks only: Static headers to set on the
                             webhook request'
                           type: object
+                        httpOptions:
+                          description: 'Webhooks only: a set of options for HTTP'
+                          properties:
+                            connectionTimeout:
+                              type: string
+                            expectContinueTimeout:
+                              description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                              type: string
+                            idleTimeout:
+                              description: The max duration to hold a HTTP keepalive
+                                connection between calls
+                              type: string
+                            maxIdleConns:
+                              description: The max number of idle connections to hold
+                                pooled
+                              type: integer
+                            requestTimeout:
+                              description: The max duration to hold a TLS handshake
+                                alive
+                              type: string
+                            tlsHandshakeTimeout:
+                              description: The max duration to hold a TLS handshake
+                                alive
+                              type: string
+                          type: object
                         input:
                           description: 'Webhooks only: A set of options to extract
                             data from the first JSON input data in the incoming message.
@@ -27786,6 +27811,27 @@ paths:
                           description: 'Webhooks only: The transaction type to set
                             on the reply message'
                           type: string
+                        retry:
+                          description: 'Webhooks only: a set of options for retrying
+                            the webhook call'
+                          properties:
+                            count:
+                              description: Number of times to retry the webhook call
+                                in case of failure
+                              type: integer
+                            enabled:
+                              description: Enables retry on HTTP calls, defaults to
+                                false
+                              type: boolean
+                            initialDelay:
+                              description: Initial delay between retries when we retry
+                                the webhook call
+                              type: string
+                            maxDelay:
+                              description: Max delay between retries when we retry
+                                the webhookcall
+                              type: string
+                          type: object
                         tlsConfigName:
                           description: The name of an existing TLS configuration associated
                             to the namespace to use
@@ -27945,6 +27991,29 @@ paths:
                       description: 'Webhooks only: Static headers to set on the webhook
                         request'
                       type: object
+                    httpOptions:
+                      description: 'Webhooks only: a set of options for HTTP'
+                      properties:
+                        connectionTimeout:
+                          type: string
+                        expectContinueTimeout:
+                          description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                          type: string
+                        idleTimeout:
+                          description: The max duration to hold a HTTP keepalive connection
+                            between calls
+                          type: string
+                        maxIdleConns:
+                          description: The max number of idle connections to hold
+                            pooled
+                          type: integer
+                        requestTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                        tlsHandshakeTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                      type: object
                     input:
                       description: 'Webhooks only: A set of options to extract data
                         from the first JSON input data in the incoming message. Only
@@ -28009,6 +28078,26 @@ paths:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
                       type: string
+                    retry:
+                      description: 'Webhooks only: a set of options for retrying the
+                        webhook call'
+                      properties:
+                        count:
+                          description: Number of times to retry the webhook call in
+                            case of failure
+                          type: integer
+                        enabled:
+                          description: Enables retry on HTTP calls, defaults to false
+                          type: boolean
+                        initialDelay:
+                          description: Initial delay between retries when we retry
+                            the webhook call
+                          type: string
+                        maxDelay:
+                          description: Max delay between retries when we retry the
+                            webhookcall
+                          type: string
+                      type: object
                     tlsConfigName:
                       description: The name of an existing TLS configuration associated
                         to the namespace to use
@@ -28155,6 +28244,31 @@ paths:
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
                         type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                        type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
                           from the first JSON input data in the incoming message.
@@ -28220,6 +28334,27 @@ paths:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
                         type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
                       tlsConfigName:
                         description: The name of an existing TLS configuration associated
                           to the namespace to use
@@ -28377,6 +28512,29 @@ paths:
                       description: 'Webhooks only: Static headers to set on the webhook
                         request'
                       type: object
+                    httpOptions:
+                      description: 'Webhooks only: a set of options for HTTP'
+                      properties:
+                        connectionTimeout:
+                          type: string
+                        expectContinueTimeout:
+                          description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                          type: string
+                        idleTimeout:
+                          description: The max duration to hold a HTTP keepalive connection
+                            between calls
+                          type: string
+                        maxIdleConns:
+                          description: The max number of idle connections to hold
+                            pooled
+                          type: integer
+                        requestTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                        tlsHandshakeTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                      type: object
                     input:
                       description: 'Webhooks only: A set of options to extract data
                         from the first JSON input data in the incoming message. Only
@@ -28441,6 +28599,26 @@ paths:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
                       type: string
+                    retry:
+                      description: 'Webhooks only: a set of options for retrying the
+                        webhook call'
+                      properties:
+                        count:
+                          description: Number of times to retry the webhook call in
+                            case of failure
+                          type: integer
+                        enabled:
+                          description: Enables retry on HTTP calls, defaults to false
+                          type: boolean
+                        initialDelay:
+                          description: Initial delay between retries when we retry
+                            the webhook call
+                          type: string
+                        maxDelay:
+                          description: Max delay between retries when we retry the
+                            webhookcall
+                          type: string
+                      type: object
                     tlsConfigName:
                       description: The name of an existing TLS configuration associated
                         to the namespace to use
@@ -28587,6 +28765,31 @@ paths:
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
                         type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                        type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
                           from the first JSON input data in the incoming message.
@@ -28652,6 +28855,27 @@ paths:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
                         type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
                       tlsConfigName:
                         description: The name of an existing TLS configuration associated
                           to the namespace to use
@@ -28871,6 +29095,31 @@ paths:
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
                         type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                        type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
                           from the first JSON input data in the incoming message.
@@ -28936,6 +29185,27 @@ paths:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
                         type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
                       tlsConfigName:
                         description: The name of an existing TLS configuration associated
                           to the namespace to use
@@ -36293,6 +36563,31 @@ paths:
                           description: 'Webhooks only: Static headers to set on the
                             webhook request'
                           type: object
+                        httpOptions:
+                          description: 'Webhooks only: a set of options for HTTP'
+                          properties:
+                            connectionTimeout:
+                              type: string
+                            expectContinueTimeout:
+                              description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                              type: string
+                            idleTimeout:
+                              description: The max duration to hold a HTTP keepalive
+                                connection between calls
+                              type: string
+                            maxIdleConns:
+                              description: The max number of idle connections to hold
+                                pooled
+                              type: integer
+                            requestTimeout:
+                              description: The max duration to hold a TLS handshake
+                                alive
+                              type: string
+                            tlsHandshakeTimeout:
+                              description: The max duration to hold a TLS handshake
+                                alive
+                              type: string
+                          type: object
                         input:
                           description: 'Webhooks only: A set of options to extract
                             data from the first JSON input data in the incoming message.
@@ -36359,6 +36654,27 @@ paths:
                           description: 'Webhooks only: The transaction type to set
                             on the reply message'
                           type: string
+                        retry:
+                          description: 'Webhooks only: a set of options for retrying
+                            the webhook call'
+                          properties:
+                            count:
+                              description: Number of times to retry the webhook call
+                                in case of failure
+                              type: integer
+                            enabled:
+                              description: Enables retry on HTTP calls, defaults to
+                                false
+                              type: boolean
+                            initialDelay:
+                              description: Initial delay between retries when we retry
+                                the webhook call
+                              type: string
+                            maxDelay:
+                              description: Max delay between retries when we retry
+                                the webhookcall
+                              type: string
+                          type: object
                         tlsConfigName:
                           description: The name of an existing TLS configuration associated
                             to the namespace to use
@@ -36511,6 +36827,29 @@ paths:
                       description: 'Webhooks only: Static headers to set on the webhook
                         request'
                       type: object
+                    httpOptions:
+                      description: 'Webhooks only: a set of options for HTTP'
+                      properties:
+                        connectionTimeout:
+                          type: string
+                        expectContinueTimeout:
+                          description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                          type: string
+                        idleTimeout:
+                          description: The max duration to hold a HTTP keepalive connection
+                            between calls
+                          type: string
+                        maxIdleConns:
+                          description: The max number of idle connections to hold
+                            pooled
+                          type: integer
+                        requestTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                        tlsHandshakeTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                      type: object
                     input:
                       description: 'Webhooks only: A set of options to extract data
                         from the first JSON input data in the incoming message. Only
@@ -36575,6 +36914,26 @@ paths:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
                       type: string
+                    retry:
+                      description: 'Webhooks only: a set of options for retrying the
+                        webhook call'
+                      properties:
+                        count:
+                          description: Number of times to retry the webhook call in
+                            case of failure
+                          type: integer
+                        enabled:
+                          description: Enables retry on HTTP calls, defaults to false
+                          type: boolean
+                        initialDelay:
+                          description: Initial delay between retries when we retry
+                            the webhook call
+                          type: string
+                        maxDelay:
+                          description: Max delay between retries when we retry the
+                            webhookcall
+                          type: string
+                      type: object
                     tlsConfigName:
                       description: The name of an existing TLS configuration associated
                         to the namespace to use
@@ -36721,6 +37080,31 @@ paths:
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
                         type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                        type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
                           from the first JSON input data in the incoming message.
@@ -36786,6 +37170,27 @@ paths:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
                         type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
                       tlsConfigName:
                         description: The name of an existing TLS configuration associated
                           to the namespace to use
@@ -36936,6 +37341,29 @@ paths:
                       description: 'Webhooks only: Static headers to set on the webhook
                         request'
                       type: object
+                    httpOptions:
+                      description: 'Webhooks only: a set of options for HTTP'
+                      properties:
+                        connectionTimeout:
+                          type: string
+                        expectContinueTimeout:
+                          description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                          type: string
+                        idleTimeout:
+                          description: The max duration to hold a HTTP keepalive connection
+                            between calls
+                          type: string
+                        maxIdleConns:
+                          description: The max number of idle connections to hold
+                            pooled
+                          type: integer
+                        requestTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                        tlsHandshakeTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                      type: object
                     input:
                       description: 'Webhooks only: A set of options to extract data
                         from the first JSON input data in the incoming message. Only
@@ -37000,6 +37428,26 @@ paths:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
                       type: string
+                    retry:
+                      description: 'Webhooks only: a set of options for retrying the
+                        webhook call'
+                      properties:
+                        count:
+                          description: Number of times to retry the webhook call in
+                            case of failure
+                          type: integer
+                        enabled:
+                          description: Enables retry on HTTP calls, defaults to false
+                          type: boolean
+                        initialDelay:
+                          description: Initial delay between retries when we retry
+                            the webhook call
+                          type: string
+                        maxDelay:
+                          description: Max delay between retries when we retry the
+                            webhookcall
+                          type: string
+                      type: object
                     tlsConfigName:
                       description: The name of an existing TLS configuration associated
                         to the namespace to use
@@ -37146,6 +37594,31 @@ paths:
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
                         type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                        type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
                           from the first JSON input data in the incoming message.
@@ -37211,6 +37684,27 @@ paths:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
                         type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
                       tlsConfigName:
                         description: The name of an existing TLS configuration associated
                           to the namespace to use
@@ -37416,6 +37910,31 @@ paths:
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
                         type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                        type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
                           from the first JSON input data in the incoming message.
@@ -37481,6 +38000,27 @@ paths:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
                         type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
                       tlsConfigName:
                         description: The name of an existing TLS configuration associated
                           to the namespace to use

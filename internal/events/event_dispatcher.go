@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -379,7 +379,7 @@ func (ed *eventDispatcher) deliverEvents() {
 				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
 			}
 			if err == nil {
-				err = ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event, data)
+				err = ed.transport.DeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, event, data)
 			}
 			if err != nil {
 				ed.deliveryResponse(&core.EventDeliveryResponse{ID: event.ID, Rejected: true})
