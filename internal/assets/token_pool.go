@@ -211,6 +211,15 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 	return pool, nil
 }
 
+func (am *assetManager) removeTokenPoolFromCache(ctx context.Context, pool *core.TokenPool) {
+	cacheKeyName := fmt.Sprintf("ns=%s,poolnameorid=%s", am.namespace, pool.Name)
+	cacheKeyID := fmt.Sprintf("ns=%s,poolnameorid=%s", am.namespace, pool.ID)
+	cacheKeyLocator := fmt.Sprintf("ns=%s,connector=%s,poollocator=%s", am.namespace, pool.Connector, pool.Locator)
+	am.cache.Delete(cacheKeyName)
+	am.cache.Delete(cacheKeyID)
+	am.cache.Delete(cacheKeyLocator)
+}
+
 func (am *assetManager) GetTokenPoolByID(ctx context.Context, poolID *fftypes.UUID) (*core.TokenPool, error) {
 	return am.database.GetTokenPoolByID(ctx, am.namespace, poolID)
 }
@@ -240,6 +249,7 @@ func (am *assetManager) DeleteTokenPool(ctx context.Context, poolNameOrID string
 		if err != nil {
 			return err
 		}
+		am.removeTokenPoolFromCache(ctx, pool)
 		if err = am.database.DeleteTokenPool(ctx, am.namespace, pool.ID); err != nil {
 			return err
 		}

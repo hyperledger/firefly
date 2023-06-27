@@ -113,6 +113,8 @@ type CInterface interface {
 
 	GetInt(key string) int
 	SetInt(key string, val int)
+
+	Delete(key string) bool
 }
 
 type CCache struct {
@@ -130,6 +132,7 @@ func (c *CCache) Set(key string, val interface{}) {
 	}
 	c.cache.Set(c.name+":"+key, val, c.cacheTTL)
 }
+
 func (c *CCache) Get(key string) interface{} {
 	if !c.enabled {
 		return nil
@@ -163,6 +166,10 @@ func (c *CCache) GetInt(key string) int {
 		return c.Get(key).(int)
 	}
 	return 0
+}
+
+func (c *CCache) Delete(key string) bool {
+	return c.cache.Delete(key)
 }
 
 type cacheManager struct {
