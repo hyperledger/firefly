@@ -125,7 +125,7 @@ nav_order: 23
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `enabled` | A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose) | `bool` |
+| `enabled` | Enables retry on HTTP calls, defaults to false | `bool` |
 | `count` | Number of times to retry the webhook call in case of failure | `int` |
 | `initialDelay` | Initial delay between retries when we retry the webhook call | `string` |
 | `maxDelay` | Max delay between retries when we retry the webhookcall | `string` |

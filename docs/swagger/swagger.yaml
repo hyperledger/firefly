@@ -27820,9 +27820,8 @@ paths:
                                 in case of failure
                               type: integer
                             enabled:
-                              description: A top-level property of the first data
-                                input, to use to dynamically set whether to pin the
-                                response (so the requester can choose)
+                              description: Enables retry on HTTP calls, defaults to
+                                false
                               type: boolean
                             initialDelay:
                               description: Initial delay between retries when we retry
@@ -28088,9 +28087,7 @@ paths:
                             case of failure
                           type: integer
                         enabled:
-                          description: A top-level property of the first data input,
-                            to use to dynamically set whether to pin the response
-                            (so the requester can choose)
+                          description: Enables retry on HTTP calls, defaults to false
                           type: boolean
                         initialDelay:
                           description: Initial delay between retries when we retry
@@ -28346,9 +28343,8 @@ paths:
                               in case of failure
                             type: integer
                           enabled:
-                            description: A top-level property of the first data input,
-                              to use to dynamically set whether to pin the response
-                              (so the requester can choose)
+                            description: Enables retry on HTTP calls, defaults to
+                              false
                             type: boolean
                           initialDelay:
                             description: Initial delay between retries when we retry
@@ -28612,9 +28608,7 @@ paths:
                             case of failure
                           type: integer
                         enabled:
-                          description: A top-level property of the first data input,
-                            to use to dynamically set whether to pin the response
-                            (so the requester can choose)
+                          description: Enables retry on HTTP calls, defaults to false
                           type: boolean
                         initialDelay:
                           description: Initial delay between retries when we retry
@@ -28870,9 +28864,8 @@ paths:
                               in case of failure
                             type: integer
                           enabled:
-                            description: A top-level property of the first data input,
-                              to use to dynamically set whether to pin the response
-                              (so the requester can choose)
+                            description: Enables retry on HTTP calls, defaults to
+                              false
                             type: boolean
                           initialDelay:
                             description: Initial delay between retries when we retry
@@ -29201,9 +29194,8 @@ paths:
                               in case of failure
                             type: integer
                           enabled:
-                            description: A top-level property of the first data input,
-                              to use to dynamically set whether to pin the response
-                              (so the requester can choose)
+                            description: Enables retry on HTTP calls, defaults to
+                              false
                             type: boolean
                           initialDelay:
                             description: Initial delay between retries when we retry
@@ -36671,9 +36663,8 @@ paths:
                                 in case of failure
                               type: integer
                             enabled:
-                              description: A top-level property of the first data
-                                input, to use to dynamically set whether to pin the
-                                response (so the requester can choose)
+                              description: Enables retry on HTTP calls, defaults to
+                                false
                               type: boolean
                             initialDelay:
                               description: Initial delay between retries when we retry
@@ -36932,9 +36923,7 @@ paths:
                             case of failure
                           type: integer
                         enabled:
-                          description: A top-level property of the first data input,
-                            to use to dynamically set whether to pin the response
-                            (so the requester can choose)
+                          description: Enables retry on HTTP calls, defaults to false
                           type: boolean
                         initialDelay:
                           description: Initial delay between retries when we retry
@@ -37190,9 +37179,8 @@ paths:
                               in case of failure
                             type: integer
                           enabled:
-                            description: A top-level property of the first data input,
-                              to use to dynamically set whether to pin the response
-                              (so the requester can choose)
+                            description: Enables retry on HTTP calls, defaults to
+                              false
                             type: boolean
                           initialDelay:
                             description: Initial delay between retries when we retry
@@ -37449,9 +37437,7 @@ paths:
                             case of failure
                           type: integer
                         enabled:
-                          description: A top-level property of the first data input,
-                            to use to dynamically set whether to pin the response
-                            (so the requester can choose)
+                          description: Enables retry on HTTP calls, defaults to false
                           type: boolean
                         initialDelay:
                           description: Initial delay between retries when we retry
@@ -37707,9 +37693,8 @@ paths:
                               in case of failure
                             type: integer
                           enabled:
-                            description: A top-level property of the first data input,
-                              to use to dynamically set whether to pin the response
-                              (so the requester can choose)
+                            description: Enables retry on HTTP calls, defaults to
+                              false
                             type: boolean
                           initialDelay:
                             description: Initial delay between retries when we retry
@@ -38024,9 +38009,8 @@ paths:
                               in case of failure
                             type: integer
                           enabled:
-                            description: A top-level property of the first data input,
-                              to use to dynamically set whether to pin the response
-                              (so the requester can choose)
+                            description: Enables retry on HTTP calls, defaults to
+                              false
                             type: boolean
                           initialDelay:
                             description: Initial delay between retries when we retry
