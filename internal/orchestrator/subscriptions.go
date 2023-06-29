@@ -18,6 +18,7 @@ package orchestrator
 
 import (
 	"context"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -54,6 +55,13 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, subDef *co
 		}
 
 		subDef.Options.TLSConfig = or.namespace.TLSConfigs[subDef.Options.TLSConfigName]
+	}
+
+	if subDef.Options.BatchTimeout != "" {
+		_, err := fftypes.ParseDurationString(subDef.Options.BatchTimeout, time.Millisecond)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return subDef, or.events.CreateUpdateDurableSubscription(ctx, subDef, mustNew)

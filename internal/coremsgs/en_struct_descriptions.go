@@ -537,9 +537,11 @@ var (
 	SubscriptionBlockchainEventFilterListener = ffm("SubscriptionBlockchainEventFilter.listener", "Regular expression to apply to the blockchain event 'listener' field, which is the UUID of the event listener. So you can restrict your subscription to certain blockchain listeners. Alternatively to avoid your application need to know listener UUIDs you can set the 'topic' field of blockchain event listeners, and use a topic filter on your subscriptions")
 
 	// SubscriptionCoreOptions field descriptions
-	SubscriptionCoreOptionsFirstEvent = ffm("SubscriptionCoreOptions.firstEvent", "Whether your application would like to receive events from the 'oldest' event emitted by your FireFly node (from the beginning of time), or the 'newest' event (from now), or a specific event sequence. Default is 'newest'")
-	SubscriptionCoreOptionsReadAhead  = ffm("SubscriptionCoreOptions.readAhead", "The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts")
-	SubscriptionCoreOptionsWithData   = ffm("SubscriptionCoreOptions.withData", "Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data. May not be supported on some transports.")
+	SubscriptionCoreOptionsFirstEvent   = ffm("SubscriptionCoreOptions.firstEvent", "Whether your application would like to receive events from the 'oldest' event emitted by your FireFly node (from the beginning of time), or the 'newest' event (from now), or a specific event sequence. Default is 'newest'")
+	SubscriptionCoreOptionsReadAhead    = ffm("SubscriptionCoreOptions.readAhead", "The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts")
+	SubscriptionCoreOptionsWithData     = ffm("SubscriptionCoreOptions.withData", "Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data. May not be supported on some transports.")
+	SubscriptionCoreOptionsBatch        = ffm("SubscriptionCoreOptions.batch", "Enable batching. Works in conjunction with readAhead which defines the batchSize.")
+	SubscriptionCoreOptionsBatchTimeout = ffm("SubscriptionCoreOptions.batchTimeout", "When batching is enabled, the optional timeout to send events even when the batch hasn't filled.")
 
 	// TokenApproval field descriptions
 	TokenApprovalLocalID         = ffm("TokenApproval.localId", "The UUID of this token approval, in the local FireFly node")
@@ -706,7 +708,7 @@ var (
 	WebhookOptHTTPExpectContinueTimeout = ffm("WebhookHTTPOptions.expectContinueTimeout", "See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)")
 	WebhookOptHTTPIdleTimeout           = ffm("WebhookHTTPOptions.idleTimeout", "The max duration to hold a HTTP keepalive connection between calls")
 	WebhookOptHTTPMaxIdleConns          = ffm("WebhookHTTPOptions.maxIdleConns", "The max number of idle connections to hold pooled")
-	WebhookOptHTTPConnectionTimeout     = ffm("WebhookHTTPOptions.connectionTimeout", "")
+	WebhookOptHTTPConnectionTimeout     = ffm("WebhookHTTPOptions.connectionTimeout", "The maximum amount of time that a connection is allowed to remain with no data transmitted.")
 	WebhookOptHTTPTLSHandshakeTimeout   = ffm("WebhookHTTPOptions.tlsHandshakeTimeout", "The max duration to hold a TLS handshake alive")
 	WebhookOptHTTPRequestTimeout        = ffm("WebhookHTTPOptions.requestTimeout", "The max duration to hold a TLS handshake alive")
 

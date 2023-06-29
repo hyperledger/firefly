@@ -1064,3 +1064,55 @@ func TestEventDispatcherWithReply(t *testing.T) {
 	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
+
+func TestEventDeliveryBatch(t *testing.T) {
+	log.SetLevel("debug")
+	var five = uint16(5)
+	sub := &subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &core.Subscription{
+			SubscriptionRef: core.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+			Options: core.SubscriptionOptions{
+				SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+					ReadAhead: &five,
+					Batch:     true,
+				},
+			},
+		},
+		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", core.EventTypeMessageConfirmed, core.EventTypeMessageConfirmed)),
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	cancel()
+	ed.acksNacks = make(chan ackNack, 5)
+
+	event1 := fftypes.NewUUID()
+	ed.inflight[*event1] = &core.Event{
+		ID:        event1,
+		Namespace: "ns1",
+	}
+
+	mms := &syncasyncmocks.Sender{}
+	mbm := ed.broadcast.(*broadcastmocks.Manager)
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	mms.On("Send", mock.Anything).Return(nil)
+
+	ed.deliveryResponse(&core.EventDeliveryResponse{
+		ID: event1,
+		Reply: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					Tag:  "myreplytag1",
+					CID:  fftypes.NewUUID(),
+					Type: core.MessageTypeBroadcast,
+				},
+			},
+			InlineData: core.InlineData{
+				{Value: fftypes.JSONAnyPtr(`"my reply"`)},
+			},
+		},
+	})
+
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}

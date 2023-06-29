@@ -134,6 +134,10 @@ func (se *Events) DeliveryRequest(ctx context.Context, connID string, sub *core.
 	return nil
 }
 
+func (se *Events) DeliveryBatchRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray) error {
+	return nil
+}
+
 func (se *Events) NamespaceRestarted(ns string, startTime time.Time) {
 	// no-op
 }

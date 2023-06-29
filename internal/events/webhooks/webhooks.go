@@ -444,6 +444,155 @@ func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, s
 	}
 }
 
+func (wh *WebHooks) attemptBatchRequest(ctx context.Context, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray) (req *whRequest, res *whResponse, err error) {
+	withData := sub.Options.WithData != nil && *sub.Options.WithData
+
+	allData := make([]*fftypes.JSONAny, 0, len(data))
+
+	if withData {
+		// We can either append all the data as flat map
+		// or nest it based on the event name?
+		// TODO ask as part of review if we want to support this
+		for _, d := range data {
+			for _, element := range d {
+				if element.Value != nil {
+					allData = append(allData, element.Value)
+				}
+			}
+		}
+	}
+
+	client := wh.client
+	if sub.Options.RestyClient != nil {
+		client = sub.Options.RestyClient
+	}
+
+	req, err = wh.buildRequest(ctx, client, sub.Options.TransportOptions(), nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Need to play around with these
+	if req.method == http.MethodPost || req.method == http.MethodPatch || req.method == http.MethodPut {
+		switch {
+		case req.body != nil:
+			// We might have been told to extract a body from the first data record
+			req.r.SetBody(req.body)
+		case len(allData) > 0:
+			// We've got an array of data to POST
+			// Send all the data of each request
+			req.r.SetBody(allData)
+		default:
+			// Just send the event itself
+			req.r.SetBody(events)
+		}
+	}
+
+	resp, err := req.r.Execute(req.method, req.url)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() { _ = resp.RawBody().Close() }()
+
+	res = &whResponse{
+		Status:  resp.StatusCode(),
+		Headers: fftypes.JSONObject{},
+	}
+
+	header := resp.Header()
+	for h := range header {
+		res.Headers[h] = header.Get(h)
+	}
+	contentType := header.Get("Content-Type")
+	log.L(ctx).Debugf("Response content-type '%s' forceJSON=%t", contentType, req.forceJSON)
+	if req.forceJSON {
+		contentType = "application/json"
+	}
+	res.Headers["Content-Type"] = contentType
+	if req.forceJSON || strings.HasPrefix(contentType, "application/json") {
+		var resData interface{}
+		err = json.NewDecoder(resp.RawBody()).Decode(&resData)
+		if err != nil {
+			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgWebhooksReplyBadJSON)
+		}
+		b, _ := json.Marshal(&resData) // we know we can re-marshal It
+		res.Body = fftypes.JSONAnyPtrBytes(b)
+	} else {
+		// Anything other than JSON, gets returned as a JSON string in base64 encoding
+		buf := &bytes.Buffer{}
+		buf.WriteByte('"')
+		b64Encoder := base64.NewEncoder(base64.StdEncoding, buf)
+		_, _ = io.Copy(b64Encoder, resp.RawBody())
+		_ = b64Encoder.Close()
+		buf.WriteByte('"')
+		res.Body = fftypes.JSONAnyPtrBytes(buf.Bytes())
+	}
+
+	return req, res, nil
+}
+
+func (wh *WebHooks) doBatchedDelivery(ctx context.Context, connID string, reply bool, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray, fastAck bool) {
+	req, res, gwErr := wh.attemptBatchRequest(ctx, sub, events, data)
+	if gwErr != nil {
+		// Generate a bad-gateway error response - we always want to send something back,
+		// rather than just causing timeouts
+		log.L(wh.ctx).Errorf("Failed to invoke webhook: %s", gwErr)
+		b, _ := json.Marshal(&fftypes.RESTError{
+			Error: gwErr.Error(),
+		})
+		res = &whResponse{
+			Status: http.StatusBadGateway,
+			Headers: fftypes.JSONObject{
+				"Content-Type": "application/json",
+			},
+			Body: fftypes.JSONAnyPtrBytes(b),
+		}
+	}
+	b, _ := json.Marshal(&res)
+	log.L(wh.ctx).Tracef("Webhook response: %s", string(b))
+
+	// For each event emit a respons
+	for _, event := range events {
+		// Emit the response
+		if reply && event.Message != nil {
+			txType := fftypes.FFEnum(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
+			if req != nil && req.replyTx != "" {
+				txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
+			}
+			if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
+				log.L(wh.ctx).Debugf("Sending reply message for %s CID=%s", event.ID, event.Message.Header.ID)
+				cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+					ID:           event.ID,
+					Rejected:     false,
+					Subscription: event.Subscription,
+					Reply: &core.MessageInOut{
+						Message: core.Message{
+							Header: core.MessageHeader{
+								CID:    event.Message.Header.ID,
+								Group:  event.Message.Header.Group,
+								Type:   event.Message.Header.Type,
+								Topics: event.Message.Header.Topics,
+								Tag:    sub.Options.TransportOptions().GetString("replytag"),
+								TxType: txType,
+							},
+						},
+						InlineData: core.InlineData{
+							{Value: fftypes.JSONAnyPtrBytes(b)},
+						},
+					},
+				})
+			}
+		} else if !fastAck {
+			if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
+				cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+					ID:           event.ID,
+					Rejected:     false,
+					Subscription: event.Subscription,
+				})
+			}
+		}
+	}
+}
 func (wh *WebHooks) DeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	reply := sub.Options.TransportOptions().GetBool("reply")
 	if reply && event.Message != nil && event.Message.Header.CID != nil {
@@ -476,7 +625,51 @@ func (wh *WebHooks) DeliveryRequest(ctx context.Context, connID string, sub *cor
 		return nil
 	}
 
+	// NOTE: We could check here for batching and accumulate but we can't return because this causes the offset to jump...
+
+	// TODO we don't look at the error here?
 	wh.doDelivery(ctx, connID, reply, sub, event, data, false)
+	return nil
+}
+
+func (wh *WebHooks) DeliveryBatchRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray) error {
+	reply := sub.Options.TransportOptions().GetBool("reply")
+	// if reply && event.Message != nil && event.Message.Header.CID != nil {
+	// 	// We cowardly refuse to dispatch a message that is itself a reply, as it's hard for users to
+	// 	// avoid loops - and there's no way for us to detect here if a user has configured correctly
+	// 	// to avoid a loop.
+	// 	log.L(wh.ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
+	// 	if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
+	// 		cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+	// 			ID:           event.ID,
+	// 			Rejected:     false,
+	// 			Subscription: event.Subscription,
+	// 		})
+	// 	}
+	// 	return nil
+	// }
+
+	// // In fastack mode we drive calls in parallel to the backend, immediately acknowledging the event
+	// NOTE: We cannot use this with reply mode, as when we're sending a reply the `DeliveryResponse`
+	//       callback must include the reply in-line.
+	if !reply && sub.Options.TransportOptions().GetBool("fastack") {
+		for _, event := range events {
+			if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
+				cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+					ID:           event.ID,
+					Rejected:     false,
+					Subscription: event.Subscription,
+				})
+			}
+		}
+		go wh.doBatchedDelivery(ctx, connID, reply, sub, events, data, true)
+		return nil
+	}
+
+	// NOTE: We could check here for batching and accumulate but we can't return because this causes the offset to jump...
+
+	// TODO we don't look at the error here?
+	wh.doBatchedDelivery(ctx, connID, reply, sub, events, data, false)
 	return nil
 }
 
