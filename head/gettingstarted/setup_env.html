@@ -447,6 +447,10 @@ Global Flags:
   <li>Register an identity for each member and node</li>
 </ul>
 
+<blockquote>
+  <p><strong>NOTE</strong>: For macOS users, the default port (5000) is already in-use by <code class="language-plaintext highlighter-rouge">ControlCe</code> service (AirPlay Receiver). You can either <a href="https://support.apple.com/guide/mac-help/change-airdrop-handoff-settings-mchl6a407f99/13.0/mac/13.0">disable this service</a> in your environment, or use a different port when creating your stack (e.g. <code class="language-plaintext highlighter-rouge">ff init dev -p 8000</code>)</p>
+</blockquote>
+
 <p>After your stack finishes starting it will print out the links to each member’s UI and the Sandbox for that node:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff start dev
