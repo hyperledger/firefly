@@ -87,22 +87,22 @@ func (ws *WebSockets) Capabilities() *events.Capabilities {
 	return ws.capabilities
 }
 
-func (ws *WebSockets) ValidateOptions(options *core.SubscriptionOptions) error {
+func (ws *WebSockets) ValidateOptions(ctx context.Context, options *core.SubscriptionOptions) error {
 	// We don't support streaming the full data over websockets
 	if options.WithData != nil && *options.WithData {
-		return i18n.NewError(ws.ctx, coremsgs.MsgWebsocketsNoData)
+		return i18n.NewError(ctx, coremsgs.MsgWebsocketsNoData)
 	}
 	forceFalse := false
 	options.WithData = &forceFalse
 	return nil
 }
 
-func (ws *WebSockets) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
+func (ws *WebSockets) DeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	ws.connMux.Lock()
 	conn, ok := ws.connections[connID]
 	ws.connMux.Unlock()
 	if !ok {
-		return i18n.NewError(ws.ctx, coremsgs.MsgWSConnectionNotActive, connID)
+		return i18n.NewError(ctx, coremsgs.MsgWSConnectionNotActive, connID)
 	}
 	return conn.dispatch(event)
 }

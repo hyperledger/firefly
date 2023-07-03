@@ -48,11 +48,12 @@ func TestGetCacheReturnsSameCacheForSameConfig(t *testing.T) {
 	cache1, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.batch.limit", "cache.batch.ttl", "testnamespace"))
 
 	assert.Equal(t, cache0, cache1)
-	assert.Equal(t, []string{"testnamespace::cache.batch"}, cacheManager.ListKeys())
+	assert.Equal(t, []string{"testnamespace:cache.batch"}, cacheManager.ListCacheNames("testnamespace"))
 
 	cache2, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.batch.limit", "cache.batch.ttl", ""))
 	assert.NotEqual(t, cache0, cache2)
-	assert.Equal(t, 2, len(cacheManager.ListKeys()))
+	assert.Equal(t, 1, len(cacheManager.ListCacheNames("testnamespace")))
+	assert.Equal(t, 1, len(cacheManager.ListCacheNames("global")))
 }
 
 func TestTwoSeparateCacheWorksIndependently(t *testing.T) {

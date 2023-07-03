@@ -24,8 +24,10 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/internal/events/webhooks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -90,18 +92,24 @@ func TestCreateSubscriptionTLSConfigOk(t *testing.T) {
 				TLSConfigName: "myconfig",
 			},
 		},
+		Transport: "webhooks",
 	}
+
 	or.mem.On("CreateUpdateDurableSubscription", mock.Anything, mock.Anything, true).Return(nil)
 	s1, err := or.CreateSubscription(or.ctx, sub)
 	assert.NoError(t, err)
 	assert.Equal(t, s1, sub)
 	assert.Equal(t, "ns", sub.Namespace)
-	assert.Equal(t, mockTlSConfig, sub.Options.TLSConfig)
+	assert.Equal(t, mockTlSConfig, s1.Options.TLSConfig)
 }
 
 func TestCreateSubscriptionTLSConfigNotFound(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+
+	or.plugins.Events = map[string]events.Plugin{
+		"webhooks": &webhooks.WebHooks{},
+	}
 
 	sub := &core.Subscription{
 		SubscriptionRef: core.SubscriptionRef{
@@ -112,6 +120,7 @@ func TestCreateSubscriptionTLSConfigNotFound(t *testing.T) {
 				TLSConfigName: "myconfig",
 			},
 		},
+		Transport: "webhooks",
 	}
 	_, err := or.CreateSubscription(or.ctx, sub)
 	assert.Error(t, err)
