@@ -94,7 +94,7 @@ func TestValidateOptionsFail(t *testing.T) {
 	defer cancel()
 
 	yes := true
-	err := ws.ValidateOptions(&core.SubscriptionOptions{
+	err := ws.ValidateOptions(ws.ctx, &core.SubscriptionOptions{
 		SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 			WithData: &yes,
 		},
@@ -108,7 +108,7 @@ func TestValidateOptionsOk(t *testing.T) {
 	defer cancel()
 
 	opts := &core.SubscriptionOptions{}
-	err := ws.ValidateOptions(opts)
+	err := ws.ValidateOptions(ws.ctx, opts)
 	assert.NoError(t, err)
 	assert.False(t, *opts.WithData)
 
@@ -194,7 +194,7 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 	assert.NoError(t, err)
 
 	<-waitSubscribed
-	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+	ws.DeliveryRequest(ws.ctx, connID, nil, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{ID: fftypes.NewUUID()},
 		},
@@ -247,7 +247,7 @@ func TestStartReceiveDurable(t *testing.T) {
 	assert.NoError(t, err)
 
 	<-waitSubscribed
-	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+	ws.DeliveryRequest(ws.ctx, connID, nil, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{ID: fftypes.NewUUID()},
 		},
@@ -258,7 +258,7 @@ func TestStartReceiveDurable(t *testing.T) {
 		},
 	}, nil)
 	// Put a second in flight
-	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+	ws.DeliveryRequest(ws.ctx, connID, nil, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{ID: fftypes.NewUUID()},
 		},
@@ -327,7 +327,7 @@ func TestStartReceiveDurableWithAuth(t *testing.T) {
 	assert.NoError(t, err)
 
 	<-waitSubscribed
-	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+	ws.DeliveryRequest(ws.ctx, connID, nil, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{ID: fftypes.NewUUID()},
 		},
@@ -338,7 +338,7 @@ func TestStartReceiveDurableWithAuth(t *testing.T) {
 		},
 	}, nil)
 	// Put a second in flight
-	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+	ws.DeliveryRequest(ws.ctx, connID, nil, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{ID: fftypes.NewUUID()},
 		},
@@ -436,7 +436,7 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 	defer cancel()
 
 	<-waitSubscribed
-	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+	ws.DeliveryRequest(ws.ctx, connID, nil, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{ID: fftypes.NewUUID()},
 		},
@@ -650,7 +650,7 @@ func TestWebsocketDispatchAfterClose(t *testing.T) {
 		ctx:         context.Background(),
 		connections: make(map[string]*websocketConnection),
 	}
-	err := ws.DeliveryRequest("gone", nil, &core.EventDelivery{}, nil)
+	err := ws.DeliveryRequest(ws.ctx, "gone", nil, &core.EventDelivery{}, nil)
 	assert.Regexp(t, "FF10173", err)
 }
 
@@ -674,7 +674,7 @@ func TestDispatchAutoAck(t *testing.T) {
 		autoAck:      true,
 	}
 	wsc.ws.connections[wsc.connID] = wsc
-	err := wsc.ws.DeliveryRequest(wsc.connID, nil, &core.EventDelivery{
+	err := wsc.ws.DeliveryRequest(wsc.ctx, wsc.connID, nil, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{ID: fftypes.NewUUID()},
 		},

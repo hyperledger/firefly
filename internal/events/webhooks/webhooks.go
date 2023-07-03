@@ -109,7 +109,7 @@ func (wh *WebHooks) Capabilities() *events.Capabilities {
 	return wh.capabilities
 }
 
-func (wh *WebHooks) buildRequest(restyClient *resty.Client, options fftypes.JSONObject, firstData fftypes.JSONObject) (req *whRequest, err error) {
+func (wh *WebHooks) buildRequest(ctx context.Context, restyClient *resty.Client, options fftypes.JSONObject, firstData fftypes.JSONObject) (req *whRequest, err error) {
 	req = &whRequest{
 		r: restyClient.R().
 			SetDoNotParseResponse(true).
@@ -120,7 +120,7 @@ func (wh *WebHooks) buildRequest(restyClient *resty.Client, options fftypes.JSON
 		replyTx:   options.GetString("replytx"),
 	}
 	if req.url == "" {
-		return nil, i18n.NewError(wh.ctx, coremsgs.MsgWebhookURLEmpty)
+		return nil, i18n.NewError(ctx, coremsgs.MsgWebhookURLEmpty)
 	}
 	if req.method == "" {
 		req.method = http.MethodPost
@@ -129,7 +129,7 @@ func (wh *WebHooks) buildRequest(restyClient *resty.Client, options fftypes.JSON
 	for h, v := range headers {
 		s, ok := v.(string)
 		if !ok {
-			return nil, i18n.NewError(wh.ctx, coremsgs.MsgWebhookInvalidStringMap, "headers", h, v)
+			return nil, i18n.NewError(ctx, coremsgs.MsgWebhookInvalidStringMap, "headers", h, v)
 		}
 		_ = req.r.SetHeader(h, s)
 	}
@@ -141,7 +141,7 @@ func (wh *WebHooks) buildRequest(restyClient *resty.Client, options fftypes.JSON
 	for q, v := range query {
 		s, ok := v.(string)
 		if !ok {
-			return nil, i18n.NewError(wh.ctx, coremsgs.MsgWebhookInvalidStringMap, "query", q, v)
+			return nil, i18n.NewError(ctx, coremsgs.MsgWebhookInvalidStringMap, "query", q, v)
 		}
 		_ = req.r.SetQueryParam(q, s)
 	}
@@ -195,16 +195,98 @@ func (wh *WebHooks) buildRequest(restyClient *resty.Client, options fftypes.JSON
 	return req, err
 }
 
-func (wh *WebHooks) ValidateOptions(options *core.SubscriptionOptions) error {
+func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.SubscriptionOptions) error {
 	if options.WithData == nil {
 		defaultTrue := true
 		options.WithData = &defaultTrue
 	}
-	_, err := wh.buildRequest(wh.client, options.TransportOptions(), fftypes.JSONObject{})
+
+	newFFRestyConfig := ffresty.Config{}
+	if wh.ffrestyConfig != nil {
+		// Take a copy of the webhooks global resty config
+		newFFRestyConfig = *wh.ffrestyConfig
+	}
+	if options.Retry.Enabled {
+		newFFRestyConfig.Retry = true
+		if options.Retry.Count > 0 {
+			newFFRestyConfig.RetryCount = options.Retry.Count
+		}
+
+		if options.Retry.InitialDelay != "" {
+			ffd, err := fftypes.ParseDurationString(options.Retry.InitialDelay, time.Millisecond)
+			if err != nil {
+				return err
+			}
+			newFFRestyConfig.RetryInitialDelay = time.Duration(ffd)
+		}
+
+		if options.Retry.MaximumDelay != "" {
+			ffd, err := fftypes.ParseDurationString(options.Retry.MaximumDelay, time.Millisecond)
+			if err != nil {
+				return err
+			}
+			newFFRestyConfig.RetryMaximumDelay = time.Duration(ffd)
+		}
+	}
+
+	if options.HTTPOptions.HTTPMaxIdleConns > 0 {
+		newFFRestyConfig.HTTPMaxIdleConns = options.HTTPOptions.HTTPMaxIdleConns
+	}
+
+	if options.HTTPOptions.HTTPRequestTimeout != "" {
+		ffd, err := fftypes.ParseDurationString(options.HTTPOptions.HTTPRequestTimeout, time.Millisecond)
+		if err != nil {
+			return err
+		}
+		newFFRestyConfig.HTTPRequestTimeout = time.Duration(ffd)
+	}
+
+	if options.HTTPOptions.HTTPIdleConnTimeout != "" {
+		ffd, err := fftypes.ParseDurationString(options.HTTPOptions.HTTPIdleConnTimeout, time.Millisecond)
+		if err != nil {
+			return err
+		}
+		newFFRestyConfig.HTTPIdleConnTimeout = time.Duration(ffd)
+	}
+
+	if options.HTTPOptions.HTTPExpectContinueTimeout != "" {
+		ffd, err := fftypes.ParseDurationString(options.HTTPOptions.HTTPExpectContinueTimeout, time.Millisecond)
+		if err != nil {
+			return err
+		}
+		newFFRestyConfig.HTTPExpectContinueTimeout = time.Duration(ffd)
+	}
+
+	if options.HTTPOptions.HTTPConnectionTimeout != "" {
+		ffd, err := fftypes.ParseDurationString(options.HTTPOptions.HTTPConnectionTimeout, time.Millisecond)
+		if err != nil {
+			return err
+		}
+		newFFRestyConfig.HTTPConnectionTimeout = time.Duration(ffd)
+	}
+
+	if options.HTTPOptions.HTTPTLSHandshakeTimeout != "" {
+		ffd, err := fftypes.ParseDurationString(options.HTTPOptions.HTTPTLSHandshakeTimeout, time.Millisecond)
+		if err != nil {
+			return err
+		}
+		newFFRestyConfig.HTTPTLSHandshakeTimeout = time.Duration(ffd)
+	}
+
+	if options.TLSConfig != nil {
+		newFFRestyConfig.TLSClientConfig = options.TLSConfig
+	}
+
+	// NOTE: this is the plugin context, as the context passed through can be terminated as part of a
+	// API call or anything else and we want to use this client later on!!
+	// So these clients should live as long as the plugin exists
+	options.RestyClient = ffresty.NewWithConfig(wh.ctx, newFFRestyConfig)
+
+	_, err := wh.buildRequest(ctx, options.RestyClient, options.TransportOptions(), fftypes.JSONObject{})
 	return err
 }
 
-func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDelivery, data core.DataArray) (req *whRequest, res *whResponse, err error) {
+func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) (req *whRequest, res *whResponse, err error) {
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 	allData := make([]*fftypes.JSONAny, 0, len(data))
 	var firstData fftypes.JSONObject
@@ -229,17 +311,12 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 		}
 	}
 
-	// Create a new ffresty client from the config
-	// 1) We do not want to modify that global instance
-	// 2) We want to keep the global configuration for webhooks
-	copyFFrestyConfig := *wh.ffrestyConfig
-	if sub.Options.TLSConfig != nil {
-		copyFFrestyConfig.TLSClientConfig = sub.Options.TLSConfig
+	client := wh.client
+	if sub.Options.RestyClient != nil {
+		client = sub.Options.RestyClient
 	}
 
-	client := ffresty.NewWithConfig(wh.ctx, copyFFrestyConfig)
-
-	req, err = wh.buildRequest(client, sub.Options.TransportOptions(), firstData)
+	req, err = wh.buildRequest(ctx, client, sub.Options.TransportOptions(), firstData)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -265,7 +342,7 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 	log.L(wh.ctx).Debugf("Webhook-> %s %s event %s on subscription %s", req.method, req.url, event.ID, sub.ID)
 	resp, err := req.r.Execute(req.method, req.url)
 	if err != nil {
-		log.L(wh.ctx).Errorf("Webhook<- %s %s event %s on subscription %s failed: %s", req.method, req.url, event.ID, sub.ID, err)
+		log.L(ctx).Errorf("Webhook<- %s %s event %s on subscription %s failed: %s", req.method, req.url, event.ID, sub.ID, err)
 		return nil, nil, err
 	}
 	defer func() { _ = resp.RawBody().Close() }()
@@ -280,7 +357,7 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 		res.Headers[h] = header.Get(h)
 	}
 	contentType := header.Get("Content-Type")
-	log.L(wh.ctx).Debugf("Response content-type '%s' forceJSON=%t", contentType, req.forceJSON)
+	log.L(ctx).Debugf("Response content-type '%s' forceJSON=%t", contentType, req.forceJSON)
 	if req.forceJSON {
 		contentType = "application/json"
 	}
@@ -289,7 +366,7 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 		var resData interface{}
 		err = json.NewDecoder(resp.RawBody()).Decode(&resData)
 		if err != nil {
-			return nil, nil, i18n.WrapError(wh.ctx, err, coremsgs.MsgWebhooksReplyBadJSON)
+			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgWebhooksReplyBadJSON)
 		}
 		b, _ := json.Marshal(&resData) // we know we can re-marshal It
 		res.Body = fftypes.JSONAnyPtrBytes(b)
@@ -307,8 +384,8 @@ func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDeli
 	return req, res, nil
 }
 
-func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray, fastAck bool) {
-	req, res, gwErr := wh.attemptRequest(sub, event, data)
+func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray, fastAck bool) {
+	req, res, gwErr := wh.attemptRequest(ctx, sub, event, data)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
 		// rather than just causing timeouts
@@ -367,7 +444,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 	}
 }
 
-func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
+func (wh *WebHooks) DeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	reply := sub.Options.TransportOptions().GetBool("reply")
 	if reply && event.Message != nil && event.Message.Header.CID != nil {
 		// We cowardly refuse to dispatch a message that is itself a reply, as it's hard for users to
@@ -395,11 +472,11 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event
 				Subscription: event.Subscription,
 			})
 		}
-		go wh.doDelivery(connID, reply, sub, event, data, true)
+		go wh.doDelivery(ctx, connID, reply, sub, event, data, true)
 		return nil
 	}
 
-	wh.doDelivery(connID, reply, sub, event, data, false)
+	wh.doDelivery(ctx, connID, reply, sub, event, data, false)
 	return nil
 }
 

@@ -93,7 +93,7 @@ func (t *TokenPool) Validate(ctx context.Context) (err error) {
 }
 
 func (t *TokenPoolDefinition) Topic() string {
-	return fftypes.TypeNamespaceNameTopicHash("tokenpool", t.Pool.Namespace, t.Pool.Name)
+	return fftypes.TypeNamespaceNameTopicHash("tokenpool", t.Pool.Namespace, t.Pool.NetworkName)
 }
 
 func (t *TokenPoolDefinition) SetBroadcastMessage(msgID *fftypes.UUID) {

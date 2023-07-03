@@ -16,7 +16,11 @@
 
 package core
 
-import "crypto/tls"
+import (
+	"crypto/tls"
+
+	"github.com/go-resty/resty/v2"
+)
 
 type WebhookSubOptions struct {
 	Fastack       bool                `ffstruct:"WebhookSubOptions" json:"fastack,omitempty"`
@@ -31,6 +35,25 @@ type WebhookSubOptions struct {
 	TLSConfigName string              `ffstruct:"WebhookSubOptions" json:"tlsConfigName,omitempty"`
 	TLSConfig     *tls.Config         `ffstruct:"WebhookSubOptions" json:"-" ffexcludeinput:"true"`
 	Input         WebhookInputOptions `ffstruct:"WebhookSubOptions" json:"input,omitempty"`
+	Retry         WebhookRetryOptions `ffstruct:"WebhookSubOptions" json:"retry,omitempty"`
+	HTTPOptions   WebhookHTTPOptions  `ffstruct:"WebhookSubOptions" json:"httpOptions,omitempty"`
+	RestyClient   *resty.Client       `ffstruct:"WebhookSubOptions" json:"-" ffexcludeinput:"true"`
+}
+
+type WebhookRetryOptions struct {
+	Enabled      bool   `ffstruct:"WebhookRetryOptions" json:"enabled,omitempty"`
+	Count        int    `ffstruct:"WebhookRetryOptions" json:"count,omitempty"`
+	InitialDelay string `ffstruct:"WebhookRetryOptions" json:"initialDelay,omitempty"`
+	MaximumDelay string `ffstruct:"WebhookRetryOptions" json:"maxDelay,omitempty"`
+}
+
+type WebhookHTTPOptions struct {
+	HTTPTLSHandshakeTimeout   string `ffstruct:"WebhookHTTPOptions" json:"tlsHandshakeTimeout,omitempty"`
+	HTTPRequestTimeout        string `ffstruct:"WebhookHTTPOptions" json:"requestTimeout,omitempty"`
+	HTTPMaxIdleConns          int    `ffstruct:"WebhookHTTPOptions" json:"maxIdleConns,omitempty"`
+	HTTPIdleConnTimeout       string `ffstruct:"WebhookHTTPOptions" json:"idleTimeout,omitempty"`
+	HTTPConnectionTimeout     string `ffstruct:"WebhookHTTPOptions" json:"connectionTimeout,omitempty"`
+	HTTPExpectContinueTimeout string `ffstruct:"WebhookHTTPOptions" json:"expectContinueTimeout,omitempty"`
 }
 
 type WebhookInputOptions struct {

@@ -355,10 +355,15 @@ func (f *Fabric) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONO
 		return nil // move on
 	}
 
+	// Fabric events are dispatched by the underlying fabric client to FabConnect with just the block number
+	// and the transaction hash. The index of the transaction in the block, or the index of the action within
+	// the transaction are not available. So we cannot generate an alphanumerically sortable string
+	// into the protocol ID. Instead we can only do this (which is according to Fabric rules assured to be
+	// unique, as Fabric only allows one event per transaction):
 	sTransactionHash := msgJSON.GetString("transactionId")
 	blockNumber := msgJSON.GetInt64("blockNumber")
-	transactionIndex := msgJSON.GetInt64("transactionIndex")
-	eventIndex := msgJSON.GetInt64("eventIndex")
+	protocolID := fmt.Sprintf("%.12d/%s", blockNumber, sTransactionHash)
+
 	name := msgJSON.GetString("eventName")
 	timestamp := msgJSON.GetInt64("timestamp")
 	chaincode := msgJSON.GetString("chaincodeId")
@@ -368,7 +373,7 @@ func (f *Fabric) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONO
 		BlockchainTXID: sTransactionHash,
 		Source:         f.Name(),
 		Name:           name,
-		ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
+		ProtocolID:     protocolID,
 		Output:         *payload,
 		Info:           msgJSON,
 		Timestamp:      fftypes.UnixTime(timestamp),
