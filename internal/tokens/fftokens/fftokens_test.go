@@ -35,6 +35,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/coremocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
@@ -1906,4 +1907,8 @@ func TestErrorWrapping(t *testing.T) {
 	err := wrapError(ctx, nil, res, fmt.Errorf("pop"))
 	assert.Regexp(t, "FF10457", err)
 	assert.Regexp(t, "pop", err)
+
+	errInterface, ok := err.(operations.ConflictError)
+	assert.True(t, ok)
+	assert.True(t, errInterface.IsConflictError())
 }

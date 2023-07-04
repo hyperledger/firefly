@@ -21,7 +21,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -94,10 +93,6 @@ type ethWSCommandPayload struct {
 	Topic       string `json:"topic,omitempty"`
 	BatchNumber int64  `json:"batchNumber,omitempty"`
 	Message     string `json:"message,omitempty"`
-}
-
-type ethError struct {
-	Error string `json:"error,omitempty"`
 }
 
 type Location struct {
@@ -569,19 +564,6 @@ func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string, intent blo
 	return resolved, err
 }
 
-func wrapError(ctx context.Context, errRes *ethError, res *resty.Response, err error) error {
-	var errMsgKey i18n.ErrorMessageKey
-	if res != nil && res.StatusCode() == http.StatusConflict {
-		errMsgKey = coremsgs.MsgEthConnectorRESTErrConflict
-	} else {
-		errMsgKey = coremsgs.MsgEthConnectorRESTErr
-	}
-	if errRes != nil && errRes.Error != "" {
-		return i18n.WrapError(ctx, err, errMsgKey, errRes.Error)
-	}
-	return ffresty.WrapRestErr(ctx, res, err, errMsgKey)
-}
-
 func (e *Ethereum) buildEthconnectRequestBody(ctx context.Context, messageType, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (map[string]interface{}, error) {
 	headers := EthconnectMessageHeaders{
 		Type: messageType,
@@ -625,14 +607,14 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 	if err != nil {
 		return err
 	}
-	var resErr ethError
+	var resErr common.BlockchainRESTError
 	res, err := e.client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
 		Post("/")
 	if err != nil || !res.IsSuccess() {
-		return wrapError(ctx, &resErr, res, err)
+		return common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return nil
 }
@@ -646,14 +628,14 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address, signingKey 
 	if err != nil {
 		return nil, err
 	}
-	var resErr ethError
+	var resErr common.BlockchainRESTError
 	res, err := e.client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
 		Post("/")
 	if err != nil || !res.IsSuccess() {
-		return res, wrapError(ctx, &resErr, res, err)
+		return res, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return res, nil
 }
@@ -766,7 +748,7 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 		return err
 	}
 
-	var resErr ethError
+	var resErr common.BlockchainRESTError
 	res, err := e.client.R().
 		SetContext(ctx).
 		SetBody(body).
@@ -778,7 +760,7 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 			// Return a more helpful and clear error message
 			return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 		}
-		return wrapError(ctx, &resErr, res, err)
+		return common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return nil
 }
@@ -1076,7 +1058,7 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 
 	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
 	client := e.client
-	var resErr ethError
+	var resErr common.BlockchainRESTError
 	var statusResponse fftypes.JSONObject
 	res, err := client.R().
 		SetContext(ctx).
@@ -1087,7 +1069,7 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 		if res.StatusCode() == 404 {
 			return nil, nil
 		}
-		return nil, wrapError(ctx, &resErr, res, err)
+		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 
 	receiptInfo := statusResponse.GetObject("receipt")
