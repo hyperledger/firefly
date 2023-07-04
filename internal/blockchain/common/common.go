@@ -412,6 +412,9 @@ func HandleReceipt(ctx context.Context, plugin core.Named, reply *BlockchainRece
 
 func WrapRESTError(ctx context.Context, errRes *BlockchainRESTError, res *resty.Response, err error, defMsgKey i18n.ErrorMessageKey) error {
 	if errRes != nil && errRes.Error != "" {
+		if res != nil && res.StatusCode() == http.StatusConflict {
+			return &conflictError{err: i18n.WrapError(ctx, err, coremsgs.MsgBlockchainConnectorRESTErrConflict, errRes.Error)}
+		}
 		return i18n.WrapError(ctx, err, defMsgKey, errRes.Error)
 	}
 	if res != nil && res.StatusCode() == http.StatusConflict {

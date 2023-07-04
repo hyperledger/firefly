@@ -1899,7 +1899,7 @@ func TestHandleEventRetryableFailure(t *testing.T) {
 	assert.True(t, retry)
 }
 
-func TestErrorWrapping(t *testing.T) {
+func TestErrorWrappingNoBodyError(t *testing.T) {
 	ctx := context.Background()
 	res := &resty.Response{
 		RawResponse: &http.Response{StatusCode: 409},
@@ -1907,6 +1907,20 @@ func TestErrorWrapping(t *testing.T) {
 	err := wrapError(ctx, nil, res, fmt.Errorf("pop"))
 	assert.Regexp(t, "FF10457", err)
 	assert.Regexp(t, "pop", err)
+
+	errInterface, ok := err.(operations.ConflictError)
+	assert.True(t, ok)
+	assert.True(t, errInterface.IsConflictError())
+}
+
+func TestErrorWrappingBodyErr(t *testing.T) {
+	ctx := context.Background()
+	res := &resty.Response{
+		RawResponse: &http.Response{StatusCode: 409},
+	}
+	err := wrapError(ctx, &tokenError{Error: "snap"}, res, fmt.Errorf("pop"))
+	assert.Regexp(t, "FF10457", err)
+	assert.Regexp(t, "snap", err)
 
 	errInterface, ok := err.(operations.ConflictError)
 	assert.True(t, ok)
