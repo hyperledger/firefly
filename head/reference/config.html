@@ -342,31 +342,31 @@
       <td>defaultFilterLimit</td>
       <td>The maximum number of rows to return if no limit is specified on an API request</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">25</code></td>
     </tr>
     <tr>
       <td>maxFilterLimit</td>
       <td>The largest value of <code class="language-plaintext highlighter-rouge">limit</code> that an HTTP client can specify in a request</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1000</code></td>
     </tr>
     <tr>
       <td>passthroughHeaders</td>
       <td>A list of HTTP request headers to pass through to dependency microservices</td>
       <td><code class="language-plaintext highlighter-rouge">[]string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">[]</code></td>
     </tr>
     <tr>
       <td>requestMaxTimeout</td>
       <td>The maximum amount of time that an HTTP client can specify in a <code class="language-plaintext highlighter-rouge">Request-Timeout</code> header to keep a specific request open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">10m</code></td>
     </tr>
     <tr>
       <td>requestTimeout</td>
       <td>The maximum amount of time that a request is allowed to remain open</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">120s</code></td>
     </tr>
   </tbody>
 </table>
@@ -393,7 +393,7 @@
       <td>keyNormalization</td>
       <td>Mechanism to normalize keys before using them. Valid options are <code class="language-plaintext highlighter-rouge">blockchain_plugin</code> - use blockchain plugin (default) or <code class="language-plaintext highlighter-rouge">none</code> - do not attempt normalization (deprecated - use namespaces.predefined[].asset.manager.keyNormalization)</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">blockchain_plugin</code></td>
     </tr>
   </tbody>
 </table>
@@ -420,19 +420,19 @@
       <td>minimumPollDelay</td>
       <td>The minimum time the batch manager waits between polls on the DB - to prevent thrashing</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100ms</code></td>
     </tr>
     <tr>
       <td>pollTimeout</td>
       <td>How long to wait without any notifications of new messages before doing a page query</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
     </tr>
     <tr>
       <td>readPageSize</td>
       <td>The size of each page of messages read from the database into memory when assembling batches</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
   </tbody>
 </table>
@@ -459,19 +459,19 @@
       <td>factor</td>
       <td>The retry backoff factor</td>
       <td><code class="language-plaintext highlighter-rouge">float32</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
     </tr>
     <tr>
       <td>initDelay</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">250ms</code></td>
     </tr>
     <tr>
       <td>maxDelay</td>
       <td>The maximum retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
     </tr>
   </tbody>
 </table>
@@ -498,19 +498,19 @@
       <td>factor</td>
       <td>The retry backoff factor</td>
       <td><code class="language-plaintext highlighter-rouge">float32</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
     </tr>
     <tr>
       <td>initialDelay</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">250ms</code></td>
     </tr>
     <tr>
       <td>maxDelay</td>
       <td>The maximum retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1m</code></td>
     </tr>
   </tbody>
 </table>
@@ -537,19 +537,19 @@
       <td>batchMaxInserts</td>
       <td>The maximum number of items the blob receiver worker will insert in a batch</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">200</code></td>
     </tr>
     <tr>
       <td>batchTimeout</td>
       <td>The maximum amount of the the blob receiver worker will wait</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">50ms</code></td>
     </tr>
     <tr>
       <td>count</td>
       <td>The number of blob receiver workers</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5</code></td>
     </tr>
   </tbody>
 </table>
@@ -576,25 +576,25 @@
       <td>agentTimeout</td>
       <td>How long to keep around a batching agent for a sending identity before disposal</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2m</code></td>
     </tr>
     <tr>
       <td>payloadLimit</td>
       <td>The maximum payload size of a batch for broadcast messages</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">800Kb</code></td>
     </tr>
     <tr>
       <td>size</td>
       <td>The maximum number of messages that can be packed into a batch</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">200</code></td>
     </tr>
     <tr>
       <td>timeout</td>
       <td>The timeout to wait for a batch to fill, before sending</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1s</code></td>
     </tr>
   </tbody>
 </table>
@@ -621,7 +621,7 @@
       <td>enabled</td>
       <td>Enables caching, defaults to true</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">true</code></td>
     </tr>
   </tbody>
 </table>
@@ -648,13 +648,13 @@
       <td>limit</td>
       <td>Max number of cached items for address resolver</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1000</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached items for address resolver</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">24h</code></td>
     </tr>
   </tbody>
 </table>
@@ -681,13 +681,13 @@
       <td>limit</td>
       <td>Max number of cached items for batches</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cache items for batches</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5m</code></td>
     </tr>
   </tbody>
 </table>
@@ -714,13 +714,13 @@
       <td>limit</td>
       <td>Max number of cached items for blockchain</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached items for blockchain</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5m</code></td>
     </tr>
   </tbody>
 </table>
@@ -747,13 +747,13 @@
       <td>limit</td>
       <td>Max number of cached blockchain events for transactions</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1000</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached blockchain events for transactions</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5m</code></td>
     </tr>
   </tbody>
 </table>
@@ -780,13 +780,13 @@
       <td>limit</td>
       <td>Max number of cached items for blockchain listener topics</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached items for blockchain listener topics</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5m</code></td>
     </tr>
   </tbody>
 </table>
@@ -813,13 +813,13 @@
       <td>limit</td>
       <td>Max number of cached items for groups</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">50</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached items for groups</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1h</code></td>
     </tr>
   </tbody>
 </table>
@@ -846,13 +846,13 @@
       <td>limit</td>
       <td>Max number of cached identities for identity manager</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached identities for identity manager</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1h</code></td>
     </tr>
   </tbody>
 </table>
@@ -879,13 +879,46 @@
       <td>size</td>
       <td>Max size of cached messages for data manager</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">50Mb</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached messages for data manager</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5m</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="cachemethods">
+        
+        
+          <a href="#cachemethods" class="anchor-heading" aria-labelledby="cachemethods"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> cache.methods
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>limit</td>
+      <td>Max number of cached items for schema validations on blockchain methods</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">200</code></td>
+    </tr>
+    <tr>
+      <td>ttl</td>
+      <td>Time to live of cached items for schema validations on blockchain methods</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5m</code></td>
     </tr>
   </tbody>
 </table>
@@ -912,13 +945,13 @@
       <td>limit</td>
       <td>Max number of cached items for operations</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1000</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached items for operations</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5m</code></td>
     </tr>
   </tbody>
 </table>
@@ -945,13 +978,13 @@
       <td>limit</td>
       <td>Max number of cached items for token pools</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached items for token pool</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1h</code></td>
     </tr>
   </tbody>
 </table>
@@ -978,13 +1011,13 @@
       <td>size</td>
       <td>Max size of cached transactions</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1Mb</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached transactions</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5m</code></td>
     </tr>
   </tbody>
 </table>
@@ -1011,13 +1044,13 @@
       <td>size</td>
       <td>Max size of cached validators for data manager</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1Mb</code></td>
     </tr>
     <tr>
       <td>ttl</td>
       <td>Time to live of cached validators for data manager</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1h</code></td>
     </tr>
   </tbody>
 </table>
@@ -1134,13 +1167,13 @@
       <td>address</td>
       <td>The HTTP interface the go debugger binds to</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">localhost</code></td>
     </tr>
     <tr>
       <td>port</td>
       <td>An HTTP port on which to enable the go debugger</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">-1</code></td>
     </tr>
   </tbody>
 </table>
@@ -1167,25 +1200,25 @@
       <td>factor</td>
       <td>The retry backoff factor</td>
       <td><code class="language-plaintext highlighter-rouge">float32</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
     </tr>
     <tr>
       <td>initialDelay</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100ms</code></td>
     </tr>
     <tr>
       <td>maxAttempts</td>
       <td>The maximum number attempts</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
     <tr>
       <td>maxDelay</td>
       <td>The maximum retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1m</code></td>
     </tr>
   </tbody>
 </table>
@@ -1212,7 +1245,7 @@
       <td>count</td>
       <td>The number of download workers</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">10</code></td>
     </tr>
     <tr>
       <td>queueLength</td>
@@ -1245,43 +1278,43 @@
       <td>batchSize</td>
       <td>The maximum number of records to read from the DB before performing an aggregation run</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">200</code></td>
     </tr>
     <tr>
       <td>batchTimeout</td>
       <td>How long to wait for new events to arrive before performing aggregation on a page of events</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">250ms</code></td>
     </tr>
     <tr>
       <td>firstEvent</td>
       <td>The first event the aggregator should process, if no previous offest is stored in the DB. Valid options are <code class="language-plaintext highlighter-rouge">oldest</code> or <code class="language-plaintext highlighter-rouge">newest</code></td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">oldest</code></td>
     </tr>
     <tr>
       <td>pollTimeout</td>
       <td>The time to wait without a notification of new events, before trying a select on the table</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
     </tr>
     <tr>
       <td>rewindQueryLimit</td>
       <td>Safety limit on the maximum number of records to search when performing queries to search for rewinds</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1000</code></td>
     </tr>
     <tr>
       <td>rewindQueueLength</td>
       <td>The size of the queue into the rewind dispatcher</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">10</code></td>
     </tr>
     <tr>
       <td>rewindTimeout</td>
       <td>The minimum time to wait for rewinds to accumulate before resolving them</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">50ms</code></td>
     </tr>
   </tbody>
 </table>
@@ -1308,19 +1341,19 @@
       <td>factor</td>
       <td>The retry backoff factor</td>
       <td><code class="language-plaintext highlighter-rouge">float32</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
     </tr>
     <tr>
       <td>initDelay</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100ms</code></td>
     </tr>
     <tr>
       <td>maxDelay</td>
       <td>The maximum retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
     </tr>
   </tbody>
 </table>
@@ -1347,7 +1380,7 @@
       <td>bufferSize</td>
       <td>The size of the buffer of change events</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
   </tbody>
 </table>
@@ -1374,19 +1407,19 @@
       <td>batchTimeout</td>
       <td>A short time to wait for new events to arrive before re-polling for new events</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">250ms</code></td>
     </tr>
     <tr>
       <td>bufferLength</td>
       <td>The number of events + attachments an individual dispatcher should hold in memory ready for delivery to the subscription</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5</code></td>
     </tr>
     <tr>
       <td>pollTimeout</td>
       <td>The time to wait without a notification of new events, before trying a select on the table</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
     </tr>
   </tbody>
 </table>
@@ -1452,13 +1485,13 @@
       <td>default</td>
       <td>The default event transport for new subscriptions</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">websockets</code></td>
     </tr>
     <tr>
       <td>enabled</td>
       <td>Which event interface plugins are enabled</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">[websockets webhooks]</code></td>
     </tr>
   </tbody>
 </table>
@@ -1749,7 +1782,7 @@
       <td>maxChartRows</td>
       <td>The maximum rows to fetch for each histogram bucket</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
     </tr>
   </tbody>
 </table>
@@ -1956,7 +1989,7 @@
       <td>filesize</td>
       <td>MaxSize is the maximum size the log file before it gets rotated</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100m</code></td>
     </tr>
     <tr>
       <td>forceColor</td>
@@ -1968,25 +2001,25 @@
       <td>includeCodeInfo</td>
       <td>Enables the report caller for including the calling file and line number, and the calling function. If using text logs, it uses the logrus text format rather than the default prefix format.</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td>level</td>
       <td>The log level - error, warn, info, debug, trace</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">info</code></td>
     </tr>
     <tr>
       <td>maxAge</td>
       <td>The maximum time to retain old log files based on the timestamp encoded in their filename</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">24h</code></td>
     </tr>
     <tr>
       <td>maxBackups</td>
       <td>Maximum number of old log files to retain</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
     </tr>
     <tr>
       <td>noColor</td>
@@ -1998,13 +2031,13 @@
       <td>timeFormat</td>
       <td>Custom time format for logs</td>
       <td><a href="https://pkg.go.dev/time#pkg-constants">Time format</a> <code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2006-01-02T15:04:05.000Z07:00</code></td>
     </tr>
     <tr>
       <td>utc</td>
       <td>Use UTC timestamps for logs</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
   </tbody>
 </table>
@@ -2031,7 +2064,7 @@
       <td>enabled</td>
       <td>Enables JSON formatted logs rather than text. All log color settings are ignored when enabled.</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
   </tbody>
 </table>
@@ -2058,31 +2091,31 @@
       <td>file</td>
       <td>configures the JSON key containing the calling file</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">file</code></td>
     </tr>
     <tr>
       <td>func</td>
       <td>Configures the JSON key containing the calling function</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">func</code></td>
     </tr>
     <tr>
       <td>level</td>
       <td>Configures the JSON key containing the log level</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">level</code></td>
     </tr>
     <tr>
       <td>message</td>
       <td>Configures the JSON key containing the log message</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">message</code></td>
     </tr>
     <tr>
       <td>timestamp</td>
       <td>Configures the JSON key containing the timestamp of the log</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">@timestamp</code></td>
     </tr>
   </tbody>
 </table>
@@ -2109,19 +2142,19 @@
       <td>batchMaxInserts</td>
       <td>The maximum number of database inserts to include when writing a single batch of messages + data</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">200</code></td>
     </tr>
     <tr>
       <td>batchTimeout</td>
       <td>How long to wait for more messages to arrive before flushing the batch</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">10ms</code></td>
     </tr>
     <tr>
       <td>count</td>
       <td>The number of message writer workers</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5</code></td>
     </tr>
   </tbody>
 </table>
@@ -2328,7 +2361,7 @@
       <td>default</td>
       <td>The default namespace - must be in the predefined list</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">default</code></td>
     </tr>
     <tr>
       <td>predefined</td>
@@ -2661,19 +2694,19 @@
       <td>factor</td>
       <td>The retry backoff factor</td>
       <td><code class="language-plaintext highlighter-rouge">float32</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
     </tr>
     <tr>
       <td>initDelay</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5s</code></td>
     </tr>
     <tr>
       <td>maxDelay</td>
       <td>The maximum retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1m</code></td>
     </tr>
   </tbody>
 </table>
@@ -2733,19 +2766,19 @@
       <td>factor</td>
       <td>The retry backoff factor</td>
       <td><code class="language-plaintext highlighter-rouge">float32</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
     </tr>
     <tr>
       <td>initialDelay</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">250ms</code></td>
     </tr>
     <tr>
       <td>maxDelay</td>
       <td>The maximum retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1m</code></td>
     </tr>
   </tbody>
 </table>
@@ -2772,25 +2805,25 @@
       <td>batchMaxInserts</td>
       <td>The maximum number of database inserts to include when writing a single batch of messages + data</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">200</code></td>
     </tr>
     <tr>
       <td>batchTimeout</td>
       <td>How long to wait for more messages to arrive before flushing the batch</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">50ms</code></td>
     </tr>
     <tr>
       <td>count</td>
       <td>The number of operation update works</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5</code></td>
     </tr>
     <tr>
       <td>queueLength</td>
       <td>The size of the queue for the Operation Update worker</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">50</code></td>
     </tr>
   </tbody>
 </table>
@@ -2817,7 +2850,7 @@
       <td>startupAttempts</td>
       <td>The number of times to attempt to connect to core infrastructure on startup</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5</code></td>
     </tr>
   </tbody>
 </table>
@@ -5898,25 +5931,25 @@
       <td>agentTimeout</td>
       <td>How long to keep around a batching agent for a sending identity before disposal</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2m</code></td>
     </tr>
     <tr>
       <td>payloadLimit</td>
       <td>The maximum payload size of a private message Data Exchange payload</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">800Kb</code></td>
     </tr>
     <tr>
       <td>size</td>
       <td>The maximum number of messages in a batch for private messages</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">200</code></td>
     </tr>
     <tr>
       <td>timeout</td>
       <td>The timeout to wait for a batch to fill, before sending</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1s</code></td>
     </tr>
   </tbody>
 </table>
@@ -5943,19 +5976,19 @@
       <td>factor</td>
       <td>The retry backoff factor</td>
       <td><code class="language-plaintext highlighter-rouge">float32</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
     </tr>
     <tr>
       <td>initDelay</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100ms</code></td>
     </tr>
     <tr>
       <td>maxDelay</td>
       <td>The maximum retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
     </tr>
   </tbody>
 </table>
@@ -5988,7 +6021,7 @@
       <td>enabled</td>
       <td>Enables the admin HTTP API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td>port</td>
@@ -6156,25 +6189,25 @@
       <td>blockedWarnInterval</td>
       <td>How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">1m</code></td>
     </tr>
     <tr>
       <td>eventQueueLength</td>
       <td>Server-side queue length for events waiting for delivery over an admin change event listener websocket</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">250</code></td>
     </tr>
     <tr>
       <td>readBufferSize</td>
       <td>The size in bytes of the read buffer for the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
     </tr>
     <tr>
       <td>writeBufferSize</td>
       <td>The size in bytes of the write buffer for the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
     </tr>
   </tbody>
 </table>
@@ -6201,7 +6234,7 @@
       <td>max</td>
       <td>The maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">500</code></td>
     </tr>
   </tbody>
 </table>
@@ -6228,7 +6261,7 @@
       <td>batchSize</td>
       <td>Default read ahead to enable for subscriptions that do not explicitly configure readahead</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">0</code></td>
     </tr>
   </tbody>
 </table>
@@ -6255,19 +6288,58 @@
       <td>factor</td>
       <td>The retry backoff factor</td>
       <td><code class="language-plaintext highlighter-rouge">float32</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">2</code></td>
     </tr>
     <tr>
       <td>initDelay</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">250ms</code></td>
     </tr>
     <tr>
       <td>maxDelay</td>
       <td>The maximum retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">30s</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="transactionwriter">
+        
+        
+          <a href="#transactionwriter" class="anchor-heading" aria-labelledby="transactionwriter"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> transaction.writer
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>batchMaxTransactions</td>
+      <td>The maximum number of transaction inserts to include in a batch</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">100</code></td>
+    </tr>
+    <tr>
+      <td>batchTimeout</td>
+      <td>How long to wait for more transactions to arrive before flushing the batch</td>
+      <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">10ms</code></td>
+    </tr>
+    <tr>
+      <td>count</td>
+      <td>The number of message writer workers</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">5</code></td>
     </tr>
   </tbody>
 </table>
@@ -6294,7 +6366,7 @@
       <td>enabled</td>
       <td>Enables the web user interface</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">true</code></td>
     </tr>
     <tr>
       <td>path</td>
