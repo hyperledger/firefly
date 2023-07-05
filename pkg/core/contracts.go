@@ -87,7 +87,7 @@ func (c *ContractAPI) Validate(ctx context.Context) (err error) {
 }
 
 func (c *ContractAPI) Topic() string {
-	return fftypes.TypeNamespaceNameTopicHash("contractapi", c.Namespace, c.Name)
+	return fftypes.TypeNamespaceNameTopicHash("contractapi", c.Namespace, c.NetworkName)
 }
 
 func (c *ContractAPI) SetBroadcastMessage(msgID *fftypes.UUID) {

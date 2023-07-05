@@ -129,6 +129,8 @@ var (
 	ConfigCacheOperationsTTL           = ffc("config.cache.operations.ttl", "Time to live of cached items for operations", i18n.StringType)
 	ConfigCacheTokenPoolLimit          = ffc("config.cache.tokenpool.limit", "Max number of cached items for token pools", i18n.IntType)
 	ConfigCacheTokenPoolTTL            = ffc("config.cache.tokenpool.ttl", "Time to live of cached items for token pool", i18n.StringType)
+	ConfigCacheMethodsLimit            = ffc("config.cache.methods.limit", "Max number of cached items for schema validations on blockchain methods", i18n.IntType)
+	ConfigCacheMethodsTTL              = ffc("config.cache.methods.ttl", "Time to live of cached items for schema validations on blockchain methods", i18n.StringType)
 
 	ConfigPluginDatabase     = ffc("config.plugins.database", "The list of configured Database plugins", i18n.StringType)
 	ConfigPluginDatabaseName = ffc("config.plugins.database[].name", "The name of the Database plugin", i18n.StringType)
@@ -289,6 +291,10 @@ var (
 	ConfigMessageWriterBatchMaxInserts = ffc("config.message.writer.batchMaxInserts", "The maximum number of database inserts to include when writing a single batch of messages + data", i18n.IntType)
 	ConfigMessageWriterBatchTimeout    = ffc("config.message.writer.batchTimeout", "How long to wait for more messages to arrive before flushing the batch", i18n.TimeDurationType)
 	ConfigMessageWriterCount           = ffc("config.message.writer.count", "The number of message writer workers", i18n.IntType)
+
+	ConfigTransactionWriterBatchMaxTransactions = ffc("config.transaction.writer.batchMaxTransactions", "The maximum number of transaction inserts to include in a batch", i18n.IntType)
+	ConfigTransactionWriterBatchTimeout         = ffc("config.transaction.writer.batchTimeout", "How long to wait for more transactions to arrive before flushing the batch", i18n.TimeDurationType)
+	ConfigTransactionWriterCount                = ffc("config.transaction.writer.count", "The number of message writer workers", i18n.IntType)
 
 	ConfigMetricsAddress      = ffc("config.metrics.address", "The IP address on which the metrics HTTP API should listen", i18n.IntType)
 	ConfigMetricsEnabled      = ffc("config.metrics.enabled", "Enables the metrics API", i18n.BooleanType)

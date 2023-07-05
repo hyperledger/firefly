@@ -37,13 +37,13 @@ func (_m *Plugin) Capabilities() *events.Capabilities {
 	return r0
 }
 
-// DeliveryRequest provides a mock function with given fields: connID, sub, event, data
-func (_m *Plugin) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
-	ret := _m.Called(connID, sub, event, data)
+// DeliveryRequest provides a mock function with given fields: ctx, connID, sub, event, data
+func (_m *Plugin) DeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
+	ret := _m.Called(ctx, connID, sub, event, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *core.Subscription, *core.EventDelivery, core.DataArray) error); ok {
-		r0 = rf(connID, sub, event, data)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Subscription, *core.EventDelivery, core.DataArray) error); ok {
+		r0 = rf(ctx, connID, sub, event, data)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -103,13 +103,13 @@ func (_m *Plugin) SetHandler(namespace string, handler events.Callbacks) error {
 	return r0
 }
 
-// ValidateOptions provides a mock function with given fields: options
-func (_m *Plugin) ValidateOptions(options *core.SubscriptionOptions) error {
-	ret := _m.Called(options)
+// ValidateOptions provides a mock function with given fields: ctx, options
+func (_m *Plugin) ValidateOptions(ctx context.Context, options *core.SubscriptionOptions) error {
+	ret := _m.Called(ctx, options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*core.SubscriptionOptions) error); ok {
-		r0 = rf(options)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.SubscriptionOptions) error); ok {
+		r0 = rf(ctx, options)
 	} else {
 		r0 = ret.Error(0)
 	}

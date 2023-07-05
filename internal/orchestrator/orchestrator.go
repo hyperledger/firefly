@@ -43,6 +43,7 @@ import (
 	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/internal/txwriter"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -213,6 +214,7 @@ type orchestrator struct {
 	cacheManager   cache.Manager
 	operations     operations.Manager
 	txHelper       txcommon.Helper
+	txWriter       txwriter.Writer
 }
 
 func NewOrchestrator(ns *core.Namespace, config Config, plugins *Plugins, metrics metrics.Manager, cacheManager cache.Manager) Orchestrator {
@@ -290,6 +292,9 @@ func (or *orchestrator) Start() (err error) {
 	if err == nil {
 		err = or.operations.Start()
 	}
+	if err == nil {
+		or.txWriter.Start()
+	}
 
 	or.started = true
 	return err
@@ -322,6 +327,9 @@ func (or *orchestrator) WaitStop() {
 	if or.operations != nil {
 		or.operations.WaitStop()
 		or.operations = nil
+	}
+	if or.txWriter != nil {
+		or.txWriter.Close()
 	}
 	or.startedLock.Lock()
 	defer or.startedLock.Unlock()
@@ -464,6 +472,10 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 	}
 
+	if or.txWriter == nil {
+		or.txWriter = txwriter.NewTransactionWriter(ctx, or.namespace.Name, or.database(), or.txHelper, or.operations)
+	}
+
 	if or.config.Multiparty.Enabled {
 		if or.multiparty == nil {
 			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
@@ -508,7 +520,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.blockchain() != nil {
 		if or.contracts == nil {
-			or.contracts, err = contracts.NewContractManager(ctx, or.namespace.Name, or.database(), or.blockchain(), or.data, or.broadcast, or.messaging, or.batch, or.identity, or.operations, or.txHelper, or.syncasync)
+			or.contracts, err = contracts.NewContractManager(ctx, or.namespace.Name, or.database(), or.blockchain(), or.data, or.broadcast, or.messaging, or.batch, or.identity, or.operations, or.txHelper, or.txWriter, or.syncasync, or.cacheManager)
 			if err != nil {
 				return err
 			}

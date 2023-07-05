@@ -126,7 +126,11 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOp
 				Contexts:        data.BatchPin.Contexts,
 			}
 		}
-		return nil, false, cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, req.Method, req.Input, req.Errors, req.Options, batchPin)
+		bcParsedMethod, err := cm.validateInvokeContractRequest(ctx, req, false /* do-not revalidate with the blockchain connector - just send it */)
+		if err != nil {
+			return nil, false, err
+		}
+		return nil, false, cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, bcParsedMethod, req.Input, req.Options, batchPin)
 
 	case blockchainContractDeployData:
 		req := data.Request

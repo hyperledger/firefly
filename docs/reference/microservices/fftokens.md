@@ -79,7 +79,7 @@ _See [Response Types: Async Request](#async-request)_
 
 ### `POST /activatepool`
 
-Activate a token pool to begin receiving events. Generally this means the connector will create blockchain event subscriptions to transfer and approval events related to the set of tokens encompassed by this token pool.
+Activate a token pool to begin receiving events. Generally this means the connector will create blockchain event listeners for transfer and approval events related to the set of tokens encompassed by this token pool.
 
 In a multiparty network, this step will be performed by every member after a successful token pool broadcast. It therefore also serves the purpose of validating the broadcast info - if the connector does not find a valid pool given the `poolLocator` and `config` information passed in to this call, the pool should not get confirmed.
 
@@ -89,7 +89,6 @@ In a multiparty network, this step will be performed by every member after a suc
 {
   "poolLocator": "id=F1",
   "poolData": "extra-pool-info",
-  "requestId": "1",
   "config": {}
 }
 ```
@@ -98,7 +97,6 @@ In a multiparty network, this step will be performed by every member after a suc
 | ----------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | poolLocator | string | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                |
 | poolData    | string | (OPTIONAL) A data string that should be permanently attached to this pool and returned in all events.                                                                                   |
-| requestId   | string | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests.                                                       |
 | config      | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. This should be the same `config` object that was passed when the pool was created. |
 
 **Response**
@@ -112,6 +110,36 @@ HTTP 202: request was accepted, but pool will be activated asynchronously, with 
 _See [Response Types: Async Request](#async-request)_
 
 HTTP 204: activation was successful - no separate receipt will be delivered, but "token-pool" event will be sent later on the websocket.
+
+_No body_
+
+### `POST /deactivatepool`
+
+Deactivate a token pool to stop receiving events and delete all blockchain listeners related to that pool.
+
+**Request**
+
+```
+{
+  "poolLocator": "id=F1",
+  "poolData": "extra-pool-info",
+  "config": {}
+}
+```
+
+| Parameter   | Type   | Description                                                                                          |
+| ----------- | ------ | ---------------------------------------------------------------------------------------------------- |
+| poolLocator | string | The locator of the pool, as supplied by the output of the pool creation.                             |
+| poolData    | string | (OPTIONAL) The data string that was attached to this pool at activation.                             |
+| config      | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. |
+
+**Response**
+
+HTTP 204: deactivation was successful, and one or more listeners were deleted.
+
+_No body_
+
+HTTP 404: no blockchain listeners were found for the given pool information.
 
 _No body_
 
