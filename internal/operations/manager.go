@@ -54,6 +54,11 @@ type Manager interface {
 	WaitStop()
 }
 
+// ConflictError can be implemented by connectors to prevent an operation being overridden to failed
+type ConflictError interface {
+	IsConflictError() bool
+}
+
 type RunOperationOption int
 
 const (
@@ -153,13 +158,18 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 	log.L(ctx).Tracef("Operation detail: %+v", op)
 	outputs, complete, err := handler.RunOperation(ctx, op)
 	if err != nil {
-		om.SubmitOperationUpdate(&core.OperationUpdate{
-			NamespacedOpID: op.NamespacedIDString(),
-			Plugin:         op.Plugin,
-			Status:         failState,
-			ErrorMessage:   err.Error(),
-			Output:         outputs,
-		})
+		conflictErr, ok := err.(ConflictError)
+		if ok && conflictErr.IsConflictError() {
+			log.L(ctx).Infof("Leaving operation %s operation %s status unchanged after conflict", op.Type, op.ID)
+		} else {
+			om.SubmitOperationUpdate(&core.OperationUpdate{
+				NamespacedOpID: op.NamespacedIDString(),
+				Plugin:         op.Plugin,
+				Status:         failState,
+				ErrorMessage:   err.Error(),
+				Output:         outputs,
+			})
+		}
 	} else {
 		// No error so move us from "Initialized" to "Pending"
 		newState := core.OpStatusPending

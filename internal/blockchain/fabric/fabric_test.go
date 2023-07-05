@@ -2344,7 +2344,7 @@ func TestHandleMessageContractGetSubError(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sb-cb37cc07-e873-4f58-44ab-55add6bba320",
-		httpmock.NewJsonResponderOrPanic(500, fabError{Error: "pop"}))
+		httpmock.NewJsonResponderOrPanic(500, common.BlockchainRESTError{Error: "pop"}))
 
 	em := &blockchainmocks.Callbacks{}
 	e.streams = newTestStreamManager(e.client, e.signer)
@@ -2972,7 +2972,7 @@ func TestGetNetworkVersionFunctionNotFound(t *testing.T) {
 	}.String())
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/query",
-		httpmock.NewJsonResponderOrPanic(500, fabError{Error: "Function NetworkVersion not found"}))
+		httpmock.NewJsonResponderOrPanic(500, common.BlockchainRESTError{Error: "Function NetworkVersion not found"}))
 
 	version, err := e.GetNetworkVersion(context.Background(), location)
 
@@ -3025,7 +3025,7 @@ func TestGetNetworkVersionFunctionNotFoundQueryFail(t *testing.T) {
 	}.String())
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/query",
-		httpmock.NewJsonResponderOrPanic(500, fabError{Error: "pop"}))
+		httpmock.NewJsonResponderOrPanic(500, common.BlockchainRESTError{Error: "pop"}))
 
 	version, err := e.GetNetworkVersion(context.Background(), location)
 

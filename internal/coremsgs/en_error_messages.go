@@ -294,4 +294,6 @@ var (
 	MsgNotFoundTLSConfig                  = ffe("FF10455", "Provided TLS Config name '%s' not found for namespace '%s'", 400)
 	MsgSQLInsertManyOutsideTransaction    = ffe("FF10456", "Attempt to perform insert many outside of a transaction", 500)
 	MsgUnexpectedInterfaceType            = ffe("FF10457", "Unexpected interface type: %T", 500)
+	MsgBlockchainConnectorRESTErrConflict = ffe("FF10458", "Conflict from blockchain connector: %s", 409)
+	MsgTokensRESTErrConflict              = ffe("FF10459", "Conflict from tokens service: %s", 409)
 )
