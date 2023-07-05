@@ -44,7 +44,7 @@ type Manager interface {
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
 	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
-	ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (*core.Operation, error)
+	ResubmitOperations(ctx context.Context, txID *fftypes.UUID) ([]*core.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
 	BulkInsertOperations(ctx context.Context, ops ...*core.Operation) error
 	SubmitOperationUpdate(update *core.OperationUpdate)
@@ -118,9 +118,8 @@ func (om *operationsManager) PrepareOperation(ctx context.Context, op *core.Oper
 	return handler.PrepareOperation(ctx, op)
 }
 
-func (om *operationsManager) ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (*core.Operation, error) {
+func (om *operationsManager) ResubmitOperations(ctx context.Context, txID *fftypes.UUID) ([]*core.Operation, error) {
 	var resubmitErr error
-	var operation *core.Operation
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", txID),
@@ -134,12 +133,23 @@ func (om *operationsManager) ResubmitOperations(ctx context.Context, txID *fftyp
 		return nil, opErr
 	}
 
+	resubmitted := []*core.Operation{}
 	for _, nextInitializedOp := range initializedOperations {
-		operation = nextInitializedOp
+		// Check the cache to cover the window while we're flushing an update to storage in the workers
+		cachedOp := om.getCachedOperation(nextInitializedOp.ID)
+		if cachedOp != nil && cachedOp.Status != core.OpStatusInitialized {
+			log.L(ctx).Debugf("Skipping re-submission of operation %s with un-flushed storage update in cache. Cached status=%s", nextInitializedOp.ID, cachedOp.Status)
+			continue
+		}
 		prepOp, _ := om.PrepareOperation(ctx, nextInitializedOp)
 		_, resubmitErr = om.RunOperation(ctx, prepOp)
+		if resubmitErr != nil {
+			break
+		}
+		log.L(ctx).Infof("%d operation resubmitted as part of idempotent retry of TX %s", nextInitializedOp.ID, txID)
+		resubmitted = append(resubmitted, nextInitializedOp)
 	}
-	return operation, resubmitErr
+	return resubmitted, resubmitErr
 }
 
 func (om *operationsManager) RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error) {

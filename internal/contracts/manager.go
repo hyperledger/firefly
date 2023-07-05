@@ -279,7 +279,7 @@ func (cm *contractManager) verifyListeners(ctx context.Context) error {
 
 }
 
-func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core.ContractCallRequest) (*core.Operation, error) {
+func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core.ContractCallRequest) (bool, *core.Operation, error) {
 	txtype := core.TransactionTypeContractInvoke
 	if req.Message != nil {
 		txtype = core.TransactionTypeContractInvokePin
@@ -290,37 +290,40 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 		nil, // assigned by txwriter
 		core.OpTypeBlockchainInvoke)
 	if err := addBlockchainReqInputs(op, req); err != nil {
-		return nil, err
+		return false, nil, err
 	}
 
 	txn, err := cm.txWriter.WriteTransactionAndOps(ctx, txtype, req.IdempotencyKey, op)
 	if err != nil {
-		var resubmitErr error
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			op, resubmitErr = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
 				err = resubmitErr
-			} else if op != nil {
+			} else if len(resubmitted) > 0 {
 				// We successfully resubmitted an initialized operation, return the operation
 				// and the idempotent error. The caller will revert the 409 to 2xx
-				err = idemErr
+				if req.Message != nil {
+					req.Message.Header.TxType = txtype
+					req.Message.TransactionID = idemErr.ExistingTXID
+				}
+				return true, resubmitted[0], nil // only one operation, return existing one
 			}
 		}
-		return op, err
+		return false, op, err
 	}
 	if req.Message != nil {
 		req.Message.Header.TxType = txtype
 		req.Message.TransactionID = txn.ID
 	}
 
-	return op, err
+	return false, op, err
 }
 
-func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core.ContractDeployRequest) (*core.Operation, error) {
+func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core.ContractDeployRequest) (bool, *core.Operation, error) {
 
 	op := core.NewOperation(
 		cm.blockchain,
@@ -328,29 +331,28 @@ func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core
 		nil, // assigned by txwriter
 		core.OpTypeBlockchainContractDeploy)
 	if err := addBlockchainReqInputs(op, req); err != nil {
-		return nil, err
+		return false, nil, err
 	}
 	_, err := cm.txWriter.WriteTransactionAndOps(ctx, core.TransactionTypeContractDeploy, req.IdempotencyKey, op)
 	if err != nil {
-		var resubmitErr error
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			op, resubmitErr = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
 				err = resubmitErr
-			} else if op != nil {
+			} else if len(resubmitted) > 0 {
 				// We successfully resubmitted an initialized operation, return the operation
 				// and the idempotent error. The caller will revert the 409 to 2xx
-				err = idemErr
+				return true, resubmitted[0], nil // only one operation, return existing one
 			}
 		}
-		return op, err
+		return false, op, err
 	}
 
-	return op, err
+	return false, op, err
 }
 
 func (cm *contractManager) DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (res interface{}, err error) {
@@ -359,16 +361,12 @@ func (cm *contractManager) DeployContract(ctx context.Context, req *core.Contrac
 		return nil, err
 	}
 
-	op, err := cm.writeDeployTransaction(ctx, req)
+	resubmit, op, err := cm.writeDeployTransaction(ctx, req)
 	if err != nil {
-		if _, ok := err.(*sqlcommon.IdempotencyError); ok {
-			if op != nil {
-				// Idempotency key clash but we resubmitted an initialized operation? Return 20x, not 409
-				return op, nil
-			}
-		}
-		// Any other error? Return the error unchanged
 		return nil, err
+	}
+	if resubmit {
+		return op, nil // nothing more to do
 	}
 
 	send := func(ctx context.Context) error {
@@ -416,17 +414,14 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 		req.Message.InlineData = nil
 	}
 	var op *core.Operation
+	var resubmit bool
 	if req.Type == core.CallTypeInvoke {
-		op, err = cm.writeInvokeTransaction(ctx, req)
+		resubmit, op, err = cm.writeInvokeTransaction(ctx, req)
 		if err != nil {
-			if _, ok := err.(*sqlcommon.IdempotencyError); ok {
-				if op != nil {
-					// Idempotency key clash but we resubmitted an initialized operation? Return 20x, not 409
-					return op, nil
-				}
-			}
-			// Any other error? Return the error unchanged
 			return nil, err
+		}
+		if resubmit {
+			return op, nil
 		}
 	}
 

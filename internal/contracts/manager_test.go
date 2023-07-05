@@ -1717,7 +1717,7 @@ func TestDeployContractIdempotentResubmitOperation(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(&core.Operation{}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{{}}, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
@@ -2340,31 +2340,40 @@ func TestInvokeContractIdempotentResubmitOperation(t *testing.T) {
 	mth := cm.txHelper.(*txcommonmocks.Helper)
 	mom := cm.operations.(*operationmocks.Manager)
 	mbm := cm.blockchain.(*blockchainmocks.Plugin)
+	mbrm := cm.broadcast.(*broadcastmocks.Manager)
 	txw := cm.txWriter.(*txwritermocks.Writer)
+	sender := &syncasyncmocks.Sender{}
 
 	req := &core.ContractCallRequest{
 		Type:      core.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
-			Name:    "doStuff",
-			ID:      fftypes.NewUUID(),
-			Params:  fftypes.FFIParams{},
+			Name: "doStuff",
+			ID:   fftypes.NewUUID(),
+			Params: fftypes.FFIParams{
+				{
+					Name:   "data",
+					Schema: fftypes.JSONAnyPtr(`{"type":"string"}`),
+				}},
 			Returns: fftypes.FFIParams{},
 		},
+		Message:        &core.MessageInOut{},
 		IdempotencyKey: "idem1",
 	}
 
-	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvoke, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
+	mbrm.On("NewBroadcast", req.Message).Return(sender, nil)
+	txw.On("WriteTransactionAndOps", mock.Anything, core.TransactionTypeContractInvokePin, core.IdempotencyKey("idem1"), mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(&core.Operation{}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{{}}, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	opaqueData := "anything"
 	mbm.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
-	mbm.On("ValidateInvokeRequest", context.Background(), opaqueData, req.Input, false).Return(nil)
+	sender.On("Prepare", mock.Anything).Return(nil) // we won't do send though
+	mbm.On("ValidateInvokeRequest", context.Background(), opaqueData, req.Input, true).Return(nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
 	_, err := cm.InvokeContract(context.Background(), req, false)
@@ -2574,7 +2583,7 @@ func TestInvokeContractBadInput(t *testing.T) {
 		},
 	}
 
-	_, err := cm.writeInvokeTransaction(context.Background(), req)
+	_, _, err := cm.writeInvokeTransaction(context.Background(), req)
 
 	assert.Regexp(t, "json", err)
 }
@@ -2588,7 +2597,7 @@ func TestDeployContractBadInput(t *testing.T) {
 		},
 	}
 
-	_, err := cm.writeDeployTransaction(context.Background(), req)
+	_, _, err := cm.writeDeployTransaction(context.Background(), req)
 
 	assert.Regexp(t, "json", err)
 }

@@ -134,19 +134,19 @@ func (_m *Manager) ResolveOperationByID(ctx context.Context, opID *fftypes.UUID,
 }
 
 // ResubmitOperations provides a mock function with given fields: ctx, txID
-func (_m *Manager) ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (*core.Operation, error) {
+func (_m *Manager) ResubmitOperations(ctx context.Context, txID *fftypes.UUID) ([]*core.Operation, error) {
 	ret := _m.Called(ctx, txID)
 
-	var r0 *core.Operation
+	var r0 []*core.Operation
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) (*core.Operation, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) ([]*core.Operation, error)); ok {
 		return rf(ctx, txID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Operation); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) []*core.Operation); ok {
 		r0 = rf(ctx, txID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Operation)
+			r0 = ret.Get(0).([]*core.Operation)
 		}
 	}
 
