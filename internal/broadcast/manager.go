@@ -234,12 +234,12 @@ func (bm *broadcastManager) PublishDataValue(ctx context.Context, id string, ide
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			operation, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			resubmitted, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
 				err = resubmitErr
-			} else if operation != nil {
+			} else if len(resubmitted) > 0 {
 				// We successfully resubmitted an initialized operation, return 2xx not 409
 				err = nil
 			}
@@ -276,12 +276,12 @@ func (bm *broadcastManager) PublishDataBlob(ctx context.Context, id string, idem
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			operation, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			resubmitted, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
 				err = resubmitErr
-			} else if operation != nil {
+			} else if len(resubmitted) > 0 {
 				// We successfully resubmitted an initialized operation, return 2xx not 409
 				err = nil
 			}

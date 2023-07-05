@@ -132,7 +132,7 @@ func TestMintTokensIdempotentResubmit(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(op, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{op}, nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
 	_, err := am.MintTokens(context.Background(), mint, false)

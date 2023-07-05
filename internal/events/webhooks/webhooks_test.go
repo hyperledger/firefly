@@ -37,6 +37,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -91,7 +92,7 @@ func TestValidateOptionsWithDataFalse(t *testing.T) {
 		},
 	}
 	opts.TransportOptions()["url"] = "/anything"
-	err := wh.ValidateOptions(opts)
+	err := wh.ValidateOptions(wh.ctx, opts)
 	assert.NoError(t, err)
 	assert.False(t, *opts.WithData)
 }
@@ -102,7 +103,7 @@ func TestValidateOptionsWithDataDefaulTrue(t *testing.T) {
 
 	opts := &core.SubscriptionOptions{}
 	opts.TransportOptions()["url"] = "/anything"
-	err := wh.ValidateOptions(opts)
+	err := wh.ValidateOptions(wh.ctx, opts)
 	assert.NoError(t, err)
 	assert.True(t, *opts.WithData)
 
@@ -116,7 +117,7 @@ func TestValidateOptionsBadURL(t *testing.T) {
 
 	opts := &core.SubscriptionOptions{}
 	opts.TransportOptions()
-	err := wh.ValidateOptions(opts)
+	err := wh.ValidateOptions(wh.ctx, opts)
 	assert.Regexp(t, "FF10242", err)
 }
 
@@ -130,7 +131,7 @@ func TestValidateOptionsBadHeaders(t *testing.T) {
 	opts.TransportOptions()["headers"] = fftypes.JSONObject{
 		"bad": map[bool]bool{false: true},
 	}
-	err := wh.ValidateOptions(opts)
+	err := wh.ValidateOptions(wh.ctx, opts)
 	assert.Regexp(t, "FF10243.*headers", err)
 }
 
@@ -144,8 +145,144 @@ func TestValidateOptionsBadQuery(t *testing.T) {
 	opts.TransportOptions()["query"] = fftypes.JSONObject{
 		"bad": map[bool]bool{false: true},
 	}
-	err := wh.ValidateOptions(opts)
+	err := wh.ValidateOptions(wh.ctx, opts)
 	assert.Regexp(t, "FF10243.*query", err)
+}
+
+func TestValidateOptionsBadInitialDelayDuration(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	opts := &core.SubscriptionOptions{}
+	opts.Retry = core.WebhookRetryOptions{
+		Enabled:      true,
+		InitialDelay: "badinitialdelay",
+	}
+	err := wh.ValidateOptions(wh.ctx, opts)
+	assert.Regexp(t, "FF00137", err)
+}
+
+func TestValidateOptionsBadMaxDelayDuration(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	opts := &core.SubscriptionOptions{}
+	opts.Retry = core.WebhookRetryOptions{
+		Enabled:      true,
+		MaximumDelay: "badmaxdelay",
+	}
+	err := wh.ValidateOptions(wh.ctx, opts)
+	assert.Regexp(t, "FF00137", err)
+}
+
+func TestValidateOptionsBadHTTPRequestTimeout(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	opts := &core.SubscriptionOptions{}
+
+	opts.HTTPOptions = core.WebhookHTTPOptions{
+		HTTPRequestTimeout: "badrequestimeout",
+	}
+	err := wh.ValidateOptions(wh.ctx, opts)
+	assert.Regexp(t, "FF00137", err)
+}
+
+func TestValidateOptionsBadHTTPTLSHandshakeTimeout(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	opts := &core.SubscriptionOptions{}
+
+	opts.HTTPOptions = core.WebhookHTTPOptions{
+		HTTPTLSHandshakeTimeout: "badtimeout",
+	}
+	err := wh.ValidateOptions(wh.ctx, opts)
+	assert.Regexp(t, "FF00137", err)
+}
+func TestValidateOptionsBadHTTPIdleConnTimeout(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	opts := &core.SubscriptionOptions{}
+
+	opts.HTTPOptions = core.WebhookHTTPOptions{
+		HTTPIdleConnTimeout: "badtimeout",
+	}
+	err := wh.ValidateOptions(wh.ctx, opts)
+	assert.Regexp(t, "FF00137", err)
+}
+func TestValidateOptionsBadHTTPConnectionTimeout(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	opts := &core.SubscriptionOptions{}
+
+	opts.HTTPOptions = core.WebhookHTTPOptions{
+		HTTPConnectionTimeout: "badtimeout",
+	}
+	err := wh.ValidateOptions(wh.ctx, opts)
+	assert.Regexp(t, "FF00137", err)
+}
+func TestValidateOptionsBadHTTPExpectedContinueTimeout(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	opts := &core.SubscriptionOptions{}
+
+	opts.HTTPOptions = core.WebhookHTTPOptions{
+		HTTPExpectContinueTimeout: "badtimeout",
+	}
+	err := wh.ValidateOptions(wh.ctx, opts)
+	assert.Regexp(t, "FF00137", err)
+}
+
+func TestValidateOptionsExtraFields(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	wh.ffrestyConfig = &ffresty.Config{
+		URL: "test-url",
+	}
+
+	opts := &core.SubscriptionOptions{}
+	opts.TransportOptions()["url"] = "/anything"
+
+	opts.Retry = core.WebhookRetryOptions{
+		Enabled:      true,
+		Count:        2,
+		InitialDelay: "1s",
+		MaximumDelay: "2s",
+	}
+
+	opts.HTTPOptions = core.WebhookHTTPOptions{
+		HTTPMaxIdleConns:          2,
+		HTTPTLSHandshakeTimeout:   "2s",
+		HTTPRequestTimeout:        "2s",
+		HTTPIdleConnTimeout:       "2s",
+		HTTPConnectionTimeout:     "2s",
+		HTTPExpectContinueTimeout: "2s",
+	}
+
+	opts.TLSConfig = &tls.Config{}
+
+	err := wh.ValidateOptions(wh.ctx, opts)
+	assert.NoError(t, err)
+
+	assert.Equal(t, opts.RestyClient.RetryCount, 2)
+	assert.Equal(t, opts.RestyClient.RetryMaxWaitTime, 2*time.Second)
+	assert.Equal(t, opts.RestyClient.RetryWaitTime, 1*time.Second)
+
+	expectedDuration := 2 * time.Second
+	assert.Equal(t, opts.RestyClient.GetClient().Timeout, expectedDuration)
+
+	transport, ok := opts.RestyClient.GetClient().Transport.(*http.Transport)
+	assert.True(t, ok)
+	assert.Equal(t, transport.IdleConnTimeout, expectedDuration)
+	assert.Equal(t, transport.ExpectContinueTimeout, expectedDuration)
+	assert.Equal(t, transport.TLSHandshakeTimeout, expectedDuration)
+	assert.Equal(t, transport.MaxIdleConns, 2)
+	assert.NotNil(t, transport.TLSClientConfig)
 }
 
 func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
@@ -252,7 +389,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{data})
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{data})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -353,6 +490,10 @@ func TestRequestWithBodyReplyEndToEndWithTLS(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	msgID := fftypes.NewUUID()
 	groupHash := fftypes.NewRandB32()
+
+	client := ffresty.NewWithConfig(ctx, ffresty.Config{
+		TLSClientConfig: clientTLSConfig,
+	})
 	sub := &core.Subscription{
 		SubscriptionRef: core.SubscriptionRef{
 			Namespace: "ns1",
@@ -362,7 +503,7 @@ func TestRequestWithBodyReplyEndToEndWithTLS(t *testing.T) {
 				WithData: &yes,
 			},
 			WebhookSubOptions: core.WebhookSubOptions{
-				TLSConfig: clientTLSConfig,
+				RestyClient: client,
 			},
 		},
 	}
@@ -433,7 +574,7 @@ func TestRequestWithBodyReplyEndToEndWithTLS(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err = wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{data})
+	err = wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{data})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -546,7 +687,7 @@ func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{data})
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{data})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -613,7 +754,7 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 		return !response.Rejected
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{data})
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{data})
 	assert.NoError(t, err)
 	assert.True(t, called)
 
@@ -677,7 +818,7 @@ func TestRequestReplyEmptyData(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{})
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{})
 	assert.NoError(t, err)
 	assert.True(t, called)
 
@@ -743,7 +884,7 @@ func TestRequestReplyOneData(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{{ID: dataID, Value: fftypes.JSONAnyPtr("foo")}})
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{{ID: dataID, Value: fftypes.JSONAnyPtr("foo")}})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -796,7 +937,7 @@ func TestRequestReplyBadJSON(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{})
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -865,7 +1006,7 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
@@ -919,7 +1060,7 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
@@ -973,13 +1114,13 @@ func TestWebhookFailFastAsk(t *testing.T) {
 		})
 
 	// Drive two deliveries, waiting for them both to ack (noting both will fail)
-	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
 	assert.NoError(t, err)
 
-	err = wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{
+	err = wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
@@ -1019,7 +1160,7 @@ func TestDeliveryRequestNilMessage(t *testing.T) {
 		},
 	}
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, nil)
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, nil)
 	assert.NoError(t, err)
 	mcb.AssertExpectations(t)
 }
@@ -1063,7 +1204,7 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 		return !response.Rejected // should be accepted as a no-op so we can move on to other events
 	}))
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, nil)
+	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, nil)
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)

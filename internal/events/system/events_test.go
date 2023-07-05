@@ -47,7 +47,7 @@ func newTestEvents(t *testing.T) (se *Events, cancel func()) {
 	se.SetHandler("ns1", cbs)
 	assert.Equal(t, "system", se.Name())
 	assert.NotNil(t, se.Capabilities())
-	assert.Nil(t, se.ValidateOptions(&core.SubscriptionOptions{}))
+	assert.Nil(t, se.ValidateOptions(ctx, &core.SubscriptionOptions{}))
 	return se, cancelCtx
 }
 
@@ -73,7 +73,7 @@ func TestDeliveryRequestOk(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = se.DeliveryRequest(se.connID, sub, &core.EventDelivery{
+	err = se.DeliveryRequest(se.ctx, se.connID, sub, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{
 				Namespace: "ns1",
@@ -82,7 +82,7 @@ func TestDeliveryRequestOk(t *testing.T) {
 	}, nil)
 	assert.NoError(t, err)
 
-	err = se.DeliveryRequest(se.connID, &core.Subscription{}, &core.EventDelivery{
+	err = se.DeliveryRequest(se.ctx, se.connID, &core.Subscription{}, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{
 				Namespace: "ns2",
@@ -112,7 +112,7 @@ func TestDeliveryRequestFail(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = se.DeliveryRequest(mock.Anything, &core.Subscription{}, &core.EventDelivery{
+	err = se.DeliveryRequest(se.ctx, mock.Anything, &core.Subscription{}, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{
 				Namespace: "ns1",
