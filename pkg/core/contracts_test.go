@@ -59,9 +59,10 @@ func TestValidateInvalidContractAPI(t *testing.T) {
 
 func TestContractAPITopic(t *testing.T) {
 	api := &ContractAPI{
-		Namespace: "ns1",
+		Namespace:   "ns1",
+		NetworkName: "banana",
 	}
-	assert.Equal(t, "4cccc66c1f0eebcf578f1e63b73a2047d4eb4c84c0a00c69b0e00c7490403d20", api.Topic())
+	assert.Equal(t, "a2f42ab7c9ef44ec08a103c565041b48b4cff4e4176e5faacfe8512c361e4f2c", api.Topic())
 }
 
 func TestContractAPISetBroadCastMessage(t *testing.T) {

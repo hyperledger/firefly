@@ -51,7 +51,9 @@ import (
 	"github.com/hyperledger/firefly/mocks/spieventsmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/mocks/txwritermocks"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -85,6 +87,7 @@ type testOrchestrator struct {
 	mdh *definitionsmocks.Handler
 	mmp *multipartymocks.Manager
 	mds *definitionsmocks.Sender
+	mtw *txwritermocks.Writer
 }
 
 func (tor *testOrchestrator) cleanup(t *testing.T) {
@@ -146,6 +149,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mdh: &definitionsmocks.Handler{},
 		mmp: &multipartymocks.Manager{},
 		mds: &definitionsmocks.Sender{},
+		mtw: &txwritermocks.Writer{},
 	}
 	tor.orchestrator.multiparty = tor.mmp
 	tor.orchestrator.data = tor.mdm
@@ -162,6 +166,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.txHelper = tor.mth
+	tor.orchestrator.txWriter = tor.mtw
 	tor.orchestrator.defhandler = tor.mdh
 	tor.orchestrator.defsender = tor.mds
 	tor.orchestrator.config.Multiparty.Enabled = true
@@ -431,6 +436,16 @@ func TestStartBatchFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestInitTXWriter(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.txWriter = nil
+	or.config.Multiparty.Enabled = false
+	or.mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
+	err := or.initManagers(context.Background())
+	assert.NoError(t, err)
+}
+
 func TestStartStopOk(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
@@ -441,12 +456,14 @@ func TestStartStopOk(t *testing.T) {
 	or.mbm.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
+	or.mtw.On("Start").Return()
 	or.mba.On("WaitStop").Return(nil)
 	or.mbm.On("WaitStop").Return(nil)
 	or.mdm.On("WaitStop").Return(nil)
 	or.msd.On("WaitStop").Return(nil)
 	or.mom.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
+	or.mtw.On("Close").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()

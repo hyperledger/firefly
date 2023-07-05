@@ -114,7 +114,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 
 			node, err := or.identity.GetLocalNode(ctx)
 			if err != nil {
-				log.L(ctx).Warnf("Failed to query local node for status: %s", err)
+				return nil, err
 			}
 			if node != nil && !node.Parent.Equals(org.ID) {
 				log.L(ctx).Errorf("Specified node name is in use by another org: %s", err)

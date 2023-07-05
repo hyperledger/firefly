@@ -177,6 +177,10 @@ var (
 	CacheOperationsLimit = ffc("cache.operations.limit")
 	CacheOperationsTTL   = ffc("cache.operations.ttl")
 
+	// Invoke methods cache config
+	CacheMethodsLimit = ffc("cache.methods.limit")
+	CacheMethodsTTL   = ffc("cache.methods.ttl")
+
 	// DownloadWorkerCount is the number of download workers created to pull data from shared storage to the local DX
 	DownloadWorkerCount = ffc("download.worker.count")
 	// DownloadWorkerQueueLength is the length of the work queue in the channel to the workers - defaults to 2x the worker count
@@ -331,6 +335,12 @@ var (
 	SubscriptionsRetryMaxDelay = ffc("subscription.retry.maxDelay")
 	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
 	SubscriptionsRetryFactor = ffc("subscription.retry.factor")
+	// TransactionWriterCount
+	TransactionWriterCount = ffc("transaction.writer.count")
+	// TransactionWriterBatchTimeout
+	TransactionWriterBatchTimeout = ffc("transaction.writer.batchTimeout")
+	// TransactionWriterBatchMaxTransactions
+	TransactionWriterBatchMaxTransactions = ffc("transaction.writer.batchMaxTransactions")
 
 	// AssetManagerKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization
 	AssetManagerKeyNormalization = ffc("asset.manager.keyNormalization")
@@ -367,7 +377,7 @@ func setDefaults() {
 	viper.SetDefault(string(BlobReceiverWorkerBatchTimeout), "50ms")
 	viper.SetDefault(string(BlobReceiverWorkerCount), 5)
 	viper.SetDefault(string(BlobReceiverWorkerBatchMaxInserts), 200)
-	viper.SetDefault(string(CacheBlockchainEventLimit), 100)
+	viper.SetDefault(string(CacheBlockchainEventLimit), 1000)
 	viper.SetDefault(string(CacheBlockchainEventTTL), "5m")
 	viper.SetDefault(string(BroadcastBatchAgentTimeout), "2m")
 	viper.SetDefault(string(BroadcastBatchSize), 200)
@@ -378,8 +388,10 @@ func setDefaults() {
 	viper.SetDefault(string(CacheAddressResolverLimit), 1000)
 	viper.SetDefault(string(CacheAddressResolverTTL), "24h")
 	viper.SetDefault(string(CacheEnabled), true)
-	viper.SetDefault(string(CacheOperationsLimit), 200)
+	viper.SetDefault(string(CacheOperationsLimit), 1000)
 	viper.SetDefault(string(CacheOperationsTTL), "5m")
+	viper.SetDefault(string(CacheMethodsLimit), 200)
+	viper.SetDefault(string(CacheMethodsTTL), "5m")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DebugAddress), "localhost")
@@ -442,6 +454,9 @@ func setDefaults() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
+	viper.SetDefault(string(TransactionWriterBatchMaxTransactions), 100)
+	viper.SetDefault(string(TransactionWriterBatchTimeout), "10ms")
+	viper.SetDefault(string(TransactionWriterCount), 5)
 	viper.SetDefault(string(CacheTransactionSize), "1Mb")
 	viper.SetDefault(string(CacheTransactionTTL), "5m")
 	viper.SetDefault(string(UIEnabled), true)
