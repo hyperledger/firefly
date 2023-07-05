@@ -120,10 +120,10 @@ func (s *approveSender) resolve(ctx context.Context) (opResubmitted bool, err er
 				return true, nil
 			}
 		}
-		s.approval.TX.ID = txid
-		s.approval.TX.Type = core.TransactionTypeTokenApproval
 		return false, err
 	}
+	s.approval.TX.ID = txid
+	s.approval.TX.Type = core.TransactionTypeTokenApproval
 
 	// Resolve the attached message
 	if s.approval.Message != nil {
