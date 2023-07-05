@@ -302,6 +302,7 @@
       <li><a href="#http-apis" id="markdown-toc-http-apis">HTTP APIs</a>        <ol>
           <li><a href="#post-createpool" id="markdown-toc-post-createpool"><code class="language-plaintext highlighter-rouge">POST /createpool</code></a></li>
           <li><a href="#post-activatepool" id="markdown-toc-post-activatepool"><code class="language-plaintext highlighter-rouge">POST /activatepool</code></a></li>
+          <li><a href="#post-deactivatepool" id="markdown-toc-post-deactivatepool"><code class="language-plaintext highlighter-rouge">POST /deactivatepool</code></a></li>
           <li><a href="#post-checkinterface" id="markdown-toc-post-checkinterface"><code class="language-plaintext highlighter-rouge">POST /checkinterface</code></a></li>
           <li><a href="#post-mint" id="markdown-toc-post-mint"><code class="language-plaintext highlighter-rouge">POST /mint</code></a></li>
           <li><a href="#post-burn" id="markdown-toc-post-burn"><code class="language-plaintext highlighter-rouge">POST /burn</code></a></li>
@@ -450,7 +451,7 @@ existing ones).</p>
       </h3>
     
 
-<p>Activate a token pool to begin receiving events. Generally this means the connector will create blockchain event subscriptions to transfer and approval events related to the set of tokens encompassed by this token pool.</p>
+<p>Activate a token pool to begin receiving events. Generally this means the connector will create blockchain event listeners for transfer and approval events related to the set of tokens encompassed by this token pool.</p>
 
 <p>In a multiparty network, this step will be performed by every member after a successful token pool broadcast. It therefore also serves the purpose of validating the broadcast info - if the connector does not find a valid pool given the <code class="language-plaintext highlighter-rouge">poolLocator</code> and <code class="language-plaintext highlighter-rouge">config</code> information passed in to this call, the pool should not get confirmed.</p>
 
@@ -459,7 +460,6 @@ existing ones).</p>
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
   "poolLocator": "id=F1",
   "poolData": "extra-pool-info",
-  "requestId": "1",
   "config": {}
 }
 </code></pre></div></div>
@@ -484,11 +484,6 @@ existing ones).</p>
       <td>(OPTIONAL) A data string that should be permanently attached to this pool and returned in all events.</td>
     </tr>
     <tr>
-      <td>requestId</td>
-      <td>string</td>
-      <td>(OPTIONAL) A unique identifier for this request. Will be included in the “receipt” websocket event to match receipts to requests.</td>
-    </tr>
-    <tr>
       <td>config</td>
       <td>object</td>
       <td>(OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. This should be the same <code class="language-plaintext highlighter-rouge">config</code> object that was passed when the pool was created.</td>
@@ -507,6 +502,62 @@ existing ones).</p>
 <p><em>See <a href="#async-request">Response Types: Async Request</a></em></p>
 
 <p>HTTP 204: activation was successful - no separate receipt will be delivered, but “token-pool” event will be sent later on the websocket.</p>
+
+<p><em>No body</em></p>
+      <h3 id="post-deactivatepool">
+        
+        
+          <a href="#post-deactivatepool" class="anchor-heading" aria-labelledby="post-deactivatepool"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> <code class="language-plaintext highlighter-rouge">POST /deactivatepool</code>
+        
+        
+      </h3>
+    
+
+<p>Deactivate a token pool to stop receiving events and delete all blockchain listeners related to that pool.</p>
+
+<p><strong>Request</strong></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+  "poolLocator": "id=F1",
+  "poolData": "extra-pool-info",
+  "config": {}
+}
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>poolLocator</td>
+      <td>string</td>
+      <td>The locator of the pool, as supplied by the output of the pool creation.</td>
+    </tr>
+    <tr>
+      <td>poolData</td>
+      <td>string</td>
+      <td>(OPTIONAL) The data string that was attached to this pool at activation.</td>
+    </tr>
+    <tr>
+      <td>config</td>
+      <td>object</td>
+      <td>(OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Response</strong></p>
+
+<p>HTTP 204: deactivation was successful, and one or more listeners were deleted.</p>
+
+<p><em>No body</em></p>
+
+<p>HTTP 404: no blockchain listeners were found for the given pool information.</p>
 
 <p><em>No body</em></p>
       <h3 id="post-checkinterface">
