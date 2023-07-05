@@ -118,12 +118,9 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		}
 	}
 
-	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Name == batchPin.Event.Name
-	})).Return(nil, fmt.Errorf("pop")).Once()
-	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Name == batchPin.Event.Name
-	})).Return(nil, nil).Once()
+	em.mth.On("InsertNewBlockchainEvents", mock.Anything, mock.MatchedBy(func(e []*core.BlockchainEvent) bool {
+		return e[0].Name == batchPin.Event.Name
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil).Once()
 	em.mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil).Once()
@@ -191,12 +188,9 @@ func TestBatchPinCompleteOkBroadcastExistingBatch(t *testing.T) {
 		}
 	}
 
-	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Name == batchPin.Event.Name
-	})).Return(nil, fmt.Errorf("pop")).Once()
-	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Name == batchPin.Event.Name
-	})).Return(nil, nil).Once()
+	em.mth.On("InsertNewBlockchainEvents", mock.Anything, mock.MatchedBy(func(e []*core.BlockchainEvent) bool {
+		return e[0].Name == batchPin.Event.Name
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil).Once()
 	em.mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil).Once()
@@ -239,7 +233,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	em.mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	em.mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("These pins have been seen before")) // simulate replay fallback
 	em.mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
-	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.Anything).Return(nil, nil)
+	em.mth.On("InsertNewBlockchainEvents", mock.Anything, mock.Anything).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil)
 	em.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	em.mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 
@@ -286,7 +280,9 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	em.mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	em.mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("optimization miss"))
 	em.mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.Anything).Return(nil, nil)
+	em.mth.On("InsertNewBlockchainEvents", mock.Anything, mock.MatchedBy(func(e []*core.BlockchainEvent) bool {
+		return e[0].Name == batchPin.Event.Name
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil).Once()
 	em.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
 	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
@@ -325,7 +321,9 @@ func TestBatchPinCompleteGetBatchByIDFails(t *testing.T) {
 
 	em.mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	em.mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
-	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.Anything).Return(nil, nil)
+	em.mth.On("InsertNewBlockchainEvents", mock.Anything, mock.MatchedBy(func(e []*core.BlockchainEvent) bool {
+		return e[0].Name == batchPin.Event.Name
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil).Once()
 	em.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	em.mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("batch lookup failed"))
 
@@ -365,7 +363,9 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 
 	em.mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
-	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, mock.Anything).Return(nil, nil)
+	em.mth.On("InsertNewBlockchainEvents", mock.Anything, mock.MatchedBy(func(e []*core.BlockchainEvent) bool {
+		return e[0].Name == batchPin.Event.Name
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil).Once()
 	em.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	em.mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
 	em.mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)

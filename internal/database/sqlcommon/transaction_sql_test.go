@@ -18,6 +18,7 @@ package sqlcommon
 
 import (
 	"context"
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -106,6 +107,67 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(transactions))
 	assert.Equal(t, (core.IdempotencyKey)("testKey"), transactions[0].IdempotencyKey)
+}
+
+func TestTransactionE2EInsertManyIdempotency(t *testing.T) {
+
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Create a new transaction entry
+	txns := make([]*core.Transaction, 5)
+	txnsByIdem := make(map[string]*core.Transaction)
+	for i := 0; i < len(txns); i++ {
+		idem := fmt.Sprintf("idem_%d", i)
+		txns[i] = &core.Transaction{
+			ID:             fftypes.NewUUID(),
+			Type:           core.TransactionTypeBatchPin,
+			Namespace:      "ns1",
+			BlockchainIDs:  fftypes.FFStringArray{"tx1"},
+			IdempotencyKey: core.IdempotencyKey(idem),
+		}
+		txnsByIdem[idem] = txns[i]
+	}
+
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, core.ChangeEventTypeCreated, "ns1", mock.Anything, mock.Anything).Return()
+
+	// Insert one transaction directly, with a conflicting idempotency key (different UUID)
+	existingTxn := &core.Transaction{
+		ID:             fftypes.NewUUID(),
+		Type:           core.TransactionTypeBatchPin,
+		Namespace:      "ns1",
+		BlockchainIDs:  fftypes.FFStringArray{"tx1"},
+		IdempotencyKey: core.IdempotencyKey("idem_2"),
+	}
+	err := s.InsertTransaction(ctx, existingTxn)
+	assert.NoError(t, err)
+
+	// Insert the whole set
+	err = s.RunAsGroup(ctx, func(ctx context.Context) error {
+		err := s.InsertTransactions(ctx, txns)
+		assert.Regexp(t, "FF10431.*idem_2", err)
+		return nil
+	})
+	assert.NoError(t, err)
+
+	// Check we find every transaction
+	fb := database.TransactionQueryFactory.NewFilter(ctx)
+	idempotencyKeys := make([]driver.Value, len(txns))
+	for i := 0; i < len(txns); i++ {
+		idempotencyKeys[i] = fmt.Sprintf("idem_%d", i)
+	}
+	resolvedTX, _, err := s.GetTransactions(ctx, "ns1", fb.In("idempotencykey", idempotencyKeys))
+	assert.NoError(t, err)
+	assert.Len(t, resolvedTX, len(txns))
+	for _, txn := range resolvedTX {
+		if txn.IdempotencyKey == "idem_2" {
+			assert.Equal(t, existingTxn.ID, txn.ID)
+		} else {
+			assert.Equal(t, txnsByIdem[string(txn.IdempotencyKey)].ID, txn.ID)
+		}
+	}
+
 }
 
 func TestInsertTransactionFailBegin(t *testing.T) {
@@ -227,4 +289,76 @@ func TestTransactionUpdateFail(t *testing.T) {
 	u := database.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
 	err := s.UpdateTransaction(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF00178", err)
+}
+
+func TestInsertTransactionsBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertTransactions(context.Background(), []*core.Transaction{})
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertTransactionsMultiRowOK(t *testing.T) {
+	s := newMockProvider()
+	s.multiRowInsert = true
+	s.fakePSQLInsert = true
+	s, mock := s.init()
+
+	tx1 := &core.Transaction{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	tx2 := &core.Transaction{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, core.ChangeEventTypeCreated, "ns1", tx1.ID)
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, core.ChangeEventTypeCreated, "ns1", tx2.ID)
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*transactions").WillReturnRows(sqlmock.NewRows([]string{s.SequenceColumn()}).
+		AddRow(int64(1001)).
+		AddRow(int64(1002)),
+	)
+	mock.ExpectCommit()
+	err := s.RunAsGroup(context.Background(), func(ctx context.Context) error {
+		return s.InsertTransactions(ctx, []*core.Transaction{tx1, tx2})
+	})
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertTransactionsOutsideTXFail(t *testing.T) {
+	s := newMockProvider()
+	s, mock := s.init()
+	mock.ExpectBegin()
+	tx1 := &core.Transaction{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	err := s.InsertTransactions(context.Background(), []*core.Transaction{tx1})
+	assert.Regexp(t, "FF10456", err)
+}
+
+func TestInsertTransactionsMultiRowFail(t *testing.T) {
+	s := newMockProvider()
+	s.multiRowInsert = true
+	s.fakePSQLInsert = true
+	s, mock := s.init()
+	tx1 := &core.Transaction{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.RunAsGroup(context.Background(), func(ctx context.Context) error {
+		return s.InsertTransactions(ctx, []*core.Transaction{tx1})
+	})
+	assert.Regexp(t, "FF00177", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertTransactionsSingleRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	tx1 := &core.Transaction{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.RunAsGroup(context.Background(), func(ctx context.Context) error {
+		return s.InsertTransactions(ctx, []*core.Transaction{tx1})
+	})
+	assert.Regexp(t, "FF00177", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
 }

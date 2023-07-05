@@ -107,6 +107,8 @@ nav_order: 23
 | `query` | Webhooks only: Static query params to set on the webhook request | `` |
 | `tlsConfigName` | The name of an existing TLS configuration associated to the namespace to use | `string` |
 | `input` | Webhooks only: A set of options to extract data from the first JSON input data in the incoming message. Only applies if withData=true | [`WebhookInputOptions`](#webhookinputoptions) |
+| `retry` | Webhooks only: a set of options for retrying the webhook call | [`WebhookRetryOptions`](#webhookretryoptions) |
+| `httpOptions` | Webhooks only: a set of options for HTTP | [`WebhookHTTPOptions`](#webhookhttpoptions) |
 
 ## WebhookInputOptions
 
@@ -117,6 +119,28 @@ nav_order: 23
 | `body` | A top-level property of the first data input, to use for the request body. Default is the whole first body | `string` |
 | `path` | A top-level property of the first data input, to use for a path to append with escaping to the webhook path | `string` |
 | `replytx` | A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose) | `string` |
+
+
+## WebhookRetryOptions
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `enabled` | Enables retry on HTTP calls, defaults to false | `bool` |
+| `count` | Number of times to retry the webhook call in case of failure | `int` |
+| `initialDelay` | Initial delay between retries when we retry the webhook call | `string` |
+| `maxDelay` | Max delay between retries when we retry the webhookcall | `string` |
+
+
+## WebhookHTTPOptions
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `tlsHandshakeTimeout` | The max duration to hold a TLS handshake alive | `string` |
+| `requestTimeout` | The max duration to hold a TLS handshake alive | `string` |
+| `maxIdleConns` | The max number of idle connections to hold pooled | `int` |
+| `idleTimeout` | The max duration to hold a HTTP keepalive connection between calls | `string` |
+| `connectionTimeout` |  | `string` |
+| `expectContinueTimeout` | See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport) | `string` |
 
 
 

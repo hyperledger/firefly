@@ -321,13 +321,13 @@ func (_m *Plugin) InitConfig(_a0 config.Section) {
 	_m.Called(_a0)
 }
 
-// InvokeContract provides a mock function with given fields: ctx, nsOpID, signingKey, location, method, input, errors, options, batch
-func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
-	ret := _m.Called(ctx, nsOpID, signingKey, location, method, input, errors, options, batch)
+// InvokeContract provides a mock function with given fields: ctx, nsOpID, signingKey, location, parsedMethod, input, options, batch
+func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) error {
+	ret := _m.Called(ctx, nsOpID, signingKey, location, parsedMethod, input, options, batch)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}, *blockchain.BatchPin) error); ok {
-		r0 = rf(ctx, nsOpID, signingKey, location, method, input, errors, options, batch)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, interface{}, map[string]interface{}, map[string]interface{}, *blockchain.BatchPin) error); ok {
+		r0 = rf(ctx, nsOpID, signingKey, location, parsedMethod, input, options, batch)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -375,25 +375,51 @@ func (_m *Plugin) NormalizeContractLocation(ctx context.Context, ntype blockchai
 	return r0, r1
 }
 
-// QueryContract provides a mock function with given fields: ctx, signingKey, location, method, input, errors, options
-func (_m *Plugin) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
-	ret := _m.Called(ctx, signingKey, location, method, input, errors, options)
+// ParseInterface provides a mock function with given fields: ctx, method, errors
+func (_m *Plugin) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
+	ret := _m.Called(ctx, method, errors)
 
 	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) (interface{}, error)); ok {
-		return rf(ctx, signingKey, location, method, input, errors, options)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIMethod, []*fftypes.FFIError) (interface{}, error)); ok {
+		return rf(ctx, method, errors)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) interface{}); ok {
-		r0 = rf(ctx, signingKey, location, method, input, errors, options)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIMethod, []*fftypes.FFIError) interface{}); ok {
+		r0 = rf(ctx, method, errors)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, map[string]interface{}) error); ok {
-		r1 = rf(ctx, signingKey, location, method, input, errors, options)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.FFIMethod, []*fftypes.FFIError) error); ok {
+		r1 = rf(ctx, method, errors)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// QueryContract provides a mock function with given fields: ctx, signingKey, location, parsedMethod, input, options
+func (_m *Plugin) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
+	ret := _m.Called(ctx, signingKey, location, parsedMethod, input, options)
+
+	var r0 interface{}
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny, interface{}, map[string]interface{}, map[string]interface{}) (interface{}, error)); ok {
+		return rf(ctx, signingKey, location, parsedMethod, input, options)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny, interface{}, map[string]interface{}, map[string]interface{}) interface{}); ok {
+		r0 = rf(ctx, signingKey, location, parsedMethod, input, options)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.JSONAny, interface{}, map[string]interface{}, map[string]interface{}) error); ok {
+		r1 = rf(ctx, signingKey, location, parsedMethod, input, options)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -482,13 +508,13 @@ func (_m *Plugin) SubmitNetworkAction(ctx context.Context, nsOpID string, signin
 	return r0
 }
 
-// ValidateInvokeRequest provides a mock function with given fields: ctx, method, input, errors, hasMessage
-func (_m *Plugin) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
-	ret := _m.Called(ctx, method, input, errors, hasMessage)
+// ValidateInvokeRequest provides a mock function with given fields: ctx, parsedMethod, input, hasMessage
+func (_m *Plugin) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
+	ret := _m.Called(ctx, parsedMethod, input, hasMessage)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIMethod, map[string]interface{}, []*fftypes.FFIError, bool) error); ok {
-		r0 = rf(ctx, method, input, errors, hasMessage)
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}, map[string]interface{}, bool) error); ok {
+		r0 = rf(ctx, parsedMethod, input, hasMessage)
 	} else {
 		r0 = ret.Error(0)
 	}

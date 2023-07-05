@@ -133,8 +133,8 @@ func (s *SQLCommon) InsertOrGetFFI(ctx context.Context, ffi *fftypes.FFI) (exist
 		sq.Eq{"namespace": ffi.Namespace},
 		sq.Or{
 			sq.Eq{"id": ffi.ID},
-			sq.Eq{"name": ffi.Name},
-			sq.Eq{"network_name": ffi.NetworkName},
+			sq.Eq{"name": ffi.Name, "version": ffi.Version},
+			sq.Eq{"network_name": ffi.NetworkName, "version": ffi.Version},
 		},
 	})
 	if queryErr != nil || existing != nil {

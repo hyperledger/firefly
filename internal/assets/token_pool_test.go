@@ -150,7 +150,7 @@ func TestCreateTokenPoolIdempotentResubmit(t *testing.T) {
 		Return(id, &sqlcommon.IdempotencyError{
 			ExistingTXID:  id,
 			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(op, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{op}, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 

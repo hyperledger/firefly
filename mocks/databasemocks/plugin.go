@@ -2535,6 +2535,27 @@ func (_m *Plugin) InsertBlobs(ctx context.Context, blobs []*core.Blob) error {
 	return r0
 }
 
+// InsertBlockchainEvents provides a mock function with given fields: ctx, messages, hooks
+func (_m *Plugin) InsertBlockchainEvents(ctx context.Context, messages []*core.BlockchainEvent, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, messages)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.BlockchainEvent, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, messages, hooks...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertContractListener provides a mock function with given fields: ctx, sub
 func (_m *Plugin) InsertContractListener(ctx context.Context, sub *core.ContractListener) error {
 	ret := _m.Called(ctx, sub)
@@ -2640,6 +2661,27 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *core.Operation
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *core.Operation, ...database.PostCompletionHook) error); ok {
 		r0 = rf(ctx, operation, hooks...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertOperations provides a mock function with given fields: ctx, ops, hooks
+func (_m *Plugin) InsertOperations(ctx context.Context, ops []*core.Operation, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, ops)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.Operation, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, ops, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2817,13 +2859,27 @@ func (_m *Plugin) InsertPins(ctx context.Context, pins []*core.Pin) error {
 	return r0
 }
 
-// InsertTransaction provides a mock function with given fields: ctx, data
-func (_m *Plugin) InsertTransaction(ctx context.Context, data *core.Transaction) error {
-	ret := _m.Called(ctx, data)
+// InsertTransaction provides a mock function with given fields: ctx, txn
+func (_m *Plugin) InsertTransaction(ctx context.Context, txn *core.Transaction) error {
+	ret := _m.Called(ctx, txn)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *core.Transaction) error); ok {
-		r0 = rf(ctx, data)
+		r0 = rf(ctx, txn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertTransactions provides a mock function with given fields: ctx, txns
+func (_m *Plugin) InsertTransactions(ctx context.Context, txns []*core.Transaction) error {
+	ret := _m.Called(ctx, txns)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.Transaction) error); ok {
+		r0 = rf(ctx, txns)
 	} else {
 		r0 = ret.Error(0)
 	}

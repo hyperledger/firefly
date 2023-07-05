@@ -19,12 +19,11 @@ package cache
 import (
 	"context"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/cache"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	"github.com/karlseguin/ccache"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -55,7 +54,7 @@ func (cc *CConfig) UniqueName() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return cc.namespace + "::" + category, nil
+	return category, nil
 }
 
 func (cc *CConfig) Category() (string, error) {
@@ -101,90 +100,20 @@ func (cc *CConfig) TTL() time.Duration {
 type Manager interface {
 	GetCache(cc *CConfig) (CInterface, error)
 	ResetCachesForNamespace(ns string)
-	ListKeys() []string
+	ListCacheNames(namespace string) []string
 }
 
-type CInterface interface {
-	Get(key string) interface{}
-	Set(key string, val interface{})
-
-	GetString(key string) string
-	SetString(key string, val string)
-
-	GetInt(key string) int
-	SetInt(key string, val int)
-}
-
-type CCache struct {
-	enabled   bool
-	ctx       context.Context
-	namespace string
-	name      string
-	cache     *ccache.Cache
-	cacheTTL  time.Duration
-}
-
-func (c *CCache) Set(key string, val interface{}) {
-	if !c.enabled {
-		return
-	}
-	c.cache.Set(c.name+":"+key, val, c.cacheTTL)
-}
-func (c *CCache) Get(key string) interface{} {
-	if !c.enabled {
-		return nil
-	}
-	if cached := c.cache.Get(c.name + ":" + key); cached != nil {
-		cached.Extend(c.cacheTTL)
-		return cached.Value()
-	}
-	return nil
-}
-
-func (c *CCache) SetString(key string, val string) {
-	c.Set(key, val)
-}
-
-func (c *CCache) GetString(key string) string {
-	val := c.Get(key)
-	if val != nil {
-		return c.Get(key).(string)
-	}
-	return ""
-}
-
-func (c *CCache) SetInt(key string, val int) {
-	c.Set(key, val)
-}
-
-func (c *CCache) GetInt(key string) int {
-	val := c.Get(key)
-	if val != nil {
-		return c.Get(key).(int)
-	}
-	return 0
-}
+type CInterface cache.CInterface
 
 type cacheManager struct {
-	ctx     context.Context
-	enabled bool
-	m       sync.Mutex
-	// maintain a list of named configured CCache, the name are unique configuration category id
-	// e.g. cache.batch
-	configuredCaches map[string]*CCache
+	ffcache cache.Manager
 }
 
 func (cm *cacheManager) ResetCachesForNamespace(ns string) {
-	cm.m.Lock()
-	defer cm.m.Unlock()
-	for k, c := range cm.configuredCaches {
-		if c.namespace == ns {
-			// Clear the cache to free the memory immediately
-			c.cache.Clear()
-			// Remove it from the map, so the next call will generate a new one
-			delete(cm.configuredCaches, k)
-		}
-	}
+	cm.ffcache.ResetCaches(ns)
+}
+func (cm *cacheManager) ListCacheNames(namespace string) []string {
+	return cm.ffcache.ListCacheNames(namespace)
 }
 
 func (cm *cacheManager) GetCache(cc *CConfig) (CInterface, error) {
@@ -196,47 +125,24 @@ func (cm *cacheManager) GetCache(cc *CConfig) (CInterface, error) {
 	if err != nil {
 		return nil, err
 	}
-	cm.m.Lock()
-	cache, exists := cm.configuredCaches[cacheName]
-	if !exists {
-		cache = &CCache{
-			ctx:       cc.ctx,
-			namespace: cc.namespace,
-			name:      cacheName,
-			cache:     ccache.New(ccache.Configure().MaxSize(maxSize)),
-			cacheTTL:  cc.TTL(),
-			enabled:   cm.enabled,
-		}
-		cm.configuredCaches[cacheName] = cache
-	}
-	cm.m.Unlock()
-	return cache, nil
-}
 
-func (cm *cacheManager) ListKeys() []string {
-	keys := make([]string, 0, len(cm.configuredCaches))
-	for k := range cm.configuredCaches {
-		keys = append(keys, k)
-	}
-	return keys
+	return cm.ffcache.GetCache(
+		cc.ctx,
+		cc.namespace,
+		cacheName,
+		maxSize,
+		cc.TTL(),
+		cm.ffcache.IsEnabled(),
+	)
 }
-
 func NewCacheManager(ctx context.Context) Manager {
 	cm := &cacheManager{
-		ctx:              ctx,
-		enabled:          config.GetBool(coreconfig.CacheEnabled),
-		configuredCaches: map[string]*CCache{},
+		ffcache: cache.NewCacheManager(ctx, config.GetBool(coreconfig.CacheEnabled)),
 	}
 	return cm
 }
 
 // should only be used for testing purpose
 func NewUmanagedCache(ctx context.Context, sizeLimit int64, ttl time.Duration) CInterface {
-	return &CCache{
-		ctx:      ctx,
-		name:     "cache.unmanaged",
-		cache:    ccache.New(ccache.Configure().MaxSize(sizeLimit)),
-		cacheTTL: ttl,
-		enabled:  true,
-	}
+	return cache.NewUmanagedCache(ctx, sizeLimit, ttl)
 }
