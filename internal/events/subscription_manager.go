@@ -258,7 +258,11 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownEventTransportPlugin, subDef.Transport)
 	}
 
-	if err := transport.ValidateOptions(&subDef.Options); err != nil {
+	if subDef.Options.TLSConfigName != "" && sm.namespace.TLSConfigs[subDef.Options.TLSConfigName] != nil {
+		subDef.Options.TLSConfig = sm.namespace.TLSConfigs[subDef.Options.TLSConfigName]
+	}
+
+	if err := transport.ValidateOptions(ctx, &subDef.Options); err != nil {
 		return nil, err
 	}
 
@@ -335,10 +339,6 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		if err != nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgRegexpCompileFailed, "filter.message.author", filter.Message.Author)
 		}
-	}
-
-	if subDef.Options.TLSConfigName != "" && sm.namespace.TLSConfigs[subDef.Options.TLSConfigName] != nil {
-		subDef.Options.TLSConfig = sm.namespace.TLSConfigs[subDef.Options.TLSConfigName]
 	}
 
 	sub = &subscription{

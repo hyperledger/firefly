@@ -737,7 +737,7 @@ func TestInitNetworkVersionNotFound(t *testing.T) {
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/",
-		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "FFEC100148"}))
+		httpmock.NewJsonResponderOrPanic(500, common.BlockchainRESTError{Error: "FFEC100148"}))
 
 	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -2436,7 +2436,7 @@ func TestHandleMessageContractEventSubNameError(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sub2",
-		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "pop"}))
+		httpmock.NewJsonResponderOrPanic(500, common.BlockchainRESTError{Error: "pop"}))
 
 	e.callbacks = common.NewBlockchainCallbacks()
 	e.SetHandler("ns1", em)
@@ -3439,7 +3439,7 @@ func TestSubmitNetworkActionVersionFail(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
-		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "unknown"}))
+		httpmock.NewJsonResponderOrPanic(500, common.BlockchainRESTError{Error: "unknown"}))
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
@@ -3632,7 +3632,7 @@ func TestGetNetworkVersionMethodNotFound(t *testing.T) {
 	}.String())
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/",
-		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "FFEC100148"}))
+		httpmock.NewJsonResponderOrPanic(500, common.BlockchainRESTError{Error: "FFEC100148"}))
 
 	version, err := e.GetNetworkVersion(context.Background(), location)
 
@@ -3650,7 +3650,7 @@ func TestGetNetworkVersionQueryFail(t *testing.T) {
 	}.String())
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/",
-		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "pop"}))
+		httpmock.NewJsonResponderOrPanic(500, common.BlockchainRESTError{Error: "pop"}))
 
 	version, err := e.GetNetworkVersion(context.Background(), location)
 
@@ -3769,7 +3769,7 @@ func TestConvertDeprecatedContractConfigContractURLBadQuery(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
-		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "FFEC100148"}))
+		httpmock.NewJsonResponderOrPanic(500, common.BlockchainRESTError{Error: "FFEC100148"}))
 
 	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")

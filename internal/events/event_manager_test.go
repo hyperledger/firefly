@@ -146,7 +146,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) *testE
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
 	mev.On("SetHandler", "ns1", mock.Anything).Return(nil).Maybe()
-	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
+	mev.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil).Maybe()
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	emi, err := NewEventManager(ctx, ns, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mmi, mom, txHelper, events, mmp, cmi)
 	em := emi.(*eventManager)

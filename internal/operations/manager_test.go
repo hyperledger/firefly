@@ -45,6 +45,18 @@ type mockHandler struct {
 	UpdateErr error
 }
 
+type mockConflictErr struct {
+	err error
+}
+
+func (ce *mockConflictErr) Error() string {
+	return ce.err.Error()
+}
+
+func (ce *mockConflictErr) IsConflictError() bool {
+	return true
+}
+
 func (m *mockHandler) Name() string {
 	return "MockHandler"
 }
@@ -196,9 +208,8 @@ func TestRunOperationFail(t *testing.T) {
 	defer cancel()
 
 	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate),
+		make(chan *core.OperationUpdate, 1),
 	}
-	om.updater.cancelFunc()
 
 	ctx := context.Background()
 	op := &core.PreparedOperation{
@@ -209,6 +220,36 @@ func TestRunOperationFail(t *testing.T) {
 
 	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op)
+
+	update := <-om.updater.workQueues[0]
+	assert.Equal(t, "ns1:"+op.ID.String(), update.NamespacedOpID)
+
+	assert.EqualError(t, err, "pop")
+}
+
+func TestRunOperationFailConflict(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate, 1),
+	}
+
+	ctx := context.Background()
+	op := &core.PreparedOperation{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Type:      core.OpTypeBlockchainPinBatch,
+	}
+
+	om.RegisterHandler(ctx, &mockHandler{RunErr: &mockConflictErr{err: fmt.Errorf("pop")}}, []core.OpType{core.OpTypeBlockchainPinBatch})
+	_, err := om.RunOperation(ctx, op)
+
+	select {
+	case <-om.updater.workQueues[0]:
+		assert.Fail(t, "Should not have an update")
+	default:
+	}
 
 	assert.EqualError(t, err, "pop")
 }

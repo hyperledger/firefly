@@ -27,6 +27,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftls"
@@ -34,6 +35,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/coremocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
@@ -1895,4 +1897,32 @@ func TestHandleEventRetryableFailure(t *testing.T) {
 	}`))
 	assert.Regexp(t, "pop", err)
 	assert.True(t, retry)
+}
+
+func TestErrorWrappingNoBodyError(t *testing.T) {
+	ctx := context.Background()
+	res := &resty.Response{
+		RawResponse: &http.Response{StatusCode: 409},
+	}
+	err := wrapError(ctx, nil, res, fmt.Errorf("pop"))
+	assert.Regexp(t, "FF10457", err)
+	assert.Regexp(t, "pop", err)
+
+	errInterface, ok := err.(operations.ConflictError)
+	assert.True(t, ok)
+	assert.True(t, errInterface.IsConflictError())
+}
+
+func TestErrorWrappingBodyErr(t *testing.T) {
+	ctx := context.Background()
+	res := &resty.Response{
+		RawResponse: &http.Response{StatusCode: 409},
+	}
+	err := wrapError(ctx, &tokenError{Error: "snap"}, res, fmt.Errorf("pop"))
+	assert.Regexp(t, "FF10457", err)
+	assert.Regexp(t, "snap", err)
+
+	errInterface, ok := err.(operations.ConflictError)
+	assert.True(t, ok)
+	assert.True(t, errInterface.IsConflictError())
 }

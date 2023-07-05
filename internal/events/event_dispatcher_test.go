@@ -177,9 +177,9 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	mdm := ed.data.(*datamocks.Manager)
 
 	eventDeliveries := make(chan *core.EventDelivery)
-	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock := mei.On("DeliveryRequest", ed.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		eventDeliveries <- a.Get(2).(*core.EventDelivery)
+		eventDeliveries <- a.Get(3).(*core.EventDelivery)
 	}
 
 	// Setup the IDs
@@ -272,9 +272,9 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 	mei := ed.transport.(*eventsmocks.Plugin)
 
 	eventDeliveries := make(chan *core.EventDelivery)
-	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		eventDeliveries <- a.Get(2).(*core.EventDelivery)
+		eventDeliveries <- a.Get(3).(*core.EventDelivery)
 	}
 
 	// Setup the IDs
@@ -603,9 +603,9 @@ func TestEnrichTransactionEvents(t *testing.T) {
 	mei := ed.transport.(*eventsmocks.Plugin)
 
 	eventDeliveries := make(chan *core.EventDelivery)
-	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		eventDeliveries <- a.Get(2).(*core.EventDelivery)
+		eventDeliveries <- a.Get(3).(*core.EventDelivery)
 	}
 
 	// Setup the IDs
@@ -692,9 +692,9 @@ func TestEnrichBlockchainEventEvents(t *testing.T) {
 	mei := ed.transport.(*eventsmocks.Plugin)
 
 	eventDeliveries := make(chan *core.EventDelivery)
-	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		eventDeliveries <- a.Get(2).(*core.EventDelivery)
+		eventDeliveries <- a.Get(3).(*core.EventDelivery)
 	}
 
 	// Setup the IDs
@@ -814,7 +814,7 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	repoll, err := ed.bufferedDelivery([]core.LocallySequenced{&core.Event{ID: fftypes.NewUUID()}})
 	assert.False(t, repoll)
@@ -837,7 +837,7 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	delivered := make(chan struct{})
-	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliver.RunFn = func(a mock.Arguments) {
 		close(delivered)
 	}
@@ -882,7 +882,7 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	failNacked := make(chan bool)
-	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	deliver.RunFn = func(a mock.Arguments) {
 		failNacked <- true
 	}

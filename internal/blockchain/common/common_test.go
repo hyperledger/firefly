@@ -20,9 +20,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"testing"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/coremocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -376,4 +380,63 @@ func TestBadReceipt(t *testing.T) {
 	assert.NoError(t, err)
 	err = HandleReceipt(context.Background(), nil, &reply, nil)
 	assert.Error(t, err)
+}
+
+func TestErrorWrappingConflict(t *testing.T) {
+	ctx := context.Background()
+	res := &resty.Response{
+		RawResponse: &http.Response{StatusCode: 409},
+	}
+	err := WrapRESTError(ctx, nil, res, fmt.Errorf("pop"), coremsgs.MsgEthConnectorRESTErr)
+	assert.Regexp(t, "FF10456", err)
+	assert.Regexp(t, "pop", err)
+
+	conflictInterface, conforms := err.(operations.ConflictError)
+	assert.True(t, conforms)
+	assert.True(t, conflictInterface.IsConflictError())
+}
+
+func TestErrorWrappingConflictErrorInBody(t *testing.T) {
+	ctx := context.Background()
+	res := &resty.Response{
+		RawResponse: &http.Response{StatusCode: 409},
+	}
+	err := WrapRESTError(ctx, &BlockchainRESTError{Error: "snap"}, res, fmt.Errorf("pop"), coremsgs.MsgEthConnectorRESTErr)
+	assert.Regexp(t, "FF10456", err)
+	assert.Regexp(t, "snap", err)
+
+	conflictInterface, conforms := err.(operations.ConflictError)
+	assert.True(t, conforms)
+	assert.True(t, conflictInterface.IsConflictError())
+}
+
+func TestErrorWrappingError(t *testing.T) {
+	ctx := context.Background()
+	err := WrapRESTError(ctx, nil, nil, fmt.Errorf("pop"), coremsgs.MsgEthConnectorRESTErr)
+	assert.Regexp(t, "pop", err)
+
+	_, conforms := err.(operations.ConflictError)
+	assert.False(t, conforms)
+}
+
+func TestErrorWrappingErrorRes(t *testing.T) {
+	ctx := context.Background()
+
+	err := WrapRESTError(ctx, &BlockchainRESTError{Error: "snap"}, nil, fmt.Errorf("pop"), coremsgs.MsgEthConnectorRESTErr)
+	assert.Regexp(t, "snap", err)
+
+	_, conforms := err.(operations.ConflictError)
+	assert.False(t, conforms)
+}
+
+func TestErrorWrappingNonConflict(t *testing.T) {
+	ctx := context.Background()
+	res := &resty.Response{
+		RawResponse: &http.Response{StatusCode: 500},
+	}
+	err := WrapRESTError(ctx, nil, res, fmt.Errorf("pop"), coremsgs.MsgEthConnectorRESTErr)
+	assert.Regexp(t, "pop", err)
+
+	_, conforms := err.(operations.ConflictError)
+	assert.False(t, conforms)
 }
