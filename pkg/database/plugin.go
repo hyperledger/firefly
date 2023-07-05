@@ -535,6 +535,10 @@ type iContractListenerCollection interface {
 }
 
 type iBlockchainEventCollection interface {
+
+	// InsertMessages performs a batch insert of blockchain events - fails if they already exist, so caller can fall back to InsertOrGetBlockchainEvent individually
+	InsertBlockchainEvents(ctx context.Context, messages []*core.BlockchainEvent, hooks ...PostCompletionHook) (err error)
+
 	// InsertOrGetBlockchainEvent - insert an event from the blockchain
 	// If the ProtocolID has already been recorded, it does not insert but returns the existing row
 	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)

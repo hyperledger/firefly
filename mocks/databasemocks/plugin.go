@@ -2535,6 +2535,27 @@ func (_m *Plugin) InsertBlobs(ctx context.Context, blobs []*core.Blob) error {
 	return r0
 }
 
+// InsertBlockchainEvents provides a mock function with given fields: ctx, messages, hooks
+func (_m *Plugin) InsertBlockchainEvents(ctx context.Context, messages []*core.BlockchainEvent, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, messages)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.BlockchainEvent, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, messages, hooks...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertContractListener provides a mock function with given fields: ctx, sub
 func (_m *Plugin) InsertContractListener(ctx context.Context, sub *core.ContractListener) error {
 	ret := _m.Called(ctx, sub)

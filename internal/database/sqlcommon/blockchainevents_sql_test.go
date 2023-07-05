@@ -115,6 +115,7 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 	existing, err = s.InsertOrGetBlockchainEvent(ctx, event4)
 	assert.NoError(t, err)
 	assert.Equal(t, event3.ID, existing.ID)
+
 }
 
 func TestInsertBlockchainEventFailBegin(t *testing.T) {
@@ -123,6 +124,67 @@ func TestInsertBlockchainEventFailBegin(t *testing.T) {
 	_, err := s.InsertOrGetBlockchainEvent(context.Background(), &core.BlockchainEvent{})
 	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertBlockchainEventsBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertBlockchainEvents(context.Background(), []*core.BlockchainEvent{})
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertBlockchainEventsMultiRowOK(t *testing.T) {
+	s := newMockProvider()
+	s.multiRowInsert = true
+	s.fakePSQLInsert = true
+	s, mock := s.init()
+
+	be1 := &core.BlockchainEvent{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	be2 := &core.BlockchainEvent{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, "ns1", be1.ID)
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, "ns1", be2.ID)
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*blockchainevents").WillReturnRows(sqlmock.NewRows([]string{s.SequenceColumn()}).
+		AddRow(int64(1001)).
+		AddRow(int64(1002)),
+	)
+	mock.ExpectCommit()
+	hookCalled := make(chan struct{}, 1)
+	err := s.InsertBlockchainEvents(context.Background(), []*core.BlockchainEvent{be1, be2}, func() {
+		close(hookCalled)
+	})
+	<-hookCalled
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertBlockchainEventsMultiRowFail(t *testing.T) {
+	s := newMockProvider()
+	s.multiRowInsert = true
+	s.fakePSQLInsert = true
+	s, mock := s.init()
+	be1 := &core.BlockchainEvent{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertBlockchainEvents(context.Background(), []*core.BlockchainEvent{be1})
+	assert.Regexp(t, "FF00177", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertBlockchainEventsSingleRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	be1 := &core.BlockchainEvent{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertBlockchainEvents(context.Background(), []*core.BlockchainEvent{be1})
+	assert.Regexp(t, "FF00177", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestInsertBlockchainEventFailInsert(t *testing.T) {
@@ -157,9 +219,9 @@ func TestGetBlockchainEventByIDSelectFail(t *testing.T) {
 func TestGetBlockchainEventByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
-	msg, err := s.GetBlockchainEventByID(context.Background(), "ns", fftypes.NewUUID())
+	be, err := s.GetBlockchainEventByID(context.Background(), "ns", fftypes.NewUUID())
 	assert.NoError(t, err)
-	assert.Nil(t, msg)
+	assert.Nil(t, be)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

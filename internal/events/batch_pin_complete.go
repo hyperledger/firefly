@@ -31,7 +31,7 @@ import (
 //
 // We must block here long enough to get the payload from the sharedstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) handleBlockchainBatchPinEvent(ctx context.Context, event *blockchain.BatchPinCompleteEvent) error {
+func (em *eventManager) handleBlockchainBatchPinEvent(ctx context.Context, event *blockchain.BatchPinCompleteEvent, bc *eventBatchContext) error {
 	batchPin := event.Batch
 
 	if em.multiparty == nil {
@@ -65,10 +65,17 @@ func (em *eventManager) handleBlockchainBatchPinEvent(ctx context.Context, event
 		ID:           batchPin.TransactionID,
 		BlockchainID: batchPin.Event.BlockchainTXID,
 	})
-	if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
-		return err
-	}
-	em.emitBlockchainEventMetric(&batchPin.Event)
+	// Defer the event insert itself to the end
+	bc.addEventToInsert(chainEvent, em.getTopicForChainListener(nil))
+	bc.postInsert = append(bc.postInsert, func() error {
+		em.emitBlockchainEventMetric(&batchPin.Event)
+		return em.postBlockchainBatchPinEventInsert(ctx, event)
+	})
+	return nil
+}
+
+func (em *eventManager) postBlockchainBatchPinEventInsert(ctx context.Context, event *blockchain.BatchPinCompleteEvent) error {
+	batchPin := event.Batch
 	private := batchPin.BatchPayloadRef == ""
 	if err := em.persistContexts(ctx, batchPin, event.SigningKey, private); err != nil {
 		return err
