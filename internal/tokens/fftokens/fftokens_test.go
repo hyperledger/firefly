@@ -1905,7 +1905,7 @@ func TestErrorWrappingNoBodyError(t *testing.T) {
 		RawResponse: &http.Response{StatusCode: 409},
 	}
 	err := wrapError(ctx, nil, res, fmt.Errorf("pop"))
-	assert.Regexp(t, "FF10457", err)
+	assert.Regexp(t, "FF10459", err)
 	assert.Regexp(t, "pop", err)
 
 	errInterface, ok := err.(operations.ConflictError)
@@ -1919,7 +1919,7 @@ func TestErrorWrappingBodyErr(t *testing.T) {
 		RawResponse: &http.Response{StatusCode: 409},
 	}
 	err := wrapError(ctx, &tokenError{Error: "snap"}, res, fmt.Errorf("pop"))
-	assert.Regexp(t, "FF10457", err)
+	assert.Regexp(t, "FF10459", err)
 	assert.Regexp(t, "snap", err)
 
 	errInterface, ok := err.(operations.ConflictError)

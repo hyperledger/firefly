@@ -388,7 +388,7 @@ func TestErrorWrappingConflict(t *testing.T) {
 		RawResponse: &http.Response{StatusCode: 409},
 	}
 	err := WrapRESTError(ctx, nil, res, fmt.Errorf("pop"), coremsgs.MsgEthConnectorRESTErr)
-	assert.Regexp(t, "FF10456", err)
+	assert.Regexp(t, "FF10458", err)
 	assert.Regexp(t, "pop", err)
 
 	conflictInterface, conforms := err.(operations.ConflictError)
@@ -402,7 +402,7 @@ func TestErrorWrappingConflictErrorInBody(t *testing.T) {
 		RawResponse: &http.Response{StatusCode: 409},
 	}
 	err := WrapRESTError(ctx, &BlockchainRESTError{Error: "snap"}, res, fmt.Errorf("pop"), coremsgs.MsgEthConnectorRESTErr)
-	assert.Regexp(t, "FF10456", err)
+	assert.Regexp(t, "FF10458", err)
 	assert.Regexp(t, "snap", err)
 
 	conflictInterface, conforms := err.(operations.ConflictError)

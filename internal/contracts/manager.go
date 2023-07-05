@@ -18,7 +18,10 @@ package contracts
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"hash"
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
@@ -27,6 +30,8 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/cache"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
@@ -35,6 +40,7 @@ import (
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/internal/txwriter"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -86,15 +92,26 @@ type contractManager struct {
 	messaging         privatemessaging.Manager // optional
 	batch             batch.Manager            // optional
 	txHelper          txcommon.Helper
+	txWriter          txwriter.Writer
 	identity          identity.Manager
 	blockchain        blockchain.Plugin
 	ffiParamValidator fftypes.FFIParamValidator
 	operations        operations.Manager
 	syncasync         syncasync.Bridge
+	methodCache       cache.CInterface
 }
 
-func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, bp batch.Manager, im identity.Manager, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
-	if di == nil || im == nil || bi == nil || dm == nil || om == nil || txHelper == nil || sa == nil {
+type methodCacheEntry struct {
+	method *fftypes.FFIMethod
+	errors []*fftypes.FFIError
+}
+
+type schemaValidationEntry struct {
+	schema *jsonschema.Schema
+}
+
+func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, bp batch.Manager, im identity.Manager, om operations.Manager, txHelper txcommon.Helper, txWriter txwriter.Writer, sa syncasync.Bridge, cacheManager cache.Manager) (Manager, error) {
+	if di == nil || im == nil || bi == nil || dm == nil || om == nil || txHelper == nil || txWriter == nil || sa == nil || cacheManager == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "ContractManager")
 	}
 	v, err := bi.GetFFIParamValidator(ctx)
@@ -110,11 +127,24 @@ func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi b
 		messaging:         pm,
 		batch:             bp,
 		txHelper:          txHelper,
+		txWriter:          txWriter,
 		identity:          im,
 		blockchain:        bi,
 		ffiParamValidator: v,
 		operations:        om,
 		syncasync:         sa,
+	}
+
+	cm.methodCache, err = cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheMethodsLimit,
+			coreconfig.CacheMethodsTTL,
+			ns,
+		),
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	om.RegisterHandler(ctx, cm, []core.OpType{
@@ -249,78 +279,80 @@ func (cm *contractManager) verifyListeners(ctx context.Context) error {
 
 }
 
-func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core.ContractCallRequest) (*core.Operation, error) {
+func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core.ContractCallRequest) (bool, *core.Operation, error) {
 	txtype := core.TransactionTypeContractInvoke
 	if req.Message != nil {
 		txtype = core.TransactionTypeContractInvokePin
 	}
-	txid, err := cm.txHelper.SubmitNewTransaction(ctx, txtype, req.IdempotencyKey)
-	var op *core.Operation
+	op := core.NewOperation(
+		cm.blockchain,
+		cm.namespace,
+		nil, // assigned by txwriter
+		core.OpTypeBlockchainInvoke)
+	if err := addBlockchainReqInputs(op, req); err != nil {
+		return false, nil, err
+	}
+
+	txn, err := cm.txWriter.WriteTransactionAndOps(ctx, txtype, req.IdempotencyKey, op)
 	if err != nil {
-		var resubmitErr error
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			op, resubmitErr = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
 				err = resubmitErr
-			} else if op != nil {
+			} else if len(resubmitted) > 0 {
 				// We successfully resubmitted an initialized operation, return the operation
 				// and the idempotent error. The caller will revert the 409 to 2xx
-				err = idemErr
+				if req.Message != nil {
+					req.Message.Header.TxType = txtype
+					req.Message.TransactionID = idemErr.ExistingTXID
+				}
+				return true, resubmitted[0], nil // only one operation, return existing one
 			}
 		}
-		return op, err
+		return false, op, err
 	}
 	if req.Message != nil {
 		req.Message.Header.TxType = txtype
-		req.Message.TransactionID = txid
+		req.Message.TransactionID = txn.ID
 	}
 
-	op = core.NewOperation(
-		cm.blockchain,
-		cm.namespace,
-		txid,
-		core.OpTypeBlockchainInvoke)
-	if err = addBlockchainReqInputs(op, req); err == nil {
-		err = cm.operations.AddOrReuseOperation(ctx, op)
-	}
-	return op, err
+	return false, op, err
 }
 
-func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core.ContractDeployRequest) (*core.Operation, error) {
-	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractDeploy, req.IdempotencyKey)
-	var op *core.Operation
+func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core.ContractDeployRequest) (bool, *core.Operation, error) {
+
+	op := core.NewOperation(
+		cm.blockchain,
+		cm.namespace,
+		nil, // assigned by txwriter
+		core.OpTypeBlockchainContractDeploy)
+	if err := addBlockchainReqInputs(op, req); err != nil {
+		return false, nil, err
+	}
+	_, err := cm.txWriter.WriteTransactionAndOps(ctx, core.TransactionTypeContractDeploy, req.IdempotencyKey, op)
 	if err != nil {
-		var resubmitErr error
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			op, resubmitErr = cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
 				err = resubmitErr
-			} else if op != nil {
+			} else if len(resubmitted) > 0 {
 				// We successfully resubmitted an initialized operation, return the operation
 				// and the idempotent error. The caller will revert the 409 to 2xx
-				err = idemErr
+				return true, resubmitted[0], nil // only one operation, return existing one
 			}
 		}
-		return op, err
+		return false, op, err
 	}
 
-	op = core.NewOperation(
-		cm.blockchain,
-		cm.namespace,
-		txid,
-		core.OpTypeBlockchainContractDeploy)
-	if err = addBlockchainReqInputs(op, req); err == nil {
-		err = cm.operations.AddOrReuseOperation(ctx, op)
-	}
-	return op, err
+	return false, op, err
 }
 
 func (cm *contractManager) DeployContract(ctx context.Context, req *core.ContractDeployRequest, waitConfirm bool) (res interface{}, err error) {
@@ -329,20 +361,12 @@ func (cm *contractManager) DeployContract(ctx context.Context, req *core.Contrac
 		return nil, err
 	}
 
-	var op *core.Operation
-	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		op, err = cm.writeDeployTransaction(ctx, req)
-		return err
-	})
+	resubmit, op, err := cm.writeDeployTransaction(ctx, req)
 	if err != nil {
-		if _, ok := err.(*sqlcommon.IdempotencyError); ok {
-			if op != nil {
-				// Idempotency key clash but we resubmitted an initialized operation? Return 20x, not 409
-				return op, nil
-			}
-		}
-		// Any other error? Return the error unchanged
 		return nil, err
+	}
+	if resubmit {
+		return op, nil // nothing more to do
 	}
 
 	send := func(ctx context.Context) error {
@@ -374,39 +398,31 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 		}
 	}
 
-	var op *core.Operation
-	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		if err = cm.resolveInvokeContractRequest(ctx, req); err != nil {
-			return err
-		}
-		if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
-			return err
-		}
-		if msgSender != nil {
-			if err = msgSender.Prepare(ctx); err != nil {
-				return err
-			}
-			// Clear inline data now that it's been resolved
-			// (so as not to store all data values on the operation inputs)
-			req.Message.InlineData = nil
-		}
-		if req.Type == core.CallTypeInvoke {
-			op, err = cm.writeInvokeTransaction(ctx, req)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		if _, ok := err.(*sqlcommon.IdempotencyError); ok {
-			if op != nil {
-				// Idempotency key clash but we resubmitted an initialized operation? Return 20x, not 409
-				return op, nil
-			}
-		}
-		// Any other error? Return the error unchanged
+	if err := cm.resolveInvokeContractRequest(ctx, req); err != nil {
 		return nil, err
+	}
+	bcParsedMethod, err := cm.validateInvokeContractRequest(ctx, req, true)
+	if err != nil {
+		return nil, err
+	}
+	if msgSender != nil {
+		if err := msgSender.Prepare(ctx); err != nil {
+			return nil, err
+		}
+		// Clear inline data now that it's been resolved
+		// (so as not to store all data values on the operation inputs)
+		req.Message.InlineData = nil
+	}
+	var op *core.Operation
+	var resubmit bool
+	if req.Type == core.CallTypeInvoke {
+		resubmit, op, err = cm.writeInvokeTransaction(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		if resubmit {
+			return op, nil
+		}
 	}
 
 	switch req.Type {
@@ -427,7 +443,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 		return op, send(ctx)
 
 	case core.CallTypeQuery:
-		return cm.blockchain.QueryContract(ctx, req.Key, req.Location, req.Method, req.Input, req.Errors, req.Options)
+		return cm.blockchain.QueryContract(ctx, req.Key, req.Location, bcParsedMethod, req.Input, req.Options)
 
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
@@ -454,6 +470,14 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req
 		if req.MethodPath == "" || req.Interface == nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractMethodNotSet)
 		}
+		cacheKey := fmt.Sprintf("method_%s_%s", req.Interface, req.MethodPath)
+		cached := cm.methodCache.Get(cacheKey)
+		if cached != nil {
+			cMethodDetails := cached.(*methodCacheEntry)
+			req.Method = cMethodDetails.method
+			req.Errors = cMethodDetails.errors
+			return nil
+		}
 		req.Method, err = cm.database.GetFFIMethod(ctx, cm.namespace, req.Interface, req.MethodPath)
 		if err != nil || req.Method == nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
@@ -463,6 +487,10 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req
 		if err != nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractErrorsResolveError, err)
 		}
+		cm.methodCache.Set(cacheKey, &methodCacheEntry{
+			method: req.Method,
+			errors: req.Errors,
+		})
 	}
 	return nil
 }
@@ -583,7 +611,7 @@ func (cm *contractManager) ResolveFFI(ctx context.Context, ffi *fftypes.FFI) err
 		method.Interface = ffi.ID
 		method.Namespace = ffi.Namespace
 		method.Pathname = cm.uniquePathName(method.Name, methodPathNames)
-		if err := cm.validateFFIMethod(ctx, method); err != nil {
+		if _, _, err := cm.validateFFIMethod(ctx, method); err != nil {
 			return err
 		}
 	}
@@ -603,39 +631,56 @@ func (cm *contractManager) ResolveFFI(ctx context.Context, ffi *fftypes.FFI) err
 		errorDef.Interface = ffi.ID
 		errorDef.Namespace = ffi.Namespace
 		errorDef.Pathname = cm.uniquePathName(errorDef.Name, errorPathNames)
-		if err := cm.validateFFIError(ctx, &errorDef.FFIErrorDefinition); err != nil {
+		if _, err := cm.validateFFIError(ctx, &errorDef.FFIErrorDefinition); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
+func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) (hash.Hash, map[string]*jsonschema.Schema, error) {
 	if method.Name == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMethodNameMustBeSet)
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgMethodNameMustBeSet)
 	}
+	paramSchemas := make(map[string]*jsonschema.Schema)
+	paramUniqueHash := sha256.New()
 	for _, param := range method.Params {
-		if err := cm.validateFFIParam(ctx, param); err != nil {
-			return err
+		paramSchemaHash, schema, err := cm.validateFFIParam(ctx, param)
+		if err != nil {
+			return nil, nil, err
 		}
+		paramSchemas[param.Name] = schema
+		paramUniqueHash.Write([]byte(paramSchemaHash))
 	}
 	for _, param := range method.Returns {
-		if err := cm.validateFFIParam(ctx, param); err != nil {
-			return err
+		returnHash, _, err := cm.validateFFIParam(ctx, param)
+		if err != nil {
+			return nil, nil, err
 		}
+		paramUniqueHash.Write([]byte(returnHash))
 	}
-	return nil
+	return paramUniqueHash, paramSchemas, nil
 }
 
-func (cm *contractManager) validateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
+func (cm *contractManager) validateFFIParam(ctx context.Context, param *fftypes.FFIParam) (string, *jsonschema.Schema, error) {
+	schemaString := param.Schema.String()
+	schemaHash := hex.EncodeToString(fftypes.HashString(schemaString)[:])
+	cacheKey := fmt.Sprintf("schema_%s", schemaHash)
+	cached := cm.methodCache.Get(cacheKey)
+	if cached != nil {
+		// Cached validation result
+		return schemaHash, cached.(*schemaValidationEntry).schema, nil
+	}
 	c := cm.newFFISchemaCompiler()
-	if err := c.AddResource(param.Name, strings.NewReader(param.Schema.String())); err != nil {
-		return i18n.WrapError(ctx, err, coremsgs.MsgFFISchemaParseFail, param.Name)
+	if err := c.AddResource(param.Name, strings.NewReader(schemaString)); err != nil {
+		return "", nil, i18n.WrapError(ctx, err, coremsgs.MsgFFISchemaParseFail, param.Name)
 	}
-	if _, err := c.Compile(param.Name); err != nil {
-		return i18n.WrapError(ctx, err, coremsgs.MsgFFISchemaCompileFail, param.Name)
+	schema, err := c.Compile(param.Name)
+	if err != nil || schema == nil {
+		return "", nil, i18n.WrapError(ctx, err, coremsgs.MsgFFISchemaCompileFail, param.Name)
 	}
-	return nil
+	cm.methodCache.Set(cacheKey, &schemaValidationEntry{schema: schema})
+	return schemaHash, schema, nil
 }
 
 func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.FFIEventDefinition) error {
@@ -643,28 +688,39 @@ func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.
 		return i18n.NewError(ctx, coremsgs.MsgEventNameMustBeSet)
 	}
 	for _, param := range event.Params {
-		if err := cm.validateFFIParam(ctx, param); err != nil {
+		if _, _, err := cm.validateFFIParam(ctx, param); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (cm *contractManager) validateFFIError(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) error {
+func (cm *contractManager) validateFFIError(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) (string, error) {
 	if errorDef.Name == "" {
-		return i18n.NewError(ctx, coremsgs.MsgErrorNameMustBeSet)
+		return "", i18n.NewError(ctx, coremsgs.MsgErrorNameMustBeSet)
 	}
+	cacheKeyBuff := new(strings.Builder) // Build a big string of aggregate hashes
 	for _, param := range errorDef.Params {
-		if err := cm.validateFFIParam(ctx, param); err != nil {
-			return err
+		paramCacheKey, _, err := cm.validateFFIParam(ctx, param)
+		if err != nil {
+			return "", err
 		}
+		cacheKeyBuff.WriteString(paramCacheKey)
 	}
-	return nil
+	return cacheKeyBuff.String(), nil
 }
 
-func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, req *core.ContractCallRequest) error {
-	if err := cm.validateFFIMethod(ctx, req.Method); err != nil {
-		return err
+func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, req *core.ContractCallRequest, blockchainValidation bool) (interface{}, error) {
+	paramUniqueHash, paramSchemas, err := cm.validateFFIMethod(ctx, req.Method)
+	if err != nil {
+		return nil, err
+	}
+	for _, errDef := range req.Errors {
+		errorCacheKey, err := cm.validateFFIError(ctx, &errDef.FFIErrorDefinition)
+		if err != nil {
+			return nil, err
+		}
+		paramUniqueHash.Write([]byte(errorCacheKey))
 	}
 
 	// Validate that all parameters are specified and are of reasonable JSON types to match the FFI
@@ -674,27 +730,46 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 		// (assume it will be used for sending the batch pin)
 		lastIndex--
 		if lastIndex < 0 {
-			return i18n.NewError(ctx, coremsgs.MsgMethodDoesNotSupportPinning)
+			return nil, i18n.NewError(ctx, coremsgs.MsgMethodDoesNotSupportPinning)
 		}
 
 		// Also verify that the user didn't pass in a value for this last parameter
 		lastParam := req.Method.Params[lastIndex]
 		if _, ok := req.Input[lastParam.Name]; ok {
-			return i18n.NewError(ctx, coremsgs.MsgCannotSetParameterWithMessage, lastParam.Name)
+			return nil, i18n.NewError(ctx, coremsgs.MsgCannotSetParameterWithMessage, lastParam.Name)
 		}
 	}
 	for _, param := range req.Method.Params[:lastIndex] {
-		value, ok := req.Input[param.Name]
-		if !ok {
-			return i18n.NewError(ctx, coremsgs.MsgContractMissingInputArgument, param.Name)
+		schema, schemaOk := paramSchemas[param.Name]
+		value, valueOk := req.Input[param.Name]
+		if !valueOk || !schemaOk {
+			return nil, i18n.NewError(ctx, coremsgs.MsgContractMissingInputArgument, param.Name)
 		}
-		if err := cm.checkParamSchema(ctx, value, param); err != nil {
-			return err
+		if err := cm.checkParamSchema(ctx, param.Name, value, schema); err != nil {
+			return nil, err
 		}
 	}
 
-	// Allow the blockchain plugin to perform additional blockchain-specific parameter validation
-	return cm.blockchain.ValidateInvokeRequest(ctx, req.Method, req.Input, req.Errors, req.Message != nil)
+	// Now we need to ask the blockchain connector to do its own validation of the FFI.
+	// This is cached by the aggregate cache key we just built
+	cacheKey := "methodhash_" + req.Method.Name + "_" + hex.EncodeToString(paramUniqueHash.Sum(nil))
+	bcParsedMethod := cm.methodCache.Get(cacheKey)
+	cacheMiss := bcParsedMethod == nil
+	if cacheMiss {
+		bcParsedMethod, err = cm.blockchain.ParseInterface(ctx, req.Method, req.Errors)
+		if err != nil {
+			return nil, err
+		}
+		cm.methodCache.Set(cacheKey, bcParsedMethod)
+	}
+	log.L(ctx).Debugf("Validating method '%s' (cacheMiss=%t)", cacheKey, cacheMiss)
+
+	if blockchainValidation {
+		// Allow the blockchain plugin to perform additional blockchain-specific parameter validation.
+		// We only do this on API on the way in, not when this function is called later as part of the operation.
+		return bcParsedMethod, cm.blockchain.ValidateInvokeRequest(ctx, bcParsedMethod, req.Input, req.Message != nil)
+	}
+	return bcParsedMethod, nil
 }
 
 func (cm *contractManager) resolveEvent(ctx context.Context, ffi *fftypes.FFIReference, eventPath string) (*core.FFISerializedEvent, error) {
@@ -904,19 +979,9 @@ func (cm *contractManager) DeleteContractListenerByNameOrID(ctx context.Context,
 	})
 }
 
-func (cm *contractManager) checkParamSchema(ctx context.Context, input interface{}, param *fftypes.FFIParam) error {
-	// TODO: Cache the compiled schema?
-	c := jsonschema.NewCompiler()
-	err := c.AddResource(param.Name, strings.NewReader(param.Schema.String()))
-	if err != nil {
-		return i18n.WrapError(ctx, err, coremsgs.MsgFFISchemaParseFail, param.Name)
-	}
-	schema, err := c.Compile(param.Name)
-	if err != nil {
-		return i18n.WrapError(ctx, err, coremsgs.MsgFFIValidationFail, param.Name, param.Schema)
-	}
+func (cm *contractManager) checkParamSchema(ctx context.Context, name string, input interface{}, schema *jsonschema.Schema) error {
 	if err := schema.Validate(input); err != nil {
-		return i18n.WrapError(ctx, err, coremsgs.MsgFFIValidationFail, param.Name)
+		return i18n.WrapError(ctx, err, coremsgs.MsgFFIValidationFail, name)
 	}
 	return nil
 }
