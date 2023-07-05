@@ -292,4 +292,6 @@ var (
 	MsgInvalidMessageIdentity             = ffe("FF10453", "Invalid message '%s'. Author '%s' does not match identity registered to %s: %s (%s)")
 	MsgDuplicateTLSConfig                 = ffe("FF10454", "Found duplicate TLS Config '%s'", 400)
 	MsgNotFoundTLSConfig                  = ffe("FF10455", "Provided TLS Config name '%s' not found for namespace '%s'", 400)
+	MsgBlockchainConnectorRESTErrConflict = ffe("FF10456", "Conflict from blockchain connector: %s", 409)
+	MsgTokensRESTErrConflict              = ffe("FF10457", "Conflict from tokens service: %s", 409)
 )

@@ -83,10 +83,6 @@ type fabTxInputHeaders struct {
 	Chaincode     string         `json:"chaincode,omitempty"`
 }
 
-type fabError struct {
-	Error string `json:"error,omitempty"`
-}
-
 type PayloadSchema struct {
 	Type        string        `json:"type"`
 	PrefixItems []*PrefixItem `json:"prefixItems"`
@@ -602,19 +598,12 @@ func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string, 
 	return signingKeyInput, nil
 }
 
-func wrapError(ctx context.Context, errRes *fabError, res *resty.Response, err error) error {
-	if errRes != nil && errRes.Error != "" {
-		return i18n.WrapError(ctx, err, coremsgs.MsgFabconnectRESTErr, errRes.Error)
-	}
-	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
-}
-
 func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) error {
 	body, err := f.buildFabconnectRequestBody(ctx, channel, chaincode, methodName, signingKey, requestID, prefixItems, input, options)
 	if err != nil {
 		return err
 	}
-	var resErr fabError
+	var resErr common.BlockchainRESTError
 	res, err := f.client.R().
 		SetContext(ctx).
 		SetHeader("x-firefly-sync", "false").
@@ -622,7 +611,7 @@ func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, m
 		SetError(&resErr).
 		Post("/transactions")
 	if err != nil || !res.IsSuccess() {
-		return wrapError(ctx, &resErr, res, err)
+		return common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return nil
 }
@@ -632,14 +621,14 @@ func (f *Fabric) queryContractMethod(ctx context.Context, channel, chaincode, me
 	if err != nil {
 		return nil, err
 	}
-	var resErr fabError
+	var resErr common.BlockchainRESTError
 	res, err := f.client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
 		Post("/query")
 	if err != nil || !res.IsSuccess() {
-		return res, wrapError(ctx, &resErr, res, err)
+		return res, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return res, nil
 }
@@ -1017,7 +1006,7 @@ func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Opera
 
 	transactionRequestPath := fmt.Sprintf("/transactions/%s", txHash)
 	client := f.client
-	var resErr fabError
+	var resErr common.BlockchainRESTError
 	var statusResponse fftypes.JSONObject
 	res, err := client.R().
 		SetContext(ctx).
@@ -1030,7 +1019,7 @@ func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Opera
 		if res.StatusCode() == 404 {
 			return nil, nil
 		}
-		return nil, wrapError(ctx, &resErr, res, err)
+		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 
 	// TODO - could implement the same enhancement ethconnect has, and build a mock WS receipt if an API query
