@@ -218,6 +218,6 @@ func (ws *WebSockets) GetStatus() *core.WebSocketStatus {
 	return status
 }
 
-func (ws *WebSockets) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray) error {
+func (ws *WebSockets) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
 	return nil
 }

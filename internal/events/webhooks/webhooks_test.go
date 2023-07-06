@@ -1351,7 +1351,7 @@ func TestRequestWithBodyReplyEndToEndWithBatch(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.BatchDeliveryRequest(wh.ctx, mock.Anything, sub, []*core.EventDelivery{event1, event2}, []core.DataArray{data1, data2})
+	err := wh.BatchDeliveryRequest(wh.ctx, mock.Anything, sub, []*core.CombinedEventDataDelivery{{Event: event1, Data: data1}, {Event: event2, Data: data2}})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)

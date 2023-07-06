@@ -1176,11 +1176,11 @@ func TestEventDispatcherBatchReadAhead(t *testing.T) {
 	mdm := ed.data.(*datamocks.Manager)
 
 	eventDeliveries := make(chan *core.EventDelivery)
-	deliveryRequestMock := mei.On("BatchDeliveryRequest", ed.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock := mei.On("BatchDeliveryRequest", ed.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		batchEvents := a.Get(3).([]*core.EventDelivery)
+		batchEvents := a.Get(3).([]*core.CombinedEventDataDelivery)
 		for _, event := range batchEvents {
-			eventDeliveries <- event
+			eventDeliveries <- event.Event
 		}
 	}
 

@@ -286,17 +286,16 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 	return err
 }
 
-func (wh *WebHooks) buildBody(withData bool, event *core.EventDelivery, data core.DataArray) (body *fftypes.JSONAny, firstData fftypes.JSONObject, err error) {
-	allData := make([]*fftypes.JSONAny, 0, len(data))
-	if withData {
-		for _, d := range data {
+func (wh *WebHooks) buildBody(withData bool, combinedEvent *core.CombinedEventDataDelivery) (body *fftypes.JSONAny, firstData fftypes.JSONObject, err error) {
+	allData := make([]*fftypes.JSONAny, 0, len(combinedEvent.Data))
+	if withData && len(combinedEvent.Data) > 0 {
+		for _, d := range combinedEvent.Data {
 			if d.Value != nil {
 				allData = append(allData, d.Value)
 			}
 		}
 		if len(allData) == 0 {
 			firstData = fftypes.JSONObject{}
-			return fftypes.JSONAnyPtr("{}"), firstData, nil
 		} else {
 			// Use JSONObjectOk instead of JSONObject
 			// JSONObject fails for datatypes such as array, string, bool, number etc
@@ -324,107 +323,29 @@ func (wh *WebHooks) buildBody(withData bool, event *core.EventDelivery, data cor
 		return fftypes.JSONAnyPtrBytes(encodedData), firstData, nil
 	}
 
-	encodedEvent, err := json.Marshal(event)
+	firstData = fftypes.JSONObject{}
+	encodedEvent, err := json.Marshal(combinedEvent.Event)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return fftypes.JSONAnyPtrBytes(encodedEvent), nil, nil
+	return fftypes.JSONAnyPtrBytes(encodedEvent), firstData, nil
 }
 
-// func (wh *WebHooks) buildBody(events []*core.EventDelivery, data []core.DataArray, withData bool, batch bool) (body interface{}, firstData fftypes.JSONObject) {
-// 	if len(events) == 0 && len(data) == 0 {
-// 		return nil, nil
-// 	}
-
-// 	myArray := []*fftypes.JSONAny{}
-
-// 	var foo *fftypes.JSONAny = myArray
-// 	json
-
-// 	fftypes.JSONAnyPtrBytes(stuff)
-
-// 	if batch {
-// 		if withData {
-// 			if len(data) > 0 {
-// 				allData := [][]*fftypes.JSONAny{}
-// 				for _, eventData := range data {
-// 					allEventData := []*fftypes.JSONAny{}
-// 					for _, d := range eventData {
-// 						if d.Value != nil {
-// 							allEventData = append(allEventData, d.Value)
-// 						}
-// 					}
-// 					allData = append(allData, allEventData)
-// 				}
-// 				return allData, nil
-// 			}
-// 		}
-
-// 		// [{"event1": "stuff"},"event2": "stuff"}]
-// 		// [{"event1": "stuff"}]
-// 		return events, nil
-// 	}
-
-// 	if withData {
-// 		if len(data) == 1 {
-// 			eventData := []*fftypes.JSONAny{}
-// 			for _, d := range data[0] {
-// 				if d.Value != nil {
-// 					eventData = append(eventData, d.Value)
-// 				}
-// 			}
-
-// 			if len(eventData) == 0 {
-// 				// Send an empty object if ask withData but no data available
-// 				firstData = fftypes.JSONObject{}
-// 				body = firstData
-// 			}
-
-// 			if len(eventData) >= 1 {
-// 				// Use JSONObjectOk instead of JSONObject
-// 				// JSONObject fails for datatypes such as array, string, bool, number etc
-// 				var valid bool
-// 				firstData, valid = eventData[0].JSONObjectOk()
-// 				if !valid {
-// 					firstData = fftypes.JSONObject{
-// 						"value": eventData[0],
-// 					}
-// 				}
-
-// 				if len(eventData) == 1 {
-// 					body = firstData
-// 				} else {
-// 					body = eventData
-// 				}
-// 			}
-
-// 			return body, firstData
-// 		}
-// 	}
-
-// 	if body == nil && len(events) > 0 {
-// 		// {"event1": "stuff"}
-// 		body = events[0]
-// 	}
-
-// 	return body, firstData
-// }
-
-func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray, batch bool) (req *whRequest, res *whResponse, err error) {
+func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, events []*core.CombinedEventDataDelivery, batch bool) (req *whRequest, res *whResponse, err error) {
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 
 	var body *fftypes.JSONAny
 	var firstData fftypes.JSONObject
-	if len(events) == 1 && len(data) == 1 {
-		body, firstData, err = wh.buildBody(withData, events[0], data[0])
+	if len(events) == 1 && !batch {
+		body, firstData, err = wh.buildBody(withData, events[0])
 		if err != nil {
 			return nil, nil, err
 		}
 	} else {
 		batchBody := []*fftypes.JSONAny{}
-		for i := 0; i < len(events); i++ {
-			eventBody, _, err := wh.buildBody(withData, events[i], data[i])
+		for _, event := range events {
+			eventBody, _, err := wh.buildBody(withData, event)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -505,7 +426,7 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 }
 
 func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray, fastAck bool) {
-	req, res, gwErr := wh.attemptRequest(ctx, sub, []*core.EventDelivery{event}, []core.DataArray{data}, false)
+	req, res, gwErr := wh.attemptRequest(ctx, sub, []*core.CombinedEventDataDelivery{{Event: event, Data: data}}, false)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
 		// rather than just causing timeouts
@@ -564,8 +485,8 @@ func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, s
 	}
 }
 
-func (wh *WebHooks) doBatchedDelivery(ctx context.Context, connID string, reply bool, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray, fastAck bool) {
-	req, res, gwErr := wh.attemptRequest(ctx, sub, events, data, true)
+func (wh *WebHooks) doBatchedDelivery(ctx context.Context, connID string, reply bool, sub *core.Subscription, events []*core.CombinedEventDataDelivery, fastAck bool) {
+	req, res, gwErr := wh.attemptRequest(ctx, sub, events, true)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
 		// rather than just causing timeouts
@@ -585,8 +506,12 @@ func (wh *WebHooks) doBatchedDelivery(ctx context.Context, connID string, reply 
 	log.L(wh.ctx).Tracef("Webhook response: %s", string(b))
 
 	// For each event emit a response
-	for _, event := range events {
+	for _, combinedEvent := range events {
+		event := combinedEvent.Event
 		// Emit the response
+		if event == nil {
+			continue
+		}
 		if reply && event.Message != nil {
 			txType := fftypes.FFEnum(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
 			if req != nil && req.replyTx != "" {
@@ -665,11 +590,12 @@ func (wh *WebHooks) DeliveryRequest(ctx context.Context, connID string, sub *cor
 	return nil
 }
 
-func (wh *WebHooks) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray) error {
+func (wh *WebHooks) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
 	reply := sub.Options.TransportOptions().GetBool("reply")
 	if reply {
-		nonReplyEvents := []*core.EventDelivery{}
-		for _, event := range events {
+		nonReplyEvents := []*core.CombinedEventDataDelivery{}
+		for _, combinedEvent := range events {
+			event := combinedEvent.Event
 			// We cowardly refuse to dispatch a message that is itself a reply, as it's hard for users to
 			// avoid loops - and there's no way for us to detect here if a user has configured correctly
 			// to avoid a loop.
@@ -685,7 +611,7 @@ func (wh *WebHooks) BatchDeliveryRequest(ctx context.Context, connID string, sub
 				continue
 			}
 
-			nonReplyEvents = append(nonReplyEvents, event)
+			nonReplyEvents = append(nonReplyEvents, combinedEvent)
 		}
 		// Override the events to send without the reply events
 		events = nonReplyEvents
@@ -695,7 +621,8 @@ func (wh *WebHooks) BatchDeliveryRequest(ctx context.Context, connID string, sub
 	// NOTE: We cannot use this with reply mode, as when we're sending a reply the `DeliveryResponse`
 	//       callback must include the reply in-line.
 	if !reply && sub.Options.TransportOptions().GetBool("fastack") {
-		for _, event := range events {
+		for _, combinedEvent := range events {
+			event := combinedEvent.Event
 			if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
 				cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 					ID:           event.ID,
@@ -704,11 +631,11 @@ func (wh *WebHooks) BatchDeliveryRequest(ctx context.Context, connID string, sub
 				})
 			}
 		}
-		go wh.doBatchedDelivery(ctx, connID, reply, sub, events, data, true)
+		go wh.doBatchedDelivery(ctx, connID, reply, sub, events, true)
 		return nil
 	}
 
-	wh.doBatchedDelivery(ctx, connID, reply, sub, events, data, false)
+	wh.doBatchedDelivery(ctx, connID, reply, sub, events, false)
 	return nil
 }
 

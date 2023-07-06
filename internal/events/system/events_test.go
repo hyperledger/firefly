@@ -153,5 +153,5 @@ func TestEventDeliveryBatch(t *testing.T) {
 		},
 	}
 
-	se.BatchDeliveryRequest(se.ctx, "id", sub, []*core.EventDelivery{}, []core.DataArray{})
+	se.BatchDeliveryRequest(se.ctx, "id", sub, []*core.CombinedEventDataDelivery{})
 }

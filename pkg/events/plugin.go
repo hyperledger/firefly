@@ -53,7 +53,7 @@ type Plugin interface {
 
 	// DeliveryBatchRequest requests delivery of multiple events on a connection, which must later be responded to
 	// Data will only be supplied as non-nil if the subscription is set to include data
-	BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event []*core.EventDelivery, data []core.DataArray) error
+	BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error
 
 	// NamespaceRestarted is called after a namespace restarts. For a connect-in style plugin, like
 	// WebSockets, this must re-register any active connections that started before the time passed in.

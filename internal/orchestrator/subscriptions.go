@@ -64,6 +64,10 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, subDef *co
 		}
 	}
 
+	if subDef.Options.Batch && subDef.Options.WithData != nil && *subDef.Options.WithData {
+		return nil, i18n.NewError(ctx, coremsgs.MsgBatchWithDataNotSupport, subDef.Name)
+	}
+
 	return subDef, or.events.CreateUpdateDurableSubscription(ctx, subDef, mustNew)
 }
 

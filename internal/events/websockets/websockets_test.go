@@ -817,5 +817,5 @@ func TestEventDeliveryBatch(t *testing.T) {
 		},
 	}
 
-	ws.BatchDeliveryRequest(ws.ctx, "id", sub, []*core.EventDelivery{}, []core.DataArray{})
+	ws.BatchDeliveryRequest(ws.ctx, "id", sub, []*core.CombinedEventDataDelivery{})
 }

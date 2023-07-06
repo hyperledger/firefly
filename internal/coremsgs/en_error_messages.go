@@ -292,4 +292,5 @@ var (
 	MsgInvalidMessageIdentity             = ffe("FF10453", "Invalid message '%s'. Author '%s' does not match identity registered to %s: %s (%s)")
 	MsgDuplicateTLSConfig                 = ffe("FF10454", "Found duplicate TLS Config '%s'", 400)
 	MsgNotFoundTLSConfig                  = ffe("FF10455", "Provided TLS Config name '%s' not found for namespace '%s'", 400)
+	MsgBatchWithDataNotSupport            = ffe("FF10456", "Provided subscription '%s' enables batching and withData which is not support", 400)
 )

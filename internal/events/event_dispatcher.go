@@ -383,8 +383,7 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) {
 func (ed *eventDispatcher) deliverBatchedEvents() {
 	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
 
-	var events []*core.EventDelivery
-	var dataSet []core.DataArray
+	var events []*core.CombinedEventDataDelivery
 	var batchTimeoutContext context.Context
 	var batchTimeoutCancel func()
 	for {
@@ -404,22 +403,20 @@ func (ed *eventDispatcher) deliverBatchedEvents() {
 				return
 			}
 
-			if events == nil && dataSet == nil {
-				events = []*core.EventDelivery{}
-				dataSet = []core.DataArray{}
+			if events == nil {
+				events = []*core.CombinedEventDataDelivery{}
 				batchTimeoutContext, batchTimeoutCancel = context.WithTimeout(ed.ctx, ed.batchTimeout)
 			}
 
 			log.L(ed.ctx).Debugf("Dispatching %s event in a batch: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
 
-			events = append(events, event)
-
 			var data []*core.Data
 			var err error
 			if withData && event.Message != nil {
 				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
-				dataSet = append(dataSet, data)
 			}
+
+			events = append(events, &core.CombinedEventDataDelivery{Event: event, Data: data})
 
 			if err != nil {
 				ed.deliveryResponse(&core.EventDeliveryResponse{ID: event.ID, Rejected: true})
@@ -435,10 +432,9 @@ func (ed *eventDispatcher) deliverBatchedEvents() {
 		}
 
 		if len(events) == ed.readAhead || (timedOut && len(events) > 0) {
-			_ = ed.transport.BatchDeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, events, dataSet)
+			_ = ed.transport.BatchDeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, events)
 			// If err handle all the delivery responses for all the events??
 			events = nil
-			dataSet = nil
 		}
 	}
 }
