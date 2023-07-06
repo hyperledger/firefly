@@ -291,24 +291,29 @@ func (wh *WebHooks) buildBody(events []*core.EventDelivery, data []core.DataArra
 		return nil, nil
 	}
 
-	if withData {
-		// We are in the case of batching
-		// [[{"event1data1": "stuff"}],[{"event2data1": "stuff"}]]
-		// [[{"event1data1": "stuff"},{"event1data2":"stuff"}],[{"event2data1": "stuff"},{"event2data2":"stuff"}]]
-		if len(data) > 1 && batch {
-			allData := [][]*fftypes.JSONAny{}
-			for _, eventData := range data {
-				allEventData := []*fftypes.JSONAny{}
-				for _, d := range eventData {
-					if d.Value != nil {
-						allEventData = append(allEventData, d.Value)
+	if batch {
+		if withData {
+			if len(data) > 0 {
+				allData := [][]*fftypes.JSONAny{}
+				for _, eventData := range data {
+					allEventData := []*fftypes.JSONAny{}
+					for _, d := range eventData {
+						if d.Value != nil {
+							allEventData = append(allEventData, d.Value)
+						}
 					}
+					allData = append(allData, allEventData)
 				}
-				allData = append(allData, allEventData)
+				return allData, nil
 			}
-			return allData, nil
 		}
 
+		// [{"event1": "stuff"},"event2": "stuff"}]
+		// [{"event1": "stuff"}]
+		return events, nil
+	}
+
+	if withData {
 		if len(data) == 1 {
 			eventData := []*fftypes.JSONAny{}
 			for _, d := range data[0] {
@@ -345,13 +350,7 @@ func (wh *WebHooks) buildBody(events []*core.EventDelivery, data []core.DataArra
 		}
 	}
 
-	// We haven't returned yet so we are not in data
-	// We only send the events
-	if batch {
-		// [{"event1": "stuff"},"event2": "stuff"}]
-		// [{"event1": "stuff"}]
-		body = events
-	} else if len(events) == 1 {
+	if body == nil {
 		// {"event1": "stuff"}
 		body = events[0]
 	}
