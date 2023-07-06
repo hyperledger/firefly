@@ -1,8 +1,10 @@
 ---
-layout: default
-title: Node Component Architecture
+layout: i18n_page
+title: pages.node_component_architecture
 parent: pages.architecture
 nav_order: 1
+seo_title: seo.architecture_node_component_architecture_title
+seo_description: seo.architecture_node_component_architecture_description
 ---
 
 # Node Component Architecture

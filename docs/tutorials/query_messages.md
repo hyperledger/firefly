@@ -3,6 +3,8 @@ layout: default
 title: Explore messages
 parent: pages.tutorials
 nav_order: 5
+seo_title: seo.tutorials_query_messages_title
+seo_description: seo.tutorials_query_messages_description
 ---
 
 # Explore messages

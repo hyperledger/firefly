@@ -3,6 +3,8 @@ layout: default
 title: Plugin Architecture
 parent: pages.architecture
 nav_order: 4
+seo_title: seo.architecture_plugin_architecture_title
+seo_description: seo.architecture_plugin_architecture_description
 ---
 
 # Plugin Architecture

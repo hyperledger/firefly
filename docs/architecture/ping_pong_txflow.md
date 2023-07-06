@@ -3,6 +3,8 @@ layout: default
 title: Example Transaction Flow
 parent: pages.architecture
 nav_order: 5
+seo_title: seo.architecture_ping_pong_txflow_title
+seo_description: seo.architecture_ping_pong_txflow_description
 ---
 
 # Example Transaction Flow (Ping Pong)

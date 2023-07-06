@@ -4,6 +4,8 @@ title: pages.chains
 parent: pages.tutorials
 nav_order: 9
 has_children: true
+seo_title: seo.tutorials_chains_title
+seo_description: seo.tutorials_chains_description
 ---
 
 # {% t pages.chains %}

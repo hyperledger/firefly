@@ -1,8 +1,10 @@
 ---
-layout: default
-title: Idempotency Keys
+layout: i18n_page
+title: pages.idempotency
 parent: pages.reference
 nav_order: 10
+seo_title: seo.reference_idempotency_title
+seo_description: seo.reference_idempotency_description
 ---
 
 # Idempotency Keys

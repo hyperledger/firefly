@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.api_spec
 nav_order: 8
 has_children: false
+seo_title: seo.swagger_swagger_title
+seo_description: seo.swagger_swagger_description
 ---
 
 # API Spec

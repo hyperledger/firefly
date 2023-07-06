@@ -3,6 +3,8 @@ layout: default
 title: ③ Use the Sandbox
 parent: pages.getting_started
 nav_order: 3
+seo_title: seo.gettingstarted_sandbox_title
+seo_description: seo.gettingstarted_sandbox_description
 ---
 
 # Use the Sandbox

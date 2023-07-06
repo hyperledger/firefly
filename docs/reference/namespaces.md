@@ -3,6 +3,8 @@ layout: default
 title: Namespaces
 parent: pages.reference
 nav_order: 9
+seo_title: seo.reference_namespaces_title
+seo_description: seo.reference_namespaces_description
 ---
 
 # Namespaces

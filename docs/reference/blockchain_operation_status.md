@@ -3,6 +3,8 @@ layout: default
 title: Blockchain Operation Status
 parent: pages.reference
 nav_order: 5
+seo_title: seo.reference_blockchain_operation_status_title
+seo_description: seo.reference_blockchain_operation_status_description
 ---
 
 # Blockchain Operation Status

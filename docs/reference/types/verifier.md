@@ -4,6 +4,8 @@ title: Verifier
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 15
+seo_title: seo.reference_types_verifier_title
+seo_description: seo.reference_types_verifier_description
 ---
 
 # Verifier

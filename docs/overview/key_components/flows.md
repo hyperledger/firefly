@@ -4,6 +4,8 @@ title: pages.flows
 parent: pages.key_features
 grand_parent: pages.understanding_firefly
 nav_order: 5
+seo_title: seo.overview_key_components_flows_title
+seo_description: seo.overview_key_components_flows_description
 ---
 
 # Flows

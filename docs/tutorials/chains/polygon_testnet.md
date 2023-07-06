@@ -4,6 +4,8 @@ title: pages.polygon_testnet
 parent: pages.chains
 grand_parent: pages.tutorials
 nav_order: 1
+seo_title: seo.tutorials_chains_polygon_testnet_title
+seo_description: seo.tutorials_chains_polygon_testnet_description
 ---
 
 # {%t pages.polygon_testnet %}

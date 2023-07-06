@@ -4,6 +4,8 @@ title: pages.fabric_test_network
 parent: pages.chains
 grand_parent: pages.tutorials
 nav_order: 7
+seo_title: seo.tutorials_chains_fabric_test_network_title
+seo_description: seo.tutorials_chains_fabric_test_network_description
 ---
 
 # Work with Fabric-Samples Test Network

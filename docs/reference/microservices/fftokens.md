@@ -4,6 +4,8 @@ title: fftokens
 parent: Microservices
 grand_parent: pages.reference
 nav_order: 1
+seo_title: seo.reference_microservices_fftokens_title
+seo_description: seo.reference_microservices_fftokens_description
 ---
 
 # fftokens

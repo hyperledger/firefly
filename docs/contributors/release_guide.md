@@ -3,6 +3,8 @@ layout: default
 title: Release Guide
 parent: pages.contributors
 nav_order: 8
+seo_title: seo.contributors_release_guide_title
+seo_description: seo.contributors_release_guide_description
 ---
 
 # Release Guide

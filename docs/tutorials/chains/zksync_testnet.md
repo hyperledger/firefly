@@ -4,6 +4,8 @@ title: pages.zksync_testnet
 parent: pages.chains
 grand_parent: pages.tutorials
 nav_order: 11
+seo_title: seo.tutorials_chains_zksync_testnet_title
+seo_description: seo.tutorials_chains_zksync_testnet_description
 ---
 
 

@@ -3,6 +3,8 @@ layout: default
 title: ① Install the FireFly CLI
 parent: pages.getting_started
 nav_order: 1
+seo_title: seo.gettingstarted_firefly_cli_title
+seo_description: seo.gettingstarted_firefly_cli_description
 ---
 
 # ① Install the FireFly CLI

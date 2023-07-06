@@ -4,6 +4,8 @@ title: pages.custom_smart_contracts
 parent: pages.tutorials
 nav_order: 7
 has_children: true
+seo_title: seo.tutorials_custom_contracts_title
+seo_description: seo.tutorials_custom_contracts_description
 ---
 
 ## Quick reference

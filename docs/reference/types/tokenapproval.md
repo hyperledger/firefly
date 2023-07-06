@@ -4,6 +4,8 @@ title: TokenApproval
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 13
+seo_title: seo.reference_types_tokenapproval_title
+seo_description: seo.reference_types_tokenapproval_description
 ---
 
 # TokenApproval

@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.introduction
 parent: pages.understanding_firefly
 nav_order: 1
+seo_title: seo.overview_supernode_concept_title
+seo_description: seo.overview_supernode_concept_description
 ---
 
 # Introduction to Hyperledger FireFly

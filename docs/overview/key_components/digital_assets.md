@@ -4,6 +4,8 @@ title: pages.digital_assets
 parent: pages.key_features
 grand_parent: pages.understanding_firefly
 nav_order: 2
+seo_title: seo.overview_key_components_digital_assets_title
+seo_description: seo.overview_key_components_digital_assets_description
 ---
 
 # Digital Assets

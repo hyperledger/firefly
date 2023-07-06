@@ -4,6 +4,8 @@ title: pages.multiparty_flow
 parent: pages.multiparty_features
 grand_parent: pages.understanding_firefly
 nav_order: 1
+seo_title: seo.overview_multiparty_multiparty_flow_title
+seo_description: seo.overview_multiparty_multiparty_flow_description
 ---
 
 # Multiparty Process Flows

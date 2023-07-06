@@ -3,6 +3,8 @@ layout: default
 title: Privately send data
 parent: pages.tutorials
 nav_order: 2
+seo_title: seo.tutorials_private_send_title
+seo_description: seo.tutorials_private_send_description
 ---
 
 # Privately send data

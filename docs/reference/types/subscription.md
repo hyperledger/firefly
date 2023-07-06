@@ -4,6 +4,8 @@ title: Subscription
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 3
+seo_title: seo.reference_types_subscription_title
+seo_description: seo.reference_types_subscription_description
 ---
 
 # Subscription

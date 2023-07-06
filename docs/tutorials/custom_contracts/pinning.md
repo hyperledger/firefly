@@ -1,9 +1,11 @@
 ---
-layout: default
-title: Pinning Data
+layout: i18n_page
+title: pages.pinning
 parent: pages.custom_smart_contracts
 grand_parent: pages.tutorials
 nav_order: 3
+seo_title: seo.tutorials_custom_contracts_title
+seo_description: seo.tutorials_custom_contracts_description
 ---
 
 # Pin off-chain data to a custom blockchain transaction

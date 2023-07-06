@@ -3,6 +3,8 @@ layout: default
 title: Internal Event Sequencing
 parent: pages.architecture
 nav_order: 6
+seo_title: seo.architecture_internal_event_sequencing_title
+seo_description: seo.architecture_internal_event_sequencing_description
 ---
 
 # Internal Event Sequencing

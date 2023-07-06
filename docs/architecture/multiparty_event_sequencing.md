@@ -3,6 +3,8 @@ layout: default
 title: Multiparty Event Sequencing
 parent: pages.architecture
 nav_order: 3
+seo_title: seo.architecture_multiparty_event_sequencing_title
+seo_description: seo.architecture_multiparty_event_sequencing_description
 ---
 
 # Multiparty Event Sequencing

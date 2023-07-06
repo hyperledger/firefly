@@ -3,6 +3,8 @@ layout: default
 title: Contributing to Documentation
 parent: pages.contributors
 nav_order: 6
+seo_title: seo.contributors_docs_setup_title
+seo_description: seo.contributors_docs_setup_description
 ---
 
 # Contributing to Documentation

@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.code_repositories
 parent: pages.contributors
 nav_order: 3
+seo_title: seo.contributors_code_repositories_title
+seo_description: seo.contributors_code_repositories_description
 ---
 
 # Code Repositories

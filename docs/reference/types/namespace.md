@@ -4,6 +4,8 @@ title: Namespace
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 22
+seo_title: seo.reference_types_namespace_title
+seo_description: seo.reference_types_namespace_description
 ---
 
 # Namespace

@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.tls
 parent: pages.reference
 nav_order: 11
+seo_title: seo.reference_tls_title
+seo_description: seo.reference_tls_description
 ---
 
 # TLS

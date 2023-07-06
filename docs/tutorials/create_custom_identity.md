@@ -3,6 +3,8 @@ layout: default
 title: Create a custom identity
 parent: pages.tutorials
 nav_order: 8
+seo_title: seo.tutorials_create_custom_identity_title
+seo_description: seo.tutorials_create_custom_identity_description
 ---
 
 # Create a Custom Identity

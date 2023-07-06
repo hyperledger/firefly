@@ -3,6 +3,8 @@ layout: default
 title: Blockchain Connector Toolkit
 parent: pages.architecture
 nav_order: 2
+seo_title: seo.architecture_blockchain_connector_framework_title
+seo_description: seo.architecture_blockchain_connector_framework_description
 ---
 
 # Blockchain Connector Toolkit

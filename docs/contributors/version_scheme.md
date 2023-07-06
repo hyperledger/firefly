@@ -3,6 +3,8 @@ layout: default
 title: Versioning Scheme
 parent: pages.contributors
 nav_order: 7
+seo_title: seo.contributors_version_scheme_title
+seo_description: seo.contributors_version_scheme_description
 ---
 
 # Versioning Scheme

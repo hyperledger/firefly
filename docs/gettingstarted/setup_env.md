@@ -3,6 +3,8 @@ layout: default
 title: ② Start your environment
 parent: pages.getting_started
 nav_order: 2
+seo_title: seo.gettingstarted_setup_env_title
+seo_description: seo.gettingstarted_setup_env_description
 ---
 
 # Start your environment

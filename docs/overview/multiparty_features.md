@@ -4,6 +4,8 @@ title: pages.multiparty_features
 parent: pages.understanding_firefly
 nav_order: 5
 has_children: true
+seo_title: seo.overview_multiparty_features_title
+seo_description: seo.overview_multiparty_features_description
 ---
 
 # Enterprise multi-party systems

@@ -4,6 +4,8 @@ title: pages.key_features
 parent: pages.understanding_firefly
 nav_order: 3
 has_children: true
+seo_title: seo.overview_key_features_title
+seo_description: seo.overview_key_features_description
 ---
 
 # Key Features

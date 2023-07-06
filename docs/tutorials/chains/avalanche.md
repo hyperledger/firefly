@@ -4,6 +4,8 @@ title: pages.avalanche
 parent: pages.chains
 grand_parent: pages.tutorials
 nav_order: 3
+seo_title: seo.tutorials_chains_avalanche_title
+seo_description: seo.tutorials_chains_avalanche_description
 ---
 
 # {%t pages.avalanche %}

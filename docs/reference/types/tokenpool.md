@@ -4,6 +4,8 @@ title: TokenPool
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 11
+seo_title: seo.reference_types_tokenpool_title
+seo_description: seo.reference_types_tokenpool_description
 ---
 
 # TokenPool

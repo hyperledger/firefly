@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.advanced_cli_usage
 parent: pages.contributors
 nav_order: 5
+seo_title: seo.contributors_advanced_cli_usage_title
+seo_description: seo.contributors_advanced_cli_usage_description
 ---
 
 # Advanced CLI Usage

@@ -3,6 +3,8 @@ layout: default
 title: Listen for events
 parent: pages.tutorials
 nav_order: 5
+seo_title: seo.tutorials_events_title
+seo_description: seo.tutorials_events_description
 ---
 
 # Listen for events

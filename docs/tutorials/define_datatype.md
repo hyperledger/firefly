@@ -3,6 +3,8 @@ layout: default
 title: Define a datatype
 parent: pages.tutorials
 nav_order: 3
+seo_title: seo.tutorials_define_datatype_title
+seo_description: seo.tutorials_define_datatype_description
 ---
 
 # Define a datatype

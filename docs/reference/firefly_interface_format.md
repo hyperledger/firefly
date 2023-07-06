@@ -3,6 +3,8 @@ layout: default
 title: FireFly Interface Format
 parent: pages.reference
 nav_order: 8
+seo_title: seo.reference_firefly_interface_format_title
+seo_description: seo.reference_firefly_interface_format_description
 ---
 
 # FireFly Interface Format

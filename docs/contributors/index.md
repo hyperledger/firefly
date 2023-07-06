@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.contributors
 nav_order: 7
 has_children: true
+seo_title: seo.contributors_title
+seo_description: seo.contributors_description
 ---
 
 # Contributors' Guide

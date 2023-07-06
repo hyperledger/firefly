@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.basic_auth
 parent: pages.tutorials
 nav_order: 10
+seo_title: seo.tutorials_basic_auth_title
+seo_description: seo.tutorials_basic_auth_description
 ---
 
 # {%t pages.basic_auth %}

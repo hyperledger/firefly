@@ -4,6 +4,8 @@ title: pages.broadcast_data
 parent: pages.multiparty_features
 grand_parent: pages.understanding_firefly
 nav_order: 3
+seo_title: seo.overview_multiparty_broadcast_title
+seo_description: seo.overview_multiparty_broadcast_description
 ---
 
 # Broadcast / shared data

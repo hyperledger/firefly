@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.broadcast_data
 parent: pages.tutorials
 nav_order: 1
+seo_title: seo.tutorials_broadcast_data_title
+seo_description: seo.tutorials_broadcast_data_description
 ---
 
 # Broadcast data

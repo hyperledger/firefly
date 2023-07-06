@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.code_overview
 parent: pages.contributors
 nav_order: 1
+seo_title: seo.contributors_code_overview_title
+seo_description: seo.contributors_code_overview_description
 ---
 
 # Firefly Code Overview

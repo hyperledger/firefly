@@ -4,6 +4,8 @@ title: Ethereum
 parent: pages.custom_smart_contracts
 grand_parent: pages.tutorials
 nav_order: 1
+seo_title: seo.tutorials_custom_contracts_ethereum_title
+seo_description: seo.tutorials_custom_contracts_ethereum_description
 ---
 
 # Work with Ethereum smart contracts

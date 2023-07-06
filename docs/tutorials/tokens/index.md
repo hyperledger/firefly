@@ -4,6 +4,8 @@ title: Use tokens
 parent: pages.tutorials
 nav_order: 6
 has_children: true
+seo_title: seo.tutorials_tokens_title
+seo_description: seo.tutorials_tokens_description
 ---
 
 

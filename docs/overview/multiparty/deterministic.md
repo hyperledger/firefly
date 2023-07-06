@@ -4,6 +4,8 @@ title: pages.deterministic
 parent: pages.multiparty_features
 grand_parent: pages.understanding_firefly
 nav_order: 4
+seo_title: seo.overview_multiparty_deterministic_title
+seo_description: seo.overview_multiparty_deterministic_description
 ---
 
 # Deterministic Compute

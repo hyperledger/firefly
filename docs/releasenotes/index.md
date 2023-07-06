@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.release_notes
 nav_order: 10
 has_children: true
+seo_title: seo.releasenotes_title
+seo_description: seo.releasenotes_description
 ---
 
 # Release Notes

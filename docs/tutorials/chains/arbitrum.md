@@ -4,6 +4,8 @@ title: pages.arbitrum
 parent: pages.chains
 grand_parent: pages.tutorials
 nav_order: 4
+seo_title: seo.tutorials_chains_arbitrum_title
+seo_description: seo.tutorials_chains_arbitrum_description
 ---
 
 # {%t pages.arbitrum %}

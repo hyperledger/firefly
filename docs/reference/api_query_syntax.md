@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.api_query_syntax
 parent: pages.reference
 nav_order: 3
+seo_title: seo.reference_api_query_syntax_title
+seo_description: seo.reference_api_query_syntax_description
 ---
 
 # API Query Syntax

@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.faqs
 nav_order: 9
 has_children: false
+seo_title: seo.faqs_title
+seo_description: seo.faqs_description
 ---
 
 # FAQs

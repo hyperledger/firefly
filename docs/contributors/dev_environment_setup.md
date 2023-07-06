@@ -3,6 +3,8 @@ layout: default
 title: Setting up a FireFly Core Development Environment
 parent: pages.contributors
 nav_order: 4
+seo_title: seo.contributors_dev_environment_setup_title
+seo_description: seo.contributors_dev_environment_setup_description
 ---
 
 # Setting up a FireFly Core Development Environment

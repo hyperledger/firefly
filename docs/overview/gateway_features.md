@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.web3_gateway_features
 parent: pages.understanding_firefly
 nav_order: 4
+seo_title: seo.overview_gateway_features_title
+seo_description: seo.overview_gateway_features_description
 ---
 
 # Web3 Gateway Features

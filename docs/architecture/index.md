@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.architecture
 nav_order: 6
 has_children: true
+seo_title: seo.architecture_title
+seo_description: seo.architecture_description
 ---
 
 # Architecture 

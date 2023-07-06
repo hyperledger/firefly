@@ -4,6 +4,8 @@ title: pages.getting_started
 nav_order: 3
 has_children: true
 has_toc: false
+seo_title: seo.gettingstarted_title
+seo_description: seo.gettingstarted_description
 ---
 
 # Getting Started

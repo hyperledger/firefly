@@ -4,6 +4,8 @@ title: pages.apps
 parent: pages.key_features
 grand_parent: pages.understanding_firefly
 nav_order: 1
+seo_title: seo.overview_key_components_apps_title
+seo_description: seo.overview_key_components_apps_description
 ---
 
 # Apps

@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.usage_patterns
 parent: pages.understanding_firefly
 nav_order: 2
+seo_title: seo.overview_usage_patterns_title
+seo_description: seo.overview_usage_patterns_description
 ---
 
 # Usage Patterns

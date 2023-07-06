@@ -4,6 +4,8 @@ title: ContractListener
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 10
+seo_title: seo.reference_types_contractlistener_title
+seo_description: seo.reference_types_contractlistener_description
 ---
 
 # ContractListener

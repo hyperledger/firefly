@@ -4,6 +4,8 @@ title: BlockchainEvent
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 5
+seo_title: seo.reference_types_blockchainevent_title
+seo_description: seo.reference_types_blockchainevent_description
 ---
 
 # BlockchainEvent

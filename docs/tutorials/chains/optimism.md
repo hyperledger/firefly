@@ -4,6 +4,8 @@ title: pages.optimism
 parent: pages.chains
 grand_parent: pages.tutorials
 nav_order: 5
+seo_title: seo.tutorials_chains_optimism_title
+seo_description: seo.tutorials_chains_optimism_description
 ---
 
 

@@ -4,6 +4,8 @@ title: WSError
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 25
+seo_title: seo.reference_types_wserror_title
+seo_description: seo.reference_types_wserror_description
 ---
 
 # WSError

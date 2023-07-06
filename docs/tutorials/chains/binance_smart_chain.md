@@ -4,6 +4,8 @@ title: pages.binance_smart_chain
 parent: pages.chains
 grand_parent: pages.tutorials
 nav_order: 2
+seo_title: seo.tutorials_chains_binance_smart_chain_title
+seo_description: seo.tutorials_chains_binance_smart_chain_description
 ---
 
 # {%t pages.binance_smart_chain %}

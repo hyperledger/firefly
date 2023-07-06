@@ -1,9 +1,11 @@
 ---
-layout: default
-title: DataRef
+layout: i18n_page
+title: pages.dataref
 parent: Types
 grand_parent: pages.reference
 nav_order: 4
+seo_title: seo.reference_types_dataref_title
+seo_description: seo.reference_types_dataref_description
 ---
 
 # DataRef

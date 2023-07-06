@@ -4,6 +4,8 @@ title: Data
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 17
+seo_title: seo.reference_types_data_title
+seo_description: seo.reference_types_data_description
 ---
 
 # Data

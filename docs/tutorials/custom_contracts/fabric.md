@@ -4,6 +4,8 @@ title: Fabric
 parent: pages.custom_smart_contracts
 grand_parent: pages.tutorials
 nav_order: 2
+seo_title: seo.tutorials_custom_contracts_fabric_title
+seo_description: seo.tutorials_custom_contracts_fabric_description
 ---
 
 # Work with Hyperledger Fabric chaincodes

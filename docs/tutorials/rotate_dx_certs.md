@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.rotate_dx_certs
 parent: pages.tutorials
 nav_order: 11
+seo_title: seo.tutorials_rotate_dx_certs_title
+seo_description: seo.tutorials_rotate_dx_certs_description
 ---
 
 # {%t pages.rotate_dx_certs %}

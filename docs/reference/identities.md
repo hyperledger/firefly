@@ -3,6 +3,8 @@ layout: default
 title: Identities
 parent: pages.reference
 nav_order: 7
+seo_title: seo.reference_identities_title
+seo_description: seo.reference_identities_description
 ---
 
 # Identities

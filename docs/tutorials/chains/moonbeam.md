@@ -4,6 +4,8 @@ title: pages.moonbeam_testnet
 parent: pages.chains
 grand_parent: pages.tutorials
 nav_order: 8
+seo_title: seo.tutorials_chains_moonbeam_title
+seo_description: seo.tutorials_chains_moonbeam_description
 ---
 
 # {%t pages.moonbeam_testnet %}

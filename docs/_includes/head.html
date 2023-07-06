@@ -2,13 +2,19 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=Edge">
 
-  {% unless site.plugins contains "jekyll-seo-tag" %}
-    <title>{% if page.layout == "i18n_page" %}{% t page.title %}{% else %}{{ page.title }}{% endif %} - {% t "site.title"  %}</title>
-
-    {% if page.description %}
-      <meta name="Description" content="{{ page.description }}">
-    {% endif %}
-  {% endunless %}
+  {% if page.seo_title %}
+    <title>{% t page.seo_title %}</title>
+  {% elsif page.title %}
+    <title>{% t site.name %}: {% t page.title %}</title>
+  {% else %}
+    <title>{% t site.title %}</title>
+  {% endif %}
+  
+  {% if page.seo_description %}
+    <meta name="description" content="{% t page.seo_description %}">
+  {% endif %}
+  
+  <meta property="og:image" content="{{ '/assets/images/firefly_social_sharing_image.png' | relative_url }}" />
 
   <link rel="shortcut icon" href="{{ 'favicon.ico' | relative_url }}" type="image/x-icon">
 
@@ -34,8 +40,6 @@
   <script type="text/javascript" src="/firefly/assets/js/versions.js" data-proofer-ignore></script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  {% seo %}
 
   {% include head_custom.html %}
 

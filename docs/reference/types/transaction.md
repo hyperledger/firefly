@@ -4,6 +4,8 @@ title: Transaction
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 6
+seo_title: seo.reference_types_transaction_title
+seo_description: seo.reference_types_transaction_description
 ---
 
 # Transaction

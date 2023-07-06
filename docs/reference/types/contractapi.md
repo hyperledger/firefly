@@ -4,6 +4,8 @@ title: ContractAPI
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 4
+seo_title: seo.reference_types_contractapi_title
+seo_description: seo.reference_types_contractapi_description
 ---
 
 # ContractAPI

@@ -3,6 +3,8 @@ layout: i18n_page
 title: pages.code_hierarchy
 parent: pages.contributors
 nav_order: 2
+seo_title: seo.contributors_code_hierarchy_title
+seo_description: seo.contributors_code_hierarchy_description
 ---
 
 # Firefly Code Hierarchy

@@ -4,6 +4,8 @@ title: Simple Types
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 1
+seo_title: seo.reference_types_simpletypes_title
+seo_description: seo.reference_types_simpletypes_description
 ---
 
 # Simple Types

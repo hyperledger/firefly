@@ -3,6 +3,8 @@ layout: default
 title: Event Bus
 parent: pages.reference
 nav_order: 6
+seo_title: seo.reference_events_title
+seo_description: seo.reference_events_description
 ---
 
 # Event Bus
