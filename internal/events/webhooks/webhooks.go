@@ -286,30 +286,83 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 	return err
 }
 
-func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) (req *whRequest, res *whResponse, err error) {
-	withData := sub.Options.WithData != nil && *sub.Options.WithData
-	allData := make([]*fftypes.JSONAny, 0, len(data))
-	var firstData fftypes.JSONObject
-	var valid bool
+func (wh *WebHooks) buildBody(events []*core.EventDelivery, data []core.DataArray, withData bool, batch bool) (body interface{}, firstData fftypes.JSONObject) {
+	if len(events) == 0 && len(data) == 0 {
+		return nil, nil
+	}
+
 	if withData {
-		for _, d := range data {
-			if d.Value != nil {
-				allData = append(allData, d.Value)
+		// We are in the case of batching
+		// [[{"event1data1": "stuff"}],[{"event2data1": "stuff"}]]
+		// [[{"event1data1": "stuff"},{"event1data2":"stuff"}],[{"event2data1": "stuff"},{"event2data2":"stuff"}]]
+		if len(data) > 1 && batch {
+			allData := [][]*fftypes.JSONAny{}
+			for _, eventData := range data {
+				allEventData := []*fftypes.JSONAny{}
+				for _, d := range eventData {
+					if d.Value != nil {
+						allEventData = append(allEventData, d.Value)
+					}
+				}
+				allData = append(allData, allEventData)
 			}
+			return allData, nil
 		}
-		if len(allData) == 0 {
-			firstData = fftypes.JSONObject{}
-		} else {
-			// Use JSONObjectOk instead of JSONObject
-			// JSONObject fails for datatypes such as array, string, bool, number etc
-			firstData, valid = allData[0].JSONObjectOk()
-			if !valid {
-				firstData = fftypes.JSONObject{
-					"value": allData[0],
+
+		if len(data) == 1 {
+			eventData := []*fftypes.JSONAny{}
+			for _, d := range data[0] {
+				if d.Value != nil {
+					eventData = append(eventData, d.Value)
 				}
 			}
+
+			if len(eventData) == 0 {
+				// Send an empty object if ask withData but no data available
+				firstData = fftypes.JSONObject{}
+				body = firstData
+			}
+
+			if len(eventData) >= 1 {
+				// Use JSONObjectOk instead of JSONObject
+				// JSONObject fails for datatypes such as array, string, bool, number etc
+				var valid bool
+				firstData, valid = eventData[0].JSONObjectOk()
+				if !valid {
+					firstData = fftypes.JSONObject{
+						"value": eventData[0],
+					}
+				}
+
+				if len(eventData) == 1 {
+					body = firstData
+				} else {
+					body = eventData
+				}
+			}
+
+			return body, firstData
 		}
 	}
+
+	// We haven't returned yet so we are not in data
+	// We only send the events
+	if batch {
+		// [{"event1": "stuff"},"event2": "stuff"}]
+		// [{"event1": "stuff"}]
+		body = events
+	} else if len(events) == 1 {
+		// {"event1": "stuff"}
+		body = events[0]
+	}
+
+	return body, firstData
+}
+
+func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray, batch bool) (req *whRequest, res *whResponse, err error) {
+	withData := sub.Options.WithData != nil && *sub.Options.WithData
+
+	body, firstData := wh.buildBody(events, data, withData, batch)
 
 	client := wh.client
 	if sub.Options.RestyClient != nil {
@@ -326,23 +379,15 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 		case req.body != nil:
 			// We might have been told to extract a body from the first data record
 			req.r.SetBody(req.body)
-		case len(allData) > 1:
-			// We've got an array of data to POST
-			req.r.SetBody(allData)
-		case len(allData) == 1:
-			// Just send the first object directly
-			req.r.SetBody(firstData)
 		default:
-			// Just send the event itself
-			req.r.SetBody(event)
-
+			req.r.SetBody(body)
 		}
 	}
 
-	log.L(wh.ctx).Debugf("Webhook-> %s %s event %s on subscription %s", req.method, req.url, event.ID, sub.ID)
+	// log.L(wh.ctx).Debugf("Webhook-> %s %s event %s on subscription %s", req.method, req.url, event.ID, sub.ID)
 	resp, err := req.r.Execute(req.method, req.url)
 	if err != nil {
-		log.L(ctx).Errorf("Webhook<- %s %s event %s on subscription %s failed: %s", req.method, req.url, event.ID, sub.ID, err)
+		// log.L(ctx).Errorf("Webhook<- %s %s event %s on subscription %s failed: %s", req.method, req.url, event.ID, sub.ID, err)
 		return nil, nil, err
 	}
 	defer func() { _ = resp.RawBody().Close() }()
@@ -351,7 +396,7 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 		Status:  resp.StatusCode(),
 		Headers: fftypes.JSONObject{},
 	}
-	log.L(wh.ctx).Infof("Webhook<- %s %s event %s on subscription %s returned %d", req.method, req.url, event.ID, sub.ID, res.Status)
+	// log.L(wh.ctx).Infof("Webhook<- %s %s event %s on subscription %s returned %d", req.method, req.url, event.ID, sub.ID, res.Status)
 	header := resp.Header()
 	for h := range header {
 		res.Headers[h] = header.Get(h)
@@ -385,7 +430,7 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 }
 
 func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray, fastAck bool) {
-	req, res, gwErr := wh.attemptRequest(ctx, sub, event, data)
+	req, res, gwErr := wh.attemptRequest(ctx, sub, []*core.EventDelivery{event}, []core.DataArray{data}, false)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
 		// rather than just causing timeouts
@@ -444,108 +489,8 @@ func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, s
 	}
 }
 
-func (wh *WebHooks) attemptBatchRequest(ctx context.Context, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray) (req *whRequest, res *whResponse, err error) {
-	withData := sub.Options.WithData != nil && *sub.Options.WithData
-
-	allData := make([]*fftypes.JSONAny, 0, len(data))
-
-	if withData {
-		// We can either append all the data as flat map
-		// or nest it based on the event name?
-		// TODO ask as part of review if we want to support this
-		for _, d := range data {
-			for _, element := range d {
-				if element.Value != nil {
-					allData = append(allData, element.Value)
-				}
-			}
-		}
-
-		// if len(allData) == 0 {
-		// 	firstData = fftypes.JSONObject{}
-		// } else {
-		// 	// Use JSONObjectOk instead of JSONObject
-		// 	// JSONObject fails for datatypes such as array, string, bool, number etc
-		// 	firstData, valid = allData[0].JSONObjectOk()
-		// 	if !valid {
-		// 		firstData = fftypes.JSONObject{
-		// 			"value": allData[0],
-		// 		}
-		// 	}
-		// }
-	}
-
-	client := wh.client
-	if sub.Options.RestyClient != nil {
-		client = sub.Options.RestyClient
-	}
-
-	req, err = wh.buildRequest(ctx, client, sub.Options.TransportOptions(), nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Need to play around with these
-	if req.method == http.MethodPost || req.method == http.MethodPatch || req.method == http.MethodPut {
-		switch {
-		case req.body != nil:
-			// We might have been told to extract a body from the first data record
-			req.r.SetBody(req.body)
-		case len(allData) > 0:
-			// We've got an array of data to POST
-			// Send all the data of each request
-			req.r.SetBody(allData)
-		default:
-			// Just send the event itself
-			req.r.SetBody(events)
-		}
-	}
-
-	resp, err := req.r.Execute(req.method, req.url)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer func() { _ = resp.RawBody().Close() }()
-
-	res = &whResponse{
-		Status:  resp.StatusCode(),
-		Headers: fftypes.JSONObject{},
-	}
-
-	header := resp.Header()
-	for h := range header {
-		res.Headers[h] = header.Get(h)
-	}
-	contentType := header.Get("Content-Type")
-	log.L(ctx).Debugf("Response content-type '%s' forceJSON=%t", contentType, req.forceJSON)
-	if req.forceJSON {
-		contentType = "application/json"
-	}
-	res.Headers["Content-Type"] = contentType
-	if req.forceJSON || strings.HasPrefix(contentType, "application/json") {
-		var resData interface{}
-		err = json.NewDecoder(resp.RawBody()).Decode(&resData)
-		if err != nil {
-			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgWebhooksReplyBadJSON)
-		}
-		b, _ := json.Marshal(&resData) // we know we can re-marshal It
-		res.Body = fftypes.JSONAnyPtrBytes(b)
-	} else {
-		// Anything other than JSON, gets returned as a JSON string in base64 encoding
-		buf := &bytes.Buffer{}
-		buf.WriteByte('"')
-		b64Encoder := base64.NewEncoder(base64.StdEncoding, buf)
-		_, _ = io.Copy(b64Encoder, resp.RawBody())
-		_ = b64Encoder.Close()
-		buf.WriteByte('"')
-		res.Body = fftypes.JSONAnyPtrBytes(buf.Bytes())
-	}
-
-	return req, res, nil
-}
-
 func (wh *WebHooks) doBatchedDelivery(ctx context.Context, connID string, reply bool, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray, fastAck bool) {
-	req, res, gwErr := wh.attemptBatchRequest(ctx, sub, events, data)
+	req, res, gwErr := wh.attemptRequest(ctx, sub, events, data, true)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
 		// rather than just causing timeouts

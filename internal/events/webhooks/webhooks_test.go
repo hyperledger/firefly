@@ -1225,11 +1225,12 @@ func TestRequestWithBodyReplyEndToEndWithBatch(t *testing.T) {
 	r.HandleFunc("/myapi", func(res http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, "myheaderval", req.Header.Get("My-Header"))
 		assert.Equal(t, "myqueryval", req.URL.Query().Get("my-query"))
-		var data []fftypes.JSONObject
+		var data [][]fftypes.JSONAny
 		err := json.NewDecoder(req.Body).Decode(&data)
 		assert.NoError(t, err)
 		assert.Equal(t, len(data), 2)
-		assert.Equal(t, "inputvalue", data[0].GetObject("in_body").GetString("inputfield"))
+		firstDataArray := data[0]
+		assert.Equal(t, "inputvalue", firstDataArray[0].JSONObject().GetObject("in_body").GetString("inputfield"))
 		res.Header().Set("my-reply-header", "myheaderval2")
 		res.WriteHeader(200)
 		res.Write([]byte(`{
