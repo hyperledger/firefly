@@ -286,82 +286,158 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 	return err
 }
 
-func (wh *WebHooks) buildBody(events []*core.EventDelivery, data []core.DataArray, withData bool, batch bool) (body interface{}, firstData fftypes.JSONObject) {
-	if len(events) == 0 && len(data) == 0 {
-		return nil, nil
-	}
-
-	if batch {
-		if withData {
-			if len(data) > 0 {
-				allData := [][]*fftypes.JSONAny{}
-				for _, eventData := range data {
-					allEventData := []*fftypes.JSONAny{}
-					for _, d := range eventData {
-						if d.Value != nil {
-							allEventData = append(allEventData, d.Value)
-						}
-					}
-					allData = append(allData, allEventData)
-				}
-				return allData, nil
-			}
-		}
-
-		// [{"event1": "stuff"},"event2": "stuff"}]
-		// [{"event1": "stuff"}]
-		return events, nil
-	}
-
+func (wh *WebHooks) buildBody(withData bool, event *core.EventDelivery, data core.DataArray) (body *fftypes.JSONAny, firstData fftypes.JSONObject, err error) {
+	allData := make([]*fftypes.JSONAny, 0, len(data))
 	if withData {
-		if len(data) == 1 {
-			eventData := []*fftypes.JSONAny{}
-			for _, d := range data[0] {
-				if d.Value != nil {
-					eventData = append(eventData, d.Value)
-				}
+		for _, d := range data {
+			if d.Value != nil {
+				allData = append(allData, d.Value)
 			}
-
-			if len(eventData) == 0 {
-				// Send an empty object if ask withData but no data available
-				firstData = fftypes.JSONObject{}
-				body = firstData
-			}
-
-			if len(eventData) >= 1 {
-				// Use JSONObjectOk instead of JSONObject
-				// JSONObject fails for datatypes such as array, string, bool, number etc
-				var valid bool
-				firstData, valid = eventData[0].JSONObjectOk()
-				if !valid {
-					firstData = fftypes.JSONObject{
-						"value": eventData[0],
-					}
-				}
-
-				if len(eventData) == 1 {
-					body = firstData
-				} else {
-					body = eventData
-				}
-			}
-
-			return body, firstData
 		}
+		if len(allData) == 0 {
+			firstData = fftypes.JSONObject{}
+			return fftypes.JSONAnyPtr("{}"), firstData, nil
+		} else {
+			// Use JSONObjectOk instead of JSONObject
+			// JSONObject fails for datatypes such as array, string, bool, number etc
+			var valid bool
+			firstData, valid = allData[0].JSONObjectOk()
+			if !valid {
+				firstData = fftypes.JSONObject{
+					"value": allData[0],
+				}
+			}
+
+			if len(allData) == 1 {
+				encodedFirstData, err := json.Marshal(firstData)
+				if err != nil {
+					return nil, nil, err
+				}
+				return fftypes.JSONAnyPtrBytes(encodedFirstData), firstData, nil
+			}
+		}
+		encodedData, err := json.Marshal(allData)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return fftypes.JSONAnyPtrBytes(encodedData), firstData, nil
 	}
 
-	if body == nil {
-		// {"event1": "stuff"}
-		body = events[0]
+	encodedEvent, err := json.Marshal(event)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return body, firstData
+	return fftypes.JSONAnyPtrBytes(encodedEvent), nil, nil
 }
+
+// func (wh *WebHooks) buildBody(events []*core.EventDelivery, data []core.DataArray, withData bool, batch bool) (body interface{}, firstData fftypes.JSONObject) {
+// 	if len(events) == 0 && len(data) == 0 {
+// 		return nil, nil
+// 	}
+
+// 	myArray := []*fftypes.JSONAny{}
+
+// 	var foo *fftypes.JSONAny = myArray
+// 	json
+
+// 	fftypes.JSONAnyPtrBytes(stuff)
+
+// 	if batch {
+// 		if withData {
+// 			if len(data) > 0 {
+// 				allData := [][]*fftypes.JSONAny{}
+// 				for _, eventData := range data {
+// 					allEventData := []*fftypes.JSONAny{}
+// 					for _, d := range eventData {
+// 						if d.Value != nil {
+// 							allEventData = append(allEventData, d.Value)
+// 						}
+// 					}
+// 					allData = append(allData, allEventData)
+// 				}
+// 				return allData, nil
+// 			}
+// 		}
+
+// 		// [{"event1": "stuff"},"event2": "stuff"}]
+// 		// [{"event1": "stuff"}]
+// 		return events, nil
+// 	}
+
+// 	if withData {
+// 		if len(data) == 1 {
+// 			eventData := []*fftypes.JSONAny{}
+// 			for _, d := range data[0] {
+// 				if d.Value != nil {
+// 					eventData = append(eventData, d.Value)
+// 				}
+// 			}
+
+// 			if len(eventData) == 0 {
+// 				// Send an empty object if ask withData but no data available
+// 				firstData = fftypes.JSONObject{}
+// 				body = firstData
+// 			}
+
+// 			if len(eventData) >= 1 {
+// 				// Use JSONObjectOk instead of JSONObject
+// 				// JSONObject fails for datatypes such as array, string, bool, number etc
+// 				var valid bool
+// 				firstData, valid = eventData[0].JSONObjectOk()
+// 				if !valid {
+// 					firstData = fftypes.JSONObject{
+// 						"value": eventData[0],
+// 					}
+// 				}
+
+// 				if len(eventData) == 1 {
+// 					body = firstData
+// 				} else {
+// 					body = eventData
+// 				}
+// 			}
+
+// 			return body, firstData
+// 		}
+// 	}
+
+// 	if body == nil && len(events) > 0 {
+// 		// {"event1": "stuff"}
+// 		body = events[0]
+// 	}
+
+// 	return body, firstData
+// }
 
 func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray, batch bool) (req *whRequest, res *whResponse, err error) {
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 
-	body, firstData := wh.buildBody(events, data, withData, batch)
+	var body *fftypes.JSONAny
+	var firstData fftypes.JSONObject
+	if len(events) == 1 && len(data) == 1 {
+		body, firstData, err = wh.buildBody(withData, events[0], data[0])
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		batchBody := []*fftypes.JSONAny{}
+		for i := 0; i < len(events); i++ {
+			eventBody, _, err := wh.buildBody(withData, events[i], data[i])
+			if err != nil {
+				return nil, nil, err
+			}
+			batchBody = append(batchBody, eventBody)
+		}
+
+		encodedBody, err := json.Marshal(batchBody)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		body = fftypes.JSONAnyPtrBytes(encodedBody)
+	}
 
 	client := wh.client
 	if sub.Options.RestyClient != nil {
@@ -379,7 +455,7 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 			// We might have been told to extract a body from the first data record
 			req.r.SetBody(req.body)
 		default:
-			req.r.SetBody(body)
+			req.r.SetBody(body.Bytes())
 		}
 	}
 
