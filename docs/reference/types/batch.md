@@ -4,8 +4,6 @@ title: Batch
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 21
-seo_title: seo.reference_types_batch_title
-seo_description: seo.reference_types_batch_description
 ---
 
 # Batch

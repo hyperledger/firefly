@@ -4,8 +4,6 @@ title: Event
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 2
-seo_title: seo.reference_types_event_title
-seo_description: seo.reference_types_event_description
 ---
 
 # Event

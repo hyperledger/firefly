@@ -4,8 +4,6 @@ title: FFI
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 9
-seo_title: seo.reference_types_ffi_title
-seo_description: seo.reference_types_ffi_description
 ---
 
 # FFI

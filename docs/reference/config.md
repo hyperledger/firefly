@@ -3,8 +3,6 @@ layout: default
 title: Configuration Reference
 parent: pages.reference
 nav_order: 2
-seo_title: seo.reference_config_title
-seo_description: seo.reference_config_description
 ---
 
 # Configuration Reference

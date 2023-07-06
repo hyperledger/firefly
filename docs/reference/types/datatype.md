@@ -4,8 +4,6 @@ title: Datatype
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 18
-seo_title: seo.reference_types_datatype_title
-seo_description: seo.reference_types_datatype_description
 ---
 
 # Datatype

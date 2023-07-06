@@ -1,6 +1,6 @@
 ---
-layout: i18n_page
-title: pages.nextpin
+layout: default
+title: NextPin
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 20

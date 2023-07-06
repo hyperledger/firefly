@@ -5,7 +5,7 @@
   {% if page.seo_title %}
     <title>{% t page.seo_title %}</title>
   {% elsif page.title %}
-    <title>{% t site.name %}: {% t page.title %}</title>
+    <title>{% t site.name %}: {{ page.title }}</title>
   {% else %}
     <title>{% t site.title %}</title>
   {% endif %}

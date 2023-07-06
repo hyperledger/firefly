@@ -4,8 +4,6 @@ title: OperationWithDetail
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 8
-seo_title: seo.reference_types_operationwithdetail_title
-seo_description: seo.reference_types_operationwithdetail_description
 ---
 
 # OperationWithDetail

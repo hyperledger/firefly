@@ -4,8 +4,6 @@ title: Message
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 16
-seo_title: seo.reference_types_message_title
-seo_description: seo.reference_types_message_description
 ---
 
 # Message

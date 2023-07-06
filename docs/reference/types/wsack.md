@@ -4,8 +4,6 @@ title: WSAck
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 24
-seo_title: seo.reference_types_wsack_title
-seo_description: seo.reference_types_wsack_description
 ---
 
 # WSAck

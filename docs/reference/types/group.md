@@ -4,8 +4,6 @@ title: Group
 parent: Core Resources
 grand_parent: pages.reference
 nav_order: 19
-seo_title: seo.reference_types_group_title
-seo_description: seo.reference_types_group_description
 ---
 
 # Group
