@@ -805,3 +805,17 @@ func TestNamespaceRestartedFailClose(t *testing.T) {
 
 	mcb.AssertExpectations(t)
 }
+
+func TestEventDeliveryBatch(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	ws, _, cancel := newTestWebsockets(t, cbs, nil)
+	defer cancel()
+
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
+
+	ws.BatchDeliveryRequest(ws.ctx, "id", sub, []*core.EventDelivery{}, []core.DataArray{})
+}

@@ -21,6 +21,20 @@ type Plugin struct {
 	mock.Mock
 }
 
+// BatchDeliveryRequest provides a mock function with given fields: ctx, connID, sub, event, data
+func (_m *Plugin) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event []*core.EventDelivery, data []core.DataArray) error {
+	ret := _m.Called(ctx, connID, sub, event, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Subscription, []*core.EventDelivery, []core.DataArray) error); ok {
+		r0 = rf(ctx, connID, sub, event, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Capabilities provides a mock function with given fields:
 func (_m *Plugin) Capabilities() *events.Capabilities {
 	ret := _m.Called()
@@ -32,20 +46,6 @@ func (_m *Plugin) Capabilities() *events.Capabilities {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*events.Capabilities)
 		}
-	}
-
-	return r0
-}
-
-// DeliveryBatchRequest provides a mock function with given fields: ctx, connID, sub, event, data
-func (_m *Plugin) DeliveryBatchRequest(ctx context.Context, connID string, sub *core.Subscription, event []*core.EventDelivery, data []core.DataArray) error {
-	ret := _m.Called(ctx, connID, sub, event, data)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Subscription, []*core.EventDelivery, []core.DataArray) error); ok {
-		r0 = rf(ctx, connID, sub, event, data)
-	} else {
-		r0 = ret.Error(0)
 	}
 
 	return r0

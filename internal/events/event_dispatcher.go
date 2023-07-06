@@ -434,10 +434,8 @@ func (ed *eventDispatcher) deliverBatchedEvents() {
 			return
 		}
 
-		if len(events) >= ed.readAhead || (timedOut && len(events) > 0) {
-			// TODO properly handle the error
-			batchTimeoutCancel()
-			_ = ed.transport.DeliveryBatchRequest(ed.ctx, ed.connID, ed.subscription.definition, events, dataSet)
+		if len(events) == ed.readAhead || (timedOut && len(events) > 0) {
+			_ = ed.transport.BatchDeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, events, dataSet)
 			// If err handle all the delivery responses for all the events??
 			events = nil
 			dataSet = nil

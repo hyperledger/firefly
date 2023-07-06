@@ -134,7 +134,7 @@ func (se *Events) DeliveryRequest(ctx context.Context, connID string, sub *core.
 	return nil
 }
 
-func (se *Events) DeliveryBatchRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray) error {
+func (se *Events) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray) error {
 	return nil
 }
 

@@ -460,6 +460,19 @@ func (wh *WebHooks) attemptBatchRequest(ctx context.Context, sub *core.Subscript
 				}
 			}
 		}
+
+		// if len(allData) == 0 {
+		// 	firstData = fftypes.JSONObject{}
+		// } else {
+		// 	// Use JSONObjectOk instead of JSONObject
+		// 	// JSONObject fails for datatypes such as array, string, bool, number etc
+		// 	firstData, valid = allData[0].JSONObjectOk()
+		// 	if !valid {
+		// 		firstData = fftypes.JSONObject{
+		// 			"value": allData[0],
+		// 		}
+		// 	}
+		// }
 	}
 
 	client := wh.client
@@ -551,7 +564,7 @@ func (wh *WebHooks) doBatchedDelivery(ctx context.Context, connID string, reply 
 	b, _ := json.Marshal(&res)
 	log.L(wh.ctx).Tracef("Webhook response: %s", string(b))
 
-	// For each event emit a respons
+	// For each event emit a response
 	for _, event := range events {
 		// Emit the response
 		if reply && event.Message != nil {
@@ -632,22 +645,31 @@ func (wh *WebHooks) DeliveryRequest(ctx context.Context, connID string, sub *cor
 	return nil
 }
 
-func (wh *WebHooks) DeliveryBatchRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray) error {
+func (wh *WebHooks) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.EventDelivery, data []core.DataArray) error {
 	reply := sub.Options.TransportOptions().GetBool("reply")
-	// if reply && event.Message != nil && event.Message.Header.CID != nil {
-	// 	// We cowardly refuse to dispatch a message that is itself a reply, as it's hard for users to
-	// 	// avoid loops - and there's no way for us to detect here if a user has configured correctly
-	// 	// to avoid a loop.
-	// 	log.L(wh.ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
-	// 	if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
-	// 		cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
-	// 			ID:           event.ID,
-	// 			Rejected:     false,
-	// 			Subscription: event.Subscription,
-	// 		})
-	// 	}
-	// 	return nil
-	// }
+	if reply {
+		nonReplyEvents := []*core.EventDelivery{}
+		for _, event := range events {
+			// We cowardly refuse to dispatch a message that is itself a reply, as it's hard for users to
+			// avoid loops - and there's no way for us to detect here if a user has configured correctly
+			// to avoid a loop.
+			if event.Message != nil && event.Message.Header.CID != nil {
+				log.L(wh.ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
+				if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
+					cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+						ID:           event.ID,
+						Rejected:     false,
+						Subscription: event.Subscription,
+					})
+				}
+				continue
+			}
+
+			nonReplyEvents = append(nonReplyEvents, event)
+		}
+		// Override the events to send without the reply events
+		events = nonReplyEvents
+	}
 
 	// // In fastack mode we drive calls in parallel to the backend, immediately acknowledging the event
 	// NOTE: We cannot use this with reply mode, as when we're sending a reply the `DeliveryResponse`
@@ -666,9 +688,6 @@ func (wh *WebHooks) DeliveryBatchRequest(ctx context.Context, connID string, sub
 		return nil
 	}
 
-	// NOTE: We could check here for batching and accumulate but we can't return because this causes the offset to jump...
-
-	// TODO we don't look at the error here?
 	wh.doBatchedDelivery(ctx, connID, reply, sub, events, data, false)
 	return nil
 }
