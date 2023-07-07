@@ -130,7 +130,7 @@ func TestCreateSubscriptionBadTransport(t *testing.T) {
 	defer or.cleanup(t)
 
 	or.mem = &eventmocks.EventManager{}
-	or.mem.On("GetTransportCapabilities", mock.Anything, "wrongun").Return(nil, fmt.Errorf("not found"))
+	or.mem.On("ResolveTransportAndCapabilities", mock.Anything, "wrongun").Return("", nil, fmt.Errorf("not found"))
 	or.events = or.mem
 	_, err := or.CreateSubscription(or.ctx, &core.Subscription{
 		SubscriptionRef: core.SubscriptionRef{

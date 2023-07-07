@@ -200,7 +200,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mcm.On("Name").Return("mock-cm").Maybe()
 	tor.mmi.On("Name").Return("mock-mm").Maybe()
 	tor.mmp.On("Name").Return("mock-mp").Maybe()
-	tor.mem.On("GetTransportCapabilities", mock.Anything, mock.Anything).Return(&events.Capabilities{}, nil).Maybe()
+	tor.mem.On("ResolveTransportAndCapabilities", mock.Anything, mock.Anything).Return("websockets", &events.Capabilities{}, nil).Maybe()
 	tor.mds.On("Init", mock.Anything).Maybe()
 	tor.cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tor.ctx, 100, 5*time.Minute), nil).Maybe()
 	return tor

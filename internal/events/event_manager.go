@@ -62,7 +62,7 @@ type EventManager interface {
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
 	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
 	QueueBatchRewind(batchID *fftypes.UUID)
-	GetTransportCapabilities(ctx context.Context, transportName string) (*events.Capabilities, error)
+	ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *events.Capabilities, error)
 	Start() error
 	WaitStop()
 
@@ -209,12 +209,15 @@ func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 	return em.subManager.deletedSubscriptions
 }
 
-func (em *eventManager) GetTransportCapabilities(ctx context.Context, transportName string) (*events.Capabilities, error) {
+func (em *eventManager) ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *events.Capabilities, error) {
+	if transportName == "" {
+		transportName = em.defaultTransport
+	}
 	t, err := em.subManager.getTransport(ctx, transportName)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
-	return t.Capabilities(), nil
+	return transportName, t.Capabilities(), nil
 }
 
 func (em *eventManager) WaitStop() {
@@ -231,10 +234,6 @@ func (em *eventManager) WaitStop() {
 func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error) {
 	if subDef.Namespace == "" || subDef.Name == "" || subDef.ID == nil {
 		return i18n.NewError(ctx, coremsgs.MsgInvalidSubscription)
-	}
-
-	if subDef.Transport == "" {
-		subDef.Transport = em.defaultTransport
 	}
 
 	// Check it can be parsed before inserting (the submanager will check again when processing the creation, so we discard the result)
