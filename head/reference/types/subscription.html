@@ -890,6 +890,16 @@ based on a field in the input request data.</li>
       <td><code class="language-plaintext highlighter-rouge">bool</code></td>
     </tr>
     <tr>
+      <td><code class="language-plaintext highlighter-rouge">batch</code></td>
+      <td>Events are delivered in batches in an ordered array. The batch size is capped to the readAhead limit. The event payload is always an array even if there is a single event in the batch. Commonly used with Webhooks to allow events to be delivered and acknowledged in batches.</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">batchTimeout</code></td>
+      <td>When batching is enabled, the optional timeout to send events even when the batch hasn’t filled.</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
       <td><code class="language-plaintext highlighter-rouge">fastack</code></td>
       <td>Webhooks only: When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations</td>
       <td><code class="language-plaintext highlighter-rouge">bool</code></td>
@@ -1081,7 +1091,7 @@ based on a field in the input request data.</li>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">connectionTimeout</code></td>
-      <td> </td>
+      <td>The maximum amount of time that a connection is allowed to remain with no data transmitted.</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
     <tr>
