@@ -47,10 +47,11 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, subDef *co
 	if subDef.Transport == system.SystemEventsTransport {
 		return nil, i18n.NewError(ctx, coremsgs.MsgSystemTransportInternal)
 	}
-	capabilities, err := or.events.GetTransportCapabilities(ctx, subDef.Transport)
+	resolvedTransport, capabilities, err := or.events.ResolveTransportAndCapabilities(ctx, subDef.Transport)
 	if err != nil {
 		return nil, err
 	}
+	subDef.Transport = resolvedTransport
 
 	if subDef.Options.TLSConfigName != "" {
 		if or.namespace.TLSConfigs[subDef.Options.TLSConfigName] == nil {
