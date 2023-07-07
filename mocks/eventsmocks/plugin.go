@@ -21,6 +21,20 @@ type Plugin struct {
 	mock.Mock
 }
 
+// BatchDeliveryRequest provides a mock function with given fields: ctx, connID, sub, _a3
+func (_m *Plugin) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, _a3 []*core.CombinedEventDataDelivery) error {
+	ret := _m.Called(ctx, connID, sub, _a3)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Subscription, []*core.CombinedEventDataDelivery) error); ok {
+		r0 = rf(ctx, connID, sub, _a3)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Capabilities provides a mock function with given fields:
 func (_m *Plugin) Capabilities() *events.Capabilities {
 	ret := _m.Called()

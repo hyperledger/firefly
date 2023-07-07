@@ -603,3 +603,25 @@ func TestGetPlugins(t *testing.T) {
 
 	assert.ElementsMatch(t, em.GetPlugins(), expectedPlugins)
 }
+
+func TestGetTransportCapabilities(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	em.mev.On("Capabilities").Return(&events.Capabilities{BatchDelivery: true})
+
+	c, err := em.GetTransportCapabilities(context.Background(), "websockets")
+	assert.NoError(t, err)
+	assert.NotNil(t, c)
+	assert.True(t, c.BatchDelivery)
+
+	em.mev.AssertExpectations(t)
+}
+
+func TestGetTransportCapabilitiesUnknown(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	_, err := em.GetTransportCapabilities(context.Background(), "wrong")
+	assert.Regexp(t, "FF10172", err)
+}
