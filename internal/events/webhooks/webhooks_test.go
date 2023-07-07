@@ -1069,7 +1069,7 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 	mcb.AssertExpectations(t)
 }
 
-func TestWebhookFailFastAsk(t *testing.T) {
+func TestWebhookFailFastAck(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
 
@@ -1123,6 +1123,68 @@ func TestWebhookFailFastAsk(t *testing.T) {
 	err = wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
+	})
+	assert.NoError(t, err)
+
+	<-waiter
+
+	mcb.AssertExpectations(t)
+}
+
+func TestWebhookFailFastAckBatch(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	msgID := fftypes.NewUUID()
+	r := mux.NewRouter()
+	server := httptest.NewServer(r)
+	server.Close()
+
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
+	sub.Options.TransportOptions()["fastack"] = true
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &core.Message{
+				Header: core.MessageHeader{
+					ID:   msgID,
+					Type: core.MessageTypeBroadcast,
+				},
+			},
+		},
+		Subscription: core.SubscriptionRef{
+			ID: sub.ID,
+		},
+	}
+
+	count := 0
+	waiter := make(chan struct{})
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
+	mcb.On("DeliveryResponse", mock.Anything, mock.Anything).
+		Return(nil).
+		Run(func(a mock.Arguments) {
+			count++
+			if count == 2 {
+				close(waiter)
+			}
+		})
+
+	// Drive two deliveries, waiting for them both to ack (noting both will fail)
+	err := wh.BatchDeliveryRequest(wh.ctx, mock.Anything, sub, []*core.CombinedEventDataDelivery{
+		{Event: event, Data: core.DataArray{
+			{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
+			{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
+		}},
+		{Event: event, Data: core.DataArray{
+			{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
+			{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
+		}},
 	})
 	assert.NoError(t, err)
 
@@ -1205,6 +1267,51 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 	}))
 
 	err := wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, nil)
+	assert.NoError(t, err)
+
+	mcb.AssertExpectations(t)
+}
+
+func TestBatchDeliveryRequestReplyToReply(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	yes := true
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+				WithData: &yes,
+			},
+		},
+	}
+	sub.Options.TransportOptions()["reply"] = true
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &core.Message{
+				Header: core.MessageHeader{
+					ID:   fftypes.NewUUID(),
+					Type: core.MessageTypeBroadcast,
+					CID:  fftypes.NewUUID(),
+				},
+			},
+		},
+		Subscription: core.SubscriptionRef{
+			ID: sub.ID,
+		},
+	}
+
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
+		return !response.Rejected // should be accepted as a no-op so we can move on to other events
+	}))
+
+	err := wh.BatchDeliveryRequest(wh.ctx, mock.Anything, sub, []*core.CombinedEventDataDelivery{{Event: event, Data: nil}})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -1355,4 +1462,8 @@ func TestRequestWithBodyReplyEndToEndWithBatch(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
+}
+
+func TestFirstDataNeverNil(t *testing.T) {
+	assert.NotNil(t, (&whPayload{}).firstData())
 }

@@ -430,68 +430,8 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 	return req, res, nil
 }
 
-func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray, fastAck bool) {
-	req, res, gwErr := wh.attemptRequest(ctx, sub, []*core.CombinedEventDataDelivery{{Event: event, Data: data}}, false)
-	if gwErr != nil {
-		// Generate a bad-gateway error response - we always want to send something back,
-		// rather than just causing timeouts
-		log.L(wh.ctx).Errorf("Failed to invoke webhook: %s", gwErr)
-		b, _ := json.Marshal(&fftypes.RESTError{
-			Error: gwErr.Error(),
-		})
-		res = &whResponse{
-			Status: http.StatusBadGateway,
-			Headers: fftypes.JSONObject{
-				"Content-Type": "application/json",
-			},
-			Body: fftypes.JSONAnyPtrBytes(b),
-		}
-	}
-	b, _ := json.Marshal(&res)
-	log.L(wh.ctx).Tracef("Webhook response: %s", string(b))
-
-	// Emit the response
-	if reply && event.Message != nil {
-		txType := fftypes.FFEnum(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
-		if req != nil && req.replyTx != "" {
-			txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
-		}
-		if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
-			log.L(wh.ctx).Debugf("Sending reply message for %s CID=%s", event.ID, event.Message.Header.ID)
-			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
-				ID:           event.ID,
-				Rejected:     false,
-				Subscription: event.Subscription,
-				Reply: &core.MessageInOut{
-					Message: core.Message{
-						Header: core.MessageHeader{
-							CID:    event.Message.Header.ID,
-							Group:  event.Message.Header.Group,
-							Type:   event.Message.Header.Type,
-							Topics: event.Message.Header.Topics,
-							Tag:    sub.Options.TransportOptions().GetString("replytag"),
-							TxType: txType,
-						},
-					},
-					InlineData: core.InlineData{
-						{Value: fftypes.JSONAnyPtrBytes(b)},
-					},
-				},
-			})
-		}
-	} else if !fastAck {
-		if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
-			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
-				ID:           event.ID,
-				Rejected:     false,
-				Subscription: event.Subscription,
-			})
-		}
-	}
-}
-
-func (wh *WebHooks) doBatchedDelivery(ctx context.Context, connID string, reply bool, sub *core.Subscription, events []*core.CombinedEventDataDelivery, fastAck bool) {
-	req, res, gwErr := wh.attemptRequest(ctx, sub, events, true)
+func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, sub *core.Subscription, events []*core.CombinedEventDataDelivery, fastAck, batched bool) {
+	req, res, gwErr := wh.attemptRequest(ctx, sub, events, batched)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
 		// rather than just causing timeouts
@@ -514,9 +454,6 @@ func (wh *WebHooks) doBatchedDelivery(ctx context.Context, connID string, reply 
 	for _, combinedEvent := range events {
 		event := combinedEvent.Event
 		// Emit the response
-		if event == nil {
-			continue
-		}
 		if reply && event.Message != nil {
 			txType := fftypes.FFEnum(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
 			if req != nil && req.replyTx != "" {
@@ -555,7 +492,9 @@ func (wh *WebHooks) doBatchedDelivery(ctx context.Context, connID string, reply 
 			}
 		}
 	}
+
 }
+
 func (wh *WebHooks) DeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	reply := sub.Options.TransportOptions().GetBool("reply")
 	if reply && event.Message != nil && event.Message.Header.CID != nil {
@@ -584,14 +523,14 @@ func (wh *WebHooks) DeliveryRequest(ctx context.Context, connID string, sub *cor
 				Subscription: event.Subscription,
 			})
 		}
-		go wh.doDelivery(ctx, connID, reply, sub, event, data, true)
+		go wh.doDelivery(ctx, connID, reply, sub, []*core.CombinedEventDataDelivery{{Event: event, Data: data}}, true, false)
 		return nil
 	}
 
 	// NOTE: We could check here for batching and accumulate but we can't return because this causes the offset to jump...
 
 	// TODO we don't look at the error here?
-	wh.doDelivery(ctx, connID, reply, sub, event, data, false)
+	wh.doDelivery(ctx, connID, reply, sub, []*core.CombinedEventDataDelivery{{Event: event, Data: data}}, false, false)
 	return nil
 }
 
@@ -636,11 +575,11 @@ func (wh *WebHooks) BatchDeliveryRequest(ctx context.Context, connID string, sub
 				})
 			}
 		}
-		go wh.doBatchedDelivery(ctx, connID, reply, sub, events, true)
+		go wh.doDelivery(ctx, connID, reply, sub, events, true, true)
 		return nil
 	}
 
-	wh.doBatchedDelivery(ctx, connID, reply, sub, events, false)
+	wh.doDelivery(ctx, connID, reply, sub, events, false, true)
 	return nil
 }
 
