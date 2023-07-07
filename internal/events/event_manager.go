@@ -62,6 +62,7 @@ type EventManager interface {
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
 	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
 	QueueBatchRewind(batchID *fftypes.UUID)
+	GetTransportCapabilities(ctx context.Context, transportName string) (*events.Capabilities, error)
 	Start() error
 	WaitStop()
 
@@ -206,6 +207,14 @@ func (em *eventManager) SubscriptionUpdates() chan<- *fftypes.UUID {
 
 func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 	return em.subManager.deletedSubscriptions
+}
+
+func (em *eventManager) GetTransportCapabilities(ctx context.Context, transportName string) (*events.Capabilities, error) {
+	t, err := em.subManager.getTransport(ctx, transportName)
+	if err != nil {
+		return nil, err
+	}
+	return t.Capabilities(), nil
 }
 
 func (em *eventManager) WaitStop() {

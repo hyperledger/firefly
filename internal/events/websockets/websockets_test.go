@@ -806,7 +806,7 @@ func TestNamespaceRestartedFailClose(t *testing.T) {
 	mcb.AssertExpectations(t)
 }
 
-func TestEventDeliveryBatch(t *testing.T) {
+func TestEventDeliveryBatchReturnsUnsupported(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
 	ws, _, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
@@ -817,5 +817,6 @@ func TestEventDeliveryBatch(t *testing.T) {
 		},
 	}
 
-	ws.BatchDeliveryRequest(ws.ctx, "id", sub, []*core.CombinedEventDataDelivery{})
+	err := ws.BatchDeliveryRequest(ws.ctx, "id", sub, []*core.CombinedEventDataDelivery{})
+	assert.Regexp(t, "FF10461", err)
 }

@@ -153,5 +153,6 @@ func TestEventDeliveryBatch(t *testing.T) {
 		},
 	}
 
-	se.BatchDeliveryRequest(se.ctx, "id", sub, []*core.CombinedEventDataDelivery{})
+	err := se.BatchDeliveryRequest(se.ctx, "id", sub, []*core.CombinedEventDataDelivery{})
+	assert.Regexp(t, "FF10461", err)
 }

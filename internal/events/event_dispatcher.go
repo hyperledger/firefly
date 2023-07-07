@@ -86,8 +86,12 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 	}
 
 	batchTimeout := defaultBatchTimeout
-	if sub.definition.Options.BatchTimeout != "" {
-		batchTimeout = fftypes.ParseToDuration(sub.definition.Options.BatchTimeout)
+	if sub.definition.Options.BatchTimeout != nil && *sub.definition.Options.BatchTimeout != "" {
+		batchTimeout = fftypes.ParseToDuration(*sub.definition.Options.BatchTimeout)
+	}
+	batch := false
+	if sub.definition.Options.Batch != nil {
+		batch = *sub.definition.Options.Batch
 	}
 	ed := &eventDispatcher{
 		ctx: log.WithLogField(log.WithLogField(ctx,
@@ -109,7 +113,7 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		txHelper:      txHelper,
-		batch:         sub.definition.Options.Batch,
+		batch:         batch,
 		batchTimeout:  batchTimeout,
 	}
 
@@ -157,7 +161,7 @@ func (ed *eventDispatcher) electAndStart() {
 		l.Debugf("Closed before we became leader")
 		return
 	}
-	// We're ready to go - not
+	// We're ready to go
 	ed.elected = true
 	ed.eventPoller.start()
 

@@ -219,5 +219,6 @@ func (ws *WebSockets) GetStatus() *core.WebSocketStatus {
 }
 
 func (ws *WebSockets) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
-	return nil
+	// We should have rejected creation of the subscription, due to us not supporting this in our capabilities
+	return i18n.NewError(ctx, coremsgs.MsgBatchDeliveryNotSupported, ws.Name())
 }

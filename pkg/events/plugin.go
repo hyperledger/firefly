@@ -87,4 +87,6 @@ type Callbacks interface {
 	DeliveryResponse(connID string, inflight *core.EventDeliveryResponse)
 }
 
-type Capabilities struct{}
+type Capabilities struct {
+	BatchDelivery bool
+}

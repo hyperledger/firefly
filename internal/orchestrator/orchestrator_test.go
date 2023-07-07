@@ -54,6 +54,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/txwritermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -199,6 +200,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mcm.On("Name").Return("mock-cm").Maybe()
 	tor.mmi.On("Name").Return("mock-mm").Maybe()
 	tor.mmp.On("Name").Return("mock-mp").Maybe()
+	tor.mem.On("GetTransportCapabilities", mock.Anything, mock.Anything).Return(&events.Capabilities{}, nil).Maybe()
 	tor.mds.On("Init", mock.Anything).Maybe()
 	tor.cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tor.ctx, 100, 5*time.Minute), nil).Maybe()
 	return tor

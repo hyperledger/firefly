@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/events/webhooks"
+	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
@@ -55,6 +56,89 @@ func TestCreateSubscriptionSystemTransport(t *testing.T) {
 		},
 	})
 	assert.Regexp(t, "FF10266", err)
+}
+
+func TestCreateSubscriptionBadBatchTimeout(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	badTimeout := "-abc"
+	_, err := or.CreateSubscription(or.ctx, &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Name: "sub1",
+		},
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+				BatchTimeout: &badTimeout,
+			},
+			WebhookSubOptions: core.WebhookSubOptions{
+				URL: "http://example.com",
+			},
+		},
+		Transport: "webhooks",
+	})
+	assert.Regexp(t, "FF00137", err)
+}
+
+func TestCreateSubscriptionBatchNotSupported(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	truthy := true
+	_, err := or.CreateSubscription(or.ctx, &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Name: "sub1",
+		},
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+				Batch: &truthy,
+			},
+			WebhookSubOptions: core.WebhookSubOptions{
+				URL: "http://example.com",
+			},
+		},
+		Transport: "webhooks",
+	})
+	assert.Regexp(t, "FF10461", err)
+}
+
+func TestCreateSubscriptionBatchWithData(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	truthy := true
+	_, err := or.CreateSubscription(or.ctx, &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Name: "sub1",
+		},
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+				WithData: &truthy,
+				Batch:    &truthy,
+			},
+			WebhookSubOptions: core.WebhookSubOptions{
+				URL: "http://example.com",
+			},
+		},
+		Transport: "webhooks",
+	})
+	assert.Regexp(t, "FF10460", err)
+}
+
+func TestCreateSubscriptionBadTransport(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	or.mem = &eventmocks.EventManager{}
+	or.mem.On("GetTransportCapabilities", mock.Anything, "wrongun").Return(nil, fmt.Errorf("not found"))
+	or.events = or.mem
+	_, err := or.CreateSubscription(or.ctx, &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Name: "sub1",
+		},
+		Transport: "wrongun",
+	})
+	assert.Regexp(t, "not found", err)
 }
 
 func TestCreateSubscriptionOk(t *testing.T) {

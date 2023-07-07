@@ -87,8 +87,10 @@ func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error)
 	client := ffresty.NewWithConfig(ctx, *ffrestyConfig)
 
 	*wh = WebHooks{
-		ctx:          log.WithLogField(ctx, "webhook", wh.connID),
-		capabilities: &events.Capabilities{},
+		ctx: log.WithLogField(ctx, "webhook", wh.connID),
+		capabilities: &events.Capabilities{
+			BatchDelivery: true,
+		},
 		callbacks: callbacks{
 			handlers: make(map[string]events.Callbacks),
 		},

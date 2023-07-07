@@ -92,8 +92,8 @@ type SubscriptionCoreOptions struct {
 	FirstEvent   *SubOptsFirstEvent `ffstruct:"SubscriptionCoreOptions" json:"firstEvent,omitempty"`
 	ReadAhead    *uint16            `ffstruct:"SubscriptionCoreOptions" json:"readAhead,omitempty"`
 	WithData     *bool              `ffstruct:"SubscriptionCoreOptions" json:"withData,omitempty"`
-	Batch        bool               `ffstruct:"SubscriptionCoreOptions" json:"batch,omitempty"`
-	BatchTimeout string             `ffstruct:"SubscriptionCoreOptions" json:"batchTimeout,omitempty"`
+	Batch        *bool              `ffstruct:"SubscriptionCoreOptions" json:"batch,omitempty"`
+	BatchTimeout *string            `ffstruct:"SubscriptionCoreOptions" json:"batchTimeout,omitempty"`
 }
 
 // SubscriptionOptions customize the behavior of subscriptions

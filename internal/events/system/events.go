@@ -23,6 +23,8 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/events"
 )
@@ -135,7 +137,7 @@ func (se *Events) DeliveryRequest(ctx context.Context, connID string, sub *core.
 }
 
 func (se *Events) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
-	return nil
+	return i18n.NewError(ctx, coremsgs.MsgBatchDeliveryNotSupported, se.Name()) // should never happen
 }
 
 func (se *Events) NamespaceRestarted(ns string, startTime time.Time) {

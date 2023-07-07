@@ -97,6 +97,40 @@ func TestEventDispatcherStartStop(t *testing.T) {
 	ed.close()
 }
 
+func TestEventDispatcherStartStopBatched(t *testing.T) {
+	ten := uint16(10)
+	oldest := core.SubOptsFirstEventOldest
+	truthy := true
+	ed, cancel := newTestEventDispatcher(&subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &core.Subscription{
+			SubscriptionRef: core.SubscriptionRef{Namespace: "ns1", Name: "sub1"},
+			Ephemeral:       true,
+			Options: core.SubscriptionOptions{
+				SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+					ReadAhead:  &ten,
+					FirstEvent: &oldest,
+					Batch:      &truthy,
+				},
+			},
+		},
+	})
+	defer cancel()
+	mdi := ed.database.(*databasemocks.Plugin)
+	ge := mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Event{}, nil, fmt.Errorf("context closed"))
+	confirmedElected := make(chan bool)
+	ge.RunFn = func(a mock.Arguments) {
+		<-confirmedElected
+	}
+
+	assert.Equal(t, int(10), ed.readAhead)
+	ed.start()
+	confirmedElected <- true
+	close(confirmedElected)
+	ed.eventPoller.eventNotifier.newEvents <- 12345
+	ed.close()
+}
+
 func TestMaxReadAhead(t *testing.T) {
 	config.Set(coreconfig.SubscriptionDefaultsReadAhead, 65537)
 	ed, cancel := newTestEventDispatcher(&subscription{
@@ -932,36 +966,20 @@ func TestEventDeliveryClosed(t *testing.T) {
 	cancel()
 }
 
-// func TestBatchEventDeliveryClosed(t *testing.T) {
+func TestBatchEventDeliveryClosed(t *testing.T) {
 
-// 	sub := &subscription{
-// 		definition: &core.Subscription{},
-// 	}
-// 	ed, cancel := newTestEventDispatcher(sub)
+	sub := &subscription{
+		definition: &core.Subscription{},
+	}
+	ed, cancel := newTestEventDispatcher(sub)
+	defer cancel()
 
-// 	go ed.deliverBatchedEvents()
+	ed.batchTimeout = 1 * time.Minute
+	ed.eventDelivery <- &core.EventDelivery{}
+	close(ed.eventDelivery)
 
-// 	id1 := fftypes.NewUUID()
-// 	ed.eventDelivery <- &core.EventDelivery{
-// 		EnrichedEvent: core.EnrichedEvent{
-// 			Event: core.Event{
-// 				ID: id1,
-// 			},
-// 			Message: &core.Message{
-// 				Header: core.MessageHeader{
-// 					ID: fftypes.NewUUID(),
-// 				},
-// 				Data: core.DataRefs{
-// 					{ID: fftypes.NewUUID()},
-// 				},
-// 			},
-// 		},
-// 	}
-// 	time.Sleep(1000)
-// 	close(ed.eventDelivery)
-// 	time.Sleep(1000)
-// 	cancel()
-// }
+	ed.deliverBatchedEvents()
+}
 
 func TestAckClosed(t *testing.T) {
 
@@ -1099,6 +1117,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 func TestEventDeliveryBatch(t *testing.T) {
 	log.SetLevel("debug")
 	var five = uint16(5)
+	truthy := true
 	sub := &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition: &core.Subscription{
@@ -1106,7 +1125,7 @@ func TestEventDeliveryBatch(t *testing.T) {
 			Options: core.SubscriptionOptions{
 				SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 					ReadAhead: &five,
-					Batch:     true,
+					Batch:     &truthy,
 				},
 			},
 		},
@@ -1152,6 +1171,8 @@ func TestEventDispatcherBatchReadAhead(t *testing.T) {
 	log.SetLevel("debug")
 	var five = uint16(5)
 	subID := fftypes.NewUUID()
+	truthy := true
+	oneSec := "1s"
 	sub := &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition: &core.Subscription{
@@ -1159,8 +1180,8 @@ func TestEventDispatcherBatchReadAhead(t *testing.T) {
 			Options: core.SubscriptionOptions{
 				SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 					ReadAhead:    &five,
-					Batch:        true,
-					BatchTimeout: "1s",
+					Batch:        &truthy,
+					BatchTimeout: &oneSec,
 				},
 			},
 		},

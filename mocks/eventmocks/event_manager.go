@@ -15,6 +15,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	pkgevents "github.com/hyperledger/firefly/pkg/events"
+
 	sharedstorage "github.com/hyperledger/firefly/pkg/sharedstorage"
 
 	system "github.com/hyperledger/firefly/internal/events/system"
@@ -153,6 +155,32 @@ func (_m *EventManager) GetPlugins() []*core.NamespaceStatusPlugin {
 	}
 
 	return r0
+}
+
+// GetTransportCapabilities provides a mock function with given fields: ctx, transportName
+func (_m *EventManager) GetTransportCapabilities(ctx context.Context, transportName string) (*pkgevents.Capabilities, error) {
+	ret := _m.Called(ctx, transportName)
+
+	var r0 *pkgevents.Capabilities
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*pkgevents.Capabilities, error)); ok {
+		return rf(ctx, transportName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *pkgevents.Capabilities); ok {
+		r0 = rf(ctx, transportName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*pkgevents.Capabilities)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, transportName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NewEvents provides a mock function with given fields:

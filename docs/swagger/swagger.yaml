@@ -27702,8 +27702,11 @@ paths:
                       description: Subscription options
                       properties:
                         batch:
-                          description: Enable batching. Works in conjunction with
-                            readAhead which defines the batchSize.
+                          description: Events are delivered in batches in an ordered
+                            array. The batch size is capped to the readAhead limit.
+                            The event payload is always an array even if there is
+                            a single event in the batch. Commonly used with Webhooks
+                            to allow events to be delivered and acknowledged in batches.
                           type: boolean
                         batchTimeout:
                           description: When batching is enabled, the optional timeout
@@ -27984,8 +27987,11 @@ paths:
                   description: Subscription options
                   properties:
                     batch:
-                      description: Enable batching. Works in conjunction with readAhead
-                        which defines the batchSize.
+                      description: Events are delivered in batches in an ordered array.
+                        The batch size is capped to the readAhead limit. The event
+                        payload is always an array even if there is a single event
+                        in the batch. Commonly used with Webhooks to allow events
+                        to be delivered and acknowledged in batches.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -28247,8 +28253,11 @@ paths:
                     description: Subscription options
                     properties:
                       batch:
-                        description: Enable batching. Works in conjunction with readAhead
-                          which defines the batchSize.
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -28525,8 +28534,11 @@ paths:
                   description: Subscription options
                   properties:
                     batch:
-                      description: Enable batching. Works in conjunction with readAhead
-                        which defines the batchSize.
+                      description: Events are delivered in batches in an ordered array.
+                        The batch size is capped to the readAhead limit. The event
+                        payload is always an array even if there is a single event
+                        in the batch. Commonly used with Webhooks to allow events
+                        to be delivered and acknowledged in batches.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -28788,8 +28800,11 @@ paths:
                     description: Subscription options
                     properties:
                       batch:
-                        description: Enable batching. Works in conjunction with readAhead
-                          which defines the batchSize.
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -29128,8 +29143,11 @@ paths:
                     description: Subscription options
                     properties:
                       batch:
-                        description: Enable batching. Works in conjunction with readAhead
-                          which defines the batchSize.
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -36605,8 +36623,11 @@ paths:
                       description: Subscription options
                       properties:
                         batch:
-                          description: Enable batching. Works in conjunction with
-                            readAhead which defines the batchSize.
+                          description: Events are delivered in batches in an ordered
+                            array. The batch size is capped to the readAhead limit.
+                            The event payload is always an array even if there is
+                            a single event in the batch. Commonly used with Webhooks
+                            to allow events to be delivered and acknowledged in batches.
                           type: boolean
                         batchTimeout:
                           description: When batching is enabled, the optional timeout
@@ -36880,8 +36901,11 @@ paths:
                   description: Subscription options
                   properties:
                     batch:
-                      description: Enable batching. Works in conjunction with readAhead
-                        which defines the batchSize.
+                      description: Events are delivered in batches in an ordered array.
+                        The batch size is capped to the readAhead limit. The event
+                        payload is always an array even if there is a single event
+                        in the batch. Commonly used with Webhooks to allow events
+                        to be delivered and acknowledged in batches.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -37143,8 +37167,11 @@ paths:
                     description: Subscription options
                     properties:
                       batch:
-                        description: Enable batching. Works in conjunction with readAhead
-                          which defines the batchSize.
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -37414,8 +37441,11 @@ paths:
                   description: Subscription options
                   properties:
                     batch:
-                      description: Enable batching. Works in conjunction with readAhead
-                        which defines the batchSize.
+                      description: Events are delivered in batches in an ordered array.
+                        The batch size is capped to the readAhead limit. The event
+                        payload is always an array even if there is a single event
+                        in the batch. Commonly used with Webhooks to allow events
+                        to be delivered and acknowledged in batches.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -37677,8 +37707,11 @@ paths:
                     description: Subscription options
                     properties:
                       batch:
-                        description: Enable batching. Works in conjunction with readAhead
-                          which defines the batchSize.
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -38003,8 +38036,11 @@ paths:
                     description: Subscription options
                     properties:
                       batch:
-                        description: Enable batching. Works in conjunction with readAhead
-                          which defines the batchSize.
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
