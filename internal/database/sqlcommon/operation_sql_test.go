@@ -241,3 +241,68 @@ func TestOperationUpdateFilterFail(t *testing.T) {
 	_, err := s.UpdateOperation(context.Background(), "ns1", fftypes.NewUUID(), f, u)
 	assert.Regexp(t, "FF00143", err)
 }
+
+func TestInsertOperationsBeginFail(t *testing.T) {
+	s := newMockProvider()
+	s.multiRowInsert = true
+	s.fakePSQLInsert = true
+	s, mock := s.init()
+	op1 := &core.Operation{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertOperations(context.Background(), []*core.Operation{op1})
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertOperationsMultiRowOK(t *testing.T) {
+	s := newMockProvider()
+	s.multiRowInsert = true
+	s.fakePSQLInsert = true
+	s, mock := s.init()
+
+	op1 := &core.Operation{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	op2 := &core.Operation{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, core.ChangeEventTypeCreated, "ns1", op1.ID)
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, core.ChangeEventTypeCreated, "ns1", op2.ID)
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*operations").WillReturnRows(sqlmock.NewRows([]string{s.SequenceColumn()}).
+		AddRow(int64(1001)).
+		AddRow(int64(1002)),
+	)
+	mock.ExpectCommit()
+	hookCalled := make(chan struct{}, 1)
+	err := s.InsertOperations(context.Background(), []*core.Operation{op1, op2}, func() {
+		close(hookCalled)
+	})
+	<-hookCalled
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertOperationsMultiRowFail(t *testing.T) {
+	s := newMockProvider()
+	s.multiRowInsert = true
+	s.fakePSQLInsert = true
+	s, mock := s.init()
+	op1 := &core.Operation{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertOperations(context.Background(), []*core.Operation{op1})
+	assert.Regexp(t, "FF00177", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertOperationsSingleRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	op1 := &core.Operation{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertOperations(context.Background(), []*core.Operation{op1})
+	assert.Regexp(t, "FF00177", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}

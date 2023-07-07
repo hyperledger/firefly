@@ -72,9 +72,9 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
 	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Once()
 	em.mam.On("GetTokenPoolByID", em.ctx, pool.ID).Return(pool, nil).Times(2)
-	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
-	})).Return(nil, nil).Times(3)
+	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(events []*core.BlockchainEvent) bool {
+		return len(events) == 1 && events[0].Namespace == pool.Namespace && events[0].Name == transfer.Event.Name
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil)
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
 		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil).Times(3)
@@ -212,8 +212,8 @@ func TestPersistTransferBlockchainEventFail(t *testing.T) {
 	em.mth.On("FindOperationInTransaction", em.ctx, transfer.TX.ID, core.OpTypeTokenTransfer).Return(op, nil)
 	em.mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
 	em.mdi.On("GetTokenTransferByID", em.ctx, "ns1", localID).Return(nil, nil)
-	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
+	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(events []*core.BlockchainEvent) bool {
+		return len(events) == 1 && events[0].Namespace == pool.Namespace && events[0].Name == transfer.Event.Name
 	})).Return(nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
@@ -246,9 +246,9 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 	em.mth.On("FindOperationInTransaction", em.ctx, transfer.TX.ID, core.OpTypeTokenTransfer).Return(op, nil)
 	em.mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
 	em.mdi.On("GetTokenTransferByID", em.ctx, "ns1", localID).Return(&core.TokenTransfer{}, nil)
-	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
-	})).Return(nil, nil)
+	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(events []*core.BlockchainEvent) bool {
+		return len(events) == 1 && events[0].Namespace == pool.Namespace && events[0].Name == transfer.Event.Name
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil)
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
 		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil)
@@ -285,9 +285,9 @@ func TestTokensTransferredWithExistingTransfer(t *testing.T) {
 	}
 
 	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
-	})).Return(nil, nil)
+	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(events []*core.BlockchainEvent) bool {
+		return len(events) == 1 && events[0].Namespace == pool.Namespace && events[0].Name == transfer.Event.Name
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil)
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
 		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil)
@@ -359,9 +359,9 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 
 	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Once()
 	em.mam.On("GetTokenPoolByID", em.ctx, pool.ID).Return(pool, nil).Once()
-	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
-	})).Return(nil, nil).Times(2)
+	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(events []*core.BlockchainEvent) bool {
+		return len(events) == 1 && events[0].Namespace == pool.Namespace && events[0].Name == transfer.Event.Name
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil).Times(2)
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
 		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil).Times(2)
@@ -418,9 +418,9 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 
 	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Once()
 	em.mam.On("GetTokenPoolByID", em.ctx, pool.ID).Return(pool, nil).Once()
-	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
-		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
-	})).Return(nil, nil).Times(2)
+	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(events []*core.BlockchainEvent) bool {
+		return len(events) == 1 && events[0].Namespace == pool.Namespace && events[0].Name == transfer.Event.Name
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil).Times(2)
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
 		return ev.Type == core.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil).Times(2)

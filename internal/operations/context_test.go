@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -136,4 +136,56 @@ func TestGetContextKeyBadJSON(t *testing.T) {
 	}
 	_, err := getContextKey(op)
 	assert.Error(t, err)
+}
+
+func TestBulkInsertOperationsOk(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	op1 := &core.Operation{
+		ID:     fftypes.NewUUID(),
+		Type:   core.OpTypeBlockchainPinBatch,
+		Input:  fftypes.JSONObject{"batch": "1"},
+		Status: core.OpStatusFailed,
+	}
+	op2 := &core.Operation{
+		ID:     fftypes.NewUUID(),
+		Type:   core.OpTypeBlockchainPinBatch,
+		Input:  fftypes.JSONObject{"batch": "1"},
+		Status: core.OpStatusPending,
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("InsertOperations", ctx, []*core.Operation{op1, op2}).Return(nil).Once()
+
+	err := om.BulkInsertOperations(ctx, op1, op2)
+	assert.NoError(t, err)
+
+}
+
+func TestBulkInsertOperationsFail(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	op1 := &core.Operation{
+		ID:     fftypes.NewUUID(),
+		Type:   core.OpTypeBlockchainPinBatch,
+		Input:  fftypes.JSONObject{"batch": "1"},
+		Status: core.OpStatusFailed,
+	}
+	op2 := &core.Operation{
+		ID:     fftypes.NewUUID(),
+		Type:   core.OpTypeBlockchainPinBatch,
+		Input:  fftypes.JSONObject{"batch": "1"},
+		Status: core.OpStatusPending,
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("InsertOperations", ctx, []*core.Operation{op1, op2}).Return(fmt.Errorf("pop")).Once()
+
+	err := om.BulkInsertOperations(ctx, op1, op2)
+	assert.Regexp(t, "pop", err)
+
 }

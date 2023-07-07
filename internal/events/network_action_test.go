@@ -39,9 +39,9 @@ func TestNetworkAction(t *testing.T) {
 	}
 
 	em.mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
-	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(be *core.BlockchainEvent) bool {
-		return be.ProtocolID == "0001"
-	})).Return(nil, nil)
+	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(be []*core.BlockchainEvent) bool {
+		return len(be) == 1 && be[0].ProtocolID == "0001"
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil)
 	em.mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	em.mmp.On("TerminateContract", em.ctx, location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
 

@@ -158,16 +158,19 @@ type iBatchCollection interface {
 
 type iTransactionCollection interface {
 	// InsertTransaction - Insert a new transaction
-	InsertTransaction(ctx context.Context, data *core.Transaction) (err error)
+	InsertTransaction(ctx context.Context, txn *core.Transaction) (err error)
+
+	// InsertTransactions performs a batch insert of transactions - returns error if idempotency keys clash while inserting the non-clashing ones, so caller can query to find the existing ones
+	InsertTransactions(ctx context.Context, txns []*core.Transaction) (err error)
 
 	// UpdateTransaction - Update transaction
 	UpdateTransaction(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) (err error)
 
 	// GetTransactionByID - Get a transaction by ID
-	GetTransactionByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Transaction, err error)
+	GetTransactionByID(ctx context.Context, namespace string, id *fftypes.UUID) (txn *core.Transaction, err error)
 
 	// GetTransactions - Get transactions
-	GetTransactions(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Transaction, res *ffapi.FilterResult, err error)
+	GetTransactions(ctx context.Context, namespace string, filter ffapi.Filter) (txn []*core.Transaction, res *ffapi.FilterResult, err error)
 }
 
 type iDatatypeCollection interface {
@@ -218,6 +221,9 @@ type iPinCollection interface {
 type iOperationCollection interface {
 	// InsertOperation - Insert an operation
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
+
+	// InsertOperations bulk insert operations - all must succeed/fail together (idempotency clashes are handled by containing transaction)
+	InsertOperations(ctx context.Context, ops []*core.Operation, hooks ...PostCompletionHook) (err error)
 
 	// UpdateOperation - Update an operation
 	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, filter ffapi.Filter, update ffapi.Update) (updated bool, err error)
@@ -535,6 +541,10 @@ type iContractListenerCollection interface {
 }
 
 type iBlockchainEventCollection interface {
+
+	// InsertBlockchainEvents performs a batch insert of blockchain events - fails if they already exist, so caller can fall back to InsertOrGetBlockchainEvent individually
+	InsertBlockchainEvents(ctx context.Context, messages []*core.BlockchainEvent, hooks ...PostCompletionHook) (err error)
+
 	// InsertOrGetBlockchainEvent - insert an event from the blockchain
 	// If the ProtocolID has already been recorded, it does not insert but returns the existing row
 	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)

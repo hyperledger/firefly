@@ -79,19 +79,23 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 	}
 
 	var newOperation *core.Operation
-	var resubmittedOperation *core.Operation
+	var resubmitted []*core.Operation
+	var resubmitErr error
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		txid, err := am.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenPool, pool.IdempotencyKey)
 		if err != nil {
-			var resubmitErr error
-
 			// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 			// submitting to their handlers.
 			if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-				resubmittedOperation, resubmitErr = am.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+				resubmitted, resubmitErr = am.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 				if resubmitErr != nil {
 					// Error doing resubmit, return the new error
 					return resubmitErr
+				}
+				if len(resubmitted) > 0 {
+					pool.TX.ID = idemErr.ExistingTXID
+					pool.TX.Type = core.TransactionTypeTokenPool
+					err = nil
 				}
 			}
 			return err
@@ -110,7 +114,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 		}
 		return err
 	})
-	if resubmittedOperation != nil {
+	if len(resubmitted) > 0 {
 		// We resubmitted a previously initialized operation, don't run a new one
 		return &pool.TokenPool, nil
 	}
@@ -211,6 +215,15 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 	return pool, nil
 }
 
+func (am *assetManager) removeTokenPoolFromCache(ctx context.Context, pool *core.TokenPool) {
+	cacheKeyName := fmt.Sprintf("ns=%s,poolnameorid=%s", am.namespace, pool.Name)
+	cacheKeyID := fmt.Sprintf("ns=%s,poolnameorid=%s", am.namespace, pool.ID)
+	cacheKeyLocator := fmt.Sprintf("ns=%s,connector=%s,poollocator=%s", am.namespace, pool.Connector, pool.Locator)
+	am.cache.Delete(cacheKeyName)
+	am.cache.Delete(cacheKeyID)
+	am.cache.Delete(cacheKeyLocator)
+}
+
 func (am *assetManager) GetTokenPoolByID(ctx context.Context, poolID *fftypes.UUID) (*core.TokenPool, error) {
 	return am.database.GetTokenPoolByID(ctx, am.namespace, poolID)
 }
@@ -240,6 +253,7 @@ func (am *assetManager) DeleteTokenPool(ctx context.Context, poolNameOrID string
 		if err != nil {
 			return err
 		}
+		am.removeTokenPoolFromCache(ctx, pool)
 		if err = am.database.DeleteTokenPool(ctx, am.namespace, pool.ID); err != nil {
 			return err
 		}

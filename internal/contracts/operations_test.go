@@ -41,6 +41,9 @@ func reqWithMessage(msgType core.MessageType) *core.ContractCallRequest {
 		Location: fftypes.JSONAnyPtr(`{"address":"0x1111"}`),
 		Method: &fftypes.FFIMethod{
 			Name: "set",
+			Params: fftypes.FFIParams{
+				{Name: "data", Schema: fftypes.JSONAnyPtr(`{"type":"string"}`)},
+			},
 		},
 		Input: map[string]interface{}{
 			"value": "1",
@@ -78,11 +81,13 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	assert.NoError(t, err)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
+		return method.Name == req.Method.Name
+	}), req.Errors).Return(opaqueData, nil)
 	mbi.On("InvokeContract", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
 		return loc.String() == req.Location.String()
-	}), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
-		return method.Name == req.Method.Name
-	}), req.Input, req.Errors, req.Options, (*blockchain.BatchPin)(nil)).Return(nil)
+	}), opaqueData, req.Input, req.Options, (*blockchain.BatchPin)(nil)).Return(nil)
 
 	po, err := cm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -92,6 +97,44 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 
 	assert.False(t, complete)
 	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
+}
+
+func TestPrepareAndRunBlockchainInvokeValidateFail(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := &core.ContractCallRequest{
+		Key:      "0x123",
+		Location: fftypes.JSONAnyPtr(`{"address":"0x1111"}`),
+		Method: &fftypes.FFIMethod{
+			Name: "set",
+		},
+		Input: map[string]interface{}{
+			"value": "1",
+		},
+	}
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ParseInterface", context.Background(), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
+		return method.Name == req.Method.Name
+	}), req.Errors).Return(nil, fmt.Errorf("pop"))
+
+	po, err := cm.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, req, po.Data.(txcommon.BlockchainInvokeData).Request)
+
+	_, complete, err := cm.RunOperation(context.Background(), po)
+
+	assert.False(t, complete)
+	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
 }
@@ -532,11 +575,13 @@ func TestRunBlockchainInvokeWithBatch(t *testing.T) {
 	pin := fftypes.NewRandB32()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
+		return method.Name == req.Method.Name
+	}), req.Errors).Return(opaqueData, nil)
 	mbi.On("InvokeContract", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
 		return loc.String() == req.Location.String()
-	}), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
-		return method.Name == req.Method.Name
-	}), req.Input, req.Errors, req.Options, mock.MatchedBy(func(batchPin *blockchain.BatchPin) bool {
+	}), opaqueData, req.Input, req.Options, mock.MatchedBy(func(batchPin *blockchain.BatchPin) bool {
 		assert.Equal(t, storedBatch.ID, batchPin.BatchID)
 		assert.Equal(t, storedBatch.Hash, batchPin.BatchHash)
 		assert.Equal(t, storedBatch.TX.ID, batchPin.TransactionID)
