@@ -57,9 +57,15 @@ type whRequest struct {
 	r         *resty.Request
 	url       string
 	method    string
-	body      fftypes.JSONObject
 	forceJSON bool
 	replyTx   string
+}
+
+type whPayload struct {
+	input       fftypes.JSONObject
+	parsedData0 fftypes.JSONObject
+	data0       *fftypes.JSONAny
+	body        interface{}
 }
 
 type whResponse struct {
@@ -109,7 +115,73 @@ func (wh *WebHooks) Capabilities() *events.Capabilities {
 	return wh.capabilities
 }
 
-func (wh *WebHooks) buildRequest(ctx context.Context, restyClient *resty.Client, options fftypes.JSONObject, firstData fftypes.JSONObject) (req *whRequest, err error) {
+// firstData parses data0 from the data the first time it's needed, and guarantees a non-nil result
+func (p *whPayload) firstData() fftypes.JSONObject {
+	if p.parsedData0 != nil {
+		return p.parsedData0
+	}
+	if p.data0 == nil {
+		p.parsedData0 = fftypes.JSONObject{}
+	} else {
+		// Use JSONObjectOk instead of JSONObject
+		// JSONObject fails for datatypes such as array, string, bool, number etc
+		var valid bool
+		p.parsedData0, valid = p.data0.JSONObjectOk()
+		if !valid {
+			p.parsedData0 = fftypes.JSONObject{
+				"value": p.parsedData0,
+			}
+		}
+	}
+	return p.parsedData0
+}
+
+func (wh *WebHooks) buildPayload(ctx context.Context, sub *core.Subscription, event *core.CombinedEventDataDelivery) *whPayload {
+
+	withData := sub.Options.WithData != nil && *sub.Options.WithData
+	options := sub.Options.TransportOptions()
+	p := &whPayload{
+		// Options on how to process the input
+		input: options.GetObject("input"),
+	}
+
+	allData := make([]*fftypes.JSONAny, 0, len(event.Data))
+	if withData {
+		for _, d := range event.Data {
+			if d.Value != nil {
+				allData = append(allData, d.Value)
+				if p.data0 == nil {
+					p.data0 = d.Value
+				}
+			}
+		}
+	}
+
+	// Choose to sub-select a field to send as the body
+	var bodyFromFirstData *fftypes.JSONAny
+	inputBody := p.input.GetString("body")
+	if inputBody != "" {
+		bodyFromFirstData = fftypes.JSONAnyPtr(p.firstData().GetObject(inputBody).String())
+	}
+
+	switch {
+	case bodyFromFirstData != nil:
+		// We might have been told to extract a body from the first data record
+		p.body = bodyFromFirstData.String()
+	case len(allData) > 1:
+		// We've got an array of data to POST
+		p.body = allData
+	case len(allData) == 1:
+		// Just send the first object, forced into an object per the rules in firstData()
+		p.body = p.firstData()
+	default:
+		// Just send the event itself
+		p.body = event.Event
+	}
+	return p
+}
+
+func (wh *WebHooks) buildRequest(ctx context.Context, restyClient *resty.Client, options fftypes.JSONObject, p *whPayload) (req *whRequest, err error) {
 	req = &whRequest{
 		r: restyClient.R().
 			SetDoNotParseResponse(true).
@@ -145,34 +217,28 @@ func (wh *WebHooks) buildRequest(ctx context.Context, restyClient *resty.Client,
 		}
 		_ = req.r.SetQueryParam(q, s)
 	}
-	if firstData != nil {
-		// Options on how to process the input
-		input := options.GetObject("input")
+	// p will be nil for a batch delivery
+	if p != nil {
 		// Dynamic query support from input
-		inputQuery := input.GetString("query")
+		inputQuery := p.input.GetString("query")
 		if inputQuery != "" {
-			iq := firstData.GetObject(inputQuery)
+			iq := p.firstData().GetObject(inputQuery)
 			for q := range iq {
 				_ = req.r.SetQueryParam(q, iq.GetString(q))
 			}
 		}
 		// Dynamic header support from input
-		inputHeaders := input.GetString("headers")
+		inputHeaders := p.input.GetString("headers")
 		if inputHeaders != "" {
-			ih := firstData.GetObject(inputHeaders)
+			ih := p.firstData().GetObject(inputHeaders)
 			for h := range ih {
 				_ = req.r.SetHeader(h, ih.GetString(h))
 			}
 		}
-		// Choose to sub-select a field to send as the body
-		inputBody := input.GetString("body")
-		if inputBody != "" {
-			req.body = firstData.GetObject(inputBody)
-		}
 		// Choose to add an additional dynamic path
-		inputPath := input.GetString("path")
+		inputPath := p.input.GetString("path")
 		if inputPath != "" {
-			extraPath := strings.TrimPrefix(firstData.GetString(inputPath), "/")
+			extraPath := strings.TrimPrefix(p.firstData().GetString(inputPath), "/")
 			if len(extraPath) > 0 {
 				pathSegments := strings.Split(extraPath, "/")
 				for _, ps := range pathSegments {
@@ -181,9 +247,9 @@ func (wh *WebHooks) buildRequest(ctx context.Context, restyClient *resty.Client,
 			}
 		}
 		// Choose to add an additional dynamic path
-		inputTxtype := input.GetString("replytx")
+		inputTxtype := p.input.GetString("replytx")
 		if inputTxtype != "" {
-			txType := firstData.GetString(inputTxtype)
+			txType := p.firstData().GetString(inputTxtype)
 			if len(txType) > 0 {
 				req.replyTx = txType
 				if strings.EqualFold(txType, "true") {
@@ -282,82 +348,27 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 	// So these clients should live as long as the plugin exists
 	options.RestyClient = ffresty.NewWithConfig(wh.ctx, newFFRestyConfig)
 
-	_, err := wh.buildRequest(ctx, options.RestyClient, options.TransportOptions(), fftypes.JSONObject{})
+	_, err := wh.buildRequest(ctx, options.RestyClient, options.TransportOptions(), nil)
 	return err
 }
 
-func (wh *WebHooks) buildBody(withData bool, combinedEvent *core.CombinedEventDataDelivery) (body *fftypes.JSONAny, firstData fftypes.JSONObject, err error) {
-	allData := make([]*fftypes.JSONAny, 0, len(combinedEvent.Data))
-	if withData && len(combinedEvent.Data) > 0 {
-		for _, d := range combinedEvent.Data {
-			if d.Value != nil {
-				allData = append(allData, d.Value)
-			}
-		}
-		if len(allData) == 0 {
-			firstData = fftypes.JSONObject{}
-		} else {
-			// Use JSONObjectOk instead of JSONObject
-			// JSONObject fails for datatypes such as array, string, bool, number etc
-			var valid bool
-			firstData, valid = allData[0].JSONObjectOk()
-			if !valid {
-				firstData = fftypes.JSONObject{
-					"value": allData[0],
-				}
-			}
-
-			if len(allData) == 1 {
-				encodedFirstData, err := json.Marshal(firstData)
-				if err != nil {
-					return nil, nil, err
-				}
-				return fftypes.JSONAnyPtrBytes(encodedFirstData), firstData, nil
-			}
-		}
-		encodedData, err := json.Marshal(allData)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		return fftypes.JSONAnyPtrBytes(encodedData), firstData, nil
-	}
-
-	firstData = fftypes.JSONObject{}
-	encodedEvent, err := json.Marshal(combinedEvent.Event)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return fftypes.JSONAnyPtrBytes(encodedEvent), firstData, nil
-}
-
 func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, events []*core.CombinedEventDataDelivery, batch bool) (req *whRequest, res *whResponse, err error) {
-	withData := sub.Options.WithData != nil && *sub.Options.WithData
 
-	var body *fftypes.JSONAny
-	var firstData fftypes.JSONObject
+	var payloadForBuildingRequest *whPayload // only set for a single event delivery
+	var requestBody interface{}
 	if len(events) == 1 && !batch {
-		body, firstData, err = wh.buildBody(withData, events[0])
-		if err != nil {
-			return nil, nil, err
-		}
+		payloadForBuildingRequest = wh.buildPayload(ctx, sub, events[0])
+		// Payload for POST/PATCH/PUT is what is calculated for a single event in buildPayload
+		requestBody = payloadForBuildingRequest.body
 	} else {
-		batchBody := []*fftypes.JSONAny{}
-		for _, event := range events {
-			eventBody, _, err := wh.buildBody(withData, event)
-			if err != nil {
-				return nil, nil, err
-			}
-			batchBody = append(batchBody, eventBody)
+		batchBody := make([]interface{}, len(events))
+		for i, event := range events {
+			// We only use the body itself from the whPayload - then discard it.
+			p := wh.buildPayload(ctx, sub, event)
+			batchBody[i] = p.body
 		}
-
-		encodedBody, err := json.Marshal(batchBody)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		body = fftypes.JSONAnyPtrBytes(encodedBody)
+		// Payload for POST/PATCH/PUT is the array of outputs calculated for a each event in buildPayload
+		requestBody = batchBody
 	}
 
 	client := wh.client
@@ -365,19 +376,13 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 		client = sub.Options.RestyClient
 	}
 
-	req, err = wh.buildRequest(ctx, client, sub.Options.TransportOptions(), firstData)
+	req, err = wh.buildRequest(ctx, client, sub.Options.TransportOptions(), payloadForBuildingRequest)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if req.method == http.MethodPost || req.method == http.MethodPatch || req.method == http.MethodPut {
-		switch {
-		case req.body != nil:
-			// We might have been told to extract a body from the first data record
-			req.r.SetBody(req.body)
-		default:
-			req.r.SetBody(body.Bytes())
-		}
+		req.r.SetBody(requestBody)
 	}
 
 	// log.L(wh.ctx).Debugf("Webhook-> %s %s event %s on subscription %s", req.method, req.url, event.ID, sub.ID)
