@@ -396,6 +396,7 @@ func TestCreateDurableSubscriptionDupName(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	sub := &core.Subscription{
+		Transport: "websockets",
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -411,6 +412,7 @@ func TestCreateDurableSubscriptionDefaultSubCannotParse(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	sub := &core.Subscription{
+		Transport: "websockets",
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -429,6 +431,7 @@ func TestCreateDurableSubscriptionBadFirstEvent(t *testing.T) {
 	defer em.cleanup(t)
 	wrongFirstEvent := core.SubOptsFirstEvent("lobster")
 	sub := &core.Subscription{
+		Transport: "websockets",
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -450,6 +453,7 @@ func TestCreateDurableSubscriptionNegativeFirstEvent(t *testing.T) {
 	defer em.cleanup(t)
 	wrongFirstEvent := core.SubOptsFirstEvent("-12345")
 	sub := &core.Subscription{
+		Transport: "websockets",
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -470,6 +474,7 @@ func TestCreateDurableSubscriptionGetHighestSequenceFailure(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	sub := &core.Subscription{
+		Transport: "websockets",
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -486,6 +491,7 @@ func TestCreateDurableSubscriptionOk(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	sub := &core.Subscription{
+		Transport: "websockets",
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -509,6 +515,7 @@ func TestUpdateDurableSubscriptionOk(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 	sub := &core.Subscription{
+		Transport: "websockets",
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -517,6 +524,7 @@ func TestUpdateDurableSubscriptionOk(t *testing.T) {
 	}
 	var firstEvent core.SubOptsFirstEvent = "12345"
 	em.mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(&core.Subscription{
+		Transport: "websockets",
 		SubscriptionRef: core.SubscriptionRef{
 			ID: fftypes.NewUUID(),
 		},
@@ -604,24 +612,41 @@ func TestGetPlugins(t *testing.T) {
 	assert.ElementsMatch(t, em.GetPlugins(), expectedPlugins)
 }
 
-func TestGetTransportCapabilities(t *testing.T) {
+func TestResolveTransportAndCapabilities(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 
 	em.mev.On("Capabilities").Return(&events.Capabilities{BatchDelivery: true})
 
-	c, err := em.GetTransportCapabilities(context.Background(), "websockets")
+	resolved, c, err := em.ResolveTransportAndCapabilities(context.Background(), "websockets")
 	assert.NoError(t, err)
+	assert.Equal(t, "websockets", resolved)
 	assert.NotNil(t, c)
 	assert.True(t, c.BatchDelivery)
 
 	em.mev.AssertExpectations(t)
 }
 
-func TestGetTransportCapabilitiesUnknown(t *testing.T) {
+func TestResolveTransportAndCapabilitiesUnknown(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
 
-	_, err := em.GetTransportCapabilities(context.Background(), "wrong")
+	_, _, err := em.ResolveTransportAndCapabilities(context.Background(), "wrong")
 	assert.Regexp(t, "FF10172", err)
+}
+
+func TestResolveTransportAndCapabilitiesDefault(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+	em.defaultTransport = "websockets"
+
+	em.mev.On("Capabilities").Return(&events.Capabilities{BatchDelivery: true})
+
+	resolved, c, err := em.ResolveTransportAndCapabilities(context.Background(), "")
+	assert.NoError(t, err)
+	assert.Equal(t, "websockets", resolved)
+	assert.NotNil(t, c)
+	assert.True(t, c.BatchDelivery)
+
+	em.mev.AssertExpectations(t)
 }
