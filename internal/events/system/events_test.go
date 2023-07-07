@@ -142,3 +142,17 @@ func TestNamespaceRestarted(t *testing.T) {
 
 	se.NamespaceRestarted("ns1", time.Now())
 }
+
+func TestEventDeliveryBatch(t *testing.T) {
+	se, cancel := newTestEvents(t)
+	defer cancel()
+
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
+
+	err := se.BatchDeliveryRequest(se.ctx, "id", sub, []*core.CombinedEventDataDelivery{})
+	assert.Regexp(t, "FF10461", err)
+}

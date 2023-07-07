@@ -15,6 +15,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	pkgevents "github.com/hyperledger/firefly/pkg/events"
+
 	sharedstorage "github.com/hyperledger/firefly/pkg/sharedstorage"
 
 	system "github.com/hyperledger/firefly/internal/events/system"
@@ -206,6 +208,39 @@ func (_m *EventManager) NewSubscriptions() chan<- *fftypes.UUID {
 // QueueBatchRewind provides a mock function with given fields: batchID
 func (_m *EventManager) QueueBatchRewind(batchID *fftypes.UUID) {
 	_m.Called(batchID)
+}
+
+// ResolveTransportAndCapabilities provides a mock function with given fields: ctx, transportName
+func (_m *EventManager) ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *pkgevents.Capabilities, error) {
+	ret := _m.Called(ctx, transportName)
+
+	var r0 string
+	var r1 *pkgevents.Capabilities
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, *pkgevents.Capabilities, error)); ok {
+		return rf(ctx, transportName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, transportName)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) *pkgevents.Capabilities); ok {
+		r1 = rf(ctx, transportName)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*pkgevents.Capabilities)
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = rf(ctx, transportName)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // SharedStorageBatchDownloaded provides a mock function with given fields: ss, payloadRef, data

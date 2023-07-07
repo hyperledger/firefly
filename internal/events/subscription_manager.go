@@ -249,13 +249,21 @@ func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
 	}
 }
 
+func (sm *subscriptionManager) getTransport(ctx context.Context, transportName string) (events.Plugin, error) {
+	transport, ok := sm.transports[transportName]
+	if !ok {
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownEventTransportPlugin, transportName)
+	}
+	return transport, nil
+}
+
 // nolint: gocyclo
 func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef *core.Subscription) (sub *subscription, err error) {
 	filter := subDef.Filter
 
-	transport, ok := sm.transports[subDef.Transport]
-	if !ok {
-		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownEventTransportPlugin, subDef.Transport)
+	transport, err := sm.getTransport(ctx, subDef.Transport)
+	if err != nil {
+		return nil, err
 	}
 
 	if subDef.Options.TLSConfigName != "" && sm.namespace.TLSConfigs[subDef.Options.TLSConfigName] != nil {

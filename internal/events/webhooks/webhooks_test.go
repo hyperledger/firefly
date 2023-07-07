@@ -1069,7 +1069,7 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 	mcb.AssertExpectations(t)
 }
 
-func TestWebhookFailFastAsk(t *testing.T) {
+func TestWebhookFailFastAck(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
 
@@ -1123,6 +1123,68 @@ func TestWebhookFailFastAsk(t *testing.T) {
 	err = wh.DeliveryRequest(wh.ctx, mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
+	})
+	assert.NoError(t, err)
+
+	<-waiter
+
+	mcb.AssertExpectations(t)
+}
+
+func TestWebhookFailFastAckBatch(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	msgID := fftypes.NewUUID()
+	r := mux.NewRouter()
+	server := httptest.NewServer(r)
+	server.Close()
+
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
+	sub.Options.TransportOptions()["fastack"] = true
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &core.Message{
+				Header: core.MessageHeader{
+					ID:   msgID,
+					Type: core.MessageTypeBroadcast,
+				},
+			},
+		},
+		Subscription: core.SubscriptionRef{
+			ID: sub.ID,
+		},
+	}
+
+	count := 0
+	waiter := make(chan struct{})
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
+	mcb.On("DeliveryResponse", mock.Anything, mock.Anything).
+		Return(nil).
+		Run(func(a mock.Arguments) {
+			count++
+			if count == 2 {
+				close(waiter)
+			}
+		})
+
+	// Drive two deliveries, waiting for them both to ack (noting both will fail)
+	err := wh.BatchDeliveryRequest(wh.ctx, mock.Anything, sub, []*core.CombinedEventDataDelivery{
+		{Event: event, Data: core.DataArray{
+			{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
+			{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
+		}},
+		{Event: event, Data: core.DataArray{
+			{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
+			{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
+		}},
 	})
 	assert.NoError(t, err)
 
@@ -1210,9 +1272,198 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 	mcb.AssertExpectations(t)
 }
 
+func TestBatchDeliveryRequestReplyToReply(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	yes := true
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+				WithData: &yes,
+			},
+		},
+	}
+	sub.Options.TransportOptions()["reply"] = true
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &core.Message{
+				Header: core.MessageHeader{
+					ID:   fftypes.NewUUID(),
+					Type: core.MessageTypeBroadcast,
+					CID:  fftypes.NewUUID(),
+				},
+			},
+		},
+		Subscription: core.SubscriptionRef{
+			ID: sub.ID,
+		},
+	}
+
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
+		return !response.Rejected // should be accepted as a no-op so we can move on to other events
+	}))
+
+	err := wh.BatchDeliveryRequest(wh.ctx, mock.Anything, sub, []*core.CombinedEventDataDelivery{{Event: event, Data: nil}})
+	assert.NoError(t, err)
+
+	mcb.AssertExpectations(t)
+}
+
 func TestNamespaceRestarted(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
 
 	wh.NamespaceRestarted("ns1", time.Now())
+}
+
+func TestRequestWithBodyReplyEndToEndWithBatch(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	r := mux.NewRouter()
+	r.HandleFunc("/myapi", func(res http.ResponseWriter, req *http.Request) {
+		assert.Equal(t, "myheaderval", req.Header.Get("My-Header"))
+		assert.Equal(t, "myqueryval", req.URL.Query().Get("my-query"))
+		var data []fftypes.JSONObject
+		err := json.NewDecoder(req.Body).Decode(&data)
+		assert.NoError(t, err)
+		assert.Equal(t, len(data), 2)
+		assert.Equal(t, "inputvalue", data[0].GetObject("in_body").GetString("inputfield"))
+		res.Header().Set("my-reply-header", "myheaderval2")
+		res.WriteHeader(200)
+		res.Write([]byte(`{
+			"replyfield": "replyvalue"
+		}`))
+	}).Methods(http.MethodPut)
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	yes := true
+	dataID := fftypes.NewUUID()
+	msgID := fftypes.NewUUID()
+	groupHash := fftypes.NewRandB32()
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+				WithData: &yes,
+			},
+		},
+	}
+	to := sub.Options.TransportOptions()
+	to["reply"] = true
+	to["json"] = true
+	to["method"] = "PUT"
+	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
+	to["headers"] = map[string]interface{}{
+		"my-header": "myheaderval",
+	}
+	to["query"] = map[string]interface{}{
+		"my-query": "myqueryval",
+	}
+	event1 := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &core.Message{
+				Header: core.MessageHeader{
+					ID:    msgID,
+					Group: groupHash,
+					Type:  core.MessageTypePrivate,
+				},
+				Data: core.DataRefs{
+					{ID: dataID},
+				},
+			},
+		},
+		Subscription: core.SubscriptionRef{
+			ID: sub.ID,
+		},
+	}
+
+	event2 := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &core.Message{
+				Header: core.MessageHeader{
+					ID:    msgID,
+					Group: groupHash,
+					Type:  core.MessageTypePrivate,
+				},
+				Data: core.DataRefs{
+					{ID: dataID},
+				},
+			},
+		},
+		Subscription: core.SubscriptionRef{
+			ID: sub.ID,
+		},
+	}
+
+	data1 := core.DataArray{&core.Data{
+		ID: dataID,
+		Value: fftypes.JSONAnyPtr(`{
+			"in_body": {
+				"inputfield": "inputvalue"
+			},
+			"in_query": {
+				"dynamic-query": "dynamicqueryval"
+			},
+			"in_headers": {
+				"dynamic-header": "dynamicheaderval"
+			},
+			"in_path": "/my/sub/path?escape_query",
+			"in_replytx": true
+		}`),
+	}}
+
+	data2 := core.DataArray{&core.Data{
+		ID: dataID,
+		Value: fftypes.JSONAnyPtr(`{
+			"in_body": {
+				"inputfield": "inputvalue"
+			},
+			"in_query": {
+				"dynamic-query": "dynamicqueryval"
+			},
+			"in_headers": {
+				"dynamic-header": "dynamicheaderval"
+			},
+			"in_path": "/my/sub/path?escape_query",
+			"in_replytx": true
+		}`),
+	}}
+
+	mcb := wh.callbacks.handlers["ns1"].(*eventsmocks.Callbacks)
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
+		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
+		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
+		assert.Equal(t, core.MessageTypePrivate, response.Reply.Message.Header.Type)
+		assert.Equal(t, "myheaderval2", response.Reply.InlineData[0].Value.JSONObject().GetObject("headers").GetString("My-Reply-Header"))
+		assert.Equal(t, "replyvalue", response.Reply.InlineData[0].Value.JSONObject().GetObject("body").GetString("replyfield"))
+		assert.Equal(t, float64(200), response.Reply.InlineData[0].Value.JSONObject()["status"])
+		return true
+	})).Return(nil)
+
+	err := wh.BatchDeliveryRequest(wh.ctx, mock.Anything, sub, []*core.CombinedEventDataDelivery{{Event: event1, Data: data1}, {Event: event2, Data: data2}})
+	assert.NoError(t, err)
+
+	mcb.AssertExpectations(t)
+}
+
+func TestFirstDataNeverNil(t *testing.T) {
+	assert.NotNil(t, (&whPayload{}).firstData())
 }
