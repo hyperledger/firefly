@@ -53,4 +53,4 @@ core systems.
 ![Hyperledger FireFly Event Mode](../../images/firefly_event_model.jpg)
 
 > Learn more about the event bus and event-driven programming in this
-> [reference document](http://localhost:4000/firefly/reference/events.html)
+> [reference document](../../reference/events.md)
