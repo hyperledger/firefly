@@ -234,8 +234,8 @@ func (suite *EthereumCouponTestSuite) SetupSuite() {
 	suite.ethIdentity = account["address"].(string)
 	suite.contractAddress = deployCouponContract(suite.T(), stack.Name, "coupon/coupon.json", suite.ethIdentity)
 
-	res, err := suite.testState.client1.CreateFFI(suite.T(), couponFFI(), false)
-	suite.interfaceID = res.ID
+	res, err := suite.testState.client1.CreateFFI(suite.T(), couponFFI())
+	suite.interfaceID = fftypes.MustParseUUID(res.(map[string]interface{})["id"].(string))
 	suite.T().Logf("interfaceID: %s", suite.interfaceID)
 	assert.NoError(suite.T(), err)
 }
