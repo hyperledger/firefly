@@ -70,7 +70,7 @@ seo:
   architecture_title: "Hyperledger FireFly Architecture: Overview and Overview"
   architecture_description: "Hyperledger Firefly Architecture: Discover the decentralized architecture of Firefly for secure and transparent transaction processing."
   architecture_blockchain_connector_framework_title: "Hyperledger FireFly Architecture: Blockchain Connector Framework"
-  architecture_blockchain_connector_framework_description: "Explore the Blockchain Connector Framework in Hyperledger's FireFly architecture. Learn about the design and functionalities of the framework, which enables seamless integration and interoperability with various blockchain networks and protocols within the FireFly blockchain platform."
+  architecture_blockchain_connector_framework_description: "Explore the Blockchain Connector Framework in Hyperledger FireFly's architecture. Learn about the design and functionalities of the framework, which enables seamless integration and interoperability with various blockchain networks and protocols within the FireFly blockchain platform."
   architecture_internal_event_sequencing_title: "Hyperledger FireFly Architecture: Internal Event Sequencing"
   architecture_internal_event_sequencing_description: "Hyperledger Firefly Architecture: Explore internal event sequencing in Firefly's decentralized framework for secure and efficient transaction processing."
   architecture_multiparty_event_sequencing_title: "Hyperledger FireFly Architecture: Multiparty Event Sequencing"
