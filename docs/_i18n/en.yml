@@ -68,7 +68,7 @@ seo:
   home_title: "Hyperledger FireFly: Decentralized Transaction Processing"
   home_description: "Explore Hyperledger Firefly documentation and features. Learn about distributed ledger technology, smart contracts, and secure data exchange."
   architecture_title: "Hyperledger FireFly Architecture: Overview and Overview"
-  architecture_description: "Hyperledger Firefly Architecture: Discover the decentralized architecture of Firefly for secure and transparent transaction processing."
+  architecture_description: "Hyperledger FireFly Architecture: Discover the decentralized architecture of Firefly for secure and transparent transaction processing."
   architecture_blockchain_connector_framework_title: "Hyperledger FireFly Architecture: Blockchain Connector Framework"
   architecture_blockchain_connector_framework_description: "Explore the Blockchain Connector Framework in Hyperledger FireFly's architecture. Learn about the design and functionalities of the framework, which enables seamless integration and interoperability with various blockchain networks and protocols within the FireFly blockchain platform."
   architecture_internal_event_sequencing_title: "Hyperledger FireFly Architecture: Internal Event Sequencing"
