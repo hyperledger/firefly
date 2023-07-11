@@ -666,7 +666,7 @@ nav_order: 2
 |address|The IP address on which the metrics HTTP API should listen|`int`|`127.0.0.1`
 |enabled|Enables the metrics API|`boolean`|`true`
 |path|The path from which to serve the Prometheus metrics|`string`|`/metrics`
-|port|The port on which the metrics HTTP API should listen|`int`|`7000`
+|port|The port on which the metrics HTTP API should listen|`int`|`6000`
 |publicURL|The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 |shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
