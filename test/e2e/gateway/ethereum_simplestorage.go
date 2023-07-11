@@ -125,7 +125,7 @@ func (suite *EthereumSimpleStorageTestSuite) SetupSuite() {
 	suite.contractAddress = deploySimpleStorageContract(suite.T(), stack.Name, "simplestorage/simple_storage.json")
 
 	res, err := suite.testState.client1.CreateFFI(suite.T(), simpleStorageFFI())
-	suite.interfaceID = fftypes.MustParseUUID(res.(map[string]interface{})["id"].(string))
+	suite.interfaceID = res.ID
 	suite.T().Logf("interfaceID: %s", suite.interfaceID)
 	assert.NoError(suite.T(), err)
 }
