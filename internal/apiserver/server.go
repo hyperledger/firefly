@@ -66,7 +66,7 @@ type apiServer struct {
 func InitConfig() {
 	httpserver.InitHTTPConfig(apiConfig, 5000)
 	httpserver.InitHTTPConfig(spiConfig, 5001)
-	httpserver.InitHTTPConfig(metricsConfig, 6000)
+	httpserver.InitHTTPConfig(metricsConfig, 7000)
 	httpserver.InitCORSConfig(corsConfig)
 	initMetricsConfig(metricsConfig)
 }
