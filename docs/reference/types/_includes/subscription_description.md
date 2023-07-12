@@ -169,8 +169,8 @@ allowing you to customize your HTTP requests as follows:
   - Method, URL, query, headers and input body
 - Wait for a invocation of the back-end service, before acknowledging
   - To retry requests to your Webhook on a non-`2xx` HTTP status code
-    or other error, then you should enable and configure
-    [events.webhooks.retry](../../config.html#eventswebhooksretry)
+    or other error, you should enable and configure
+    [options.retry](#webhookretryoptions)
   - The event is acknowledged once the request (with any retries), is
     completed - regardless of whether the outcome was a success or failure.
 - Use `fastack` to acknowledge against FireFly immediately and make multiple
@@ -185,4 +185,17 @@ allowing you to customize your HTTP requests as follows:
   - Sets a `tag` in the reply message, per the configuration, or dynamically
     based on a field in the input request data.
 
+
+#### Batching events 
+
+Webhooks have the ability to batch events into a single HTTP request instead of sending an event per HTTP request. The interface will be a JSON array of events instead of a top level JSON object with a single event. The size of the batch will be set by the `readAhead` limit and an optional timeout can be specified to send the events when the batch hasn't filled.
+
+To enable this set the following configuration under [SubscriptionOptions](#SubscriptionOptions)
+
+`batch` | Events are delivered in batches in an ordered array. The batch size is capped to the readAhead limit. The event payload is always an array even if there is a single event in the batch. Commonly used with Webhooks to allow events to be delivered and acknowledged in batches. | `bool` |
+
+`batchTimeout` | When batching is enabled, the optional timeout to send events even when the batch hasn't filled. Defaults to 2 seconds | `string`
+
+
+**NOTE**: When batch is enabled, `withData` cannot be used as these may alter the HTTP request based on a single event and in batching it does not make sense for now.
 
