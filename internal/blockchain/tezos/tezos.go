@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"blockwatch.cc/tzgo/micheline"
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
@@ -81,6 +82,11 @@ type paramDetails struct {
 type ffiParamSchema struct {
 	Type    string       `json:"type,omitempty"`
 	Details paramDetails `json:"details,omitempty"`
+}
+
+type ffiMethodAndErrors struct {
+	method *fftypes.FFIMethod
+	errors []*fftypes.FFIError
 }
 
 var addressVerify = regexp.MustCompile("^(tz[1-4]|[Kk][Tt]1)[1-9A-Za-z]{33}$")
@@ -182,12 +188,18 @@ func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, d
 	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
-func (t *Tezos) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
+func (t *Tezos) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
 	// No additional validation beyond what is enforced by Contract Manager
-	return nil
+	_, _, err := t.recoverFFI(ctx, parsedMethod)
+	return err
 }
 
-func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
+func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) error {
+	method, _, err := t.recoverFFI(ctx, parsedMethod)
+	if err != nil {
+		return err
+	}
+
 	tezosLocation, err := t.parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -208,16 +220,34 @@ func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey st
 		}
 	}
 
+	payloadSchema := &PayloadSchema{
+		Type:        "array",
+		PrefixItems: prefixItems,
+	}
+
+	schemaBytes, _ := json.Marshal(payloadSchema)
+	var processSchemaReq map[string]interface{}
+	_ = json.Unmarshal(schemaBytes, &processSchemaReq)
+
+	michelsonInput, err := processArgs(processSchemaReq, input, method.Name)
+
 	if batch != nil {
 		// TODO: add batch pin support
 	}
 
-	return t.invokeContractMethod(ctx, tezosLocation.Address, method.Name, signingKey, nsOpID, prefixItems, input, options)
+	return t.invokeContractMethod(ctx, tezosLocation.Address, method.Name, signingKey, nsOpID, michelsonInput, options)
 }
 
-func (t *Tezos) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
+func (t *Tezos) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
 	// TODO: impl
 	return nil, nil
+}
+
+func (f *Tezos) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
+	return &ffiMethodAndErrors{
+		method: method,
+		errors: errors,
+	}, nil
 }
 
 func (t *Tezos) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
@@ -281,12 +311,20 @@ func (t *Tezos) GetTransactionStatus(ctx context.Context, operation *core.Operat
 	return nil, nil
 }
 
-func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName string, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) error {
+func (f *Tezos) recoverFFI(ctx context.Context, parsedMethod interface{}) (*fftypes.FFIMethod, []*fftypes.FFIError, error) {
+	methodInfo, ok := parsedMethod.(*ffiMethodAndErrors)
+	if !ok || methodInfo.method == nil {
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgUnexpectedInterfaceType, parsedMethod)
+	}
+	return methodInfo.method, methodInfo.errors, nil
+}
+
+func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName string, signingKey, requestID string, michelsonInput micheline.Parameters, options map[string]interface{}) error {
 	if t.metrics.IsMetricsEnabled() {
 		t.metrics.BlockchainTransaction(address, methodName)
 	}
 	messageType := "SendTransaction"
-	body, err := t.buildTezosconnectRequestBody(ctx, messageType, address, methodName, signingKey, requestID, prefixItems, input, options)
+	body, err := t.buildTezosconnectRequestBody(ctx, messageType, address, methodName, signingKey, requestID, michelsonInput, options)
 	if err != nil {
 		return err
 	}
@@ -303,51 +341,25 @@ func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName st
 	return nil
 }
 
-func (t *Tezos) buildTezosconnectRequestBody(ctx context.Context, messageType, address, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (map[string]interface{}, error) {
+func (t *Tezos) buildTezosconnectRequestBody(ctx context.Context, messageType, address, methodName, signingKey, requestID string, michelsonInput micheline.Parameters, options map[string]interface{}) (map[string]interface{}, error) {
 	headers := TezosconnectMessageHeaders{
 		Type: messageType,
 	}
 	if requestID != "" {
 		headers.ID = requestID
 	}
-	// All arguments must be JSON serialized
-	args, err := jsonEncodeInput(input)
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
-	}
 
 	body := map[string]interface{}{
 		"headers": &headers,
 		"to":      address,
 		"method":  methodName,
-		"args":    args,
-		"payloadSchema": &PayloadSchema{
-			Type:        "array",
-			PrefixItems: prefixItems,
-		},
+		"params":  []interface{}{michelsonInput},
 	}
 	if signingKey != "" {
 		body["from"] = signingKey
 	}
 
 	return t.applyOptions(ctx, body, options)
-}
-
-func jsonEncodeInput(params map[string]interface{}) (output map[string]interface{}, err error) {
-	output = make(map[string]interface{}, len(params))
-	for field, value := range params {
-		switch v := value.(type) {
-		// case string:
-		// 	output[field] = v
-		default:
-			encodedValue, err := json.Marshal(v)
-			if err != nil {
-				return nil, err
-			}
-			output[field] = string(encodedValue)
-		}
-	}
-	return
 }
 
 func (t *Tezos) applyOptions(ctx context.Context, body, options map[string]interface{}) (map[string]interface{}, error) {
