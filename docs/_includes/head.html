@@ -2,16 +2,20 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=Edge">
 
-  {% if page.seo_title %}
+  {% if page.layout == "i18n_page" and page.seo_title %}
     <title>{% t page.seo_title %}</title>
-  {% elsif page.title %}
-    <title>{% t site.name %}: {{ page.title }}</title>
+  {% elsif page.layout == "default" and page.seo_title %}
+    <title>{{ page.seo_title }}</title>
+  {% elsif page.layout == "i18n_page" %}
+    <title>{% t site.name %}: {% t page.title %}</title>
   {% else %}
-    <title>{% t site.title %}</title>
+    <title>{{ site.title }}: {{ page.title }}</title>
   {% endif %}
   
-  {% if page.seo_description %}
+  {% if page.layout == "i18n_page" and page.seo_title %}
     <meta name="description" content="{% t page.seo_description %}">
+  {% elsif page.seo_description %}
+    <meta name="description" content="{{ page.seo_description }}">
   {% endif %}
   
   <meta property="og:image" content="{{ '/assets/images/firefly_social_sharing_image.png' | relative_url }}" />
