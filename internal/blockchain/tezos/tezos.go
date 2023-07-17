@@ -29,8 +29,11 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/cache"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -40,12 +43,28 @@ import (
 type Tezos struct {
 	ctx                  context.Context
 	cancelCtx            context.CancelFunc
+	topic                string
+	prefixShort          string
+	prefixLong           string
+	capabilities         *blockchain.Capabilities
 	callbacks            common.BlockchainCallbacks
 	client               *resty.Client
+	streams              *streamManager
+	streamID             string
+	wsconn               wsclient.WSClient
+	closed               chan struct{}
 	addressResolveAlways bool
 	addressResolver      *addressResolver
 	metrics              metrics.Manager
 	tezosconnectConf     config.Section
+	subs                 common.FireflySubscriptions
+	cache                cache.CInterface
+	backgroundRetry      *retry.Retry
+	backgroundStart      bool
+}
+
+type eventStreamWebsocket struct {
+	Topic string `json:"topic"`
 }
 
 type tezosError struct {
@@ -89,6 +108,11 @@ type ffiMethodAndErrors struct {
 	errors []*fftypes.FFIError
 }
 
+type tezosWSCommandPayload struct {
+	Type  string `json:"type"`
+	Topic string `json:"topic,omitempty"`
+}
+
 var addressVerify = regexp.MustCompile("^(tz[1-4]|[Kk][Tt]1)[1-9A-Za-z]{33}$")
 
 func (t *Tezos) Name() string {
@@ -107,7 +131,9 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 	t.ctx = log.WithLogField(ctx, "proto", "tezos")
 	t.cancelCtx = cancelCtx
 	t.metrics = metrics
+	t.capabilities = &blockchain.Capabilities{}
 	t.callbacks = common.NewBlockchainCallbacks()
+	t.subs = common.NewFireflySubscriptions()
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
 		// Check if we need to invoke the address resolver (without caching) on every call
@@ -121,10 +147,65 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", tezosconnectConf)
 	}
 
-	t.client, err = ffresty.New(t.ctx, tezosconnectConf)
+	wsConfig, err := wsclient.GenerateConfig(ctx, tezosconnectConf)
+	if err == nil {
+		t.client, err = ffresty.New(t.ctx, tezosconnectConf)
+	}
+
 	if err != nil {
 		return err
 	}
+
+	t.topic = tezosconnectConf.GetString(TezosconnectConfigTopic)
+	if t.topic == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.tezos.tezosconnect")
+	}
+	t.prefixShort = tezosconnectConf.GetString(TezosconnectPrefixShort)
+	t.prefixLong = tezosconnectConf.GetString(TezosconnectPrefixLong)
+
+	if wsConfig.WSKeyPath == "" {
+		wsConfig.WSKeyPath = "/ws"
+	}
+	t.wsconn, err = wsclient.New(ctx, wsConfig, nil, t.afterConnect)
+	if err != nil {
+		return err
+	}
+	cache, err := cacheManager.GetCache(
+		cache.NewCacheConfig(
+			ctx,
+			coreconfig.CacheBlockchainLimit,
+			coreconfig.CacheBlockchainTTL,
+			"",
+		),
+	)
+	if err != nil {
+		return err
+	}
+	t.cache = cache
+
+	t.streams = newStreamManager(t.client, t.cache, t.tezosconnectConf.GetUint(TezosconnectConfigBatchSize), uint(t.tezosconnectConf.GetDuration(TezosconnectConfigBatchTimeout).Milliseconds()))
+
+	t.backgroundStart = t.tezosconnectConf.GetBool(TezosconnectBackgroundStart)
+	if t.backgroundStart {
+		t.backgroundRetry = &retry.Retry{
+			InitialDelay: t.tezosconnectConf.GetDuration(TezosconnectBackgroundStartInitialDelay),
+			MaximumDelay: t.tezosconnectConf.GetDuration(TezosconnectBackgroundStartMaxDelay),
+			Factor:       t.tezosconnectConf.GetFloat64(TezosconnectBackgroundStartFactor),
+		}
+
+		return nil
+	}
+
+	stream, err := t.streams.ensureEventStream(t.ctx, t.topic)
+	if err != nil {
+		return err
+	}
+
+	t.streamID = stream.ID
+	log.L(t.ctx).Infof("Event stream: %s (topic=%s)", t.streamID, t.topic)
+
+	t.closed = make(chan struct{})
+	go t.eventLoop()
 
 	return nil
 }
@@ -138,13 +219,16 @@ func (t *Tezos) SetOperationHandler(namespace string, handler core.OperationCall
 }
 
 func (t *Tezos) Start() (err error) {
-	// TODO: impl
-	return nil
+	if t.backgroundStart {
+		go t.startBackgroundLoop()
+		return nil
+	}
+
+	return t.wsconn.Connect()
 }
 
 func (t *Tezos) Capabilities() *blockchain.Capabilities {
-	// TODO: impl
-	return nil
+	return t.capabilities
 }
 
 func (t *Tezos) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
@@ -153,7 +237,10 @@ func (t *Tezos) AddFireflySubscription(ctx context.Context, namespace *core.Name
 }
 
 func (t *Tezos) RemoveFireflySubscription(ctx context.Context, subID string) {
-	// TODO: impl
+	// Don't actually delete the subscription from tezosconnect, as this may be called while processing
+	// events from the subscription (and handling that scenario cleanly could be difficult for tezosconnect).
+	// TODO: can old subscriptions be somehow cleaned up later?
+	t.subs.RemoveSubscription(ctx, subID)
 }
 
 func (t *Tezos) ResolveSigningKey(ctx context.Context, key string, intent blockchain.ResolveKeyIntent) (resolved string, err error) {
@@ -264,8 +351,7 @@ func (e *Tezos) AddContractListener(ctx context.Context, listener *core.Contract
 }
 
 func (t *Tezos) DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error {
-	// TODO: impl
-	return nil
+	return t.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
 func (t *Tezos) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (found bool, status interface{}, err error) {
@@ -274,13 +360,12 @@ func (t *Tezos) GetContractListenerStatus(ctx context.Context, subID string, okN
 }
 
 func (t *Tezos) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
-	// TODO: impl
+	// Tezosconnect does not require any additional validation beyond "JSON Schema correctness" at this time
 	return nil, nil
 }
 
 func (t *Tezos) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
-	// TODO: impl
-	return ""
+	return event.Name
 }
 
 func (t *Tezos) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIErrorDefinition) string {
@@ -289,7 +374,6 @@ func (t *Tezos) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIEr
 }
 
 func (t *Tezos) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
-	// TODO: impl
 	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
 }
 
@@ -309,6 +393,22 @@ func (t *Tezos) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loca
 func (t *Tezos) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
 	// TODO: impl
 	return nil, nil
+}
+
+func (t *Tezos) afterConnect(ctx context.Context, w wsclient.WSClient) error {
+	// Send a subscribe to our topic after each connect/reconnect
+	b, _ := json.Marshal(&tezosWSCommandPayload{
+		Type:  "listen",
+		Topic: t.topic,
+	})
+	err := w.Send(ctx, b)
+	if err == nil {
+		b, _ = json.Marshal(&tezosWSCommandPayload{
+			Type: "listenreplies",
+		})
+		err = w.Send(ctx, b)
+	}
+	return err
 }
 
 func (f *Tezos) recoverFFI(ctx context.Context, parsedMethod interface{}) (*fftypes.FFIMethod, []*fftypes.FFIError, error) {
@@ -395,6 +495,94 @@ func (t *Tezos) encodeContractLocation(ctx context.Context, location *Location) 
 		result = fftypes.JSONAnyPtrBytes(normalized)
 	}
 	return result, err
+}
+
+func (t *Tezos) startBackgroundLoop() {
+	_ = t.backgroundRetry.Do(t.ctx, fmt.Sprintf("tezos connector %s", t.Name()), func(attempt int) (retry bool, err error) {
+		stream, err := t.streams.ensureEventStream(t.ctx, t.topic)
+		if err != nil {
+			return true, err
+		}
+
+		t.streamID = stream.ID
+		log.L(t.ctx).Infof("Event stream: %s (topic=%s)", t.streamID, t.topic)
+
+		err = t.wsconn.Connect()
+		if err != nil {
+			return true, err
+		}
+
+		t.closed = make(chan struct{})
+		go t.eventLoop()
+
+		return false, nil
+	})
+}
+
+func (t *Tezos) eventLoop() {
+	defer t.wsconn.Close()
+	defer close(t.closed)
+	l := log.L(t.ctx).WithField("role", "event-loop")
+	ctx := log.WithLogger(t.ctx, l)
+	for {
+		select {
+		case <-ctx.Done():
+			l.Debugf("Event loop exiting (context cancelled)")
+			return
+		case msgBytes, ok := <-t.wsconn.Receive():
+			if !ok {
+				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
+				t.cancelCtx()
+				return
+			}
+
+			var msgParsed interface{}
+			err := json.Unmarshal(msgBytes, &msgParsed)
+			if err != nil {
+				l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
+				continue // Swallow this and move on
+			}
+			switch msgTyped := msgParsed.(type) {
+			case []interface{}:
+				err = t.handleMessageBatch(ctx, 0, msgTyped)
+				if err == nil {
+					ack, _ := json.Marshal(&tezosWSCommandPayload{
+						Type:  "ack",
+						Topic: t.topic,
+					})
+					err = t.wsconn.Send(ctx, ack)
+				}
+			case map[string]interface{}:
+				var receipt common.BlockchainReceiptNotification
+				_ = json.Unmarshal(msgBytes, &receipt)
+
+				err := common.HandleReceipt(ctx, t, &receipt, t.callbacks)
+				if err != nil {
+					l.Errorf("Failed to process receipt: %+v", msgTyped)
+				}
+			default:
+				l.Errorf("Message unexpected: %+v", msgTyped)
+				continue
+			}
+
+			if err != nil {
+				l.Errorf("Event loop exiting (%s). Terminating server!", err)
+				t.cancelCtx()
+				return
+			}
+		}
+	}
+}
+
+func (t *Tezos) handleMessageBatch(ctx context.Context, batchID int64, messages []interface{}) error {
+	// TODO:
+
+	// Build the set of events that need handling
+	events := make(common.EventsToDispatch)
+
+	// Dispatch all the events from this patch that were successfully parsed and routed to namespaces
+	// (could be zero - that's ok)
+	return t.callbacks.DispatchBlockchainEvents(ctx, events)
 }
 
 func wrapError(ctx context.Context, errRes *tezosError, res *resty.Response, err error) error {

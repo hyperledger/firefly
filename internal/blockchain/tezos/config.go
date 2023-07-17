@@ -15,6 +15,10 @@ const (
 
 	defaultAddressResolverMethod        = "GET"
 	defaultAddressResolverResponseField = "address"
+
+	defaultBackgroundInitialDelay = "5s"
+	defaultBackgroundRetryFactor  = 2.0
+	defaultBackgroundMaxDelay     = "1m"
 )
 
 const (
@@ -35,6 +39,14 @@ const (
 	TezosconnectConfigInstanceDeprecated = "instance"
 	// TezosconnectConfigFromBlockDeprecated is the configuration of the first block to listen to when creating the listener for the FireFly contract
 	TezosconnectConfigFromBlockDeprecated = "fromBlock"
+	// TezosconnectBackgroundStart is used to not fail the tezos plugin on init and retry to start it in the background
+	TezosconnectBackgroundStart = "backgroundStart.enabled"
+	// TezosconnectBackgroundStartInitialDelay is delay between restarts in the case where we retry to restart in the tezos plugin
+	TezosconnectBackgroundStartInitialDelay = "backgroundStart.initialDelay"
+	// TezosconnectBackgroundStartMaxDelay is the max delay between restarts in the case where we retry to restart in the tezos plugin
+	TezosconnectBackgroundStartMaxDelay = "backgroundStart.maxDelay"
+	// TezosconnectBackgroundStartFactor is to set the factor by which the delay increases when retrying
+	TezosconnectBackgroundStartFactor = "backgroundStart.factor"
 
 	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
 	AddressResolverConfigKey = "addressResolver"
@@ -59,6 +71,10 @@ func (t *Tezos) InitConfig(config config.Section) {
 	t.tezosconnectConf = config.SubSection(TezosconnectConfigKey)
 	wsclient.InitConfig(t.tezosconnectConf)
 	t.tezosconnectConf.AddKnownKey(TezosconnectConfigTopic)
+	t.tezosconnectConf.AddKnownKey(TezosconnectBackgroundStart)
+	t.tezosconnectConf.AddKnownKey(TezosconnectBackgroundStartInitialDelay, defaultBackgroundInitialDelay)
+	t.tezosconnectConf.AddKnownKey(TezosconnectBackgroundStartFactor, defaultBackgroundRetryFactor)
+	t.tezosconnectConf.AddKnownKey(TezosconnectBackgroundStartMaxDelay, defaultBackgroundMaxDelay)
 	t.tezosconnectConf.AddKnownKey(TezosconnectConfigBatchSize, defaultBatchSize)
 	t.tezosconnectConf.AddKnownKey(TezosconnectConfigBatchTimeout, defaultBatchTimeout)
 	t.tezosconnectConf.AddKnownKey(TezosconnectPrefixShort, defaultPrefixShort)
