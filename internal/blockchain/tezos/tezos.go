@@ -67,10 +67,6 @@ type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
 }
 
-type tezosError struct {
-	Error string `json:"error,omitempty"`
-}
-
 type Location struct {
 	Address string `json:"address"`
 }
@@ -282,52 +278,43 @@ func (t *Tezos) ValidateInvokeRequest(ctx context.Context, parsedMethod interfac
 }
 
 func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) error {
-	method, _, err := t.recoverFFI(ctx, parsedMethod)
-	if err != nil {
-		return err
-	}
-
 	tezosLocation, err := t.parseContractLocation(ctx, location)
 	if err != nil {
 		return err
 	}
 
-	// Build the payload schema for the method parameters
-	prefixItems := make([]*PrefixItem, len(method.Params))
-	for i, param := range method.Params {
-		var paramSchema ffiParamSchema
-		if err := json.Unmarshal(param.Schema.Bytes(), &paramSchema); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, fmt.Sprintf("%s.schema", param.Name))
-		}
-
-		prefixItems[i] = &PrefixItem{
-			Name:    param.Name,
-			Type:    paramSchema.Type,
-			Details: paramSchema.Details,
-		}
+	methodName, michelsonInput, err := t.prepareRequest(ctx, parsedMethod, input)
+	if err != nil {
+		return err
 	}
-
-	payloadSchema := &PayloadSchema{
-		Type:        "array",
-		PrefixItems: prefixItems,
-	}
-
-	schemaBytes, _ := json.Marshal(payloadSchema)
-	var processSchemaReq map[string]interface{}
-	_ = json.Unmarshal(schemaBytes, &processSchemaReq)
-
-	michelsonInput, err := processArgs(processSchemaReq, input, method.Name)
-
 	if batch != nil {
 		// TODO: add batch pin support
 	}
 
-	return t.invokeContractMethod(ctx, tezosLocation.Address, method.Name, signingKey, nsOpID, michelsonInput, options)
+	return t.invokeContractMethod(ctx, tezosLocation.Address, methodName, signingKey, nsOpID, michelsonInput, options)
 }
 
 func (t *Tezos) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
-	// TODO: impl
-	return nil, nil
+	tezosLocation, err := t.parseContractLocation(ctx, location)
+	if err != nil {
+		return nil, err
+	}
+
+	methodName, michelsonInput, err := t.prepareRequest(ctx, parsedMethod, input)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := t.queryContractMethod(ctx, tezosLocation.Address, methodName, signingKey, michelsonInput, options)
+	if err != nil || !res.IsSuccess() {
+		return nil, err
+	}
+
+	var output interface{}
+	if err = json.Unmarshal(res.Body(), &output); err != nil {
+		return nil, err
+	}
+	return output, nil // note UNLIKE fabric this is just `output`, not `output.Result` - but either way the top level of what we return to the end user, is whatever the Connector sent us
 }
 
 func (f *Tezos) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
@@ -419,7 +406,7 @@ func (f *Tezos) recoverFFI(ctx context.Context, parsedMethod interface{}) (*ffty
 	return methodInfo.method, methodInfo.errors, nil
 }
 
-func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName string, signingKey, requestID string, michelsonInput micheline.Parameters, options map[string]interface{}) error {
+func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName, signingKey, requestID string, michelsonInput micheline.Parameters, options map[string]interface{}) error {
 	if t.metrics.IsMetricsEnabled() {
 		t.metrics.BlockchainTransaction(address, methodName)
 	}
@@ -429,16 +416,38 @@ func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName st
 		return err
 	}
 
-	var resErr tezosError
+	var resErr common.BlockchainRESTError
 	res, err := t.client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
 		Post("/")
 	if err != nil || !res.IsSuccess() {
-		return wrapError(ctx, &resErr, res, err)
+		return common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgTezosconnectRESTErr)
 	}
 	return nil
+}
+
+func (t *Tezos) queryContractMethod(ctx context.Context, address, methodName, signingKey string, michelsonInput micheline.Parameters, options map[string]interface{}) (*resty.Response, error) {
+	if t.metrics.IsMetricsEnabled() {
+		t.metrics.BlockchainQuery(address, methodName)
+	}
+	messageType := "Query"
+	body, err := t.buildTezosconnectRequestBody(ctx, messageType, address, methodName, signingKey, "", michelsonInput, options)
+	if err != nil {
+		return nil, err
+	}
+
+	var resErr common.BlockchainRESTError
+	res, err := t.client.R().
+		SetContext(ctx).
+		SetBody(body).
+		SetError(&resErr).
+		Post("/")
+	if err != nil || !res.IsSuccess() {
+		return res, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgTezosconnectRESTErr)
+	}
+	return res, nil
 }
 
 func (t *Tezos) buildTezosconnectRequestBody(ctx context.Context, messageType, address, methodName, signingKey, requestID string, michelsonInput micheline.Parameters, options map[string]interface{}) (map[string]interface{}, error) {
@@ -472,6 +481,41 @@ func (t *Tezos) applyOptions(ctx context.Context, body, options map[string]inter
 		}
 	}
 	return body, nil
+}
+
+func (t *Tezos) prepareRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}) (string, micheline.Parameters, error) {
+	method, _, err := t.recoverFFI(ctx, parsedMethod)
+	if err != nil {
+		return "", micheline.Parameters{}, err
+	}
+
+	// Build the payload schema for the method parameters
+	prefixItems := make([]*PrefixItem, len(method.Params))
+	for i, param := range method.Params {
+		var paramSchema ffiParamSchema
+		if err := json.Unmarshal(param.Schema.Bytes(), &paramSchema); err != nil {
+			return "", micheline.Parameters{}, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, fmt.Sprintf("%s.schema", param.Name))
+		}
+
+		prefixItems[i] = &PrefixItem{
+			Name:    param.Name,
+			Type:    paramSchema.Type,
+			Details: paramSchema.Details,
+		}
+	}
+
+	payloadSchema := &PayloadSchema{
+		Type:        "array",
+		PrefixItems: prefixItems,
+	}
+
+	schemaBytes, _ := json.Marshal(payloadSchema)
+	var processSchemaReq map[string]interface{}
+	_ = json.Unmarshal(schemaBytes, &processSchemaReq)
+
+	michelineInput, err := processArgs(processSchemaReq, input, method.Name)
+
+	return method.Name, michelineInput, err
 }
 
 func (t *Tezos) parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
@@ -583,13 +627,6 @@ func (t *Tezos) handleMessageBatch(ctx context.Context, batchID int64, messages 
 	// Dispatch all the events from this patch that were successfully parsed and routed to namespaces
 	// (could be zero - that's ok)
 	return t.callbacks.DispatchBlockchainEvents(ctx, events)
-}
-
-func wrapError(ctx context.Context, errRes *tezosError, res *resty.Response, err error) error {
-	if errRes != nil && errRes.Error != "" {
-		return i18n.WrapError(ctx, err, coremsgs.MsgTezosconnectRESTErr, errRes.Error)
-	}
-	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTezosconnectRESTErr)
 }
 
 func formatTezosAddress(ctx context.Context, key string) (string, error) {
