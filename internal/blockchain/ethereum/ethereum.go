@@ -42,6 +42,7 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -583,7 +584,15 @@ func (e *Ethereum) buildEthconnectRequestBody(ctx context.Context, messageType, 
 	if len(errors) > 0 {
 		body["errors"] = errors
 	}
-	return e.applyOptions(ctx, body, options)
+	finalBody, err := e.applyOptions(ctx, body, options)
+	if err != nil {
+		return nil, err
+	}
+	if logrus.IsLevelEnabled(logrus.DebugLevel) {
+		jsonBody, _ := json.Marshal(finalBody)
+		log.L(ctx).Debugf("EVMConnectorBody: %s", string(jsonBody))
+	}
+	return finalBody, nil
 }
 
 func (e *Ethereum) applyOptions(ctx context.Context, body, options map[string]interface{}) (map[string]interface{}, error) {
