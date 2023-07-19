@@ -46,6 +46,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/jarcoal/httpmock"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -2627,6 +2628,7 @@ func TestDeployContractError(t *testing.T) {
 }
 
 func TestInvokeContractOK(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
 	e, cancel := newTestEthereum()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
