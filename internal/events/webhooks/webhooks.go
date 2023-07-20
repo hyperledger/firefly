@@ -341,6 +341,10 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		newFFRestyConfig.HTTPTLSHandshakeTimeout = time.Duration(ffd)
 	}
 
+	if options.HTTPOptions.HTTPProxyURL != nil {
+		newFFRestyConfig.ProxyURL = *options.HTTPOptions.HTTPProxyURL
+	}
+
 	if options.TLSConfig != nil {
 		newFFRestyConfig.TLSClientConfig = options.TLSConfig
 	}
