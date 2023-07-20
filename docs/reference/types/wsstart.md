@@ -137,6 +137,7 @@ nav_order: 23
 
 | Field Name | Description | Type |
 |------------|-------------|------|
+| `proxyURL` | HTTP proxy URL to use for outbound requests to the webhook | `string` |
 | `tlsHandshakeTimeout` | The max duration to hold a TLS handshake alive | `string` |
 | `requestTimeout` | The max duration to hold a TLS handshake alive | `string` |
 | `maxIdleConns` | The max number of idle connections to hold pooled | `int` |
