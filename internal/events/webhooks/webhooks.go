@@ -345,6 +345,8 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		newFFRestyConfig.TLSClientConfig = options.TLSConfig
 	}
 
+	newFFRestyConfig.ProxyURL = options.HTTPOptions.HTTPProxyURL
+
 	// NOTE: this is the plugin context, as the context passed through can be terminated as part of a
 	// API call or anything else and we want to use this client later on!!
 	// So these clients should live as long as the plugin exists

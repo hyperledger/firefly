@@ -27749,6 +27749,10 @@ paths:
                               description: The max number of idle connections to hold
                                 pooled
                               type: integer
+                            proxyURL:
+                              description: The max duration to hold a TLS handshake
+                                alive
+                              type: string
                             requestTimeout:
                               description: The max duration to hold a TLS handshake
                                 alive
@@ -28033,6 +28037,9 @@ paths:
                           description: The max number of idle connections to hold
                             pooled
                           type: integer
+                        proxyURL:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
                           type: string
@@ -28299,6 +28306,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -28580,6 +28591,9 @@ paths:
                           description: The max number of idle connections to hold
                             pooled
                           type: integer
+                        proxyURL:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
                           type: string
@@ -28846,6 +28860,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -29189,6 +29207,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -36670,6 +36692,10 @@ paths:
                               description: The max number of idle connections to hold
                                 pooled
                               type: integer
+                            proxyURL:
+                              description: The max duration to hold a TLS handshake
+                                alive
+                              type: string
                             requestTimeout:
                               description: The max duration to hold a TLS handshake
                                 alive
@@ -36947,6 +36973,9 @@ paths:
                           description: The max number of idle connections to hold
                             pooled
                           type: integer
+                        proxyURL:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
                           type: string
@@ -37213,6 +37242,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -37487,6 +37520,9 @@ paths:
                           description: The max number of idle connections to hold
                             pooled
                           type: integer
+                        proxyURL:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
                           type: string
@@ -37753,6 +37789,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -38082,6 +38122,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive

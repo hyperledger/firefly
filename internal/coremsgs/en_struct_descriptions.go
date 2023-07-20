@@ -711,6 +711,7 @@ var (
 	WebhookOptHTTPConnectionTimeout     = ffm("WebhookHTTPOptions.connectionTimeout", "The maximum amount of time that a connection is allowed to remain with no data transmitted.")
 	WebhookOptHTTPTLSHandshakeTimeout   = ffm("WebhookHTTPOptions.tlsHandshakeTimeout", "The max duration to hold a TLS handshake alive")
 	WebhookOptHTTPRequestTimeout        = ffm("WebhookHTTPOptions.requestTimeout", "The max duration to hold a TLS handshake alive")
+	WebhookOptHTTPProxyURL              = ffm("WebhookHTTPOptions.proxyURL", "The max duration to hold a TLS handshake alive")
 
 	// PublishInput field descriptions
 	PublishInputIdempotencyKey = ffm("PublishInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
