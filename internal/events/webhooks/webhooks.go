@@ -341,11 +341,13 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		newFFRestyConfig.HTTPTLSHandshakeTimeout = time.Duration(ffd)
 	}
 
+	if options.HTTPOptions.HTTPProxyURL != nil {
+		newFFRestyConfig.ProxyURL = *options.HTTPOptions.HTTPProxyURL
+	}
+
 	if options.TLSConfig != nil {
 		newFFRestyConfig.TLSClientConfig = options.TLSConfig
 	}
-
-	newFFRestyConfig.ProxyURL = options.HTTPOptions.HTTPProxyURL
 
 	// NOTE: this is the plugin context, as the context passed through can be terminated as part of a
 	// API call or anything else and we want to use this client later on!!

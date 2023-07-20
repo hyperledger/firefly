@@ -255,6 +255,7 @@ func TestValidateOptionsExtraFields(t *testing.T) {
 		MaximumDelay: "2s",
 	}
 
+	proxyURL := "http://myproxy.example.com:8888"
 	opts.HTTPOptions = core.WebhookHTTPOptions{
 		HTTPMaxIdleConns:          2,
 		HTTPTLSHandshakeTimeout:   "2s",
@@ -262,6 +263,7 @@ func TestValidateOptionsExtraFields(t *testing.T) {
 		HTTPIdleConnTimeout:       "2s",
 		HTTPConnectionTimeout:     "2s",
 		HTTPExpectContinueTimeout: "2s",
+		HTTPProxyURL:              &proxyURL,
 	}
 
 	opts.TLSConfig = &tls.Config{}
@@ -283,6 +285,11 @@ func TestValidateOptionsExtraFields(t *testing.T) {
 	assert.Equal(t, transport.TLSHandshakeTimeout, expectedDuration)
 	assert.Equal(t, transport.MaxIdleConns, 2)
 	assert.NotNil(t, transport.TLSClientConfig)
+
+	req := httptest.NewRequest(http.MethodGet, "http://testany.example.com", nil)
+	u, err := transport.Proxy(req)
+	assert.NoError(t, err)
+	assert.Equal(t, "http://myproxy.example.com:8888", u.String())
 }
 
 func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
