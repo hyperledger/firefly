@@ -27750,8 +27750,8 @@ paths:
                                 pooled
                               type: integer
                             proxyURL:
-                              description: The max duration to hold a TLS handshake
-                                alive
+                              description: HTTP proxy URL to use for outbound requests
+                                to the webhook
                               type: string
                             requestTimeout:
                               description: The max duration to hold a TLS handshake
@@ -28038,7 +28038,8 @@ paths:
                             pooled
                           type: integer
                         proxyURL:
-                          description: The max duration to hold a TLS handshake alive
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
                           type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
@@ -28307,8 +28308,8 @@ paths:
                               pooled
                             type: integer
                           proxyURL:
-                            description: The max duration to hold a TLS handshake
-                              alive
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
                             type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
@@ -28592,7 +28593,8 @@ paths:
                             pooled
                           type: integer
                         proxyURL:
-                          description: The max duration to hold a TLS handshake alive
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
                           type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
@@ -28861,8 +28863,8 @@ paths:
                               pooled
                             type: integer
                           proxyURL:
-                            description: The max duration to hold a TLS handshake
-                              alive
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
                             type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
@@ -29208,8 +29210,8 @@ paths:
                               pooled
                             type: integer
                           proxyURL:
-                            description: The max duration to hold a TLS handshake
-                              alive
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
                             type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
@@ -36693,8 +36695,8 @@ paths:
                                 pooled
                               type: integer
                             proxyURL:
-                              description: The max duration to hold a TLS handshake
-                                alive
+                              description: HTTP proxy URL to use for outbound requests
+                                to the webhook
                               type: string
                             requestTimeout:
                               description: The max duration to hold a TLS handshake
@@ -36974,7 +36976,8 @@ paths:
                             pooled
                           type: integer
                         proxyURL:
-                          description: The max duration to hold a TLS handshake alive
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
                           type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
@@ -37243,8 +37246,8 @@ paths:
                               pooled
                             type: integer
                           proxyURL:
-                            description: The max duration to hold a TLS handshake
-                              alive
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
                             type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
@@ -37521,7 +37524,8 @@ paths:
                             pooled
                           type: integer
                         proxyURL:
-                          description: The max duration to hold a TLS handshake alive
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
                           type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
@@ -37790,8 +37794,8 @@ paths:
                               pooled
                             type: integer
                           proxyURL:
-                            description: The max duration to hold a TLS handshake
-                              alive
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
                             type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
@@ -38123,8 +38127,8 @@ paths:
                               pooled
                             type: integer
                           proxyURL:
-                            description: The max duration to hold a TLS handshake
-                              alive
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
                             type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
