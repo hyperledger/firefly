@@ -4519,7 +4519,7 @@
   },"753": {
     "doc": "Subscription",
     "title": "WebhookHTTPOptions",
-    "content": "| Field Name | Description | Type | . | tlsHandshakeTimeout | The max duration to hold a TLS handshake alive | string | . | requestTimeout | The max duration to hold a TLS handshake alive | string | . | maxIdleConns | The max number of idle connections to hold pooled | int | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | string | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted. | string | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | string | . ",
+    "content": "| Field Name | Description | Type | . | proxyURL | HTTP proxy URL to use for outbound requests to the webhook | string | . | tlsHandshakeTimeout | The max duration to hold a TLS handshake alive | string | . | requestTimeout | The max duration to hold a TLS handshake alive | string | . | maxIdleConns | The max number of idle connections to hold pooled | int | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | string | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted. | string | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | string | . ",
     "url": "/firefly/head/reference/types/subscription.html#webhookhttpoptions",
     "relUrl": "/reference/types/subscription.html#webhookhttpoptions"
   },"754": {
@@ -4921,7 +4921,7 @@
   },"820": {
     "doc": "WSStart",
     "title": "WebhookHTTPOptions",
-    "content": "| Field Name | Description | Type | . | tlsHandshakeTimeout | The max duration to hold a TLS handshake alive | string | . | requestTimeout | The max duration to hold a TLS handshake alive | string | . | maxIdleConns | The max number of idle connections to hold pooled | int | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | string | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted. | string | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | string | . ",
+    "content": "| Field Name | Description | Type | . | proxyURL | HTTP proxy URL to use for outbound requests to the webhook | string | . | tlsHandshakeTimeout | The max duration to hold a TLS handshake alive | string | . | requestTimeout | The max duration to hold a TLS handshake alive | string | . | maxIdleConns | The max number of idle connections to hold pooled | int | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | string | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted. | string | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | string | . ",
     "url": "/firefly/head/reference/types/wsstart.html#webhookhttpoptions",
     "relUrl": "/reference/types/wsstart.html#webhookhttpoptions"
   },"821": {
