@@ -40,6 +40,15 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
+const (
+	tezosTxStatusPending string = "Pending"
+)
+
+const (
+	ReceiptTransactionSuccess string = "TransactionSuccess"
+	ReceiptTransactionFailed  string = "TransactionFailed"
+)
+
 type Tezos struct {
 	ctx                  context.Context
 	cancelCtx            context.CancelFunc
@@ -378,8 +387,56 @@ func (t *Tezos) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loca
 }
 
 func (t *Tezos) GetTransactionStatus(ctx context.Context, operation *core.Operation) (interface{}, error) {
-	// TODO: impl
-	return nil, nil
+	txnID := (&core.PreparedOperation{ID: operation.ID, Namespace: operation.Namespace}).NamespacedIDString()
+
+	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
+	client := t.client
+	var resErr common.BlockchainRESTError
+	var statusResponse fftypes.JSONObject
+	res, err := client.R().
+		SetContext(ctx).
+		SetError(&resErr).
+		SetResult(&statusResponse).
+		Get(transactionRequestPath)
+	if err != nil || !res.IsSuccess() {
+		if res.StatusCode() == 404 {
+			return nil, nil
+		}
+		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgTezosconnectRESTErr)
+	}
+
+	receiptInfo := statusResponse.GetObject("receipt")
+	txStatus := statusResponse.GetString("status")
+
+	if txStatus != "" {
+		var replyType string
+		if txStatus == "Succeeded" {
+			replyType = ReceiptTransactionSuccess
+		} else {
+			replyType = ReceiptTransactionFailed
+		}
+		// If the status has changed, mock up blockchain receipt as if we'd received it
+		// as a web socket notification
+		if (operation.Status == core.OpStatusPending || operation.Status == core.OpStatusInitialized) && txStatus != tezosTxStatusPending {
+			receipt := &common.BlockchainReceiptNotification{
+				Headers: common.BlockchainReceiptHeaders{
+					ReceiptID: statusResponse.GetString("id"),
+					ReplyType: replyType,
+				},
+				TxHash:     statusResponse.GetString("transactionHash"),
+				Message:    statusResponse.GetString("errorMessage"),
+				ProtocolID: receiptInfo.GetString("protocolId")}
+			err := common.HandleReceipt(ctx, t, receipt, t.callbacks)
+			if err != nil {
+				log.L(ctx).Warnf("Failed to handle receipt")
+			}
+		}
+	} else {
+		// Don't expect to get here so issue a warning
+		log.L(ctx).Warnf("Transaction status didn't include txStatus information")
+	}
+
+	return statusResponse, nil
 }
 
 func (t *Tezos) afterConnect(ctx context.Context, w wsclient.WSClient) error {
