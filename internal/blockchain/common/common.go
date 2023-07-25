@@ -334,7 +334,7 @@ func buildBatchPin(ctx context.Context, event *blockchain.Event, params *BatchPi
 func GetNamespaceFromSubName(subName string) string {
 	var parts = strings.Split(subName, "-")
 	// Subscription names post version 1.1 are in the format `ff-sub-<namespace>-<listener ID>`
-	if len(parts) != 4 {
+	if len(parts) < 4 {
 		// Assume older subscription and return empty string
 		return ""
 	}
