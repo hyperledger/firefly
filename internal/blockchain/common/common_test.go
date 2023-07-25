@@ -293,8 +293,14 @@ func TestBuildBatchPinErrors(t *testing.T) {
 }
 
 func TestGetNamespaceFromSubName(t *testing.T) {
-	ns := GetNamespaceFromSubName("ff-sub-ns1-123")
+	ns := GetNamespaceFromSubName("ff-sub-ns1-03071072-079b-4047-b192-a07186fc9db8")
 	assert.Equal(t, "ns1", ns)
+
+	ns = GetNamespaceFromSubName("ff-sub-03071072-079b-4047-b192-a07186fc9db8")
+	assert.Equal(t, "", ns)
+
+	ns = GetNamespaceFromSubName("ff-sub-ns1-123")
+	assert.Equal(t, "", ns)
 
 	ns = GetNamespaceFromSubName("BAD")
 	assert.Equal(t, "", ns)
