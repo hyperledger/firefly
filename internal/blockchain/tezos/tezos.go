@@ -80,6 +80,23 @@ type Location struct {
 	Address string `json:"address"`
 }
 
+type ListenerCheckpoint struct {
+	Block                   int64 `json:"block"`
+	TransactionBatchIndex   int64 `json:"transactionBatchIndex"`
+	TransactionIndex        int64 `json:"transactionIndex"`
+	MetaInternalResultIndex int64 `json:"metaInternalResultIndex"`
+}
+
+type ListenerStatus struct {
+	Checkpoint ListenerCheckpoint `json:"checkpoint"`
+	Catchup    bool               `json:"catchup"`
+}
+
+type subscriptionCheckpoint struct {
+	Checkpoint ListenerCheckpoint `json:"checkpoint,omitempty"`
+	Catchup    bool               `json:"catchup,omitempty"`
+}
+
 type TezosconnectMessageHeaders struct {
 	Type string `json:"type,omitempty"`
 	ID   string `json:"id,omitempty"`
@@ -341,8 +358,25 @@ func (t *Tezos) NormalizeContractLocation(ctx context.Context, ntype blockchain.
 	return t.encodeContractLocation(ctx, parsed)
 }
 
-func (e *Tezos) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
-	// TODO: impl
+func (t *Tezos) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
+	var location *Location
+	if listener.Location != nil {
+		location, err = t.parseContractLocation(ctx, listener.Location)
+		if err != nil {
+			return err
+		}
+	}
+
+	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
+	firstEvent := string(core.SubOptsFirstEventNewest)
+	if listener.Options != nil {
+		firstEvent = listener.Options.FirstEvent
+	}
+	result, err := t.streams.createSubscription(ctx, location, t.streamID, subName, listener.Event.Name, firstEvent)
+	if err != nil {
+		return err
+	}
+	listener.BackendID = result.ID
 	return nil
 }
 
@@ -351,8 +385,22 @@ func (t *Tezos) DeleteContractListener(ctx context.Context, subscription *core.C
 }
 
 func (t *Tezos) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (found bool, status interface{}, err error) {
-	// TODO: impl
-	return false, nil, nil
+	sub, err := t.streams.getSubscription(ctx, subID, okNotFound)
+	if err != nil || sub == nil {
+		return false, nil, err
+	}
+
+	checkpoint := &ListenerStatus{
+		Catchup: sub.Catchup,
+		Checkpoint: ListenerCheckpoint{
+			Block:                   sub.Checkpoint.Block,
+			TransactionBatchIndex:   sub.Checkpoint.TransactionBatchIndex,
+			TransactionIndex:        sub.Checkpoint.TransactionIndex,
+			MetaInternalResultIndex: sub.Checkpoint.MetaInternalResultIndex,
+		},
+	}
+
+	return true, checkpoint, nil
 }
 
 func (t *Tezos) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
@@ -373,12 +421,10 @@ func (t *Tezos) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIG
 	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
 }
 
-// TODO: should return string instead of int
-// Mainnet: NetXdQprcVkpaWU
-// Delphi Testnet: NetXm8tYqnMWky1
-// Edo Testnet: NetXjD3HPJJjmcd
 func (t *Tezos) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (version int, err error) {
-	// TODO: impl
+	// Part of the FIR-12. https://github.com/hyperledger/firefly-fir/pull/12
+	// Not actual for the Tezos as it's batch pin contract was after the proposal.
+	// TODO: get the network version from the batch pin contract
 	return 2, nil
 }
 

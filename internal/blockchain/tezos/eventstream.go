@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type streamManager struct {
@@ -45,14 +46,17 @@ type eventStream struct {
 }
 
 type subscription struct {
-	ID                 string `json:"id"`
-	Name               string `json:"name,omitempty"`
-	Stream             string `json:"stream"`
-	FromBlock          string `json:"fromBlock"`
-	TezosCompatAddress string `json:"address,omitempty"`
-	// EthCompatEvent   *abi.Entry        `json:"event,omitempty"`
-	// Filters          []fftypes.JSONAny `json:"filters"`
-	// subscriptionCheckpoint
+	ID                 string      `json:"id"`
+	Name               string      `json:"name,omitempty"`
+	Stream             string      `json:"stream"`
+	FromBlock          string      `json:"fromBlock"`
+	TezosCompatAddress string      `json:"address,omitempty"`
+	Filter             eventFilter `json:"filter"`
+	subscriptionCheckpoint
+}
+
+type eventFilter struct {
+	EventFilter string `json:"eventFilter"`
 }
 
 func newStreamManager(client *resty.Client, cache cache.CInterface, batchSize, batchTimeout uint) *streamManager {
@@ -169,35 +173,37 @@ func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (
 	return sub.Name, nil
 }
 
-// func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event, fromBlock string) (*subscription, error) {
-// 	// Map FireFly "firstEvent" values to Tezos "fromBlock" values
-// 	switch fromBlock {
-// 	case string(core.SubOptsFirstEventOldest):
-// 		fromBlock = "0"
-// 	case string(core.SubOptsFirstEventNewest):
-// 		fromBlock = "latest"
-// 	}
-// 	sub := subscription{
-// 		Name:      name,
-// 		Stream:    stream,
-// 		FromBlock: fromBlock,
-// 		// EthCompatEvent: abi,
-// 	}
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event, firstEvent string) (*subscription, error) {
+	// Map FireFly "firstEvent" values to Tezos "fromBlock" values
+	switch firstEvent {
+	case string(core.SubOptsFirstEventOldest):
+		firstEvent = "0"
+	case string(core.SubOptsFirstEventNewest):
+		firstEvent = "latest"
+	}
+	sub := subscription{
+		Name:   name,
+		Stream: stream,
+		Filter: eventFilter{
+			EventFilter: event,
+		},
+		FromBlock: firstEvent,
+	}
 
-// 	if location != nil {
-// 		sub.TezosCompatAddress = location.Address
-// 	}
+	if location != nil {
+		sub.TezosCompatAddress = location.Address
+	}
 
-// 	res, err := s.client.R().
-// 		SetContext(ctx).
-// 		SetBody(&sub).
-// 		SetResult(&sub).
-// 		Post("/subscriptions")
-// 	if err != nil || !res.IsSuccess() {
-// 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTezosconnectRESTErr)
-// 	}
-// 	return &sub, nil
-// }
+	res, err := s.client.R().
+		SetContext(ctx).
+		SetBody(&sub).
+		SetResult(&sub).
+		Post("/subscriptions")
+	if err != nil || !res.IsSuccess() {
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTezosconnectRESTErr)
+	}
+	return &sub, nil
+}
 
 func (s *streamManager) deleteSubscription(ctx context.Context, subID string, okNotFound bool) error {
 	res, err := s.client.R().
@@ -211,7 +217,3 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string, ok
 	}
 	return nil
 }
-
-// func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, instancePath, fromBlock, stream, event string) (sub *subscription, err error) {
-// 	return nil, nil
-// }
