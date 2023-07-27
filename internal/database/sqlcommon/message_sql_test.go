@@ -109,7 +109,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Created:   fftypes.Now(),
 			Namespace: "ns12345",
 			Topics:    []string{"topic1", "topic2"},
-			Tag:       "tag1",
+			Tag:       "tag_1",
 			Group:     gid,
 			DataHash:  fftypes.NewRandB32(),
 			TxType:    core.TransactionTypeBatchPin,
@@ -236,6 +236,17 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	msgJson, _ = json.Marshal(&msgUpdated)
 	msgReadJson, _ = json.Marshal(msgRead)
 	assert.Equal(t, string(msgJson), string(msgReadJson))
+
+	// Query with a complex "like" filter
+	filter = fb.And(
+		fb.IStartsWith("tag", "TAG_"),
+		fb.EndsWith("tag", "_1"),
+		fb.NotContains("tag", "%tag%"),
+	)
+	msgs, _, err = s.GetMessages(ctx, "ns12345", filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(msgs))
+	assert.Equal(t, *msgID, *msgs[0].Header.ID)
 
 	s.callbacks.AssertExpectations(t)
 }
