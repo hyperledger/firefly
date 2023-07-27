@@ -139,7 +139,7 @@ func (p *whPayload) firstData() fftypes.JSONObject {
 }
 
 func (wh *WebHooks) buildPayload(ctx context.Context, sub *core.Subscription, event *core.CombinedEventDataDelivery) *whPayload {
-
+	log.L(wh.ctx).Debugf("Webhook-> %s event %s on subscription %s", sub.Options.URL, event.Event.ID, sub.ID)
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 	options := sub.Options.TransportOptions()
 	p := &whPayload{
@@ -391,10 +391,9 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 		req.r.SetBody(requestBody)
 	}
 
-	// log.L(wh.ctx).Debugf("Webhook-> %s %s event %s on subscription %s", req.method, req.url, event.ID, sub.ID)
 	resp, err := req.r.Execute(req.method, req.url)
 	if err != nil {
-		// log.L(ctx).Errorf("Webhook<- %s %s event %s on subscription %s failed: %s", req.method, req.url, event.ID, sub.ID, err)
+		log.L(ctx).Errorf("Webhook<- %s %s on subscription %s failed: %s", req.method, req.url, sub.ID, err)
 		return nil, nil, err
 	}
 	defer func() { _ = resp.RawBody().Close() }()
@@ -403,7 +402,7 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 		Status:  resp.StatusCode(),
 		Headers: fftypes.JSONObject{},
 	}
-	// log.L(wh.ctx).Infof("Webhook<- %s %s event %s on subscription %s returned %d", req.method, req.url, event.ID, sub.ID, res.Status)
+	log.L(wh.ctx).Infof("Webhook<- %s %s on subscription %s returned %d", req.method, req.url, sub.ID, res.Status)
 	header := resp.Header()
 	for h := range header {
 		res.Headers[h] = header.Get(h)
