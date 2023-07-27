@@ -2387,7 +2387,7 @@ func TestHandleMessageContractEventNoNamespaceHandlers(t *testing.T) {
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sub2",
 		httpmock.NewJsonResponderOrPanic(200, subscription{
-			ID: "sub2", Stream: "es12345", Name: "ff-sub-ns1-1132312312312",
+			ID: "sub2", Stream: "es12345", Name: "ff-sub-ns1-58113723-0cc3-411f-aa1b-948eca83b9cd",
 		}))
 
 	e.SetHandler("ns2", em)

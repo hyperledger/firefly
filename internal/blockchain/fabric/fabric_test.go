@@ -2187,7 +2187,7 @@ func TestHandleMessageContractEventNoNamespacedHandlers(t *testing.T) {
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sb-cb37cc07-e873-4f58-44ab-55add6bba320",
 		httpmock.NewJsonResponderOrPanic(200, subscription{
-			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "ff-sub-ns1-11232312312",
+			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "ff-sub-ns1-58113723-0cc3-411f-aa1b-948eca83b9cd",
 		}))
 
 	e.streams = newTestStreamManager(e.client, e.signer)
