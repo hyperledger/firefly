@@ -18,10 +18,12 @@ package tezos
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -46,12 +48,13 @@ type eventStream struct {
 }
 
 type subscription struct {
-	ID                 string      `json:"id"`
-	Name               string      `json:"name,omitempty"`
-	Stream             string      `json:"stream"`
-	FromBlock          string      `json:"fromBlock"`
-	TezosCompatAddress string      `json:"address,omitempty"`
-	Filter             eventFilter `json:"filter"`
+	ID                 string            `json:"id"`
+	Name               string            `json:"name,omitempty"`
+	Stream             string            `json:"stream"`
+	FromBlock          string            `json:"fromBlock"`
+	TezosCompatAddress string            `json:"address,omitempty"`
+	Filter             eventFilter       `json:"filter"`
+	Filters            []fftypes.JSONAny `json:"filters"`
 	subscriptionCheckpoint
 }
 
@@ -181,12 +184,18 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 	case string(core.SubOptsFirstEventNewest):
 		firstEvent = "latest"
 	}
+
+	filters := make([]fftypes.JSONAny, 0)
+	filter := eventFilter{
+		EventFilter: event,
+	}
+	filterJson, _ := json.Marshal(filter)
+	filters = append(filters, fftypes.JSONAny(filterJson))
+
 	sub := subscription{
-		Name:   name,
-		Stream: stream,
-		Filter: eventFilter{
-			EventFilter: event,
-		},
+		Name:      name,
+		Stream:    stream,
+		Filters:   filters,
 		FromBlock: firstEvent,
 	}
 
