@@ -80,6 +80,8 @@ type Location struct {
 	Address string `json:"address"`
 }
 
+var batchPinEvent = "BatchPin"
+
 type ListenerCheckpoint struct {
 	Block                   int64 `json:"block"`
 	TransactionBatchIndex   int64 `json:"transactionBatchIndex"`
@@ -254,8 +256,23 @@ func (t *Tezos) Capabilities() *blockchain.Capabilities {
 }
 
 func (t *Tezos) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
-	// TODO: impl
-	return "", nil
+	tezosLocation, err := t.parseContractLocation(ctx, contract.Location)
+	if err != nil {
+		return "", err
+	}
+
+	version, err := t.GetNetworkVersion(ctx, contract.Location)
+	if err != nil {
+		return "", err
+	}
+
+	sub, err := t.streams.ensureFireFlySubscription(ctx, namespace.Name, version, tezosLocation.Address, contract.FirstEvent, t.streamID, batchPinEvent)
+	if err != nil {
+		return "", err
+	}
+
+	t.subs.AddSubscription(ctx, namespace, version, sub.ID, nil)
+	return sub.ID, nil
 }
 
 func (t *Tezos) RemoveFireflySubscription(ctx context.Context, subID string) {

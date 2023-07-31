@@ -18,12 +18,15 @@ package tezos
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -225,4 +228,33 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string, ok
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTezosconnectRESTErr)
 	}
 	return nil
+}
+
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, instancePath, firstEvent, stream, event string) (sub *subscription, err error) {
+	// Include a hash of the instance path in the subscription, so if we ever point at a different
+	// contract configuration, we re-subscribe from block 0.
+	// We don't need full strength hashing, so just use the first 16 chars for readability.
+	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(instancePath)))[0:16]
+
+	existingSubs, err := s.getSubscriptions(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	v2Name := fmt.Sprintf("%s_%s_%s", namespace, event, instanceUniqueHash)
+
+	for _, s := range existingSubs {
+		if s.Stream == stream {
+			if s.Name == v2Name {
+				return s, nil
+			}
+		}
+	}
+
+	location := &Location{Address: instancePath}
+	if sub, err = s.createSubscription(ctx, location, stream, v2Name, event, firstEvent); err != nil {
+		return nil, err
+	}
+	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)
+	return sub, nil
 }
