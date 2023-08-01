@@ -164,12 +164,14 @@ func TestPersistBlockchainEventDuplicate(t *testing.T) {
 		},
 		Listener: fftypes.NewUUID(),
 	}
+	existingID := fftypes.NewUUID()
 
-	em.mth.On("InsertNewBlockchainEvents", mock.Anything, []*core.BlockchainEvent{ev}).
-		Return([]*core.BlockchainEvent{ /* duplicate, so empty insert array */ }, nil)
+	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, ev).
+		Return(&core.BlockchainEvent{ID: existingID}, nil)
 
 	err := em.maybePersistBlockchainEvent(em.ctx, ev, nil)
 	assert.NoError(t, err)
+	assert.Equal(t, existingID, ev.ID)
 
 }
 
