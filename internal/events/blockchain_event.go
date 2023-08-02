@@ -72,11 +72,14 @@ func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, 
 }
 
 func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent, listener *core.ContractListener) error {
-	inserted, err := em.txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
+	existing, err := em.txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
 	if err != nil {
 		return err
 	}
-	if len(inserted) < 1 {
+	if existing != nil {
+		log.L(ctx).Debugf("Ignoring duplicate blockchain event %s", chainEvent.ProtocolID)
+		// Return the ID of the existing event
+		chainEvent.ID = existing.ID
 		return nil
 	}
 	topic := em.getTopicForChainListener(listener)

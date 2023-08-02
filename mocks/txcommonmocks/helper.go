@@ -136,6 +136,32 @@ func (_m *Helper) InsertNewBlockchainEvents(ctx context.Context, events []*core.
 	return r0, r1
 }
 
+// InsertOrGetBlockchainEvent provides a mock function with given fields: ctx, event
+func (_m *Helper) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (*core.BlockchainEvent, error) {
+	ret := _m.Called(ctx, event)
+
+	var r0 *core.BlockchainEvent
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BlockchainEvent) (*core.BlockchainEvent, error)); ok {
+		return rf(ctx, event)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BlockchainEvent) *core.BlockchainEvent); ok {
+		r0 = rf(ctx, event)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.BlockchainEvent)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *core.BlockchainEvent) error); ok {
+		r1 = rf(ctx, event)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PersistTransaction provides a mock function with given fields: ctx, id, txType, blockchainTXID
 func (_m *Helper) PersistTransaction(ctx context.Context, id *fftypes.UUID, txType fftypes.FFEnum, blockchainTXID string) (bool, error) {
 	ret := _m.Called(ctx, id, txType, blockchainTXID)
