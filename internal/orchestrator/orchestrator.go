@@ -249,6 +249,10 @@ func (or *orchestrator) Init() (err error) {
 func Purge(ctx context.Context, ns *core.Namespace, plugins *Plugins, dxNodeName string) {
 	// Clear all handlers on all plugins, as this namespace is never coming back
 	setHandlers(ctx, plugins, ns, dxNodeName, nil, nil)
+	err := plugins.Blockchain.Plugin.StopNamespace(ctx, ns.Name)
+	if err != nil {
+		log.L(ctx).Errorf("Error purging namespace '%s' from blockchain plugin '%s': %s", ns.Name, plugins.Blockchain.Name, err.Error())
+	}
 }
 
 func (or *orchestrator) database() database.Plugin {
@@ -552,6 +556,11 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
+	err = or.blockchain().StartNamespace(ctx, or.namespace.Name)
+	if err != nil {
+		return err
+	}
+
 	if or.data == nil {
 		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.dataexchange(), or.cacheManager)
 		if err != nil {

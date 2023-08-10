@@ -31,7 +31,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/cache"
@@ -47,27 +46,26 @@ const (
 )
 
 type Fabric struct {
-	ctx             context.Context
-	cancelCtx       context.CancelFunc
-	topic           string
-	defaultChannel  string
-	signer          string
-	prefixShort     string
-	prefixLong      string
-	capabilities    *blockchain.Capabilities
-	callbacks       common.BlockchainCallbacks
-	client          *resty.Client
-	streams         *streamManager
-	streamID        string
-	idCache         map[string]*fabIdentity
-	wsconn          wsclient.WSClient
-	closed          chan struct{}
-	metrics         metrics.Manager
-	fabconnectConf  config.Section
-	subs            common.FireflySubscriptions
-	cache           cache.CInterface
-	backgroundRetry *retry.Retry
-	backgroundStart bool
+	ctx            context.Context
+	cancelCtx      context.CancelFunc
+	pluginTopic    string
+	defaultChannel string
+	signer         string
+	prefixShort    string
+	prefixLong     string
+	capabilities   *blockchain.Capabilities
+	callbacks      common.BlockchainCallbacks
+	client         *resty.Client
+	streams        *streamManager
+	streamID       map[string]string
+	idCache        map[string]*fabIdentity
+	wsconn         map[string]wsclient.WSClient
+	wsConfig       *wsclient.WSConfig
+	closed         map[string]chan struct{}
+	metrics        metrics.Manager
+	fabconnectConf config.Section
+	subs           common.FireflySubscriptions
+	cache          cache.CInterface
 }
 
 type eventStreamWebsocket struct {
@@ -205,7 +203,7 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
 	}
 
-	wsConfig, err := wsclient.GenerateConfig(ctx, fabconnectConf)
+	f.wsConfig, err = wsclient.GenerateConfig(ctx, fabconnectConf)
 	if err == nil {
 		f.client, err = ffresty.New(f.ctx, fabconnectConf)
 	}
@@ -217,21 +215,17 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 	f.defaultChannel = fabconnectConf.GetString(FabconnectConfigDefaultChannel)
 	// the org identity is guaranteed to be configured by the core
 	f.signer = fabconnectConf.GetString(FabconnectConfigSigner)
-	f.topic = fabconnectConf.GetString(FabconnectConfigTopic)
-	if f.topic == "" {
+	f.pluginTopic = fabconnectConf.GetString(FabconnectConfigTopic)
+	if f.pluginTopic == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.fabric.fabconnect")
 	}
 	f.prefixShort = fabconnectConf.GetString(FabconnectPrefixShort)
 	f.prefixLong = fabconnectConf.GetString(FabconnectPrefixLong)
 
-	if wsConfig.WSKeyPath == "" {
-		wsConfig.WSKeyPath = "/ws"
+	if f.wsConfig.WSKeyPath == "" {
+		f.wsConfig.WSKeyPath = "/ws"
 	}
 
-	f.wsconn, err = wsclient.New(f.ctx, wsConfig, nil, f.afterConnect)
-	if err != nil {
-		return err
-	}
 	cache, err := cacheManager.GetCache(
 		cache.NewCacheConfig(
 			ctx,
@@ -245,28 +239,68 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 	}
 	f.cache = cache
 
+	f.streamID = make(map[string]string)
+	f.closed = make(map[string]chan struct{})
+	f.wsconn = make(map[string]wsclient.WSClient)
 	f.streams = newStreamManager(f.client, f.signer, f.cache, f.fabconnectConf.GetUint(FabconnectConfigBatchSize), uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds()))
 
-	f.backgroundStart = f.fabconnectConf.GetBool(FabconnectBackgroundStart)
+	return nil
+}
 
-	if f.backgroundStart {
-		f.backgroundRetry = &retry.Retry{
-			InitialDelay: f.fabconnectConf.GetDuration(FabconnectBackgroundStartInitialDelay),
-			MaximumDelay: f.fabconnectConf.GetDuration(FabconnectBackgroundStartMaxDelay),
-			Factor:       f.fabconnectConf.GetFloat64(FabconnectBackgroundStartFactor),
+func (f *Fabric) getTopic(namespace string) string {
+	return fmt.Sprintf("%s/%s", f.pluginTopic, namespace)
+}
+
+func (f *Fabric) StartNamespace(ctx context.Context, namespace string) (err error) {
+	log.L(f.ctx).Debugf("Starting namespace: %s", namespace)
+	topic := f.getTopic(namespace)
+
+	f.wsconn[namespace], err = wsclient.New(ctx, f.wsConfig, nil, func(ctx context.Context, w wsclient.WSClient) error {
+		// Send a subscribe to our topic after each connect/reconnect
+		b, _ := json.Marshal(&fabWSCommandPayload{
+			Type:  "listen",
+			Topic: topic,
+		})
+		err := w.Send(ctx, b)
+		if err == nil {
+			b, _ = json.Marshal(&fabWSCommandPayload{
+				Type: "listenreplies",
+			})
+			err = w.Send(ctx, b)
 		}
-		return nil
-	}
-
-	stream, err := f.streams.ensureEventStream(f.ctx, f.topic)
+		return err
+	})
 	if err != nil {
 		return err
 	}
-	f.streamID = stream.ID
-	log.L(f.ctx).Infof("Event stream: %s", f.streamID)
+	// Otherwise, make sure that our event stream is in place
+	stream, err := f.streams.ensureEventStream(ctx, topic)
+	if err != nil {
+		return err
+	}
+	log.L(f.ctx).Infof("Event stream: %s (topic=%s)", stream.ID, topic)
+	f.streamID[namespace] = stream.ID
 
-	f.closed = make(chan struct{})
-	go f.eventLoop()
+	err = f.wsconn[namespace].Connect()
+	if err != nil {
+		return err
+	}
+
+	f.closed[namespace] = make(chan struct{})
+
+	go f.eventLoop(namespace)
+
+	return nil
+}
+
+func (f *Fabric) StopNamespace(ctx context.Context, namespace string) (err error) {
+	wsconn, ok := f.wsconn[namespace]
+	if ok {
+		wsconn.Close()
+	}
+	delete(f.wsconn, namespace)
+	delete(f.streamID, namespace)
+	delete(f.closed, namespace)
 
 	return nil
 }
@@ -279,54 +313,8 @@ func (f *Fabric) SetOperationHandler(namespace string, handler core.OperationCal
 	f.callbacks.SetOperationalHandler(namespace, handler)
 }
 
-func (f *Fabric) backgroundStartLoop() {
-	_ = f.backgroundRetry.Do(f.ctx, fmt.Sprintf("fabric connector %s", f.Name()), func(attempt int) (retry bool, err error) {
-		stream, err := f.streams.ensureEventStream(f.ctx, f.topic)
-		if err != nil {
-			return true, err
-		}
-
-		f.streamID = stream.ID
-		log.L(f.ctx).Infof("Event stream: %s (topic=%s)", f.streamID, f.topic)
-
-		err = f.wsconn.Connect()
-		if err != nil {
-			return true, err
-		}
-
-		f.closed = make(chan struct{})
-		go f.eventLoop()
-
-		return false, nil
-	})
-}
-
-func (f *Fabric) Start() (err error) {
-	if f.backgroundStart {
-		go f.backgroundStartLoop()
-		return nil
-	}
-	return f.wsconn.Connect()
-}
-
 func (f *Fabric) Capabilities() *blockchain.Capabilities {
 	return f.capabilities
-}
-
-func (f *Fabric) afterConnect(ctx context.Context, w wsclient.WSClient) error {
-	// Send a subscribe to our topic after each connect/reconnect
-	b, _ := json.Marshal(&fabWSCommandPayload{
-		Type:  "listen",
-		Topic: f.topic,
-	})
-	err := w.Send(ctx, b)
-	if err == nil {
-		b, _ = json.Marshal(&fabWSCommandPayload{
-			Type: "listenreplies",
-		})
-		err = w.Send(ctx, b)
-	}
-	return err
 }
 
 func decodeJSONPayload(ctx context.Context, payloadString string) *fftypes.JSONObject {
@@ -445,7 +433,7 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Nam
 		fabricOnChainLocation.Chaincode = ""
 	}
 
-	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, f.streamID, batchPinEvent)
+	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, f.streamID[namespace.Name], batchPinEvent)
 	if err != nil {
 		return "", err
 	}
@@ -508,9 +496,11 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 	return f.callbacks.DispatchBlockchainEvents(ctx, events)
 }
 
-func (f *Fabric) eventLoop() {
-	defer f.wsconn.Close()
-	defer close(f.closed)
+func (f *Fabric) eventLoop(namespace string) {
+	topic := f.getTopic(namespace)
+	wsconn := f.wsconn[namespace]
+	defer wsconn.Close()
+	defer close(f.closed[namespace])
 	l := log.L(f.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(f.ctx, l)
 	for {
@@ -518,7 +508,7 @@ func (f *Fabric) eventLoop() {
 		case <-ctx.Done():
 			l.Debugf("Event loop exiting (context cancelled)")
 			return
-		case msgBytes, ok := <-f.wsconn.Receive():
+		case msgBytes, ok := <-wsconn.Receive():
 			if !ok {
 				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
 				f.cancelCtx()
@@ -536,12 +526,12 @@ func (f *Fabric) eventLoop() {
 				err = f.handleMessageBatch(ctx, msgTyped)
 				var ackOrNack []byte
 				if err == nil {
-					ackOrNack, _ = json.Marshal(map[string]string{"type": "ack", "topic": f.topic})
+					ackOrNack, _ = json.Marshal(map[string]string{"type": "ack", "topic": topic})
 				} else {
 					log.L(ctx).Errorf("Rejecting batch due error: %s", err)
-					ackOrNack, _ = json.Marshal(map[string]string{"type": "error", "topic": f.topic, "message": err.Error()})
+					ackOrNack, _ = json.Marshal(map[string]string{"type": "error", "topic": topic, "message": err.Error()})
 				}
-				err = f.wsconn.Send(ctx, ackOrNack)
+				err = wsconn.Send(ctx, ackOrNack)
 			case map[string]interface{}:
 				var receipt common.BlockchainReceiptNotification
 				_ = json.Unmarshal(msgBytes, &receipt)
@@ -925,13 +915,14 @@ func encodeContractLocation(ctx context.Context, ntype blockchain.NormalizeType,
 }
 
 func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListener) error {
+	namespace := listener.Namespace
 	location, err := parseContractLocation(ctx, listener.Location)
 	if err != nil {
 		return err
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
-	result, err := f.streams.createSubscription(ctx, location, f.streamID, subName, listener.Event.Name, listener.Options.FirstEvent)
+	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, listener.Event.Name, listener.Options.FirstEvent)
 	if err != nil {
 		return err
 	}

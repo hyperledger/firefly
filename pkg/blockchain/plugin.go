@@ -45,6 +45,12 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section, metrics metrics.Manager, cacheManager cache.Manager) error
 
+	// StartNamespace starts a specific namespace within the plugin
+	StartNamespace(ctx context.Context, namespace string) error
+
+	// StopNamespace removes a namespace from use within the plugin
+	StopNamespace(ctx context.Context, namespace string) error
+
 	// SetHandler registers a handler to receive callbacks
 	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace
 	SetHandler(namespace string, handler Callbacks)
@@ -52,9 +58,6 @@ type Plugin interface {
 	// SetOperationHandler registers a handler to receive async operation status
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
 	SetOperationHandler(namespace string, handler core.OperationCallbacks)
-
-	// Blockchain interface must not deliver any events until start is called
-	Start() error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities

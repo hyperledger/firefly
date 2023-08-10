@@ -410,10 +410,6 @@ func (nm *namespaceManager) startNamespacesAndPlugins(namespacesToStart map[stri
 	}
 	for _, plugin := range pluginsToStart {
 		switch plugin.category {
-		case pluginCategoryBlockchain:
-			if err := plugin.blockchain.Start(); err != nil {
-				return err
-			}
 		case pluginCategoryDataexchange:
 			if err := plugin.dataexchange.Start(); err != nil {
 				return err
