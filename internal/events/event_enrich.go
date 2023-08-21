@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -110,7 +110,13 @@ func (em *eventEnricher) enrichEvent(ctx context.Context, event *core.Event) (*c
 			return nil, err
 		}
 		e.TokenTransfer = transfer
-	case core.EventTypeApprovalOpFailed, core.EventTypeTransferOpFailed, core.EventTypeBlockchainInvokeOpFailed, core.EventTypePoolOpFailed, core.EventTypeBlockchainInvokeOpSucceeded:
+	case core.EventTypeApprovalOpFailed,
+		core.EventTypeTransferOpFailed,
+		core.EventTypePoolOpFailed,
+		core.EventTypeBlockchainInvokeOpFailed,
+		core.EventTypeBlockchainInvokeOpSucceeded,
+		core.EventTypeBlockchainContractDeployOpFailed,
+		core.EventTypeBlockchainContractDeployOpSucceeded:
 		operation, err := em.operations.GetOperationByIDCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
