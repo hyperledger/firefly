@@ -708,6 +708,7 @@ func (cm *contractManager) validateFFIError(ctx context.Context, errorDef *fftyp
 		if err != nil {
 			return "", err
 		}
+		cacheKeyBuff.WriteString(param.Name)
 		cacheKeyBuff.WriteString(paramCacheKey)
 	}
 	return cacheKeyBuff.String(), nil
