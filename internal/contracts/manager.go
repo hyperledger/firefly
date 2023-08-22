@@ -650,6 +650,8 @@ func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftype
 			return nil, nil, err
 		}
 		paramSchemas[param.Name] = schema
+		// The input parsing is dependent on the parameter name, so it's important those are included in the hash
+		paramUniqueHash.Write([]byte(param.Name))
 		paramUniqueHash.Write([]byte(paramSchemaHash))
 	}
 	for _, param := range method.Returns {
@@ -657,6 +659,7 @@ func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftype
 		if err != nil {
 			return nil, nil, err
 		}
+		paramUniqueHash.Write([]byte(param.Name))
 		paramUniqueHash.Write([]byte(returnHash))
 	}
 	return paramUniqueHash, paramSchemas, nil
@@ -705,6 +708,7 @@ func (cm *contractManager) validateFFIError(ctx context.Context, errorDef *fftyp
 		if err != nil {
 			return "", err
 		}
+		cacheKeyBuff.WriteString(param.Name)
 		cacheKeyBuff.WriteString(paramCacheKey)
 	}
 	return cacheKeyBuff.String(), nil

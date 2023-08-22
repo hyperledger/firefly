@@ -18,6 +18,8 @@ package contracts
 
 import (
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -3739,4 +3741,55 @@ func TestResolveInvokeContractRequestCache(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mom.AssertExpectations(t)
 	mbi.AssertExpectations(t)
+}
+
+func TestEnsureParamNamesIncludedInCacheKeys(t *testing.T) {
+	method1 := `{
+        "name": "myFunction",
+        "params": [
+            {
+                "name": "param_name_1",
+                "schema": {
+                    "details": {
+                        "internalType": "address",
+                        "type": "address"
+                    },
+                    "type": "string"
+                }
+            }
+        ],
+        "returns": []
+    }`
+	var method1FFI *fftypes.FFIMethod
+	err := json.Unmarshal([]byte(method1), &method1FFI)
+	assert.NoError(t, err)
+
+	method2 := `{
+        "name": "myFunction",
+        "params": [
+            {
+                "name": "param_name_2",
+                "schema": {
+                    "details": {
+                        "internalType": "address",
+                        "type": "address"
+                    },
+                    "type": "string"
+                }
+            }
+        ],
+        "returns": []
+    }`
+	var method2FFI *fftypes.FFIMethod
+	err = json.Unmarshal([]byte(method2), &method2FFI)
+	assert.NoError(t, err)
+
+	cm := newTestContractManager()
+	paramUniqueHash1, _, err := cm.validateFFIMethod(context.Background(), method1FFI)
+	assert.NoError(t, err)
+	paramUniqueHash2, _, err := cm.validateFFIMethod(context.Background(), method2FFI)
+	assert.NoError(t, err)
+
+	assert.NotEqual(t, hex.EncodeToString(paramUniqueHash1.Sum(nil)), hex.EncodeToString(paramUniqueHash2.Sum(nil)))
+
 }
