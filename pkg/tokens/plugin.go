@@ -43,8 +43,11 @@ type Plugin interface {
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
 	SetOperationHandler(namespace string, handler core.OperationCallbacks)
 
-	// Token interface must not deliver any events until start is called
-	Start() error
+	// StartNamespace starts a specific namespace within the plugin
+	StartNamespace(ctx context.Context, namespace string) error
+
+	// StopNamespace removes a namespace from use within the plugin
+	StopNamespace(ctx context.Context, namespace string) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities

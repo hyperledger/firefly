@@ -409,13 +409,8 @@ func (nm *namespaceManager) startNamespacesAndPlugins(namespacesToStart map[stri
 		go nm.namespaceStarter(ns)
 	}
 	for _, plugin := range pluginsToStart {
-		switch plugin.category {
-		case pluginCategoryDataexchange:
+		if plugin.category == pluginCategoryDataexchange {
 			if err := plugin.dataexchange.Start(); err != nil {
-				return err
-			}
-		case pluginCategoryTokens:
-			if err := plugin.tokens.Start(); err != nil {
 				return err
 			}
 		}

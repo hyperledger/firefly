@@ -196,13 +196,27 @@ func (_m *Plugin) SetOperationHandler(namespace string, handler core.OperationCa
 	_m.Called(namespace, handler)
 }
 
-// Start provides a mock function with given fields:
-func (_m *Plugin) Start() error {
-	ret := _m.Called()
+// StartNamespace provides a mock function with given fields: ctx, namespace
+func (_m *Plugin) StartNamespace(ctx context.Context, namespace string) error {
+	ret := _m.Called(ctx, namespace)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, namespace)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// StopNamespace provides a mock function with given fields: ctx, namespace
+func (_m *Plugin) StopNamespace(ctx context.Context, namespace string) error {
+	ret := _m.Called(ctx, namespace)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, namespace)
 	} else {
 		r0 = ret.Error(0)
 	}

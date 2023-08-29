@@ -253,6 +253,12 @@ func Purge(ctx context.Context, ns *core.Namespace, plugins *Plugins, dxNodeName
 	if err != nil {
 		log.L(ctx).Errorf("Error purging namespace '%s' from blockchain plugin '%s': %s", ns.Name, plugins.Blockchain.Name, err.Error())
 	}
+	for _, t := range plugins.Tokens {
+		err := t.Plugin.StopNamespace(ctx, ns.Name)
+		if err != nil {
+			log.L(ctx).Errorf("Error purging namespace '%s' from tokens plugin '%s': %s", ns.Name, t.Name, err.Error())
+		}
+	}
 }
 
 func (or *orchestrator) database() database.Plugin {
@@ -559,6 +565,13 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	err = or.blockchain().StartNamespace(ctx, or.namespace.Name)
 	if err != nil {
 		return err
+	}
+
+	for _, t := range or.tokens() {
+		err := t.StartNamespace(ctx, or.namespace.Name)
+		if err != nil {
+			return err
+		}
 	}
 
 	if or.data == nil {

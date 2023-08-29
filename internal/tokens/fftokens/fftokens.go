@@ -19,7 +19,6 @@ package fftokens
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -53,16 +52,15 @@ func (ie *ConflictError) IsConflictError() bool {
 }
 
 type FFTokens struct {
-	ctx             context.Context
-	cancelCtx       context.CancelFunc
-	capabilities    *tokens.Capabilities
-	callbacks       callbacks
-	configuredName  string
-	client          *resty.Client
-	wsconn          wsclient.WSClient
-	retry           *retry.Retry
-	backgroundRetry *retry.Retry
-	backgroundStart bool
+	ctx            context.Context
+	cancelCtx      context.CancelFunc
+	capabilities   *tokens.Capabilities
+	callbacks      callbacks
+	configuredName string
+	client         *resty.Client
+	wsconn         map[string]wsclient.WSClient
+	wsConfig       *wsclient.WSConfig
+	retry          *retry.Retry
 }
 
 type callbacks struct {
@@ -286,7 +284,7 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "tokens.fftokens")
 	}
 
-	wsConfig, err := wsclient.GenerateConfig(ctx, config)
+	ft.wsConfig, err = wsclient.GenerateConfig(ctx, config)
 	if err == nil {
 		ft.client, err = ffresty.New(ft.ctx, config)
 	}
@@ -295,14 +293,11 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 		return err
 	}
 
-	if wsConfig.WSKeyPath == "" {
-		wsConfig.WSKeyPath = "/api/ws"
+	if ft.wsConfig.WSKeyPath == "" {
+		ft.wsConfig.WSKeyPath = "/api/ws"
 	}
 
-	ft.wsconn, err = wsclient.New(ctx, wsConfig, nil, nil)
-	if err != nil {
-		return err
-	}
+	ft.wsconn = make(map[string]wsclient.WSClient)
 
 	ft.retry = &retry.Retry{
 		InitialDelay: config.GetDuration(FFTEventRetryInitialDelay),
@@ -310,19 +305,26 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 		Factor:       config.GetFloat64(FFTEventRetryFactor),
 	}
 
-	ft.backgroundStart = config.GetBool(FFTBackgroundStart)
+	return nil
+}
 
-	if ft.backgroundStart {
-		ft.backgroundRetry = &retry.Retry{
-			InitialDelay: config.GetDuration(FFTBackgroundStartInitialDelay),
-			MaximumDelay: config.GetDuration(FFTBackgroundStartMaxDelay),
-			Factor:       config.GetFloat64(FFTBackgroundStartFactor),
-		}
-		return nil
+func (ft *FFTokens) StartNamespace(ctx context.Context, namespace string) (err error) {
+	ft.wsconn[namespace], err = wsclient.New(ctx, ft.wsConfig, nil, nil)
+	if err != nil {
+		return err
 	}
 
-	go ft.eventLoop()
+	err = ft.wsconn[namespace].Connect()
+	if err != nil {
+		return err
+	}
 
+	go ft.eventLoop(namespace)
+
+	return nil
+}
+
+func (ft *FFTokens) StopNamespace(ctx context.Context, namespace string) error {
 	return nil
 }
 
@@ -344,27 +346,6 @@ func (ft *FFTokens) SetOperationHandler(namespace string, handler core.Operation
 	} else {
 		ft.callbacks.opHandlers[namespace] = handler
 	}
-}
-
-func (ft *FFTokens) backgroundStartLoop() {
-	_ = ft.backgroundRetry.Do(ft.ctx, fmt.Sprintf("Background start %s", ft.Name()), func(attempt int) (retry bool, err error) {
-		err = ft.wsconn.Connect()
-		if err != nil {
-			return true, err
-		}
-
-		go ft.eventLoop()
-
-		return false, nil
-	})
-}
-
-func (ft *FFTokens) Start() error {
-	if ft.backgroundStart {
-		go ft.backgroundStartLoop()
-		return nil
-	}
-	return ft.wsconn.Connect()
 }
 
 func (ft *FFTokens) Capabilities() *tokens.Capabilities {
@@ -617,7 +598,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, eventData fftypes.J
 	return ft.callbacks.TokensApproved(ctx, namespace, approval)
 }
 
-func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (retry bool, err error) {
+func (ft *FFTokens) handleMessage(ctx context.Context, namespace string, msgBytes []byte) (retry bool, err error) {
 	var msg *wsEvent
 	if err = json.Unmarshal(msgBytes, &msg); err != nil {
 		log.L(ctx).Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
@@ -629,7 +610,7 @@ func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (retry b
 		ft.handleReceipt(ctx, msg.Data)
 	case messageBatch:
 		for _, msg := range msg.Data.GetObjectArray("events") {
-			if retry, err = ft.handleMessage(ctx, []byte(msg.String())); err != nil {
+			if retry, err = ft.handleMessage(ctx, namespace, []byte(msg.String())); err != nil {
 				return retry, err
 			}
 		}
@@ -660,21 +641,22 @@ func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (retry b
 			},
 		})
 		// Do not retry this
-		return false, ft.wsconn.Send(ctx, ack)
+		return false, ft.wsconn[namespace].Send(ctx, ack)
 	}
 	return false, nil
 }
 
-func (ft *FFTokens) handleMessageRetry(ctx context.Context, msgBytes []byte) (err error) {
+func (ft *FFTokens) handleMessageRetry(ctx context.Context, namespace string, msgBytes []byte) (err error) {
 	eventCtx, done := context.WithCancel(ctx)
 	defer done()
 	return ft.retry.Do(eventCtx, "fftokens event", func(attempt int) (retry bool, err error) {
-		return ft.handleMessage(eventCtx, msgBytes) // We keep retrying on error until the context ends
+		return ft.handleMessage(eventCtx, namespace, msgBytes) // We keep retrying on error until the context ends
 	})
 }
 
-func (ft *FFTokens) eventLoop() {
-	defer ft.wsconn.Close()
+func (ft *FFTokens) eventLoop(namespace string) {
+	wsconn := ft.wsconn[namespace]
+	defer wsconn.Close()
 	l := log.L(ft.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(ft.ctx, l)
 	for {
@@ -682,13 +664,13 @@ func (ft *FFTokens) eventLoop() {
 		case <-ctx.Done():
 			l.Debugf("Event loop exiting (context cancelled)")
 			return
-		case msgBytes, ok := <-ft.wsconn.Receive():
+		case msgBytes, ok := <-wsconn.Receive():
 			if !ok {
 				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
 				ft.cancelCtx()
 				return
 			}
-			if err := ft.handleMessageRetry(ctx, msgBytes); err != nil {
+			if err := ft.handleMessageRetry(ctx, namespace, msgBytes); err != nil {
 				l.Errorf("Event loop exiting (%s). Terminating server!", err)
 				ft.cancelCtx()
 				return
