@@ -325,6 +325,12 @@ func (ft *FFTokens) StartNamespace(ctx context.Context, namespace string) (err e
 }
 
 func (ft *FFTokens) StopNamespace(ctx context.Context, namespace string) error {
+	wsconn, ok := ft.wsconn[namespace]
+	if ok {
+		wsconn.Close()
+	}
+	delete(ft.wsconn, namespace)
+
 	return nil
 }
 

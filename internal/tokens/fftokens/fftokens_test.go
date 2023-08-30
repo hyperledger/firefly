@@ -21,7 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"testing"
@@ -109,6 +109,35 @@ func TestInitBadURL(t *testing.T) {
 	assert.Regexp(t, "FF00149", err)
 }
 
+func TestStartNamespaceConnectFail(t *testing.T) {
+	coreconfig.Reset()
+	h := &FFTokens{}
+	h.InitConfig(ffTokensConfig)
+
+	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "http://localhost:8080")
+	ffTokensConfig.Set(FFTBackgroundStart, true)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
+	assert.NoError(t, err)
+
+	err = h.StartNamespace(ctx, "ns1")
+	assert.Error(t, err)
+}
+
+func TestStopNamespace(t *testing.T) {
+	wsm := &wsmocks.WSClient{}
+	ctx, cancel := context.WithCancel(context.Background())
+	wsm.On("Close").Return(nil)
+	cancel()
+	h := &FFTokens{
+		ctx:    ctx,
+		wsconn: map[string]wsclient.WSClient{"ns1": wsm},
+	}
+	h.StopNamespace(ctx, "ns1")
+	assert.Nil(t, h.wsconn["ns1"])
+}
+
 func TestInitBackgroundStart1(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFTokens{}
@@ -190,7 +219,7 @@ func TestCreateTokenPool(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -301,7 +330,7 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 			assert.NoError(t, err)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+				Body: io.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
 					"type":        "fungible",
 					"poolLocator": "F1",
 					"signer":      "0x0",
@@ -359,7 +388,7 @@ func TestCreateTokenPoolSynchronousBadResponse(t *testing.T) {
 			assert.NoError(t, err)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte("bad"))),
+				Body: io.NopCloser(bytes.NewReader([]byte("bad"))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -398,7 +427,7 @@ func TestActivateTokenPool(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -457,7 +486,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+				Body: io.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
 					"type":        "fungible",
 					"poolLocator": "F1",
 					"signer":      "0x0",
@@ -506,7 +535,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte("bad"))),
+				Body: io.NopCloser(bytes.NewReader([]byte("bad"))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -653,7 +682,7 @@ func TestMintTokens(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -711,7 +740,7 @@ func TestMintTokensWithInterface(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -765,7 +794,7 @@ func TestTokenApproval(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -850,7 +879,7 @@ func TestBurnTokens(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -923,7 +952,7 @@ func TestTransferTokens(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -1742,7 +1771,7 @@ func TestCheckInterfaceABI(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+				Body: io.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
 					"approval": fftypes.JSONAny(`[]`),
 					"burn":     fftypes.JSONAny(`[]`),
 					"mint":     fftypes.JSONAny(`[]`),
@@ -1808,7 +1837,7 @@ func TestCheckInterfaceFFI(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+				Body: io.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
 					"approval": fftypes.JSONAny(`[]`),
 					"burn":     fftypes.JSONAny(`[]`),
 					"mint":     fftypes.JSONAny(`[]`),
@@ -1860,7 +1889,7 @@ func TestCheckInterfaceFFIBadResponse(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/checkinterface", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+				Body: io.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
 					"approval": map[bool]bool{true: false},
 				}.String()))),
 				Header: http.Header{
