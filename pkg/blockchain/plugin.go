@@ -103,7 +103,7 @@ type Plugin interface {
 	DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error
 
 	// GetContractListenerStatus gets the status of a contract listener from the backend connector. Returns false if not found
-	GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (bool, interface{}, error)
+	GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (bool, interface{}, error)
 
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
 	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)

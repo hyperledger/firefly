@@ -4086,7 +4086,8 @@ func TestGetContractListenerStatus(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := e.GetContractListenerStatus(context.Background(), "sub1", true)
+	e.streamID["ns1"] = "es12345"
+	found, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
 	assert.NotNil(t, status)
 	assert.NoError(t, err)
 	assert.True(t, found)
@@ -4119,7 +4120,8 @@ func TestGetContractListenerStatusGetSubFail(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := e.GetContractListenerStatus(context.Background(), "sub1", true)
+	e.streamID["ns1"] = "es12345"
+	found, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
 	assert.Nil(t, status)
 	assert.Regexp(t, "FF10111", err)
 	assert.False(t, found)
@@ -4152,7 +4154,8 @@ func TestGetContractListenerStatusGetSubNotFound(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := e.GetContractListenerStatus(context.Background(), "sub1", true)
+	e.streamID["ns1"] = "es12345"
+	found, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
 	assert.Nil(t, status)
 	assert.Nil(t, err)
 	assert.False(t, found)
