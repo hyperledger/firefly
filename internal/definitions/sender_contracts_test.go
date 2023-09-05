@@ -306,7 +306,7 @@ func TestDefineContractAPIPublishNonMultiparty(t *testing.T) {
 	assert.Regexp(t, "FF10414", err)
 }
 
-func TestDefineContractAPIPublishNonMultipartyUpdate(t *testing.T) {
+func TestDefineContractAPINonMultipartyUpdate(t *testing.T) {
 	ds := newTestDefinitionSender(t)
 	defer ds.cleanup(t)
 	ds.multiparty = false
