@@ -59,6 +59,7 @@ type subscription struct {
 	EthCompatAddress string            `json:"address,omitempty"`
 	EthCompatEvent   *abi.Entry        `json:"event,omitempty"`
 	Filters          []fftypes.JSONAny `json:"filters"`
+	Options          *fftypes.JSONAny  `json:"options"`
 	subscriptionCheckpoint
 }
 
@@ -182,7 +183,7 @@ func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (
 	return sub.Name, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, firstEvent string, abi *abi.Entry) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, firstEvent string, abi *abi.Entry, options *fftypes.JSONAny) (*subscription, error) {
 	// Map FireFly "firstEvent" values to Ethereum "fromBlock" values
 	switch firstEvent {
 	case string(core.SubOptsFirstEventOldest):
@@ -195,6 +196,7 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		Stream:         stream,
 		FromBlock:      firstEvent,
 		EthCompatEvent: abi,
+		Options:        options,
 	}
 
 	if location != nil {
@@ -267,7 +269,7 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 		name = v1Name
 	}
 	location := &Location{Address: instancePath}
-	if sub, err = s.createSubscription(ctx, location, stream, name, firstEvent, abi); err != nil {
+	if sub, err = s.createSubscription(ctx, location, stream, name, firstEvent, abi, nil); err != nil {
 		return nil, err
 	}
 	log.L(ctx).Infof("%s subscription: %s", abi.Name, sub.ID)

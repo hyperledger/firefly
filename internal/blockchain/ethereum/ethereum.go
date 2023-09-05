@@ -888,10 +888,12 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
 	firstEvent := string(core.SubOptsFirstEventNewest)
+	var subscriptionOptions *fftypes.JSONAny
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent
+		subscriptionOptions = listener.Options.SubscriptionOptions
 	}
-	result, err := e.streams.createSubscription(ctx, location, e.streamID, subName, firstEvent, abi)
+	result, err := e.streams.createSubscription(ctx, location, e.streamID, subName, firstEvent, abi, subscriptionOptions)
 	if err != nil {
 		return err
 	}
