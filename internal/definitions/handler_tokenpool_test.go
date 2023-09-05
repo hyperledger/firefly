@@ -82,11 +82,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID && p.Connector == "connector1"
 	})).Return(nil, nil)
 	dh.mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org1", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)
@@ -105,11 +101,7 @@ func TestHandleDefinitionBroadcastTokenPoolBadConnector(t *testing.T) {
 	msg, data, err := buildPoolDefinitionMessage(definition)
 	assert.NoError(t, err)
 
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org1", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionReject, CustomCorrelator: pool.ID}, action)
@@ -137,11 +129,7 @@ func TestHandleDefinitionBroadcastTokenPoolNameExists(t *testing.T) {
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID && p.Name == "name1-1"
 	})).Return(nil, nil)
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org1", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)
@@ -185,11 +173,7 @@ func TestHandleDefinitionBroadcastTokenPoolNetworkNameExists(t *testing.T) {
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org1", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionReject, CustomCorrelator: pool.ID}, action)
@@ -215,11 +199,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org1", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionConfirm, CustomCorrelator: pool.ID}, action)
@@ -243,11 +223,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingWaiting(t *testing.T) {
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org1", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)
@@ -278,11 +254,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublish(t *testing.T) {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
 	dh.mdi.On("UpsertTokenPool", context.Background(), &newPool, database.UpsertOptimizationExisting).Return(nil)
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org1", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionConfirm, CustomCorrelator: pool.ID}, action)
@@ -313,11 +285,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishUpsertFail(t *testing.
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
 	dh.mdi.On("UpsertTokenPool", context.Background(), &newPool, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org1", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry, CustomCorrelator: pool.ID}, action)
@@ -344,7 +312,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishOrgFail(t *testing.T) 
 	newPool.Message = msg.Header.ID
 	newPool.State = core.TokenPoolStatePending
 
-	dh.mim.On("GetRootOrg", context.Background()).Return(nil, fmt.Errorf("pop"))
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("", fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
@@ -374,11 +342,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishOrgMismatch(t *testing
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(existing, nil)
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org2",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org2", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionReject, CustomCorrelator: pool.ID}, action)
@@ -396,11 +360,7 @@ func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil, fmt.Errorf("pop"))
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org1", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
@@ -421,11 +381,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil, nil)
 	dh.mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(fmt.Errorf("pop"))
-	dh.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			DID: "firefly:org1",
-		},
-	}, nil)
+	dh.mim.On("GetRootOrgDID", context.Background()).Return("firefly:org1", nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionWait, CustomCorrelator: pool.ID}, action)

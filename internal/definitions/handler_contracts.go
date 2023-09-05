@@ -161,11 +161,11 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
 	}
 
-	org, err := dh.identity.GetRootOrg(ctx)
+	org, err := dh.identity.GetRootOrgDID(ctx)
 	if err != nil {
 		return HandlerResult{Action: core.ActionRetry}, err
 	}
-	isAuthor := org.DID == msg.Header.Author
+	isAuthor := org == msg.Header.Author
 
 	ffi.Message = msg.Header.ID
 	ffi.Name = ffi.NetworkName
@@ -198,11 +198,11 @@ func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, sta
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract API", msg.Header.ID)
 	}
 
-	org, err := dh.identity.GetRootOrg(ctx)
+	org, err := dh.identity.GetRootOrgDID(ctx)
 	if err != nil {
 		return HandlerResult{Action: core.ActionRetry}, err
 	}
-	isAuthor := org.DID == msg.Header.Author
+	isAuthor := org == msg.Header.Author
 
 	api.Message = msg.Header.ID
 	api.Name = api.NetworkName
