@@ -189,6 +189,30 @@ func (_m *Manager) GetRootOrg(ctx context.Context) (*core.Identity, error) {
 	return r0, r1
 }
 
+// GetRootOrgDID provides a mock function with given fields: ctx
+func (_m *Manager) GetRootOrgDID(ctx context.Context) (string, error) {
+	ret := _m.Called(ctx)
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (string, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ResolveIdentitySigner provides a mock function with given fields: ctx, _a1
 func (_m *Manager) ResolveIdentitySigner(ctx context.Context, _a1 *core.Identity) (*core.SignerRef, error) {
 	ret := _m.Called(ctx, _a1)

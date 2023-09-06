@@ -42,11 +42,11 @@ func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, pool.Connector, "token")
 	}
 
-	org, err := dh.identity.GetRootOrg(ctx)
+	org, err := dh.identity.GetRootOrgDID(ctx)
 	if err != nil {
 		return HandlerResult{Action: core.ActionRetry}, err
 	}
-	isAuthor := org.DID == msg.Header.Author
+	isAuthor := org == msg.Header.Author
 
 	pool.Message = msg.Header.ID
 	pool.Name = pool.NetworkName
