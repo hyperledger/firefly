@@ -101,7 +101,7 @@ func (nm *networkMap) generateEthAddressVerifier(identity *core.Identity, verifi
 func (nm *networkMap) generateTezosAddressVerifier(identity *core.Identity, verifier *core.Verifier) *VerificationMethod {
 	return &VerificationMethod{
 		ID:                  verifier.Hash.String(),
-		Type:                "EcdsaSecp256k1VerificationKey2019",
+		Type:                "Ed25519VerificationKey2020",
 		Controller:          identity.DID,
 		BlockchainAccountID: verifier.Value,
 	}

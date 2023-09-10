@@ -1,3 +1,19 @@
+// Copyright © 2023 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package tezos
 
 import (
@@ -11,7 +27,6 @@ const (
 	defaultBatchTimeout = 500
 	defaultPrefixShort  = "fly"
 	defaultPrefixLong   = "firefly"
-	defaultFromBlock    = "0"
 
 	defaultAddressResolverMethod        = "GET"
 	defaultAddressResolverResponseField = "address"
@@ -35,10 +50,6 @@ const (
 	TezosconnectPrefixShort = "prefixShort"
 	// TezosconnectPrefixLong is used in HTTP headers in requests to tezosconnect
 	TezosconnectPrefixLong = "prefixLong"
-	// TezosconnectConfigInstanceDeprecated is the tezos address of the FireFly contract
-	TezosconnectConfigInstanceDeprecated = "instance"
-	// TezosconnectConfigFromBlockDeprecated is the configuration of the first block to listen to when creating the listener for the FireFly contract
-	TezosconnectConfigFromBlockDeprecated = "fromBlock"
 	// TezosconnectBackgroundStart is used to not fail the tezos plugin on init and retry to start it in the background
 	TezosconnectBackgroundStart = "backgroundStart.enabled"
 	// TezosconnectBackgroundStartInitialDelay is delay between restarts in the case where we retry to restart in the tezos plugin
@@ -50,7 +61,7 @@ const (
 
 	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
 	AddressResolverConfigKey = "addressResolver"
-	// AddressResolverAlwaysResolve causes the address resolve to be invoked on every API call that resolves an address, regardless of whether the input conforms to an 0x address, and disables any caching
+	// AddressResolverAlwaysResolve causes the address resolve to be invoked on every API call that resolves an address and disables any caching
 	AddressResolverAlwaysResolve = "alwaysResolve"
 	// AddressResolverRetainOriginal when true the original pre-resolved string is retained after the lookup, and passed down to Tezosconnect as the from address
 	AddressResolverRetainOriginal = "retainOriginal"
@@ -79,8 +90,6 @@ func (t *Tezos) InitConfig(config config.Section) {
 	t.tezosconnectConf.AddKnownKey(TezosconnectConfigBatchTimeout, defaultBatchTimeout)
 	t.tezosconnectConf.AddKnownKey(TezosconnectPrefixShort, defaultPrefixShort)
 	t.tezosconnectConf.AddKnownKey(TezosconnectPrefixLong, defaultPrefixLong)
-	t.tezosconnectConf.AddKnownKey(TezosconnectConfigInstanceDeprecated)
-	t.tezosconnectConf.AddKnownKey(TezosconnectConfigFromBlockDeprecated, defaultFromBlock)
 
 	fftmConf := config.SubSection(FFTMConfigKey)
 	ffresty.InitConfig(fftmConf)

@@ -28,7 +28,7 @@ type VerifierType = fftypes.FFEnum
 var (
 	// VerifierTypeEthAddress is an Ethereum (secp256k1) address string
 	VerifierTypeEthAddress = fftypes.FFEnumValue("verifiertype", "ethereum_address")
-	// VerifierTypeTezosAddress is an Tezos (secp256k1) address string
+	// VerifierTypeTezosAddress is a Tezos (ed25519) address string
 	VerifierTypeTezosAddress = fftypes.FFEnumValue("verifiertype", "tezos_address")
 	// VerifierTypeMSPIdentity is the MSP id (X509 distinguished name) of an issued signing certificate / keypair
 	VerifierTypeMSPIdentity = fftypes.FFEnumValue("verifiertype", "fabric_msp_id")

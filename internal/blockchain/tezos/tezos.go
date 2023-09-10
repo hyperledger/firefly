@@ -172,13 +172,10 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 	}
 
 	wsConfig, err := wsclient.GenerateConfig(ctx, tezosconnectConf)
-	if err == nil {
-		t.client, err = ffresty.New(t.ctx, tezosconnectConf)
-	}
-
 	if err != nil {
 		return err
 	}
+	t.client, err = ffresty.New(t.ctx, tezosconnectConf)
 
 	t.topic = tezosconnectConf.GetString(TezosconnectConfigTopic)
 	if t.topic == "" {
@@ -740,13 +737,7 @@ func (t *Tezos) eventLoop() {
 
 func (t *Tezos) handleMessageBatch(ctx context.Context, batchID int64, messages []interface{}) error {
 	// TODO:
-
-	// Build the set of events that need handling
-	events := make(common.EventsToDispatch)
-
-	// Dispatch all the events from this patch that were successfully parsed and routed to namespaces
-	// (could be zero - that's ok)
-	return t.callbacks.DispatchBlockchainEvents(ctx, events)
+	return nil
 }
 
 func formatTezosAddress(ctx context.Context, key string) (string, error) {
