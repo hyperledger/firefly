@@ -603,6 +603,43 @@ func TestPersistContractAPIUpsertFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestPersistContractAPIUpsertNonPublished(t *testing.T) {
+	dh, _ := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
+
+	api := testContractAPI()
+	api.Published = false
+	api.Message = fftypes.NewUUID()
+	existing := &core.ContractAPI{
+		ID: api.ID,
+	}
+
+	dh.mdi.On("InsertOrGetContractAPI", mock.Anything, mock.Anything).Return(existing, nil)
+	dh.mcm.On("ResolveContractAPI", context.Background(), "", mock.Anything).Return(nil)
+	dh.mdi.On("UpsertContractAPI", context.Background(), api, database.UpsertOptimizationExisting).Return(nil)
+
+	_, err := dh.persistContractAPI(context.Background(), "", api, true)
+	assert.NoError(t, err)
+}
+
+func TestPersistContractAPIUpsertFailNonPublished(t *testing.T) {
+	dh, _ := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
+
+	api := testContractAPI()
+	api.Published = false
+	api.Message = fftypes.NewUUID()
+	existing := &core.ContractAPI{
+		ID: api.ID,
+	}
+
+	dh.mdi.On("InsertOrGetContractAPI", mock.Anything, mock.Anything).Return(existing, nil)
+	dh.mcm.On("ResolveContractAPI", context.Background(), "", mock.Anything).Return(nil)
+	dh.mdi.On("UpsertContractAPI", context.Background(), api, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
+
+	_, err := dh.persistContractAPI(context.Background(), "", api, true)
+	assert.EqualError(t, err, "pop")
+}
 func TestPersistContractAPIWrongMessage(t *testing.T) {
 	dh, _ := newTestDefinitionHandler(t)
 	defer dh.cleanup(t)
