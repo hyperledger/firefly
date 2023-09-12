@@ -72,10 +72,6 @@ type Tezos struct {
 	backgroundStart      bool
 }
 
-type eventStreamWebsocket struct {
-	Topic string `json:"topic"`
-}
-
 type Location struct {
 	Address string `json:"address"`
 }
@@ -273,9 +269,6 @@ func (t *Tezos) AddFireflySubscription(ctx context.Context, namespace *core.Name
 }
 
 func (t *Tezos) RemoveFireflySubscription(ctx context.Context, subID string) {
-	// Don't actually delete the subscription from tezosconnect, as this may be called while processing
-	// events from the subscription (and handling that scenario cleanly could be difficult for tezosconnect).
-	// TODO: can old subscriptions be somehow cleaned up later?
 	t.subs.RemoveSubscription(ctx, subID)
 }
 
@@ -354,7 +347,7 @@ func (t *Tezos) QueryContract(ctx context.Context, signingKey string, location *
 	if err = json.Unmarshal(res.Body(), &output); err != nil {
 		return nil, err
 	}
-	return output, nil // note UNLIKE fabric this is just `output`, not `output.Result` - but either way the top level of what we return to the end user, is whatever the Connector sent us
+	return output, nil
 }
 
 func (f *Tezos) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
@@ -398,6 +391,7 @@ func (t *Tezos) DeleteContractListener(ctx context.Context, subscription *core.C
 	return t.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
+// Note: In state of development. Approach can be changed.
 func (t *Tezos) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (found bool, status interface{}, err error) {
 	sub, err := t.streams.getSubscription(ctx, subID, okNotFound)
 	if err != nil || sub == nil {

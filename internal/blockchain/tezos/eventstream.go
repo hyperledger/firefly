@@ -40,14 +40,13 @@ type streamManager struct {
 }
 
 type eventStream struct {
-	ID             string               `json:"id"`
-	Name           string               `json:"name"`
-	ErrorHandling  string               `json:"errorHandling"`
-	BatchSize      uint                 `json:"batchSize"`
-	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
-	Type           string               `json:"type"`
-	WebSocket      eventStreamWebsocket `json:"websocket"`
-	Timestamps     bool                 `json:"timestamps"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	ErrorHandling  string `json:"errorHandling"`
+	BatchSize      uint   `json:"batchSize"`
+	BatchTimeoutMS uint   `json:"batchTimeoutMS"`
+	Type           string `json:"type"`
+	Timestamps     bool   `json:"timestamps"`
 }
 
 type subscription struct {
@@ -92,10 +91,7 @@ func buildEventStream(topic string, batchSize, batchTimeout uint) *eventStream {
 		BatchSize:      batchSize,
 		BatchTimeoutMS: batchTimeout,
 		Type:           "websocket",
-		// Some implementations require a "topic" to be set separately, while others rely only on the name.
-		// We set them to the same thing for cross compatibility.
-		WebSocket:  eventStreamWebsocket{Topic: topic},
-		Timestamps: true,
+		Timestamps:     true,
 	}
 }
 
@@ -165,18 +161,6 @@ func (s *streamManager) getSubscription(ctx context.Context, subID string, okNot
 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTezosconnectRESTErr)
 	}
 	return sub, nil
-}
-
-func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (string, error) {
-	if cachedValue := s.cache.GetString("sub:" + subID); cachedValue != "" {
-		return cachedValue, nil
-	}
-	sub, err := s.getSubscription(ctx, subID, false)
-	if err != nil {
-		return "", err
-	}
-	s.cache.SetString("sub:"+subID, sub.Name)
-	return sub.Name, nil
 }
 
 func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event, firstEvent string) (*subscription, error) {

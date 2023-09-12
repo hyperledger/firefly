@@ -141,9 +141,10 @@ func processMichelson(entry interface{}, details map[string]interface{}) (michel
 	} else {
 		internalType := details["internalType"].(string)
 		resp, err = processPrimitive(entry, internalType)
-
-		propKind := details["kind"].(string)
-		resp = applyKind(resp, propKind)
+		if err == nil {
+			propKind := details["kind"].(string)
+			resp = applyKind(resp, propKind)
+		}
 	}
 
 	return resp, err
@@ -153,7 +154,7 @@ func processSchemaEntry(entry interface{}, schema map[string]interface{}) (miche
 	resp := micheline.Prim{}
 	var err error
 	entryType := schema["type"].(string)
-	switch schema["type"].(string) {
+	switch entryType {
 	case _internalStruct:
 		schemaArgs := schema["args"].([]interface{})
 
@@ -204,7 +205,7 @@ func processSchemaEntry(entry interface{}, schema map[string]interface{}) (miche
 				if err != nil {
 					return resp, err
 				}
-				if len(variants) == 1 || len(variants) > 4 {
+				if len(variants) <= 1 || len(variants) > 4 {
 					return resp, errors.New("wrong number of variants")
 				}
 				resp = wrapWithVariant(processedEntry, i+1, len(variants))
