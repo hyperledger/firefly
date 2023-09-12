@@ -6743,6 +6743,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -7020,6 +7025,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -7242,6 +7252,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -7340,6 +7354,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: pins
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: rejectreason
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -9542,6 +9561,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -9766,6 +9790,10 @@ paths:
                           is assigned for each topic
                         type: string
                       type: array
+                    rejectReason:
+                      description: If a message was rejected, provides details on
+                        the rejection reason
+                      type: string
                     state:
                       description: The current state of the message
                       enum:
@@ -10041,6 +10069,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -10677,6 +10709,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -10832,6 +10868,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -11158,6 +11198,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -11319,6 +11363,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -11726,6 +11774,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -19375,6 +19427,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -19666,6 +19723,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -19888,6 +19950,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -19993,6 +20059,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: pins
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: rejectreason
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -22314,6 +22385,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: rejectreason
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: sequence
         schema:
           type: string
@@ -22538,6 +22614,10 @@ paths:
                           is assigned for each topic
                         type: string
                       type: array
+                    rejectReason:
+                      description: If a message was rejected, provides details on
+                        the rejection reason
+                      type: string
                     state:
                       description: The current state of the message
                       enum:
@@ -22820,6 +22900,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -23528,6 +23612,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -23689,6 +23777,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -24022,6 +24114,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -24183,6 +24279,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -24597,6 +24697,10 @@ paths:
                         assigned for each topic
                       type: string
                     type: array
+                  rejectReason:
+                    description: If a message was rejected, provides details on the
+                      rejection reason
+                    type: string
                   state:
                     description: The current state of the message
                     enum:
@@ -27597,6 +27701,17 @@ paths:
                     options:
                       description: Subscription options
                       properties:
+                        batch:
+                          description: Events are delivered in batches in an ordered
+                            array. The batch size is capped to the readAhead limit.
+                            The event payload is always an array even if there is
+                            a single event in the batch. Commonly used with Webhooks
+                            to allow events to be delivered and acknowledged in batches.
+                          type: boolean
+                        batchTimeout:
+                          description: When batching is enabled, the optional timeout
+                            to send events even when the batch hasn't filled.
+                          type: string
                         fastack:
                           description: 'Webhooks only: When true the event will be
                             acknowledged before the webhook is invoked, allowing parallel
@@ -27615,6 +27730,37 @@ paths:
                             type: string
                           description: 'Webhooks only: Static headers to set on the
                             webhook request'
+                          type: object
+                        httpOptions:
+                          description: 'Webhooks only: a set of options for HTTP'
+                          properties:
+                            connectionTimeout:
+                              description: The maximum amount of time that a connection
+                                is allowed to remain with no data transmitted.
+                              type: string
+                            expectContinueTimeout:
+                              description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                              type: string
+                            idleTimeout:
+                              description: The max duration to hold a HTTP keepalive
+                                connection between calls
+                              type: string
+                            maxIdleConns:
+                              description: The max number of idle connections to hold
+                                pooled
+                              type: integer
+                            proxyURL:
+                              description: HTTP proxy URL to use for outbound requests
+                                to the webhook
+                              type: string
+                            requestTimeout:
+                              description: The max duration to hold a TLS handshake
+                                alive
+                              type: string
+                            tlsHandshakeTimeout:
+                              description: The max duration to hold a TLS handshake
+                                alive
+                              type: string
                           type: object
                         input:
                           description: 'Webhooks only: A set of options to extract
@@ -27681,6 +27827,31 @@ paths:
                         replytx:
                           description: 'Webhooks only: The transaction type to set
                             on the reply message'
+                          type: string
+                        retry:
+                          description: 'Webhooks only: a set of options for retrying
+                            the webhook call'
+                          properties:
+                            count:
+                              description: Number of times to retry the webhook call
+                                in case of failure
+                              type: integer
+                            enabled:
+                              description: Enables retry on HTTP calls, defaults to
+                                false
+                              type: boolean
+                            initialDelay:
+                              description: Initial delay between retries when we retry
+                                the webhook call
+                              type: string
+                            maxDelay:
+                              description: Max delay between retries when we retry
+                                the webhookcall
+                              type: string
+                          type: object
+                        tlsConfigName:
+                          description: The name of an existing TLS configuration associated
+                            to the namespace to use
                           type: string
                         url:
                           description: 'Webhooks only: HTTP url to invoke. Can be
@@ -27819,6 +27990,17 @@ paths:
                 options:
                   description: Subscription options
                   properties:
+                    batch:
+                      description: Events are delivered in batches in an ordered array.
+                        The batch size is capped to the readAhead limit. The event
+                        payload is always an array even if there is a single event
+                        in the batch. Commonly used with Webhooks to allow events
+                        to be delivered and acknowledged in batches.
+                      type: boolean
+                    batchTimeout:
+                      description: When batching is enabled, the optional timeout
+                        to send events even when the batch hasn't filled.
+                      type: string
                     fastack:
                       description: 'Webhooks only: When true the event will be acknowledged
                         before the webhook is invoked, allowing parallel invocations'
@@ -27836,6 +28018,35 @@ paths:
                         type: string
                       description: 'Webhooks only: Static headers to set on the webhook
                         request'
+                      type: object
+                    httpOptions:
+                      description: 'Webhooks only: a set of options for HTTP'
+                      properties:
+                        connectionTimeout:
+                          description: The maximum amount of time that a connection
+                            is allowed to remain with no data transmitted.
+                          type: string
+                        expectContinueTimeout:
+                          description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                          type: string
+                        idleTimeout:
+                          description: The max duration to hold a HTTP keepalive connection
+                            between calls
+                          type: string
+                        maxIdleConns:
+                          description: The max number of idle connections to hold
+                            pooled
+                          type: integer
+                        proxyURL:
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
+                          type: string
+                        requestTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                        tlsHandshakeTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
                       type: object
                     input:
                       description: 'Webhooks only: A set of options to extract data
@@ -27900,6 +28111,30 @@ paths:
                     replytx:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
+                      type: string
+                    retry:
+                      description: 'Webhooks only: a set of options for retrying the
+                        webhook call'
+                      properties:
+                        count:
+                          description: Number of times to retry the webhook call in
+                            case of failure
+                          type: integer
+                        enabled:
+                          description: Enables retry on HTTP calls, defaults to false
+                          type: boolean
+                        initialDelay:
+                          description: Initial delay between retries when we retry
+                            the webhook call
+                          type: string
+                        maxDelay:
+                          description: Max delay between retries when we retry the
+                            webhookcall
+                          type: string
+                      type: object
+                    tlsConfigName:
+                      description: The name of an existing TLS configuration associated
+                        to the namespace to use
                       type: string
                     url:
                       description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -28025,6 +28260,17 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      batch:
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
+                        type: boolean
+                      batchTimeout:
+                        description: When batching is enabled, the optional timeout
+                          to send events even when the batch hasn't filled.
+                        type: string
                       fastack:
                         description: 'Webhooks only: When true the event will be acknowledged
                           before the webhook is invoked, allowing parallel invocations'
@@ -28042,6 +28288,37 @@ paths:
                           type: string
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
+                        type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            description: The maximum amount of time that a connection
+                              is allowed to remain with no data transmitted.
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                         type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
@@ -28107,6 +28384,31 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -28243,6 +28545,17 @@ paths:
                 options:
                   description: Subscription options
                   properties:
+                    batch:
+                      description: Events are delivered in batches in an ordered array.
+                        The batch size is capped to the readAhead limit. The event
+                        payload is always an array even if there is a single event
+                        in the batch. Commonly used with Webhooks to allow events
+                        to be delivered and acknowledged in batches.
+                      type: boolean
+                    batchTimeout:
+                      description: When batching is enabled, the optional timeout
+                        to send events even when the batch hasn't filled.
+                      type: string
                     fastack:
                       description: 'Webhooks only: When true the event will be acknowledged
                         before the webhook is invoked, allowing parallel invocations'
@@ -28260,6 +28573,35 @@ paths:
                         type: string
                       description: 'Webhooks only: Static headers to set on the webhook
                         request'
+                      type: object
+                    httpOptions:
+                      description: 'Webhooks only: a set of options for HTTP'
+                      properties:
+                        connectionTimeout:
+                          description: The maximum amount of time that a connection
+                            is allowed to remain with no data transmitted.
+                          type: string
+                        expectContinueTimeout:
+                          description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                          type: string
+                        idleTimeout:
+                          description: The max duration to hold a HTTP keepalive connection
+                            between calls
+                          type: string
+                        maxIdleConns:
+                          description: The max number of idle connections to hold
+                            pooled
+                          type: integer
+                        proxyURL:
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
+                          type: string
+                        requestTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                        tlsHandshakeTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
                       type: object
                     input:
                       description: 'Webhooks only: A set of options to extract data
@@ -28324,6 +28666,30 @@ paths:
                     replytx:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
+                      type: string
+                    retry:
+                      description: 'Webhooks only: a set of options for retrying the
+                        webhook call'
+                      properties:
+                        count:
+                          description: Number of times to retry the webhook call in
+                            case of failure
+                          type: integer
+                        enabled:
+                          description: Enables retry on HTTP calls, defaults to false
+                          type: boolean
+                        initialDelay:
+                          description: Initial delay between retries when we retry
+                            the webhook call
+                          type: string
+                        maxDelay:
+                          description: Max delay between retries when we retry the
+                            webhookcall
+                          type: string
+                      type: object
+                    tlsConfigName:
+                      description: The name of an existing TLS configuration associated
+                        to the namespace to use
                       type: string
                     url:
                       description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -28449,6 +28815,17 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      batch:
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
+                        type: boolean
+                      batchTimeout:
+                        description: When batching is enabled, the optional timeout
+                          to send events even when the batch hasn't filled.
+                        type: string
                       fastack:
                         description: 'Webhooks only: When true the event will be acknowledged
                           before the webhook is invoked, allowing parallel invocations'
@@ -28466,6 +28843,37 @@ paths:
                           type: string
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
+                        type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            description: The maximum amount of time that a connection
+                              is allowed to remain with no data transmitted.
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                         type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
@@ -28531,6 +28939,31 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -28729,6 +29162,17 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      batch:
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
+                        type: boolean
+                      batchTimeout:
+                        description: When batching is enabled, the optional timeout
+                          to send events even when the batch hasn't filled.
+                        type: string
                       fastack:
                         description: 'Webhooks only: When true the event will be acknowledged
                           before the webhook is invoked, allowing parallel invocations'
@@ -28746,6 +29190,37 @@ paths:
                           type: string
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
+                        type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            description: The maximum amount of time that a connection
+                              is allowed to remain with no data transmitted.
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                         type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
@@ -28811,6 +29286,31 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -36146,6 +36646,17 @@ paths:
                     options:
                       description: Subscription options
                       properties:
+                        batch:
+                          description: Events are delivered in batches in an ordered
+                            array. The batch size is capped to the readAhead limit.
+                            The event payload is always an array even if there is
+                            a single event in the batch. Commonly used with Webhooks
+                            to allow events to be delivered and acknowledged in batches.
+                          type: boolean
+                        batchTimeout:
+                          description: When batching is enabled, the optional timeout
+                            to send events even when the batch hasn't filled.
+                          type: string
                         fastack:
                           description: 'Webhooks only: When true the event will be
                             acknowledged before the webhook is invoked, allowing parallel
@@ -36164,6 +36675,37 @@ paths:
                             type: string
                           description: 'Webhooks only: Static headers to set on the
                             webhook request'
+                          type: object
+                        httpOptions:
+                          description: 'Webhooks only: a set of options for HTTP'
+                          properties:
+                            connectionTimeout:
+                              description: The maximum amount of time that a connection
+                                is allowed to remain with no data transmitted.
+                              type: string
+                            expectContinueTimeout:
+                              description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                              type: string
+                            idleTimeout:
+                              description: The max duration to hold a HTTP keepalive
+                                connection between calls
+                              type: string
+                            maxIdleConns:
+                              description: The max number of idle connections to hold
+                                pooled
+                              type: integer
+                            proxyURL:
+                              description: HTTP proxy URL to use for outbound requests
+                                to the webhook
+                              type: string
+                            requestTimeout:
+                              description: The max duration to hold a TLS handshake
+                                alive
+                              type: string
+                            tlsHandshakeTimeout:
+                              description: The max duration to hold a TLS handshake
+                                alive
+                              type: string
                           type: object
                         input:
                           description: 'Webhooks only: A set of options to extract
@@ -36230,6 +36772,31 @@ paths:
                         replytx:
                           description: 'Webhooks only: The transaction type to set
                             on the reply message'
+                          type: string
+                        retry:
+                          description: 'Webhooks only: a set of options for retrying
+                            the webhook call'
+                          properties:
+                            count:
+                              description: Number of times to retry the webhook call
+                                in case of failure
+                              type: integer
+                            enabled:
+                              description: Enables retry on HTTP calls, defaults to
+                                false
+                              type: boolean
+                            initialDelay:
+                              description: Initial delay between retries when we retry
+                                the webhook call
+                              type: string
+                            maxDelay:
+                              description: Max delay between retries when we retry
+                                the webhookcall
+                              type: string
+                          type: object
+                        tlsConfigName:
+                          description: The name of an existing TLS configuration associated
+                            to the namespace to use
                           type: string
                         url:
                           description: 'Webhooks only: HTTP url to invoke. Can be
@@ -36361,6 +36928,17 @@ paths:
                 options:
                   description: Subscription options
                   properties:
+                    batch:
+                      description: Events are delivered in batches in an ordered array.
+                        The batch size is capped to the readAhead limit. The event
+                        payload is always an array even if there is a single event
+                        in the batch. Commonly used with Webhooks to allow events
+                        to be delivered and acknowledged in batches.
+                      type: boolean
+                    batchTimeout:
+                      description: When batching is enabled, the optional timeout
+                        to send events even when the batch hasn't filled.
+                      type: string
                     fastack:
                       description: 'Webhooks only: When true the event will be acknowledged
                         before the webhook is invoked, allowing parallel invocations'
@@ -36378,6 +36956,35 @@ paths:
                         type: string
                       description: 'Webhooks only: Static headers to set on the webhook
                         request'
+                      type: object
+                    httpOptions:
+                      description: 'Webhooks only: a set of options for HTTP'
+                      properties:
+                        connectionTimeout:
+                          description: The maximum amount of time that a connection
+                            is allowed to remain with no data transmitted.
+                          type: string
+                        expectContinueTimeout:
+                          description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                          type: string
+                        idleTimeout:
+                          description: The max duration to hold a HTTP keepalive connection
+                            between calls
+                          type: string
+                        maxIdleConns:
+                          description: The max number of idle connections to hold
+                            pooled
+                          type: integer
+                        proxyURL:
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
+                          type: string
+                        requestTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                        tlsHandshakeTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
                       type: object
                     input:
                       description: 'Webhooks only: A set of options to extract data
@@ -36442,6 +37049,30 @@ paths:
                     replytx:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
+                      type: string
+                    retry:
+                      description: 'Webhooks only: a set of options for retrying the
+                        webhook call'
+                      properties:
+                        count:
+                          description: Number of times to retry the webhook call in
+                            case of failure
+                          type: integer
+                        enabled:
+                          description: Enables retry on HTTP calls, defaults to false
+                          type: boolean
+                        initialDelay:
+                          description: Initial delay between retries when we retry
+                            the webhook call
+                          type: string
+                        maxDelay:
+                          description: Max delay between retries when we retry the
+                            webhookcall
+                          type: string
+                      type: object
+                    tlsConfigName:
+                      description: The name of an existing TLS configuration associated
+                        to the namespace to use
                       type: string
                     url:
                       description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -36567,6 +37198,17 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      batch:
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
+                        type: boolean
+                      batchTimeout:
+                        description: When batching is enabled, the optional timeout
+                          to send events even when the batch hasn't filled.
+                        type: string
                       fastack:
                         description: 'Webhooks only: When true the event will be acknowledged
                           before the webhook is invoked, allowing parallel invocations'
@@ -36584,6 +37226,37 @@ paths:
                           type: string
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
+                        type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            description: The maximum amount of time that a connection
+                              is allowed to remain with no data transmitted.
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                         type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
@@ -36649,6 +37322,31 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -36778,6 +37476,17 @@ paths:
                 options:
                   description: Subscription options
                   properties:
+                    batch:
+                      description: Events are delivered in batches in an ordered array.
+                        The batch size is capped to the readAhead limit. The event
+                        payload is always an array even if there is a single event
+                        in the batch. Commonly used with Webhooks to allow events
+                        to be delivered and acknowledged in batches.
+                      type: boolean
+                    batchTimeout:
+                      description: When batching is enabled, the optional timeout
+                        to send events even when the batch hasn't filled.
+                      type: string
                     fastack:
                       description: 'Webhooks only: When true the event will be acknowledged
                         before the webhook is invoked, allowing parallel invocations'
@@ -36795,6 +37504,35 @@ paths:
                         type: string
                       description: 'Webhooks only: Static headers to set on the webhook
                         request'
+                      type: object
+                    httpOptions:
+                      description: 'Webhooks only: a set of options for HTTP'
+                      properties:
+                        connectionTimeout:
+                          description: The maximum amount of time that a connection
+                            is allowed to remain with no data transmitted.
+                          type: string
+                        expectContinueTimeout:
+                          description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                          type: string
+                        idleTimeout:
+                          description: The max duration to hold a HTTP keepalive connection
+                            between calls
+                          type: string
+                        maxIdleConns:
+                          description: The max number of idle connections to hold
+                            pooled
+                          type: integer
+                        proxyURL:
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
+                          type: string
+                        requestTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
+                        tlsHandshakeTimeout:
+                          description: The max duration to hold a TLS handshake alive
+                          type: string
                       type: object
                     input:
                       description: 'Webhooks only: A set of options to extract data
@@ -36859,6 +37597,30 @@ paths:
                     replytx:
                       description: 'Webhooks only: The transaction type to set on
                         the reply message'
+                      type: string
+                    retry:
+                      description: 'Webhooks only: a set of options for retrying the
+                        webhook call'
+                      properties:
+                        count:
+                          description: Number of times to retry the webhook call in
+                            case of failure
+                          type: integer
+                        enabled:
+                          description: Enables retry on HTTP calls, defaults to false
+                          type: boolean
+                        initialDelay:
+                          description: Initial delay between retries when we retry
+                            the webhook call
+                          type: string
+                        maxDelay:
+                          description: Max delay between retries when we retry the
+                            webhookcall
+                          type: string
+                      type: object
+                    tlsConfigName:
+                      description: The name of an existing TLS configuration associated
+                        to the namespace to use
                       type: string
                     url:
                       description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -36984,6 +37746,17 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      batch:
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
+                        type: boolean
+                      batchTimeout:
+                        description: When batching is enabled, the optional timeout
+                          to send events even when the batch hasn't filled.
+                        type: string
                       fastack:
                         description: 'Webhooks only: When true the event will be acknowledged
                           before the webhook is invoked, allowing parallel invocations'
@@ -37001,6 +37774,37 @@ paths:
                           type: string
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
+                        type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            description: The maximum amount of time that a connection
+                              is allowed to remain with no data transmitted.
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                         type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
@@ -37066,6 +37870,31 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative
@@ -37250,6 +38079,17 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      batch:
+                        description: Events are delivered in batches in an ordered
+                          array. The batch size is capped to the readAhead limit.
+                          The event payload is always an array even if there is a
+                          single event in the batch. Commonly used with Webhooks to
+                          allow events to be delivered and acknowledged in batches.
+                        type: boolean
+                      batchTimeout:
+                        description: When batching is enabled, the optional timeout
+                          to send events even when the batch hasn't filled.
+                        type: string
                       fastack:
                         description: 'Webhooks only: When true the event will be acknowledged
                           before the webhook is invoked, allowing parallel invocations'
@@ -37267,6 +38107,37 @@ paths:
                           type: string
                         description: 'Webhooks only: Static headers to set on the
                           webhook request'
+                        type: object
+                      httpOptions:
+                        description: 'Webhooks only: a set of options for HTTP'
+                        properties:
+                          connectionTimeout:
+                            description: The maximum amount of time that a connection
+                              is allowed to remain with no data transmitted.
+                            type: string
+                          expectContinueTimeout:
+                            description: See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)
+                            type: string
+                          idleTimeout:
+                            description: The max duration to hold a HTTP keepalive
+                              connection between calls
+                            type: string
+                          maxIdleConns:
+                            description: The max number of idle connections to hold
+                              pooled
+                            type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
+                          requestTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
+                          tlsHandshakeTimeout:
+                            description: The max duration to hold a TLS handshake
+                              alive
+                            type: string
                         type: object
                       input:
                         description: 'Webhooks only: A set of options to extract data
@@ -37332,6 +38203,31 @@ paths:
                       replytx:
                         description: 'Webhooks only: The transaction type to set on
                           the reply message'
+                        type: string
+                      retry:
+                        description: 'Webhooks only: a set of options for retrying
+                          the webhook call'
+                        properties:
+                          count:
+                            description: Number of times to retry the webhook call
+                              in case of failure
+                            type: integer
+                          enabled:
+                            description: Enables retry on HTTP calls, defaults to
+                              false
+                            type: boolean
+                          initialDelay:
+                            description: Initial delay between retries when we retry
+                              the webhook call
+                            type: string
+                          maxDelay:
+                            description: Max delay between retries when we retry the
+                              webhookcall
+                            type: string
+                        type: object
+                      tlsConfigName:
+                        description: The name of an existing TLS configuration associated
+                          to the namespace to use
                         type: string
                       url:
                         description: 'Webhooks only: HTTP url to invoke. Can be relative

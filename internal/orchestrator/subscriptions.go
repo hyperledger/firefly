@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,6 +18,7 @@ package orchestrator
 
 import (
 	"context"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -45,6 +46,36 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, subDef *co
 	}
 	if subDef.Transport == system.SystemEventsTransport {
 		return nil, i18n.NewError(ctx, coremsgs.MsgSystemTransportInternal)
+	}
+	resolvedTransport, capabilities, err := or.events.ResolveTransportAndCapabilities(ctx, subDef.Transport)
+	if err != nil {
+		return nil, err
+	}
+	subDef.Transport = resolvedTransport
+
+	if subDef.Options.TLSConfigName != "" {
+		if or.namespace.TLSConfigs[subDef.Options.TLSConfigName] == nil {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNotFoundTLSConfig, subDef.Options.TLSConfigName, subDef.Namespace)
+
+		}
+
+		subDef.Options.TLSConfig = or.namespace.TLSConfigs[subDef.Options.TLSConfigName]
+	}
+
+	if subDef.Options.BatchTimeout != nil && *subDef.Options.BatchTimeout != "" {
+		_, err := fftypes.ParseDurationString(*subDef.Options.BatchTimeout, time.Millisecond)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if subDef.Options.Batch != nil && *subDef.Options.Batch {
+		if subDef.Options.WithData != nil && *subDef.Options.WithData {
+			return nil, i18n.NewError(ctx, coremsgs.MsgBatchWithDataNotSupported, subDef.Name)
+		}
+		if !capabilities.BatchDelivery {
+			return nil, i18n.NewError(ctx, coremsgs.MsgBatchDeliveryNotSupported, subDef.Transport)
+		}
 	}
 
 	return subDef, or.events.CreateUpdateDurableSubscription(ctx, subDef, mustNew)

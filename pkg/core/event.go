@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -97,6 +97,11 @@ type EnrichedEvent struct {
 type EventDelivery struct {
 	EnrichedEvent
 	Subscription SubscriptionRef `json:"subscription"`
+}
+
+type CombinedEventDataDelivery struct {
+	Event *EventDelivery
+	Data  DataArray
 }
 
 // EventDeliveryResponse is the payload an application sends back, to confirm it has accepted (or rejected) the event and as such

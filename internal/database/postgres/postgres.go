@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -41,6 +41,9 @@ type Postgres struct {
 
 func (psql *Postgres) Init(ctx context.Context, config config.Section) error {
 	capabilities := &database.Capabilities{}
+	if config.GetInt(dbsql.SQLConfMaxConnections) > 1 {
+		capabilities.Concurrency = true
+	}
 	return psql.SQLCommon.Init(ctx, psql, config, capabilities)
 }
 

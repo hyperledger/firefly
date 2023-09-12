@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -69,87 +70,60 @@ var (
 
 const tokentransferTable = "tokentransfer"
 
-func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) (err error) {
+func (s *SQLCommon) setTokenTransferEventInsertValues(query sq.InsertBuilder, transfer *core.TokenTransfer) sq.InsertBuilder {
+	return query.Values(
+		transfer.Type,
+		transfer.LocalID,
+		transfer.Pool,
+		transfer.TokenIndex,
+		transfer.URI,
+		transfer.Connector,
+		transfer.Namespace,
+		transfer.Key,
+		transfer.From,
+		transfer.To,
+		transfer.Amount,
+		transfer.ProtocolID,
+		transfer.Message,
+		transfer.MessageHash,
+		transfer.TX.Type,
+		transfer.TX.ID,
+		transfer.BlockchainEvent,
+		transfer.Created,
+	)
+}
+
+func (s *SQLCommon) attemptTokenTransferEventInsert(ctx context.Context, tx *dbsql.TXWrapper, transfer *core.TokenTransfer, requestConflictEmptyResult bool) (err error) {
+	_, err = s.InsertTxExt(ctx, tokentransferTable, tx,
+		s.setTokenTransferEventInsertValues(sq.Insert(tokentransferTable).Columns(tokenTransferColumns...), transfer),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenTransfers, core.ChangeEventTypeCreated, transfer.Namespace, transfer.LocalID)
+		}, requestConflictEmptyResult)
+	return err
+}
+
+func (s *SQLCommon) InsertOrGetTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) (existing *core.TokenTransfer, err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.QueryTx(ctx, tokentransferTable, tx,
-		sq.Select("seq").
-			From(tokentransferTable).
-			Where(sq.Eq{
-				"protocol_id": transfer.ProtocolID,
-				"pool_id":     transfer.Pool,
-				"namespace":   transfer.Namespace,
-			}),
-	)
-	if err != nil {
-		return err
-	}
-	existing := rows.Next()
-	rows.Close()
-
-	if existing {
-		if _, err = s.UpdateTx(ctx, tokentransferTable, tx,
-			sq.Update(tokentransferTable).
-				Set("type", transfer.Type).
-				Set("local_id", transfer.LocalID).
-				Set("pool_id", transfer.Pool).
-				Set("token_index", transfer.TokenIndex).
-				Set("uri", transfer.URI).
-				Set("connector", transfer.Connector).
-				Set("key", transfer.Key).
-				Set("from_key", transfer.From).
-				Set("to_key", transfer.To).
-				Set("amount", transfer.Amount).
-				Set("message_id", transfer.Message).
-				Set("message_hash", transfer.MessageHash).
-				Set("tx_type", transfer.TX.Type).
-				Set("tx_id", transfer.TX.ID).
-				Set("blockchain_event", transfer.BlockchainEvent).
-				Where(sq.Eq{"protocol_id": transfer.ProtocolID}),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenTransfers, core.ChangeEventTypeUpdated, transfer.Namespace, transfer.LocalID)
-			},
-		); err != nil {
-			return err
-		}
-	} else {
+	if transfer.Created == nil {
 		transfer.Created = fftypes.Now()
-		if _, err = s.InsertTx(ctx, tokentransferTable, tx,
-			sq.Insert(tokentransferTable).
-				Columns(tokenTransferColumns...).
-				Values(
-					transfer.Type,
-					transfer.LocalID,
-					transfer.Pool,
-					transfer.TokenIndex,
-					transfer.URI,
-					transfer.Connector,
-					transfer.Namespace,
-					transfer.Key,
-					transfer.From,
-					transfer.To,
-					transfer.Amount,
-					transfer.ProtocolID,
-					transfer.Message,
-					transfer.MessageHash,
-					transfer.TX.Type,
-					transfer.TX.ID,
-					transfer.BlockchainEvent,
-					transfer.Created,
-				),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenTransfers, core.ChangeEventTypeCreated, transfer.Namespace, transfer.LocalID)
-			},
-		); err != nil {
-			return err
-		}
+	}
+	opErr := s.attemptTokenTransferEventInsert(ctx, tx, transfer, true /* we want a failure here we can progress past */)
+	if opErr == nil {
+		return nil, s.CommitTx(ctx, tx, autoCommit)
 	}
 
-	return s.CommitTx(ctx, tx, autoCommit)
+	// Do a select within the transaction to determine if the protocolID already exists
+	existing, err = s.GetTokenTransferByProtocolID(ctx, transfer.Namespace, transfer.Pool, transfer.ProtocolID)
+	if err != nil || existing != nil {
+		return existing, err
+	}
+	// Error was apparently not a protocolID conflict - must have been something else
+	return nil, opErr
 }
 
 func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*core.TokenTransfer, error) {

@@ -1472,6 +1472,22 @@ func TestGetRootOrg(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestGetRootOrgUnregistered(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mdi := im.database.(*databasemocks.Plugin)
+
+	mmp.On("RootOrg").Return(multiparty.RootOrg{Name: "org1"})
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:org/org1").Return(nil, nil)
+	mmp.On("GetNetworkVersion").Return(2)
+
+	_, err := im.GetRootOrg(ctx)
+	assert.Regexp(t, "FF10277", err)
+
+	mmp.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestParseKeyNormalizationConfig(t *testing.T) {
 	assert.Equal(t, KeyNormalizationBlockchainPlugin, ParseKeyNormalizationConfig("blockchain_Plugin"))
 	assert.Equal(t, KeyNormalizationNone, ParseKeyNormalizationConfig("none"))

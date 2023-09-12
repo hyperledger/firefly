@@ -124,7 +124,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(storedPool, nil).Once()
 	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Name == chainPool.Event.Name
-	})).Return(nil, nil).Once()
+	})).Return(nil, nil)
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil).Once()

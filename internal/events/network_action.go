@@ -29,7 +29,7 @@ func (em *eventManager) actionTerminate(ctx context.Context, location *fftypes.J
 	return em.multiparty.TerminateContract(ctx, location, event)
 }
 
-func (em *eventManager) handleBlockchainNetworkAction(ctx context.Context, event *blockchain.NetworkActionEvent) error {
+func (em *eventManager) handleBlockchainNetworkAction(ctx context.Context, event *blockchain.NetworkActionEvent, bc *eventBatchContext) error {
 	if em.multiparty == nil {
 		log.L(ctx).Errorf("Ignoring network action from non-multiparty network!")
 		return nil
@@ -60,7 +60,7 @@ func (em *eventManager) handleBlockchainNetworkAction(ctx context.Context, event
 		chainEvent := buildBlockchainEvent(em.namespace.Name, nil, event.Event, &core.BlockchainTransactionRef{
 			BlockchainID: event.Event.BlockchainTXID,
 		})
-		err = em.maybePersistBlockchainEvent(ctx, chainEvent, nil)
+		bc.addEventToInsert(chainEvent, em.getTopicForChainListener(nil))
 	}
 	return err
 }

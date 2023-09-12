@@ -18,6 +18,7 @@ package assets
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -78,19 +79,23 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 	}
 
 	var newOperation *core.Operation
-	var resubmittedOperation *core.Operation
+	var resubmitted []*core.Operation
+	var resubmitErr error
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		txid, err := am.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenPool, pool.IdempotencyKey)
 		if err != nil {
-			var resubmitErr error
-
 			// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 			// submitting to their handlers.
 			if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-				resubmittedOperation, resubmitErr = am.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+				resubmitted, resubmitErr = am.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 				if resubmitErr != nil {
 					// Error doing resubmit, return the new error
 					return resubmitErr
+				}
+				if len(resubmitted) > 0 {
+					pool.TX.ID = idemErr.ExistingTXID
+					pool.TX.Type = core.TransactionTypeTokenPool
+					err = nil
 				}
 			}
 			return err
@@ -109,7 +114,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 		}
 		return err
 	})
-	if resubmittedOperation != nil {
+	if len(resubmitted) > 0 {
 		// We resubmitted a previously initialized operation, don't run a new one
 		return &pool.TokenPool, nil
 	}
@@ -158,6 +163,12 @@ func (am *assetManager) GetTokenPools(ctx context.Context, filter ffapi.AndFilte
 }
 
 func (am *assetManager) GetTokenPoolByLocator(ctx context.Context, connector, poolLocator string) (*core.TokenPool, error) {
+	cacheKey := fmt.Sprintf("ns=%s,connector=%s,poollocator=%s", am.namespace, connector, poolLocator)
+	if cachedValue := am.cache.Get(cacheKey); cachedValue != nil {
+		log.L(ctx).Debugf("Token pool cache hit: %s", cacheKey)
+		return cachedValue.(*core.TokenPool), nil
+	}
+	log.L(ctx).Debugf("Token pool cache miss: %s", cacheKey)
 	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
 		return nil, err
 	}
@@ -170,11 +181,20 @@ func (am *assetManager) GetTokenPoolByLocator(ctx context.Context, connector, po
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
+
+	// Cache the result
+	am.cache.Set(cacheKey, results[0])
 	return results[0], nil
 }
 
 func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error) {
 	var pool *core.TokenPool
+	cacheKey := fmt.Sprintf("ns=%s,poolnameorid=%s", am.namespace, poolNameOrID)
+	if cachedValue := am.cache.Get(cacheKey); cachedValue != nil {
+		log.L(ctx).Debugf("Token pool cache hit: %s", cacheKey)
+		return cachedValue.(*core.TokenPool), nil
+	}
+	log.L(ctx).Debugf("Token pool cache miss: %s", cacheKey)
 
 	poolID, err := fftypes.ParseUUID(ctx, poolNameOrID)
 	if err != nil {
@@ -190,7 +210,18 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 	if pool == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
+	// Cache the result
+	am.cache.Set(cacheKey, pool)
 	return pool, nil
+}
+
+func (am *assetManager) removeTokenPoolFromCache(ctx context.Context, pool *core.TokenPool) {
+	cacheKeyName := fmt.Sprintf("ns=%s,poolnameorid=%s", am.namespace, pool.Name)
+	cacheKeyID := fmt.Sprintf("ns=%s,poolnameorid=%s", am.namespace, pool.ID)
+	cacheKeyLocator := fmt.Sprintf("ns=%s,connector=%s,poollocator=%s", am.namespace, pool.Connector, pool.Locator)
+	am.cache.Delete(cacheKeyName)
+	am.cache.Delete(cacheKeyID)
+	am.cache.Delete(cacheKeyLocator)
 }
 
 func (am *assetManager) GetTokenPoolByID(ctx context.Context, poolID *fftypes.UUID) (*core.TokenPool, error) {
@@ -222,6 +253,7 @@ func (am *assetManager) DeleteTokenPool(ctx context.Context, poolNameOrID string
 		if err != nil {
 			return err
 		}
+		am.removeTokenPoolFromCache(ctx, pool)
 		if err = am.database.DeleteTokenPool(ctx, am.namespace, pool.ID); err != nil {
 			return err
 		}

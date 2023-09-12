@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -57,26 +58,22 @@ func (e *IdempotencyError) Error() string {
 	return e.OriginalError.Error()
 }
 
-func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *core.Transaction) (err error) {
-	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.RollbackTx(ctx, tx, autoCommit)
+func (s *SQLCommon) setTransactionInsertValues(query sq.InsertBuilder, transaction *core.Transaction) sq.InsertBuilder {
+	return query.Values(
+		transaction.ID,
+		string(transaction.Type),
+		transaction.Namespace,
+		transaction.Created,
+		transaction.IdempotencyKey,
+		transaction.BlockchainIDs,
+	)
+}
 
+func (s *SQLCommon) attemptInsertTxnWithIdempotencyCheck(ctx context.Context, tx *dbsql.TXWrapper, transaction *core.Transaction) (isIdempotencyErr bool, err error) {
 	transaction.Created = fftypes.Now()
 	var seq int64
 	if seq, err = s.InsertTxExt(ctx, transactionsTable, tx,
-		sq.Insert(transactionsTable).
-			Columns(transactionColumns...).
-			Values(
-				transaction.ID,
-				string(transaction.Type),
-				transaction.Namespace,
-				transaction.Created,
-				transaction.IdempotencyKey,
-				transaction.BlockchainIDs,
-			),
+		s.setTransactionInsertValues(sq.Insert(transactionsTable).Columns(transactionColumns...), transaction),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, core.ChangeEventTypeCreated, transaction.Namespace, transaction.ID)
 		},
@@ -88,16 +85,82 @@ func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *core.Tra
 			existing, _, _ := s.GetTransactions(ctx, transaction.Namespace, fb.Eq("idempotencykey", (string)(transaction.IdempotencyKey)))
 			if len(existing) > 0 {
 				newErr := &IdempotencyError{existing[0].ID, i18n.NewError(ctx, coremsgs.MsgIdempotencyKeyDuplicateTransaction, transaction.IdempotencyKey, existing[0].ID)}
-				return newErr
+				return true, newErr
 			} else if err == nil {
 				// If we don't have an error, and we didn't find an existing idempotency key match, then we don't know the reason for the conflict
-				return i18n.NewError(ctx, coremsgs.MsgNonIdempotencyKeyConflictTxInsert, transaction.ID, transaction.IdempotencyKey)
+				return false, i18n.NewError(ctx, coremsgs.MsgNonIdempotencyKeyConflictTxInsert, transaction.ID, transaction.IdempotencyKey)
 			}
 		}
+		return false, err
+	}
+	return false, nil
+}
+
+func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *core.Transaction) (err error) {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	if _, err := s.attemptInsertTxnWithIdempotencyCheck(ctx, tx, transaction); err != nil {
 		return err
 	}
 
 	return s.CommitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) InsertTransactions(ctx context.Context, txns []*core.Transaction) (err error) {
+
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	// It does not make sense to invoke this function outside of a wider transaction boundary.
+	// It relies on being able to return an idempotency error, without calling commit, after inserting some of the transactions
+	if !autoCommit {
+		s.RollbackTx(ctx, tx, autoCommit)
+		return i18n.NewError(ctx, coremsgs.MsgSQLInsertManyOutsideTransaction)
+	}
+
+	if s.Features().MultiRowInsert {
+		query := sq.Insert(transactionsTable).Columns(transactionColumns...)
+		for _, txn := range txns {
+			txn.Created = fftypes.Now()
+			query = s.setTransactionInsertValues(query, txn)
+		}
+		sequences := make([]int64, len(txns))
+
+		// Use a single multi-row insert for the messages
+		err := s.InsertTxRows(ctx, transactionsTable, tx, query, func() {
+			for _, txn := range txns {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, core.ChangeEventTypeCreated, txn.Namespace, txn.ID)
+			}
+		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Fall back to individual inserts grouped in a TX, where if one fails for idempotency error we
+		// return the error, but the others get inserted.
+		var idempotencyErr error
+		for _, txn := range txns {
+			isIdempotencyErr, txnErr := s.attemptInsertTxnWithIdempotencyCheck(ctx, tx, txn)
+			if txnErr != nil {
+				log.L(ctx).Errorf("Insert failed for tx=%s:%s idempotencyKey=%s: %s", txn.Namespace, txn.ID, txn.IdempotencyKey, txnErr)
+				if !isIdempotencyErr {
+					return txnErr
+				}
+				idempotencyErr = txnErr
+			}
+		}
+		if idempotencyErr != nil {
+			return idempotencyErr
+		}
+	}
+
+	return nil
+
 }
 
 func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*core.Transaction, error) {

@@ -83,10 +83,6 @@ type fabTxInputHeaders struct {
 	Chaincode     string         `json:"chaincode,omitempty"`
 }
 
-type fabError struct {
-	Error string `json:"error,omitempty"`
-}
-
 type PayloadSchema struct {
 	Type        string        `json:"type"`
 	PrefixItems []*PrefixItem `json:"prefixItems"`
@@ -355,10 +351,15 @@ func (f *Fabric) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONO
 		return nil // move on
 	}
 
+	// Fabric events are dispatched by the underlying fabric client to FabConnect with just the block number
+	// and the transaction hash. The index of the transaction in the block, or the index of the action within
+	// the transaction are not available. So we cannot generate an alphanumerically sortable string
+	// into the protocol ID. Instead we can only do this (which is according to Fabric rules assured to be
+	// unique, as Fabric only allows one event per transaction):
 	sTransactionHash := msgJSON.GetString("transactionId")
 	blockNumber := msgJSON.GetInt64("blockNumber")
-	transactionIndex := msgJSON.GetInt64("transactionIndex")
-	eventIndex := msgJSON.GetInt64("eventIndex")
+	protocolID := fmt.Sprintf("%.12d/%s", blockNumber, sTransactionHash)
+
 	name := msgJSON.GetString("eventName")
 	timestamp := msgJSON.GetInt64("timestamp")
 	chaincode := msgJSON.GetString("chaincodeId")
@@ -368,7 +369,7 @@ func (f *Fabric) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONO
 		BlockchainTXID: sTransactionHash,
 		Source:         f.Name(),
 		Name:           name,
-		ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
+		ProtocolID:     protocolID,
 		Output:         *payload,
 		Info:           msgJSON,
 		Timestamp:      fftypes.UnixTime(timestamp),
@@ -597,19 +598,12 @@ func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string, 
 	return signingKeyInput, nil
 }
 
-func wrapError(ctx context.Context, errRes *fabError, res *resty.Response, err error) error {
-	if errRes != nil && errRes.Error != "" {
-		return i18n.WrapError(ctx, err, coremsgs.MsgFabconnectRESTErr, errRes.Error)
-	}
-	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
-}
-
 func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) error {
 	body, err := f.buildFabconnectRequestBody(ctx, channel, chaincode, methodName, signingKey, requestID, prefixItems, input, options)
 	if err != nil {
 		return err
 	}
-	var resErr fabError
+	var resErr common.BlockchainRESTError
 	res, err := f.client.R().
 		SetContext(ctx).
 		SetHeader("x-firefly-sync", "false").
@@ -617,7 +611,7 @@ func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, m
 		SetError(&resErr).
 		Post("/transactions")
 	if err != nil || !res.IsSuccess() {
-		return wrapError(ctx, &resErr, res, err)
+		return common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return nil
 }
@@ -627,14 +621,14 @@ func (f *Fabric) queryContractMethod(ctx context.Context, channel, chaincode, me
 	if err != nil {
 		return nil, err
 	}
-	var resErr fabError
+	var resErr common.BlockchainRESTError
 	res, err := f.client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
 		Post("/query")
 	if err != nil || !res.IsSuccess() {
-		return res, wrapError(ctx, &resErr, res, err)
+		return res, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return res, nil
 }
@@ -778,12 +772,19 @@ func (f *Fabric) DeployContract(ctx context.Context, nsOpID, signingKey string, 
 	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
-func (f *Fabric) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
+func (f *Fabric) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
 	// No additional validation beyond what is enforced by Contract Manager
-	return nil
+	_, _, err := f.recoverFFI(ctx, parsedMethod)
+	return err
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
+func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) error {
+
+	method, _, err := f.recoverFFI(ctx, parsedMethod)
+	if err != nil {
+		return err
+	}
+
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -816,7 +817,34 @@ func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey s
 	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, nsOpID, prefixItems, input, options)
 }
 
-func (f *Fabric) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
+type ffiMethodAndErrors struct {
+	method *fftypes.FFIMethod
+	errors []*fftypes.FFIError
+}
+
+func (f *Fabric) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
+	// Not very sophisticated here - we don't need to parse the FFIMethod/FFIError for Fabric,
+	// as there is no underlying schema to map them to. So we just use them directly.
+	return &ffiMethodAndErrors{
+		method: method,
+		errors: errors,
+	}, nil
+}
+
+func (f *Fabric) recoverFFI(ctx context.Context, parsedMethod interface{}) (*fftypes.FFIMethod, []*fftypes.FFIError, error) {
+	methodInfo, ok := parsedMethod.(*ffiMethodAndErrors)
+	if !ok || methodInfo.method == nil {
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgUnexpectedInterfaceType, parsedMethod)
+	}
+	return methodInfo.method, methodInfo.errors, nil
+}
+
+func (f *Fabric) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
+	method, _, err := f.recoverFFI(ctx, parsedMethod)
+	if err != nil {
+		return nil, err
+	}
+
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -1012,7 +1040,7 @@ func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Opera
 
 	transactionRequestPath := fmt.Sprintf("/transactions/%s", txHash)
 	client := f.client
-	var resErr fabError
+	var resErr common.BlockchainRESTError
 	var statusResponse fftypes.JSONObject
 	res, err := client.R().
 		SetContext(ctx).
@@ -1025,7 +1053,7 @@ func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Opera
 		if res.StatusCode() == 404 {
 			return nil, nil
 		}
-		return nil, wrapError(ctx, &resErr, res, err)
+		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 
 	// TODO - could implement the same enhancement ethconnect has, and build a mock WS receipt if an API query

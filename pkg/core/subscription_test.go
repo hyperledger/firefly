@@ -35,6 +35,9 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 				ReadAhead:  &readAhead,
 				WithData:   &yes,
 			},
+			WebhookSubOptions: WebhookSubOptions{
+				TLSConfigName: "myconfig",
+			},
 		},
 		Filter: SubscriptionFilter{},
 	}
@@ -46,7 +49,7 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	// Verify it serializes as bytes to the database
 	b1, err := sub1.Options.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, `{"firstEvent":"newest","my-nested-opts":{"myopt1":12345,"myopt2":"test"},"readAhead":50,"withData":true}`, string(b1.([]byte)))
+	assert.Equal(t, `{"firstEvent":"newest","my-nested-opts":{"myopt1":12345,"myopt2":"test"},"readAhead":50,"tlsConfigName":"myconfig","withData":true}`, string(b1.([]byte)))
 
 	f1, err := sub1.Filter.Value()
 	assert.NoError(t, err)
@@ -61,6 +64,7 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, SubOptsFirstEventNewest, *sub2.Options.FirstEvent)
 	assert.Equal(t, uint16(50), *sub2.Options.ReadAhead)
+	assert.Equal(t, "myconfig", sub2.Options.TLSConfigName)
 	assert.Equal(t, string(b1.([]byte)), string(b2.([]byte)))
 
 	// Confirm we don't pass core options, to transports

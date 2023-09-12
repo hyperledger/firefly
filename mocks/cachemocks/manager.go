@@ -38,13 +38,13 @@ func (_m *Manager) GetCache(cc *cache.CConfig) (cache.CInterface, error) {
 	return r0, r1
 }
 
-// ListKeys provides a mock function with given fields:
-func (_m *Manager) ListKeys() []string {
-	ret := _m.Called()
+// ListCacheNames provides a mock function with given fields: namespace
+func (_m *Manager) ListCacheNames(namespace string) []string {
+	ret := _m.Called(namespace)
 
 	var r0 []string
-	if rf, ok := ret.Get(0).(func() []string); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = rf(namespace)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)

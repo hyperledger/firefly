@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 
@@ -38,6 +39,18 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
+
+type ConflictError struct {
+	err error
+}
+
+func (ie *ConflictError) Error() string {
+	return ie.err.Error()
+}
+
+func (ie *ConflictError) IsConflictError() bool {
+	return true
+}
 
 type FFTokens struct {
 	ctx             context.Context
@@ -690,11 +703,18 @@ func (ft *FFTokens) eventLoop() {
 //
 //	"Bad Request: Field 'x' is required"
 func wrapError(ctx context.Context, errRes *tokenError, res *resty.Response, err error) error {
-	if errRes != nil && errRes.Message != "" {
+	if errRes != nil && (errRes.Message != "" || errRes.Error != "") {
+		errMsgFromBody := errRes.Message
 		if errRes.Error != "" {
-			return i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErr, errRes.Error+": "+errRes.Message)
+			errMsgFromBody = errRes.Error + ": " + errRes.Message
 		}
-		return i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErr, errRes.Message)
+		if res != nil && res.StatusCode() == http.StatusConflict {
+			return &ConflictError{err: i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErrConflict, errMsgFromBody)}
+		}
+		err = i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErr, errMsgFromBody)
+	}
+	if res != nil && res.StatusCode() == http.StatusConflict {
+		return &ConflictError{err: ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErrConflict)}
 	}
 	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 }

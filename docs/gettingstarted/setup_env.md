@@ -124,6 +124,8 @@ This may take a minute or two and in the background the FireFly CLI will do the 
 - Deploy an `ERC-1155` token smart contract
 - Register an identity for each member and node
 
+> **NOTE**: For macOS users, the default port (5000) is already in-use by `ControlCe` service (AirPlay Receiver). You can either [disable this service](https://support.apple.com/guide/mac-help/change-airdrop-handoff-settings-mchl6a407f99/13.0/mac/13.0) in your environment, or use a different port when creating your stack (e.g. `ff init dev -p 8000`)
+
 After your stack finishes starting it will print out the links to each member's UI and the Sandbox for that node:
 
 ```

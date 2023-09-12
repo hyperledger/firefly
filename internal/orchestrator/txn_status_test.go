@@ -650,6 +650,9 @@ func TestGetTransactionStatusTokenTransferRetry(t *testing.T) {
 
 	or.mth.On("GetTransactionByIDCached", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
+	or.mom.On("GetOperationByIDCached", mock.Anything, op1ID).Return(ops[0], nil)
+	or.mom.On("GetOperationByIDCached", mock.Anything, op2ID).Return(ops[1], nil)
+	or.mbi.On("GetTransactionStatus", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetTokenTransfers", mock.Anything, "ns", mock.Anything).Return(transfers, nil, nil)
 
@@ -939,4 +942,30 @@ func TestGetTransactionStatusUnknownType(t *testing.T) {
 	assert.Regexp(t, "FF10336", err)
 
 	or.mdi.AssertExpectations(t)
+}
+
+func TestGetTransactionStatusOpStatusError(t *testing.T) {
+	or := newTestOrchestrator()
+
+	txID := fftypes.NewUUID()
+	tx := &core.Transaction{
+		Namespace: "ns1",
+		Type:      core.TransactionTypeTokenTransfer,
+	}
+	op1ID := fftypes.NewUUID()
+	ops := []*core.Operation{
+		{
+			Namespace: "ns1",
+			Status:    core.OpStatusPending,
+			ID:        op1ID,
+			Type:      core.OpTypeTokenTransfer,
+		},
+	}
+
+	or.mth.On("GetTransactionByIDCached", mock.Anything, txID).Return(tx, nil)
+	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
+	or.mom.On("GetOperationByIDCached", mock.Anything, op1ID).Return(nil, fmt.Errorf("pop"))
+
+	_, err := or.GetTransactionStatus(context.Background(), txID.String())
+	assert.EqualError(t, err, "pop")
 }
