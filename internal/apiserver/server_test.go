@@ -21,7 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
@@ -234,9 +235,57 @@ func TestSwaggerJSON(t *testing.T) {
 	res, err := http.Get(fmt.Sprintf("http://%s/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
-	b, _ := ioutil.ReadAll(res.Body)
+	b, _ := io.ReadAll(res.Body)
 	err = json.Unmarshal(b, &openapi3.T{})
 	assert.NoError(t, err)
+}
+
+func TestNamespacedSwaggerJSON(t *testing.T) {
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/test/api/swagger.json", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	b, _ := io.ReadAll(res.Body)
+	err = json.Unmarshal(b, &openapi3.T{})
+	assert.NoError(t, err)
+}
+
+func TestNamespacedSwaggerUI(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	res, err := resty.New().R().
+		SetDoNotParseResponse(true).
+		Get(fmt.Sprintf("http://%s/api/v1/namespaces/test/api", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode())
+	b, _ := io.ReadAll(res.RawBody())
+	assert.Contains(t, string(b), "http://127.0.0.1:5000/api/v1/namespaces/test/api/openapi.yaml")
+}
+
+func TestNamespacedSwaggerUIRewrite(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	s := httptest.NewServer(r)
+	defer s.Close()
+	as.dynamicPublicURLHeader = "X-API-Rewrite"
+
+	res, err := resty.New().R().
+		SetDoNotParseResponse(true).
+		SetHeader("X-API-Rewrite", "https://myhost.example.com/mypath/to/namespace/").
+		Get(fmt.Sprintf("http://%s/api/v1/namespaces/test/api", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode())
+	b, _ := io.ReadAll(res.RawBody())
+	assert.Contains(t, string(b), "https://myhost.example.com/mypath/to/namespace/api/openapi.yaml")
 }
 
 func TestSwaggerAdminJSON(t *testing.T) {
@@ -247,7 +296,7 @@ func TestSwaggerAdminJSON(t *testing.T) {
 	res, err := http.Get(fmt.Sprintf("http://%s/spi/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
-	b, _ := ioutil.ReadAll(res.Body)
+	b, _ := io.ReadAll(res.Body)
 	err = json.Unmarshal(b, &openapi3.T{})
 	assert.NoError(t, err)
 }
@@ -373,7 +422,7 @@ func TestContractAPISwaggerUI(t *testing.T) {
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
-	b, _ := ioutil.ReadAll(res.Body)
+	b, _ := io.ReadAll(res.Body)
 	assert.Regexp(t, "html", string(b))
 }
 

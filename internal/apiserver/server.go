@@ -404,10 +404,10 @@ func (as *apiServer) createAdminMuxRouter(mgr namespace.Manager) *mux.Router {
 		StaticPublicURL:        publicURL,
 		DynamicPublicURLHeader: as.dynamicPublicURLHeader,
 	}
-	r.HandleFunc(`/spi/swagger.json`, hf.APIWrapper(oaf.OpenAPIHandler(`/spi/v1`, ffapi.OpenAPIFormatJSON, routes)))
-	r.HandleFunc(`/spi/openapi.json`, hf.APIWrapper(oaf.OpenAPIHandler(`/spi/v1`, ffapi.OpenAPIFormatJSON, routes)))
-	r.HandleFunc(`/spi/swagger.yaml`, hf.APIWrapper(oaf.OpenAPIHandler(`/spi/v1`, ffapi.OpenAPIFormatYAML, routes)))
-	r.HandleFunc(`/spi/openapi.yaml`, hf.APIWrapper(oaf.OpenAPIHandler(`/spi/v1`, ffapi.OpenAPIFormatYAML, routes)))
+	r.HandleFunc(`/spi/swagger.json`, hf.APIWrapper(oaf.OpenAPIHandler(`/spi/v1`, ffapi.OpenAPIFormatJSON, spiRoutes)))
+	r.HandleFunc(`/spi/openapi.json`, hf.APIWrapper(oaf.OpenAPIHandler(`/spi/v1`, ffapi.OpenAPIFormatJSON, spiRoutes)))
+	r.HandleFunc(`/spi/swagger.yaml`, hf.APIWrapper(oaf.OpenAPIHandler(`/spi/v1`, ffapi.OpenAPIFormatYAML, spiRoutes)))
+	r.HandleFunc(`/spi/openapi.yaml`, hf.APIWrapper(oaf.OpenAPIHandler(`/spi/v1`, ffapi.OpenAPIFormatYAML, spiRoutes)))
 	r.HandleFunc(`/spi`, hf.APIWrapper(oaf.SwaggerUIHandler(`/spi/openapi.yaml`)))
 
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
