@@ -306,6 +306,27 @@ func TestDefineContractAPIPublishNonMultiparty(t *testing.T) {
 	assert.Regexp(t, "FF10414", err)
 }
 
+func TestDefineContractAPINonMultipartyUpdate(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = false
+	testUUID := fftypes.NewUUID()
+
+	url := "http://firefly"
+	api := &core.ContractAPI{
+		ID:        testUUID,
+		Name:      "banana",
+		Published: false,
+	}
+	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
+	ds.mdi.On("InsertOrGetContractAPI", mock.Anything, mock.Anything).Return(api, nil)
+	ds.mdi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ds.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+
+	err := ds.DefineContractAPI(context.Background(), url, api, false)
+	assert.NoError(t, err)
+}
+
 func TestPublishFFI(t *testing.T) {
 	ds := newTestDefinitionSender(t)
 	defer ds.cleanup(t)
