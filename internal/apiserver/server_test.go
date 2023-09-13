@@ -31,6 +31,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/httpserver"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -224,22 +225,6 @@ func TestUnauthorized(t *testing.T) {
 	assert.Regexp(t, "FF00169", resJSON["error"])
 }
 
-func TestSwaggerYAML(t *testing.T) {
-	_, _, as := newTestServer()
-	handler := as.handlerFactory().APIWrapper(as.swaggerHandler(as.swaggerGenerator(routes, "http://localhost:12345/api/v1")))
-	s := httptest.NewServer(http.HandlerFunc(handler))
-	defer s.Close()
-
-	res, err := http.Get(fmt.Sprintf("http://%s/api/swagger.yaml", s.Listener.Addr()))
-	assert.NoError(t, err)
-	assert.Equal(t, 200, res.StatusCode)
-	b, _ := ioutil.ReadAll(res.Body)
-	doc, err := openapi3.NewLoader().LoadFromData(b)
-	assert.NoError(t, err)
-	err = doc.Validate(context.Background())
-	assert.NoError(t, err)
-}
-
 func TestSwaggerJSON(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
@@ -305,7 +290,7 @@ func TestContractAPISwaggerJSON(t *testing.T) {
 
 	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(api, nil)
 	mcm.On("GetFFIByIDWithChildren", mock.Anything, api.Interface.ID).Return(ffi, nil)
-	mffi.On("Generate", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my-api", api, ffi).Return(&openapi3.T{})
+	mffi.On("Build", mock.Anything, api, ffi).Return(&ffapi.SwaggerGenOptions{}, []*ffapi.Route{})
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)

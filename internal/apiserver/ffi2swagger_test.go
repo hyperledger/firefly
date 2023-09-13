@@ -23,6 +23,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -114,9 +115,10 @@ func paramNames(p openapi3.Schemas) []string {
 }
 
 func TestGenerate(t *testing.T) {
-	g := NewFFISwaggerGen()
 	api := &core.ContractAPI{}
-	doc := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
+	options, routes := (&ffiSwaggerGen{}).Build(context.Background(), api, testFFI())
+	options.BaseURL = "http://localhost:12345"
+	doc := ffapi.NewSwaggerGen(options).Generate(context.Background(), routes)
 
 	b, err := yaml.Marshal(doc)
 	assert.NoError(t, err)
@@ -150,9 +152,10 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestGenerateWithLocation(t *testing.T) {
-	g := NewFFISwaggerGen()
 	api := &core.ContractAPI{Location: fftypes.JSONAnyPtr(`{}`)}
-	doc := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
+	options, routes := (&ffiSwaggerGen{}).Build(context.Background(), api, testFFI())
+	options.BaseURL = "http://localhost:12345"
+	doc := ffapi.NewSwaggerGen(options).Generate(context.Background(), routes)
 
 	b, err := yaml.Marshal(doc)
 	assert.NoError(t, err)

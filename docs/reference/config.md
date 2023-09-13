@@ -28,6 +28,7 @@ nav_order: 2
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |defaultFilterLimit|The maximum number of rows to return if no limit is specified on an API request|`int`|`25`
+|dynamicPublicURLHeader|Dynamic header that informs the backend the base public URL for the request, in order to build URL links in OpenAPI/SwaggerUI|`string`|`<nil>`
 |maxFilterLimit|The largest value of `limit` that an HTTP client can specify in a request|`int`|`1000`
 |passthroughHeaders|A list of HTTP request headers to pass through to dependency microservices|`[]string`|`[]`
 |requestMaxTimeout|The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10m`
