@@ -74,10 +74,11 @@ func InitConfig() {
 
 func NewAPIServer() Server {
 	as := &apiServer{
-		apiTimeout:     config.GetDuration(coreconfig.APIRequestTimeout),
-		apiMaxTimeout:  config.GetDuration(coreconfig.APIRequestMaxTimeout),
-		metricsEnabled: config.GetBool(coreconfig.MetricsEnabled),
-		ffiSwaggerGen:  &ffiSwaggerGen{},
+		apiTimeout:             config.GetDuration(coreconfig.APIRequestTimeout),
+		apiMaxTimeout:          config.GetDuration(coreconfig.APIRequestMaxTimeout),
+		dynamicPublicURLHeader: config.GetString(coreconfig.APIDynamicPublicURLHeader),
+		metricsEnabled:         config.GetBool(coreconfig.MetricsEnabled),
+		ffiSwaggerGen:          &ffiSwaggerGen{},
 	}
 	as.apiPublicURL = as.getPublicURL(apiConfig, "")
 	return as
