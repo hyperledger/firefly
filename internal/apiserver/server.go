@@ -60,6 +60,7 @@ type apiServer struct {
 	apiMaxTimeout          time.Duration
 	metricsEnabled         bool
 	ffiSwaggerGen          FFISwaggerGen
+	apiPublicURL           string
 	dynamicPublicURLHeader string
 }
 
@@ -72,12 +73,14 @@ func InitConfig() {
 }
 
 func NewAPIServer() Server {
-	return &apiServer{
+	as := &apiServer{
 		apiTimeout:     config.GetDuration(coreconfig.APIRequestTimeout),
 		apiMaxTimeout:  config.GetDuration(coreconfig.APIRequestMaxTimeout),
 		metricsEnabled: config.GetBool(coreconfig.MetricsEnabled),
 		ffiSwaggerGen:  &ffiSwaggerGen{},
 	}
+	as.apiPublicURL = as.getPublicURL(apiConfig, "")
+	return as
 }
 
 // Serve is the main entry point for the API Server
@@ -173,7 +176,23 @@ func (as *apiServer) baseSwaggerGenOptions() ffapi.SwaggerGenOptions {
 	}
 }
 
-func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manager, apiBaseURL string, route *ffapi.Route) http.HandlerFunc {
+func (as *apiServer) getBaseURL(req *http.Request) string {
+	var baseURL string
+	if as.dynamicPublicURLHeader != "" {
+		baseURL = req.Header.Get(as.dynamicPublicURLHeader)
+		if baseURL != "" {
+			return baseURL
+		}
+	}
+	baseURL = strings.TrimSuffix(as.apiPublicURL, "/") + "/api/v1"
+	vars := mux.Vars(req)
+	if ns, ok := vars["ns"]; ok && ns != "" {
+		baseURL += `/namespaces/` + ns
+	}
+	return baseURL
+}
+
+func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manager, fixedBaseURL string, route *ffapi.Route) http.HandlerFunc {
 	// We extend the base ffapi functionality, with standardized DB filter support for all core resources.
 	// We also pass the Orchestrator context through
 	ce := route.Extensions.(*coreExtensions)
@@ -199,6 +218,10 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 			return nil, i18n.NewError(r.Req.Context(), coremsgs.MsgActionNotSupported)
 		}
 
+		apiBaseURL := fixedBaseURL // for SPI
+		if apiBaseURL == "" {
+			apiBaseURL = as.getBaseURL(r.Req)
+		}
 		cr := &coreRequest{
 			mgr:        mgr,
 			or:         or,
@@ -217,6 +240,10 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 				return nil, i18n.NewError(r.Req.Context(), coremsgs.MsgActionNotSupported)
 			}
 
+			apiBaseURL := fixedBaseURL // for SPI
+			if apiBaseURL == "" {
+				apiBaseURL = as.getBaseURL(r.Req)
+			}
 			cr := &coreRequest{
 				mgr:        mgr,
 				or:         or,
@@ -274,7 +301,7 @@ func (as *apiServer) namespacedContractSwaggerGenerator(hf *ffapi.HandlerFactory
 		if err != nil {
 			return -1, err
 		}
-		apiBaseURL := publicURL + "/api/v1"
+		apiBaseURL := as.getBaseURL(req)
 		cm := or.Contracts()
 		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["apiName"])
 		if err != nil {
@@ -291,7 +318,7 @@ func (as *apiServer) namespacedContractSwaggerGenerator(hf *ffapi.HandlerFactory
 		options, routes := as.ffiSwaggerGen.Build(req.Context(), api, ffi)
 		return (&ffapi.OpenAPIHandlerFactory{
 			BaseSwaggerGenOptions:  *options,
-			StaticPublicURL:        apiBaseURL + "/namespaces/" + vars["ns"],
+			StaticPublicURL:        apiBaseURL,
 			DynamicPublicURLHeader: as.dynamicPublicURLHeader,
 		}).OpenAPIHandler(fmt.Sprintf("/apis/%s", vars["apiName"]), format, routes)(res, req)
 	}))
@@ -316,12 +343,10 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 		r.Use(metrics.GetRestServerInstrumentation().Middleware)
 	}
 
-	publicURL := as.getPublicURL(apiConfig, "")
-	apiBaseURL := fmt.Sprintf("%s/api/v1", publicURL)
 	for _, route := range routes {
 		if ce, ok := route.Extensions.(*coreExtensions); ok {
 			if ce.CoreJSONHandler != nil {
-				r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(hf, mgr, apiBaseURL, route)).
+				r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(hf, mgr, "", route)).
 					Methods(route.Method)
 			}
 		}
@@ -330,7 +355,7 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 	// Swagger builder for the root
 	oaf := &ffapi.OpenAPIHandlerFactory{
 		BaseSwaggerGenOptions:  as.baseSwaggerGenOptions(),
-		StaticPublicURL:        publicURL,
+		StaticPublicURL:        as.apiPublicURL,
 		DynamicPublicURLHeader: as.dynamicPublicURLHeader,
 	}
 
@@ -341,17 +366,17 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 	r.HandleFunc(`/api/openapi.yaml`, hf.APIWrapper(oaf.OpenAPIHandler(`/api/v1`, ffapi.OpenAPIFormatYAML, routes)))
 	r.HandleFunc(`/api`, hf.APIWrapper(oaf.SwaggerUIHandler(`/api/openapi.yaml`)))
 	// Namespace relative APIs
-	as.namespacedSwaggerHandler(hf, r, publicURL, `/api/swagger.json`, ffapi.OpenAPIFormatJSON)
-	as.namespacedSwaggerHandler(hf, r, publicURL, `/api/openapi.json`, ffapi.OpenAPIFormatJSON)
-	as.namespacedSwaggerHandler(hf, r, publicURL, `/api/swagger.yaml`, ffapi.OpenAPIFormatYAML)
-	as.namespacedSwaggerHandler(hf, r, publicURL, `/api/openapi.yaml`, ffapi.OpenAPIFormatYAML)
-	as.namespacedSwaggerUI(hf, r, publicURL, `/api`)
+	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/swagger.json`, ffapi.OpenAPIFormatJSON)
+	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/openapi.json`, ffapi.OpenAPIFormatJSON)
+	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/swagger.yaml`, ffapi.OpenAPIFormatYAML)
+	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/openapi.yaml`, ffapi.OpenAPIFormatYAML)
+	as.namespacedSwaggerUI(hf, r, as.apiPublicURL, `/api`)
 	// Dynamic swagger for namespaced contract APIs
-	as.namespacedContractSwaggerGenerator(hf, r, mgr, publicURL, `/api/swagger.json`, ffapi.OpenAPIFormatJSON)
-	as.namespacedContractSwaggerGenerator(hf, r, mgr, publicURL, `/api/openapi.json`, ffapi.OpenAPIFormatJSON)
-	as.namespacedContractSwaggerGenerator(hf, r, mgr, publicURL, `/api/swagger.yaml`, ffapi.OpenAPIFormatYAML)
-	as.namespacedContractSwaggerGenerator(hf, r, mgr, publicURL, `/api/openapi.yaml`, ffapi.OpenAPIFormatYAML)
-	as.namespacedContractSwaggerUI(hf, r, publicURL, `/api`)
+	as.namespacedContractSwaggerGenerator(hf, r, mgr, as.apiPublicURL, `/api/swagger.json`, ffapi.OpenAPIFormatJSON)
+	as.namespacedContractSwaggerGenerator(hf, r, mgr, as.apiPublicURL, `/api/openapi.json`, ffapi.OpenAPIFormatJSON)
+	as.namespacedContractSwaggerGenerator(hf, r, mgr, as.apiPublicURL, `/api/swagger.yaml`, ffapi.OpenAPIFormatYAML)
+	as.namespacedContractSwaggerGenerator(hf, r, mgr, as.apiPublicURL, `/api/openapi.yaml`, ffapi.OpenAPIFormatYAML)
+	as.namespacedContractSwaggerUI(hf, r, as.apiPublicURL, `/api`)
 
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 

@@ -3169,11 +3169,11 @@ func TestGetContractAPI(t *testing.T) {
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
 
-	result, err := cm.GetContractAPI(context.Background(), "http://localhost/api", "banana")
+	result, err := cm.GetContractAPI(context.Background(), "http://localhost/api/v1/namespaces/ns1", "banana")
 
 	assert.NoError(t, err)
-	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api/swagger.json", result.URLs.OpenAPI)
-	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api", result.URLs.UI)
+	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api/swagger.json", result.URLs.OpenAPI)
+	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api", result.URLs.UI)
 }
 
 func TestGetContractAPIs(t *testing.T) {
@@ -3189,12 +3189,12 @@ func TestGetContractAPIs(t *testing.T) {
 	filter := database.ContractAPIQueryFactory.NewFilter(context.Background()).And()
 	mdb.On("GetContractAPIs", mock.Anything, "ns1", filter).Return(apis, &ffapi.FilterResult{}, nil)
 
-	results, _, err := cm.GetContractAPIs(context.Background(), "http://localhost/api", filter)
+	results, _, err := cm.GetContractAPIs(context.Background(), "http://localhost/api/v1/namespaces/ns1", filter)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
-	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api/swagger.json", results[0].URLs.OpenAPI)
-	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api", results[0].URLs.UI)
+	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api/swagger.json", results[0].URLs.OpenAPI)
+	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api", results[0].URLs.UI)
 }
 
 func TestGetContractAPIInterface(t *testing.T) {

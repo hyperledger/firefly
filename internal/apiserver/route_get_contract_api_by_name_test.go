@@ -40,7 +40,7 @@ func TestGetContractAPIByName(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "banana").
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/ns1", "banana").
 		Return(&core.ContractAPI{}, nil)
 	r.ServeHTTP(res, req)
 
