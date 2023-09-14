@@ -21,16 +21,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/httpserver"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -58,10 +59,7 @@ func newTestServer() (*namespacemocks.Manager, *orchestratormocks.Orchestrator, 
 	mgr.On("Orchestrator", mock.Anything, "mynamespace", false).Return(o, nil).Maybe()
 	mgr.On("Orchestrator", mock.Anything, "ns1", false).Return(o, nil).Maybe()
 	config.Set(coreconfig.APIMaxFilterLimit, 100)
-	as := &apiServer{
-		apiTimeout:    5 * time.Second,
-		ffiSwaggerGen: &apiservermocks.FFISwaggerGen{},
-	}
+	as := NewAPIServer().(*apiServer)
 	return mgr, o, as
 }
 
@@ -224,22 +222,6 @@ func TestUnauthorized(t *testing.T) {
 	assert.Regexp(t, "FF00169", resJSON["error"])
 }
 
-func TestSwaggerYAML(t *testing.T) {
-	_, _, as := newTestServer()
-	handler := as.handlerFactory().APIWrapper(as.swaggerHandler(as.swaggerGenerator(routes, "http://localhost:12345/api/v1")))
-	s := httptest.NewServer(http.HandlerFunc(handler))
-	defer s.Close()
-
-	res, err := http.Get(fmt.Sprintf("http://%s/api/swagger.yaml", s.Listener.Addr()))
-	assert.NoError(t, err)
-	assert.Equal(t, 200, res.StatusCode)
-	b, _ := ioutil.ReadAll(res.Body)
-	doc, err := openapi3.NewLoader().LoadFromData(b)
-	assert.NoError(t, err)
-	err = doc.Validate(context.Background())
-	assert.NoError(t, err)
-}
-
 func TestSwaggerJSON(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
@@ -249,9 +231,57 @@ func TestSwaggerJSON(t *testing.T) {
 	res, err := http.Get(fmt.Sprintf("http://%s/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
-	b, _ := ioutil.ReadAll(res.Body)
+	b, _ := io.ReadAll(res.Body)
 	err = json.Unmarshal(b, &openapi3.T{})
 	assert.NoError(t, err)
+}
+
+func TestNamespacedSwaggerJSON(t *testing.T) {
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/test/api/swagger.json", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	b, _ := io.ReadAll(res.Body)
+	err = json.Unmarshal(b, &openapi3.T{})
+	assert.NoError(t, err)
+}
+
+func TestNamespacedSwaggerUI(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	res, err := resty.New().R().
+		SetDoNotParseResponse(true).
+		Get(fmt.Sprintf("http://%s/api/v1/namespaces/test/api", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode())
+	b, _ := io.ReadAll(res.RawBody())
+	assert.Contains(t, string(b), "http://127.0.0.1:5000/api/v1/namespaces/test/api/openapi.yaml")
+}
+
+func TestNamespacedSwaggerUIRewrite(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	s := httptest.NewServer(r)
+	defer s.Close()
+	as.dynamicPublicURLHeader = "X-API-Rewrite"
+
+	res, err := resty.New().R().
+		SetDoNotParseResponse(true).
+		SetHeader("X-API-Rewrite", "https://myhost.example.com/mypath/to/namespace/").
+		Get(fmt.Sprintf("http://%s/api/v1/namespaces/test/api", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode())
+	b, _ := io.ReadAll(res.RawBody())
+	assert.Contains(t, string(b), "https://myhost.example.com/mypath/to/namespace/api/openapi.yaml")
 }
 
 func TestSwaggerAdminJSON(t *testing.T) {
@@ -262,7 +292,7 @@ func TestSwaggerAdminJSON(t *testing.T) {
 	res, err := http.Get(fmt.Sprintf("http://%s/spi/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
-	b, _ := ioutil.ReadAll(res.Body)
+	b, _ := io.ReadAll(res.Body)
 	err = json.Unmarshal(b, &openapi3.T{})
 	assert.NoError(t, err)
 }
@@ -292,7 +322,8 @@ func TestContractAPISwaggerJSON(t *testing.T) {
 	r := as.createMuxRouter(context.Background(), mgr)
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
-	mffi := as.ffiSwaggerGen.(*apiservermocks.FFISwaggerGen)
+	mffi := apiservermocks.NewFFISwaggerGen(t)
+	as.ffiSwaggerGen = mffi
 	s := httptest.NewServer(r)
 	defer s.Close()
 
@@ -302,14 +333,17 @@ func TestContractAPISwaggerJSON(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
+	as.dynamicPublicURLHeader = "X-API-BaseURL"
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(api, nil)
+	mcm.On("GetContractAPI", mock.Anything, "http://mydomain.com/path/to/default", "my-api").Return(api, nil)
 	mcm.On("GetFFIByIDWithChildren", mock.Anything, api.Interface.ID).Return(ffi, nil)
-	mffi.On("Generate", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my-api", api, ffi).Return(&openapi3.T{})
+	mffi.On("Build", mock.Anything, api, ffi).Return(&ffapi.SwaggerGenOptions{}, []*ffapi.Route{})
 
-	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
+	res, err := resty.New().R().
+		SetHeader("X-API-BaseURL", "http://mydomain.com/path/to/default").
+		Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
-	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, 200, res.StatusCode())
 }
 
 func TestContractAPISwaggerJSONGetAPIFail(t *testing.T) {
@@ -320,7 +354,7 @@ func TestContractAPISwaggerJSONGetAPIFail(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(nil, fmt.Errorf("pop"))
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/default", "my-api").Return(nil, fmt.Errorf("pop"))
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
@@ -335,7 +369,7 @@ func TestContractAPISwaggerJSONGetAPINotFound(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(nil, nil)
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/default", "my-api").Return(nil, nil)
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
@@ -356,7 +390,7 @@ func TestContractAPISwaggerJSONGetFFIFail(t *testing.T) {
 		},
 	}
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(api, nil)
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/default", "my-api").Return(api, nil)
 	mcm.On("GetFFIByIDWithChildren", mock.Anything, api.Interface.ID).Return(nil, fmt.Errorf("pop"))
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
@@ -388,7 +422,7 @@ func TestContractAPISwaggerUI(t *testing.T) {
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
-	b, _ := ioutil.ReadAll(res.Body)
+	b, _ := io.ReadAll(res.Body)
 	assert.Regexp(t, "html", string(b))
 }
 
