@@ -369,7 +369,7 @@ as long as it can support the basic operations described here (create pool, mint
     </span><span class="nl">"decimals"</span><span class="p">:</span><span class="w"> </span><span class="mi">18</span><span class="p">,</span><span class="w">
     </span><span class="nl">"connector"</span><span class="p">:</span><span class="w"> </span><span class="s2">"erc20_erc721"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"43923040-b1e5-4164-aa20-47636c7177ee"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"state"</span><span class="p">:</span><span class="w"> </span><span class="s2">"confirmed"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"active"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
     </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-16T01:23:15Z"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"info"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
         </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x056df1c53c3c00b0e13d37543f46930b42f71db0"</span><span class="p">,</span><span class="w">
@@ -458,13 +458,13 @@ as long as it can support the basic operations described here (create pool, mint
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">message</code></td>
-      <td>The UUID of the broadcast message used to inform the network to index this pool</td>
+      <td>The UUID of the broadcast message used to inform the network about this pool</td>
       <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
     </tr>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">state</code></td>
-      <td>The current state of the token pool</td>
-      <td><code class="language-plaintext highlighter-rouge">FFEnum</code>:<br /><code class="language-plaintext highlighter-rouge">"pending"</code><br /><code class="language-plaintext highlighter-rouge">"confirmed"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">active</code></td>
+      <td>Indicates whether the pool has been successfully activated with the token connector</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">created</code></td>
