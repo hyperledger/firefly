@@ -112,7 +112,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	storedPool := &core.TokenPool{
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 		Message:   fftypes.NewUUID(),
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
@@ -167,7 +167,7 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 	storedPool := &core.TokenPool{
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   txID,
@@ -207,7 +207,7 @@ func TestTokenPoolCreatedConfirmFailBadSymbol(t *testing.T) {
 	storedPool := &core.TokenPool{
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 		Symbol:    "FFT",
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
@@ -234,7 +234,7 @@ func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
 		Key:       "0x0",
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   txID,
@@ -264,7 +264,7 @@ func TestConfirmPoolTxFail(t *testing.T) {
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
 		Key:       "0x0",
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   txID,
@@ -298,7 +298,7 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
 		Key:       "0x0",
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   txID,

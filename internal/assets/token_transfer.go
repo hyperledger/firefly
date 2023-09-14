@@ -101,8 +101,8 @@ func (am *assetManager) validateTransfer(ctx context.Context, transfer *core.Tok
 	transfer.TokenTransfer.Pool = pool.ID
 	transfer.TokenTransfer.Connector = pool.Connector
 
-	if pool.State != core.TokenPoolStateConfirmed {
-		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
+	if !pool.Active {
+		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotActive)
 	}
 	if transfer.Key, err = am.identity.ResolveInputSigningKey(ctx, transfer.Key, am.keyNormalization); err != nil {
 		return nil, err

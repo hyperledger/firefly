@@ -94,7 +94,7 @@ func (ds *definitionSender) getTokenPoolSender(ctx context.Context, pool *core.T
 	pool.Name = ""
 	pool.Namespace = ""
 	pool.Published = true
-	pool.State = core.TokenPoolStatePending
+	pool.Active = false
 	definition := &core.TokenPoolDefinition{Pool: pool}
 
 	sender := ds.getSenderDefault(ctx, definition, core.SystemTagDefinePool)
@@ -104,7 +104,7 @@ func (ds *definitionSender) getTokenPoolSender(ctx context.Context, pool *core.T
 
 	pool.Name = localName
 	pool.Namespace = ds.namespace
-	pool.State = core.TokenPoolStateConfirmed
+	pool.Active = true
 	return sender
 }
 

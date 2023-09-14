@@ -213,8 +213,8 @@ func (am *assetManager) validateApproval(ctx context.Context, approval *core.Tok
 	approval.TokenApproval.Pool = pool.ID
 	approval.TokenApproval.Connector = pool.Connector
 
-	if pool.State != core.TokenPoolStateConfirmed {
-		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
+	if !pool.Active {
+		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotActive)
 	}
 	approval.Key, err = am.identity.ResolveInputSigningKey(ctx, approval.Key, am.keyNormalization)
 	return pool, err

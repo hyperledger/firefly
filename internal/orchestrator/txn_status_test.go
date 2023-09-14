@@ -258,7 +258,7 @@ func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Type:      core.TokenTypeFungible,
 			Created:   fftypes.UnixTime(0),
-			State:     core.TokenPoolStateConfirmed,
+			Active:    true,
 		},
 	}
 
@@ -378,7 +378,7 @@ func TestGetTransactionStatusTokenPoolUnconfirmed(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Type:      core.TokenTypeFungible,
 			Created:   fftypes.UnixTime(0),
-			State:     core.TokenPoolStatePending,
+			Active:    false,
 		},
 	}
 

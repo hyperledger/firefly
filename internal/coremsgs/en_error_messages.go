@@ -151,7 +151,7 @@ var (
 	MsgInvalidMessageType                 = ffe("FF10287", "Invalid message type - allowed types are %s", 400)
 	MsgWSClosed                           = ffe("FF10290", "Websocket closed")
 	MsgFieldNotSpecified                  = ffe("FF10292", "Field '%s' must be specified", 400)
-	MsgTokenPoolNotConfirmed              = ffe("FF10293", "Token pool is not yet confirmed")
+	MsgTokenPoolNotActive                 = ffe("FF10293", "Token pool is not yet activated")
 	MsgHistogramCollectionParam           = ffe("FF10297", "Collection to fetch")
 	MsgInvalidNumberOfIntervals           = ffe("FF10298", "Number of time intervals must be between %d and %d", 400)
 	MsgInvalidChartNumberParam            = ffe("FF10299", "Invalid %s. Must be a number.", 400)

@@ -61,7 +61,7 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 
 	// Attempt to create the pool in pending state
 	pool.Namespace = dh.namespace.Name
-	pool.State = core.TokenPoolStatePending
+	pool.Active = false
 	for i := 1; ; i++ {
 		if err := pool.Validate(ctx); err != nil {
 			return HandlerResult{Action: core.ActionReject, CustomCorrelator: correlator}, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID)
@@ -110,7 +110,7 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 
 func (dh *definitionHandler) reconcilePublishedPool(ctx context.Context, existing, pool *core.TokenPool, isAuthor bool) (core.MessageAction, error) {
 	if existing.Message.Equals(pool.Message) {
-		if existing.State == core.TokenPoolStateConfirmed {
+		if existing.Active {
 			// Pool was previously activated - this must be a rewind to confirm the message
 			return core.ActionConfirm, nil
 		} else {
