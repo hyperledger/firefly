@@ -1,6 +1,6 @@
 components: {}
 info:
-  title: FireFly
+  title: Hyperledger FireFly
   version: "1.0"
 openapi: 3.0.2
 paths:
@@ -42678,4 +42678,4 @@ paths:
       tags:
       - Global
 servers:
-- url: http://localhost:5000
+- url: http://localhost:5000/api/v1
