@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -55,6 +55,7 @@ const (
 	// SystemTagIdentityClaim is the tag for messages that broadcast an identity claim
 	SystemTagIdentityClaim = "ff_identity_claim"
 
+	//nolint:gosec
 	// SystemTagIdentityVerification is the tag for messages that broadcast an identity verification
 	SystemTagIdentityVerification = "ff_identity_verification"
 

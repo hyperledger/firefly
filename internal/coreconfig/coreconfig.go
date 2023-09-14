@@ -86,6 +86,8 @@ var (
 	APIRequestTimeout = ffc("api.requestTimeout")
 	// APIRequestMaxTimeout is the maximum timeout an application can set using a Request-Timeout header
 	APIRequestMaxTimeout = ffc("api.requestMaxTimeout")
+	// APIDynamicPublicURLHeader is a header that can be used on requests to generate Swagger to influence the PublicURL on a per-request basis
+	APIDynamicPublicURLHeader = ffc("api.dynamicPublicURLHeader")
 	// APIOASPanicOnMissingDescription controls whether the OpenAPI Spec generator will strongly enforce descriptions on every field or not
 	APIOASPanicOnMissingDescription = ffc("api.oas.panicOnMissingDescription")
 	// APIPassThroughHeaders is a list of HTTP request headers to pass through to requests made to dependency microservices

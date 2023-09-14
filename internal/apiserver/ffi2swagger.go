@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -35,7 +35,7 @@ import (
 )
 
 type FFISwaggerGen interface {
-	Generate(ctx context.Context, baseURL string, api *core.ContractAPI, ffi *fftypes.FFI) *openapi3.T
+	Build(ctx context.Context, api *core.ContractAPI, ffi *fftypes.FFI) (*ffapi.SwaggerGenOptions, []*ffapi.Route)
 }
 
 type ContractListenerInput struct {
@@ -49,15 +49,9 @@ type ContractListenerInputWithLocation struct {
 	Location *fftypes.JSONAny `ffstruct:"ContractListener" json:"location,omitempty"`
 }
 
-// ffiSwaggerGen generates OpenAPI3 (Swagger) definitions for FFIs
-type ffiSwaggerGen struct {
-}
+type ffiSwaggerGen struct{}
 
-func NewFFISwaggerGen() FFISwaggerGen {
-	return &ffiSwaggerGen{}
-}
-
-func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core.ContractAPI, ffi *fftypes.FFI) (swagger *openapi3.T) {
+func (swg *ffiSwaggerGen) Build(ctx context.Context, api *core.ContractAPI, ffi *fftypes.FFI) (*ffapi.SwaggerGenOptions, []*ffapi.Route) {
 	hasLocation := !api.Location.IsNil()
 
 	routes := []*ffapi.Route{
@@ -71,22 +65,21 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core
 		},
 	}
 	for _, method := range ffi.Methods {
-		routes = og.addMethod(ctx, routes, method, hasLocation)
+		routes = addFFIMethod(ctx, routes, method, hasLocation)
 	}
 	for _, event := range ffi.Events {
-		routes = og.addEvent(routes, event, hasLocation)
+		routes = addFFIEvent(ctx, routes, event, hasLocation)
 	}
 
-	return ffapi.NewSwaggerGen(&ffapi.Options{
+	return &ffapi.SwaggerGenOptions{
 		Title:                 ffi.Name,
 		Version:               ffi.Version,
 		Description:           ffi.Description,
-		BaseURL:               baseURL,
 		DefaultRequestTimeout: config.GetDuration(coreconfig.APIRequestTimeout),
-	}).Generate(ctx, routes)
+	}, routes
 }
 
-func (og *ffiSwaggerGen) addMethod(ctx context.Context, routes []*ffapi.Route, method *fftypes.FFIMethod, hasLocation bool) []*ffapi.Route {
+func addFFIMethod(ctx context.Context, routes []*ffapi.Route, method *fftypes.FFIMethod, hasLocation bool) []*ffapi.Route {
 	description := method.Description
 	if method.Details != nil && len(method.Details) > 0 {
 		additionalDetailsHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetails)
@@ -121,8 +114,7 @@ func (og *ffiSwaggerGen) addMethod(ctx context.Context, routes []*ffapi.Route, m
 	return routes
 }
 
-func (og *ffiSwaggerGen) addEvent(routes []*ffapi.Route, event *fftypes.FFIEvent, hasLocation bool) []*ffapi.Route {
-	ctx := context.Background()
+func addFFIEvent(ctx context.Context, routes []*ffapi.Route, event *fftypes.FFIEvent, hasLocation bool) []*ffapi.Route {
 	description := event.Description
 	if event.Details != nil && len(event.Details) > 0 {
 		additionalDetailsHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetails)
