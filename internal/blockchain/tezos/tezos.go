@@ -254,10 +254,7 @@ func (t *Tezos) AddFireflySubscription(ctx context.Context, namespace *core.Name
 		return "", err
 	}
 
-	version, err := t.GetNetworkVersion(ctx, contract.Location)
-	if err != nil {
-		return "", err
-	}
+	version := t.GetNetworkVersion(ctx, contract.Location)
 
 	sub, err := t.streams.ensureFireFlySubscription(ctx, namespace.Name, version, tezosLocation.Address, contract.FirstEvent, t.streamID, batchPinEvent)
 	if err != nil {
@@ -429,11 +426,11 @@ func (t *Tezos) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIG
 	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
 }
 
-func (t *Tezos) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (version int, err error) {
+func (t *Tezos) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) int {
 	// Part of the FIR-12. https://github.com/hyperledger/firefly-fir/pull/12
 	// Not actual for the Tezos as it's batch pin contract was after the proposal.
 	// TODO: get the network version from the batch pin contract
-	return 2, nil
+	return 2
 }
 
 func (t *Tezos) GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error) {

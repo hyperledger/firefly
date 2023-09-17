@@ -1853,3 +1853,37 @@ func TestValidateInvokeRequest(t *testing.T) {
 	}, nil, false)
 	assert.NoError(t, err)
 }
+
+func TestGenerateErrorSignature(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+
+	res := tz.GenerateErrorSignature(context.Background(), nil)
+	assert.Equal(t, res, "")
+}
+
+func TestSubmitNetworkAction(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "KT123",
+	}.String())
+	singer := "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN"
+
+	err := tz.SubmitNetworkAction(context.Background(), "", singer, core.NetworkActionTerminate, location)
+	assert.NoError(t, err)
+}
+
+func TestSubmitBatchPin(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "KT123",
+	}.String())
+	singer := "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN"
+
+	err := tz.SubmitBatchPin(context.Background(), "", "", singer, nil, location)
+	assert.NoError(t, err)
+}
