@@ -26,12 +26,7 @@ import (
 
 // FFI schema types
 const (
-	_jsonBoolean = "boolean"
-	_jsonInteger = "integer"
-	_jsonNumber  = "number"
-	_jsonString  = "string"
-	_jsonArray   = "array"
-	_jsonObject  = "object"
+	_jsonArray = "array"
 )
 
 // Tezos data types
@@ -98,8 +93,7 @@ func processArgs(payloadSchema map[string]interface{}, input map[string]interfac
 	return params, nil
 }
 
-func convertFFIParamToMicheltonParam(argsMap map[string]interface{}, arg interface{}) (micheline.Prim, error) {
-	resp := micheline.Prim{}
+func convertFFIParamToMicheltonParam(argsMap map[string]interface{}, arg interface{}) (resp micheline.Prim, err error) {
 	argDef := arg.(map[string]interface{})
 	propType := argDef["type"].(string)
 	details := argDef["details"].(map[string]interface{})
@@ -109,7 +103,6 @@ func convertFFIParamToMicheltonParam(argsMap map[string]interface{}, arg interfa
 	}
 
 	entry := argsMap[name.(string)]
-	var err error
 
 	if propType == _jsonArray {
 		resp = micheline.NewSeq()
@@ -131,10 +124,7 @@ func convertFFIParamToMicheltonParam(argsMap map[string]interface{}, arg interfa
 	return resp, nil
 }
 
-func processMichelson(entry interface{}, details map[string]interface{}) (micheline.Prim, error) {
-	resp := micheline.Prim{}
-	var err error
-
+func processMichelson(entry interface{}, details map[string]interface{}) (resp micheline.Prim, err error) {
 	if details["type"] == "schema" {
 		internalSchema := details["internalSchema"].(map[string]interface{})
 		resp, err = processSchemaEntry(entry, internalSchema)
@@ -150,9 +140,7 @@ func processMichelson(entry interface{}, details map[string]interface{}) (michel
 	return resp, err
 }
 
-func processSchemaEntry(entry interface{}, schema map[string]interface{}) (micheline.Prim, error) {
-	resp := micheline.Prim{}
-	var err error
+func processSchemaEntry(entry interface{}, schema map[string]interface{}) (resp micheline.Prim, err error) {
 	entryType := schema["type"].(string)
 	switch entryType {
 	case _internalStruct:
@@ -221,26 +209,26 @@ func processSchemaEntry(entry interface{}, schema map[string]interface{}) (miche
 
 // TODO: define an algorithm to support any number of variants.
 // at the moment, support for up to 4 variants covers most cases
-func wrapWithVariant(elem micheline.Prim, variantPos int, totalVariantsCount int) micheline.Prim {
-	res := micheline.Prim{}
-	if totalVariantsCount == 2 {
+func wrapWithVariant(elem micheline.Prim, variantPos int, totalVariantsCount int) (resp micheline.Prim) {
+	switch totalVariantsCount {
+	case 2:
 		branch := micheline.D_LEFT
 		if variantPos == 2 {
 			branch = micheline.D_RIGHT
 		}
-		res = micheline.NewCode(
+		resp = micheline.NewCode(
 			branch,
 			elem,
 		)
-	} else if totalVariantsCount == 3 {
+	case 3:
 		switch variantPos {
 		case 1:
-			res = micheline.NewCode(
+			resp = micheline.NewCode(
 				micheline.D_LEFT,
 				elem,
 			)
 		case 2:
-			res = micheline.NewCode(
+			resp = micheline.NewCode(
 				micheline.D_RIGHT,
 				micheline.NewCode(
 					micheline.D_LEFT,
@@ -248,7 +236,7 @@ func wrapWithVariant(elem micheline.Prim, variantPos int, totalVariantsCount int
 				),
 			)
 		case 3:
-			res = micheline.NewCode(
+			resp = micheline.NewCode(
 				micheline.D_RIGHT,
 				micheline.NewCode(
 					micheline.D_RIGHT,
@@ -256,10 +244,10 @@ func wrapWithVariant(elem micheline.Prim, variantPos int, totalVariantsCount int
 				),
 			)
 		}
-	} else if totalVariantsCount == 4 {
+	case 4:
 		switch variantPos {
 		case 1:
-			res = micheline.NewCode(
+			resp = micheline.NewCode(
 				micheline.D_LEFT,
 				micheline.NewCode(
 					micheline.D_LEFT,
@@ -267,7 +255,7 @@ func wrapWithVariant(elem micheline.Prim, variantPos int, totalVariantsCount int
 				),
 			)
 		case 2:
-			res = micheline.NewCode(
+			resp = micheline.NewCode(
 				micheline.D_LEFT,
 				micheline.NewCode(
 					micheline.D_RIGHT,
@@ -275,7 +263,7 @@ func wrapWithVariant(elem micheline.Prim, variantPos int, totalVariantsCount int
 				),
 			)
 		case 3:
-			res = micheline.NewCode(
+			resp = micheline.NewCode(
 				micheline.D_RIGHT,
 				micheline.NewCode(
 					micheline.D_LEFT,
@@ -283,7 +271,7 @@ func wrapWithVariant(elem micheline.Prim, variantPos int, totalVariantsCount int
 				),
 			)
 		case 4:
-			res = micheline.NewCode(
+			resp = micheline.NewCode(
 				micheline.D_RIGHT,
 				micheline.NewCode(
 					micheline.D_RIGHT,
@@ -293,7 +281,7 @@ func wrapWithVariant(elem micheline.Prim, variantPos int, totalVariantsCount int
 		}
 	}
 
-	return res
+	return resp
 }
 
 func forgePair(leftElem micheline.Prim, rightElem *micheline.Prim) micheline.Prim {
@@ -303,8 +291,7 @@ func forgePair(leftElem micheline.Prim, rightElem *micheline.Prim) micheline.Pri
 	return micheline.NewPair(leftElem, *rightElem)
 }
 
-func processPrimitive(entry interface{}, propType string) (micheline.Prim, error) {
-	resp := micheline.Prim{}
+func processPrimitive(entry interface{}, propType string) (resp micheline.Prim, err error) {
 	switch propType {
 	case _internalInteger, _internalNat:
 		entryValue, ok := entry.(float64)
@@ -357,8 +344,7 @@ func processPrimitive(entry interface{}, propType string) (micheline.Prim, error
 }
 
 func applyKind(param micheline.Prim, kind string) micheline.Prim {
-	switch kind {
-	case _internalOption:
+	if kind == _internalOption {
 		return micheline.NewOption(param)
 	}
 	return param

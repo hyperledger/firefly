@@ -168,10 +168,13 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 	}
 
 	wsConfig, err := wsclient.GenerateConfig(ctx, tezosconnectConf)
+	if err == nil {
+		t.client, err = ffresty.New(t.ctx, tezosconnectConf)
+	}
+
 	if err != nil {
 		return err
 	}
-	t.client, err = ffresty.New(t.ctx, tezosconnectConf)
 
 	t.topic = tezosconnectConf.GetString(TezosconnectConfigTopic)
 	if t.topic == "" {
@@ -317,9 +320,8 @@ func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey st
 	if err != nil {
 		return err
 	}
-	if batch != nil {
-		// TODO: add batch pin support
-	}
+
+	// TODO: add batch pin support
 
 	return t.invokeContractMethod(ctx, tezosLocation.Address, methodName, signingKey, nsOpID, michelsonInput, options)
 }
@@ -347,7 +349,7 @@ func (t *Tezos) QueryContract(ctx context.Context, signingKey string, location *
 	return output, nil
 }
 
-func (f *Tezos) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
+func (t *Tezos) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
 	return &ffiMethodAndErrors{
 		method: method,
 		errors: errors,
@@ -506,7 +508,7 @@ func (t *Tezos) afterConnect(ctx context.Context, w wsclient.WSClient) error {
 	return err
 }
 
-func (f *Tezos) recoverFFI(ctx context.Context, parsedMethod interface{}) (*fftypes.FFIMethod, []*fftypes.FFIError, error) {
+func (t *Tezos) recoverFFI(ctx context.Context, parsedMethod interface{}) (*fftypes.FFIMethod, []*fftypes.FFIError, error) {
 	methodInfo, ok := parsedMethod.(*ffiMethodAndErrors)
 	if !ok || methodInfo.method == nil {
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgUnexpectedInterfaceType, parsedMethod)

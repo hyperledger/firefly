@@ -176,8 +176,8 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 	filter := eventFilter{
 		EventFilter: event,
 	}
-	filterJson, _ := json.Marshal(filter)
-	filters = append(filters, fftypes.JSONAny(filterJson))
+	filterJSON, _ := json.Marshal(filter)
+	filters = append(filters, fftypes.JSONAny(filterJSON))
 
 	sub := subscription{
 		Name:      name,
