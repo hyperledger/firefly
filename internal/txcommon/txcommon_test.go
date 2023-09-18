@@ -222,7 +222,7 @@ func TestPersistTransactionExistingAddBlockchainID(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	ctx := context.Background()
 	cmi := &cachemocks.Manager{}
-	cache := cache.NewUmanagedCache(ctx, 100, 5*time.Minute)
+	cache := cache.NewUmanagedCache(ctx, 1024, 5*time.Minute)
 	cmi.On("GetCache", mock.Anything).Return(cache, nil)
 	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 

@@ -30,12 +30,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestTokenTransferE2EWithDB(t *testing.T) {
-	s, cleanup := newSQLiteTestProvider(t)
-	defer cleanup()
-	ctx := context.Background()
-
-	// Create a new token transfer entry
+func newTestTransfer() *core.TokenTransfer {
 	transfer := &core.TokenTransfer{
 		LocalID:     fftypes.NewUUID(),
 		Type:        core.TokenTransferTypeTransfer,
@@ -56,6 +51,16 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 		BlockchainEvent: fftypes.NewUUID(),
 	}
 	transfer.Amount.Int().SetInt64(10)
+	return transfer
+}
+
+func TestTokenTransferE2EWithDB(t *testing.T) {
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Create a new token transfer entry
+	transfer := newTestTransfer()
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenTransfers, core.ChangeEventTypeCreated, transfer.Namespace, transfer.LocalID, mock.Anything).
 		Return().Once()
@@ -126,14 +131,26 @@ func TestInsertOrGetTokenTransferFailSelect(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func InsertOrGetTokenTransfer(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	_, err := s.InsertOrGetBlockchainEvent(context.Background(), &core.BlockchainEvent{})
-	assert.Regexp(t, "FF00180", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
+func TestInsertOrGetTokenTransferExisting(t *testing.T) {
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Create a new token transfer entry
+	transfer := newTestTransfer()
+
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenTransfers, core.ChangeEventTypeCreated, transfer.Namespace, transfer.LocalID, mock.Anything).
+		Return().Once()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenTransfers, core.ChangeEventTypeUpdated, transfer.Namespace, transfer.LocalID, mock.Anything).
+		Return().Once()
+
+	existing, err := s.InsertOrGetTokenTransfer(ctx, transfer)
+	assert.NoError(t, err)
+	assert.Nil(t, existing)
+
+	existing, err = s.InsertOrGetTokenTransfer(ctx, transfer)
+	assert.NoError(t, err)
+	assert.NotNil(t, existing)
 }
 
 func TestGetTokenTransferByIDSelectFail(t *testing.T) {
