@@ -4,8 +4,8 @@ title: ERC-20
 parent: Use tokens
 grand_parent: pages.tutorials
 nav_order: 1
-seo_title: seo.tutorials_tokens_erc20_title
-seo_description: seo.tutorials_tokens_erc20_description
+seo_title: "Hyperledger FireFly: ERC20 Token Implementation (Tutorial)"
+seo_description: "Follow this tutorial to understand the step-by-step process of creating and managing fungible tokens using the ERC20 standard in Hyperledger FireFly."
 ---
 
 # Use ERC-20 tokens

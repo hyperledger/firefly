@@ -3,8 +3,8 @@ layout: default
 title: Internal Event Sequencing
 parent: pages.architecture
 nav_order: 6
-seo_title: seo.architecture_internal_event_sequencing_title
-seo_description: seo.architecture_internal_event_sequencing_description
+seo_title: "Hyperledger FireFly: Internal Event Sequencing"
+seo_description: "Explore internal event sequencing in Hyperledger FireFly for secure and efficient transaction processing."
 ---
 
 # Internal Event Sequencing

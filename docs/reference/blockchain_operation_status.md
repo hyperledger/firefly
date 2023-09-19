@@ -3,8 +3,8 @@ layout: default
 title: Blockchain Operation Status
 parent: pages.reference
 nav_order: 5
-seo_title: seo.reference_blockchain_operation_status_title
-seo_description: seo.reference_blockchain_operation_status_description
+seo_title: "Hyperledger FireFly: Blockchain Operation Status"
+seo_description: "Explore the Blockchain Operation Status reference in Hyperledger FireFly to learn about the different status values and their meanings for tracking and monitoring blockchain operations."
 ---
 
 # Blockchain Operation Status

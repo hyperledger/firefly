@@ -3,8 +3,8 @@ layout: default
 title: Explore messages
 parent: pages.tutorials
 nav_order: 5
-seo_title: seo.tutorials_query_messages_title
-seo_description: seo.tutorials_query_messages_description
+seo_title: "Hyperledger FireFly: Query Messages Guide (Tutorial)"
+seo_description: "Learn how to query messages in Hyperledger FireFly to efficiently retrieve and analyze messages within the supernode."
 ---
 
 # Explore messages

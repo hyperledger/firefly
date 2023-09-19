@@ -3,8 +3,8 @@ layout: default
 title: Versioning Scheme
 parent: pages.contributors
 nav_order: 7
-seo_title: seo.contributors_version_scheme_title
-seo_description: seo.contributors_version_scheme_description
+seo_title: "Hyperledger FireFly: Version Scheme Explanation"
+seo_description: "Hyperledger FireFly follows semantic versioning. Here you'll get details on how versioning and managing contributions works on the supernode."
 ---
 
 # Versioning Scheme

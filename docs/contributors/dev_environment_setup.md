@@ -3,8 +3,8 @@ layout: default
 title: Setting up a FireFly Core Development Environment
 parent: pages.contributors
 nav_order: 4
-seo_title: seo.contributors_dev_environment_setup_title
-seo_description: seo.contributors_dev_environment_setup_description
+seo_title: "Hyperledger FireFly: Development Environment Setup"
+seo_description: "Follow this documentation to configure your development environment, including software prerequisites, dependencies, and recommended tools, to effectively contribute to Hyperledger FireFly."
 ---
 
 # Setting up a FireFly Core Development Environment

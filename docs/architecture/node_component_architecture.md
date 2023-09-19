@@ -1,10 +1,10 @@
 ---
-layout: i18n_page
-title: pages.node_component_architecture
+layout: default
+title: Node Component Architecture
 parent: pages.architecture
 nav_order: 1
-seo_title: seo.architecture_node_component_architecture_title
-seo_description: seo.architecture_node_component_architecture_description
+seo_title: "Hyperledger FireFly: Node Component Architecture"
+seo_description: "Learn about the different components and their interactions in Hyperledger FireFly, gaining insights into the underlying architecture that powers the supernode."
 ---
 
 # Node Component Architecture

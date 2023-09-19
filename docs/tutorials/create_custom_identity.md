@@ -3,8 +3,8 @@ layout: default
 title: Create a custom identity
 parent: pages.tutorials
 nav_order: 8
-seo_title: seo.tutorials_create_custom_identity_title
-seo_description: seo.tutorials_create_custom_identity_description
+seo_title: "Hyperledger FireFly: Custom Identity Creation (Tutorial)"
+seo_description: "Follow this tutorial to understand the process of generating and managing custom identities in Hyperledger FireFly, enabling enhanced security and identity management for participants."
 ---
 
 # Create a Custom Identity

@@ -3,8 +3,8 @@ layout: default
 title: Multiparty Event Sequencing
 parent: pages.architecture
 nav_order: 3
-seo_title: seo.architecture_multiparty_event_sequencing_title
-seo_description: seo.architecture_multiparty_event_sequencing_description
+seo_title: "Hyperledger FireFly: Multiparty Event Sequencing"
+seo_description: "Dive into multiparty event sequencing and its role in Hyperledger FireFly, the first open source supernode."
 ---
 
 # Multiparty Event Sequencing

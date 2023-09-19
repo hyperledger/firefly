@@ -4,8 +4,8 @@ title: Fabric
 parent: pages.custom_smart_contracts
 grand_parent: pages.tutorials
 nav_order: 2
-seo_title: seo.tutorials_custom_contracts_fabric_title
-seo_description: seo.tutorials_custom_contracts_fabric_description
+seo_title: "Hyperledger FireFly: Custom Contracts with Fabric (Tutorial)"
+seo_description: "Learn how to develop and deploy custom contracts using Fabric in Hyperledger FireFly that are tailored to your needs."
 ---
 
 # Work with Hyperledger Fabric chaincodes

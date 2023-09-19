@@ -4,8 +4,8 @@ title: Ethereum
 parent: pages.custom_smart_contracts
 grand_parent: pages.tutorials
 nav_order: 1
-seo_title: seo.tutorials_custom_contracts_ethereum_title
-seo_description: seo.tutorials_custom_contracts_ethereum_description
+seo_title: "Hyperledger FireFly: Custom Contracts with Ethereum (Tutorial)"
+seo_description: "Follow this tutorial to understand the process of creating and deploying custom contracts tailored to your specific requirements in Hyperledger FireFly."
 ---
 
 # Work with Ethereum smart contracts

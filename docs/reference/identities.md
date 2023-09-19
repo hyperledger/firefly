@@ -3,8 +3,8 @@ layout: default
 title: Identities
 parent: pages.reference
 nav_order: 7
-seo_title: seo.reference_identities_title
-seo_description: seo.reference_identities_description
+seo_title: "Hyperledger FireFly: Identity Management Details"
+seo_description: "Learn about the various types of identities supported in Hyperledger FireFly, including user identities, service identities, and cryptographic key management, enabling secure and reliable interactions."
 ---
 
 # Identities

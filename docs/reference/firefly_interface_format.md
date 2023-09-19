@@ -3,8 +3,8 @@ layout: default
 title: FireFly Interface Format
 parent: pages.reference
 nav_order: 8
-seo_title: seo.reference_firefly_interface_format_title
-seo_description: seo.reference_firefly_interface_format_description
+seo_title: "Hyperledger FireFly: Interface Format Details"
+seo_description: "Explore the Hyperledger FireFly interface format in the reference documentation for seamless integration and communication with the open source supernode."
 ---
 
 # FireFly Interface Format

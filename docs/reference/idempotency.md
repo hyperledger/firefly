@@ -1,10 +1,10 @@
 ---
-layout: i18n_page
-title: pages.idempotency
+layout: default
+title: Idempotency Keys
 parent: pages.reference
 nav_order: 10
-seo_title: seo.reference_idempotency_title
-seo_description: seo.reference_idempotency_description
+seo_title: "Hyperledger FireFly: Idempotency Keys (Tutorial)"
+seo_description: "Learn how to use Idempotency Keys on Hyperledger FireFly as you build a decentralized application."
 ---
 
 # Idempotency Keys

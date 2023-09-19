@@ -3,8 +3,8 @@ layout: default
 title: ② Start your environment
 parent: pages.getting_started
 nav_order: 2
-seo_title: seo.gettingstarted_setup_env_title
-seo_description: seo.gettingstarted_setup_env_description
+seo_title: "Hyperledger FireFly: Environment Setup Guide"
+seo_description: "Use this guide to set up your development environment for Hyperledger FireFly and start building your application."
 ---
 
 # Start your environment

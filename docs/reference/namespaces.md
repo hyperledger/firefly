@@ -3,8 +3,8 @@ layout: default
 title: Namespaces
 parent: pages.reference
 nav_order: 9
-seo_title: seo.reference_namespaces_title
-seo_description: seo.reference_namespaces_description
+seo_title: "Hyperledger FireFly: Namespaces"
+seo_description: "Learn about Hyperledger FireFly namespaces, a construct for segregating data and operations within a supernode."
 ---
 
 # Namespaces

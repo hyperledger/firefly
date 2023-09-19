@@ -3,8 +3,8 @@ layout: default
 title: Event Bus
 parent: pages.reference
 nav_order: 6
-seo_title: seo.reference_events_title
-seo_description: seo.reference_events_description
+seo_title: "Hyperledger FireFly: Events Overview and Usage"
+seo_description: "Learn about the different types of events, event structures, and event handling mechanisms in Hyperledger FireFly, facilitating real-time notifications and updates for various blockchain-related activities and transactions."
 ---
 
 # Event Bus

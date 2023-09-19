@@ -3,8 +3,8 @@ layout: default
 title: Example Transaction Flow
 parent: pages.architecture
 nav_order: 5
-seo_title: seo.architecture_ping_pong_txflow_title
-seo_description: seo.architecture_ping_pong_txflow_description
+seo_title: "Hyperledger FireFly: Ping Pong Transaction Flow"
+seo_description: "Learn about the sequential steps involved in a ping-pong transaction flow in Hyperledger FireFly."
 ---
 
 # Example Transaction Flow (Ping Pong)

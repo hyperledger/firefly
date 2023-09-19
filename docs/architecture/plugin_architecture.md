@@ -3,8 +3,8 @@ layout: default
 title: Plugin Architecture
 parent: pages.architecture
 nav_order: 4
-seo_title: seo.architecture_plugin_architecture_title
-seo_description: seo.architecture_plugin_architecture_description
+seo_title: "Hyperledger FireFly: Plugin Architecture Overview"
+seo_description: "Learn about the extensibility and modularity of Hyperledger FireFly, allowing developers to integrate custom plugins and extend the functionality for specific use cases."
 ---
 
 # Plugin Architecture

@@ -3,8 +3,8 @@ layout: default
 title: Privately send data
 parent: pages.tutorials
 nav_order: 2
-seo_title: seo.tutorials_private_send_title
-seo_description: seo.tutorials_private_send_description
+seo_title: "Hyperledger FireFly: Private Send for Enhanced Privacy (Tutorial)"
+seo_description: "Learn how to privately send data in Hyperledger FireFly within your networks using encryption techniques."
 ---
 
 # Privately send data

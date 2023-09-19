@@ -3,8 +3,8 @@ layout: default
 title: Define a datatype
 parent: pages.tutorials
 nav_order: 3
-seo_title: seo.tutorials_define_datatype_title
-seo_description: seo.tutorials_define_datatype_description
+seo_title: "Hyperledger FireFly: Define Datatype Creation (Tutorial)"
+seo_description: "Follow this tutorial to define custom datatypes in Hyperledger FireFly for tailored data representation and processing in decentralized applications."
 ---
 
 # Define a datatype

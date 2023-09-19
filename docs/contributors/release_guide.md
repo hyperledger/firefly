@@ -3,8 +3,8 @@ layout: default
 title: Release Guide
 parent: pages.contributors
 nav_order: 8
-seo_title: seo.contributors_release_guide_title
-seo_description: seo.contributors_release_guide_description
+seo_title: "Hyperledger FireFly: Release Guide"
+seo_description: "Refer to the release guide for contributors to ensure a smooth and successful release of Hyperledger FireFly's latest version."
 ---
 
 # Release Guide

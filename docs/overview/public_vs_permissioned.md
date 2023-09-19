@@ -3,8 +3,8 @@ layout: default
 title: Public and Permissioned
 parent: pages.understanding_firefly
 nav_order: 6
-seo_title: seo.overview_public_vs_permissioned_title
-seo_description: seo.overview_public_vs_permissioned_description
+seo_title: "Hyperledger FireFly: Public vs. Permissioned Networks"
+seo_description: "Understand the differences between public and permissioned blockchain networks in Hyperledger FireFly for various use cases and deployment scenarios."
 ---
 
 # Public and Permissioned Blockchain

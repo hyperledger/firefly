@@ -3,8 +3,8 @@ layout: default
 title: Blockchain Connector Toolkit
 parent: pages.architecture
 nav_order: 2
-seo_title: seo.architecture_blockchain_connector_framework_title
-seo_description: seo.architecture_blockchain_connector_framework_description
+seo_title: "Hyperledger FireFly: Blockchain Connector Framework"
+seo_description: "Learn about the design and functionalities of the framework, which enables seamless integration and interoperability with various blockchain networks and protocols in Hyperledger FireFly."
 ---
 
 # Blockchain Connector Toolkit

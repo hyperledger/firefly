@@ -3,8 +3,8 @@ layout: default
 title: ① Install the FireFly CLI
 parent: pages.getting_started
 nav_order: 1
-seo_title: seo.gettingstarted_firefly_cli_title
-seo_description: seo.gettingstarted_firefly_cli_description
+seo_title: "Hyperledger FireFly: Hyperledger FireFly CLI Guide"
+seo_description: "Learn how to get started with the CLI and leverage its powerful features for interacting with and managing Hyperledger FireFly from the command line."
 ---
 
 # ① Install the FireFly CLI

@@ -3,8 +3,8 @@ layout: default
 title: Contributing to Documentation
 parent: pages.contributors
 nav_order: 6
-seo_title: seo.contributors_docs_setup_title
-seo_description: seo.contributors_docs_setup_description
+seo_title: "Hyperledger FireFly: Documentation Setup"
+seo_description: "Set up your development environment with the comprehensive setup guide for Hyperledger FireFly."
 ---
 
 # Contributing to Documentation

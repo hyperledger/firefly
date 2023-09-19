@@ -1,11 +1,11 @@
 ---
-layout: i18n_page
-title: pages.pinning
+layout: default
+title: Pinning Data
 parent: pages.custom_smart_contracts
 grand_parent: pages.tutorials
 nav_order: 3
-seo_title: seo.tutorials_custom_contracts_title
-seo_description: seo.tutorials_custom_contracts_description
+seo_title: "Hyperledger FireFly: Pinning Data (Tutorial)"
+seo_description: "Learn about how to pin data using Hyperledger FireFly as you build a decentralized application."
 ---
 
 # Pin off-chain data to a custom blockchain transaction

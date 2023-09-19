@@ -4,8 +4,8 @@ title: Use tokens
 parent: pages.tutorials
 nav_order: 6
 has_children: true
-seo_title: seo.tutorials_tokens_title
-seo_description: seo.tutorials_tokens_description
+seo_title: "Hyperledger FireFly: Token Integration Guide (Tutorial)"
+seo_description: "Explore step-by-step guides and practical examples to learn how to create, manage, and interact with tokens using Hyperledger FireFly."
 ---
 
 

@@ -3,8 +3,8 @@ layout: default
 title: Listen for events
 parent: pages.tutorials
 nav_order: 5
-seo_title: seo.tutorials_events_title
-seo_description: seo.tutorials_events_description
+seo_title: "Hyperledger FireFly: Events and Event Listening (Tutorial)"
+seo_description: "Learn about event-driven architectures and how to implement them using Hyperledger FireFly."
 ---
 
 # Listen for events

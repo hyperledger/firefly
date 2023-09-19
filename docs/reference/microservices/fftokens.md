@@ -4,8 +4,8 @@ title: fftokens
 parent: Microservices
 grand_parent: pages.reference
 nav_order: 1
-seo_title: seo.reference_microservices_fftokens_title
-seo_description: seo.reference_microservices_fftokens_description
+seo_title: "Hyperledger FireFly: FFTokens"
+seo_description: "Learn about FFTokens, a key microservice in Hyperledger FireFly for managing tokens and enabling secure and efficient transactional operations."
 ---
 
 # fftokens
