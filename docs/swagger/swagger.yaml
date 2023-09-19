@@ -8642,6 +8642,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -8973,6 +8974,7 @@ paths:
                           description: The type of the verifier
                           enum:
                           - ethereum_address
+                          - tezos_address
                           - fabric_msp_id
                           - dx_peer_id
                           type: string
@@ -9468,6 +9470,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -21417,6 +21420,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -21762,6 +21766,7 @@ paths:
                           description: The type of the verifier
                           enum:
                           - ethereum_address
+                          - tezos_address
                           - fabric_msp_id
                           - dx_peer_id
                           type: string
@@ -22285,6 +22290,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -25060,6 +25066,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -25194,6 +25201,7 @@ paths:
                           description: The type of the verifier
                           enum:
                           - ethereum_address
+                          - tezos_address
                           - fabric_msp_id
                           - dx_peer_id
                           type: string
@@ -27293,6 +27301,7 @@ paths:
                               description: The type of the verifier
                               enum:
                               - ethereum_address
+                              - tezos_address
                               - fabric_msp_id
                               - dx_peer_id
                               type: string
@@ -33655,6 +33664,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -33723,6 +33733,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -33764,6 +33775,7 @@ paths:
                   description: The type of the verifier
                   enum:
                   - ethereum_address
+                  - tezos_address
                   - fabric_msp_id
                   - dx_peer_id
                   type: string
@@ -33782,6 +33794,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -34112,6 +34125,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -34239,6 +34253,7 @@ paths:
                           description: The type of the verifier
                           enum:
                           - ethereum_address
+                          - tezos_address
                           - fabric_msp_id
                           - dx_peer_id
                           type: string
@@ -36240,6 +36255,7 @@ paths:
                               description: The type of the verifier
                               enum:
                               - ethereum_address
+                              - tezos_address
                               - fabric_msp_id
                               - dx_peer_id
                               type: string
@@ -42398,6 +42414,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -42459,6 +42476,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -42493,6 +42511,7 @@ paths:
                   description: The type of the verifier
                   enum:
                   - ethereum_address
+                  - tezos_address
                   - fabric_msp_id
                   - dx_peer_id
                   type: string
@@ -42511,6 +42530,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
