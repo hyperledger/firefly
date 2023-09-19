@@ -91,9 +91,6 @@ func (t *Tezos) InitConfig(config config.Section) {
 	t.tezosconnectConf.AddKnownKey(TezosconnectPrefixShort, defaultPrefixShort)
 	t.tezosconnectConf.AddKnownKey(TezosconnectPrefixLong, defaultPrefixLong)
 
-	fftmConf := config.SubSection(FFTMConfigKey)
-	ffresty.InitConfig(fftmConf)
-
 	addressResolverConf := config.SubSection(AddressResolverConfigKey)
 	ffresty.InitConfig(addressResolverConf)
 	addressResolverConf.AddKnownKey(AddressResolverAlwaysResolve)

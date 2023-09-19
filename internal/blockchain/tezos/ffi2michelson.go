@@ -73,7 +73,7 @@ func processArgs(payloadSchema map[string]interface{}, input map[string]interfac
 		return params, nil
 	}
 	if len(items) == 1 {
-		michelineVal, err := convertFFIParamToMicheltonParam(input, items[0])
+		michelineVal, err := convertFFIParamToMichelsonParam(input, items[0])
 		if err != nil {
 			return params, err
 		}
@@ -81,7 +81,7 @@ func processArgs(payloadSchema map[string]interface{}, input map[string]interfac
 	} else {
 		seq := micheline.NewSeq()
 		for _, item := range items {
-			michelineVal, err := convertFFIParamToMicheltonParam(input, item)
+			michelineVal, err := convertFFIParamToMichelsonParam(input, item)
 			if err != nil {
 				return params, err
 			}
@@ -93,7 +93,7 @@ func processArgs(payloadSchema map[string]interface{}, input map[string]interfac
 	return params, nil
 }
 
-func convertFFIParamToMicheltonParam(argsMap map[string]interface{}, arg interface{}) (resp micheline.Prim, err error) {
+func convertFFIParamToMichelsonParam(argsMap map[string]interface{}, arg interface{}) (resp micheline.Prim, err error) {
 	argDef := arg.(map[string]interface{})
 	propType := argDef["type"].(string)
 	details := argDef["details"].(map[string]interface{})

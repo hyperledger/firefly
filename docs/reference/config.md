@@ -892,54 +892,6 @@ nav_order: 2
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
-## plugins.blockchain[].tezos.fftm
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
-|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
-|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
-|maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
-|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
-|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
-|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
-|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
-|url|The URL of the FireFly Transaction Manager runtime, if enabled|`string`|`<nil>`
-
-## plugins.blockchain[].tezos.fftm.auth
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|password|Password|`string`|`<nil>`
-|username|Username|`string`|`<nil>`
-
-## plugins.blockchain[].tezos.fftm.proxy
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|url|Optional HTTP proxy server to use when connecting to the Transaction Manager|`string`|`<nil>`
-
-## plugins.blockchain[].tezos.fftm.retry
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|count|The maximum number of times to retry|`int`|`5`
-|enabled|Enables retries|`boolean`|`false`
-|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
-|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
-
-## plugins.blockchain[].tezos.fftm.tls
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
-|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
-|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
-|enabled|Enables or disables TLS on this API|`boolean`|`false`
-|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
-|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
-
 ## plugins.blockchain[].tezos.tezosconnect
 
 |Key|Description|Type|Default Value|

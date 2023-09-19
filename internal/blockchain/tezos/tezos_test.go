@@ -51,7 +51,6 @@ import (
 var utConfig = config.RootSection("tezos_unit_tests")
 var utTezosconnectConf = utConfig.SubSection(TezosconnectConfigKey)
 var utAddressResolverConf = utConfig.SubSection(AddressResolverConfigKey)
-var utFFTMConf = utConfig.SubSection(FFTMConfigKey)
 
 func testFFIMethod() *fftypes.FFIMethod {
 	return &fftypes.FFIMethod{
@@ -105,7 +104,7 @@ func newTestTezos() (*Tezos, func()) {
 		ctx:         ctx,
 		cancelCtx:   cancel,
 		client:      resty.New().SetBaseURL("http://localhost:12345"),
-		topic:       "topic1",
+		pluginTopic: "topic1",
 		prefixShort: defaultPrefixShort,
 		prefixLong:  defaultPrefixLong,
 		wsconn:      wsm,
@@ -208,7 +207,6 @@ func TestInitAndStartWithTezosConnect(t *testing.T) {
 	utTezosconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
 	utTezosconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utTezosconnectConf.Set(TezosconnectConfigTopic, "topic1")
-	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://tezosc.example.com:12345")
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tz.ctx, 100, 5*time.Minute), nil)
@@ -268,7 +266,6 @@ func TestBackgroundStart(t *testing.T) {
 	utTezosconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utTezosconnectConf.Set(TezosconnectConfigTopic, "topic1")
 	utTezosconnectConf.Set(TezosconnectBackgroundStart, true)
-	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://tezosc.example.com:12345")
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tz.ctx, 100, 5*time.Minute), nil)
@@ -325,7 +322,6 @@ func TestBackgroundStartFail(t *testing.T) {
 	utTezosconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utTezosconnectConf.Set(TezosconnectConfigTopic, "topic1")
 	utTezosconnectConf.Set(TezosconnectBackgroundStart, true)
-	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://tezosc.example.com:12345")
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tz.ctx, 100, 5*time.Minute), nil)
@@ -377,7 +373,6 @@ func TestBackgroundStartWSFail(t *testing.T) {
 	utTezosconnectConf.Set(TezosconnectConfigTopic, "topic1")
 	utTezosconnectConf.Set(TezosconnectBackgroundStart, true)
 	utTezosconnectConf.Set(wsclient.WSConfigKeyInitialConnectAttempts, 1)
-	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://tezosc.example.com:12345")
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tz.ctx, 100, 5*time.Minute), nil)
@@ -664,10 +659,10 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	tm := &coremocks.OperationCallbacks{}
 	wsm := &wsmocks.WSClient{}
 	tz := &Tezos{
-		ctx:       context.Background(),
-		topic:     "topic1",
-		callbacks: common.NewBlockchainCallbacks(),
-		wsconn:    wsm,
+		ctx:         context.Background(),
+		pluginTopic: "topic1",
+		callbacks:   common.NewBlockchainCallbacks(),
+		wsconn:      wsm,
 	}
 	tz.SetOperationHandler("ns1", tm)
 
@@ -705,10 +700,10 @@ func TestHandleReceiptTXUpdateTezosConnect(t *testing.T) {
 	tm := &coremocks.OperationCallbacks{}
 	wsm := &wsmocks.WSClient{}
 	tz := &Tezos{
-		ctx:       context.Background(),
-		topic:     "topic1",
-		callbacks: common.NewBlockchainCallbacks(),
-		wsconn:    wsm,
+		ctx:         context.Background(),
+		pluginTopic: "topic1",
+		callbacks:   common.NewBlockchainCallbacks(),
+		wsconn:      wsm,
 	}
 	tz.SetOperationHandler("ns1", tm)
 
@@ -789,9 +784,9 @@ func TestHandleReceiptTXUpdateTezosConnect(t *testing.T) {
 func TestHandleMsgBatchBadData(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
 	tz := &Tezos{
-		ctx:    context.Background(),
-		topic:  "topic1",
-		wsconn: wsm,
+		ctx:         context.Background(),
+		pluginTopic: "topic1",
+		wsconn:      wsm,
 	}
 
 	var reply common.BlockchainReceiptNotification

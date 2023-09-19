@@ -206,9 +206,6 @@ var (
 	ConfigPluginBlockchainTezosTezosconnectURL                         = ffc("config.plugins.blockchain[].tezos.tezosconnect.url", "The URL of the Tezosconnect instance", "URL "+i18n.StringType)
 	ConfigPluginBlockchainTezosTezosconnectProxyURL                    = ffc("config.plugins.blockchain[].tezos.tezosconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Tezosconnect", "URL "+i18n.StringType)
 
-	ConfigPluginBlockchainTezosFFTMURL      = ffc("config.plugins.blockchain[].tezos.fftm.url", "The URL of the FireFly Transaction Manager runtime, if enabled", i18n.StringType)
-	ConfigPluginBlockchainTezosFFTMProxyURL = ffc("config.plugins.blockchain[].tezos.fftm.proxy.url", "Optional HTTP proxy server to use when connecting to the Transaction Manager", i18n.StringType)
-
 	ConfigPluginBlockchainFabricFabconnectBackgroundStart             = ffc("config.plugins.blockchain[].fabric.fabconnect.backgroundStart.enabled", "Start the fabric plugin in the background and enter retry loop if failed to start", i18n.BooleanType)
 	ConfigPluginBlockchainFabricFabconnectBackgroundStartInitialDelay = ffc("config.plugins.blockchain[].fabric.fabconnect.backgroundStart.initialDelay", "Delay between restarts in the case where we retry to restart the fabric plugin", i18n.TimeDurationType)
 	ConfigPluginBlockchainFabricFabconnectBackgroundStartMaxDelay     = ffc("config.plugins.blockchain[].fabric.fabconnect.backgroundStart.maxDelay", "Max delay between restarts in the case where we retry to restart the fabric plugin", i18n.TimeDurationType)

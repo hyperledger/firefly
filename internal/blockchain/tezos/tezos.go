@@ -52,7 +52,7 @@ const (
 type Tezos struct {
 	ctx                  context.Context
 	cancelCtx            context.CancelFunc
-	topic                string
+	pluginTopic          string
 	prefixShort          string
 	prefixLong           string
 	capabilities         *blockchain.Capabilities
@@ -176,8 +176,8 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 		return err
 	}
 
-	t.topic = tezosconnectConf.GetString(TezosconnectConfigTopic)
-	if t.topic == "" {
+	t.pluginTopic = tezosconnectConf.GetString(TezosconnectConfigTopic)
+	if t.pluginTopic == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.tezos.tezosconnect")
 	}
 	t.prefixShort = tezosconnectConf.GetString(TezosconnectPrefixShort)
@@ -216,13 +216,13 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 		return nil
 	}
 
-	stream, err := t.streams.ensureEventStream(t.ctx, t.topic)
+	stream, err := t.streams.ensureEventStream(t.ctx, t.pluginTopic)
 	if err != nil {
 		return err
 	}
 
 	t.streamID = stream.ID
-	log.L(t.ctx).Infof("Event stream: %s (topic=%s)", t.streamID, t.topic)
+	log.L(t.ctx).Infof("Event stream: %s (pluginTopic=%s)", t.streamID, t.pluginTopic)
 
 	t.closed = make(chan struct{})
 	go t.eventLoop()
@@ -496,7 +496,7 @@ func (t *Tezos) afterConnect(ctx context.Context, w wsclient.WSClient) error {
 	// Send a subscribe to our topic after each connect/reconnect
 	b, _ := json.Marshal(&tezosWSCommandPayload{
 		Type:  "listen",
-		Topic: t.topic,
+		Topic: t.pluginTopic,
 	})
 	err := w.Send(ctx, b)
 	if err == nil {
@@ -653,13 +653,13 @@ func (t *Tezos) encodeContractLocation(ctx context.Context, location *Location) 
 
 func (t *Tezos) startBackgroundLoop() {
 	_ = t.backgroundRetry.Do(t.ctx, fmt.Sprintf("tezos connector %s", t.Name()), func(attempt int) (retry bool, err error) {
-		stream, err := t.streams.ensureEventStream(t.ctx, t.topic)
+		stream, err := t.streams.ensureEventStream(t.ctx, t.pluginTopic)
 		if err != nil {
 			return true, err
 		}
 
 		t.streamID = stream.ID
-		log.L(t.ctx).Infof("Event stream: %s (topic=%s)", t.streamID, t.topic)
+		log.L(t.ctx).Infof("Event stream: %s (topic=%s)", t.streamID, t.pluginTopic)
 
 		err = t.wsconn.Connect()
 		if err != nil {
@@ -702,7 +702,7 @@ func (t *Tezos) eventLoop() {
 				if err == nil {
 					ack, _ := json.Marshal(&tezosWSCommandPayload{
 						Type:  "ack",
-						Topic: t.topic,
+						Topic: t.pluginTopic,
 					})
 					err = t.wsconn.Send(ctx, ack)
 				}
