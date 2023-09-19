@@ -4,21 +4,29 @@
 
   {% if page.layout == "i18n_page" and page.seo_title %}
     <title>{% t page.seo_title %}</title>
+    <meta property="og:title" content="{% t page.seo_title %}">
   {% elsif page.layout == "default" and page.seo_title %}
     <title>{{ page.seo_title }}</title>
+    <meta property="og:title" content="{{ page.seo_title }}">
   {% elsif page.layout == "i18n_page" %}
     <title>{% t site.name %}: {% t page.title %}</title>
+    <meta property="og:title" content="{% t site.name %}: {% t page.title %}">
   {% else %}
     <title>{{ site.title }}: {{ page.title }}</title>
+    <meta property="og:title" content="{{ site.title }}: {{ page.title }}">
   {% endif %}
-  
   {% if page.layout == "i18n_page" and page.seo_title %}
     <meta name="description" content="{% t page.seo_description %}">
+    <meta property="og:description" content="{% t page.seo_description %}">
   {% elsif page.seo_description %}
     <meta name="description" content="{{ page.seo_description }}">
+    <meta property="og:description" content="{{ page.seo_description }}">
   {% endif %}
-  
-  <meta property="og:image" content="{{ '/assets/images/firefly_social_sharing_image.png' | relative_url }}" />
+  <meta name="generator" content="Jekyll v3.9.2">
+  <meta property="og:locale" content="en">
+  <meta property="og:site_name" content="{{ site.title }}">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="{{ '/assets/images/firefly_social_sharing_image.png' | relative_url }}">
 
   <link rel="shortcut icon" href="{{ 'favicon.ico' | relative_url }}" type="image/x-icon">
 
