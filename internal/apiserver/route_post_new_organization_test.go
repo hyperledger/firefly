@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,7 @@ func TestNewOrganization(t *testing.T) {
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	input := core.Identity{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
