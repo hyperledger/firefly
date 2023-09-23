@@ -101,7 +101,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.NoError(t, err)
@@ -270,7 +270,7 @@ func TestMintTokenDefaultPoolSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == tokenPools[0] && data.Transfer == &mint.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.NoError(t, err)
@@ -461,7 +461,7 @@ func TestMintTokensFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.EqualError(t, err, "pop")
@@ -541,7 +541,7 @@ func TestMintTokensConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), mint, true)
 	assert.NoError(t, err)
@@ -578,7 +578,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &burn.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.BurnTokens(context.Background(), burn, false)
 	assert.NoError(t, err)
@@ -654,7 +654,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &burn.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.BurnTokens(context.Background(), burn, true)
 	assert.NoError(t, err)
@@ -694,7 +694,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.NoError(t, err)
@@ -869,7 +869,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.NoError(t, err)
@@ -1069,7 +1069,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.NoError(t, err)
@@ -1195,7 +1195,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, true)
 	assert.NoError(t, err)
@@ -1269,7 +1269,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, true)
 	assert.NoError(t, err)

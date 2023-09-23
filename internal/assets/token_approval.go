@@ -34,10 +34,11 @@ func (am *assetManager) GetTokenApprovals(ctx context.Context, filter ffapi.AndF
 }
 
 type approveSender struct {
-	mgr       *assetManager
-	approval  *core.TokenApprovalInput
-	resolved  bool
-	msgSender syncasync.Sender
+	mgr              *assetManager
+	approval         *core.TokenApprovalInput
+	resolved         bool
+	msgSender        syncasync.Sender
+	idempotentSubmit bool
 }
 
 func (s *approveSender) Prepare(ctx context.Context) error {
@@ -58,8 +59,9 @@ func (s *approveSender) setDefaults() {
 
 func (am *assetManager) NewApproval(approval *core.TokenApprovalInput) syncasync.Sender {
 	sender := &approveSender{
-		mgr:      am,
-		approval: approval,
+		mgr:              am,
+		approval:         approval,
+		idempotentSubmit: approval.IdempotencyKey != "",
 	}
 	sender.setDefaults()
 	return sender
@@ -194,7 +196,7 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 		}
 	}
 
-	_, err = s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval))
+	_, err = s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval), s.idempotentSubmit)
 	return err
 }
 

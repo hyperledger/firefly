@@ -81,7 +81,7 @@ func TestTokenApprovalSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.NoError(t, err)
@@ -121,7 +121,7 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.NoError(t, err)
@@ -208,7 +208,7 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == tokenPools[0] && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.NoError(t, err)
@@ -474,7 +474,7 @@ func TestApprovalFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.EqualError(t, err, "pop")
@@ -555,7 +555,7 @@ func TestApprovalWithBroadcastMessage(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.NoError(t, err)
@@ -751,7 +751,7 @@ func TestApprovalWithPrivateMessage(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.NoError(t, err)
@@ -908,7 +908,7 @@ func TestTokenApprovalConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	msa.On("WaitForTokenApproval", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
@@ -989,7 +989,7 @@ func TestApprovalWithBroadcastConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, true)
 	assert.NoError(t, err)

@@ -214,13 +214,13 @@ func (_m *Manager) ResolveInitGroup(ctx context.Context, msg *core.Message, crea
 }
 
 // RunOperation provides a mock function with given fields: ctx, op
-func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation) (fftypes.JSONObject, bool, error) {
+func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation) (fftypes.JSONObject, core.OpPhase, error) {
 	ret := _m.Called(ctx, op)
 
 	var r0 fftypes.JSONObject
-	var r1 bool
+	var r1 core.OpPhase
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation) (fftypes.JSONObject, bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation) (fftypes.JSONObject, core.OpPhase, error)); ok {
 		return rf(ctx, op)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation) fftypes.JSONObject); ok {
@@ -231,10 +231,10 @@ func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *core.PreparedOperation) bool); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.PreparedOperation) core.OpPhase); ok {
 		r1 = rf(ctx, op)
 	} else {
-		r1 = ret.Get(1).(bool)
+		r1 = ret.Get(1).(core.OpPhase)
 	}
 
 	if rf, ok := ret.Get(2).(func(context.Context, *core.PreparedOperation) error); ok {

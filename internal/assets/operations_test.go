@@ -46,15 +46,15 @@ func TestPrepareAndRunCreatePool(t *testing.T) {
 	assert.NoError(t, err)
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("CreateTokenPool", context.Background(), "ns1:"+op.ID.String(), pool).Return(false, nil)
+	mti.On("CreateTokenPool", context.Background(), "ns1:"+op.ID.String(), pool).Return(core.OpPhaseComplete, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
 	assert.Equal(t, pool, po.Data.(createPoolData).Pool)
 
-	_, complete, err := am.RunOperation(context.Background(), po)
+	_, phase, err := am.RunOperation(context.Background(), po)
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -78,16 +78,16 @@ func TestPrepareAndRunActivatePool(t *testing.T) {
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
-	mti.On("ActivateTokenPool", context.Background(), pool).Return(true, nil)
+	mti.On("ActivateTokenPool", context.Background(), pool).Return(core.OpPhaseComplete, nil)
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
 	assert.Equal(t, pool, po.Data.(activatePoolData).Pool)
 
-	_, complete, err := am.RunOperation(context.Background(), po)
+	_, phase, err := am.RunOperation(context.Background(), po)
 
-	assert.True(t, complete)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -124,9 +124,9 @@ func TestPrepareAndRunTransfer(t *testing.T) {
 	assert.Equal(t, pool, po.Data.(transferData).Pool)
 	assert.Equal(t, transfer, po.Data.(transferData).Transfer)
 
-	_, complete, err := am.RunOperation(context.Background(), po)
+	_, phase, err := am.RunOperation(context.Background(), po)
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -163,9 +163,9 @@ func TestPrepareAndRunApproval(t *testing.T) {
 	assert.Equal(t, pool, po.Data.(approvalData).Pool)
 	assert.Equal(t, approval, po.Data.(approvalData).Approval)
 
-	_, complete, err := am.RunOperation(context.Background(), po)
+	_, phase, err := am.RunOperation(context.Background(), po)
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -352,9 +352,9 @@ func TestRunOperationNotSupported(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	_, complete, err := am.RunOperation(context.Background(), &core.PreparedOperation{})
+	_, phase, err := am.RunOperation(context.Background(), &core.PreparedOperation{})
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10378", err)
 }
 
@@ -365,9 +365,9 @@ func TestRunOperationCreatePoolBadPlugin(t *testing.T) {
 	op := &core.Operation{}
 	pool := &core.TokenPool{}
 
-	_, complete, err := am.RunOperation(context.Background(), opCreatePool(op, pool))
+	_, phase, err := am.RunOperation(context.Background(), opCreatePool(op, pool))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10272", err)
 }
 
@@ -384,11 +384,11 @@ func TestRunOperationCreatePool(t *testing.T) {
 	}
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("CreateTokenPool", context.Background(), "ns1:"+op.ID.String(), pool).Return(false, nil)
+	mti.On("CreateTokenPool", context.Background(), "ns1:"+op.ID.String(), pool).Return(core.OpPhaseInitializing, nil)
 
-	_, complete, err := am.RunOperation(context.Background(), opCreatePool(op, pool))
+	_, phase, err := am.RunOperation(context.Background(), opCreatePool(op, pool))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -401,9 +401,9 @@ func TestRunOperationActivatePoolBadPlugin(t *testing.T) {
 	op := &core.Operation{}
 	pool := &core.TokenPool{}
 
-	_, complete, err := am.RunOperation(context.Background(), opActivatePool(op, pool))
+	_, phase, err := am.RunOperation(context.Background(), opActivatePool(op, pool))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10272", err)
 }
 
@@ -415,9 +415,9 @@ func TestRunOperationTransferBadPlugin(t *testing.T) {
 	pool := &core.TokenPool{}
 	transfer := &core.TokenTransfer{}
 
-	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
+	_, phase, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10272", err)
 }
 
@@ -429,9 +429,9 @@ func TestRunOperationApprovalBadPlugin(t *testing.T) {
 	pool := &core.TokenPool{}
 	approval := &core.TokenApproval{}
 
-	_, complete, err := am.RunOperation(context.Background(), opApproval(op, pool, approval))
+	_, phase, err := am.RunOperation(context.Background(), opApproval(op, pool, approval))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10272", err)
 }
 
@@ -473,9 +473,9 @@ func TestRunOperationTransferMint(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mti.On("MintTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, (*fftypes.JSONAny)(nil)).Return(nil)
 
-	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
+	_, phase, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -501,9 +501,9 @@ func TestRunOperationTransferMintWithInterface(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mti.On("MintTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, pool.Methods).Return(nil)
 
-	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
+	_, phase, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -528,9 +528,9 @@ func TestRunOperationTransferBurn(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mti.On("BurnTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, (*fftypes.JSONAny)(nil)).Return(nil)
 
-	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
+	_, phase, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -555,9 +555,9 @@ func TestRunOperationTransfer(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mti.On("TransferTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer, (*fftypes.JSONAny)(nil)).Return(nil)
 
-	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
+	_, phase, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)

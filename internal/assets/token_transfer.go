@@ -43,18 +43,20 @@ func (am *assetManager) GetTokenTransferByID(ctx context.Context, id string) (*c
 
 func (am *assetManager) NewTransfer(transfer *core.TokenTransferInput) syncasync.Sender {
 	sender := &transferSender{
-		mgr:      am,
-		transfer: transfer,
+		mgr:              am,
+		transfer:         transfer,
+		idempotentSubmit: transfer.IdempotencyKey != "",
 	}
 	sender.setDefaults()
 	return sender
 }
 
 type transferSender struct {
-	mgr       *assetManager
-	transfer  *core.TokenTransferInput
-	resolved  bool
-	msgSender syncasync.Sender
+	mgr              *assetManager
+	transfer         *core.TokenTransferInput
+	resolved         bool
+	msgSender        syncasync.Sender
+	idempotentSubmit bool
 }
 
 // sendMethod is the specific operation requested of the transferSender.
@@ -284,7 +286,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 		}
 	}
 
-	_, err = s.mgr.operations.RunOperation(ctx, opTransfer(op, pool, &s.transfer.TokenTransfer))
+	_, err = s.mgr.operations.RunOperation(ctx, opTransfer(op, pool, &s.transfer.TokenTransfer), s.idempotentSubmit)
 	return err
 }
 

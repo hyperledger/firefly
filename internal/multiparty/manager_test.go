@@ -275,11 +275,11 @@ func TestSubmitNetworkAction(t *testing.T) {
 	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(networkActionData)
 		return op.Type == core.OpTypeBlockchainNetworkAction && data.Type == core.NetworkActionTerminate
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
 	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
-	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
+	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate}, false)
 	assert.Nil(t, err)
 
 	mp.mbi.AssertExpectations(t)
@@ -310,7 +310,7 @@ func TestSubmitNetworkActionTXFail(t *testing.T) {
 
 	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
-	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
+	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate}, false)
 	assert.EqualError(t, err, "pop")
 
 	mp.mbi.AssertExpectations(t)
@@ -343,7 +343,7 @@ func TestSubmitNetworkActionOpFail(t *testing.T) {
 
 	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
-	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
+	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate}, false)
 	assert.EqualError(t, err, "pop")
 
 	mp.mbi.AssertExpectations(t)
@@ -373,7 +373,7 @@ func TestSubmitNetworkActionBadType(t *testing.T) {
 
 	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
-	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: "BAD"})
+	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: "BAD"}, false)
 	assert.Regexp(t, "FF10397", err)
 
 	mp.mbi.AssertExpectations(t)
@@ -410,9 +410,9 @@ func TestSubmitBatchPinOk(t *testing.T) {
 	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BatchPinData)
 		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
-	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1", false)
 	assert.NoError(t, err)
 }
 
@@ -448,9 +448,9 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BatchPinData)
 		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
-	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1", false)
 	assert.NoError(t, err)
 }
 
@@ -483,9 +483,9 @@ func TestSubmitBatchPinWithBatchOk(t *testing.T) {
 		assert.Equal(t, contexts, data.BatchPin.Contexts)
 		assert.Equal(t, "payload1", data.BatchPin.PayloadRef)
 		return op.Type == core.OpTypeBlockchainInvoke && data.BatchPin.Batch == batch
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
-	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1", false)
 	assert.NoError(t, err)
 }
 
@@ -511,7 +511,7 @@ func TestSubmitBatchPinWithBatchOpFailure(t *testing.T) {
 
 	mp.mth.On("FindOperationInTransaction", ctx, batch.TX.ID, core.OpTypeBlockchainInvoke).Return(nil, fmt.Errorf("pop"))
 
-	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1", false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -543,7 +543,7 @@ func TestSubmitBatchPinWithBatchOpMalformed(t *testing.T) {
 
 	mp.mth.On("FindOperationInTransaction", ctx, batch.TX.ID, core.OpTypeBlockchainInvoke).Return(invokeOp, nil)
 
-	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1", false)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -581,9 +581,9 @@ func TestSubmitBatchPinWithBatchOpNotFound(t *testing.T) {
 	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BatchPinData)
 		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
-	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1", false)
 	assert.NoError(t, err)
 }
 
@@ -608,7 +608,7 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 
 	mp.mbi.On("Name").Return("ut")
 	mp.mom.On("AddOrReuseOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
-	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1", false)
 	assert.Regexp(t, "pop", err)
 }
 

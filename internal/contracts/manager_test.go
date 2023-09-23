@@ -1686,7 +1686,7 @@ func TestDeployContract(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(blockchainContractDeployData)
 		return op.Type == core.OpTypeBlockchainContractDeploy && data.Request == req
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := cm.DeployContract(context.Background(), req, false)
 
@@ -1917,7 +1917,7 @@ func TestInvokeContract(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 	opaqueData := "anything"
 	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
@@ -1964,7 +1964,7 @@ func TestInvokeContractViaFFI(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 	opaqueData := "anything"
 	mbi.On("ParseInterface", context.Background(), method, errors).Return(opaqueData, nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
@@ -2505,7 +2505,7 @@ func TestInvokeContractConfirm(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 	msa.On("WaitForInvokeOperation", mock.Anything, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[2].(syncasync.SendFunction)
@@ -2557,7 +2557,7 @@ func TestInvokeContractFail(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 	opaqueData := "anything"
 	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
@@ -3100,7 +3100,7 @@ func TestInvokeContractAPI(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 	opaqueData := "anything"
 	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)

@@ -28,7 +28,6 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
-	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -245,7 +244,7 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Batch.ID)
-	}), operations.RemainPendingOnFailure).Return(nil, fmt.Errorf("pop"))
+	}), false).Return(nil, fmt.Errorf("pop"))
 
 	err := bm.dispatchBatch(context.Background(), state)
 	assert.EqualError(t, err, "pop")
@@ -270,11 +269,11 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	mmp := bm.multiparty.(*multipartymocks.Manager)
 	mom := bm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
-	mmp.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(nil)
+	mmp.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, "payload1", false).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Batch.ID)
-	}), operations.RemainPendingOnFailure).Return(getUploadBatchOutputs("payload1"), nil)
+	}), false).Return(getUploadBatchOutputs("payload1"), nil)
 
 	err := bm.dispatchBatch(context.Background(), state)
 	assert.NoError(t, err)
@@ -302,11 +301,11 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mmp := bm.multiparty.(*multipartymocks.Manager)
 	mom := bm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
-	mmp.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(fmt.Errorf("pop"))
+	mmp.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, "payload1", false).Return(fmt.Errorf("pop"))
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Batch.ID)
-	}), operations.RemainPendingOnFailure).Return(getUploadBatchOutputs("payload1"), nil)
+	}), false).Return(getUploadBatchOutputs("payload1"), nil)
 
 	err := bm.dispatchBatch(context.Background(), state)
 	assert.EqualError(t, err, "pop")
@@ -344,7 +343,7 @@ func TestUploadBlobPublishFail(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBlobData)
 		return op.Type == core.OpTypeSharedStorageUploadBlob && data.Blob == blob
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.PublishDataBlob(ctx, d.ID.String(), "idem1")
 	assert.EqualError(t, err, "pop")
@@ -482,7 +481,7 @@ func TestUploadBlobsGetBlobFail(t *testing.T) {
 				Hash: blob.Hash,
 			},
 		},
-	})
+	}, false)
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -514,7 +513,7 @@ func TestUploadBlobsGetBlobNotFound(t *testing.T) {
 				Hash: blob.Hash,
 			},
 		},
-	})
+	}, false)
 	assert.Regexp(t, "FF10239", err)
 
 	mdi.AssertExpectations(t)
@@ -543,7 +542,7 @@ func TestUploadBlobsGetBlobInsertOpFail(t *testing.T) {
 				Hash: blob.Hash,
 			},
 		},
-	})
+	}, true)
 	assert.EqualError(t, err, "pop")
 
 	mom.AssertExpectations(t)
@@ -627,7 +626,7 @@ func TestUploadValueFail(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadValue)
 		return op.Type == core.OpTypeSharedStorageUploadValue && data.Data.ID.Equals(d.ID)
-	})).Return(nil, fmt.Errorf("pop"))
+	}), false).Return(nil, fmt.Errorf("pop"))
 
 	mtx := bm.txHelper.(*txcommonmocks.Helper)
 	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
@@ -656,7 +655,7 @@ func TestUploadValueOK(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadValue)
 		return op.Type == core.OpTypeSharedStorageUploadValue && data.Data.ID.Equals(d.ID)
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
 	mtx := bm.txHelper.(*txcommonmocks.Helper)
 	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
@@ -808,7 +807,7 @@ func TestUploadBlobOK(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBlobData)
 		return op.Type == core.OpTypeSharedStorageUploadBlob && data.Blob == blob
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
 	mtx := bm.txHelper.(*txcommonmocks.Helper)
 	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)

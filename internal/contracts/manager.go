@@ -81,7 +81,7 @@ type Manager interface {
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error)
 }
 
 type contractManager struct {
@@ -370,7 +370,7 @@ func (cm *contractManager) DeployContract(ctx context.Context, req *core.Contrac
 	}
 
 	send := func(ctx context.Context) error {
-		_, err := cm.operations.RunOperation(ctx, opBlockchainContractDeploy(op, req))
+		_, err := cm.operations.RunOperation(ctx, opBlockchainContractDeploy(op, req), req.IdempotencyKey != "")
 		return err
 	}
 	if waitConfirm {
@@ -434,7 +434,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 			return op, msgSender.Send(ctx)
 		}
 		send := func(ctx context.Context) error {
-			_, err := cm.operations.RunOperation(ctx, txcommon.OpBlockchainInvoke(op, req, nil))
+			_, err := cm.operations.RunOperation(ctx, txcommon.OpBlockchainInvoke(op, req, nil), req.IdempotencyKey != "")
 			return err
 		}
 		if waitConfirm {

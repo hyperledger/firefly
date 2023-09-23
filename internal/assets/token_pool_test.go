@@ -110,7 +110,7 @@ func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
@@ -369,7 +369,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "pop", err)
@@ -487,7 +487,7 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
@@ -521,7 +521,7 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
@@ -562,7 +562,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, true)
 	assert.NoError(t, err)
@@ -596,7 +596,7 @@ func TestActivateTokenPool(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
 		return op.Type == core.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
@@ -665,7 +665,7 @@ func TestActivateTokenPoolFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
 		return op.Type == core.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(nil, fmt.Errorf("pop"))
+	}), false).Return(nil, fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.EqualError(t, err, "pop")
@@ -737,7 +737,7 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
 		return op.Type == core.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.NoError(t, err)

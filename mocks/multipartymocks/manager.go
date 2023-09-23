@@ -118,13 +118,13 @@ func (_m *Manager) RootOrg() multiparty.RootOrg {
 }
 
 // RunOperation provides a mock function with given fields: ctx, op
-func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation) (fftypes.JSONObject, bool, error) {
+func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation) (fftypes.JSONObject, core.OpPhase, error) {
 	ret := _m.Called(ctx, op)
 
 	var r0 fftypes.JSONObject
-	var r1 bool
+	var r1 core.OpPhase
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation) (fftypes.JSONObject, bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation) (fftypes.JSONObject, core.OpPhase, error)); ok {
 		return rf(ctx, op)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation) fftypes.JSONObject); ok {
@@ -135,10 +135,10 @@ func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *core.PreparedOperation) bool); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.PreparedOperation) core.OpPhase); ok {
 		r1 = rf(ctx, op)
 	} else {
-		r1 = ret.Get(1).(bool)
+		r1 = ret.Get(1).(core.OpPhase)
 	}
 
 	if rf, ok := ret.Get(2).(func(context.Context, *core.PreparedOperation) error); ok {
@@ -150,13 +150,13 @@ func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation)
 	return r0, r1, r2
 }
 
-// SubmitBatchPin provides a mock function with given fields: ctx, batch, contexts, payloadRef
-func (_m *Manager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
-	ret := _m.Called(ctx, batch, contexts, payloadRef)
+// SubmitBatchPin provides a mock function with given fields: ctx, batch, contexts, payloadRef, idempotentSubmit
+func (_m *Manager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string, idempotentSubmit bool) error {
+	ret := _m.Called(ctx, batch, contexts, payloadRef, idempotentSubmit)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.BatchPersisted, []*fftypes.Bytes32, string) error); ok {
-		r0 = rf(ctx, batch, contexts, payloadRef)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BatchPersisted, []*fftypes.Bytes32, string, bool) error); ok {
+		r0 = rf(ctx, batch, contexts, payloadRef, idempotentSubmit)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -164,13 +164,13 @@ func (_m *Manager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersiste
 	return r0
 }
 
-// SubmitNetworkAction provides a mock function with given fields: ctx, signingKey, action
-func (_m *Manager) SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction) error {
-	ret := _m.Called(ctx, signingKey, action)
+// SubmitNetworkAction provides a mock function with given fields: ctx, signingKey, action, idempotentSubmit
+func (_m *Manager) SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction, idempotentSubmit bool) error {
+	ret := _m.Called(ctx, signingKey, action, idempotentSubmit)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.NetworkAction) error); ok {
-		r0 = rf(ctx, signingKey, action)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.NetworkAction, bool) error); ok {
+		r0 = rf(ctx, signingKey, action, idempotentSubmit)
 	} else {
 		r0 = ret.Error(0)
 	}

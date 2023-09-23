@@ -35,14 +35,14 @@ import (
 type OperationHandler interface {
 	core.Named
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error)
 	OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error
 }
 
 type Manager interface {
 	RegisterHandler(ctx context.Context, handler OperationHandler, ops []core.OpType)
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation, idempotentSubmit bool) (fftypes.JSONObject, error)
 	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	ResubmitOperations(ctx context.Context, txID *fftypes.UUID) ([]*core.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
@@ -59,17 +59,20 @@ type ConflictError interface {
 	IsConflictError() bool
 }
 
-type RunOperationOption int
-
-const (
-	RemainPendingOnFailure RunOperationOption = iota
-)
+func ErrTernary(err error, ifErr, ifNoError core.OpPhase) core.OpPhase {
+	phase := ifErr
+	if err == nil {
+		phase = ifNoError
+	}
+	return phase
+}
 
 type operationsManager struct {
 	ctx       context.Context
 	namespace string
 	database  database.Plugin
 	handlers  map[core.OpType]OperationHandler
+	txHelper  txcommon.Helper
 	updater   *operationUpdater
 	cache     cache.CInterface
 }
@@ -96,6 +99,7 @@ func NewOperationsManager(ctx context.Context, ns string, di database.Plugin, tx
 		ctx:       ctx,
 		namespace: ns,
 		database:  di,
+		txHelper:  txHelper,
 		handlers:  make(map[core.OpType]OperationHandler),
 	}
 	om.updater = newOperationUpdater(ctx, om, di, txHelper)
@@ -142,7 +146,7 @@ func (om *operationsManager) ResubmitOperations(ctx context.Context, txID *fftyp
 			continue
 		}
 		prepOp, _ := om.PrepareOperation(ctx, nextInitializedOp)
-		_, resubmitErr = om.RunOperation(ctx, prepOp)
+		_, resubmitErr = om.RunOperation(ctx, prepOp, true /* we only call ResubmitOperations in idempotent submit cases */)
 		if resubmitErr != nil {
 			break
 		}
@@ -152,39 +156,49 @@ func (om *operationsManager) ResubmitOperations(ctx context.Context, txID *fftyp
 	return resubmitted, resubmitErr
 }
 
-func (om *operationsManager) RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error) {
-	failState := core.OpStatusFailed
-	for _, o := range options {
-		if o == RemainPendingOnFailure {
-			failState = core.OpStatusPending
-		}
-	}
-
+func (om *operationsManager) RunOperation(ctx context.Context, op *core.PreparedOperation, idempotentSubmit bool) (fftypes.JSONObject, error) {
 	handler, ok := om.handlers[op.Type]
 	if !ok {
 		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 	log.L(ctx).Infof("Executing %s operation %s via handler %s", op.Type, op.ID, handler.Name())
 	log.L(ctx).Tracef("Operation detail: %+v", op)
-	outputs, complete, err := handler.RunOperation(ctx, op)
+	outputs, phase, err := handler.RunOperation(ctx, op)
 	if err != nil {
-		conflictErr, ok := err.(ConflictError)
-		if ok && conflictErr.IsConflictError() {
-			log.L(ctx).Infof("Leaving operation %s operation %s status unchanged after conflict", op.Type, op.ID)
-		} else {
-			om.SubmitOperationUpdate(&core.OperationUpdate{
-				NamespacedOpID: op.NamespacedIDString(),
-				Plugin:         op.Plugin,
-				Status:         failState,
-				ErrorMessage:   err.Error(),
-				Output:         outputs,
-			})
+		conflictErr, conflictTestOk := err.(ConflictError)
+		var failState core.OpStatus
+		switch {
+		case conflictTestOk && conflictErr.IsConflictError():
+			// We are now pending - we know the connector has the action we're attempting to submit
+			//
+			// The async processing in SubmitOperationUpdate does not allow us to go back to pending, if
+			// we have progressed to failed through an async event that gets ordered before this update.
+			// So this is safe
+			failState = core.OpStatusPending
+			log.L(ctx).Infof("Setting operation %s operation %s status to %s after conflict", op.Type, op.ID, failState)
+		case phase == core.OpPhaseInitializing && idempotentSubmit:
+			// We haven't submitted the operation yet - so we will reuse the operation if the user retires with the same idempotency key
+			failState = core.OpStatusInitialized
+		case phase == core.OpPhasePending:
+			// This error is past the point we have submitted to the connector - idempotency error from here on in on resubmit.
+			// This also implies we are continuing to progress the transaction, and expecting it to update through events.
+			failState = core.OpStatusPending
+		default:
+			// Ok, we're failed
+			failState = core.OpStatusFailed
 		}
+		om.SubmitOperationUpdate(&core.OperationUpdate{
+			NamespacedOpID: op.NamespacedIDString(),
+			Plugin:         op.Plugin,
+			Status:         failState,
+			ErrorMessage:   err.Error(),
+			Output:         outputs,
+		})
 	} else {
 		// No error so move us from "Initialized" to "Pending"
 		newState := core.OpStatusPending
 
-		if complete {
+		if phase == core.OpPhaseComplete {
 			// If the operation is actually completed synchronously skip "Pending" state and go to "Succeeded"
 			newState = core.OpStatusSucceeded
 		}
@@ -212,10 +226,19 @@ func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.
 
 func (om *operationsManager) RetryOperation(ctx context.Context, opID *fftypes.UUID) (op *core.Operation, err error) {
 	var po *core.PreparedOperation
+	var idempotencyKey core.IdempotencyKey
 	err = om.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		op, err = om.findLatestRetry(ctx, opID)
 		if err != nil {
 			return err
+		}
+
+		tx, err := om.updater.txHelper.GetTransactionByIDCached(ctx, op.Transaction)
+		if err != nil {
+			return err
+		}
+		if tx != nil {
+			idempotencyKey = tx.IdempotencyKey
 		}
 
 		// Create a copy of the operation with a new ID
@@ -244,7 +267,8 @@ func (om *operationsManager) RetryOperation(ctx context.Context, opID *fftypes.U
 		return nil, err
 	}
 
-	_, err = om.RunOperation(ctx, po)
+	log.L(ctx).Debugf("Retry initiation for operation %s idempotencyKey=%s", po.NamespacedIDString(), idempotencyKey)
+	_, err = om.RunOperation(ctx, po, idempotencyKey != "")
 	return op, err
 }
 

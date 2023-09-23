@@ -123,7 +123,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 		return nil, err
 	}
 
-	_, err = am.operations.RunOperation(ctx, opCreatePool(newOperation, &pool.TokenPool))
+	_, err = am.operations.RunOperation(ctx, opCreatePool(newOperation, &pool.TokenPool), pool.IdempotencyKey != "")
 	return &pool.TokenPool, err
 }
 
@@ -154,7 +154,10 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenP
 		return err
 	}
 
-	_, err = am.operations.RunOperation(ctx, opActivatePool(op, pool))
+	_, err = am.operations.RunOperation(ctx, opActivatePool(op, pool),
+		false, // TODO: this operation should be made idempotent, but cannot inherit this from the TX per our normal semantics
+		//              as the transaction is only on the submitting side and this is triggered on all parties.
+	)
 	return err
 }
 
