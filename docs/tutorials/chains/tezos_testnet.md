@@ -3,7 +3,7 @@ layout: i18n_page
 title: pages.tezos_testnet
 parent: pages.chains
 grand_parent: pages.tutorials
-nav_order: 1
+nav_order: 6
 ---
 
 # {%t pages.tezos_testnet %}
