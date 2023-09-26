@@ -2359,7 +2359,7 @@
   },"393": {
     "doc": "Ethereum",
     "title": "Table of contents",
-    "content": ". | TOC | . ",
+    "content": ". | Work with Ethereum smart contracts . | Example smart contract | Contract deployment . | Request | Response | . | The FireFly Interface Format . | Request | Response | . | Broadcast the contract interface . | Request | Response | . | Create an HTTP API for the contract . | Request | Response | . | View OpenAPI spec for the contract | Invoke the smart contract . | Request | Response | . | Query the current value . | Request | Response | . | Passing additional options with a request . | Request | Response | . | Create a blockchain event listener . | Request | Response | Querying listener status . | Request / Response | . | . | Subscribe to events from our contract . | Request | Response | . | Receive custom smart contract events . | WebSocket event | Subscription offset | . | Appendix I: Work with a custom contract without creating a named API . | Request | Response | . | Appendix II: Work directly with contracts with inline requests . | Request | Response | . | . | . ",
     "url": "/firefly/head/tutorials/custom_contracts/ethereum.html#table-of-contents",
     "relUrl": "/tutorials/custom_contracts/ethereum.html#table-of-contents"
   },"394": {
@@ -2593,7 +2593,7 @@
   },"432": {
     "doc": "Fabric",
     "title": "Table of contents",
-    "content": ". | TOC | . ",
+    "content": ". | Work with Hyperledger Fabric chaincodes . | Example smart contract | Create the chaincode package | Contract deployment | The FireFly Interface Format . | Input parameters | Return values | Event payloads | . | Broadcast the contract interface . | Request | Response | . | Create an HTTP API for the contract . | Request | Response | . | View OpenAPI spec for the contract . | /invoke/* endpoints | /query/* endpoints | . | Invoke the chaincode . | Request | Response | . | Query the current state . | Request | Response | . | Create a blockchain event listener . | Request | Response | . | Subscribe to events from our contract . | Request | Response | . | Receive custom smart contract events . | WebSocket event | . | . | . ",
     "url": "/firefly/head/tutorials/custom_contracts/fabric.html#table-of-contents",
     "relUrl": "/tutorials/custom_contracts/fabric.html#table-of-contents"
   },"433": {
@@ -3985,7 +3985,7 @@
   },"664": {
     "doc": "Pinning Data",
     "title": "Table of contents",
-    "content": ". | TOC | . ",
+    "content": ". | Pin off-chain data to a custom blockchain transaction . | Designing a compatible contract . | Ethereum | Fabric | . | Initializing FireFly | Invoking the contract | Listening for events | . | . ",
     "url": "/firefly/head/tutorials/custom_contracts/pinning.html#table-of-contents",
     "relUrl": "/tutorials/custom_contracts/pinning.html#table-of-contents"
   },"665": {

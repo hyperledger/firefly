@@ -293,7 +293,7 @@
 <blockquote>
   <p><strong>NOTE:</strong> This guide assumes that you are running a local FireFly stack with at least 2 members and a Fabric blockchain created by the FireFly CLI. If you need help getting that set up, please see the <a href="../../gettingstarted/setup_env.html">Getting Started guide to Start your environment</a>.</p>
 </blockquote>
-      <h2 id="table-of-contents">
+      <h2 class="no_toc text-delta" id="table-of-contents">
         
         
           <a href="#table-of-contents" class="anchor-heading" aria-labelledby="table-of-contents"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Table of contents
@@ -302,8 +302,58 @@
       </h2>
     
 
-<ol class="no_toc text-delta">
-  <li>TOC</li>
+<ol id="markdown-toc">
+  <li><a href="#work-with-hyperledger-fabric-chaincodes" id="markdown-toc-work-with-hyperledger-fabric-chaincodes">Work with Hyperledger Fabric chaincodes</a>    <ol>
+      <li><a href="#example-smart-contract" id="markdown-toc-example-smart-contract">Example smart contract</a></li>
+      <li><a href="#create-the-chaincode-package" id="markdown-toc-create-the-chaincode-package">Create the chaincode package</a></li>
+      <li><a href="#contract-deployment" id="markdown-toc-contract-deployment">Contract deployment</a></li>
+      <li><a href="#the-firefly-interface-format" id="markdown-toc-the-firefly-interface-format">The FireFly Interface Format</a>        <ol>
+          <li><a href="#input-parameters" id="markdown-toc-input-parameters">Input parameters</a></li>
+          <li><a href="#return-values" id="markdown-toc-return-values">Return values</a></li>
+          <li><a href="#event-payloads" id="markdown-toc-event-payloads">Event payloads</a></li>
+        </ol>
+      </li>
+      <li><a href="#broadcast-the-contract-interface" id="markdown-toc-broadcast-the-contract-interface">Broadcast the contract interface</a>        <ol>
+          <li><a href="#request" id="markdown-toc-request">Request</a></li>
+          <li><a href="#response" id="markdown-toc-response">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#create-an-http-api-for-the-contract" id="markdown-toc-create-an-http-api-for-the-contract">Create an HTTP API for the contract</a>        <ol>
+          <li><a href="#request-1" id="markdown-toc-request-1">Request</a></li>
+          <li><a href="#response-1" id="markdown-toc-response-1">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#view-openapi-spec-for-the-contract" id="markdown-toc-view-openapi-spec-for-the-contract">View OpenAPI spec for the contract</a>        <ol>
+          <li><a href="#invoke-endpoints" id="markdown-toc-invoke-endpoints">/invoke/* endpoints</a></li>
+          <li><a href="#query-endpoints" id="markdown-toc-query-endpoints">/query/* endpoints</a></li>
+        </ol>
+      </li>
+      <li><a href="#invoke-the-chaincode" id="markdown-toc-invoke-the-chaincode">Invoke the chaincode</a>        <ol>
+          <li><a href="#request-2" id="markdown-toc-request-2">Request</a></li>
+          <li><a href="#response-2" id="markdown-toc-response-2">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#query-the-current-state" id="markdown-toc-query-the-current-state">Query the current state</a>        <ol>
+          <li><a href="#request-3" id="markdown-toc-request-3">Request</a></li>
+          <li><a href="#response-3" id="markdown-toc-response-3">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#create-a-blockchain-event-listener" id="markdown-toc-create-a-blockchain-event-listener">Create a blockchain event listener</a>        <ol>
+          <li><a href="#request-4" id="markdown-toc-request-4">Request</a></li>
+          <li><a href="#response-4" id="markdown-toc-response-4">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#subscribe-to-events-from-our-contract" id="markdown-toc-subscribe-to-events-from-our-contract">Subscribe to events from our contract</a>        <ol>
+          <li><a href="#request-5" id="markdown-toc-request-5">Request</a></li>
+          <li><a href="#response-5" id="markdown-toc-response-5">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#receive-custom-smart-contract-events" id="markdown-toc-receive-custom-smart-contract-events">Receive custom smart contract events</a>        <ol>
+          <li><a href="#websocket-event" id="markdown-toc-websocket-event">WebSocket event</a></li>
+        </ol>
+      </li>
+    </ol>
+  </li>
 </ol><hr />
       <h2 id="example-smart-contract">
         
