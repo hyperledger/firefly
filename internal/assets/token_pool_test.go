@@ -150,7 +150,45 @@ func TestCreateTokenPoolIdempotentResubmit(t *testing.T) {
 		Return(id, &sqlcommon.IdempotencyError{
 			ExistingTXID:  id,
 			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{op}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{op}, nil)
+
+	_, err := am.CreateTokenPool(context.Background(), pool, false)
+
+	// SubmitNewTransction returned 409 idempotency clash, ResubmitOperations returned that it resubmitted an operation. Shouldn't
+	// see the original 409 Conflict error
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestCreateTokenPoolIdempotentResubmitAll(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).
+		Return(id, &sqlcommon.IdempotencyError{
+			ExistingTXID:  id,
+			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(0, nil, nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("RunOperation", context.Background(), mock.Anything, true).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 
@@ -186,7 +224,7 @@ func TestCreateTokenPoolIdempotentNoOperationToResubmit(t *testing.T) {
 		Return(id, &sqlcommon.IdempotencyError{
 			ExistingTXID:  id,
 			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* total */, nil /* to resubmit */, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 
@@ -223,7 +261,7 @@ func TestCreateTokenPoolIdempotentErrorOnOperationResubmit(t *testing.T) {
 		Return(id, &sqlcommon.IdempotencyError{
 			ExistingTXID:  id,
 			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 

@@ -620,12 +620,12 @@ func TestResubmitIdempotentOperation(t *testing.T) {
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", id),
-		fb.Eq("status", core.OpStatusInitialized),
 	)
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	mdi.On("GetOperations", ctx, "ns1", filter).Return(operations, nil, nil)
-	resubmitted, err := om.ResubmitOperations(ctx, id)
+	total, resubmitted, err := om.ResubmitOperations(ctx, id)
 	assert.NoError(t, err)
+	assert.Equal(t, total, 1)
 	assert.Len(t, resubmitted, 1)
 
 	mdi.AssertExpectations(t)
@@ -658,12 +658,12 @@ func TestResubmitIdempotentOperationSkipCached(t *testing.T) {
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", id),
-		fb.Eq("status", core.OpStatusInitialized),
 	)
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	mdi.On("GetOperations", ctx, "ns1", filter).Return(operations, nil, nil)
-	resubmitted, err := om.ResubmitOperations(ctx, id)
+	total, resubmitted, err := om.ResubmitOperations(ctx, id)
 	assert.NoError(t, err)
+	assert.Equal(t, total, 1)
 	assert.Empty(t, resubmitted)
 
 	mdi.AssertExpectations(t)
@@ -693,11 +693,10 @@ func TestResubmitIdempotentOperationLookupError(t *testing.T) {
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", id),
-		fb.Eq("status", core.OpStatusInitialized),
 	)
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	mdi.On("GetOperations", ctx, "ns1", filter).Return(operations, nil, fmt.Errorf("pop"))
-	_, err := om.ResubmitOperations(ctx, id)
+	_, _, err := om.ResubmitOperations(ctx, id)
 	assert.Error(t, err)
 
 	mdi.AssertExpectations(t)
@@ -727,11 +726,10 @@ func TestResubmitIdempotentOperationExecError(t *testing.T) {
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", id),
-		fb.Eq("status", core.OpStatusInitialized),
 	)
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po, RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	mdi.On("GetOperations", ctx, "ns1", filter).Return(operations, nil, nil)
-	_, err := om.ResubmitOperations(ctx, id)
+	_, _, err := om.ResubmitOperations(ctx, id)
 	assert.Error(t, err)
 
 	mdi.AssertExpectations(t)

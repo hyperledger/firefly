@@ -298,7 +298,8 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			// Note we don't need to worry about re-entering this code zero-ops in this case, as we write everything as a batch in WriteTransactionAndOps.
+			_, resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
@@ -338,7 +339,8 @@ func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			// Note we don't need to worry about re-entering this code zero-ops in this case, as we write everything as a batch in WriteTransactionAndOps.
+			_, resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error

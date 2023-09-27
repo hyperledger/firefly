@@ -1719,7 +1719,7 @@ func TestDeployContractIdempotentResubmitOperation(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{{}}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{{}}, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
@@ -1752,7 +1752,7 @@ func TestDeployContractIdempotentNoOperationToResubmit(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* total */, nil /* to resubmit */, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
@@ -1786,7 +1786,7 @@ func TestDeployContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
 	_, err := cm.DeployContract(context.Background(), req, false)
@@ -2370,7 +2370,7 @@ func TestInvokeContractIdempotentResubmitOperation(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{{}}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{{}}, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	opaqueData := "anything"
 	mbm.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
@@ -2414,7 +2414,7 @@ func TestInvokeContractIdempotentNoOperationToResubmit(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* total */, nil /* to resubmit */, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	opaqueData := "anything"
 	mbm.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
@@ -2458,7 +2458,7 @@ func TestInvokeContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	opaqueData := "anything"
 	mbm.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)

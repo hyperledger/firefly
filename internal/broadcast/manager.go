@@ -233,18 +233,27 @@ func (bm *broadcastManager) PublishDataValue(ctx context.Context, id string, ide
 	if err != nil {
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
+		resubmitWholeTX := false
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			resubmitted, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			total, resubmitted, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
-			if resubmitErr != nil {
+			switch {
+			case resubmitErr != nil:
 				// Error doing resubmit, return the new error
 				err = resubmitErr
-			} else if len(resubmitted) > 0 {
+			case total == 0:
+				// We didn't do anything last time - just start again
+				txid = idemErr.ExistingTXID
+				resubmitWholeTX = true
+				err = nil
+			case len(resubmitted) > 0:
 				// We successfully resubmitted an initialized operation, return 2xx not 409
 				err = nil
 			}
 		}
-		return d, err
+		if !resubmitWholeTX {
+			return d, err
+		}
 	}
 
 	op := core.NewOperation(
@@ -275,18 +284,27 @@ func (bm *broadcastManager) PublishDataBlob(ctx context.Context, id string, idem
 	if err != nil {
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
+		resubmitWholeTX := false
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			resubmitted, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			total, resubmitted, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
-			if resubmitErr != nil {
+			switch {
+			case resubmitErr != nil:
 				// Error doing resubmit, return the new error
 				err = resubmitErr
-			} else if len(resubmitted) > 0 {
+			case total == 0:
+				// We didn't do anything last time - just start again
+				txid = idemErr.ExistingTXID
+				resubmitWholeTX = true
+				err = nil
+			case len(resubmitted) > 0:
 				// We successfully resubmitted an initialized operation, return 2xx not 409
 				err = nil
 			}
 		}
-		return d, err
+		if !resubmitWholeTX {
+			return d, err
+		}
 	}
 
 	if err = bm.uploadDataBlob(ctx, txid, d, idempotencyKey != ""); err != nil {

@@ -132,7 +132,46 @@ func TestMintTokensIdempotentResubmit(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{op}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{op}, nil)
+
+	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
+	_, err := am.MintTokens(context.Background(), mint, false)
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestMintTokensIdempotentResubmitAll(t *testing.T) {
+	am, cancel := newTestAssetsWithMetrics(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	mint := &core.TokenTransferInput{
+		TokenTransfer: core.TokenTransfer{
+			Amount: *fftypes.NewFFBigInt(5),
+		},
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
+	}
+	pool := &core.TokenPool{
+		Name:      "pool1",
+		Connector: "magic-tokens",
+		Active:    true,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(0, nil, nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("RunOperation", context.Background(), mock.Anything, true).Return(nil, nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
 	_, err := am.MintTokens(context.Background(), mint, false)
@@ -160,7 +199,7 @@ func TestMintTokensIdempotentNoOperationToResubmit(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* total */, nil /* to resumit */, nil)
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
 	_, err := am.MintTokens(context.Background(), mint, false)
@@ -189,7 +228,7 @@ func TestMintTokensIdempotentErrorOnResubmit(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
 	_, err := am.MintTokens(context.Background(), mint, false)

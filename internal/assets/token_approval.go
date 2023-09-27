@@ -109,20 +109,28 @@ func (s *approveSender) resolve(ctx context.Context) (opResubmitted bool, err er
 	if err != nil {
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
+		resubmitWholeTX := false
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			resubmitted, resubmitErr := s.mgr.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			total, resubmitted, resubmitErr := s.mgr.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
 				return false, resubmitErr
 			}
-			if len(resubmitted) > 0 {
+			if total == 0 {
+				// We didn't do anything last time - just start again
+				txid = idemErr.ExistingTXID
+				resubmitWholeTX = true
+				err = nil
+			} else if len(resubmitted) > 0 {
 				// We resubmitted something - translate the status code to 200 (true return)
 				s.approval.TX.ID = idemErr.ExistingTXID
 				s.approval.TX.Type = core.TransactionTypeTokenApproval
 				return true, nil
 			}
 		}
-		return false, err
+		if !resubmitWholeTX {
+			return false, err
+		}
 	}
 	s.approval.TX.ID = txid
 	s.approval.TX.Type = core.TransactionTypeTokenApproval

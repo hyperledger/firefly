@@ -378,8 +378,45 @@ func TestUploadBlobPublishIdempotentResubmitOperation(t *testing.T) {
 	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{op}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{op}, nil)
 	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
+
+	// If ResubmitOperations returns an operation it's because it found one to resubmit, we return 2xx not 409 and hence don't expect any errors here
+	d, err := bm.PublishDataBlob(ctx, d.ID.String(), "idem1")
+	assert.NotNil(t, d)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestUploadBlobPublishIdempotentResubmitAll(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	var id = fftypes.NewUUID()
+	defer cancel()
+	mdi := bm.database.(*databasemocks.Plugin)
+	mom := bm.operations.(*operationmocks.Manager)
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+
+	blob := &core.Blob{
+		Hash:       fftypes.NewRandB32(),
+		PayloadRef: "blob/1",
+	}
+	d := &core.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &core.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
+
+	ctx := context.Background()
+	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(0, nil, nil)
+	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("GetBlobs", ctx, bm.namespace.Name, mock.Anything).Return([]*core.Blob{blob}, nil, nil)
+	mom.On("RunOperation", mock.Anything, mock.Anything, true).Return(nil, nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, we return 2xx not 409 and hence don't expect any errors here
 	d, err := bm.PublishDataBlob(ctx, d.ID.String(), "idem1")
@@ -412,7 +449,7 @@ func TestUploadBlobPublishIdempotentNoOperationToResubmit(t *testing.T) {
 	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* total */, nil /* to resubmit */, nil)
 	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
@@ -446,7 +483,7 @@ func TestUploadBlobPublishIdempotentErrorOnOperationResubmit(t *testing.T) {
 	mtx.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 	mdi.On("GetDataByID", ctx, "ns1", d.ID, true).Return(d, nil)
 
 	// If ResubmitOperations returned an error trying to resubmit an operation we expect that error back, not the 409 conflict error
@@ -689,7 +726,39 @@ func TestUploadValueIdempotentResubmitOperation(t *testing.T) {
 	mtx.On("SubmitNewTransaction", context.Background(), core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{op}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{op}, nil)
+
+	// If ResubmitOperations returns an operation it's because it found one to resubmit, we return 2xx not 409 and hence don't expect any errors here
+	d1, err := bm.PublishDataValue(context.Background(), d.ID.String(), "idem1")
+	assert.NoError(t, err)
+	assert.Equal(t, d.ID, d1.ID)
+
+	mom.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestUploadValueIdempotentResubmitAll(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	var id = fftypes.NewUUID()
+	defer cancel()
+
+	d := &core.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtr(`{"some": "value"}`),
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", mock.Anything, "ns1", d.ID, true).Return(d, nil)
+
+	mom := bm.operations.(*operationmocks.Manager)
+
+	mtx := bm.txHelper.(*txcommonmocks.Helper)
+	mtx.On("SubmitNewTransaction", context.Background(), core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(0, nil, nil)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
+	mom.On("RunOperation", mock.Anything, mock.Anything, true).Return(nil, nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, we return 2xx not 409 and hence don't expect any errors here
 	d1, err := bm.PublishDataValue(context.Background(), d.ID.String(), "idem1")
@@ -719,7 +788,7 @@ func TestUploadValueIdempotentNoOperationToResubmit(t *testing.T) {
 	mtx.On("SubmitNewTransaction", context.Background(), core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* total */, nil /* to resubmit */, nil)
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
 	_, err := bm.PublishDataValue(context.Background(), d.ID.String(), "idem1")
@@ -749,7 +818,7 @@ func TestUploadValueIdempotentErrorOnOperationResubmit(t *testing.T) {
 	mtx.On("SubmitNewTransaction", context.Background(), core.TransactionTypeDataPublish, core.IdempotencyKey("idem1")).Return(fftypes.NewUUID(), &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
 	_, err := bm.PublishDataValue(context.Background(), d.ID.String(), "idem1")

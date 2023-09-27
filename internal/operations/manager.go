@@ -44,7 +44,7 @@ type Manager interface {
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *core.PreparedOperation, idempotentSubmit bool) (fftypes.JSONObject, error)
 	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
-	ResubmitOperations(ctx context.Context, txID *fftypes.UUID) ([]*core.Operation, error)
+	ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (total int, resubmit []*core.Operation, err error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
 	BulkInsertOperations(ctx context.Context, ops ...*core.Operation) error
 	SubmitOperationUpdate(update *core.OperationUpdate)
@@ -122,19 +122,25 @@ func (om *operationsManager) PrepareOperation(ctx context.Context, op *core.Oper
 	return handler.PrepareOperation(ctx, op)
 }
 
-func (om *operationsManager) ResubmitOperations(ctx context.Context, txID *fftypes.UUID) ([]*core.Operation, error) {
+func (om *operationsManager) ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (int, []*core.Operation, error) {
 	var resubmitErr error
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", txID),
-		fb.Eq("status", core.OpStatusInitialized),
 	)
-	initializedOperations, _, opErr := om.database.GetOperations(ctx, om.namespace, filter)
+	allOperations, _, opErr := om.database.GetOperations(ctx, om.namespace, filter)
 
 	if opErr != nil {
 		// Couldn't query operations. Log and return the original error
 		log.L(ctx).Errorf("Failed to lookup initialized operations for TX %v: %v", txID, opErr)
-		return nil, opErr
+		return -1, nil, opErr
+	}
+
+	initializedOperations := make([]*core.Operation, 0, len(allOperations))
+	for _, op := range allOperations {
+		if op.Status == core.OpStatusInitialized {
+			initializedOperations = append(initializedOperations, op)
+		}
 	}
 
 	resubmitted := []*core.Operation{}
@@ -153,7 +159,7 @@ func (om *operationsManager) ResubmitOperations(ctx context.Context, txID *fftyp
 		log.L(ctx).Infof("%d operation resubmitted as part of idempotent retry of TX %s", nextInitializedOp.ID, txID)
 		resubmitted = append(resubmitted, nextInitializedOp)
 	}
-	return resubmitted, resubmitErr
+	return len(allOperations), resubmitted, resubmitErr
 }
 
 func (om *operationsManager) RunOperation(ctx context.Context, op *core.PreparedOperation, idempotentSubmit bool) (fftypes.JSONObject, error) {
