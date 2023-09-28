@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -124,14 +125,15 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		}
 		switch data.Transfer.Type {
 		case core.TokenTransferTypeMint:
-			return nil, core.OpPhaseInitializing, plugin.MintTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
+			err = plugin.MintTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
 		case core.TokenTransferTypeTransfer:
-			return nil, core.OpPhaseInitializing, plugin.TransferTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
+			err = plugin.TransferTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
 		case core.TokenTransferTypeBurn:
-			return nil, core.OpPhaseInitializing, plugin.BurnTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
+			err = plugin.BurnTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
 		default:
 			panic(fmt.Sprintf("unknown transfer type: %v", data.Transfer.Type))
 		}
+		return nil, operations.ErrTernary(err, core.OpPhaseInitializing, core.OpPhasePending), err
 
 	case approvalData:
 		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)

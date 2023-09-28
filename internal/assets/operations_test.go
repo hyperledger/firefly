@@ -126,7 +126,7 @@ func TestPrepareAndRunTransfer(t *testing.T) {
 
 	_, phase, err := am.RunOperation(context.Background(), po)
 
-	assert.Equal(t, core.OpPhaseInitializing, phase)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -475,7 +475,7 @@ func TestRunOperationTransferMint(t *testing.T) {
 
 	_, phase, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
-	assert.Equal(t, core.OpPhaseInitializing, phase)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -503,7 +503,7 @@ func TestRunOperationTransferMintWithInterface(t *testing.T) {
 
 	_, phase, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
-	assert.Equal(t, core.OpPhaseInitializing, phase)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -530,7 +530,7 @@ func TestRunOperationTransferBurn(t *testing.T) {
 
 	_, phase, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
-	assert.Equal(t, core.OpPhaseInitializing, phase)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -557,7 +557,7 @@ func TestRunOperationTransfer(t *testing.T) {
 
 	_, phase, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
-	assert.Equal(t, core.OpPhaseInitializing, phase)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
