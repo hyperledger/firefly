@@ -215,16 +215,16 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		}
 		data := op.Data.(transferBlobData)
 		return *data.Node.ID == *node2.ID
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		if op.Type != core.OpTypeDataExchangeSendBatch {
 			return false
 		}
 		data := op.Data.(batchSendData)
 		return *data.Node.ID == *node2.ID
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
-	mmp.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, "").Return(nil)
+	mmp.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, "", false).Return(nil)
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{
 		Batch: core.BatchPersisted{
@@ -438,7 +438,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferBlobData)
 		return op.Type == core.OpTypeDataExchangeSendBlob && *data.Node.ID == *node2.ID
-	})).Return(nil, fmt.Errorf("pop"))
+	}), false).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{
 		Batch: core.BatchPersisted{
@@ -496,14 +496,14 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 		}
 		data := op.Data.(transferBlobData)
 		return *data.Node.ID == *node2.ID
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		if op.Type != core.OpTypeDataExchangeSendBatch {
 			return false
 		}
 		data := op.Data.(batchSendData)
 		return *data.Node.ID == *node2.ID
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
 	mdi.On("GetBlobs", pm.ctx, "ns1", mock.Anything).Return([]*core.Blob{{
 		Hash:       blob1,
@@ -511,7 +511,7 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	}}, nil, nil)
 
 	mmp := pm.multiparty.(*multipartymocks.Manager)
-	mmp.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, "").Return(fmt.Errorf("pop"))
+	mmp.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, "", false).Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchPayload{
 		Batch: core.BatchPersisted{

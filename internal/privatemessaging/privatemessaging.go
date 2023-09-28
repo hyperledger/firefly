@@ -54,7 +54,7 @@ type Manager interface {
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error)
 }
 
 type privateMessaging struct {
@@ -179,7 +179,7 @@ func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, payload *ba
 	}
 
 	log.L(ctx).Infof("Pinning private batch %s with author=%s key=%s group=%s", payload.Batch.ID, payload.Batch.Author, payload.Batch.Key, payload.Batch.Group)
-	return pm.multiparty.SubmitBatchPin(ctx, &payload.Batch, payload.Pins, "" /* no payloadRef for private */)
+	return pm.multiparty.SubmitBatchPin(ctx, &payload.Batch, payload.Pins, "" /* no payloadRef for private */, false /* batch processing does not currently use idempotency keys */)
 }
 
 func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, payload *batch.DispatchPayload) error {
@@ -263,7 +263,7 @@ func (pm *privateMessaging) submitBlobTransfersToDX(ctx context.Context, tracker
 		go func(tracker *blobTransferTracker) {
 			defer wg.Done()
 			log.L(ctx).Debugf("Initiating DX transfer blob=%s data=%s operation=%s", tracker.blobHash, tracker.dataID, tracker.op.ID)
-			if _, err := pm.operations.RunOperation(ctx, tracker.op); err != nil {
+			if _, err := pm.operations.RunOperation(ctx, tracker.op, false /* batch processing does not currently use idempotency keys */); err != nil {
 				log.L(ctx).Errorf("Failed to initiate DX transfer blob=%s data=%s operation=%s", tracker.blobHash, tracker.dataID, tracker.op.ID)
 				if firstError == nil {
 					firstError = err
@@ -329,7 +329,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *core.TransportWrap
 		}
 
 		// Then initiate the batch transfer
-		if _, err = pm.operations.RunOperation(ctx, sendBatchOp); err != nil {
+		if _, err = pm.operations.RunOperation(ctx, sendBatchOp, false /* batch processing does not currently use idempotency keys */); err != nil {
 			return err
 		}
 	}

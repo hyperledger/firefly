@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -112,7 +113,7 @@ func (cm *contractManager) PrepareOperation(ctx context.Context, op *core.Operat
 	}
 }
 
-func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 	switch data := op.Data.(type) {
 	case txcommon.BlockchainInvokeData:
 		req := data.Request
@@ -128,15 +129,16 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOp
 		}
 		bcParsedMethod, err := cm.validateInvokeContractRequest(ctx, req, false /* do-not revalidate with the blockchain connector - just send it */)
 		if err != nil {
-			return nil, false, err
+			return nil, core.OpPhaseInitializing, err
 		}
-		return nil, false, cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, bcParsedMethod, req.Input, req.Options, batchPin)
-
+		err = cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, bcParsedMethod, req.Input, req.Options, batchPin)
+		return nil, operations.ErrTernary(err, core.OpPhaseInitializing, core.OpPhasePending), err
 	case blockchainContractDeployData:
 		req := data.Request
-		return nil, false, cm.blockchain.DeployContract(ctx, op.NamespacedIDString(), req.Key, req.Definition, req.Contract, req.Input, req.Options)
+		err = cm.blockchain.DeployContract(ctx, op.NamespacedIDString(), req.Key, req.Definition, req.Contract, req.Input, req.Options)
+		return nil, operations.ErrTernary(err, core.OpPhaseInitializing, core.OpPhasePending), err
 	default:
-		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
+		return nil, core.OpPhaseInitializing, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

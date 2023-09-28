@@ -144,6 +144,14 @@ type PreparedOperation struct {
 	Data      interface{}   `json:"data"`
 }
 
+type OpPhase int
+
+const (
+	OpPhaseComplete OpPhase = iota
+	OpPhasePending
+	OpPhaseInitializing
+)
+
 func (po *PreparedOperation) NamespacedIDString() string {
 	return po.Namespace + ":" + po.ID.String()
 }

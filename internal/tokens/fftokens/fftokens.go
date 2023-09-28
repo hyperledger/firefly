@@ -719,7 +719,7 @@ func wrapError(ctx context.Context, errRes *tokenError, res *resty.Response, err
 	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 }
 
-func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error) {
+func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (phase core.OpPhase, err error) {
 	tokenData := &tokenData{
 		TX:     pool.TX.ID,
 		TXType: pool.TX.Type,
@@ -739,22 +739,22 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *co
 		SetError(&errRes).
 		Post("/api/v1/createpool")
 	if err != nil || !res.IsSuccess() {
-		return false, wrapError(ctx, &errRes, res, err)
+		return core.OpPhaseInitializing, wrapError(ctx, &errRes, res, err)
 	}
 	if res.StatusCode() == 200 {
 		// HTTP 200: Creation was successful, and pool details are in response body
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
-			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
+			return core.OpPhaseComplete, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
 		obj["poolData"] = packPoolData(pool.Namespace, pool.ID)
-		return true, ft.handleTokenPoolCreate(ctx, obj, tokenData)
+		return core.OpPhaseComplete, ft.handleTokenPoolCreate(ctx, obj, tokenData)
 	}
 	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
-	return false, nil
+	return core.OpPhasePending, nil
 }
 
-func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (complete bool, err error) {
+func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (phase core.OpPhase, err error) {
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
@@ -765,25 +765,25 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool)
 		SetError(&errRes).
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {
-		return false, wrapError(ctx, &errRes, res, err)
+		return core.OpPhaseInitializing, wrapError(ctx, &errRes, res, err)
 	}
 	if res.StatusCode() == 200 {
 		// HTTP 200: Activation was successful, and pool details are in response body
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
-			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
+			return core.OpPhaseComplete, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
-		return true, ft.handleTokenPoolCreate(ctx, obj, &tokenData{
+		return core.OpPhaseComplete, ft.handleTokenPoolCreate(ctx, obj, &tokenData{
 			TX:     pool.TX.ID,
 			TXType: pool.TX.Type,
 		})
 	} else if res.StatusCode() == 204 {
 		// HTTP 204: Activation was successful, but pool details are not available
 		// This will resolve the operation, but connector is responsible for re-delivering pool details on the websocket.
-		return true, nil
+		return core.OpPhaseComplete, nil
 	}
 	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
-	return false, nil
+	return core.OpPhasePending, nil
 }
 
 func (ft *FFTokens) DeactivateTokenPool(ctx context.Context, pool *core.TokenPool) error {

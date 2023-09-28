@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -81,9 +81,9 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 	assert.Equal(t, node, po.Data.(transferBlobData).Node)
 	assert.Equal(t, blob, po.Data.(transferBlobData).Blob)
 
-	_, complete, err := pm.RunOperation(context.Background(), po)
+	_, phase, err := pm.RunOperation(context.Background(), po)
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -150,9 +150,9 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	assert.Equal(t, group, po.Data.(batchSendData).Transport.Group)
 	assert.Equal(t, batch, po.Data.(batchSendData).Transport.Batch)
 
-	_, complete, err := pm.RunOperation(context.Background(), po)
+	_, phase, err := pm.RunOperation(context.Background(), po)
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -553,9 +553,9 @@ func TestRunOperationNotSupported(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	_, complete, err := pm.RunOperation(context.Background(), &core.PreparedOperation{})
+	_, phase, err := pm.RunOperation(context.Background(), &core.PreparedOperation{})
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10378", err)
 }
 
@@ -592,9 +592,9 @@ func TestRunOperationBatchSendInvalidData(t *testing.T) {
 		},
 	}
 
-	_, complete, err := pm.RunOperation(context.Background(), opSendBatch(op, node, transport))
+	_, phase, err := pm.RunOperation(context.Background(), opSendBatch(op, node, transport))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10137", err)
 }
 
@@ -621,9 +621,9 @@ func TestRunOperationBatchSendNodeFail(t *testing.T) {
 		},
 	}
 
-	_, complete, err := pm.RunOperation(context.Background(), opSendBatch(op, node, transport))
+	_, phase, err := pm.RunOperation(context.Background(), opSendBatch(op, node, transport))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -640,9 +640,9 @@ func TestRunOperationBlobSendNodeFail(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalNode", context.Background()).Return(nil, fmt.Errorf("pop"))
 
-	_, complete, err := pm.RunOperation(context.Background(), opSendBlob(op, node, &core.Blob{}))
+	_, phase, err := pm.RunOperation(context.Background(), opSendBlob(op, node, &core.Blob{}))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.EqualError(t, err, "pop")
 }
 

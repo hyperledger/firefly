@@ -22,18 +22,18 @@ type Plugin struct {
 }
 
 // ActivateTokenPool provides a mock function with given fields: ctx, pool
-func (_m *Plugin) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (bool, error) {
+func (_m *Plugin) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (core.OpPhase, error) {
 	ret := _m.Called(ctx, pool)
 
-	var r0 bool
+	var r0 core.OpPhase
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) (core.OpPhase, error)); ok {
 		return rf(ctx, pool)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) core.OpPhase); ok {
 		r0 = rf(ctx, pool)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Get(0).(core.OpPhase)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenPool) error); ok {
@@ -102,18 +102,18 @@ func (_m *Plugin) CheckInterface(ctx context.Context, pool *core.TokenPool, meth
 }
 
 // CreateTokenPool provides a mock function with given fields: ctx, nsOpID, pool
-func (_m *Plugin) CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (bool, error) {
+func (_m *Plugin) CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (core.OpPhase, error) {
 	ret := _m.Called(ctx, nsOpID, pool)
 
-	var r0 bool
+	var r0 core.OpPhase
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.TokenPool) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.TokenPool) (core.OpPhase, error)); ok {
 		return rf(ctx, nsOpID, pool)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.TokenPool) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.TokenPool) core.OpPhase); ok {
 		r0 = rf(ctx, nsOpID, pool)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Get(0).(core.OpPhase)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *core.TokenPool) error); ok {

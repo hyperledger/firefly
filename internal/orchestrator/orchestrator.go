@@ -583,7 +583,7 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.Ne
 	if err != nil {
 		return err
 	}
-	return or.multiparty.SubmitNetworkAction(ctx, key, action)
+	return or.multiparty.SubmitNetworkAction(ctx, key, action, false /* network actions do not support idempotency keys currently */)
 }
 
 func (or *orchestrator) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
