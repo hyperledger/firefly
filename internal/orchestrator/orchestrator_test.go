@@ -493,7 +493,7 @@ func TestNetworkAction(t *testing.T) {
 	or.namespace.Name = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
-	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action).Return(nil)
+	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action, false).Return(nil)
 	err := or.SubmitNetworkAction(context.Background(), action)
 	assert.NoError(t, err)
 }

@@ -134,29 +134,36 @@ func (_m *Manager) ResolveOperationByID(ctx context.Context, opID *fftypes.UUID,
 }
 
 // ResubmitOperations provides a mock function with given fields: ctx, txID
-func (_m *Manager) ResubmitOperations(ctx context.Context, txID *fftypes.UUID) ([]*core.Operation, error) {
+func (_m *Manager) ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (int, []*core.Operation, error) {
 	ret := _m.Called(ctx, txID)
 
-	var r0 []*core.Operation
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) ([]*core.Operation, error)); ok {
+	var r0 int
+	var r1 []*core.Operation
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) (int, []*core.Operation, error)); ok {
 		return rf(ctx, txID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) []*core.Operation); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) int); ok {
 		r0 = rf(ctx, txID)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*core.Operation)
+		r0 = ret.Get(0).(int)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) []*core.Operation); ok {
+		r1 = rf(ctx, txID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([]*core.Operation)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, txID)
+	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.UUID) error); ok {
+		r2 = rf(ctx, txID)
 	} else {
-		r1 = ret.Error(1)
+		r2 = ret.Error(2)
 	}
 
-	return r0, r1
+	return r0, r1, r2
 }
 
 // RetryOperation provides a mock function with given fields: ctx, opID
@@ -185,32 +192,25 @@ func (_m *Manager) RetryOperation(ctx context.Context, opID *fftypes.UUID) (*cor
 	return r0, r1
 }
 
-// RunOperation provides a mock function with given fields: ctx, op, options
-func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation, options ...operations.RunOperationOption) (fftypes.JSONObject, error) {
-	_va := make([]interface{}, len(options))
-	for _i := range options {
-		_va[_i] = options[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, op)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// RunOperation provides a mock function with given fields: ctx, op, idempotentSubmit
+func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation, idempotentSubmit bool) (fftypes.JSONObject, error) {
+	ret := _m.Called(ctx, op, idempotentSubmit)
 
 	var r0 fftypes.JSONObject
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation, ...operations.RunOperationOption) (fftypes.JSONObject, error)); ok {
-		return rf(ctx, op, options...)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation, bool) (fftypes.JSONObject, error)); ok {
+		return rf(ctx, op, idempotentSubmit)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation, ...operations.RunOperationOption) fftypes.JSONObject); ok {
-		r0 = rf(ctx, op, options...)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation, bool) fftypes.JSONObject); ok {
+		r0 = rf(ctx, op, idempotentSubmit)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(fftypes.JSONObject)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *core.PreparedOperation, ...operations.RunOperationOption) error); ok {
-		r1 = rf(ctx, op, options...)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.PreparedOperation, bool) error); ok {
+		r1 = rf(ctx, op, idempotentSubmit)
 	} else {
 		r1 = ret.Error(1)
 	}

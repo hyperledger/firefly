@@ -22,6 +22,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -98,25 +99,25 @@ func (mm *multipartyManager) PrepareOperation(ctx context.Context, op *core.Oper
 	}
 }
 
-func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 	switch data := op.Data.(type) {
 	case txcommon.BatchPinData:
 		batch := data.Batch
 		contract := mm.namespace.Contracts.Active
-		return nil, false, mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Namespace, batch.Key, &blockchain.BatchPin{
+		err = mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Namespace, batch.Key, &blockchain.BatchPin{
 			TransactionID:   batch.TX.ID,
 			BatchID:         batch.ID,
 			BatchHash:       batch.Hash,
 			BatchPayloadRef: data.PayloadRef,
 			Contexts:        data.Contexts,
 		}, contract.Location)
-
+		return nil, operations.ErrTernary(err, core.OpPhaseInitializing, core.OpPhasePending), err
 	case networkActionData:
 		contract := mm.namespace.Contracts.Active
-		return nil, false, mm.blockchain.SubmitNetworkAction(ctx, op.NamespacedIDString(), data.Key, data.Type, contract.Location)
-
+		err = mm.blockchain.SubmitNetworkAction(ctx, op.NamespacedIDString(), data.Key, data.Type, contract.Location)
+		return nil, operations.ErrTernary(err, core.OpPhaseInitializing, core.OpPhasePending), err
 	default:
-		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
+		return nil, core.OpPhaseInitializing, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

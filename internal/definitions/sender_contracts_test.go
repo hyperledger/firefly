@@ -67,6 +67,23 @@ func TestDefineFFIFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestDefineFFIFailInnerError(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = true
+
+	ffi := &fftypes.FFI{
+		Name:      "ffi1",
+		Version:   "1.0",
+		Published: false,
+	}
+
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
+	ds.mdi.On("InsertOrGetFFI", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error2: [%w]", fmt.Errorf("pop")))
+	err := ds.DefineFFI(context.Background(), ffi, false)
+	assert.Regexp(t, "pop", err)
+}
+
 func TestDefineFFIExists(t *testing.T) {
 	ds := newTestDefinitionSender(t)
 	defer ds.cleanup(t)

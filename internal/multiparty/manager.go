@@ -56,14 +56,14 @@ type Manager interface {
 	GetNetworkVersion() int
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
-	SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error
+	SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string, idempotentSubmit bool) error
 
 	// SubmitNetworkAction writes a special "BatchPin" event which signals the plugin to take an action
-	SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction) error
+	SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction, idempotentSubmit bool) error
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error)
 }
 
 type Config struct {
@@ -204,7 +204,7 @@ func (mm *multipartyManager) GetNetworkVersion() int {
 	return mm.namespace.Contracts.Active.Info.Version
 }
 
-func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction) error {
+func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction, idempotentSubmit bool) error {
 	if action.Type != core.NetworkActionTerminate {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
@@ -224,7 +224,7 @@ func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey
 		return err
 	}
 
-	_, err = mm.operations.RunOperation(ctx, opNetworkAction(op, action.Type, signingKey))
+	_, err = mm.operations.RunOperation(ctx, opNetworkAction(op, action.Type, signingKey), idempotentSubmit)
 	return err
 }
 
@@ -244,13 +244,13 @@ func (mm *multipartyManager) prepareInvokeOperation(ctx context.Context, batch *
 	}), nil
 }
 
-func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
+func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string, idempotentSubmit bool) error {
 	if batch.TX.Type == core.TransactionTypeContractInvokePin {
 		preparedOp, err := mm.prepareInvokeOperation(ctx, batch, contexts, payloadRef)
 		if err != nil {
 			return err
 		} else if preparedOp != nil {
-			_, err = mm.operations.RunOperation(ctx, preparedOp)
+			_, err = mm.operations.RunOperation(ctx, preparedOp, idempotentSubmit)
 			return err
 		}
 		log.L(ctx).Warnf("No invoke operation found on transaction %s", batch.TX.ID)
@@ -269,6 +269,6 @@ func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, batch *core.Bat
 	if mm.metrics.IsMetricsEnabled() {
 		mm.metrics.CountBatchPin()
 	}
-	_, err := mm.operations.RunOperation(ctx, opBatchPin(op, batch, contexts, payloadRef))
+	_, err := mm.operations.RunOperation(ctx, opBatchPin(op, batch, contexts, payloadRef), idempotentSubmit)
 	return err
 }

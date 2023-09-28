@@ -18,11 +18,10 @@ This guide describes how to associate an arbitrary off-chain payload with a bloc
 > fundamentals of how FireFly interacts with [custom contracts](../).
 
 ## Table of contents
-
 {: .no_toc .text-delta }
 
 1. TOC
-   {:toc}
+{:toc}
 
 ---
 
