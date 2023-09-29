@@ -144,7 +144,8 @@ func TestHandleDefinitionLocalTokenPoolNameExists(t *testing.T) {
 	pool.Published = false
 
 	existing := &core.TokenPool{
-		Name: "name1",
+		Active: true,
+		Name:   "name1",
 	}
 
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
@@ -192,7 +193,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 
 	existing := &core.TokenPool{
 		ID:      pool.ID,
-		State:   core.TokenPoolStateConfirmed,
+		Active:  true,
 		Message: msg.Header.ID,
 	}
 
@@ -216,7 +217,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingWaiting(t *testing.T) {
 
 	existing := &core.TokenPool{
 		ID:      pool.ID,
-		State:   core.TokenPoolStatePending,
+		Active:  false,
 		Message: msg.Header.ID,
 	}
 
@@ -239,16 +240,16 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublish(t *testing.T) {
 	assert.NoError(t, err)
 
 	existing := &core.TokenPool{
-		ID:    pool.ID,
-		State: core.TokenPoolStateConfirmed,
-		Name:  "existing-pool",
+		ID:     pool.ID,
+		Active: true,
+		Name:   "existing-pool",
 	}
 	newPool := *pool
 	newPool.Name = existing.Name
 	newPool.Connector = "connector1"
 	newPool.Published = true
 	newPool.Message = msg.Header.ID
-	newPool.State = core.TokenPoolStatePending
+	newPool.Active = false
 
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
@@ -270,16 +271,16 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishUpsertFail(t *testing.
 	assert.NoError(t, err)
 
 	existing := &core.TokenPool{
-		ID:    pool.ID,
-		State: core.TokenPoolStateConfirmed,
-		Name:  "existing-pool",
+		ID:     pool.ID,
+		Active: true,
+		Name:   "existing-pool",
 	}
 	newPool := *pool
 	newPool.Name = existing.Name
 	newPool.Connector = "connector1"
 	newPool.Published = true
 	newPool.Message = msg.Header.ID
-	newPool.State = core.TokenPoolStatePending
+	newPool.Active = false
 
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
@@ -301,16 +302,16 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishOrgFail(t *testing.T) 
 	assert.NoError(t, err)
 
 	existing := &core.TokenPool{
-		ID:    pool.ID,
-		State: core.TokenPoolStateConfirmed,
-		Name:  "existing-pool",
+		ID:     pool.ID,
+		Active: true,
+		Name:   "existing-pool",
 	}
 	newPool := *pool
 	newPool.Name = existing.Name
 	newPool.Connector = "connector1"
 	newPool.Published = true
 	newPool.Message = msg.Header.ID
-	newPool.State = core.TokenPoolStatePending
+	newPool.Active = false
 
 	dh.mim.On("GetRootOrgDID", context.Background()).Return("", fmt.Errorf("pop"))
 
@@ -328,16 +329,16 @@ func TestHandleDefinitionBroadcastTokenPoolExistingPublishOrgMismatch(t *testing
 	assert.NoError(t, err)
 
 	existing := &core.TokenPool{
-		ID:    pool.ID,
-		State: core.TokenPoolStateConfirmed,
-		Name:  "existing-pool",
+		ID:     pool.ID,
+		Active: true,
+		Name:   "existing-pool",
 	}
 	newPool := *pool
 	newPool.Name = existing.Name
 	newPool.Connector = "connector1"
 	newPool.Published = true
 	newPool.Message = msg.Header.ID
-	newPool.State = core.TokenPoolStatePending
+	newPool.Active = false
 
 	dh.mdi.On("InsertOrGetTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID

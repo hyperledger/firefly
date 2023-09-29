@@ -93,9 +93,9 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, req, po.Data.(txcommon.BlockchainInvokeData).Request)
 
-	_, complete, err := cm.RunOperation(context.Background(), po)
+	_, phase, err := cm.RunOperation(context.Background(), po)
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
@@ -131,9 +131,9 @@ func TestPrepareAndRunBlockchainInvokeValidateFail(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, req, po.Data.(txcommon.BlockchainInvokeData).Request)
 
-	_, complete, err := cm.RunOperation(context.Background(), po)
+	_, phase, err := cm.RunOperation(context.Background(), po)
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
@@ -164,9 +164,9 @@ func TestPrepareAndRunBlockchainContractDeploy(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, req, po.Data.(blockchainContractDeployData).Request)
 
-	_, complete, err := cm.RunOperation(context.Background(), po)
+	_, phase, err := cm.RunOperation(context.Background(), po)
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
@@ -595,9 +595,9 @@ func TestRunBlockchainInvokeWithBatch(t *testing.T) {
 		Contexts:   []*fftypes.Bytes32{pin},
 		PayloadRef: "test-payload",
 	})
-	_, complete, err := cm.RunOperation(context.Background(), po)
+	_, phase, err := cm.RunOperation(context.Background(), po)
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
@@ -606,9 +606,9 @@ func TestRunBlockchainInvokeWithBatch(t *testing.T) {
 func TestRunOperationNotSupported(t *testing.T) {
 	cm := newTestContractManager()
 
-	_, complete, err := cm.RunOperation(context.Background(), &core.PreparedOperation{})
+	_, phase, err := cm.RunOperation(context.Background(), &core.PreparedOperation{})
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10378", err)
 }
 

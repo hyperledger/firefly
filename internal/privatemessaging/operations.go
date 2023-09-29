@@ -137,29 +137,29 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 	}
 }
 
-func (pm *privateMessaging) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (pm *privateMessaging) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 	switch data := op.Data.(type) {
 	case transferBlobData:
 		localNode, err := pm.identity.GetLocalNode(ctx)
 		if err != nil {
-			return nil, false, err
+			return nil, core.OpPhaseInitializing, err
 		}
-		return nil, false, pm.exchange.TransferBlob(ctx, op.NamespacedIDString(), data.Node.Profile, localNode.Profile, data.Blob.PayloadRef)
+		return nil, core.OpPhaseInitializing, pm.exchange.TransferBlob(ctx, op.NamespacedIDString(), data.Node.Profile, localNode.Profile, data.Blob.PayloadRef)
 
 	case batchSendData:
 		localNode, err := pm.identity.GetLocalNode(ctx)
 		if err != nil {
-			return nil, false, err
+			return nil, core.OpPhaseInitializing, err
 		}
 
 		payload, err := json.Marshal(data.Transport)
 		if err != nil {
-			return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
+			return nil, core.OpPhaseInitializing, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 		}
-		return nil, false, pm.exchange.SendMessage(ctx, op.NamespacedIDString(), data.Node.Profile, localNode.Profile, payload)
+		return nil, core.OpPhaseInitializing, pm.exchange.SendMessage(ctx, op.NamespacedIDString(), data.Node.Profile, localNode.Profile, payload)
 
 	default:
-		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
+		return nil, core.OpPhaseInitializing, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

@@ -45,6 +45,7 @@ SERVICES=(
     "ethconnect"
     "evmconnect"
     "fabconnect"
+    "tezosconnect"
     "dataexchange-https"
     "tokens-erc1155"
     "tokens-erc20-erc721"

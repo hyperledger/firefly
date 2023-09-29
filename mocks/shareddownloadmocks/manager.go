@@ -14,13 +14,13 @@ type Manager struct {
 	mock.Mock
 }
 
-// InitiateDownloadBatch provides a mock function with given fields: ctx, tx, payloadRef
-func (_m *Manager) InitiateDownloadBatch(ctx context.Context, tx *fftypes.UUID, payloadRef string) error {
-	ret := _m.Called(ctx, tx, payloadRef)
+// InitiateDownloadBatch provides a mock function with given fields: ctx, tx, payloadRef, idempotentSubmit
+func (_m *Manager) InitiateDownloadBatch(ctx context.Context, tx *fftypes.UUID, payloadRef string, idempotentSubmit bool) error {
+	ret := _m.Called(ctx, tx, payloadRef, idempotentSubmit)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string) error); ok {
-		r0 = rf(ctx, tx, payloadRef)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, bool) error); ok {
+		r0 = rf(ctx, tx, payloadRef, idempotentSubmit)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -28,13 +28,13 @@ func (_m *Manager) InitiateDownloadBatch(ctx context.Context, tx *fftypes.UUID, 
 	return r0
 }
 
-// InitiateDownloadBlob provides a mock function with given fields: ctx, tx, dataID, payloadRef
-func (_m *Manager) InitiateDownloadBlob(ctx context.Context, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string) error {
-	ret := _m.Called(ctx, tx, dataID, payloadRef)
+// InitiateDownloadBlob provides a mock function with given fields: ctx, tx, dataID, payloadRef, idempotentSubmit
+func (_m *Manager) InitiateDownloadBlob(ctx context.Context, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string, idempotentSubmit bool) error {
+	ret := _m.Called(ctx, tx, dataID, payloadRef, idempotentSubmit)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.UUID, string) error); ok {
-		r0 = rf(ctx, tx, dataID, payloadRef)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.UUID, string, bool) error); ok {
+		r0 = rf(ctx, tx, dataID, payloadRef, idempotentSubmit)
 	} else {
 		r0 = ret.Error(0)
 	}

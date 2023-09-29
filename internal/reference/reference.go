@@ -404,7 +404,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			Locator:   "address=0x056df1c53c3c00b0e13d37543f46930b42f71db0&schema=ERC20WithData&type=fungible",
 			Decimals:  18,
 			Connector: "erc20_erc721",
-			State:     core.TokenPoolStateConfirmed,
+			Active:    true,
 			Message:   fftypes.MustParseUUID("43923040-b1e5-4164-aa20-47636c7177ee"),
 			Info: fftypes.JSONObject{
 				"address": "0x056df1c53c3c00b0e13d37543f46930b42f71db0",

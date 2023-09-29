@@ -838,6 +838,133 @@ nav_order: 2
 |readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 |writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 
+## plugins.blockchain[].tezos.addressResolver
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|alwaysResolve|Causes the address resolver to be invoked on every API call that submits a signing key. Also disables any result caching|`boolean`|`<nil>`
+|bodyTemplate|The body go template string to use when making HTTP requests|[Go Template](https://pkg.go.dev/text/template) `string`|`<nil>`
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|method|The HTTP method to use when making requests to the Address Resolver|`string`|`GET`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|responseField|The name of a JSON field that is provided in the response, that contains the tezos address (default `address`)|`string`|`address`
+|retainOriginal|When true the original pre-resolved string is retained after the lookup, and passed down to Tezosconnect as the from address|`boolean`|`<nil>`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|url|The URL of the Address Resolver|`string`|`<nil>`
+|urlTemplate|The URL Go template string to use when calling the Address Resolver. The template input contains '.Key' and '.Intent' string variables.|[Go Template](https://pkg.go.dev/text/template) `string`|`<nil>`
+
+## plugins.blockchain[].tezos.addressResolver.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.blockchain[].tezos.addressResolver.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to connect through|`string`|`<nil>`
+
+## plugins.blockchain[].tezos.addressResolver.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.blockchain[].tezos.addressResolver.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
+
+## plugins.blockchain[].tezos.tezosconnect
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|batchSize|The number of events Tezosconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream|`int`|`50`
+|batchTimeout|How long Tezosconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
+|prefixLong|The prefix that will be used for Tezosconnect specific HTTP headers when FireFly makes requests to Tezosconnect|`string`|`firefly`
+|prefixShort|The prefix that will be used for Tezosconnect specific query parameters when FireFly makes requests to Tezosconnect|`string`|`fly`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|topic|The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single tezosconnect|`string`|`<nil>`
+|url|The URL of the Tezosconnect instance|URL `string`|`<nil>`
+
+## plugins.blockchain[].tezos.tezosconnect.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.blockchain[].tezos.tezosconnect.backgroundStart
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Start the Tezosconnect plugin in the background and enter retry loop if failed to start|`boolean`|`<nil>`
+|factor|Set the factor by which the delay increases when retrying|`float32`|`2`
+|initialDelay|Delay between restarts in the case where we retry to restart the tezos plugin|[`time.Duration`](https://pkg.go.dev/time#Duration)|`5s`
+|maxDelay|Max delay between restarts in the case where we retry to restart the tezos plugin|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
+
+## plugins.blockchain[].tezos.tezosconnect.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to Tezosconnect|URL `string`|`<nil>`
+
+## plugins.blockchain[].tezos.tezosconnect.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.blockchain[].tezos.tezosconnect.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
+
+## plugins.blockchain[].tezos.tezosconnect.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|connectionTimeout|The amount of time to wait while establishing a connection (or auto-reconnection)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`45s`
+|heartbeatInterval|The amount of time to wait between heartbeat signals on the WebSocket connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|initialConnectAttempts|The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing|`int`|`5`
+|path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+
 ## plugins.database[]
 
 |Key|Description|Type|Default Value|

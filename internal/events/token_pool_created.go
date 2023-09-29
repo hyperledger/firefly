@@ -52,7 +52,7 @@ func addPoolDetailsFromPlugin(ffPool *core.TokenPool, pluginPool *tokens.TokenPo
 }
 
 func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, ev *blockchain.Event) error {
-	log.L(ctx).Debugf("Confirming pool ID=%s Locator='%s'", pool.ID, pool.Locator)
+	log.L(ctx).Debugf("Confirming token pool ID='%s' Locator='%s'", pool.ID, pool.Locator)
 	var blockchainID string
 	if ev != nil {
 		// Some pools will not include a blockchain event for creation (such as when indexing a pre-existing pool)
@@ -70,7 +70,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 	if _, err := em.txHelper.PersistTransaction(ctx, pool.TX.ID, pool.TX.Type, blockchainID); err != nil {
 		return err
 	}
-	pool.State = core.TokenPoolStateConfirmed
+	pool.Active = true
 	if err := em.database.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting); err != nil {
 		return err
 	}
@@ -135,21 +135,23 @@ func (em *eventManager) TokenPoolCreated(ctx context.Context, ti tokens.Plugin, 
 
 	err = em.retry.Do(ctx, "persist token pool transaction", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(ctx, func(ctx context.Context) error {
-			// See if this is a confirmation of an unconfirmed pool
+			// See if this is the result of activating an existing pool
 			existingPool, err := em.loadExisting(ctx, pool)
 			if err != nil {
 				return err
 			}
 			if existingPool != nil {
-				if existingPool.State == core.TokenPoolStateConfirmed {
-					log.L(ctx).Debugf("Token pool ID=%s Locator='%s' already confirmed", existingPool.ID, pool.PoolLocator)
-					return nil // already confirmed
+				if existingPool.Active {
+					log.L(ctx).Debugf("Token pool already active ID='%s' Locator='%s'", existingPool.ID, pool.PoolLocator)
+					return nil // already active
 				}
 				msgIDforRewind = existingPool.Message
 				return em.confirmPool(ctx, existingPool, pool.Event)
-			} else if pool.TX.ID == nil {
-				// TransactionID is required if the pool doesn't exist yet
-				// (but it may be omitted when activating a pool that was received via definition broadcast)
+			}
+
+			if pool.TX.ID == nil {
+				// Transaction ID is required if the pool doesn't exist yet
+				// (it can be omitted above when only activating)
 				log.L(ctx).Errorf("Invalid token pool transaction - ID is nil")
 				return nil // move on
 			}
@@ -166,7 +168,7 @@ func (em *eventManager) TokenPoolCreated(ctx context.Context, ti tokens.Plugin, 
 			if pool.Event != nil {
 				protoID = pool.Event.ProtocolID
 			}
-			log.L(ctx).Debugf("Handler ignoring token pool created notification. Pool is not active for namespace event='%s' locator='%s'", protoID, pool.PoolLocator)
+			log.L(ctx).Debugf("Ignoring token pool created notification. No matching pool definition found Event='%s' Locator='%s'", protoID, pool.PoolLocator)
 			return nil
 		})
 		return err != nil, err

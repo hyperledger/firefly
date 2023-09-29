@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,9 +61,9 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, bp.ID, po.Data.(uploadBatchData).Batch.ID)
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
+	_, phase, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
 
-	assert.True(t, complete)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.NoError(t, err)
 
 	mps.AssertExpectations(t)
@@ -159,9 +159,9 @@ func TestRunOperationNotSupported(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	_, complete, err := bm.RunOperation(context.Background(), &core.PreparedOperation{})
+	_, phase, err := bm.RunOperation(context.Background(), &core.PreparedOperation{})
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10378", err)
 }
 
@@ -178,9 +178,9 @@ func TestRunOperationBatchBroadcastInvalidData(t *testing.T) {
 		},
 	}
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
+	_, phase, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10137", err)
 }
 
@@ -198,9 +198,9 @@ func TestRunOperationBatchBroadcastPublishFail(t *testing.T) {
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
+	_, phase, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.EqualError(t, err, "pop")
 
 	mps.AssertExpectations(t)
@@ -221,10 +221,10 @@ func TestRunOperationBatchBroadcast(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 
-	outputs, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
+	outputs, phase, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch))
 	assert.Equal(t, "123", outputs["payloadRef"])
 
-	assert.True(t, complete)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.NoError(t, err)
 
 	mps.AssertExpectations(t)
@@ -273,10 +273,10 @@ func TestPrepareAndRunUploadBlob(t *testing.T) {
 	assert.Equal(t, data, po.Data.(uploadBlobData).Data)
 	assert.Equal(t, blob, po.Data.(uploadBlobData).Blob)
 
-	outputs, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
+	outputs, phase, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
 	assert.Equal(t, "123", outputs["payloadRef"])
 
-	assert.True(t, complete)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.NoError(t, err)
 
 	mps.AssertExpectations(t)
@@ -316,10 +316,10 @@ func TestPrepareAndRunValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, data, po.Data.(uploadValue).Data)
 
-	outputs, complete, err := bm.RunOperation(context.Background(), opUploadValue(op, data))
+	outputs, phase, err := bm.RunOperation(context.Background(), opUploadValue(op, data))
 	assert.Equal(t, "123", outputs["payloadRef"])
 
-	assert.True(t, complete)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.NoError(t, err)
 
 	mps.AssertExpectations(t)
@@ -527,9 +527,9 @@ func TestRunOperationUploadBlobUpdateFail(t *testing.T) {
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
+	_, phase, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "pop", err)
 
 	mps.AssertExpectations(t)
@@ -553,9 +553,9 @@ func TestRunOperationUploadValueUpdateFail(t *testing.T) {
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 	mdi.On("UpdateData", context.Background(), "ns1", data.ID, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadValue(op, data))
+	_, phase, err := bm.RunOperation(context.Background(), opUploadValue(op, data))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "pop", err)
 
 	mps.AssertExpectations(t)
@@ -584,9 +584,9 @@ func TestRunOperationUploadBlobUploadFail(t *testing.T) {
 	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
+	_, phase, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "pop", err)
 
 	mps.AssertExpectations(t)
@@ -606,9 +606,9 @@ func TestRunOperationUploadValueUploadFail(t *testing.T) {
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadValue(op, data))
+	_, phase, err := bm.RunOperation(context.Background(), opUploadValue(op, data))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "pop", err)
 
 	mps.AssertExpectations(t)
@@ -635,9 +635,9 @@ func TestRunOperationUploadBlobDownloadFail(t *testing.T) {
 	reader := ioutil.NopCloser(strings.NewReader("some data"))
 	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, fmt.Errorf("pop"))
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
+	_, phase, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "pop", err)
 
 	mps.AssertExpectations(t)

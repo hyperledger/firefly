@@ -43,18 +43,20 @@ func (am *assetManager) GetTokenTransferByID(ctx context.Context, id string) (*c
 
 func (am *assetManager) NewTransfer(transfer *core.TokenTransferInput) syncasync.Sender {
 	sender := &transferSender{
-		mgr:      am,
-		transfer: transfer,
+		mgr:              am,
+		transfer:         transfer,
+		idempotentSubmit: transfer.IdempotencyKey != "",
 	}
 	sender.setDefaults()
 	return sender
 }
 
 type transferSender struct {
-	mgr       *assetManager
-	transfer  *core.TokenTransferInput
-	resolved  bool
-	msgSender syncasync.Sender
+	mgr              *assetManager
+	transfer         *core.TokenTransferInput
+	resolved         bool
+	msgSender        syncasync.Sender
+	idempotentSubmit bool
 }
 
 // sendMethod is the specific operation requested of the transferSender.
@@ -101,8 +103,8 @@ func (am *assetManager) validateTransfer(ctx context.Context, transfer *core.Tok
 	transfer.TokenTransfer.Pool = pool.ID
 	transfer.TokenTransfer.Connector = pool.Connector
 
-	if pool.State != core.TokenPoolStateConfirmed {
-		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
+	if !pool.Active {
+		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotActive)
 	}
 	if transfer.Key, err = am.identity.ResolveInputSigningKey(ctx, transfer.Key, am.keyNormalization); err != nil {
 		return nil, err
@@ -193,13 +195,19 @@ func (s *transferSender) resolve(ctx context.Context) (opResubmitted bool, err e
 	if err != nil {
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers. Note that we'll return the result of resubmitting the operation, not a 409 Conflict error
+		resubmitWholeTX := false
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			resubmitted, resubmitErr := s.mgr.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			total, resubmitted, resubmitErr := s.mgr.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
 				err = resubmitErr
 			}
-			if len(resubmitted) > 0 {
+			if total == 0 {
+				// We didn't do anything last time - just start again
+				txid = idemErr.ExistingTXID
+				resubmitWholeTX = true
+				err = nil
+			} else if len(resubmitted) > 0 {
 				// We resubmitted something - translate the status code to 200 (true return)
 				s.transfer.TX.ID = idemErr.ExistingTXID
 				s.transfer.TX.Type = core.TransactionTypeTokenTransfer
@@ -207,7 +215,9 @@ func (s *transferSender) resolve(ctx context.Context) (opResubmitted bool, err e
 			}
 
 		}
-		return false, err
+		if !resubmitWholeTX {
+			return false, err
+		}
 	}
 	s.transfer.TX.ID = txid
 	s.transfer.TX.Type = core.TransactionTypeTokenTransfer
@@ -284,7 +294,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 		}
 	}
 
-	_, err = s.mgr.operations.RunOperation(ctx, opTransfer(op, pool, &s.transfer.TokenTransfer))
+	_, err = s.mgr.operations.RunOperation(ctx, opTransfer(op, pool, &s.transfer.TokenTransfer), s.idempotentSubmit)
 	return err
 }
 
