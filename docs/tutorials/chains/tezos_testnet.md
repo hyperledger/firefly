@@ -38,7 +38,7 @@ connector:
   blockchain:
     rpc: https://rpc.ghost.tzstats.com
     network: ghostnet
-    signatory: http://127.0.0.1:6732 # address of the transaction signing service
+    signatory: http://127.0.0.1:6732 # tx signing service address
 ```
 
 For this tutorial, we will assume this file is saved at `~/Desktop/tezosonnect.yml`. If your path is different, you will need to adjust the path in the next command below.
@@ -83,7 +83,7 @@ ff logs tezos
 
 At this point you should have a working FireFly stack, talking to a public chain. However, you won't be able to run any transactions just yet, because you don't have any way to pay transaction fee. A testnet faucet can give us some XTZ, the native token for Tezos.
 
-First, you need to get an account address, which was created during [this](#signatory) step.
+First, you need to get an account address, which was created during [signer set up](#signatory) step.
 
 After that, go to [Tezos Ghostnet Faucet](https://faucet.ghostnet.teztnets.xyz/) and paste the address in the form and click the **Request** button.
 
@@ -94,4 +94,4 @@ You should be able to go lookup your account on [TzStats for the Ghostnet testne
 
 On the **Transfers** tab from you account page you will see the actual transfer of the XTZ from the faucet.
 
-![TzStats](images/tzstats_xtz.png)
+![TzStats](images/tezos_explorer.png)
