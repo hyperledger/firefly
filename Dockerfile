@@ -17,13 +17,25 @@ ADD . .
 RUN make build
 
 FROM --platform=$FABRIC_BUILDER_PLATFORM $FABRIC_BUILDER_TAG AS fabric-builder
-RUN apk add libc6-compat
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    sudo \
+    curl \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+# Install Go
+ARG GO_VERSION=1.20
+ARG ARCH=amd64
+RUN curl -fsSL "https://golang.org/dl/go$GO_VERSION.linux-$ARCH.tar.gz" | tar -C /usr/local -xzf -
+ENV PATH="/usr/local/go/bin:$PATH"
 WORKDIR /firefly/smart_contracts/fabric/firefly-go
 ADD smart_contracts/fabric/firefly-go .
+ENV GO111MODULE=on
 RUN GO111MODULE=on go mod vendor
 WORKDIR /tmp/fabric
-RUN wget https://github.com/hyperledger/fabric/releases/download/v2.3.2/hyperledger-fabric-linux-amd64-2.3.2.tar.gz
-RUN tar -zxf hyperledger-fabric-linux-amd64-2.3.2.tar.gz
+RUN wget https://github.com/hyperledger/fabric/releases/download/v2.5.4/hyperledger-fabric-linux-amd64-2.5.4.tar.gz
+RUN tar -zxf hyperledger-fabric-linux-amd64-2.5.4.tar.gz
 RUN touch core.yaml
 RUN ./bin/peer lifecycle chaincode package /firefly/smart_contracts/fabric/firefly-go/firefly_fabric.tar.gz --path /firefly/smart_contracts/fabric/firefly-go --lang golang --label firefly_1.0
 
