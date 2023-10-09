@@ -303,6 +303,7 @@
     </ol>
   </li>
   <li><a href="#detailed-examples" id="markdown-toc-detailed-examples">Detailed examples</a></li>
+  <li><a href="#time-range-example" id="markdown-toc-time-range-example">Time range example</a></li>
 </ol><hr />
       <h2 id="syntax-overview">
         
@@ -449,6 +450,14 @@ behavior.</p>
       <td><code class="language-plaintext highlighter-rouge">?</code></td>
       <td>Treat empty match string as null</td>
     </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">[</code></td>
+      <td>Combine using <code class="language-plaintext highlighter-rouge">AND</code> on the same field</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">]</code></td>
+      <td>Combine using <code class="language-plaintext highlighter-rouge">OR</code> on the same field (default)</td>
+    </tr>
   </tbody>
 </table>
       <h2 id="detailed-examples">
@@ -518,6 +527,27 @@ behavior.</p>
     </tr>
   </tbody>
 </table>
+      <h2 id="time-range-example">
+        
+        
+          <a href="#time-range-example" class="anchor-heading" aria-labelledby="time-range-example"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Time range example
+        
+        
+      </h2>
+    
+
+<p>For this case we need to combine multiple queries on the same <code class="language-plaintext highlighter-rouge">created</code>
+field using AND semantics (with the <code class="language-plaintext highlighter-rouge">[</code>) modifier:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>?created=[&gt;&gt;2021-01-01T00:00:00Z&amp;created=[&lt;=2021-01-02T00:00:00Z
+</code></pre></div></div>
+
+<p>So this means:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">created</code> greater than <code class="language-plaintext highlighter-rouge">2021-01-01T00:00:00Z</code></li>
+  <li><code class="language-plaintext highlighter-rouge">AND</code></li>
+  <li><code class="language-plaintext highlighter-rouge">created</code> less than or equal to <code class="language-plaintext highlighter-rouge">2021-01-02T00:00:00Z</code></li>
+</ul>
 
         
 
