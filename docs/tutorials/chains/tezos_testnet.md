@@ -41,7 +41,7 @@ connector:
     signatory: http://127.0.0.1:6732 # tx signing service address
 ```
 
-For this tutorial, we will assume this file is saved at `~/Desktop/tezosonnect.yml`. If your path is different, you will need to adjust the path in the next command below.
+For this tutorial, we will assume this file is saved at `~/Desktop/tezosconnect.yml`. If your path is different, you will need to adjust the path in the next command below.
 
 ## Creating a new stack
 
