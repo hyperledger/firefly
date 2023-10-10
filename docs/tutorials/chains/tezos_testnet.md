@@ -49,7 +49,7 @@ To create a local FireFly development stack and connect it to the Tezos Ghostnet
 
 - Create a new Tezos based stack named `tezos` with `1` member
 - Disable `multiparty` mode. We are going to be using this FireFly node as a Web3 gateway, and we don't need to communicate with a consortium here
-- Merge the custom config created above with the generated `tezosonnect` config file
+- Merge the custom config created above with the generated `tezosconnect.yml` config file
 
 To do this, run the following command:
 
