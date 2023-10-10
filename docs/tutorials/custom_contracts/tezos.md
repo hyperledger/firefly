@@ -475,7 +475,7 @@ Now that we've got everything set up, it's time to use our smart contract! We're
 }
 ```
 
-> **NOTE**: The `key` field is the tezos account address, which will be used for signing our transactions.
+> **NOTE**: The `key` field is the Tezos account address, which will be used for signing our transactions.
 See more at [transaction signing service set up](../chains/tezos_testnet.md#signatory).
 
 ### Response
