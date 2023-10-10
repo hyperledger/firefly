@@ -58,7 +58,7 @@ def test():
 
 ## Contract deployment
 
-To deploy the contract, we will use [SmarPy IDE](https://smartpy.io/ide).
+To deploy the contract, we will use [SmartPy IDE](https://smartpy.io/ide).
 1. Open an IDE;
 2. Paste the contract code;
 3. Click "Run code" button;
