@@ -86,6 +86,19 @@ do
     echo "  }," >> manifest.json
 done
 
+# Add an external tezos signer service
+echo "  \"tezossigner\": {" >> manifest.json
+echo "    \"image\": \"ecadlabs/signatory\"," >> manifest.json
+docker pull ecadlabs/signatory:latest
+SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ecadlabs/signatory:latest | cut -d ':' -f 2)
+TAG_LABEL=$(docker inspect --format='{{index .Config.Labels "tag"}}' ecadlabs/signatory:latest)
+if [ -z "$TAG_LABEL" ]; then
+    TAG_LABEL=$TAG
+fi
+echo "    \"tag\": \"$TAG_LABEL\"," >> manifest.json
+echo "    \"sha\": \"$SHA\"" >> manifest.json
+echo "  }," >> manifest.json
+
 # Add the build and UI sections, piping to sed to get proper indentation
 echo "\"build\": $BUILD_SECTION," | sed 's/^/  /' >> manifest.json
 echo "\"ui\": $UI_SECTION," | sed 's/^/  /' >> manifest.json
