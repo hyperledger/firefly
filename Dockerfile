@@ -52,5 +52,8 @@ COPY --from=fabric-builder /firefly/smart_contracts/fabric/firefly-go/firefly_fa
 ENV UI_RELEASE https://github.com/hyperledger/firefly-ui/releases/download/$UI_TAG/$UI_RELEASE.tgz
 RUN mkdir /firefly/frontend \
     && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
-RUN ln -s /firefly/firefly /usr/bin/firefly
+RUN ln -s /firefly/firefly /usr/bin/firefly \
+    && chgrp -R 0 /firefly/ \
+    && chmod -R g+rwX /firefly/
+USER 1001
 ENTRYPOINT [ "firefly" ]
