@@ -301,21 +301,28 @@ var (
 
 	// ContractListener field descriptions
 	ContractListenerID        = ffm("ContractListener.id", "The UUID of the smart contract listener")
-	ContractListenerInterface = ffm("ContractListener.interface", "A reference to an existing FFI, containing pre-registered type information for the event")
+	ContractListenerInterface = ffm("ContractListener.interface", "Deprecated: Please use 'interface' in the array of 'filters' instead")
 	ContractListenerNamespace = ffm("ContractListener.namespace", "The namespace of the listener, which defines the namespace of all blockchain events detected by this listener")
 	ContractListenerName      = ffm("ContractListener.name", "A descriptive name for the listener")
 	ContractListenerBackendID = ffm("ContractListener.backendId", "An ID assigned by the blockchain connector to this listener")
-	ContractListenerLocation  = ffm("ContractListener.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
+	ContractListenerLocation  = ffm("ContractListener.location", "Deprecated: Please use 'location' in the array of 'filters' instead")
 	ContractListenerCreated   = ffm("ContractListener.created", "The creation time of the listener")
-	ContractListenerEvent     = ffm("ContractListener.event", "The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI")
+	ContractListenerEvent     = ffm("ContractListener.event", "Deprecated: Please use 'event' in the array of 'filters' instead")
+	ContractListenerFilters   = ffm("ContractListener.filters", "A list of filters for the contract listener. Each filter is made up of an Event and an optional Location. Events matching these filters will always be emitted in the order determined by the blockchain.")
 	ContractListenerTopic     = ffm("ContractListener.topic", "A topic to set on the FireFly event that is emitted each time a blockchain event is detected from the blockchain. Setting this topic on a number of listeners allows applications to easily subscribe to all events they need")
 	ContractListenerOptions   = ffm("ContractListener.options", "Options that control how the listener subscribes to events from the underlying blockchain")
-	ContractListenerEventPath = ffm("ContractListener.eventPath", "When creating a listener from an existing FFI, this is the pathname of the event on that FFI to be detected by this listener")
+	ContractListenerEventPath = ffm("ContractListener.eventPath", "Deprecated: Please use 'eventPath' in the array of 'filters' instead")
 	ContractListenerSignature = ffm("ContractListener.signature", "The stringified signature of the event, as computed by the blockchain plugin")
 	ContractListenerState     = ffm("ContractListener.state", "This field is provided for the event listener implementation of the blockchain provider to record state, such as checkpoint information")
 
 	// ContractListenerOptions field descriptions
 	ContractListenerOptionsFirstEvent = ffm("ContractListenerOptions.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors. Default is 'newest'")
+
+	ListenerFilterInterface = ffm("ListenerFilter.interface", "A reference to an existing FFI, containing pre-registered type information for the event")
+	ListenerFilterEvent     = ffm("ListenerFilter.event", "The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI")
+	ListenerFilterEventPath = ffm("ListenerFilter.eventPath", "When creating a listener from an existing FFI, this is the pathname of the event on that FFI to be detected by this listener")
+	ListenerFilterLocation  = ffm("ListenerFilter.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
+	ListenerFilterSignature = ffm("ListenerFilter.signature", "The stringified signature of the event, as computed by the blockchain plugin")
 
 	// DIDDocument field descriptions
 	DIDDocumentContext            = ffm("DIDDocument.@context", "See https://www.w3.org/TR/did-core/#json-ld")

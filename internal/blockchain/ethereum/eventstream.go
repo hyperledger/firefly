@@ -24,7 +24,6 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
-	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
@@ -52,14 +51,19 @@ type eventStream struct {
 }
 
 type subscription struct {
-	ID               string            `json:"id"`
-	Name             string            `json:"name,omitempty"`
-	Stream           string            `json:"stream"`
-	FromBlock        string            `json:"fromBlock"`
-	EthCompatAddress string            `json:"address,omitempty"`
-	EthCompatEvent   *abi.Entry        `json:"event,omitempty"`
-	Filters          []fftypes.JSONAny `json:"filters"`
+	ID               string     `json:"id"`
+	Name             string     `json:"name,omitempty"`
+	Stream           string     `json:"stream"`
+	FromBlock        string     `json:"fromBlock"`
+	EthCompatAddress string     `json:"address,omitempty"`
+	EthCompatEvent   *abi.Entry `json:"event,omitempty"`
+	Filters          []*filter  `json:"filters"`
 	subscriptionCheckpoint
+}
+
+type filter struct {
+	Event   *abi.Entry `json:"event"`
+	Address string     `json:"address"`
 }
 
 type subscriptionCheckpoint struct {
@@ -201,7 +205,7 @@ func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (
 	return sub.Name, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, firstEvent string, abi *abi.Entry) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, stream, subName, firstEvent string, filters []*filter) (*subscription, error) {
 	// Map FireFly "firstEvent" values to Ethereum "fromBlock" values
 	switch firstEvent {
 	case string(core.SubOptsFirstEventOldest):
@@ -210,14 +214,10 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		firstEvent = "latest"
 	}
 	sub := subscription{
-		Name:           subName,
-		Stream:         stream,
-		FromBlock:      firstEvent,
-		EthCompatEvent: abi,
-	}
-
-	if location != nil {
-		sub.EthCompatAddress = location.Address
+		Name:      subName,
+		Stream:    stream,
+		FromBlock: firstEvent,
+		Filters:   filters,
 	}
 
 	res, err := s.client.R().
@@ -286,7 +286,13 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 		name = v1Name
 	}
 	location := &Location{Address: instancePath}
-	if sub, err = s.createSubscription(ctx, location, stream, name, firstEvent, abi); err != nil {
+	filters := []*filter{
+		{
+			Event:   abi,
+			Address: location.Address,
+		},
+	}
+	if sub, err = s.createSubscription(ctx, stream, name, firstEvent, filters); err != nil {
 		return nil, err
 	}
 	log.L(ctx).Infof("%s subscription: %s", abi.Name, sub.ID)

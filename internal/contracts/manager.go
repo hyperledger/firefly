@@ -19,7 +19,6 @@ package contracts
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql/driver"
 	"encoding/hex"
 	"fmt"
 	"hash"
@@ -835,55 +834,51 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		listener.Options.FirstEvent = cm.getDefaultContractListenerOptions().FirstEvent
 	}
 
-	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		// Namespace + Name must be unique
-		if listener.Name != "" {
-			if existing, err := cm.database.GetContractListener(ctx, cm.namespace, listener.Name); err != nil {
-				return err
-			} else if existing != nil {
-				return i18n.NewError(ctx, coremsgs.MsgContractListenerNameExists, cm.namespace, listener.Name)
-			}
-		}
-
-		if listener.Event == nil {
-			if listener.EventPath == "" || listener.Interface == nil {
-				return i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
-			}
-			// Copy the event definition into the listener
-			if listener.Event, err = cm.resolveEvent(ctx, listener.Interface, listener.EventPath); err != nil {
-				return err
-			}
-		} else {
-			listener.Interface = nil
-		}
-
-		// Namespace + Topic + Location + Signature must be unique
-		listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
-		// Above we only call NormalizeContractLocation if the listener is non-nil, and that means
-		// for an unset location we will have a nil value. Using an fftypes.JSONAny in a query
-		// of nil does not yield the right result, so we need to do an explicit nil query.
-		var locationLookup driver.Value = nil
-		if !listener.Location.IsNil() {
-			locationLookup = listener.Location.String()
-		}
-		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
-		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
-			fb.Eq("topic", listener.Topic),
-			fb.Eq("location", locationLookup),
-			fb.Eq("signature", listener.Signature),
-		)); err != nil {
-			return err
-		} else if len(existing) > 0 {
-			return i18n.NewError(ctx, coremsgs.MsgContractListenerExists)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
+	// Normalize Event/EventPath + Location to list of Listeners
+	if len(listener.Filters) == 0 {
+		listener.Filters = append(listener.Filters, &core.ListenerFilterInput{
+			ListenerFilter: core.ListenerFilter{
+				Event:     listener.Event,
+				Location:  listener.Location,
+				Interface: listener.Interface,
+			},
+			EventPath: listener.EventPath,
+		})
 	}
 
-	if err := cm.validateFFIEvent(ctx, &listener.Event.FFIEventDefinition); err != nil {
-		return nil, err
+	// Namespace + Name must be unique
+	if listener.Name != "" {
+		if existing, err := cm.database.GetContractListener(ctx, cm.namespace, listener.Name); err != nil {
+			return nil, err
+		} else if existing != nil {
+			return nil, i18n.NewError(ctx, coremsgs.MsgContractListenerNameExists, cm.namespace, listener.Name)
+		}
+	}
+
+	for _, filter := range listener.Filters {
+		if filter.Event == nil {
+			if filter.EventPath == "" || filter.Interface == nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
+			}
+			// Copy the event definition into the filter
+			if filter.Event, err = cm.resolveEvent(ctx, filter.Interface, filter.EventPath); err != nil {
+				return nil, err
+			}
+		} else {
+			filter.Interface = nil
+		}
+
+		filter.Signature = cm.blockchain.GenerateEventSignature(ctx, &filter.Event.FFIEventDefinition)
+		if err := cm.validateFFIEvent(ctx, &filter.Event.FFIEventDefinition); err != nil {
+			return nil, err
+		}
+
+		listener.ContractListener.Filters = append(listener.ContractListener.Filters, &core.ListenerFilter{
+			Event:     filter.Event,
+			Location:  filter.Location,
+			Interface: filter.Interface,
+			Signature: filter.Signature,
+		})
 	}
 	if err = cm.blockchain.AddContractListener(ctx, &listener.ContractListener); err != nil {
 		return nil, err

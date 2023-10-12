@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestContractListenerE2EWithDB(t *testing.T) {
+func TestContractListenerLegacyE2EWithDB(t *testing.T) {
 	s, cleanup := newSQLiteTestProvider(t)
 	defer cleanup()
 	ctx := context.Background()
@@ -58,6 +58,30 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 		},
 	}
 
+	newSub := &core.ContractListener{
+		ID: sub.ID,
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "event1",
+					},
+				},
+				Location: fftypes.JSONAnyPtrBytes(locationJson),
+				Interface: &fftypes.FFIReference{
+					ID: sub.Interface.ID,
+				},
+			},
+		},
+		Namespace: "ns",
+		Name:      "sub1",
+		BackendID: "sb-123",
+		Topic:     "topic1",
+		Options: &core.ContractListenerOptions{
+			FirstEvent: "0",
+		},
+	}
+
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, core.ChangeEventTypeCreated, "ns", sub.ID).Return()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, core.ChangeEventTypeUpdated, "ns", sub.ID).Return()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, core.ChangeEventTypeDeleted, "ns", sub.ID).Return()
@@ -65,7 +89,8 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	err := s.InsertContractListener(ctx, sub)
 	assert.NotNil(t, sub.Created)
 	assert.NoError(t, err)
-	subJson, _ := json.Marshal(&sub)
+	newSub.Created = sub.Created
+	newSubJson, _ := json.Marshal(&newSub)
 
 	// Query back the listener (by query filter)
 	fb := database.ContractListenerQueryFactory.NewFilter(ctx)
@@ -77,7 +102,7 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(subs))
 	assert.Equal(t, int64(1), *res.TotalCount)
 	subReadJson, _ := json.Marshal(subs[0])
-	assert.Equal(t, string(subJson), string(subReadJson))
+	assert.Equal(t, string(newSubJson), string(subReadJson))
 
 	// Update by backend ID
 	err = s.UpdateContractListener(ctx, "ns", sub.ID, database.ContractListenerQueryFactory.NewUpdate(ctx).Set("backendid", "sb-234"))
@@ -87,21 +112,22 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	subRead, err := s.GetContractListener(ctx, "ns", "sub1")
 	assert.NoError(t, err)
 	sub.BackendID = "sb-234"
-	subJson, _ = json.Marshal(&sub)
+	newSub.BackendID = "sb-234"
+	newSubJson, _ = json.Marshal(&newSub)
 	subReadJson, _ = json.Marshal(subRead)
-	assert.Equal(t, string(subJson), string(subReadJson))
+	assert.Equal(t, string(newSubJson), string(subReadJson))
 
 	// Query back the listener (by ID)
 	subRead, err = s.GetContractListenerByID(ctx, "ns", sub.ID)
 	assert.NoError(t, err)
 	subReadJson, _ = json.Marshal(subRead)
-	assert.Equal(t, string(subJson), string(subReadJson))
+	assert.Equal(t, string(newSubJson), string(subReadJson))
 
 	// Query back the listener (by protocol ID)
 	subRead, err = s.GetContractListenerByBackendID(ctx, "ns", sub.BackendID)
 	assert.NoError(t, err)
 	subReadJson, _ = json.Marshal(subRead)
-	assert.Equal(t, string(subJson), string(subReadJson))
+	assert.Equal(t, string(newSubJson), string(subReadJson))
 
 	// Query back the listener (by query filter)
 	filter = fb.And(
@@ -112,7 +138,7 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(subs))
 	assert.Equal(t, int64(1), *res.TotalCount)
 	subReadJson, _ = json.Marshal(subs[0])
-	assert.Equal(t, string(subJson), string(subReadJson))
+	assert.Equal(t, string(newSubJson), string(subReadJson))
 
 	// Test delete, and refind no return
 	err = s.DeleteContractListenerByID(ctx, "ns", sub.ID)
@@ -211,7 +237,7 @@ func TestContractListenerDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(contractListenerColumns).AddRow(
-		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "sig", "topic1", nil, fftypes.Now()),
+		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "sig", "topic1", nil, fftypes.Now(), "[]"),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteContractListenerByID(context.Background(), "ns", fftypes.NewUUID())

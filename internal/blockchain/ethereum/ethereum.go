@@ -878,9 +878,38 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 			return err
 		}
 	}
-	abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
-	if err != nil {
-		return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
+
+	filters := make([]*filter, 0)
+	if listener.Event != nil {
+		abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
+		if err != nil {
+			return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
+		}
+		evmFilter := &filter{
+			Event: abi,
+		}
+		if location != nil {
+			evmFilter.Address = location.Address
+		}
+		filters = append(filters, evmFilter)
+	} else {
+		for _, f := range listener.Filters {
+			abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &f.Event.FFIEventDefinition)
+			if err != nil {
+				return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
+			}
+			evmFilter := &filter{
+				Event: abi,
+			}
+			if f.Location != nil {
+				location, err = e.parseContractLocation(ctx, f.Location)
+				if err != nil {
+					return err
+				}
+				evmFilter.Address = location.Address
+			}
+			filters = append(filters, evmFilter)
+		}
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
@@ -888,7 +917,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent
 	}
-	result, err := e.streams.createSubscription(ctx, location, e.streamID[namespace], subName, firstEvent, abi)
+	result, err := e.streams.createSubscription(ctx, e.streamID[namespace], subName, firstEvent, filters)
 	if err != nil {
 		return err
 	}

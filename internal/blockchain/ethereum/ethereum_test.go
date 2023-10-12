@@ -2060,6 +2060,98 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestAddSubscriptionMultipleFilters(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.streamID = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
+					},
+				},
+			},
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed2",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value2",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
+					},
+				},
+				Location: fftypes.JSONAnyPtr(`{"address":"0x1234"}`),
+			},
+		},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddContractListener(context.Background(), sub)
+
+	assert.NoError(t, err)
+}
+
+func TestAddSubscriptionInvalidAbi(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.streamID = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "0x123",
+				}.String()),
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`"not an abi"`),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddContractListener(context.Background(), sub)
+
+	assert.Regexp(t, "FF10311", err)
+}
+
 func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
@@ -2095,7 +2187,7 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	assert.Regexp(t, "FF10311", err)
 }
 
-func TestAddSubscriptionBadLocation(t *testing.T) {
+func TestAddLegacySubscriptionBadLocation(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -2109,6 +2201,31 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	sub := &core.ContractListener{
 		Location: fftypes.JSONAnyPtr(""),
 		Event:    &core.FFISerializedEvent{},
+	}
+
+	err := e.AddContractListener(context.Background(), sub)
+
+	assert.Regexp(t, "FF10310", err)
+}
+
+func TestAddSubscriptionBadLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.streamID = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(""),
+				Event:    &core.FFISerializedEvent{},
+			},
+		},
 	}
 
 	err := e.AddContractListener(context.Background(), sub)

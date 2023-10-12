@@ -910,7 +910,7 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 	result, err := cm.AddContractListener(context.Background(), sub)
 	assert.NoError(t, err)
 	assert.NotNil(t, result.ID)
-	assert.NotNil(t, result.Event)
+	assert.NotNil(t, result.Filters[0].Event)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -1270,58 +1270,6 @@ func TestAddContractListenerNameError(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestAddContractListenerTopicConflict(t *testing.T) {
-	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mdi := cm.database.(*databasemocks.Plugin)
-
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"address": "0x123",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Topic: "test-topic",
-		},
-	}
-
-	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return([]*core.ContractListener{{}}, nil, nil)
-
-	_, err := cm.AddContractListener(context.Background(), sub)
-	assert.Regexp(t, "FF10383", err)
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-}
-
-func TestAddContractListenerTopicError(t *testing.T) {
-	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mdi := cm.database.(*databasemocks.Plugin)
-
-	sub := &core.ContractListenerInput{
-		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"address": "0x123",
-			}.String()),
-			Event: &core.FFISerializedEvent{},
-			Topic: "test-topic",
-		},
-	}
-
-	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-
-	_, err := cm.AddContractListener(context.Background(), sub)
-	assert.EqualError(t, err, "pop")
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-}
-
 func TestAddContractListenerValidateFail(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
@@ -1466,7 +1414,7 @@ func TestAddContractAPIListener(t *testing.T) {
 		return *l.Interface.ID == *interfaceID && l.Topic == "test-topic"
 	})).Return(nil)
 	mdi.On("InsertContractListener", context.Background(), mock.MatchedBy(func(l *core.ContractListener) bool {
-		return *l.Interface.ID == *interfaceID && l.Event.Name == "changed" && l.Topic == "test-topic"
+		return *l.Filters[0].Interface.ID == *interfaceID && l.Filters[0].Event.Name == "changed" && l.Topic == "test-topic"
 	})).Return(nil)
 
 	_, err := cm.AddContractAPIListener(context.Background(), "simple", "changed", listener)
