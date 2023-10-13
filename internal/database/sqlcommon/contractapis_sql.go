@@ -135,6 +135,7 @@ func (s *SQLCommon) InsertOrGetContractAPI(ctx context.Context, api *core.Contra
 	if insertErr == nil {
 		return nil, s.CommitTx(ctx, tx, autoCommit)
 	}
+	log.L(ctx).Debugf("Contract API insert failed due to err: %+v, retrieving the existing contract API", insertErr)
 
 	// Do a select within the transaction to determine if the API already exists
 	existing, queryErr := s.getContractAPIPred(ctx, api.Namespace+":"+api.Name, sq.And{

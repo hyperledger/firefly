@@ -81,7 +81,7 @@ type Manager interface {
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error)
 }
 
 type contractManager struct {
@@ -298,7 +298,8 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			// Note we don't need to worry about re-entering this code zero-ops in this case, as we write everything as a batch in WriteTransactionAndOps.
+			_, resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
@@ -338,7 +339,8 @@ func (cm *contractManager) writeDeployTransaction(ctx context.Context, req *core
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			// Note we don't need to worry about re-entering this code zero-ops in this case, as we write everything as a batch in WriteTransactionAndOps.
+			_, resubmitted, resubmitErr := cm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
@@ -370,7 +372,7 @@ func (cm *contractManager) DeployContract(ctx context.Context, req *core.Contrac
 	}
 
 	send := func(ctx context.Context) error {
-		_, err := cm.operations.RunOperation(ctx, opBlockchainContractDeploy(op, req))
+		_, err := cm.operations.RunOperation(ctx, opBlockchainContractDeploy(op, req), req.IdempotencyKey != "")
 		return err
 	}
 	if waitConfirm {
@@ -434,7 +436,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, req *core.Contrac
 			return op, msgSender.Send(ctx)
 		}
 		send := func(ctx context.Context) error {
-			_, err := cm.operations.RunOperation(ctx, txcommon.OpBlockchainInvoke(op, req, nil))
+			_, err := cm.operations.RunOperation(ctx, txcommon.OpBlockchainInvoke(op, req, nil), req.IdempotencyKey != "")
 			return err
 		}
 		if waitConfirm {
@@ -498,7 +500,8 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req
 func (cm *contractManager) addContractURLs(httpServerURL string, api *core.ContractAPI) {
 	if api != nil {
 		// These URLs must match the actual routes in apiserver.createMuxRouter()!
-		baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, cm.namespace, api.Name)
+		// Note the httpServerURL includes the namespace
+		baseURL := fmt.Sprintf("%s/apis/%s", httpServerURL, api.Name)
 		api.URLs.OpenAPI = baseURL + "/api/swagger.json"
 		api.URLs.UI = baseURL + "/api"
 	}
@@ -650,6 +653,8 @@ func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftype
 			return nil, nil, err
 		}
 		paramSchemas[param.Name] = schema
+		// The input parsing is dependent on the parameter name, so it's important those are included in the hash
+		paramUniqueHash.Write([]byte(param.Name))
 		paramUniqueHash.Write([]byte(paramSchemaHash))
 	}
 	for _, param := range method.Returns {
@@ -657,6 +662,7 @@ func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftype
 		if err != nil {
 			return nil, nil, err
 		}
+		paramUniqueHash.Write([]byte(param.Name))
 		paramUniqueHash.Write([]byte(returnHash))
 	}
 	return paramUniqueHash, paramSchemas, nil
@@ -705,6 +711,7 @@ func (cm *contractManager) validateFFIError(ctx context.Context, errorDef *fftyp
 		if err != nil {
 			return "", err
 		}
+		cacheKeyBuff.WriteString(param.Name)
 		cacheKeyBuff.WriteString(paramCacheKey)
 	}
 	return cacheKeyBuff.String(), nil

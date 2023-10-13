@@ -67,6 +67,23 @@ func TestDefineFFIFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestDefineFFIFailInnerError(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = true
+
+	ffi := &fftypes.FFI{
+		Name:      "ffi1",
+		Version:   "1.0",
+		Published: false,
+	}
+
+	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
+	ds.mdi.On("InsertOrGetFFI", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error2: [%w]", fmt.Errorf("pop")))
+	err := ds.DefineFFI(context.Background(), ffi, false)
+	assert.Regexp(t, "pop", err)
+}
+
 func TestDefineFFIExists(t *testing.T) {
 	ds := newTestDefinitionSender(t)
 	defer ds.cleanup(t)
@@ -304,6 +321,27 @@ func TestDefineContractAPIPublishNonMultiparty(t *testing.T) {
 
 	err := ds.DefineContractAPI(context.Background(), url, api, false)
 	assert.Regexp(t, "FF10414", err)
+}
+
+func TestDefineContractAPINonMultipartyUpdate(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	ds.multiparty = false
+	testUUID := fftypes.NewUUID()
+
+	url := "http://firefly"
+	api := &core.ContractAPI{
+		ID:        testUUID,
+		Name:      "banana",
+		Published: false,
+	}
+	ds.mcm.On("ResolveContractAPI", context.Background(), url, api).Return(nil)
+	ds.mdi.On("InsertOrGetContractAPI", mock.Anything, mock.Anything).Return(api, nil)
+	ds.mdi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ds.mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+
+	err := ds.DefineContractAPI(context.Background(), url, api, false)
+	assert.NoError(t, err)
 }
 
 func TestPublishFFI(t *testing.T) {

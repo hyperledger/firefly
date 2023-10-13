@@ -33,7 +33,7 @@ nav_order: 11
     "decimals": 18,
     "connector": "erc20_erc721",
     "message": "43923040-b1e5-4164-aa20-47636c7177ee",
-    "state": "confirmed",
+    "active": true,
     "created": "2022-05-16T01:23:15Z",
     "info": {
         "address": "0x056df1c53c3c00b0e13d37543f46930b42f71db0",
@@ -63,8 +63,8 @@ nav_order: 11
 | `symbol` | The token symbol. If supplied on input for an existing on-chain token, this must match the on-chain information | `string` |
 | `decimals` | Number of decimal places that this token has | `int` |
 | `connector` | The name of the token connector, as specified in the FireFly core configuration file that is responsible for the token pool. Required on input when multiple token connectors are configured | `string` |
-| `message` | The UUID of the broadcast message used to inform the network to index this pool | [`UUID`](simpletypes#uuid) |
-| `state` | The current state of the token pool | `FFEnum`:<br/>`"pending"`<br/>`"confirmed"` |
+| `message` | The UUID of the broadcast message used to inform the network about this pool | [`UUID`](simpletypes#uuid) |
+| `active` | Indicates whether the pool has been successfully activated with the token connector | `bool` |
 | `created` | The creation time of the pool | [`FFTime`](simpletypes#fftime) |
 | `config` | Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |
 | `info` | Token connector specific information about the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |

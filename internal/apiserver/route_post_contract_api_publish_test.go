@@ -41,7 +41,7 @@ func TestPostContractAPIPublish(t *testing.T) {
 	res := httptest.NewRecorder()
 	api := &core.ContractAPI{}
 
-	mds.On("PublishContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "banana", "banana-net", false).Return(api, nil)
+	mds.On("PublishContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/ns1", "banana", "banana-net", false).Return(api, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

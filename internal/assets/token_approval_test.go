@@ -67,7 +67,7 @@ func TestTokenApprovalSuccess(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -81,7 +81,7 @@ func TestTokenApprovalSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.NoError(t, err)
@@ -107,7 +107,7 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -121,7 +121,7 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.NoError(t, err)
@@ -148,7 +148,7 @@ func TestApprovalBadConnector(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "bad",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -191,7 +191,7 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 			Name:      "pool1",
 			Locator:   "F1",
 			Connector: "magic-tokens",
-			State:     core.TokenPoolStateConfirmed,
+			Active:    true,
 		},
 	}
 	totalCount := int64(1)
@@ -208,7 +208,7 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == tokenPools[0] && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.NoError(t, err)
@@ -243,7 +243,68 @@ func TestApprovalIdempotentOperationResubmit(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{op}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{op}, nil)
+
+	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
+	_, err := am.TokenApproval(context.Background(), approval, false)
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestApprovalIdempotentOperationResubmitAll(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
+			Approved: true,
+			Operator: "operator",
+			Key:      "key",
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	pool := &core.TokenPool{
+		Connector: "magic-tokens",
+		Active:    true,
+	}
+
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(0, nil, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("RunOperation", context.Background(), mock.Anything, true).Return(nil, nil)
+
+	tokenPools := []*core.TokenPool{
+		{
+			Name:      "pool1",
+			Locator:   "F1",
+			Connector: "magic-tokens",
+			Active:    true,
+		},
+	}
+	totalCount := int64(1)
+	filterResult := &ffapi.FilterResult{
+		TotalCount: &totalCount,
+	}
+	mim.On("ResolveInputSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f ffapi.AndFilter) bool {
+		info, _ := f.Finalize()
+		return info.Count && info.Limit == 1
+	}))).Return(tokenPools, filterResult, nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
 	_, err := am.TokenApproval(context.Background(), approval, false)
@@ -275,7 +336,7 @@ func TestApprovalIdempotentNoOperationToResubmit(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* one total */, nil /* none to resubmit */, nil)
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
 	_, err := am.TokenApproval(context.Background(), approval, false)
@@ -308,7 +369,7 @@ func TestApprovalIdempotentOperationErrorOnResubmit(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
 	_, err := am.TokenApproval(context.Background(), approval, false)
@@ -396,7 +457,7 @@ func TestApprovalUnconfirmedPool(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -426,7 +487,7 @@ func TestApprovalIdentityFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -460,7 +521,7 @@ func TestApprovalFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -474,7 +535,7 @@ func TestApprovalFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.EqualError(t, err, "pop")
@@ -536,7 +597,7 @@ func TestApprovalWithBroadcastMessage(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -555,7 +616,7 @@ func TestApprovalWithBroadcastMessage(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.NoError(t, err)
@@ -637,7 +698,7 @@ func TestApprovalWithBroadcastMessageSendFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -732,7 +793,7 @@ func TestApprovalWithPrivateMessage(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -751,7 +812,7 @@ func TestApprovalWithPrivateMessage(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, false)
 	assert.NoError(t, err)
@@ -855,7 +916,7 @@ func TestApprovalOperationsFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -893,7 +954,7 @@ func TestTokenApprovalConfirm(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -908,7 +969,7 @@ func TestTokenApprovalConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	msa.On("WaitForTokenApproval", context.Background(), mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
@@ -957,7 +1018,7 @@ func TestApprovalWithBroadcastConfirm(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -989,7 +1050,7 @@ func TestApprovalWithBroadcastConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), approval, true)
 	assert.NoError(t, err)
@@ -1020,7 +1081,7 @@ func TestApprovalPrepare(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	sender := am.NewApproval(approval)

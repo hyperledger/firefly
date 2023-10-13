@@ -45,6 +45,7 @@ const (
 	routeTagNonDefaultNamespace = "Non-Default Namespace"
 )
 
+var nsRoutes = []*ffapi.Route{}
 var routes = append(
 	globalRoutes([]*ffapi.Route{
 		getNamespace,
@@ -177,14 +178,18 @@ func namespacedRoutes(routes []*ffapi.Route) []*ffapi.Route {
 	for i, route := range routes {
 		route.Tag = routeTagDefaultNamespace
 
-		routeCopy := *route
-		routeCopy.Name += "Namespace"
-		routeCopy.Path = "namespaces/{ns}/" + route.Path
-		routeCopy.PathParams = append(routeCopy.PathParams, &ffapi.PathParam{
+		routeCopy1 := *route
+		routeCopy1.Name += "Namespace"
+		routeCopy1.Path = "namespaces/{ns}/" + route.Path
+		routeCopy1.PathParams = append(routeCopy1.PathParams, &ffapi.PathParam{
 			Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace,
 		})
-		routeCopy.Tag = routeTagNonDefaultNamespace
-		newRoutes[i] = &routeCopy
+		routeCopy1.Tag = routeTagNonDefaultNamespace
+		newRoutes[i] = &routeCopy1
+
+		// Build a separate list of NS relative routes, to build a swagger limited to one namespace
+		routeCopy2 := *route
+		nsRoutes = append(nsRoutes, &routeCopy2)
 	}
 	return append(routes, newRoutes...)
 }

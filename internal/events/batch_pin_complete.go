@@ -90,7 +90,7 @@ func (em *eventManager) postBlockchainBatchPinEventInsert(ctx context.Context, e
 	}
 	// Kick off a download for broadcast batches if the batch isn't already persisted
 	if !private && batch == nil {
-		if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
+		if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.TransactionID, batchPin.BatchPayloadRef, false /* batch processing does not currently use idempotency keys */); err != nil {
 			return err
 		}
 	}

@@ -59,9 +59,9 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, batch, po.Data.(txcommon.BatchPinData).Batch)
 
-	_, complete, err := mp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
+	_, phase, err := mp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 }
 
@@ -82,9 +82,9 @@ func TestPrepareAndRunNetworkAction(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, core.NetworkActionTerminate, po.Data.(networkActionData).Type)
 
-	_, complete, err := mp.RunOperation(context.Background(), opNetworkAction(op, core.NetworkActionTerminate, "0x123"))
+	_, phase, err := mp.RunOperation(context.Background(), opNetworkAction(op, core.NetworkActionTerminate, "0x123"))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 
 	mp.mbi.AssertExpectations(t)
@@ -133,9 +133,9 @@ func TestRunOperationNotSupported(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	_, complete, err := mp.RunOperation(context.Background(), &core.PreparedOperation{})
+	_, phase, err := mp.RunOperation(context.Background(), &core.PreparedOperation{})
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10378", err)
 }
 
@@ -204,9 +204,9 @@ func TestRunBatchPinV1(t *testing.T) {
 
 	mp.mbi.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "ns1", "0x123", mock.Anything, mock.Anything).Return(nil)
 
-	_, complete, err := mp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
+	_, phase, err := mp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
 
-	assert.False(t, complete)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 }
 

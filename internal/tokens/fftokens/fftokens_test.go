@@ -228,8 +228,8 @@ func TestCreateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	complete, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
-	assert.False(t, complete)
+	phase, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 }
 
@@ -252,8 +252,8 @@ func TestCreateTokenPoolError(t *testing.T) {
 		}))
 
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	complete, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
-	assert.False(t, complete)
+	phase, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10274.*Bad Request: Missing required field", err)
 }
 
@@ -275,8 +275,8 @@ func TestCreateTokenPoolErrorMessageOnly(t *testing.T) {
 		}))
 
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	complete, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
-	assert.False(t, complete)
+	phase, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10274.*Missing required field", err)
 }
 
@@ -296,8 +296,8 @@ func TestCreateTokenPoolUnexpectedError(t *testing.T) {
 		httpmock.NewStringResponder(400, "Failed miserably"))
 
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	complete, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
-	assert.False(t, complete)
+	phase, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10274.*Failed miserably", err)
 }
 
@@ -354,8 +354,8 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && *p.TX.ID == *pool.TX.ID
 	})).Return(nil)
 
-	complete, err := h.CreateTokenPool(ctx, nsOpID, pool)
-	assert.True(t, complete)
+	phase, err := h.CreateTokenPool(ctx, nsOpID, pool)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.NoError(t, err)
 }
 
@@ -397,8 +397,8 @@ func TestCreateTokenPoolSynchronousBadResponse(t *testing.T) {
 			return res, nil
 		})
 
-	complete, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
-	assert.False(t, complete)
+	phase, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -436,8 +436,8 @@ func TestActivateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	complete, err := h.ActivateTokenPool(context.Background(), pool)
-	assert.False(t, complete)
+	phase, err := h.ActivateTokenPool(context.Background(), pool)
+	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
 }
 
@@ -456,8 +456,8 @@ func TestActivateTokenPoolError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	complete, err := h.ActivateTokenPool(context.Background(), pool)
-	assert.False(t, complete)
+	phase, err := h.ActivateTokenPool(context.Background(), pool)
+	assert.Equal(t, core.OpPhaseInitializing, phase)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -505,8 +505,8 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event == nil
 	})).Return(nil)
 
-	complete, err := h.ActivateTokenPool(context.Background(), pool)
-	assert.True(t, complete)
+	phase, err := h.ActivateTokenPool(context.Background(), pool)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.NoError(t, err)
 }
 
@@ -550,8 +550,8 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil
 	})).Return(nil)
 
-	complete, err := h.ActivateTokenPool(context.Background(), pool)
-	assert.False(t, complete)
+	phase, err := h.ActivateTokenPool(context.Background(), pool)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -586,8 +586,8 @@ func TestActivateTokenPoolNoContent(t *testing.T) {
 			return res, nil
 		})
 
-	complete, err := h.ActivateTokenPool(context.Background(), pool)
-	assert.True(t, complete)
+	phase, err := h.ActivateTokenPool(context.Background(), pool)
+	assert.Equal(t, core.OpPhaseComplete, phase)
 	assert.NoError(t, err)
 }
 

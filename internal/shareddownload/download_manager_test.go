@@ -102,17 +102,17 @@ func TestDownloadBatchE2EOk(t *testing.T) {
 		assert.Equal(t, "ref1", op.Data.(downloadBatchData).PayloadRef)
 		return true
 	}), mock.Anything).Return(nil, nil).Run(func(args mock.Arguments) {
-		output, complete, err := dm.RunOperation(args[0].(context.Context), args[1].(*core.PreparedOperation))
+		output, phase, err := dm.RunOperation(args[0].(context.Context), args[1].(*core.PreparedOperation))
 		assert.NoError(t, err)
 		assert.Equal(t, fftypes.JSONObject{"batch": batchID}, output)
-		assert.True(t, complete)
+		assert.Equal(t, core.OpPhaseComplete, phase)
 		close(called)
 	})
 
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
 	mci.On("SharedStorageBatchDownloaded", "ref1", []byte("some batch data")).Return(batchID, nil)
 
-	err := dm.InitiateDownloadBatch(dm.ctx, txID, "ref1")
+	err := dm.InitiateDownloadBatch(dm.ctx, txID, "ref1", false)
 	assert.NoError(t, err)
 
 	<-called
@@ -169,21 +169,21 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 		assert.Equal(t, "ref1", op.Data.(downloadBlobData).PayloadRef)
 		return true
 	}), mock.Anything).Return(nil, nil).Run(func(args mock.Arguments) {
-		output, complete, err := dm.RunOperation(args[0].(context.Context), args[1].(*core.PreparedOperation))
+		output, phase, err := dm.RunOperation(args[0].(context.Context), args[1].(*core.PreparedOperation))
 		assert.NoError(t, err)
 		assert.Equal(t, fftypes.JSONObject{
 			"dxPayloadRef": "privateRef1",
 			"hash":         blobHash,
 			"size":         12345,
 		}.String(), output.String())
-		assert.True(t, complete)
+		assert.Equal(t, core.OpPhaseComplete, phase)
 		close(called)
 	}).Once()
 
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
 	mci.On("SharedStorageBlobDownloaded", *blobHash, int64(12345), "privateRef1", dataID).Return(nil)
 
-	err := dm.InitiateDownloadBlob(dm.ctx, txID, dataID, "ref1")
+	err := dm.InitiateDownloadBlob(dm.ctx, txID, dataID, "ref1", false)
 	assert.NoError(t, err)
 
 	<-called
@@ -209,7 +209,7 @@ func TestDownloadBlobInsertOpFail(t *testing.T) {
 	mom := dm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := dm.InitiateDownloadBlob(dm.ctx, txID, dataID, "ref1")
+	err := dm.InitiateDownloadBlob(dm.ctx, txID, dataID, "ref1", false)
 	assert.Regexp(t, "pop", err)
 
 	mom.AssertExpectations(t)
@@ -288,14 +288,15 @@ func TestDownloadManagerStartupRecoveryCombinations(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		return op.Type == core.OpTypeSharedStorageDownloadBatch && op.Data.(downloadBatchData).PayloadRef == "ref2"
 	}), mock.Anything).Return(nil, nil).Run(func(args mock.Arguments) {
-		output, complete, err := dm.RunOperation(args[0].(context.Context), args[1].(*core.PreparedOperation))
+		output, phase, err := dm.RunOperation(args[0].(context.Context), args[1].(*core.PreparedOperation))
 		assert.NoError(t, err)
 		assert.Equal(t, fftypes.JSONObject{
 			"batch": batchID,
 		}.String(), output.String())
-		assert.True(t, complete)
+		assert.Equal(t, core.OpPhaseComplete, phase)
 		called <- true
 	})
+	mom.On("SubmitOperationUpdate", mock.Anything).Return(nil)
 
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
 	mci.On("SharedStorageBatchDownloaded", "ref2", []byte("some batch data")).Return(batchID, nil)

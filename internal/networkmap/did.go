@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -77,6 +77,8 @@ func (nm *networkMap) generateDIDAuthentication(ctx context.Context, identity *c
 	switch verifier.Type {
 	case core.VerifierTypeEthAddress:
 		return nm.generateEthAddressVerifier(identity, verifier)
+	case core.VerifierTypeTezosAddress:
+		return nm.generateTezosAddressVerifier(identity, verifier)
 	case core.VerifierTypeMSPIdentity:
 		return nm.generateMSPVerifier(identity, verifier)
 	case core.VerifierTypeFFDXPeerID:
@@ -91,6 +93,15 @@ func (nm *networkMap) generateEthAddressVerifier(identity *core.Identity, verifi
 	return &VerificationMethod{
 		ID:                  verifier.Hash.String(),
 		Type:                "EcdsaSecp256k1VerificationKey2019",
+		Controller:          identity.DID,
+		BlockchainAccountID: verifier.Value,
+	}
+}
+
+func (nm *networkMap) generateTezosAddressVerifier(identity *core.Identity, verifier *core.Verifier) *VerificationMethod {
+	return &VerificationMethod{
+		ID:                  verifier.Hash.String(),
+		Type:                "Ed25519VerificationKey2020",
 		Controller:          identity.DID,
 		BlockchainAccountID: verifier.Value,
 	}

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -35,6 +35,8 @@ var PrivateMsgConfirmedCounterName = "ff_private_msg_confirmed_total"
 var PrivateMsgRejectedCounterName = "ff_private_msg_rejected_total"
 
 // PrivateMsgHistogramName is the prometheus metric for tracking the total number of private messages - histogram
+//
+//nolint:gosec
 var PrivateMsgHistogramName = "ff_private_msg_histogram"
 
 func InitPrivateMsgMetrics() {

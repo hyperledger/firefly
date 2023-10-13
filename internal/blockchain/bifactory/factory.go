@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/blockchain/ethereum"
 	"github.com/hyperledger/firefly/internal/blockchain/fabric"
+	"github.com/hyperledger/firefly/internal/blockchain/tezos"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -31,6 +32,7 @@ import (
 var pluginsByType = map[string]func() blockchain.Plugin{
 	(*ethereum.Ethereum)(nil).Name(): func() blockchain.Plugin { return &ethereum.Ethereum{} },
 	(*fabric.Fabric)(nil).Name():     func() blockchain.Plugin { return &fabric.Fabric{} },
+	(*tezos.Tezos)(nil).Name():       func() blockchain.Plugin { return &tezos.Tezos{} },
 }
 
 func InitConfig(config config.ArraySection) {
