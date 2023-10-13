@@ -228,7 +228,7 @@ func (e *Ethereum) StartNamespace(ctx context.Context, namespace string) (err er
 		return err
 	}
 	// Otherwise, make sure that our event stream is in place
-	stream, err := e.streams.ensureEventStream(ctx, topic)
+	stream, err := e.streams.ensureEventStream(ctx, topic, e.pluginTopic)
 	if err != nil {
 		return err
 	}

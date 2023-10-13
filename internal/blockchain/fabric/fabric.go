@@ -274,7 +274,7 @@ func (f *Fabric) StartNamespace(ctx context.Context, namespace string) (err erro
 		return err
 	}
 	// Otherwise, make sure that our event stream is in place
-	stream, err := f.streams.ensureEventStream(ctx, topic)
+	stream, err := f.streams.ensureEventStream(ctx, topic, f.pluginTopic)
 	if err != nil {
 		return err
 	}
