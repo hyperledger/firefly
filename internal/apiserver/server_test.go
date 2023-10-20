@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -43,6 +44,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger/firefly/mocks/spieventsmocks"
+	"github.com/hyperledger/firefly/mocks/websocketsmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -512,4 +514,38 @@ func TestFormDataDisabledRoute(t *testing.T) {
 func TestGetOrchestratorMissingTag(t *testing.T) {
 	_, err := getOrchestrator(context.Background(), &namespacemocks.Manager{}, "", nil)
 	assert.Regexp(t, "FF10437", err)
+}
+
+func TestGetNamespacedWebSocketHandler(t *testing.T) {
+	mgr, _, _ := newTestServer()
+	mwsns := &websocketsmocks.WebSocketsNamespaced{}
+	mwsns.On("ServeHTTPNamespaced", "ns1", mock.Anything, mock.Anything).Return()
+
+	var b bytes.Buffer
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/ws", &b)
+	req = mux.SetURLVars(req, map[string]string{"ns": "ns1"})
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	handler := getNamespacedWebSocketHandler(mwsns, mgr)
+	status, err := handler(res, req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, status)
+}
+
+func TestGetNamespacedWebSocketHandlerUnknownNamespace(t *testing.T) {
+	mgr, _, _ := newTestServer()
+	mwsns := &websocketsmocks.WebSocketsNamespaced{}
+
+	mgr.On("Orchestrator", mock.Anything, "unknown", false).Return(nil, errors.New("unknown namespace")).Maybe()
+	var b bytes.Buffer
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/unknown/ws", &b)
+	req = mux.SetURLVars(req, map[string]string{"ns": "unknown"})
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	handler := getNamespacedWebSocketHandler(mwsns, mgr)
+	status, err := handler(res, req)
+	assert.Error(t, err)
+	assert.Equal(t, 404, status)
 }
