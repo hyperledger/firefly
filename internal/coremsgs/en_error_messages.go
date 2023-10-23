@@ -300,4 +300,5 @@ var (
 	MsgTokensRESTErrConflict              = ffe("FF10459", "Conflict from tokens service: %s", 409)
 	MsgBatchWithDataNotSupported          = ffe("FF10460", "Provided subscription '%s' enables batching and withData which is not supported", 400)
 	MsgBatchDeliveryNotSupported          = ffe("FF10461", "Batch delivery not supported by transport '%s'", 400)
+	MsgWSWrongNamespace                   = ffe("FF10462", "Websocket request received on a namespace scoped connection but the provided namespace does not match")
 )

@@ -385,6 +385,9 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 	ws.(*websockets.WebSockets).SetAuthorizer(mgr)
 	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
 
+	// namespace scoped web sockets
+	r.HandleFunc("/api/v1/namespaces/{ns}/ws", hf.APIWrapper(getNamespacedWebSocketHandler(ws.(*websockets.WebSockets), mgr)))
+
 	uiPath := config.GetString(coreconfig.UIPath)
 	if uiPath != "" && config.GetBool(coreconfig.UIEnabled) {
 		r.PathPrefix(`/ui`).Handler(newStaticHandler(uiPath, "index.html", `/ui`))
@@ -392,6 +395,23 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 
 	r.NotFoundHandler = hf.APIWrapper(as.notFoundHandler)
 	return r
+}
+
+func getNamespacedWebSocketHandler(ws websockets.WebSocketsNamespaced, mgr namespace.Manager) ffapi.HandlerFunction {
+	return func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+
+		vars := mux.Vars(req)
+		namespace := vars["ns"]
+		or, err := mgr.Orchestrator(req.Context(), namespace, false)
+		if err != nil || or == nil {
+			return 404, i18n.NewError(req.Context(), coremsgs.Msg404NotFound)
+		}
+
+		ws.ServeHTTPNamespaced(namespace, res, req)
+
+		return 200, nil
+	}
+
 }
 
 func (as *apiServer) notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
