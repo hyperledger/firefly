@@ -58,3 +58,4 @@ pages:
   xdc_testnet: XDC Testnet
   zksync_testnet: zkSync Testnet
   rotate_dx_certs: Rotate Data Exchange Certificates
+  tezos_testnet: Tezos Testnet
