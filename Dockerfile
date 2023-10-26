@@ -31,7 +31,6 @@ RUN curl -fsSL "https://golang.org/dl/go$GO_VERSION.linux-$ARCH.tar.gz" | tar -C
 ENV PATH="/usr/local/go/bin:$PATH"
 WORKDIR /firefly/smart_contracts/fabric/firefly-go
 ADD smart_contracts/fabric/firefly-go .
-ENV GO111MODULE=on
 RUN GO111MODULE=on go mod vendor
 WORKDIR /tmp/fabric
 RUN wget https://github.com/hyperledger/fabric/releases/download/v2.5.4/hyperledger-fabric-linux-amd64-2.5.4.tar.gz
