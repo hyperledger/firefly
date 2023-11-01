@@ -120,6 +120,9 @@ func (am *assetManager) validateTransfer(ctx context.Context, transfer *core.Tok
 
 func (am *assetManager) MintTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
 	transfer.Type = core.TokenTransferTypeMint
+	if transfer.Namespace == "" {
+		transfer.Namespace = am.namespace
+	}
 
 	sender := am.NewTransfer(transfer)
 	if am.metrics.IsMetricsEnabled() {
@@ -135,6 +138,9 @@ func (am *assetManager) MintTokens(ctx context.Context, transfer *core.TokenTran
 
 func (am *assetManager) BurnTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
 	transfer.Type = core.TokenTransferTypeBurn
+	if transfer.Namespace == "" {
+		transfer.Namespace = am.namespace
+	}
 
 	sender := am.NewTransfer(transfer)
 	if am.metrics.IsMetricsEnabled() {
@@ -150,6 +156,9 @@ func (am *assetManager) BurnTokens(ctx context.Context, transfer *core.TokenTran
 
 func (am *assetManager) TransferTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
 	transfer.Type = core.TokenTransferTypeTransfer
+	if transfer.Namespace == "" {
+		transfer.Namespace = am.namespace
+	}
 
 	sender := am.NewTransfer(transfer)
 	if am.metrics.IsMetricsEnabled() {

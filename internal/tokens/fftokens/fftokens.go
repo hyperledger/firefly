@@ -163,6 +163,7 @@ type tokenData struct {
 }
 
 type createPool struct {
+	Namespace string             `json:"namespace"`
 	Type      core.TokenType     `json:"type"`
 	RequestID string             `json:"requestId"`
 	Signer    string             `json:"signer"`
@@ -173,12 +174,14 @@ type createPool struct {
 }
 
 type activatePool struct {
+	Namespace   string             `json:"namespace"`
 	PoolData    string             `json:"poolData"`
 	PoolLocator string             `json:"poolLocator"`
 	Config      fftypes.JSONObject `json:"config"`
 }
 
 type deactivatePool struct {
+	Namespace   string             `json:"namespace"`
 	PoolData    string             `json:"poolData"`
 	PoolLocator string             `json:"poolLocator"`
 	Config      fftypes.JSONObject `json:"config"`
@@ -195,6 +198,7 @@ type checkInterface struct {
 }
 
 type mintTokens struct {
+	Namespace   string             `json:"namespace"`
 	PoolLocator string             `json:"poolLocator"`
 	TokenIndex  string             `json:"tokenIndex,omitempty"`
 	To          string             `json:"to"`
@@ -208,6 +212,7 @@ type mintTokens struct {
 }
 
 type burnTokens struct {
+	Namespace   string             `json:"namespace"`
 	PoolLocator string             `json:"poolLocator"`
 	TokenIndex  string             `json:"tokenIndex,omitempty"`
 	From        string             `json:"from"`
@@ -221,6 +226,7 @@ type burnTokens struct {
 
 type transferTokens struct {
 	PoolLocator string             `json:"poolLocator"`
+	Namespace   string             `json:"namespace"`
 	TokenIndex  string             `json:"tokenIndex,omitempty"`
 	From        string             `json:"from"`
 	To          string             `json:"to"`
@@ -233,6 +239,7 @@ type transferTokens struct {
 }
 
 type tokenApproval struct {
+	Namespace   string             `json:"namespace"`
 	Signer      string             `json:"signer"`
 	Operator    string             `json:"operator"`
 	Approved    bool               `json:"approved"`
@@ -316,6 +323,16 @@ func (ft *FFTokens) StartNamespace(ctx context.Context, namespace string) (err e
 
 	err = ft.wsconn[namespace].Connect()
 	if err != nil {
+		return err
+	}
+	startCmd := core.WSStart{
+		WSActionBase: core.WSActionBase{
+			Type: core.WSClientActionStart,
+		},
+		Namespace: namespace,
+	}
+	b, _ := json.Marshal(startCmd)
+	if err := ft.wsconn[namespace].Send(ctx, b); err != nil {
 		return err
 	}
 
@@ -716,6 +733,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *co
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&createPool{
+			Namespace: pool.Namespace,
 			Type:      pool.Type,
 			RequestID: nsOpID,
 			Signer:    pool.Key,
@@ -746,6 +764,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool)
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
+			Namespace:   pool.Namespace,
 			PoolData:    packPoolData(pool.Namespace, pool.ID),
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
@@ -778,6 +797,7 @@ func (ft *FFTokens) DeactivateTokenPool(ctx context.Context, pool *core.TokenPoo
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&deactivatePool{
+			Namespace:   pool.Namespace,
 			PoolData:    pool.PluginData,
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
@@ -855,6 +875,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator s
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&mintTokens{
+			Namespace:   mint.Namespace,
 			PoolLocator: poolLocator,
 			TokenIndex:  mint.TokenIndex,
 			To:          mint.To,
@@ -890,6 +911,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator s
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&burnTokens{
+			Namespace:   burn.Namespace,
 			PoolLocator: poolLocator,
 			TokenIndex:  burn.TokenIndex,
 			From:        burn.From,
@@ -924,6 +946,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocat
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&transferTokens{
+			Namespace:   transfer.Namespace,
 			PoolLocator: poolLocator,
 			TokenIndex:  transfer.TokenIndex,
 			From:        transfer.From,
@@ -959,6 +982,7 @@ func (ft *FFTokens) TokensApproval(ctx context.Context, nsOpID string, poolLocat
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&tokenApproval{
+			Namespace:   approval.Namespace,
 			PoolLocator: poolLocator,
 			Signer:      approval.Key,
 			Operator:    approval.Operator,
