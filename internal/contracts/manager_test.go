@@ -3554,12 +3554,25 @@ func TestGenerateFFI(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("GenerateFFI", mock.Anything, mock.Anything).Return(&fftypes.FFI{
-		Name: "generated",
+		Name:    "generated",
+		Version: "1.0",
+		Methods: []*fftypes.FFIMethod{
+			{
+				Name: "method1",
+			},
+			{
+				Name: "method1",
+			},
+		},
 	}, nil)
 	ffi, err := cm.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{})
 	assert.NoError(t, err)
 	assert.NotNil(t, ffi)
 	assert.Equal(t, "generated", ffi.Name)
+	assert.Equal(t, "method1", ffi.Methods[0].Name)
+	assert.Equal(t, "method1", ffi.Methods[0].Pathname)
+	assert.Equal(t, "method1", ffi.Methods[1].Name)
+	assert.Equal(t, "method1_1", ffi.Methods[1].Pathname)
 }
 
 type MockFFIParamValidator struct{}
