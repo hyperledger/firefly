@@ -398,6 +398,119 @@ func TestStartStopNamespace(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestStartStopNamespaceOldEventstream(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	toServer, _, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{
+			{
+				ID:   "es12345",
+				Name: "topic1",
+			},
+		}))
+	httpmock.RegisterResponder("DELETE", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
+		httpmock.NewJsonResponderOrPanic(204, ""))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, httpURL)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	err = e.StartNamespace(e.ctx, "ns1")
+	assert.NoError(t, err)
+
+	<-toServer
+
+	err = e.StopNamespace(e.ctx, "ns1")
+	assert.NoError(t, err)
+}
+
+func TestEnsureEventStreamDeleteFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpURL := "http://localhost:12345"
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{
+			{
+				ID:   "es12345",
+				Name: "topic1",
+			},
+		}))
+	httpmock.RegisterResponder("DELETE", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, "pop"))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, httpURL)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	_, err = e.streams.ensureEventStream(context.Background(), "topic1/ns1", "topic1")
+	assert.Regexp(t, "pop", err)
+}
+
+func TestDeleteStreamOKNotFound(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpURL := "http://localhost:12345"
+
+	httpmock.RegisterResponder("DELETE", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
+		httpmock.NewJsonResponderOrPanic(404, "pop"))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, httpURL)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	err = e.streams.deleteEventStream(context.Background(), "es12345", true)
+	assert.NoError(t, err)
+}
+
 func TestStartNamespaceWSCreateFail(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
