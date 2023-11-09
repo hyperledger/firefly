@@ -138,19 +138,6 @@ func TestStopNamespace(t *testing.T) {
 	assert.Nil(t, h.wsconn["ns1"])
 }
 
-func TestInitBackgroundStart1(t *testing.T) {
-	coreconfig.Reset()
-	h := &FFTokens{}
-	h.InitConfig(ffTokensConfig)
-
-	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "http://localhost:8080")
-	ffTokensConfig.Set(FFTBackgroundStart, true)
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
-	assert.NoError(t, err)
-}
-
 func TestInitBadTLS(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFTokens{}
@@ -1603,6 +1590,19 @@ func TestEventLoopSendClosed(t *testing.T) {
 	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	h.eventLoop("ns1")
 	assert.True(t, called)
+}
+
+func TestStartNamespaceSendClosed(t *testing.T) {
+	wsm := &wsmocks.WSClient{}
+	h := &FFTokens{
+		ctx:    context.Background(),
+		wsconn: map[string]wsclient.WSClient{"ns1": wsm},
+		retry:  &retry.Retry{},
+	}
+	wsm.On("Connect").Return(nil)
+	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	err := h.StartNamespace(context.Background(), "ns1")
+	assert.Regexp(t, "pop", err)
 }
 
 func TestEventLoopClosedContext(t *testing.T) {

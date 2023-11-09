@@ -1882,3 +1882,17 @@ func TestSubmitBatchPin(t *testing.T) {
 	err := tz.SubmitBatchPin(context.Background(), "", "", singer, nil, location)
 	assert.NoError(t, err)
 }
+
+func TestStartNamespace(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	err := tz.StartNamespace(context.Background(), "ns1")
+	assert.NoError(t, err)
+}
+
+func TestStopNamespace(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	err := tz.StopNamespace(context.Background(), "ns1")
+	assert.NoError(t, err)
+}

@@ -316,9 +316,11 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 }
 
 func (ft *FFTokens) StartNamespace(ctx context.Context, namespace string) (err error) {
-	ft.wsconn[namespace], err = wsclient.New(ctx, ft.wsConfig, nil, nil)
-	if err != nil {
-		return err
+	if ft.wsconn[namespace] == nil {
+		ft.wsconn[namespace], err = wsclient.New(ctx, ft.wsConfig, nil, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = ft.wsconn[namespace].Connect()
