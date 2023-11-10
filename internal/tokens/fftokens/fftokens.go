@@ -52,15 +52,16 @@ func (ie *ConflictError) IsConflictError() bool {
 }
 
 type FFTokens struct {
-	ctx            context.Context
-	cancelCtx      context.CancelFunc
-	capabilities   *tokens.Capabilities
-	callbacks      callbacks
-	configuredName string
-	client         *resty.Client
-	wsconn         map[string]wsclient.WSClient
-	wsConfig       *wsclient.WSConfig
-	retry          *retry.Retry
+	ctx             context.Context
+	cancelCtx       context.CancelFunc
+	capabilities    *tokens.Capabilities
+	callbacks       callbacks
+	configuredName  string
+	client          *resty.Client
+	wsconn          map[string]wsclient.WSClient
+	wsConfig        *wsclient.WSConfig
+	retry           *retry.Retry
+	poolsToActivate map[string][]*core.TokenPool
 }
 
 type callbacks struct {
@@ -153,6 +154,8 @@ const (
 	messageTokenBurn     msgType = "token-burn"
 	messageTokenTransfer msgType = "token-transfer"
 	messageTokenApproval msgType = "token-approval"
+	messageStarted       msgType = "started"
+	messageActivated     msgType = "activated"
 )
 
 type tokenData struct {
@@ -276,6 +279,10 @@ func (ft *FFTokens) Name() string {
 	return "fftokens"
 }
 
+func (ft *FFTokens) ConnectorName() string {
+	return ft.configuredName
+}
+
 func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name string, config config.Section) (err error) {
 	ft.ctx = log.WithLogField(ctx, "proto", "fftokens")
 	ft.cancelCtx = cancelCtx
@@ -315,13 +322,20 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 	return nil
 }
 
-func (ft *FFTokens) StartNamespace(ctx context.Context, namespace string) (err error) {
+func (ft *FFTokens) StartNamespace(ctx context.Context, namespace string, activePools []*core.TokenPool) (err error) {
 	if ft.wsconn[namespace] == nil {
 		ft.wsconn[namespace], err = wsclient.New(ctx, ft.wsConfig, nil, nil)
 		if err != nil {
 			return err
 		}
 	}
+
+	// Keep the list of pools we need to ensure are active
+	// The handleNamespaceStarted function will ensure pools are active after the namespace has finished starting
+	if ft.poolsToActivate == nil {
+		ft.poolsToActivate = make(map[string][]*core.TokenPool)
+	}
+	ft.poolsToActivate[namespace] = activePools
 
 	err = ft.wsconn[namespace].Connect()
 	if err != nil {
@@ -649,6 +663,10 @@ func (ft *FFTokens) handleMessage(ctx context.Context, namespace string, msgByte
 		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeTransfer, msg.Data)
 	case messageTokenApproval:
 		err = ft.handleTokenApproval(ctx, msg.Data)
+	case messageStarted:
+		err = ft.handleNamespaceStarted(ctx, msg.Data)
+	case messageActivated:
+		err = ft.handlePoolActivated(ctx, msg.Data)
 	default:
 		log.L(ctx).Errorf("Message unexpected: %s", msg.Event)
 		// do not set error here - we will never be able to process this message so log+swallow it.
@@ -677,6 +695,26 @@ func (ft *FFTokens) handleMessageRetry(ctx context.Context, namespace string, ms
 	return ft.retry.Do(eventCtx, "fftokens event", func(attempt int) (retry bool, err error) {
 		return ft.handleMessage(eventCtx, namespace, msgBytes) // We keep retrying on error until the context ends
 	})
+}
+
+func (ft *FFTokens) handleNamespaceStarted(ctx context.Context, data fftypes.JSONObject) error {
+	// Make sure any pools that are marked as active in our DB are indeed active
+	namespace := data.GetString("namespace")
+	log.L(ctx).Debugf("Token connector '%s' started namespace '%s'. Ensuring all token pools active.", ft.Name(), namespace)
+	for _, pool := range ft.poolsToActivate[namespace] {
+		if _, err := ft.ActivateTokenPool(ctx, pool); err != nil {
+			// Log the error and continue trying to activate pools
+			// At this point we've already started
+			log.L(ctx).Errorf("Error auto re-activating token pool '%s': %s", pool.ID, err.Error())
+		}
+		log.L(ctx).Debugf("Activated token pool '%s'", pool.ID)
+	}
+	return nil
+}
+
+func (ft *FFTokens) handlePoolActivated(ctx context.Context, data fftypes.JSONObject) error {
+	// NOOP
+	return nil
 }
 
 func (ft *FFTokens) eventLoop(namespace string) {

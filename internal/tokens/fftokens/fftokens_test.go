@@ -105,7 +105,7 @@ func TestInitBadURL(t *testing.T) {
 	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
 	assert.NoError(t, err)
 
-	err = h.StartNamespace(ctx, "ns1")
+	err = h.StartNamespace(ctx, "ns1", []*core.TokenPool{})
 	assert.Regexp(t, "FF00149", err)
 }
 
@@ -121,7 +121,7 @@ func TestStartNamespaceConnectFail(t *testing.T) {
 	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
 	assert.NoError(t, err)
 
-	err = h.StartNamespace(ctx, "ns1")
+	err = h.StartNamespace(ctx, "ns1", []*core.TokenPool{})
 	assert.Error(t, err)
 }
 
@@ -987,7 +987,7 @@ func TestIgnoredEvents(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
-	err := h.StartNamespace(context.Background(), "ns1")
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.NoError(t, err)
 
 	fromServer <- `!}`         // ignored
@@ -1012,7 +1012,7 @@ func TestReceiptEvents(t *testing.T) {
 	h, _, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
-	err := h.StartNamespace(context.Background(), "ns1")
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.NoError(t, err)
 
 	mcb := &coremocks.OperationCallbacks{}
@@ -1104,7 +1104,7 @@ func TestPoolEvents(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
-	err := h.StartNamespace(context.Background(), "ns1")
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
@@ -1225,7 +1225,7 @@ func TestTransferEvents(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
-	err := h.StartNamespace(context.Background(), "ns1")
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
@@ -1449,7 +1449,7 @@ func TestApprovalEvents(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
-	err := h.StartNamespace(context.Background(), "ns1")
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
@@ -1601,7 +1601,7 @@ func TestStartNamespaceSendClosed(t *testing.T) {
 	}
 	wsm.On("Connect").Return(nil)
 	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	err := h.StartNamespace(context.Background(), "ns1")
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.Regexp(t, "pop", err)
 }
 

@@ -542,6 +542,9 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
+		if err := or.assets.Start(ctx); err != nil {
+			return err
+		}
 	}
 
 	if or.defsender == nil {
@@ -564,13 +567,6 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	if or.blockchain() != nil {
 		err = or.blockchain().StartNamespace(ctx, or.namespace.Name)
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, t := range or.tokens() {
-		err := t.StartNamespace(ctx, or.namespace.Name)
 		if err != nil {
 			return err
 		}

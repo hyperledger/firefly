@@ -44,13 +44,16 @@ type Plugin interface {
 	SetOperationHandler(namespace string, handler core.OperationCallbacks)
 
 	// StartNamespace starts a specific namespace within the plugin
-	StartNamespace(ctx context.Context, namespace string) error
+	StartNamespace(ctx context.Context, namespace string, tokenPools []*core.TokenPool) error
 
 	// StopNamespace removes a namespace from use within the plugin
 	StopNamespace(ctx context.Context, namespace string) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
+
+	// ConnectorName returns the configured connector name (plugin instance)
+	ConnectorName() string
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
 	CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (phase core.OpPhase, err error)

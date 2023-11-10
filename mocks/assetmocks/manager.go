@@ -575,6 +575,20 @@ func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation)
 	return r0, r1, r2
 }
 
+// Start provides a mock function with given fields: ctx
+func (_m *Manager) Start(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // TokenApproval provides a mock function with given fields: ctx, approval, waitConfirm
 func (_m *Manager) TokenApproval(ctx context.Context, approval *core.TokenApprovalInput, waitConfirm bool) (*core.TokenApproval, error) {
 	ret := _m.Called(ctx, approval, waitConfirm)
