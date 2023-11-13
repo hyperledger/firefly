@@ -29,7 +29,7 @@ Smart contracts on Tezos can be programmed using familiar, developer-friendly la
 
 First let's look at a simple contract smart contract called `SimpleStorage`, which we will be using on a Tezos blockchain. Here we have one state variable called 'storedValue' and initialized with the value 12. During initialization the type of the variable was defined as 'int'. You can see more at [SmartPy types](https://smartpy.io/manual/syntax/integers-and-mutez). And then we added a simple test, which set the storage value to 15 and checks that the value was changed as expected.
 
-> **NOTE:** Tests are used to verify the validity of contract entrypoints and do not affect the state of the contract during deployment.
+> **NOTE:** Smart contract's tests (marked with `@sp.add_test` annotation) are used to verify the validity of contract entrypoints and do not affect the state of the contract during deployment.
 
 Here is the source for this contract:
 
@@ -475,7 +475,7 @@ Now that we've got everything set up, it's time to use our smart contract! We're
 }
 ```
 
-> **NOTE**: The `key` field is the Tezos account address, which will be used for signing our transactions.
+> **NOTE**: The `key` field (optional) is the tezos account's address, which is used to sign blockchain transactions.\
 See more at [transaction signing service set up](../chains/tezos_testnet.md#signatory).
 
 ### Response
