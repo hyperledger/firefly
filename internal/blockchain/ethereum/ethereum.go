@@ -454,6 +454,7 @@ func (e *Ethereum) eventLoop(namespace string) {
 	defer close(e.closed[namespace])
 	l := log.L(e.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(e.ctx, l)
+	log.L(ctx).Debugf("Starting event loop for namespace '%s'", namespace)
 	for {
 		select {
 		case <-ctx.Done():

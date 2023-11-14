@@ -1857,3 +1857,43 @@ func TestErrorWrappingBodyErr(t *testing.T) {
 	assert.True(t, ok)
 	assert.True(t, errInterface.IsConflictError())
 }
+
+func TestHandleNamespaceStartedEnsureActive(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+	h.poolsToActivate = map[string][]*core.TokenPool{
+		"ns1": {{Active: true}},
+	}
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
+
+	_, err := h.handleMessage(context.Background(), "ns1", []byte(`{"event":"started","data":{"namespace": "ns1"}}`))
+	assert.NoError(t, err)
+}
+
+func TestHandleNamespaceStartedEnsureActiveError(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+	h.poolsToActivate = map[string][]*core.TokenPool{
+		"ns1": {{Active: true}},
+	}
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
+
+	_, err := h.handleMessage(context.Background(), "ns1", []byte(`{"event":"started","data":{"namespace": "ns1"}}`))
+	assert.NoError(t, err)
+}
+
+func TestHandlePoolActivated(t *testing.T) {
+	h, _, _, _, done := newTestFFTokens(t)
+	defer done()
+	_, err := h.handleMessage(context.Background(), "ns1", []byte(`{"event":"activated","dat":{"namespace": "ns1"}}`))
+	assert.NoError(t, err)
+}
+
+func TestConnectorName(t *testing.T) {
+	h := &FFTokens{
+		configuredName: "bob",
+	}
+	assert.Equal(t, h.ConnectorName(), "bob")
+}

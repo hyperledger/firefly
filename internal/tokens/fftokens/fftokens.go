@@ -666,7 +666,7 @@ func (ft *FFTokens) handleMessage(ctx context.Context, namespace string, msgByte
 	case messageStarted:
 		err = ft.handleNamespaceStarted(ctx, msg.Data)
 	case messageActivated:
-		err = ft.handlePoolActivated(ctx, msg.Data)
+		err = ft.handleTokenPoolActivated(ctx, msg.Data)
 	default:
 		log.L(ctx).Errorf("Message unexpected: %s", msg.Event)
 		// do not set error here - we will never be able to process this message so log+swallow it.
@@ -702,17 +702,19 @@ func (ft *FFTokens) handleNamespaceStarted(ctx context.Context, data fftypes.JSO
 	namespace := data.GetString("namespace")
 	log.L(ctx).Debugf("Token connector '%s' started namespace '%s'. Ensuring all token pools active.", ft.Name(), namespace)
 	for _, pool := range ft.poolsToActivate[namespace] {
-		if _, err := ft.ActivateTokenPool(ctx, pool); err != nil {
+		if _, err := ft.EnsureTokenPoolActive(ctx, pool); err == nil {
+			log.L(ctx).Debugf("Ensured token pool active '%s'", pool.ID)
+		} else {
 			// Log the error and continue trying to activate pools
 			// At this point we've already started
-			log.L(ctx).Errorf("Error auto re-activating token pool '%s': %s", pool.ID, err.Error())
+			log.L(ctx).Errorf("Error ensuring token pool active '%s': %s", pool.ID, err.Error())
 		}
-		log.L(ctx).Debugf("Activated token pool '%s'", pool.ID)
+
 	}
 	return nil
 }
 
-func (ft *FFTokens) handlePoolActivated(ctx context.Context, data fftypes.JSONObject) error {
+func (ft *FFTokens) handleTokenPoolActivated(ctx context.Context, data fftypes.JSONObject) error {
 	// NOOP
 	return nil
 }
@@ -800,9 +802,9 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *co
 	return core.OpPhasePending, nil
 }
 
-func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (phase core.OpPhase, err error) {
+func (ft *FFTokens) EnsureTokenPoolActive(ctx context.Context, pool *core.TokenPool) (res *resty.Response, err error) {
 	var errRes tokenError
-	res, err := ft.client.R().SetContext(ctx).
+	res, err = ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
 			Namespace:   pool.Namespace,
 			PoolData:    packPoolData(pool.Namespace, pool.ID),
@@ -812,7 +814,15 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool)
 		SetError(&errRes).
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {
-		return core.OpPhaseInitializing, wrapError(ctx, &errRes, res, err)
+		return res, wrapError(ctx, &errRes, res, err)
+	}
+	return res, nil
+}
+
+func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (phase core.OpPhase, err error) {
+	res, err := ft.EnsureTokenPoolActive(ctx, pool)
+	if err != nil || !res.IsSuccess() {
+		return core.OpPhaseInitializing, err
 	}
 	if res.StatusCode() == 200 {
 		// HTTP 200: Activation was successful, and pool details are in response body
