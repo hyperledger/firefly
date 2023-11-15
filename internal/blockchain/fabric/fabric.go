@@ -288,7 +288,7 @@ func (f *Fabric) StartNamespace(ctx context.Context, namespace string) (err erro
 
 	f.closed[namespace] = make(chan struct{})
 
-	go f.eventLoop(namespace)
+	go f.eventLoop(namespace, f.wsconn[namespace], f.closed[namespace])
 
 	return nil
 }
@@ -433,7 +433,11 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Nam
 		fabricOnChainLocation.Chaincode = ""
 	}
 
-	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, f.streamID[namespace.Name], batchPinEvent)
+	streamID, ok := f.streamID[namespace.Name]
+	if !ok {
+		return "", i18n.NewError(ctx, coremsgs.MsgInternalServerError, "eventstream ID not found")
+	}
+	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, streamID, batchPinEvent)
 	if err != nil {
 		return "", err
 	}
@@ -496,13 +500,13 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 	return f.callbacks.DispatchBlockchainEvents(ctx, events)
 }
 
-func (f *Fabric) eventLoop(namespace string) {
+func (f *Fabric) eventLoop(namespace string, wsconn wsclient.WSClient, closed chan struct{}) {
 	topic := f.getTopic(namespace)
-	wsconn := f.wsconn[namespace]
 	defer wsconn.Close()
-	defer close(f.closed[namespace])
+	defer close(closed)
 	l := log.L(f.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(f.ctx, l)
+	log.L(ctx).Debugf("Starting event loop for namespace '%s'", namespace)
 	for {
 		select {
 		case <-ctx.Done():

@@ -553,8 +553,59 @@ func TestAddFireflySubscriptionGlobal(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	e.streamID["ns1"] = "es12345"
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
+}
+
+func TestAddFireflySubscriptionEventstreamFail(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "firefly", body["channel"])
+			assert.Equal(t, nil, body["chaincode"])
+			return httpmock.NewJsonResponderOrPanic(200, body)(req)
+		})
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"channel":   "firefly",
+		"chaincode": "simplestorage",
+	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+		Options:    fftypes.JSONAnyPtr(`{"customPinSupport":true}`),
+	}
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
+	assert.NoError(t, err)
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	assert.Regexp(t, "FF10462", err)
 }
 
 func TestAddFireflySubscriptionBadOptions(t *testing.T) {
@@ -594,6 +645,7 @@ func TestAddFireflySubscriptionBadOptions(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	e.streamID["ns1"] = "es12345"
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "pop", err)
 }
@@ -634,6 +686,7 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	e.streamID["ns1"] = "es12345"
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "pop", err)
 }
@@ -1037,6 +1090,7 @@ func TestSubQueryCreateError(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	e.streamID["ns1"] = "es12345"
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10284.*pop", err)
 
@@ -1084,6 +1138,7 @@ func TestSubQueryCreate(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	e.streamID["ns1"] = "es12345"
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
@@ -1634,7 +1689,7 @@ func TestEventLoopContextCancelled(t *testing.T) {
 	wsm.On("Receive").Return(r)
 	wsm.On("Close").Return()
 	e.closed["ns1"] = make(chan struct{})
-	e.eventLoop("ns1") // we're simply looking for it exiting
+	e.eventLoop("ns1", wsm, e.closed["ns1"]) // we're simply looking for it exiting
 }
 
 func TestEventLoopReceiveClosed(t *testing.T) {
@@ -1647,7 +1702,7 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Close").Return()
 	e.closed["ns1"] = make(chan struct{})
-	e.eventLoop("ns1") // we're simply looking for it exiting
+	e.eventLoop("ns1", wsm, e.closed["ns1"]) // we're simply looking for it exiting
 }
 
 func TestEventLoopSendClosed(t *testing.T) {
@@ -1664,7 +1719,7 @@ func TestEventLoopSendClosed(t *testing.T) {
 		close(r)
 	})
 	e.closed["ns1"] = make(chan struct{})
-	e.eventLoop("ns1") // we're simply looking for it exiting
+	e.eventLoop("ns1", wsm, e.closed["ns1"]) // we're simply looking for it exiting
 	wsm.AssertExpectations(t)
 }
 
@@ -1706,7 +1761,7 @@ func TestEventLoopUnexpectedMessage(t *testing.T) {
 		close(done)
 	}
 
-	go e.eventLoop("ns1")
+	go e.eventLoop("ns1", wsm, e.closed["ns1"])
 	r <- []byte(`!badjson`)        // ignored bad json
 	r <- []byte(`"not an object"`) // ignored wrong type
 	r <- data

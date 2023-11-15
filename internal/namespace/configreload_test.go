@@ -808,7 +808,6 @@ func mockPurge(nmm *nmMocks, nsName string) {
 	nmm.mdi.On("SetHandler", nsName, matchNil).Return()
 	nmm.mbi.On("SetHandler", nsName, matchNil).Return()
 	nmm.mbi.On("SetOperationHandler", nsName, matchNil).Return()
-	nmm.mbi.On("StopNamespace", mock.Anything, mock.Anything).Return(nil)
 	nmm.mps.On("SetHandler", nsName, matchNil).Return().Maybe()
 	nmm.mps.On("SetOperationHandler", nsName, matchNil).Return().Maybe()
 	nmm.mdx.On("SetHandler", nsName, mock.Anything, matchNil).Return().Maybe()
@@ -817,7 +816,6 @@ func mockPurge(nmm *nmMocks, nsName string) {
 		mti.On("SetHandler", nsName, matchNil).Return().Maybe()
 		mti.On("SetOperationHandler", nsName, matchNil).Return().Maybe()
 		mti.On("StartNamespace", mock.Anything, nsName).Return(nil).Maybe()
-		mti.On("StopNamespace", mock.Anything, nsName).Return(nil).Maybe()
 	}
 }
 

@@ -242,7 +242,7 @@ func (e *Ethereum) StartNamespace(ctx context.Context, namespace string) (err er
 
 	e.closed[namespace] = make(chan struct{})
 
-	go e.eventLoop(namespace)
+	go e.eventLoop(namespace, e.wsconn[namespace], e.closed[namespace])
 
 	return nil
 }
@@ -282,7 +282,12 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.N
 		return "", err
 	}
 
-	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, contract.FirstEvent, e.streamID[namespace.Name], batchPinEventABI)
+	streamID, ok := e.streamID[namespace.Name]
+	if !ok {
+		return "", i18n.NewError(ctx, coremsgs.MsgInternalServerError, "eventstream ID not found")
+	}
+	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, contract.FirstEvent, streamID, batchPinEventABI)
+
 	if err != nil {
 		return "", err
 	}
@@ -447,11 +452,10 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, batchID int64, messag
 	return e.callbacks.DispatchBlockchainEvents(ctx, events)
 }
 
-func (e *Ethereum) eventLoop(namespace string) {
+func (e *Ethereum) eventLoop(namespace string, wsconn wsclient.WSClient, closed chan struct{}) {
 	topic := e.getTopic(namespace)
-	wsconn := e.wsconn[namespace]
 	defer wsconn.Close()
-	defer close(e.closed[namespace])
+	defer close(closed)
 	l := log.L(e.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(e.ctx, l)
 	log.L(ctx).Debugf("Starting event loop for namespace '%s'", namespace)

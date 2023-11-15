@@ -1746,7 +1746,7 @@ func TestEventLoopContextCancelled(t *testing.T) {
 	wsm.On("Receive").Return(r)
 	wsm.On("Close").Return()
 	e.closed["ns1"] = make(chan struct{})
-	e.eventLoop("ns1") // we're simply looking for it exiting
+	e.eventLoop("ns1", wsm, e.closed["ns1"]) // we're simply looking for it exiting
 	wsm.AssertExpectations(t)
 }
 
@@ -1760,7 +1760,7 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Close").Return()
 	e.closed["ns1"] = make(chan struct{})
-	e.eventLoop("ns1") // we're simply looking for it exiting
+	e.eventLoop("ns1", wsm, e.closed["ns1"]) // we're simply looking for it exiting
 	wsm.AssertExpectations(t)
 }
 
@@ -1778,7 +1778,7 @@ func TestEventLoopSendClosed(t *testing.T) {
 	}).Return(fmt.Errorf("pop"))
 	wsm.On("Close").Return()
 	e.closed["ns1"] = make(chan struct{})
-	e.eventLoop("ns1") // we're simply looking for it exiting
+	e.eventLoop("ns1", wsm, e.closed["ns1"]) // we're simply looking for it exiting
 	wsm.AssertExpectations(t)
 }
 
@@ -1959,7 +1959,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 		close(done)
 	}
 
-	go e.eventLoop("ns1")
+	go e.eventLoop("ns1", wsm, e.closed["ns1"])
 	r <- []byte(`!badjson`)        // ignored bad json
 	r <- []byte(`"not an object"`) // ignored wrong type
 	r <- data.Bytes()
@@ -3984,6 +3984,7 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 		FirstEvent: "newest",
 	}
 
+	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	subID, err := e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
@@ -4031,10 +4032,54 @@ func TestAddFireflySubscriptionV1(t *testing.T) {
 		FirstEvent: "newest",
 	}
 
+	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 	assert.NotNil(t, e.subs.GetSubscription("sub1"))
+}
+
+func TestAddFireflySubscriptionEventstreamFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sub1",
+		}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
+
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	// assert.NoError(t, err)
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+	}
+
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	assert.Regexp(t, "FF10462", err)
 }
 
 func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
@@ -4073,6 +4118,7 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 		FirstEvent: "oldest",
 	}
 
+	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10111", err)
@@ -4156,6 +4202,7 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 		FirstEvent: "oldest",
 	}
 
+	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10111", err)

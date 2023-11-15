@@ -249,16 +249,6 @@ func (or *orchestrator) Init() (err error) {
 func Purge(ctx context.Context, ns *core.Namespace, plugins *Plugins, dxNodeName string) {
 	// Clear all handlers on all plugins, as this namespace is never coming back
 	setHandlers(ctx, plugins, ns, dxNodeName, nil, nil)
-	err := plugins.Blockchain.Plugin.StopNamespace(ctx, ns.Name)
-	if err != nil {
-		log.L(ctx).Errorf("Error purging namespace '%s' from blockchain plugin '%s': %s", ns.Name, plugins.Blockchain.Name, err.Error())
-	}
-	for _, t := range plugins.Tokens {
-		err := t.Plugin.StopNamespace(ctx, ns.Name)
-		if err != nil {
-			log.L(ctx).Errorf("Error purging namespace '%s' from tokens plugin '%s': %s", ns.Name, t.Name, err.Error())
-		}
-	}
 }
 
 func (or *orchestrator) database() database.Plugin {
@@ -313,6 +303,16 @@ func (or *orchestrator) Start() (err error) {
 func (or *orchestrator) WaitStop() {
 	if !or.started {
 		return
+	}
+	err := or.plugins.Blockchain.Plugin.StopNamespace(or.ctx, or.namespace.Name)
+	if err != nil {
+		log.L(or.ctx).Errorf("Error purging namespace '%s' from blockchain plugin '%s': %s", or.namespace.Name, or.plugins.Blockchain.Name, err.Error())
+	}
+	for _, t := range or.plugins.Tokens {
+		err := t.Plugin.StopNamespace(or.ctx, or.namespace.Name)
+		if err != nil {
+			log.L(or.ctx).Errorf("Error purging namespace '%s' from tokens plugin '%s': %s", or.namespace.Name, t.Name, err.Error())
+		}
 	}
 	if or.batch != nil {
 		or.batch.WaitStop()
