@@ -358,7 +358,7 @@
 <p>First let’s look at a simple contract smart contract called <code class="language-plaintext highlighter-rouge">SimpleStorage</code>, which we will be using on a Tezos blockchain. Here we have one state variable called ‘storedValue’ and initialized with the value 12. During initialization the type of the variable was defined as ‘int’. You can see more at <a href="https://smartpy.io/manual/syntax/integers-and-mutez">SmartPy types</a>. And then we added a simple test, which set the storage value to 15 and checks that the value was changed as expected.</p>
 
 <blockquote>
-  <p><strong>NOTE:</strong> Tests are used to verify the validity of contract entrypoints and do not affect the state of the contract during deployment.</p>
+  <p><strong>NOTE:</strong> Smart contract’s tests (marked with <code class="language-plaintext highlighter-rouge">@sp.add_test</code> annotation) are used to verify the validity of contract entrypoints and do not affect the state of the contract during deployment.</p>
 </blockquote>
 
 <p>Here is the source for this contract:</p>
@@ -872,7 +872,7 @@ This language is very efficient but also a bit tricky and challenging for learni
 </span></code></pre></div></div>
 
 <blockquote>
-  <p><strong>NOTE</strong>: The <code class="language-plaintext highlighter-rouge">key</code> field is the Tezos account address, which will be used for signing our transactions.
+  <p><strong>NOTE</strong>: The <code class="language-plaintext highlighter-rouge">key</code> field (optional) is the tezos account’s address, which is used to sign blockchain transactions.<br />
 See more at <a href="/firefly/head/tutorials/chains/tezos_testnet.html#signatory">transaction signing service set up</a>.</p>
 </blockquote>
       <h3 id="response-2">
