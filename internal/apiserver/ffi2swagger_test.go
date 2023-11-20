@@ -196,7 +196,7 @@ func TestFFIParamBadSchema(t *testing.T) {
 			Schema: fftypes.JSONAnyPtr(`{`),
 		},
 	}
-	_, err := contractJSONSchema(ctx, params, true)
+	_, err := contractRequestJSONSchema(ctx, params, true)
 	assert.Error(t, err)
 
 	params = &fftypes.FFIParams{
@@ -205,6 +205,56 @@ func TestFFIParamBadSchema(t *testing.T) {
 			Schema: fftypes.JSONAnyPtr(`{"type": false}`),
 		},
 	}
-	_, err = contractJSONSchema(ctx, params, true)
+	_, err = contractRequestJSONSchema(ctx, params, true)
+	assert.Error(t, err)
+}
+
+func TestUnnamedOutputs(t *testing.T) {
+	ctx := context.Background()
+	params := &fftypes.FFIParams{
+		{
+			Name:   "",
+			Schema: fftypes.JSONAnyPtr(`{}`),
+		},
+		{
+			Name:   "",
+			Schema: fftypes.JSONAnyPtr(`{}`),
+		},
+	}
+
+	expectedJSON := `{
+		"description": "A map of named outputs",
+		"properties": {
+			"output": {},
+			"output1": {}
+		},
+		"type": "object"
+	}`
+
+	ref, err := contractQueryResponseJSONSchema(ctx, params)
+	assert.NoError(t, err)
+	b, err := ref.MarshalJSON()
+	assert.JSONEq(t, expectedJSON, string(b))
+}
+
+func TestBadSchema(t *testing.T) {
+	ctx := context.Background()
+	params := &fftypes.FFIParams{
+		{
+			Name:   "",
+			Schema: fftypes.JSONAnyPtr(`{`),
+		},
+	}
+	_, err := contractQueryResponseJSONSchema(ctx, params)
+	assert.Error(t, err)
+
+	ctx = context.Background()
+	params = &fftypes.FFIParams{
+		{
+			Name:   "",
+			Schema: fftypes.JSONAnyPtr(`{"type": false}`),
+		},
+	}
+	_, err = contractQueryResponseJSONSchema(ctx, params)
 	assert.Error(t, err)
 }
