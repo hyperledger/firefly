@@ -90,11 +90,9 @@ func addFFIMethod(ctx context.Context, routes []*ffapi.Route, method *fftypes.FF
 		Path:   fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method: http.MethodPost,
 		JSONInputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
-			return contractJSONSchema(ctx, &method.Params, hasLocation)
+			return contractRequestJSONSchema(ctx, &method.Params, hasLocation)
 		},
-		JSONOutputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
-			return contractJSONSchema(ctx, &method.Returns, true)
-		},
+		JSONOutputValue:          func() interface{} { return &core.OperationWithDetail{} },
 		JSONOutputCodes:          []int{http.StatusOK},
 		PreTranslatedDescription: description,
 	})
@@ -103,10 +101,10 @@ func addFFIMethod(ctx context.Context, routes []*ffapi.Route, method *fftypes.FF
 		Path:   fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method: http.MethodPost,
 		JSONInputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
-			return contractJSONSchema(ctx, &method.Params, hasLocation)
+			return contractRequestJSONSchema(ctx, &method.Params, hasLocation)
 		},
 		JSONOutputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
-			return contractJSONSchema(ctx, &method.Returns, true)
+			return contractQueryResponseJSONSchema(ctx, &method.Returns)
 		},
 		JSONOutputCodes:          []int{http.StatusOK},
 		PreTranslatedDescription: description,
@@ -146,10 +144,10 @@ func addFFIEvent(ctx context.Context, routes []*ffapi.Route, event *fftypes.FFIE
 }
 
 /**
- * Parse the FFI and build a corresponding JSON Schema to describe the request body for "invoke".
- * Returns the JSON Schema as an `fftypes.JSONObject`.
+ * Parse the FFI and build a corresponding JSON Schema to describe the request body for "invoke" or "query" requests
+ * Returns the JSON Schema as an `fftypes.JSONObject`
  */
-func contractJSONSchema(ctx context.Context, params *fftypes.FFIParams, hasLocation bool) (*openapi3.SchemaRef, error) {
+func contractRequestJSONSchema(ctx context.Context, params *fftypes.FFIParams, hasLocation bool) (*openapi3.SchemaRef, error) {
 	paramSchema := make(fftypes.JSONObject, len(*params))
 	for _, param := range *params {
 		paramSchema[param.Name] = param.Schema
@@ -182,6 +180,40 @@ func contractJSONSchema(ctx context.Context, params *fftypes.FFIParams, hasLocat
 		"properties": properties,
 	}
 	b, err := json.Marshal(schema)
+	if err != nil {
+		return nil, err
+	}
+	s := openapi3.NewSchema()
+	err = s.UnmarshalJSON(b)
+	if err != nil {
+		return nil, err
+	}
+	return openapi3.NewSchemaRef("", s), nil
+}
+
+/**
+ * Parse the FFI and build a corresponding JSON Schema to describe the response body for "query" requests
+ * Returns the JSON Schema as an `fftypes.JSONObject`
+ */
+func contractQueryResponseJSONSchema(ctx context.Context, params *fftypes.FFIParams) (*openapi3.SchemaRef, error) {
+	paramSchema := make(fftypes.JSONObject, len(*params))
+	for i, param := range *params {
+		paramName := param.Name
+		if paramName == "" {
+			if i > 0 {
+				paramName = fmt.Sprintf("output%v", i)
+			} else {
+				paramName = "output"
+			}
+		}
+		paramSchema[paramName] = param.Schema
+	}
+	outputSchema := fftypes.JSONObject{
+		"type":        "object",
+		"description": i18n.Expand(ctx, coremsgs.ContractCallRequestOutput),
+		"properties":  paramSchema,
+	}
+	b, err := json.Marshal(outputSchema)
 	if err != nil {
 		return nil, err
 	}
