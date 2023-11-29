@@ -92,7 +92,6 @@ func addFFIMethod(ctx context.Context, routes []*ffapi.Route, method *fftypes.FF
 		JSONInputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
 			return contractRequestJSONSchema(ctx, &method.Params, hasLocation)
 		},
-		// // TODO change to operation schema
 		JSONOutputValue:          func() interface{} { return &core.OperationWithDetail{} },
 		JSONOutputCodes:          []int{http.StatusOK},
 		PreTranslatedDescription: description,
@@ -145,8 +144,8 @@ func addFFIEvent(ctx context.Context, routes []*ffapi.Route, event *fftypes.FFIE
 }
 
 /**
- * Parse the FFI and build a corresponding JSON Schema to describe the request body for "invoke" or "query".
- * Returns the JSON Schema as an `fftypes.JSONObject`.
+ * Parse the FFI and build a corresponding JSON Schema to describe the request body for "invoke" or "query" requests
+ * Returns the JSON Schema as an `fftypes.JSONObject`
  */
 func contractRequestJSONSchema(ctx context.Context, params *fftypes.FFIParams, hasLocation bool) (*openapi3.SchemaRef, error) {
 	paramSchema := make(fftypes.JSONObject, len(*params))
@@ -193,8 +192,8 @@ func contractRequestJSONSchema(ctx context.Context, params *fftypes.FFIParams, h
 }
 
 /**
- * Parse the FFI and build a corresponding JSON Schema to describe the response body for "invoke" or "query".
- * Returns the JSON Schema as an `fftypes.JSONObject`.
+ * Parse the FFI and build a corresponding JSON Schema to describe the response body for "query" requests
+ * Returns the JSON Schema as an `fftypes.JSONObject`
  */
 func contractQueryResponseJSONSchema(ctx context.Context, params *fftypes.FFIParams) (*openapi3.SchemaRef, error) {
 	paramSchema := make(fftypes.JSONObject, len(*params))
