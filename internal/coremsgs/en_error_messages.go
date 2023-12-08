@@ -245,7 +245,7 @@ var (
 	MsgDefRejectedIDMismatch              = ffe("FF10404", "Rejected %s '%s' - ID mismatch with existing record")
 	MsgDefRejectedLocationMismatch        = ffe("FF10405", "Rejected %s '%s' - location mismatch with existing record")
 	MsgDefRejectedSchemaFail              = ffe("FF10406", "Rejected %s '%s' - schema check: %s")
-	MsgDefRejectedConflict                = ffe("FF10407", "Rejected %s '%s' - conflicts with existing: %s")
+	MsgDefRejectedConflict                = ffe("FF10407", "Rejected %s '%s' - conflicts with existing: %s", 409)
 	MsgDefRejectedIdentityNotFound        = ffe("FF10408", "Rejected %s '%s' - identity not found: %s")
 	MsgDefRejectedWrongAuthor             = ffe("FF10409", "Rejected %s '%s' - wrong author: %s")
 	MsgDefRejectedHashMismatch            = ffe("FF10410", "Rejected %s '%s' - hash mismatch: %s != %s")
