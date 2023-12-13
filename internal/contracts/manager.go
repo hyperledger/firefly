@@ -995,6 +995,12 @@ func (cm *contractManager) checkParamSchema(ctx context.Context, name string, in
 
 func (cm *contractManager) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	generationRequest.Namespace = cm.namespace
+	if generationRequest.Name == "" {
+		generationRequest.Name = "generated"
+	}
+	if generationRequest.Version == "" {
+		generationRequest.Version = "0.0.1"
+	}
 	ffi, err := cm.blockchain.GenerateFFI(ctx, generationRequest)
 	if err == nil {
 		err = cm.ResolveFFI(ctx, ffi)
