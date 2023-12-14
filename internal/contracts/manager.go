@@ -19,6 +19,7 @@ package contracts
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql/driver"
 	"encoding/hex"
 	"fmt"
 	"hash"
@@ -858,10 +859,17 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 
 		// Namespace + Topic + Location + Signature must be unique
 		listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
+		// Above we only call NormalizeContractLocation if the listener is non-nil, and that means
+		// for an unset location we will have a nil value. Using an fftypes.JSONAny in a query
+		// of nil does not yield the right result, so we need to do an explicit nil query.
+		var locationLookup driver.Value = nil
+		if !listener.Location.IsNil() {
+			locationLookup = listener.Location.String()
+		}
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
 			fb.Eq("topic", listener.Topic),
-			fb.Eq("location", listener.Location.String()),
+			fb.Eq("location", locationLookup),
 			fb.Eq("signature", listener.Signature),
 		)); err != nil {
 			return err
