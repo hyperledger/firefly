@@ -788,14 +788,13 @@ func TestAddContractListenerInline(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestAddContractListenerInlineEmptyString(t *testing.T) {
+func TestAddContractListenerInlineNilLocation(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mdi := cm.database.(*databasemocks.Plugin)
 
 	sub := &core.ContractListenerInput{
 		ContractListener: core.ContractListener{
-			Location: fftypes.JSONAnyPtr("   "),
 			Event: &core.FFISerializedEvent{
 				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "changed",
@@ -812,11 +811,11 @@ func TestAddContractListenerInlineEmptyString(t *testing.T) {
 		},
 	}
 
-	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), mock.MatchedBy(func(cl *core.ContractListener) bool {
-		return cl.Location == nil // converted from empty string
+		// Normalize is not called for this case
+		return cl.Location == nil
 	})).Return(nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
