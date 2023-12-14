@@ -857,11 +857,14 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		}
 
 		// Namespace + Topic + Location + Signature must be unique
+		if len(strings.TrimSpace(listener.Location.String())) == 0 {
+			listener.Location = nil // consistently store nil
+		}
 		listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
 			fb.Eq("topic", listener.Topic),
-			fb.Eq("location", listener.Location),
+			fb.Eq("location", listener.Location), // we query nil
 			fb.Eq("signature", listener.Signature),
 		)); err != nil {
 			return err
