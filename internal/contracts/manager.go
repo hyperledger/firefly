@@ -861,7 +861,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
 			fb.Eq("topic", listener.Topic),
-			fb.Eq("location", listener.Location.String()),
+			fb.Eq("location", listener.Location),
 			fb.Eq("signature", listener.Signature),
 		)); err != nil {
 			return err
