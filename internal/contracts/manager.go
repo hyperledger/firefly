@@ -864,7 +864,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		// of nil does not yield the right result, so we need to do an explicit nil query.
 		var locationLookup driver.Value = nil
 		if !listener.Location.IsNil() {
-			locationLookup = listener.Location
+			locationLookup = listener.Location.String()
 		}
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
