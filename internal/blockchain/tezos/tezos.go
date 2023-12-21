@@ -300,8 +300,8 @@ func (t *Tezos) SubmitNetworkAction(ctx context.Context, nsOpID string, signingK
 	return nil
 }
 
-func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error {
-	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
+func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
+	return true, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
 func (t *Tezos) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
@@ -310,15 +310,15 @@ func (t *Tezos) ValidateInvokeRequest(ctx context.Context, parsedMethod interfac
 	return err
 }
 
-func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) error {
+func (t *Tezos) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) (bool, error) {
 	tezosLocation, err := t.parseContractLocation(ctx, location)
 	if err != nil {
-		return err
+		return true, err
 	}
 
 	methodName, michelsonInput, err := t.prepareRequest(ctx, parsedMethod, input)
 	if err != nil {
-		return err
+		return true, err
 	}
 
 	// TODO: add batch pin support
@@ -516,14 +516,14 @@ func (t *Tezos) recoverFFI(ctx context.Context, parsedMethod interface{}) (*ffty
 	return methodInfo.method, methodInfo.errors, nil
 }
 
-func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName, signingKey, requestID string, michelsonInput micheline.Parameters, options map[string]interface{}) error {
+func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName, signingKey, requestID string, michelsonInput micheline.Parameters, options map[string]interface{}) (submissionRejected bool, err error) {
 	if t.metrics.IsMetricsEnabled() {
 		t.metrics.BlockchainTransaction(address, methodName)
 	}
 	messageType := "SendTransaction"
 	body, err := t.buildTezosconnectRequestBody(ctx, messageType, address, methodName, signingKey, requestID, michelsonInput, options)
 	if err != nil {
-		return err
+		return true, err
 	}
 
 	var resErr common.BlockchainRESTError
@@ -533,9 +533,9 @@ func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName, s
 		SetError(&resErr).
 		Post("/")
 	if err != nil || !res.IsSuccess() {
-		return common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgTezosconnectRESTErr)
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgTezosconnectRESTErr)
 	}
-	return nil
+	return false, nil
 }
 
 func (t *Tezos) queryContractMethod(ctx context.Context, address, methodName, signingKey string, michelsonInput micheline.Parameters, options map[string]interface{}) (*resty.Response, error) {
