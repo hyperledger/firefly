@@ -598,7 +598,7 @@ func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string, 
 	return signingKeyInput, nil
 }
 
-func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (bool, error) {
+func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
 	body, err := f.buildFabconnectRequestBody(ctx, channel, chaincode, methodName, signingKey, requestID, prefixItems, input, options)
 	if err != nil {
 		return true, err
@@ -770,7 +770,7 @@ func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chainc
 	return body, nil
 }
 
-func (f *Fabric) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (bool, error) {
+func (f *Fabric) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
 	return true, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 

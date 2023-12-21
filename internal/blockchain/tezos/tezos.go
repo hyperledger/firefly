@@ -300,7 +300,7 @@ func (t *Tezos) SubmitNetworkAction(ctx context.Context, nsOpID string, signingK
 	return nil
 }
 
-func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (bool, error) {
+func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
 	return true, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
@@ -516,7 +516,7 @@ func (t *Tezos) recoverFFI(ctx context.Context, parsedMethod interface{}) (*ffty
 	return methodInfo.method, methodInfo.errors, nil
 }
 
-func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName, signingKey, requestID string, michelsonInput micheline.Parameters, options map[string]interface{}) (bool, error) {
+func (t *Tezos) invokeContractMethod(ctx context.Context, address, methodName, signingKey, requestID string, michelsonInput micheline.Parameters, options map[string]interface{}) (submissionRejected bool, err error) {
 	if t.metrics.IsMetricsEnabled() {
 		t.metrics.BlockchainTransaction(address, methodName)
 	}
