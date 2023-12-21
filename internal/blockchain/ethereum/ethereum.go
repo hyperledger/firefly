@@ -607,14 +607,14 @@ func (e *Ethereum) applyOptions(ctx context.Context, body, options map[string]in
 	return body, nil
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}, errors []*abi.Entry, options map[string]interface{}) error {
+func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (bool, error) {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainTransaction(address, abi.Name)
 	}
 	messageType := "SendTransaction"
 	body, err := e.buildEthconnectRequestBody(ctx, messageType, address, signingKey, abi, requestID, input, errors, options)
 	if err != nil {
-		return err
+		return true, err
 	}
 	var resErr common.BlockchainRESTError
 	res, err := e.client.R().
@@ -623,9 +623,9 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 		SetError(&resErr).
 		Post("/")
 	if err != nil || !res.IsSuccess() {
-		return common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
-	return nil
+	return false, nil
 }
 
 func (e *Ethereum) queryContractMethod(ctx context.Context, address, signingKey string, abi *abi.Entry, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (*resty.Response, error) {
@@ -697,7 +697,8 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace,
 	method, input := e.buildBatchPinInput(ctx, version, networkNamespace, batch)
 
 	var emptyErrors []*abi.Entry
-	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
+	_, err = e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
+	return err
 }
 
 func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
@@ -731,10 +732,11 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signi
 		}
 	}
 	var emptyErrors []*abi.Entry
-	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
+	_, err = e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
+	return err
 }
 
-func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error {
+func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (bool, error) {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainContractDeployment()
 	}
@@ -754,7 +756,7 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 	}
 	body, err := e.applyOptions(ctx, body, options)
 	if err != nil {
-		return err
+		return true, err
 	}
 
 	var resErr common.BlockchainRESTError
@@ -767,11 +769,11 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 		if strings.Contains(string(res.Body()), "FFEC100130") {
 			// This error is returned by ethconnect because it does not support deploying contracts with this syntax
 			// Return a more helpful and clear error message
-			return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
+			return true, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 		}
-		return common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
-	return nil
+	return false, nil
 }
 
 // Check if a method supports passing extra data via conformance to ERC5750.
@@ -796,14 +798,14 @@ func (e *Ethereum) ValidateInvokeRequest(ctx context.Context, parsedMethod inter
 	return err
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) error {
+func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) (bool, error) {
 	ethereumLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
-		return err
+		return true, err
 	}
 	methodInfo, orderedInput, err := e.prepareRequest(ctx, parsedMethod, input)
 	if err != nil {
-		return err
+		return true, err
 	}
 	if batch != nil {
 		err := e.checkDataSupport(ctx, methodInfo.methodABI)
@@ -815,7 +817,7 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 			}
 		}
 		if err != nil {
-			return err
+			return true, err
 		}
 	}
 	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, methodInfo.methodABI, nsOpID, orderedInput, methodInfo.errorsABI, options)

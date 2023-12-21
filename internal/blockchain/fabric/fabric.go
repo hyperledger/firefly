@@ -598,10 +598,10 @@ func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string, 
 	return signingKeyInput, nil
 }
 
-func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) error {
+func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (bool, error) {
 	body, err := f.buildFabconnectRequestBody(ctx, channel, chaincode, methodName, signingKey, requestID, prefixItems, input, options)
 	if err != nil {
-		return err
+		return true, err
 	}
 	var resErr common.BlockchainRESTError
 	res, err := f.client.R().
@@ -611,9 +611,9 @@ func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, m
 		SetError(&resErr).
 		Post("/transactions")
 	if err != nil || !res.IsSuccess() {
-		return common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgFabconnectRESTErr)
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
-	return nil
+	return false, nil
 }
 
 func (f *Fabric) queryContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (*resty.Response, error) {
@@ -696,7 +696,8 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, s
 	prefixItems, pinInput := f.buildBatchPinInput(ctx, version, networkNamespace, batch)
 
 	input, _ := jsonEncodeInput(pinInput)
-	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, prefixItems, input, nil)
+	_, err = f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, prefixItems, input, nil)
+	return err
 }
 
 func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
@@ -734,7 +735,8 @@ func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signing
 	}
 
 	input, _ := jsonEncodeInput(pinInput)
-	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, methodName, signingKey, nsOpID, prefixItems, input, nil)
+	_, err = f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, methodName, signingKey, nsOpID, prefixItems, input, nil)
+	return err
 }
 
 func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (map[string]interface{}, error) {
@@ -768,8 +770,8 @@ func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chainc
 	return body, nil
 }
 
-func (f *Fabric) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error {
-	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
+func (f *Fabric) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (bool, error) {
+	return true, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
 func (f *Fabric) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
@@ -778,16 +780,16 @@ func (f *Fabric) ValidateInvokeRequest(ctx context.Context, parsedMethod interfa
 	return err
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) error {
+func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) (bool, error) {
 
 	method, _, err := f.recoverFFI(ctx, parsedMethod)
 	if err != nil {
-		return err
+		return true, err
 	}
 
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
-		return err
+		return true, err
 	}
 
 	// Build the payload schema for the method parameters
@@ -795,7 +797,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey s
 	for i, param := range method.Params {
 		var paramSchema ffiParamSchema
 		if err := json.Unmarshal(param.Schema.Bytes(), &paramSchema); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, fmt.Sprintf("%s.schema", param.Name))
+			return true, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, fmt.Sprintf("%s.schema", param.Name))
 		}
 
 		prefixItems[i] = &PrefixItem{
