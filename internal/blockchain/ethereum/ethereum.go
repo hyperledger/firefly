@@ -607,7 +607,7 @@ func (e *Ethereum) applyOptions(ctx context.Context, body, options map[string]in
 	return body, nil
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (bool, error) {
+func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (submissionRejected bool, err error) {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainTransaction(address, abi.Name)
 	}
@@ -736,7 +736,7 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signi
 	return err
 }
 
-func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (bool, error) {
+func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainContractDeployment()
 	}
@@ -754,7 +754,7 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 	if signingKey != "" {
 		body["from"] = signingKey
 	}
-	body, err := e.applyOptions(ctx, body, options)
+	body, err = e.applyOptions(ctx, body, options)
 	if err != nil {
 		return true, err
 	}
