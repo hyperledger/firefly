@@ -131,12 +131,20 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOp
 		if err != nil {
 			return nil, core.OpPhaseInitializing, err
 		}
-		err = cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, bcParsedMethod, req.Input, req.Options, batchPin)
-		return nil, operations.ErrTernary(err, core.OpPhaseInitializing, core.OpPhasePending), err
+		errPhase := core.OpPhaseInitializing
+		submissionRejected, err := cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, bcParsedMethod, req.Input, req.Options, batchPin)
+		if submissionRejected {
+			errPhase = core.OpPhaseComplete // immediately transition to failed
+		}
+		return nil, operations.ErrTernary(err, errPhase, core.OpPhasePending), err
 	case blockchainContractDeployData:
 		req := data.Request
-		err = cm.blockchain.DeployContract(ctx, op.NamespacedIDString(), req.Key, req.Definition, req.Contract, req.Input, req.Options)
-		return nil, operations.ErrTernary(err, core.OpPhaseInitializing, core.OpPhasePending), err
+		submissionRejected, err := cm.blockchain.DeployContract(ctx, op.NamespacedIDString(), req.Key, req.Definition, req.Contract, req.Input, req.Options)
+		errPhase := core.OpPhaseInitializing
+		if submissionRejected {
+			errPhase = core.OpPhaseComplete // immediately transition to failed
+		}
+		return nil, operations.ErrTernary(err, errPhase, core.OpPhasePending), err
 	default:
 		return nil, core.OpPhaseInitializing, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
