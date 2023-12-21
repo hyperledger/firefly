@@ -87,7 +87,7 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	}), req.Errors).Return(opaqueData, nil)
 	mbi.On("InvokeContract", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
 		return loc.String() == req.Location.String()
-	}), opaqueData, req.Input, req.Options, (*blockchain.BatchPin)(nil)).Return(nil)
+	}), opaqueData, req.Input, req.Options, (*blockchain.BatchPin)(nil)).Return(false, nil)
 
 	po, err := cm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -97,6 +97,92 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 
 	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
+}
+
+func TestPrepareAndRunBlockchainInvokeRejected(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := &core.ContractCallRequest{
+		Key:      "0x123",
+		Location: fftypes.JSONAnyPtr(`{"address":"0x1111"}`),
+		Method: &fftypes.FFIMethod{
+			Name: "set",
+		},
+		Input: map[string]interface{}{
+			"value": "1",
+		},
+	}
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
+		return method.Name == req.Method.Name
+	}), req.Errors).Return(opaqueData, nil)
+	mbi.On("InvokeContract", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
+		return loc.String() == req.Location.String()
+	}), opaqueData, req.Input, req.Options, (*blockchain.BatchPin)(nil)).
+		Return(true, fmt.Errorf("rejected"))
+
+	po, err := cm.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, req, po.Data.(txcommon.BlockchainInvokeData).Request)
+
+	_, phase, err := cm.RunOperation(context.Background(), po)
+
+	assert.Equal(t, core.OpPhaseComplete, phase)
+	assert.Regexp(t, "rejected", err)
+
+	mbi.AssertExpectations(t)
+}
+
+func TestPrepareAndRunBlockchainInvokeRetryable(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	req := &core.ContractCallRequest{
+		Key:      "0x123",
+		Location: fftypes.JSONAnyPtr(`{"address":"0x1111"}`),
+		Method: &fftypes.FFIMethod{
+			Name: "set",
+		},
+		Input: map[string]interface{}{
+			"value": "1",
+		},
+	}
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
+		return method.Name == req.Method.Name
+	}), req.Errors).Return(opaqueData, nil)
+	mbi.On("InvokeContract", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
+		return loc.String() == req.Location.String()
+	}), opaqueData, req.Input, req.Options, (*blockchain.BatchPin)(nil)).
+		Return(false, fmt.Errorf("rejected"))
+
+	po, err := cm.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, req, po.Data.(txcommon.BlockchainInvokeData).Request)
+
+	_, phase, err := cm.RunOperation(context.Background(), po)
+
+	assert.Equal(t, core.OpPhaseInitializing, phase)
+	assert.Regexp(t, "rejected", err)
 
 	mbi.AssertExpectations(t)
 }
@@ -158,7 +244,7 @@ func TestPrepareAndRunBlockchainContractDeploy(t *testing.T) {
 	assert.NoError(t, err)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("DeployContract", context.Background(), "ns1:"+op.ID.String(), signingKey, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mbi.On("DeployContract", context.Background(), "ns1:"+op.ID.String(), signingKey, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(false, nil)
 
 	po, err := cm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -168,6 +254,40 @@ func TestPrepareAndRunBlockchainContractDeploy(t *testing.T) {
 
 	assert.Equal(t, core.OpPhasePending, phase)
 	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
+}
+
+func TestPrepareAndRunBlockchainContractDeployRejected(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainContractDeploy,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	signingKey := "0x2468"
+	req := &core.ContractDeployRequest{
+		Key:        signingKey,
+		Definition: fftypes.JSONAnyPtr("[]"),
+		Contract:   fftypes.JSONAnyPtr("\"0x123456\""),
+		Input:      []interface{}{"one", "two", "three"},
+	}
+	err := addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("DeployContract", context.Background(), "ns1:"+op.ID.String(), signingKey, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(true, fmt.Errorf("rejected"))
+
+	po, err := cm.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, req, po.Data.(blockchainContractDeployData).Request)
+
+	_, phase, err := cm.RunOperation(context.Background(), po)
+
+	assert.Equal(t, core.OpPhaseComplete, phase)
+	assert.Regexp(t, "rejected", err)
 
 	mbi.AssertExpectations(t)
 }
@@ -588,7 +708,7 @@ func TestRunBlockchainInvokeWithBatch(t *testing.T) {
 		assert.Equal(t, []*fftypes.Bytes32{pin}, batchPin.Contexts)
 		assert.Equal(t, "test-payload", batchPin.BatchPayloadRef)
 		return true
-	})).Return(nil)
+	})).Return(false, nil)
 
 	po := txcommon.OpBlockchainInvoke(op, req, &txcommon.BatchPinData{
 		Batch:      storedBatch,

@@ -25,6 +25,9 @@ var ffc = func(key, translation, fieldType string) i18n.ConfigMessageKey {
 	return i18n.FFC(language.AmericanEnglish, key, translation, fieldType)
 }
 
+var urlStringType = "URL " + i18n.StringType
+var addressStringType = "Address " + i18n.StringType
+
 //revive:disable
 var (
 	ConfigGlobalMigrationsAuto      = ffc("config.global.migrations.auto", "Enables automatic database migrations", i18n.BooleanType)
@@ -41,7 +44,7 @@ var (
 	ConfigSPIAddress      = ffc("config.spi.address", "The IP address on which the admin HTTP API should listen", "IP Address "+i18n.StringType)
 	ConfigSPIEnabled      = ffc("config.spi.enabled", "Enables the admin HTTP API", i18n.BooleanType)
 	ConfigSPIPort         = ffc("config.spi.port", "The port on which the admin HTTP API should listen", i18n.IntType)
-	ConfigSPIPublicURL    = ffc("config.spi.publicURL", "The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", "URL "+i18n.StringType)
+	ConfigSPIPublicURL    = ffc("config.spi.publicURL", "The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", urlStringType)
 	ConfigSPIReadTimeout  = ffc("config.spi.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigSPIWriteTimeout = ffc("config.spi.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
@@ -75,17 +78,17 @@ var (
 	ConfigBlockchainEthereumAddressResolverRetainOriginal = ffc("config.blockchain.ethereum.addressResolver.retainOriginal", "When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address", i18n.BooleanType)
 	ConfigBlockchainEthereumAddressResolverURL            = ffc("config.blockchain.ethereum.addressResolver.url", "The URL of the Address Resolver", i18n.StringType)
 	ConfigBlockchainEthereumAddressResolverURLTemplate    = ffc("config.blockchain.ethereum.addressResolver.urlTemplate", "The URL Go template string to use when calling the Address Resolver. The template input contains '.Key' and '.Intent' string variables", i18n.GoTemplateType)
-	ConfigBlockchainEthereumAddressResolverProxyURL       = ffc("config.blockchain.ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", "URL "+i18n.StringType)
+	ConfigBlockchainEthereumAddressResolverProxyURL       = ffc("config.blockchain.ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", urlStringType)
 
 	ConfigBlockchainEthereumEthconnectBatchSize    = ffc("config.blockchain.ethereum.ethconnect.batchSize", "The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
 	ConfigBlockchainEthereumEthconnectBatchTimeout = ffc("config.blockchain.ethereum.ethconnect.batchTimeout", "How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream", i18n.TimeDurationType)
-	ConfigBlockchainEthereumEthconnectInstance     = ffc("config.blockchain.ethereum.ethconnect.instance", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use namespaces.predefined[].multiparty.contract[].location.address)", "Address "+i18n.StringType)
-	ConfigBlockchainEthereumEthconnectFromBlock    = ffc("config.blockchain.ethereum.ethconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use namespaces.predefined[].multiparty.contract[].location.firstEvent)", "Address "+i18n.StringType)
+	ConfigBlockchainEthereumEthconnectInstance     = ffc("config.blockchain.ethereum.ethconnect.instance", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use namespaces.predefined[].multiparty.contract[].location.address)", addressStringType)
+	ConfigBlockchainEthereumEthconnectFromBlock    = ffc("config.blockchain.ethereum.ethconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use namespaces.predefined[].multiparty.contract[].location.firstEvent)", addressStringType)
 	ConfigBlockchainEthereumEthconnectPrefixLong   = ffc("config.blockchain.ethereum.ethconnect.prefixLong", "The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect", i18n.StringType)
 	ConfigBlockchainEthereumEthconnectPrefixShort  = ffc("config.blockchain.ethereum.ethconnect.prefixShort", "The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect", i18n.StringType)
 	ConfigBlockchainEthereumEthconnectTopic        = ffc("config.blockchain.ethereum.ethconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect", i18n.StringType)
-	ConfigBlockchainEthereumEthconnectURL          = ffc("config.blockchain.ethereum.ethconnect.url", "The URL of the Ethconnect instance", "URL "+i18n.StringType)
-	ConfigBlockchainEthereumEthconnectProxyURL     = ffc("config.blockchain.ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
+	ConfigBlockchainEthereumEthconnectURL          = ffc("config.blockchain.ethereum.ethconnect.url", "The URL of the Ethconnect instance", urlStringType)
+	ConfigBlockchainEthereumEthconnectProxyURL     = ffc("config.blockchain.ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", urlStringType)
 
 	ConfigBlockchainEthereumFFTMURL      = ffc("config.blockchain.ethereum.fftm.url", "The URL of the FireFly Transaction Manager runtime, if enabled", i18n.StringType)
 	ConfigBlockchainEthereumFFTMProxyURL = ffc("config.blockchain.ethereum.fftm.proxy.url", "Optional HTTP proxy server to use when connecting to the Transaction Manager", i18n.StringType)
@@ -98,8 +101,8 @@ var (
 	ConfigBlockchainFabricFabconnectPrefixShort  = ffc("config.blockchain.fabric.fabconnect.prefixShort", "The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect", i18n.StringType)
 	ConfigBlockchainFabricFabconnectSigner       = ffc("config.blockchain.fabric.fabconnect.signer", "The Fabric signing key to use when submitting transactions to Fabconnect", i18n.StringType)
 	ConfigBlockchainFabricFabconnectTopic        = ffc("config.blockchain.fabric.fabconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single Fabconnect", i18n.StringType)
-	ConfigBlockchainFabricFabconnectURL          = ffc("config.blockchain.fabric.fabconnect.url", "The URL of the Fabconnect instance", "URL "+i18n.StringType)
-	ConfigBlockchainFabricFabconnectProxyURL     = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
+	ConfigBlockchainFabricFabconnectURL          = ffc("config.blockchain.fabric.fabconnect.url", "The URL of the Fabconnect instance", urlStringType)
+	ConfigBlockchainFabricFabconnectProxyURL     = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", urlStringType)
 
 	ConfigCacheEnabled = ffc("config.cache.enabled", "Enables caching, defaults to true", i18n.BooleanType)
 
@@ -166,7 +169,7 @@ var (
 	ConfigPluginBlockchainEthereumAddressResolverURL            = ffc("config.plugins.blockchain[].ethereum.addressResolver.url", "The URL of the Address Resolver", i18n.StringType)
 	ConfigPluginBlockchainEthereumAddressResolverURLTemplate    = ffc("config.plugins.blockchain[].ethereum.addressResolver.urlTemplate", "The URL Go template string to use when calling the Address Resolver. The template input contains '.Key' and '.Intent' string variables.", i18n.GoTemplateType)
 
-	ConfigPluginBlockchainEthereumAddressResolverProxyURL = ffc("config.plugins.blockchain[].ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", "URL "+i18n.StringType)
+	ConfigPluginBlockchainEthereumAddressResolverProxyURL = ffc("config.plugins.blockchain[].ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", urlStringType)
 
 	ConfigPluginBlockchainEthereumEthconnectBackgroundStart             = ffc("config.plugins.blockchain[].ethereum.ethconnect.backgroundStart.enabled", "Start the Ethconnect plugin in the background and enter retry loop if failed to start", i18n.BooleanType)
 	ConfigPluginBlockchainEthereumEthconnectBackgroundStartInitialDelay = ffc("config.plugins.blockchain[].ethereum.ethconnect.backgroundStart.initialDelay", "Delay between restarts in the case where we retry to restart the ethereum plugin", i18n.TimeDurationType)
@@ -174,13 +177,13 @@ var (
 	ConfigPluginBlockchainEthereumEthconnectBackgroundStartFactor       = ffc("config.plugins.blockchain[].ethereum.ethconnect.backgroundStart.factor", "Set the factor by which the delay increases when retrying", i18n.FloatType)
 	ConfigPluginBlockchainEthereumEthconnectBatchSize                   = ffc("config.plugins.blockchain[].ethereum.ethconnect.batchSize", "The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
 	ConfigPluginBlockchainEthereumEthconnectBatchTimeout                = ffc("config.plugins.blockchain[].ethereum.ethconnect.batchTimeout", "How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream", i18n.TimeDurationType)
-	ConfigPluginBlockchainEthereumEthconnectInstance                    = ffc("config.plugins.blockchain[].ethereum.ethconnect.instance", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
-	ConfigPluginBlockchainEthereumEthconnectFromBlock                   = ffc("config.plugins.blockchain[].ethereum.ethconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
+	ConfigPluginBlockchainEthereumEthconnectInstance                    = ffc("config.plugins.blockchain[].ethereum.ethconnect.instance", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", addressStringType)
+	ConfigPluginBlockchainEthereumEthconnectFromBlock                   = ffc("config.plugins.blockchain[].ethereum.ethconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", addressStringType)
 	ConfigPluginBlockchainEthereumEthconnectPrefixLong                  = ffc("config.plugins.blockchain[].ethereum.ethconnect.prefixLong", "The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect", i18n.StringType)
 	ConfigPluginBlockchainEthereumEthconnectPrefixShort                 = ffc("config.plugins.blockchain[].ethereum.ethconnect.prefixShort", "The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect", i18n.StringType)
 	ConfigPluginBlockchainEthereumEthconnectTopic                       = ffc("config.plugins.blockchain[].ethereum.ethconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect", i18n.StringType)
-	ConfigPluginBlockchainEthereumEthconnectURL                         = ffc("config.plugins.blockchain[].ethereum.ethconnect.url", "The URL of the Ethconnect instance", "URL "+i18n.StringType)
-	ConfigPluginBlockchainEthereumEthconnectProxyURL                    = ffc("config.plugins.blockchain[].ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
+	ConfigPluginBlockchainEthereumEthconnectURL                         = ffc("config.plugins.blockchain[].ethereum.ethconnect.url", "The URL of the Ethconnect instance", urlStringType)
+	ConfigPluginBlockchainEthereumEthconnectProxyURL                    = ffc("config.plugins.blockchain[].ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", urlStringType)
 
 	ConfigPluginBlockchainEthereumFFTMURL      = ffc("config.plugins.blockchain[].ethereum.fftm.url", "The URL of the FireFly Transaction Manager runtime, if enabled", i18n.StringType)
 	ConfigPluginBlockchainEthereumFFTMProxyURL = ffc("config.plugins.blockchain[].ethereum.fftm.proxy.url", "Optional HTTP proxy server to use when connecting to the Transaction Manager", i18n.StringType)
@@ -198,13 +201,13 @@ var (
 	ConfigPluginBlockchainTezosTezosconnectBackgroundStartFactor       = ffc("config.plugins.blockchain[].tezos.tezosconnect.backgroundStart.factor", "Set the factor by which the delay increases when retrying", i18n.FloatType)
 	ConfigPluginBlockchainTezosTezosconnectBatchSize                   = ffc("config.plugins.blockchain[].tezos.tezosconnect.batchSize", "The number of events Tezosconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
 	ConfigPluginBlockchainTezosTezosconnectBatchTimeout                = ffc("config.plugins.blockchain[].tezos.tezosconnect.batchTimeout", "How long Tezosconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream", i18n.TimeDurationType)
-	ConfigPluginBlockchainTezosTezosconnectInstance                    = ffc("config.plugins.blockchain[].tezos.tezosconnect.instance", "The Tezosconnect address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
-	ConfigPluginBlockchainTezosTezosconnectFromBlock                   = ffc("config.plugins.blockchain[].tezos.tezosconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
+	ConfigPluginBlockchainTezosTezosconnectInstance                    = ffc("config.plugins.blockchain[].tezos.tezosconnect.instance", "The Tezosconnect address of the FireFly BatchPin smart contract that has been deployed to the blockchain", addressStringType)
+	ConfigPluginBlockchainTezosTezosconnectFromBlock                   = ffc("config.plugins.blockchain[].tezos.tezosconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", addressStringType)
 	ConfigPluginBlockchainTezosTezosconnectPrefixLong                  = ffc("config.plugins.blockchain[].tezos.tezosconnect.prefixLong", "The prefix that will be used for Tezosconnect specific HTTP headers when FireFly makes requests to Tezosconnect", i18n.StringType)
 	ConfigPluginBlockchainTezosTezosconnectPrefixShort                 = ffc("config.plugins.blockchain[].tezos.tezosconnect.prefixShort", "The prefix that will be used for Tezosconnect specific query parameters when FireFly makes requests to Tezosconnect", i18n.StringType)
 	ConfigPluginBlockchainTezosTezosconnectTopic                       = ffc("config.plugins.blockchain[].tezos.tezosconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single tezosconnect", i18n.StringType)
-	ConfigPluginBlockchainTezosTezosconnectURL                         = ffc("config.plugins.blockchain[].tezos.tezosconnect.url", "The URL of the Tezosconnect instance", "URL "+i18n.StringType)
-	ConfigPluginBlockchainTezosTezosconnectProxyURL                    = ffc("config.plugins.blockchain[].tezos.tezosconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Tezosconnect", "URL "+i18n.StringType)
+	ConfigPluginBlockchainTezosTezosconnectURL                         = ffc("config.plugins.blockchain[].tezos.tezosconnect.url", "The URL of the Tezosconnect instance", urlStringType)
+	ConfigPluginBlockchainTezosTezosconnectProxyURL                    = ffc("config.plugins.blockchain[].tezos.tezosconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Tezosconnect", urlStringType)
 
 	ConfigPluginBlockchainFabricFabconnectBackgroundStart             = ffc("config.plugins.blockchain[].fabric.fabconnect.backgroundStart.enabled", "Start the fabric plugin in the background and enter retry loop if failed to start", i18n.BooleanType)
 	ConfigPluginBlockchainFabricFabconnectBackgroundStartInitialDelay = ffc("config.plugins.blockchain[].fabric.fabconnect.backgroundStart.initialDelay", "Delay between restarts in the case where we retry to restart the fabric plugin", i18n.TimeDurationType)
@@ -216,8 +219,8 @@ var (
 	ConfigPluginBlockchainFabricFabconnectPrefixShort                 = ffc("config.plugins.blockchain[].fabric.fabconnect.prefixShort", "The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect", i18n.StringType)
 	ConfigPluginBlockchainFabricFabconnectSigner                      = ffc("config.plugins.blockchain[].fabric.fabconnect.signer", "The Fabric signing key to use when submitting transactions to Fabconnect", i18n.StringType)
 	ConfigPluginBlockchainFabricFabconnectTopic                       = ffc("config.plugins.blockchain[].fabric.fabconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single Fabconnect", i18n.StringType)
-	ConfigPluginBlockchainFabricFabconnectURL                         = ffc("config.plugins.blockchain[].fabric.fabconnect.url", "The URL of the Fabconnect instance", "URL "+i18n.StringType)
-	ConfigPluginBlockchainFabricFabconnectProxyURL                    = ffc("config.plugins.blockchain[].fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
+	ConfigPluginBlockchainFabricFabconnectURL                         = ffc("config.plugins.blockchain[].fabric.fabconnect.url", "The URL of the Fabconnect instance", urlStringType)
+	ConfigPluginBlockchainFabricFabconnectProxyURL                    = ffc("config.plugins.blockchain[].fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", urlStringType)
 	ConfigPluginBlockchainFabricFabconnectChaincode                   = ffc("config.plugins.blockchain[].fabric.fabconnect.chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode)", i18n.StringType)
 	ConfigPluginBlockchainFabricFabconnectChannel                     = ffc("config.plugins.blockchain[].fabric.fabconnect.channel", "The Fabric channel that FireFly will use for BatchPin transactions", i18n.StringType)
 
@@ -244,9 +247,9 @@ var (
 
 	ConfigDataexchangeFfdxInitEnabled     = ffc("config.dataexchange.ffdx.initEnabled", "Instructs FireFly to always post all current nodes to the `/init` API before connecting or reconnecting to the connector", i18n.BooleanType)
 	ConfigDataexchangeFfdxManifestEnabled = ffc("config.dataexchange.ffdx.manifestEnabled", "Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector", i18n.StringType)
-	ConfigDataexchangeFfdxURL             = ffc("config.dataexchange.ffdx.url", "The URL of the Data Exchange instance", "URL "+i18n.StringType)
+	ConfigDataexchangeFfdxURL             = ffc("config.dataexchange.ffdx.url", "The URL of the Data Exchange instance", urlStringType)
 
-	ConfigDataexchangeFfdxProxyURL = ffc("config.dataexchange.ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", "URL "+i18n.StringType)
+	ConfigDataexchangeFfdxProxyURL = ffc("config.dataexchange.ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", urlStringType)
 
 	ConfigPluginDataexchange     = ffc("config.plugins.dataexchange", "The array of configured Data Exchange plugins ", i18n.StringType)
 	ConfigPluginDataexchangeType = ffc("config.plugins.dataexchange[].type", "The Data Exchange plugin to use", i18n.StringType)
@@ -254,13 +257,13 @@ var (
 
 	ConfigPluginDataexchangeFfdxInitEnabled                 = ffc("config.plugins.dataexchange[].ffdx.initEnabled", "Instructs FireFly to always post all current nodes to the `/init` API before connecting or reconnecting to the connector", i18n.BooleanType)
 	ConfigPluginDataexchangeFfdxManifestEnabled             = ffc("config.plugins.dataexchange[].ffdx.manifestEnabled", "Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector", i18n.StringType)
-	ConfigPluginDataexchangeFfdxURL                         = ffc("config.plugins.dataexchange[].ffdx.url", "The URL of the Data Exchange instance", "URL "+i18n.StringType)
+	ConfigPluginDataexchangeFfdxURL                         = ffc("config.plugins.dataexchange[].ffdx.url", "The URL of the Data Exchange instance", urlStringType)
 	ConfigPluginDataexchangeFfdxBackgroundStart             = ffc("config.plugins.dataexchange[].ffdx.backgroundStart.enabled", "Start the data exchange plugin in the background and enter retry loop if failed to start", i18n.BooleanType)
 	ConfigPluginDataexchangeFfdxBackgroundStartInitialDelay = ffc("config.plugins.dataexchange[].ffdx.backgroundStart.initialDelay", "Delay between restarts in the case where we retry to restart the data exchange plugin", i18n.TimeDurationType)
 	ConfigPluginDataexchangeFfdxBackgroundStartMaxDelay     = ffc("config.plugins.dataexchange[].ffdx.backgroundStart.maxDelay", "Max delay between restarts in the case where we retry to restart the data exchange plugin", i18n.TimeDurationType)
 	ConfigPluginDataexchangeFfdxBackgroundStartFactor       = ffc("config.plugins.dataexchange[].ffdx.backgroundStart.factor", "Set the factor by which the delay increases when retrying", i18n.FloatType)
 
-	ConfigPluginDataexchangeFfdxProxyURL = ffc("config.plugins.dataexchange[].ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", "URL "+i18n.StringType)
+	ConfigPluginDataexchangeFfdxProxyURL = ffc("config.plugins.dataexchange[].ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", urlStringType)
 
 	ConfigDebugPort    = ffc("config.debug.port", "An HTTP port on which to enable the go debugger", i18n.IntType)
 	ConfigDebugAddress = ffc("config.debug.address", "The HTTP interface the go debugger binds to", i18n.StringType)
@@ -288,7 +291,7 @@ var (
 
 	ConfigHTTPAddress      = ffc("config.http.address", "The IP address on which the HTTP API should listen", "IP Address "+i18n.StringType)
 	ConfigHTTPPort         = ffc("config.http.port", "The port on which the HTTP API should listen", i18n.IntType)
-	ConfigHTTPPublicURL    = ffc("config.http.publicURL", "The fully qualified public URL for the API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", "URL "+i18n.StringType)
+	ConfigHTTPPublicURL    = ffc("config.http.publicURL", "The fully qualified public URL for the API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", urlStringType)
 	ConfigHTTPReadTimeout  = ffc("config.http.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigHTTPWriteTimeout = ffc("config.http.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
@@ -321,7 +324,7 @@ var (
 	ConfigMetricsEnabled      = ffc("config.metrics.enabled", "Enables the metrics API", i18n.BooleanType)
 	ConfigMetricsPath         = ffc("config.metrics.path", "The path from which to serve the Prometheus metrics", i18n.StringType)
 	ConfigMetricsPort         = ffc("config.metrics.port", "The port on which the metrics HTTP API should listen", i18n.IntType)
-	ConfigMetricsPublicURL    = ffc("config.metrics.publicURL", "The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", "URL "+i18n.StringType)
+	ConfigMetricsPublicURL    = ffc("config.metrics.publicURL", "The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", urlStringType)
 	ConfigMetricsReadTimeout  = ffc("config.metrics.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigMetricsWriteTimeout = ffc("config.metrics.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
@@ -367,33 +370,33 @@ var (
 	ConfigPrivatemessagingBatchTimeout      = ffc("config.privatemessaging.batch.timeout", "The timeout to wait for a batch to fill, before sending", i18n.TimeDurationType)
 
 	ConfigSharedstorageType                = ffc("config.sharedstorage.type", "The Shared Storage plugin to use", i18n.StringType)
-	ConfigSharedstorageIpfsAPIURL          = ffc("config.sharedstorage.ipfs.api.url", "The URL for the IPFS API", "URL "+i18n.StringType)
-	ConfigSharedstorageIpfsAPIProxyURL     = ffc("config.sharedstorage.ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", "URL "+i18n.StringType)
-	ConfigSharedstorageIpfsGatewayURL      = ffc("config.sharedstorage.ipfs.gateway.url", "The URL for the IPFS Gateway", "URL "+i18n.StringType)
-	ConfigSharedstorageIpfsGatewayProxyURL = ffc("config.sharedstorage.ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", "URL "+i18n.StringType)
+	ConfigSharedstorageIpfsAPIURL          = ffc("config.sharedstorage.ipfs.api.url", "The URL for the IPFS API", urlStringType)
+	ConfigSharedstorageIpfsAPIProxyURL     = ffc("config.sharedstorage.ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", urlStringType)
+	ConfigSharedstorageIpfsGatewayURL      = ffc("config.sharedstorage.ipfs.gateway.url", "The URL for the IPFS Gateway", urlStringType)
+	ConfigSharedstorageIpfsGatewayProxyURL = ffc("config.sharedstorage.ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", urlStringType)
 
 	ConfigPluginSharedstorage                    = ffc("config.plugins.sharedstorage", "The list of configured Shared Storage plugins", i18n.StringType)
 	ConfigPluginSharedstorageName                = ffc("config.plugins.sharedstorage[].name", "The name of the Shared Storage plugin to use", i18n.StringType)
 	ConfigPluginSharedstorageType                = ffc("config.plugins.sharedstorage[].type", "The Shared Storage plugin to use", i18n.StringType)
-	ConfigPluginSharedstorageIpfsAPIURL          = ffc("config.plugins.sharedstorage[].ipfs.api.url", "The URL for the IPFS API", "URL "+i18n.StringType)
-	ConfigPluginSharedstorageIpfsAPIProxyURL     = ffc("config.plugins.sharedstorage[].ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", "URL "+i18n.StringType)
-	ConfigPluginSharedstorageIpfsGatewayURL      = ffc("config.plugins.sharedstorage[].ipfs.gateway.url", "The URL for the IPFS Gateway", "URL "+i18n.StringType)
-	ConfigPluginSharedstorageIpfsGatewayProxyURL = ffc("config.plugins.sharedstorage[].ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", "URL "+i18n.StringType)
+	ConfigPluginSharedstorageIpfsAPIURL          = ffc("config.plugins.sharedstorage[].ipfs.api.url", "The URL for the IPFS API", urlStringType)
+	ConfigPluginSharedstorageIpfsAPIProxyURL     = ffc("config.plugins.sharedstorage[].ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", urlStringType)
+	ConfigPluginSharedstorageIpfsGatewayURL      = ffc("config.plugins.sharedstorage[].ipfs.gateway.url", "The URL for the IPFS Gateway", urlStringType)
+	ConfigPluginSharedstorageIpfsGatewayProxyURL = ffc("config.plugins.sharedstorage[].ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", urlStringType)
 
 	ConfigSubscriptionMax               = ffc("config.subscription.max", "The maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)", i18n.IntType)
 	ConfigSubscriptionDefaultsBatchSize = ffc("config.subscription.defaults.batchSize", "Default read ahead to enable for subscriptions that do not explicitly configure readahead", i18n.IntType)
 
 	ConfigTokensName     = ffc("config.tokens[].name", "A name to identify this token plugin", i18n.StringType)
 	ConfigTokensPlugin   = ffc("config.tokens[].plugin", "The type of the token plugin to use", i18n.StringType)
-	ConfigTokensURL      = ffc("config.tokens[].url", "The URL of the token connector", "URL "+i18n.StringType)
-	ConfigTokensProxyURL = ffc("config.tokens[].proxy.url", "Optional HTTP proxy server to use when connecting to the token connector", "URL "+i18n.StringType)
+	ConfigTokensURL      = ffc("config.tokens[].url", "The URL of the token connector", urlStringType)
+	ConfigTokensProxyURL = ffc("config.tokens[].proxy.url", "Optional HTTP proxy server to use when connecting to the token connector", urlStringType)
 
 	ConfigPluginTokens                            = ffc("config.plugins.tokens", "The token plugin configurations", i18n.StringType)
 	ConfigPluginTokensName                        = ffc("config.plugins.tokens[].name", "A name to identify this token plugin", i18n.StringType)
 	ConfigPluginTokensBroadcastName               = ffc("config.plugins.tokens[].broadcastName", "The name to be used in broadcast messages related to this token plugin, if it differs from the local plugin name", i18n.StringType)
 	ConfigPluginTokensType                        = ffc("config.plugins.tokens[].type", "The type of the token plugin to use", i18n.StringType)
-	ConfigPluginTokensURL                         = ffc("config.plugins.tokens[].fftokens.url", "The URL of the token connector", "URL "+i18n.StringType)
-	ConfigPluginTokensProxyURL                    = ffc("config.plugins.tokens[].fftokens.proxy.url", "Optional HTTP proxy server to use when connecting to the token connector", "URL "+i18n.StringType)
+	ConfigPluginTokensURL                         = ffc("config.plugins.tokens[].fftokens.url", "The URL of the token connector", urlStringType)
+	ConfigPluginTokensProxyURL                    = ffc("config.plugins.tokens[].fftokens.proxy.url", "Optional HTTP proxy server to use when connecting to the token connector", urlStringType)
 	ConfigPluginTokensBackgroundStart             = ffc("config.plugins.tokens[].fftokens.backgroundStart.enabled", "Start the tokens plugin in the background and enter retry loop if failed to start", i18n.BooleanType)
 	ConfigPluginTokensBackgroundStartInitialDelay = ffc("config.plugins.tokens[].fftokens.backgroundStart.initialDelay", "Delay between restarts in the case where we retry to restart the token plugin", i18n.TimeDurationType)
 	ConfigPluginTokensBackgroundStartMaxDelay     = ffc("config.plugins.tokens[].fftokens.backgroundStart.maxDelay", "Max delay between restarts in the case where we retry to restart the token plugin", i18n.TimeDurationType)

@@ -105,6 +105,12 @@ func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *c
 	}
 
 	if ou.conf.workerCount > 0 {
+		if update.Status == core.OpStatusFailed {
+			// We do a cache update pre-emptively, as for idempotency checking on an error status we want to
+			// see the update immediately - even though it's being asynchronously flushed to the storage
+			ou.manager.updateCachedOperation(id, update.Status, &update.ErrorMessage, update.Output, nil)
+		}
+
 		select {
 		case ou.pickWorker(ctx, id, update) <- update:
 		case <-ou.ctx.Done():

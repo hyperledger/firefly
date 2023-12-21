@@ -984,7 +984,7 @@ func TestDeployContractOK(t *testing.T) {
 	contractBytes, err := json.Marshal("KT123")
 	assert.NoError(t, err)
 
-	err = tz.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	_, err = tz.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
 	assert.Regexp(t, "FF10429", err)
 }
 
@@ -1030,7 +1030,7 @@ func TestInvokeContractOK(t *testing.T) {
 	parsedMethod, err := tz.ParseInterface(context.Background(), method, nil)
 	assert.NoError(t, err)
 
-	err = tz.InvokeContract(context.Background(), "opID", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = tz.InvokeContract(context.Background(), "opID", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.NoError(t, err)
 }
 
@@ -1076,7 +1076,7 @@ func TestInvokeContractInvalidOption(t *testing.T) {
 	parsedMethod, err := tz.ParseInterface(context.Background(), method, nil)
 	assert.NoError(t, err)
 
-	err = tz.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = tz.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF10398", err)
 }
 
@@ -1109,7 +1109,7 @@ func TestInvokeContractBadSchema(t *testing.T) {
 	parsedMethod, err := tz.ParseInterface(context.Background(), method, nil)
 	assert.NoError(t, err)
 
-	err = tz.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = tz.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -1137,7 +1137,7 @@ func TestInvokeContractAddressNotSet(t *testing.T) {
 	parsedMethod, err := tz.ParseInterface(context.Background(), method, nil)
 	assert.NoError(t, err)
 
-	err = tz.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = tz.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -1172,7 +1172,7 @@ func TestInvokeContractTezosconnectError(t *testing.T) {
 	parsedMethod, err := tz.ParseInterface(context.Background(), method, nil)
 	assert.NoError(t, err)
 
-	err = tz.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = tz.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF10283", err)
 }
 
@@ -1192,7 +1192,7 @@ func TestInvokeContractPrepareFail(t *testing.T) {
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 
-	err = tz.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), "wrong", params, options, nil)
+	_, err = tz.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), "wrong", params, options, nil)
 	assert.Regexp(t, "FF10457", err)
 }
 

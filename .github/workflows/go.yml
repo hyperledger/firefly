@@ -117,7 +117,7 @@ jobs:
 
           - stack-type: ethereum
             blockchain-connector: ethconnect
-            test-suite: TestEthereumGatewayE2ESuite
+            test-suite: TestEthereumGatewayLegacyEthE2ESuite
             database-type: sqlite3
             token-provider: erc1155
             multiparty-enabled: false
