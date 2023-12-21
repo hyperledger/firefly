@@ -1000,7 +1000,7 @@ func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.F
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgFFIGenerationFailed, "unable to deserialize JSON as ABI")
 	}
-	if len(*input.ABI) == 0 {
+	if input.ABI == nil || len(*input.ABI) == 0 {
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationFailed, "ABI is empty")
 	}
 	return ffi2abi.ConvertABIToFFI(ctx, generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
