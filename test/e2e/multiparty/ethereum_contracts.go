@@ -233,7 +233,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 
 	// Idempotency check
 	_, err = suite.testState.client1.InvokeContractMethod(suite.T(), invokeContractRequest, 409)
-	assert.NoError(suite.T(), err)
+	assert.Regexp(suite.T(), "FF10431", err)
 
 	match := map[string]interface{}{
 		"info": map[string]interface{}{
