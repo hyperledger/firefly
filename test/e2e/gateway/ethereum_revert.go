@@ -85,9 +85,10 @@ func (suite *EthereumRevertTestSuite) TestRevertTransitionsToFailed() {
 	}
 	locationBytes, _ := json.Marshal(location)
 	invokeContractRequest := &core.ContractCallRequest{
-		Location: fftypes.JSONAnyPtrBytes(locationBytes),
-		Method:   goBang,
-		Input:    map[string]interface{}{},
+		IdempotencyKey: core.IdempotencyKey(fftypes.NewUUID().String()),
+		Location:       fftypes.JSONAnyPtrBytes(locationBytes),
+		Method:         goBang,
+		Input:          map[string]interface{}{},
 	}
 
 	// Check we get the revert error all the way back through the API on the invoke, due to the gas estimation
