@@ -3,6 +3,7 @@ run:
   skip-dirs:
   - "mocks"
   - "ffconfig"
+  - "test/e2e"
 linters-settings:
   golint: {}
   gocritic:
