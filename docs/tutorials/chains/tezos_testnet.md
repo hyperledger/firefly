@@ -30,7 +30,7 @@ However, it is also possible to configure the transaction signing service using 
 > **NOTE**: The default option is not secure and is mainly used for development and demo purposes. Therefore, for the production, use the selected KMS.\
 The full list can be found [here](https://github.com/ecadlabs/signatory#backend-kmshsm-support-status).
 
-## Create a `tezosconnect.yml` config file
+## Create a `tezosconnect.yml` config file (optional)
 
 In order to connect to the Tezos testnet, you will need to set a few configuration options for the tezosconnect blockchain connector. Create a text file called `tezosconnect.yml` with the following contents:
 
@@ -50,15 +50,26 @@ To create a local FireFly development stack and connect it to the Tezos Ghostnet
 
 - Create a new Tezos based stack named `tezos` with `1` member
 - Disable `multiparty` mode. We are going to be using this FireFly node as a Web3 gateway, and we don't need to communicate with a consortium here
-- Merge the custom config created above with the generated `tezosconnect.yml` config file
+- Define `remote-node-url` option 
+- Merge the custom config created above with the generated `tezosconnect.yml` config file.
 
 To do this, run the following command:
 
 ```
 ff init tezos dev 1 \
     --multiparty=false \
+    --remote-node-url https://ghostnet.ecadinfra.com \
     --connector-config ~/Desktop/tezosonnect.yml
 ```
+
+`tezosconnect.yml` config file is optional, it overrides `remote-node-url` option which is required. So if it doesn't exist run the following command for stack creation:
+
+```
+ff init tezos dev 1 \
+    --multiparty=false \
+    --remote-node-url https://ghostnet.ecadinfra.com
+```
+
 
 ## Start the stack
 
