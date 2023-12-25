@@ -22,6 +22,8 @@ If you haven't set up the FireFly CLI already, please go back to the Getting Sta
 
 [← ① Install the FireFly CLI](../../gettingstarted/firefly_cli.md){: .btn .btn-purple .mb-5}
 
+> **NOTE**: If you want to run FF on docker move to [Creating a new stack](https://github.com/alex-semenyuk/firefly/edit/fix_tezos_doc/docs/tutorials/chains/tezos_testnet.md#new-stack).
+
 ## Set up the transaction signing service <a name="signatory"></a>
 
 [Signatory](https://signatory.io/) service allows to work with many different key-management systems.\
@@ -30,7 +32,7 @@ However, it is also possible to configure the transaction signing service using 
 > **NOTE**: The default option is not secure and is mainly used for development and demo purposes. Therefore, for the production, use the selected KMS.\
 The full list can be found [here](https://github.com/ecadlabs/signatory#backend-kmshsm-support-status).
 
-## Create a `tezosconnect.yml` config file (optional)
+## Create a `tezosconnect.yml` config file
 
 In order to connect to the Tezos testnet, you will need to set a few configuration options for the tezosconnect blockchain connector. Create a text file called `tezosconnect.yml` with the following contents:
 
@@ -44,7 +46,7 @@ connector:
 
 For this tutorial, we will assume this file is saved at `~/Desktop/tezosconnect.yml`. If your path is different, you will need to adjust the path in the next command below.
 
-## Creating a new stack
+## Creating a new stack <a name="new-stack"></a>
 
 To create a local FireFly development stack and connect it to the Tezos Ghostnet testnet, we will use command line flags to customize the following settings:
 
@@ -62,13 +64,7 @@ ff init tezos dev 1 \
     --connector-config ~/Desktop/tezosonnect.yml
 ```
 
-`tezosconnect.yml` config file is optional, it overrides `remote-node-url` option which is required. So if it doesn't exist run the following command for stack creation:
-
-```
-ff init tezos dev 1 \
-    --multiparty=false \
-    --remote-node-url https://ghostnet.ecadinfra.com
-```
+> **NOTE**: `connector-config` option overrides the default connector config and it's optional.
 
 
 ## Start the stack
