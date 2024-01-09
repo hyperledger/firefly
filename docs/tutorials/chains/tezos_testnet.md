@@ -43,8 +43,10 @@ To do this, run the following command:
 ```
 ff init tezos dev 1 \
     --multiparty=false \
-    --remote-node-url https://ghostnet.ecadinfra.com
+    --remote-node-url <selected RPC endpoint>
 ```
+
+> **NOTE**: The public RPC nodes may have limitations or may not support all FF required RPC endpoints. Therefore it's not recommended to use ones for production and you may need to run own node or use third-party vendors.
 
 ## Start the stack
 
