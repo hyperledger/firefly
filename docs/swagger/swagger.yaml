@@ -26737,6 +26737,9 @@ paths:
                     description: The time the operation was created
                     format: date-time
                     type: string
+                  detail:
+                    description: Additional detailed information about an operation
+                      provided by the connector
                   error:
                     description: Any error reported back from the plugin for this
                       operation
@@ -35719,6 +35722,9 @@ paths:
                     description: The time the operation was created
                     format: date-time
                     type: string
+                  detail:
+                    description: Additional detailed information about an operation
+                      provided by the connector
                   error:
                     description: Any error reported back from the plugin for this
                       operation
