@@ -9,7 +9,11 @@ ARG GIT_REF
 FROM $FIREFLY_BUILDER_TAG AS firefly-builder
 ARG BUILD_VERSION
 ARG GIT_REF
-RUN apk add make gcc build-base curl git
+RUN apk add make=4.3-r0 \
+    gcc=11.2.1_git20220219-r2 \
+    build-base=0.5-r3 \
+    curl=8.5.0-r0 \
+    git=2.36.6-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
@@ -23,7 +27,7 @@ ADD --chown=1001:0 . .
 RUN make build
 
 FROM --platform=$FABRIC_BUILDER_PLATFORM $FABRIC_BUILDER_TAG AS fabric-builder
-RUN apk add libc6-compat
+RUN apk add libc6-compat=1.2.3-r3
 WORKDIR /firefly/smart_contracts/fabric/firefly-go
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
@@ -41,7 +45,6 @@ RUN ./bin/peer lifecycle chaincode package /firefly/smart_contracts/fabric/firef
 
 FROM $SOLIDITY_BUILDER_TAG AS solidity-builder
 WORKDIR /firefly/solidity_firefly
-RUN apk add jq
 RUN chgrp -R 0 /firefly \ 
     && chmod -R g+rwX /firefly
 ADD --chown=1001:0 smart_contracts/ethereum/solidity_firefly/ .
@@ -55,7 +58,11 @@ RUN mkdir -p build/contracts \
 FROM $BASE_TAG
 ARG UI_TAG
 ARG UI_RELEASE
-RUN apk add --update --no-cache sqlite postgresql-client curl jq
+RUN apk add --update --no-cache \
+    sqlite=3.40.1-r0 \
+    postgresql14-client=14.10-r0 \
+    curl=8.5.0-r0 \
+    jq=1.6-r1
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
