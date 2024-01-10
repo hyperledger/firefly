@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -138,7 +138,7 @@ func (s *SQLCommon) GetNextPins(ctx context.Context, namespace string, filter ff
 		nextpins = append(nextpins, d)
 	}
 
-	return nextpins, s.QueryRes(ctx, pinsTable, tx, fop, fi), err
+	return nextpins, s.QueryRes(ctx, pinsTable, tx, fop, nil, fi), err
 
 }
 
