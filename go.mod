@@ -19,7 +19,7 @@ require (
 	github.com/hyperledger/firefly-signer v1.1.8
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/lib/pq v1.10.9
-	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/mattn/go-sqlite3 v1.14.19
 	github.com/prometheus/client_golang v1.14.0
 	github.com/qeesung/image2ascii v1.0.1
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.1
