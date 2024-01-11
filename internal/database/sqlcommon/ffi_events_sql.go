@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -165,7 +165,7 @@ func (s *SQLCommon) GetFFIEvents(ctx context.Context, namespace string, filter f
 		events = append(events, ci)
 	}
 
-	return events, s.QueryRes(ctx, ffieventsTable, tx, fop, fi), err
+	return events, s.QueryRes(ctx, ffieventsTable, tx, fop, nil, fi), err
 
 }
 

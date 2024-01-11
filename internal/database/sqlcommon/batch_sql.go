@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -172,7 +172,7 @@ func (s *SQLCommon) GetBatches(ctx context.Context, namespace string, filter ffa
 		batches = append(batches, batch)
 	}
 
-	return batches, s.QueryRes(ctx, batchesTable, tx, fop, fi), err
+	return batches, s.QueryRes(ctx, batchesTable, tx, fop, nil, fi), err
 
 }
 

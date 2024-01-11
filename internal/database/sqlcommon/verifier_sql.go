@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -193,6 +193,6 @@ func (s *SQLCommon) GetVerifiers(ctx context.Context, namespace string, filter f
 		verifiers = append(verifiers, d)
 	}
 
-	return verifiers, s.QueryRes(ctx, verifiersTable, tx, fop, fi), err
+	return verifiers, s.QueryRes(ctx, verifiersTable, tx, fop, nil, fi), err
 
 }

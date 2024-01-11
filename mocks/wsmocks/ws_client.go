@@ -95,6 +95,11 @@ func (_m *WSClient) Send(ctx context.Context, message []byte) error {
 	return r0
 }
 
+// SetHeader provides a mock function with given fields: header, value
+func (_m *WSClient) SetHeader(header string, value string) {
+	_m.Called(header, value)
+}
+
 // SetURL provides a mock function with given fields: url
 func (_m *WSClient) SetURL(url string) {
 	_m.Called(url)

@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -228,5 +228,5 @@ func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, namespace string, f
 		events = append(events, event)
 	}
 
-	return events, s.QueryRes(ctx, blockchaineventsTable, tx, fop, fi), err
+	return events, s.QueryRes(ctx, blockchaineventsTable, tx, fop, nil, fi), err
 }

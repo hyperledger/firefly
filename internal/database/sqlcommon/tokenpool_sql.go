@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -325,7 +325,7 @@ func (s *SQLCommon) GetTokenPools(ctx context.Context, namespace string, filter 
 		pools = append(pools, d)
 	}
 
-	return pools, s.QueryRes(ctx, tokenpoolTable, tx, fop, fi), err
+	return pools, s.QueryRes(ctx, tokenpoolTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) DeleteTokenPool(ctx context.Context, namespace string, id *fftypes.UUID) error {
