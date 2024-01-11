@@ -1672,6 +1672,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -1727,6 +1733,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -1955,6 +1967,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -2341,6 +2359,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>keyFile</td>
       <td>The path to the private key file for TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
@@ -2672,6 +2696,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -3274,6 +3304,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -3329,6 +3365,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -3604,6 +3646,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -3659,6 +3707,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -3722,6 +3776,12 @@
       <td>The size in bytes of the read buffer for the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
+    </tr>
+    <tr>
+      <td>url</td>
+      <td>URL to use for WebSocket - overrides url one level up (in the HTTP config)</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>writeBufferSize</td>
@@ -3904,6 +3964,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -3959,6 +4025,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -4240,6 +4312,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -4295,6 +4373,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -4358,6 +4442,12 @@
       <td>The size in bytes of the read buffer for the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
+    </tr>
+    <tr>
+      <td>url</td>
+      <td>URL to use for WebSocket - overrides url one level up (in the HTTP config)</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>writeBufferSize</td>
@@ -4576,6 +4666,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -4631,6 +4727,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -4894,6 +4996,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -4949,6 +5057,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -5012,6 +5126,12 @@
       <td>The size in bytes of the read buffer for the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
+    </tr>
+    <tr>
+      <td>url</td>
+      <td>URL to use for WebSocket - overrides url one level up (in the HTTP config)</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>writeBufferSize</td>
@@ -5524,6 +5644,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -5579,6 +5705,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -5642,6 +5774,12 @@
       <td>The size in bytes of the read buffer for the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
+    </tr>
+    <tr>
+      <td>url</td>
+      <td>URL to use for WebSocket - overrides url one level up (in the HTTP config)</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>writeBufferSize</td>
@@ -5890,6 +6028,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -5945,6 +6089,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -6133,6 +6283,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -6188,6 +6344,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -6499,6 +6661,12 @@
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
     </tr>
     <tr>
+      <td>errorStatusCodeRegex</td>
+      <td>The regex that the error response status code must match to trigger retry</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
       <td>initWaitTime</td>
       <td>The initial retry delay</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
@@ -6554,6 +6722,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
@@ -6617,6 +6791,12 @@
       <td>The size in bytes of the read buffer for the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
+    </tr>
+    <tr>
+      <td>url</td>
+      <td>URL to use for WebSocket - overrides url one level up (in the HTTP config)</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>writeBufferSize</td>
@@ -6869,6 +7049,12 @@
       <td>Enables or disables TLS on this API</td>
       <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
       <td><code class="language-plaintext highlighter-rouge">false</code></td>
+    </tr>
+    <tr>
+      <td>insecureSkipHostVerify</td>
+      <td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>keyFile</td>
