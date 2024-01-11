@@ -1,6 +1,6 @@
 module github.com/hyperledger/firefly
 
-go 1.19
+go 1.21
 
 require (
 	blockwatch.cc/tzgo v1.17.1
