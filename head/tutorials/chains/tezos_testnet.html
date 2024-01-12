@@ -295,13 +295,13 @@
 <ol id="markdown-toc">
   <li><a href="#previous-steps-install-the-firefly-cli" id="markdown-toc-previous-steps-install-the-firefly-cli">Previous steps: Install the FireFly CLI</a></li>
   <li><a href="#set-up-the-transaction-signing-service-" id="markdown-toc-set-up-the-transaction-signing-service-">Set up the transaction signing service <a name="signatory"></a></a></li>
-  <li><a href="#create-a-tezosconnectyml-config-file" id="markdown-toc-create-a-tezosconnectyml-config-file">Create a <code class="language-plaintext highlighter-rouge">tezosconnect.yml</code> config file</a></li>
   <li><a href="#creating-a-new-stack" id="markdown-toc-creating-a-new-stack">Creating a new stack</a></li>
   <li><a href="#start-the-stack" id="markdown-toc-start-the-stack">Start the stack</a></li>
   <li><a href="#get-some-xtz" id="markdown-toc-get-some-xtz">Get some XTZ</a>    <ol>
       <li><a href="#confirm-the-transaction-on-tzstats" id="markdown-toc-confirm-the-transaction-on-tzstats">Confirm the transaction on TzStats</a></li>
     </ol>
   </li>
+  <li><a href="#use-the-public-testnet" id="markdown-toc-use-the-public-testnet">Use the public testnet</a></li>
 </ol><hr />
 
 <p>This guide will walk you through the steps to create a local FireFly development environment and connect it to the public Tezos Ghostnet testnet.</p>
@@ -333,25 +333,6 @@ However, it is also possible to configure the transaction signing service using 
   <p><strong>NOTE</strong>: The default option is not secure and is mainly used for development and demo purposes. Therefore, for the production, use the selected KMS.<br />
 The full list can be found <a href="https://github.com/ecadlabs/signatory#backend-kmshsm-support-status">here</a>.</p>
 </blockquote>
-      <h2 id="create-a-tezosconnectyml-config-file">
-        
-        
-          <a href="#create-a-tezosconnectyml-config-file" class="anchor-heading" aria-labelledby="create-a-tezosconnectyml-config-file"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Create a <code class="language-plaintext highlighter-rouge">tezosconnect.yml</code> config file
-        
-        
-      </h2>
-    
-
-<p>In order to connect to the Tezos testnet, you will need to set a few configuration options for the tezosconnect blockchain connector. Create a text file called <code class="language-plaintext highlighter-rouge">tezosconnect.yml</code> with the following contents:</p>
-
-<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">connector</span><span class="pi">:</span>
-  <span class="na">blockchain</span><span class="pi">:</span>
-    <span class="na">rpc</span><span class="pi">:</span> <span class="s">https://ghostnet.ecadinfra.com</span>
-    <span class="na">network</span><span class="pi">:</span> <span class="s">ghostnet</span>
-    <span class="na">signatory</span><span class="pi">:</span> <span class="s">http://127.0.0.1:6732</span> <span class="c1"># tx signing service address</span>
-</code></pre></div></div>
-
-<p>For this tutorial, we will assume this file is saved at <code class="language-plaintext highlighter-rouge">~/Desktop/tezosconnect.yml</code>. If your path is different, you will need to adjust the path in the next command below.</p>
       <h2 id="creating-a-new-stack">
         
         
@@ -366,15 +347,19 @@ The full list can be found <a href="https://github.com/ecadlabs/signatory#backen
 <ul>
   <li>Create a new Tezos based stack named <code class="language-plaintext highlighter-rouge">tezos</code> with <code class="language-plaintext highlighter-rouge">1</code> member</li>
   <li>Disable <code class="language-plaintext highlighter-rouge">multiparty</code> mode. We are going to be using this FireFly node as a Web3 gateway, and we don’t need to communicate with a consortium here</li>
-  <li>Merge the custom config created above with the generated <code class="language-plaintext highlighter-rouge">tezosconnect.yml</code> config file</li>
+  <li>See the list of Tezos <a href="https://tezostaquito.io/docs/rpc_nodes/">public RPC nodes</a> and select an HTTPS RPC node.</li>
 </ul>
 
 <p>To do this, run the following command:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff init tezos dev 1 \
     --multiparty=false \
-    --connector-config ~/Desktop/tezosonnect.yml
+    --remote-node-url &lt;selected RPC endpoint&gt;
 </code></pre></div></div>
+
+<blockquote>
+  <p><strong>NOTE</strong>: The public RPC nodes may have limitations or may not support all FF required RPC endpoints. Therefore it’s not recommended to use ones for production and you may need to run own node or use third-party vendors.</p>
+</blockquote>
       <h2 id="start-the-stack">
         
         
@@ -437,6 +422,16 @@ To check that, you can run:</p>
 <p>On the <strong>Transfers</strong> tab from you account page you will see the actual transfer of the XTZ from the faucet.</p>
 
 <p><img src="/firefly/head/tutorials/chains/images/tezos_explorer.png" alt="TzStats" /></p>
+      <h2 id="use-the-public-testnet">
+        
+        
+          <a href="#use-the-public-testnet" class="anchor-heading" aria-labelledby="use-the-public-testnet"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Use the public testnet
+        
+        
+      </h2>
+    
+
+<p>Now that you have everything set up, you can follow one of the other FireFly guides such as <a href="/firefly/head/tutorials/custom_contracts/tezos.html">Custom Smart Contracts</a>. For detailed instructions on deploying a custom smart contract to Tezos, please see the <a href="https://docs.tezos.com/smart-contracts/deploying">Tezos docs</a> for instructions using various tools.</p>
 
         
 

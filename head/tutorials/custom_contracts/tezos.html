@@ -324,7 +324,7 @@
           <li><a href="#response-2" id="markdown-toc-response-2">Response</a></li>
         </ol>
       </li>
-      <li><a href="#get-the-operation-result" id="markdown-toc-get-the-operation-result">Get the operation result</a>        <ol>
+      <li><a href="#query-the-current-value" id="markdown-toc-query-the-current-value">Query the current value</a>        <ol>
           <li><a href="#request-3" id="markdown-toc-request-3">Request</a></li>
           <li><a href="#response-3" id="markdown-toc-response-3">Response</a></li>
         </ol>
@@ -367,22 +367,34 @@
 
 @sp.module
 def main():
+    # Declares a new contract
     class SimpleStorage(sp.Contract):
+        # Storage. Persists in between transactions
         def __init__(self, value):
-            self.data.storedValue = value
+            self.data.x = value
 
+        # Allows the stored integer to be changed
         @sp.entrypoint
-        def replace(self, params):
-            self.data.storedValue = params.value
+        def set(self, params):
+            self.data.x = params.value
+
+        # Returns the currently stored integer
+        @sp.onchain_view()
+        def get(self):
+            return self.data.x
 
 @sp.add_test(name="SimpleStorage")
 def test():
-    c1 = main.SimpleStorage(12)
+    # Initialize the contract
+    c = main.SimpleStorage(12)
+
+    # Create a test scenario and run some test cases
     scenario = sp.test_scenario(main)
     scenario.h1("SimpleStorage")
-    scenario += c1
-    c1.replace(value=15)
-    scenario.verify(c1.data.storedValue == 15)
+    scenario += c
+    c.set(value=15)
+    scenario.verify(c.data.x == 15)
+    scenario.verify(scenario.compute(c.get()) == 15)
 </code></pre></div></div>
       <h2 id="contract-deployment">
         
@@ -408,7 +420,7 @@ def test():
 <p><img src="/firefly/head/tutorials/custom_contracts/images/tezos_contract_deployment.png" alt="ContractDeployment" />
 <img src="/firefly/head/tutorials/custom_contracts/images/tezos_contract_deployment2.png" alt="ContractDeployment2" /></p>
 
-<p>Here we can see that our new contract address is <code class="language-plaintext highlighter-rouge">KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s</code>. This is the address that we will reference in the rest of this guide.</p>
+<p>Here we can see that our new contract address is <code class="language-plaintext highlighter-rouge">KT1ED4gj2xZnp8318yxa5NpvyvW15pqe4yFg</code>. This is the address that we will reference in the rest of this guide.</p>
       <h2 id="the-firefly-interface-format">
         
         
@@ -694,7 +706,7 @@ This language is very efficient but also a bit tricky and challenging for learni
     </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
     </span><span class="nl">"methods"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
         </span><span class="p">{</span><span class="w">
-            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"replace"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
             </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
             </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
             </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
@@ -709,6 +721,13 @@ This language is very efficient but also a bit tricky and challenging for learni
                     </span><span class="p">}</span><span class="w">
                 </span><span class="p">}</span><span class="w">
             </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
             </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
         </span><span class="p">}</span><span class="w">
     </span><span class="p">],</span><span class="w">
@@ -725,34 +744,44 @@ This language is very efficient but also a bit tricky and challenging for learni
     
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
-  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c655704a-f0e2-4aa3-adbb-c7bf3280cdc2"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simplestorage"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.0.0"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"methods"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
-    </span><span class="p">{</span><span class="w">
-      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6f707105-d8b5-4808-a864-51475086608d"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c655704a-f0e2-4aa3-adbb-c7bf3280cdc2"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"replace"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"replace"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f9e34787-e634-46cd-af47-b52c537404ff"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simplestorage"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.0.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"methods"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
         </span><span class="p">{</span><span class="w">
-          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"newValue"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
-              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="w">
-            </span><span class="p">}</span><span class="w">
-          </span><span class="p">}</span><span class="w">
+            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"78f13a7f-7b85-47c3-bf51-346a9858c027"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f9e34787-e634-46cd-af47-b52c537404ff"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"newValue"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ee864e25-c3f7-42d3-aefd-a82f753e9002"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f9e34787-e634-46cd-af47-b52c537404ff"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tezos"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+            </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
         </span><span class="p">}</span><span class="w">
-      </span><span class="p">],</span><span class="w">
-      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
-    </span><span class="p">}</span><span class="w">
-  </span><span class="p">]</span><span class="w">
+    </span><span class="p">]</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
 
@@ -798,10 +827,10 @@ This language is very efficient but also a bit tricky and challenging for learni
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simple-storage"</span><span class="p">,</span><span class="w">
   </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c655704a-f0e2-4aa3-adbb-c7bf3280cdc2"</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f9e34787-e634-46cd-af47-b52c537404ff"</span><span class="w">
   </span><span class="p">},</span><span class="w">
   </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"</span><span class="w">
+    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1ED4gj2xZnp8318yxa5NpvyvW15pqe4yFg"</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
@@ -818,10 +847,10 @@ This language is very efficient but also a bit tricky and challenging for learni
   </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"af09de97-741d-4f61-8d30-4db5e7460f76"</span><span class="p">,</span><span class="w">
   </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
   </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c655704a-f0e2-4aa3-adbb-c7bf3280cdc2"</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f9e34787-e634-46cd-af47-b52c537404ff"</span><span class="w">
   </span><span class="p">},</span><span class="w">
   </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"</span><span class="w">
+    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1ED4gj2xZnp8318yxa5NpvyvW15pqe4yFg"</span><span class="w">
   </span><span class="p">},</span><span class="w">
   </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simple-storage"</span><span class="p">,</span><span class="w">
   </span><span class="nl">"urls"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
@@ -851,7 +880,7 @@ This language is very efficient but also a bit tricky and challenging for learni
       </h2>
     
 
-<p>Now that we’ve got everything set up, it’s time to use our smart contract! We’re going to make a <code class="language-plaintext highlighter-rouge">POST</code> request to the <code class="language-plaintext highlighter-rouge">invoke/replace</code> endpoint to set the integer value on-chain. Let’s set it to the value of <code class="language-plaintext highlighter-rouge">3</code> right now.</p>
+<p>Now that we’ve got everything set up, it’s time to use our smart contract! We’re going to make a <code class="language-plaintext highlighter-rouge">POST</code> request to the <code class="language-plaintext highlighter-rouge">invoke/set</code> endpoint to set the integer value on-chain. Let’s set it to the value of <code class="language-plaintext highlighter-rouge">3</code> right now.</p>
       <h3 id="request-2">
         
         
@@ -861,20 +890,14 @@ This language is very efficient but also a bit tricky and challenging for learni
       </h3>
     
 
-<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/invoke/replace</code></p>
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/invoke/set</code></p>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
     </span><span class="nl">"newValue"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="w">
-  </span><span class="p">},</span><span class="w">
-  </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tz1cuFw1E2Mn2bVS8q8d7QoCb6FXC18JivSp"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
-
-<blockquote>
-  <p><strong>NOTE</strong>: The <code class="language-plaintext highlighter-rouge">key</code> field (optional) is the tezos account’s address, which is used to sign blockchain transactions.<br />
-See more at <a href="/firefly/head/tutorials/chains/tezos_testnet.html#signatory">transaction signing service set up</a>.</p>
-</blockquote>
       <h3 id="response-2">
         
         
@@ -885,62 +908,24 @@ See more at <a href="/firefly/head/tutorials/chains/tezos_testnet.html#signatory
     
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
-  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"cb38a538-7093-4150-8a80-6097a666df82"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="s2">"5860befb-9f76-4aa0-a67c-55718b2c46d6"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"87c7ee1b-33d1-46e2-b3f5-8566c14367cf"</span><span class="p">,</span><span class="w">
   </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_invoke"</span><span class="p">,</span><span class="w">
   </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Pending"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"plugin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tezos"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-      </span><span class="nl">"newValue"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="w">
-    </span><span class="p">},</span><span class="w">
-    </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c655704a-f0e2-4aa3-adbb-c7bf3280cdc2"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tz1cuFw1E2Mn2bVS8q8d7QoCb6FXC18JivSp"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-      </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"</span><span class="w">
-    </span><span class="p">},</span><span class="w">
-    </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6f707105-d8b5-4808-a864-51475086608d"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c655704a-f0e2-4aa3-adbb-c7bf3280cdc2"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"replace"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
-        </span><span class="p">{</span><span class="w">
-          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"newValue"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
-              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="w">
-            </span><span class="p">},</span><span class="w">
-            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="w">
-          </span><span class="p">}</span><span class="w">
-        </span><span class="p">}</span><span class="w">
-      </span><span class="p">],</span><span class="w">
-      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"replace"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
-    </span><span class="p">},</span><span class="w">
-    </span><span class="nl">"methodPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"replace"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"invoke"</span><span class="w">
-  </span><span class="p">},</span><span class="w">
-  </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2023-09-27T09:12:24.033724927Z"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"updated"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2023-09-27T09:12:24.033724927Z"</span><span class="w">
+  </span><span class="s2">"..."</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
 
-<p>You’ll notice that we got an ID back with status <code class="language-plaintext highlighter-rouge">Pending</code>, and that’s expected due to the asynchronous programming model of working with custom onchain logic in FireFly. After a while, let’s see the result of our operation.</p>
-      <h2 id="get-the-operation-result">
+<p>You’ll notice that we got an ID back with status <code class="language-plaintext highlighter-rouge">Pending</code>, and that’s expected due to the asynchronous programming model of working with smart contracts in FireFly. To see what the value is now, we can query the smart contract.</p>
+      <h2 id="query-the-current-value">
         
         
-          <a href="#get-the-operation-result" class="anchor-heading" aria-labelledby="get-the-operation-result"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Get the operation result
+          <a href="#query-the-current-value" class="anchor-heading" aria-labelledby="query-the-current-value"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Query the current value
         
         
       </h2>
     
 
-<p>To see the result of the operation, call <code class="language-plaintext highlighter-rouge">/operations</code> endpoint with the operation ID from the previous step.</p>
+<p>To make a read-only request to the blockchain to check the current value of the stored integer, we can make a <code class="language-plaintext highlighter-rouge">POST</code> to the <code class="language-plaintext highlighter-rouge">query/get</code> endpoint.</p>
       <h3 id="request-3">
         
         
@@ -950,7 +935,10 @@ See more at <a href="/firefly/head/tutorials/chains/tezos_testnet.html#signatory
       </h3>
     
 
-<p><code class="language-plaintext highlighter-rouge">GET</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/operations/cb38a538-7093-4150-8a80-6097a666df82?fetchstatus=true</code></p>
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/query/get</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{}</span><span class="w">
+</span></code></pre></div></div>
       <h3 id="response-3">
         
         
@@ -961,89 +949,13 @@ See more at <a href="/firefly/head/tutorials/chains/tezos_testnet.html#signatory
     
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
-  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"cb38a538-7093-4150-8a80-6097a666df82"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="s2">"5860befb-9f76-4aa0-a67c-55718b2c46d6"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_invoke"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Succeeded"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"plugin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tezos"</span><span class="p">,</span><span class="w">
-  </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-      </span><span class="nl">"newValue"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="w">
-    </span><span class="p">},</span><span class="w">
-    </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c655704a-f0e2-4aa3-adbb-c7bf3280cdc2"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tz1cuFw1E2Mn2bVS8q8d7QoCb6FXC18JivSp"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-      </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"</span><span class="w">
-    </span><span class="p">},</span><span class="w">
-    </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6f707105-d8b5-4808-a864-51475086608d"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c655704a-f0e2-4aa3-adbb-c7bf3280cdc2"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"replace"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
-        </span><span class="p">{</span><span class="w">
-          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"newValue"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
-              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="w">
-            </span><span class="p">},</span><span class="w">
-            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="w">
-          </span><span class="p">}</span><span class="w">
-        </span><span class="p">}</span><span class="w">
-      </span><span class="p">],</span><span class="w">
-      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"replace"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
-    </span><span class="p">},</span><span class="w">
-    </span><span class="nl">"methodPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"replace"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"invoke"</span><span class="w">
-  </span><span class="p">},</span><span class="w">
-  </span><span class="nl">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nl">"contractLocation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-      </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"</span><span class="w">
-    </span><span class="p">},</span><span class="w">
-    </span><span class="nl">"headers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-      </span><span class="nl">"requestId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default:cb38a538-7093-4150-8a80-6097a666df82"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TransactionSuccess"</span><span class="w">
-    </span><span class="p">},</span><span class="w">
-    </span><span class="nl">"protocolId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PtNairobiyssHuh87hEhfVBGCVrK3WnS8Z2FT4ymB5tAa4r1nQf"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"transactionHash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"opMjGX58akxboipsxMcTv5yc5M4Y2ZCGktos4E26zgEpgtHop7g"</span><span class="w">
-  </span><span class="p">},</span><span class="w">
-  </span><span class="nl">"detail"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nl">"receipt"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-      </span><span class="nl">"blockHash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"BLy9BdEjBvHvhYkt8tR4wTQzHagCUmweh8K8uM6X5gXzPLbCmzP"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"blockNumber"</span><span class="p">:</span><span class="w"> </span><span class="s2">"4012016"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"contractLocation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-        </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"</span><span class="w">
-      </span><span class="p">},</span><span class="w">
-      </span><span class="nl">"extraInfo"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
-        </span><span class="p">{</span><span class="w">
-          </span><span class="nl">"consumedGas"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1279"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"contractAddress"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"counter"</span><span class="p">:</span><span class="w"> </span><span class="s2">"18602183"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"errorMessage"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"fee"</span><span class="p">:</span><span class="w"> </span><span class="s2">"404"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tz1cuFw1E2Mn2bVS8q8d7QoCb6FXC18JivSp"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"gasLimit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1380"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"paidStorageSizeDiff"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"applied"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"storage"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3"</span><span class="p">,</span><span class="w">
-          </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"</span><span class="w">
-        </span><span class="p">}</span><span class="w">
-      </span><span class="p">],</span><span class="w">
-      </span><span class="nl">"protocolId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PtNairobiyssHuh87hEhfVBGCVrK3WnS8Z2FT4ymB5tAa4r1nQf"</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
-      </span><span class="nl">"transactionIndex"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="w">
-    </span><span class="p">},</span><span class="w">
-    </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Succeeded"</span><span class="w">
-  </span><span class="p">}</span><span class="w">
+  </span><span class="s2">"3"</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
 
-<p>Here we can see <code class="language-plaintext highlighter-rouge">detail.receipt.extraInfo.storage</code> section, which displays the latest state of the contract storage state after invoking the operation and that the value of the <code class="language-plaintext highlighter-rouge">storage</code> variable was changed to <code class="language-plaintext highlighter-rouge">3</code>.</p>
+<blockquote>
+  <p><strong>NOTE:</strong> Some contracts may have queries that require input parameters. That’s why the query endpoint is a <code class="language-plaintext highlighter-rouge">POST</code>, rather than a <code class="language-plaintext highlighter-rouge">GET</code> so that parameters can be passed as JSON in the request body. This particular function does not have any parameters, so we just pass an empty JSON object.</p>
+</blockquote>
 
         
 
