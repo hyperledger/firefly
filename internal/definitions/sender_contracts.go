@@ -99,7 +99,7 @@ func (ds *definitionSender) PublishFFI(ctx context.Context, name, version, netwo
 
 	var sender *sendWrapper
 	err = ds.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		if ffi, err = ds.contracts.GetFFI(ctx, name, version); err != nil {
+		if ffi, err = ds.contracts.GetFFIWithChildren(ctx, name, version); err != nil {
 			return err
 		}
 		if ffi.Published {

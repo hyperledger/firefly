@@ -359,7 +359,7 @@ func TestPublishFFI(t *testing.T) {
 	}
 
 	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1-shared", "1.0").Return(nil, nil)
-	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(ffi, nil)
+	ds.mcm.On("GetFFIWithChildren", context.Background(), "ffi1", "1.0").Return(ffi, nil)
 	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
 	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
@@ -392,7 +392,7 @@ func TestPublishFFIAlreadyPublished(t *testing.T) {
 		Published: true,
 	}
 
-	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(ffi, nil)
+	ds.mcm.On("GetFFIWithChildren", context.Background(), "ffi1", "1.0").Return(ffi, nil)
 	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishFFI(context.Background(), "ffi1", "1.0", "ffi1-shared", false)
@@ -404,7 +404,7 @@ func TestPublishFFIQueryFail(t *testing.T) {
 	defer ds.cleanup(t)
 	ds.multiparty = true
 
-	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(nil, fmt.Errorf("pop"))
+	ds.mcm.On("GetFFIWithChildren", context.Background(), "ffi1", "1.0").Return(nil, fmt.Errorf("pop"))
 	mockRunAsGroupPassthrough(ds.mdi)
 
 	_, err := ds.PublishFFI(context.Background(), "ffi1", "1.0", "ffi1-shared", false)
@@ -423,7 +423,7 @@ func TestPublishFFIResolveFail(t *testing.T) {
 		Published: false,
 	}
 
-	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(ffi, nil)
+	ds.mcm.On("GetFFIWithChildren", context.Background(), "ffi1", "1.0").Return(ffi, nil)
 	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(fmt.Errorf("pop"))
 	mockRunAsGroupPassthrough(ds.mdi)
 
@@ -446,7 +446,7 @@ func TestPublishFFIPrepareFail(t *testing.T) {
 	}
 
 	ds.mdi.On("GetFFIByNetworkName", context.Background(), "ns1", "ffi1-shared", "1.0").Return(nil, nil)
-	ds.mcm.On("GetFFI", context.Background(), "ffi1", "1.0").Return(ffi, nil)
+	ds.mcm.On("GetFFIWithChildren", context.Background(), "ffi1", "1.0").Return(ffi, nil)
 	ds.mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
 	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
