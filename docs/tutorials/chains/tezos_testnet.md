@@ -30,35 +30,23 @@ However, it is also possible to configure the transaction signing service using 
 > **NOTE**: The default option is not secure and is mainly used for development and demo purposes. Therefore, for the production, use the selected KMS.\
 The full list can be found [here](https://github.com/ecadlabs/signatory#backend-kmshsm-support-status).
 
-## Create a `tezosconnect.yml` config file
-
-In order to connect to the Tezos testnet, you will need to set a few configuration options for the tezosconnect blockchain connector. Create a text file called `tezosconnect.yml` with the following contents:
-
-```yml
-connector:
-  blockchain:
-    rpc: https://ghostnet.ecadinfra.com
-    network: ghostnet
-    signatory: http://127.0.0.1:6732 # tx signing service address
-```
-
-For this tutorial, we will assume this file is saved at `~/Desktop/tezosconnect.yml`. If your path is different, you will need to adjust the path in the next command below.
-
 ## Creating a new stack
 
 To create a local FireFly development stack and connect it to the Tezos Ghostnet testnet, we will use command line flags to customize the following settings:
 
 - Create a new Tezos based stack named `tezos` with `1` member
 - Disable `multiparty` mode. We are going to be using this FireFly node as a Web3 gateway, and we don't need to communicate with a consortium here
-- Merge the custom config created above with the generated `tezosconnect.yml` config file
+- See the list of Tezos [public RPC nodes](https://tezostaquito.io/docs/rpc_nodes/) and select an HTTPS RPC node.
 
 To do this, run the following command:
 
 ```
 ff init tezos dev 1 \
     --multiparty=false \
-    --connector-config ~/Desktop/tezosonnect.yml
+    --remote-node-url <selected RPC endpoint>
 ```
+
+> **NOTE**: The public RPC nodes may have limitations or may not support all FF required RPC endpoints. Therefore it's not recommended to use ones for production and you may need to run own node or use third-party vendors.
 
 ## Start the stack
 
@@ -107,3 +95,7 @@ You should be able to go lookup your account on [TzStats for the Ghostnet testne
 On the **Transfers** tab from you account page you will see the actual transfer of the XTZ from the faucet.
 
 ![TzStats](images/tezos_explorer.png)
+
+## Use the public testnet
+
+Now that you have everything set up, you can follow one of the other FireFly guides such as [Custom Smart Contracts](../custom_contracts/tezos.md). For detailed instructions on deploying a custom smart contract to Tezos, please see the [Tezos docs](https://docs.tezos.com/smart-contracts/deploying) for instructions using various tools.

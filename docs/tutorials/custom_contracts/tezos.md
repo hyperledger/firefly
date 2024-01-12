@@ -38,22 +38,34 @@ import smartpy as sp
 
 @sp.module
 def main():
+    # Declares a new contract
     class SimpleStorage(sp.Contract):
+        # Storage. Persists in between transactions
         def __init__(self, value):
-            self.data.storedValue = value
+            self.data.x = value
 
+        # Allows the stored integer to be changed
         @sp.entrypoint
-        def replace(self, params):
-            self.data.storedValue = params.value
+        def set(self, params):
+            self.data.x = params.value
+
+        # Returns the currently stored integer
+        @sp.onchain_view()
+        def get(self):
+            return self.data.x
 
 @sp.add_test(name="SimpleStorage")
 def test():
-    c1 = main.SimpleStorage(12)
+    # Initialize the contract
+    c = main.SimpleStorage(12)
+
+    # Create a test scenario and run some test cases
     scenario = sp.test_scenario(main)
     scenario.h1("SimpleStorage")
-    scenario += c1
-    c1.replace(value=15)
-    scenario.verify(c1.data.storedValue == 15)
+    scenario += c
+    c.set(value=15)
+    scenario.verify(c.data.x == 15)
+    scenario.verify(scenario.compute(c.get()) == 15)
 ```
 
 ## Contract deployment
@@ -71,7 +83,7 @@ To deploy the contract, we will use [SmartPy IDE](https://smartpy.io/ide).
 ![ContractDeployment](images/tezos_contract_deployment.png)
 ![ContractDeployment2](images/tezos_contract_deployment2.png)
 
-Here we can see that our new contract address is `KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s`. This is the address that we will reference in the rest of this guide.
+Here we can see that our new contract address is `KT1ED4gj2xZnp8318yxa5NpvyvW15pqe4yFg`. This is the address that we will reference in the rest of this guide.
 
 ## The FireFly Interface Format
 
@@ -342,7 +354,7 @@ We will use the FFI JSON constructed above and `POST` that to the `/contracts/in
     "description": "",
     "methods": [
         {
-            "name": "replace",
+            "name": "set",
             "pathname": "",
             "description": "",
             "params": [
@@ -358,6 +370,13 @@ We will use the FFI JSON constructed above and `POST` that to the `/contracts/in
                 }
             ],
             "returns": []
+        },
+        {
+            "name": "get",
+            "pathname": "",
+            "description": "",
+            "params": [],
+            "returns": []
         }
     ],
     "events": []
@@ -368,34 +387,44 @@ We will use the FFI JSON constructed above and `POST` that to the `/contracts/in
 
 ```json
 {
-  "id": "c655704a-f0e2-4aa3-adbb-c7bf3280cdc2",
-  "namespace": "default",
-  "name": "simplestorage",
-  "description": "",
-  "version": "v1.0.0",
-  "methods": [
-    {
-      "id": "6f707105-d8b5-4808-a864-51475086608d",
-      "interface": "c655704a-f0e2-4aa3-adbb-c7bf3280cdc2",
-      "name": "replace",
-      "namespace": "default",
-      "pathname": "replace",
-      "description": "",
-      "params": [
+    "id": "f9e34787-e634-46cd-af47-b52c537404ff",
+    "namespace": "default",
+    "name": "simplestorage",
+    "description": "",
+    "version": "v1.0.0",
+    "methods": [
         {
-          "name": "newValue",
-          "schema": {
-            "type": "integer",
-            "details": {
-              "type": "integer",
-              "internalType": "integer"
-            }
-          }
+            "id": "78f13a7f-7b85-47c3-bf51-346a9858c027",
+            "interface": "f9e34787-e634-46cd-af47-b52c537404ff",
+            "name": "set",
+            "namespace": "default",
+            "pathname": "set",
+            "description": "",
+            "params": [
+                {
+                    "name": "newValue",
+                    "schema": {
+                        "type": "integer",
+                        "details": {
+                            "type": "integer",
+                            "internalType": "integer"
+                        }
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "id": "ee864e25-c3f7-42d3-aefd-a82f753e9002",
+            "interface": "f9e34787-e634-46cd-af47-b52c537404ff",
+            "name": "get",
+            "namespace": "tezos",
+            "pathname": "get",
+            "description": "",
+            "params": [],
+            "returns": []
         }
-      ],
-      "returns": []
-    }
-  ]
+    ]
 }
 ```
 
@@ -424,10 +453,10 @@ We need to copy the `id` field we got in the response from the previous step to 
 {
   "name": "simple-storage",
   "interface": {
-    "id": "c655704a-f0e2-4aa3-adbb-c7bf3280cdc2"
+    "id": "f9e34787-e634-46cd-af47-b52c537404ff"
   },
   "location": {
-    "address": "KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"
+    "address": "KT1ED4gj2xZnp8318yxa5NpvyvW15pqe4yFg"
   }
 }
 ```
@@ -439,10 +468,10 @@ We need to copy the `id` field we got in the response from the previous step to 
   "id": "af09de97-741d-4f61-8d30-4db5e7460f76",
   "namespace": "default",
   "interface": {
-    "id": "c655704a-f0e2-4aa3-adbb-c7bf3280cdc2"
+    "id": "f9e34787-e634-46cd-af47-b52c537404ff"
   },
   "location": {
-    "address": "KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"
+    "address": "KT1ED4gj2xZnp8318yxa5NpvyvW15pqe4yFg"
   },
   "name": "simple-storage",
   "urls": {
@@ -460,167 +489,51 @@ You'll notice in the response body that there are a couple of URLs near the bott
 
 ## Invoke the smart contract
 
-Now that we've got everything set up, it's time to use our smart contract! We're going to make a `POST` request to the `invoke/replace` endpoint to set the integer value on-chain. Let's set it to the value of `3` right now.
+Now that we've got everything set up, it's time to use our smart contract! We're going to make a `POST` request to the `invoke/set` endpoint to set the integer value on-chain. Let's set it to the value of `3` right now.
 
 ### Request
 
-`POST` `http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/invoke/replace`
+`POST` `http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/invoke/set`
 
 ```json
 {
   "input": {
     "newValue": 3
-  },
-  "key": "tz1cuFw1E2Mn2bVS8q8d7QoCb6FXC18JivSp"
-}
-```
-
-> **NOTE**: The `key` field (optional) is the tezos account's address, which is used to sign blockchain transactions.\
-See more at [transaction signing service set up](../chains/tezos_testnet.md#signatory).
-
-### Response
-
-```json
-{
-  "id": "cb38a538-7093-4150-8a80-6097a666df82",
-  "namespace": "default",
-  "tx": "5860befb-9f76-4aa0-a67c-55718b2c46d6",
-  "type": "blockchain_invoke",
-  "status": "Pending",
-  "plugin": "tezos",
-  "input": {
-    "input": {
-      "newValue": 3
-    },
-    "interface": "c655704a-f0e2-4aa3-adbb-c7bf3280cdc2",
-    "key": "tz1cuFw1E2Mn2bVS8q8d7QoCb6FXC18JivSp",
-    "location": {
-      "address": "KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"
-    },
-    "method": {
-      "description": "",
-      "id": "6f707105-d8b5-4808-a864-51475086608d",
-      "interface": "c655704a-f0e2-4aa3-adbb-c7bf3280cdc2",
-      "name": "replace",
-      "namespace": "default",
-      "params": [
-        {
-          "name": "newValue",
-          "schema": {
-            "details": {
-              "internalType": "integer",
-              "type": "integer"
-            },
-            "type": "integer"
-          }
-        }
-      ],
-      "pathname": "replace",
-      "returns": []
-    },
-    "methodPath": "replace",
-    "options": null,
-    "type": "invoke"
-  },
-  "created": "2023-09-27T09:12:24.033724927Z",
-  "updated": "2023-09-27T09:12:24.033724927Z"
-}
-```
-
-You'll notice that we got an ID back with status `Pending`, and that's expected due to the asynchronous programming model of working with custom onchain logic in FireFly. After a while, let's see the result of our operation.
-
-## Get the operation result
-
-To see the result of the operation, call `/operations` endpoint with the operation ID from the previous step.
-
-### Request
-
-`GET` `http://localhost:5000/api/v1/operations/cb38a538-7093-4150-8a80-6097a666df82?fetchstatus=true`
-
-### Response
-
-```json
-{
-  "id": "cb38a538-7093-4150-8a80-6097a666df82",
-  "namespace": "default",
-  "tx": "5860befb-9f76-4aa0-a67c-55718b2c46d6",
-  "type": "blockchain_invoke",
-  "status": "Succeeded",
-  "plugin": "tezos",
-  "input": {
-    "input": {
-      "newValue": 3
-    },
-    "interface": "c655704a-f0e2-4aa3-adbb-c7bf3280cdc2",
-    "key": "tz1cuFw1E2Mn2bVS8q8d7QoCb6FXC18JivSp",
-    "location": {
-      "address": "KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"
-    },
-    "method": {
-      "description": "",
-      "id": "6f707105-d8b5-4808-a864-51475086608d",
-      "interface": "c655704a-f0e2-4aa3-adbb-c7bf3280cdc2",
-      "name": "replace",
-      "namespace": "default",
-      "params": [
-        {
-          "name": "newValue",
-          "schema": {
-            "details": {
-              "internalType": "integer",
-              "type": "integer"
-            },
-            "type": "integer"
-          }
-        }
-      ],
-      "pathname": "replace",
-      "returns": []
-    },
-    "methodPath": "replace",
-    "options": null,
-    "type": "invoke"
-  },
-  "output": {
-    "contractLocation": {
-      "address": "KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"
-    },
-    "headers": {
-      "requestId": "default:cb38a538-7093-4150-8a80-6097a666df82",
-      "type": "TransactionSuccess"
-    },
-    "protocolId": "PtNairobiyssHuh87hEhfVBGCVrK3WnS8Z2FT4ymB5tAa4r1nQf",
-    "transactionHash": "opMjGX58akxboipsxMcTv5yc5M4Y2ZCGktos4E26zgEpgtHop7g"
-  },
-  "detail": {
-    "receipt": {
-      "blockHash": "BLy9BdEjBvHvhYkt8tR4wTQzHagCUmweh8K8uM6X5gXzPLbCmzP",
-      "blockNumber": "4012016",
-      "contractLocation": {
-        "address": "KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"
-      },
-      "extraInfo": [
-        {
-          "consumedGas": "1279",
-          "contractAddress": "KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s",
-          "counter": "18602183",
-          "errorMessage": null,
-          "fee": "404",
-          "from": "tz1cuFw1E2Mn2bVS8q8d7QoCb6FXC18JivSp",
-          "gasLimit": "1380",
-          "paidStorageSizeDiff": "0",
-          "status": "applied",
-          "storage": "3",
-          "to": "KT1D254HTPKq5GZNVcF73XBinG9BLybHqu8s"
-        }
-      ],
-      "protocolId": "PtNairobiyssHuh87hEhfVBGCVrK3WnS8Z2FT4ymB5tAa4r1nQf",
-      "success": true,
-      "transactionIndex": "0"
-    },
-    "status": "Succeeded"
   }
 }
 ```
 
-Here we can see `detail.receipt.extraInfo.storage` section, which displays the latest state of the contract storage state after invoking the operation and that the value of the `storage` variable was changed to `3`.
+### Response
+
+```json
+{
+  "id": "87c7ee1b-33d1-46e2-b3f5-8566c14367cf",
+  "type": "blockchain_invoke",
+  "status": "Pending",
+  "..."
+}
+```
+
+You'll notice that we got an ID back with status `Pending`, and that's expected due to the asynchronous programming model of working with smart contracts in FireFly. To see what the value is now, we can query the smart contract.
+
+## Query the current value
+
+To make a read-only request to the blockchain to check the current value of the stored integer, we can make a `POST` to the `query/get` endpoint.
+
+### Request
+
+`POST` `http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/query/get`
+
+```json
+{}
+```
+
+### Response
+
+```json
+{
+  "3"
+}
+```
+
+> **NOTE:** Some contracts may have queries that require input parameters. That's why the query endpoint is a `POST`, rather than a `GET` so that parameters can be passed as JSON in the request body. This particular function does not have any parameters, so we just pass an empty JSON object.
