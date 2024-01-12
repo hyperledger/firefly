@@ -3967,7 +3967,7 @@
   },"661": {
     "doc": "Example Transaction Flow",
     "title": "Authorize &amp; Transfer Data (Member 1)",
-    "content": ". | Inpsect the request data | Retrieve data asset by hash | Send the private data in a private message . | No blockchain in this flow | . | . ",
+    "content": ". | Inspect the request data | Retrieve data asset by hash | Send the private data in a private message . | No blockchain in this flow | . | . ",
     "url": "/firefly/head/architecture/ping_pong_txflow.html#authorize--transfer-data-member-1",
     "relUrl": "/architecture/ping_pong_txflow.html#authorize--transfer-data-member-1"
   },"662": {
