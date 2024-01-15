@@ -23,7 +23,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/cache"
@@ -129,20 +128,6 @@ func TestEventDispatcherStartStopBatched(t *testing.T) {
 	close(confirmedElected)
 	ed.eventPoller.eventNotifier.newEvents <- 12345
 	ed.close()
-}
-
-func TestMaxReadAhead(t *testing.T) {
-	config.Set(coreconfig.SubscriptionDefaultsReadAhead, 65537)
-	ed, cancel := newTestEventDispatcher(&subscription{
-		dispatcherElection: make(chan bool, 1),
-		definition: &core.Subscription{
-			SubscriptionRef: core.SubscriptionRef{Namespace: "ns1", Name: "sub1"},
-			Ephemeral:       true,
-			Options:         core.SubscriptionOptions{},
-		},
-	})
-	defer cancel()
-	assert.Equal(t, int(65536), ed.readAhead)
 }
 
 func TestEventDispatcherLeaderElection(t *testing.T) {
@@ -974,6 +959,9 @@ func TestBatchEventDeliveryClosed(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 
+	mei := ed.transport.(*eventsmocks.Plugin)
+	mei.On("BatchDeliveryRequest", ed.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 	ed.batchTimeout = 1 * time.Minute
 	ed.eventDelivery <- &core.EventDelivery{}
 	close(ed.eventDelivery)
@@ -1292,6 +1280,9 @@ func TestBatchDeliverEventsWithDataFail(t *testing.T) {
 
 	mdm := ed.data.(*datamocks.Manager)
 	mdm.On("GetMessageDataCached", ed.ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
+
+	mei := ed.transport.(*eventsmocks.Plugin)
+	mei.On("BatchDeliveryRequest", ed.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	id1 := fftypes.NewUUID()
 	ed.eventDelivery <- &core.EventDelivery{

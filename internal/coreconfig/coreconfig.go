@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -327,8 +327,10 @@ var (
 	OrgDescription = ffc("org.description")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
 	OrchestratorStartupAttempts = ffc("orchestrator.startupAttempts")
-	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
-	SubscriptionDefaultsReadAhead = ffc("subscription.defaults.batchSize")
+	// SubscriptionDefaultsBatchSize default read ahead to enable for subscriptions that do not explicitly configure readahead
+	SubscriptionDefaultsBatchSize = ffc("subscription.defaults.batchSize")
+	// SubscriptionDefaultsBatchTimeout default batch timeout
+	SubscriptionDefaultsBatchTimeout = ffc("subscription.defaults.batchTimeout")
 	// SubscriptionMax maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)
 	SubscriptionMax = ffc("subscription.max")
 	// SubscriptionsRetryInitialDelay is the initial retry delay
@@ -451,7 +453,8 @@ func setDefaults() {
 	viper.SetDefault(string(PrivateMessagingBatchSize), 200)
 	viper.SetDefault(string(PrivateMessagingBatchTimeout), "1s")
 	viper.SetDefault(string(PrivateMessagingBatchPayloadLimit), "800Kb")
-	viper.SetDefault(string(SubscriptionDefaultsReadAhead), 0)
+	viper.SetDefault(string(SubscriptionDefaultsBatchSize), 50)
+	viper.SetDefault(string(SubscriptionDefaultsBatchTimeout), "50ms")
 	viper.SetDefault(string(SubscriptionMax), 500)
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")

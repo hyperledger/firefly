@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -95,21 +97,45 @@ func (wc *websocketConnection) assertNamespace(namespace string) (string, error)
 	return namespace, nil
 }
 
+func isBoolQuerySet(query url.Values, boolOption string) bool {
+	optionValues, hasOptionValues := query[boolOption]
+	return hasOptionValues && (len(optionValues) == 0 || optionValues[0] != "false")
+}
+
+func (wc *websocketConnection) getReadAhead(query url.Values, isBatch bool) *uint16 {
+	readaheadStr := query.Get("readahead")
+	if readaheadStr != "" {
+		readAheadInt, err := strconv.ParseUint(readaheadStr, 10, 16)
+		if err == nil {
+			readahead := uint16(readAheadInt)
+			return &readahead
+		}
+	}
+	return nil
+}
+
+func (wc *websocketConnection) getBatchTimeout(query url.Values) *string {
+	batchTimeout := query.Get("batchtimeout")
+	if batchTimeout != "" {
+		return &batchTimeout
+	}
+	return nil
+}
+
 // processAutoStart gives a helper to specify query parameters to auto-start your subscription
 func (wc *websocketConnection) processAutoStart(req *http.Request) {
 	query := req.URL.Query()
-	ephemeral, hasEphemeral := req.URL.Query()["ephemeral"]
-	isEphemeral := hasEphemeral && (len(ephemeral) == 0 || ephemeral[0] != "false")
+	isEphemeral := isBoolQuerySet(query, "ephemeral")
 	_, hasName := query["name"]
-	autoAck, hasAutoack := req.URL.Query()["autoack"]
-	isAutoack := hasAutoack && (len(autoAck) == 0 || autoAck[0] != "false")
+	isAutoack := isBoolQuerySet(query, "autoack")
 	namespace, err := wc.assertNamespace(query.Get("namespace"))
 	if err != nil {
 		wc.protocolError(err)
 		return
 	}
 
-	if hasEphemeral || hasName {
+	if isEphemeral || hasName {
+		isBatch := isBoolQuerySet(query, "batch")
 		filter := core.NewSubscriptionFilterFromQuery(query)
 		err := wc.handleStart(&core.WSStart{
 			AutoAck:   &isAutoack,
@@ -117,6 +143,13 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 			Namespace: namespace,
 			Name:      query.Get("name"),
 			Filter:    filter,
+			Options: core.SubscriptionOptions{
+				SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+					Batch:        &isBatch,
+					BatchTimeout: wc.getBatchTimeout(query),
+					ReadAhead:    wc.getReadAhead(query, isBatch),
+				},
+			},
 		})
 		if err != nil {
 			wc.protocolError(err)
@@ -234,11 +267,17 @@ func (wc *websocketConnection) dispatch(event *core.EventDelivery) error {
 
 func (wc *websocketConnection) dispatchBatch(sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
 	inflightBatch := &core.WSEventBatch{
-		ID:           fftypes.NewUUID(),
-		Subscription: sub.SubscriptionRef,
-		Events:       make([]*core.EventDelivery, len(events)),
+		ID:     fftypes.NewUUID(),
+		Events: make([]*core.EventDelivery, len(events)),
+	}
+	if sub != nil {
+		inflightBatch.Subscription = sub.SubscriptionRef
 	}
 	for i, e := range events {
+		// For ephemeral there's no sub, so we pick up from first event
+		if inflightBatch.Subscription.Namespace == "" {
+			inflightBatch.Subscription = e.Event.Subscription
+		}
 		inflightBatch.Events[i] = e.Event
 	}
 

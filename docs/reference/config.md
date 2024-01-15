@@ -1387,7 +1387,8 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchSize|Default read ahead to enable for subscriptions that do not explicitly configure readahead|`int`|`0`
+|batchSize|Default read ahead to enable for subscriptions that do not explicitly configure readahead|`int`|`50`
+|batchTimeout|Default batch timeout|`int`|`50ms`
 
 ## subscription.retry
 
