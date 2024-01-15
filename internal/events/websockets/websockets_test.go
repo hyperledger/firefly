@@ -240,7 +240,7 @@ func TestAutoAckBatch(t *testing.T) {
 	log.SetLevel("trace")
 
 	cbs := &eventsmocks.Callbacks{}
-	ws, wsc, cancel := newTestWebsockets(t, cbs, nil, "autoack=true", "ephemeral")
+	ws, wsc, cancel := newTestWebsockets(t, cbs, nil, "autoack=true")
 	defer cancel()
 	var connID string
 	mes := cbs.On("EphemeralSubscription",
@@ -266,6 +266,7 @@ func TestAutoAckBatch(t *testing.T) {
 		"type":"start",
 		"namespace":"ns1",
 		"ephemeral":true,
+		"autoack": true,
 		"options": {
 			"batch": true
 		}
@@ -619,6 +620,55 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 	cbs.AssertExpectations(t)
 }
 
+func TestAutoStartReceiveAckBatchEphemeral(t *testing.T) {
+	var connID string
+	cbs := &eventsmocks.Callbacks{}
+	sub := cbs.On("EphemeralSubscription",
+		mock.MatchedBy(func(s string) bool { connID = s; return true }),
+		"ns1", mock.Anything, mock.Anything).Return(nil)
+	ack := cbs.On("DeliveryResponse",
+		mock.MatchedBy(func(s string) bool { return s == connID }),
+		mock.Anything).Return(nil)
+
+	waitSubscribed := make(chan struct{})
+	sub.RunFn = func(a mock.Arguments) {
+		close(waitSubscribed)
+	}
+
+	waitAcked := make(chan struct{})
+	ack.RunFn = func(a mock.Arguments) {
+		close(waitAcked)
+	}
+
+	ws, wsc, cancel := newTestWebsockets(t, cbs, nil, "ephemeral", "namespace=ns1", "batch")
+	defer cancel()
+
+	<-waitSubscribed
+	ws.BatchDeliveryRequest(ws.ctx, connID, nil, []*core.CombinedEventDataDelivery{
+		{Event: &core.EventDelivery{
+			EnrichedEvent: core.EnrichedEvent{
+				Event: core.Event{ID: fftypes.NewUUID()},
+			},
+			Subscription: core.SubscriptionRef{
+				ID:        fftypes.NewUUID(),
+				Namespace: "ns1",
+			},
+		}},
+	})
+
+	b := <-wsc.Receive()
+	var deliveredBatch core.WSEventBatch
+	err := json.Unmarshal(b, &deliveredBatch)
+	assert.NoError(t, err)
+	assert.Len(t, deliveredBatch.Events, 1)
+
+	err = wsc.Send(context.Background(), []byte(`{"type":"ack", "id": "`+deliveredBatch.ID.String()+`"}`))
+	assert.NoError(t, err)
+
+	<-waitAcked
+	cbs.AssertExpectations(t)
+}
+
 func TestAutoStartBadOptions(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
 	_, wsc, cancel := newTestWebsockets(t, cbs, nil, "name=missingnamespace")
@@ -630,6 +680,29 @@ func TestAutoStartBadOptions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Regexp(t, "FF10178", res.Error)
 	cbs.AssertExpectations(t)
+}
+
+func TestAutoStartCustomReadAheadBatch(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+
+	subscribedConn := make(chan string, 1)
+	cbs.On("EphemeralSubscription",
+		mock.MatchedBy(func(s string) bool {
+			subscribedConn <- s
+			return true
+		}),
+		"ns1",
+		mock.Anything,
+		mock.MatchedBy(func(o *core.SubscriptionOptions) bool {
+			return *o.ReadAhead == 42 && *o.BatchTimeout == "1s"
+		}),
+	).Return(nil)
+
+	_, _, cancel := newTestWebsockets(t, cbs, nil, "namespace=ns1", "ephemeral", "batch", "batchtimeout=1s", "readahead=42")
+	defer cancel()
+
+	<-subscribedConn
+
 }
 
 func TestAutoStartBadNamespace(t *testing.T) {

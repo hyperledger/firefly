@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,6 +20,7 @@ import (
 	"context"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -90,6 +91,9 @@ type subscriptionManager struct {
 	newOrUpdatedSubscriptions chan *fftypes.UUID
 	deletedSubscriptions      chan *fftypes.UUID
 	retry                     retry.Retry
+
+	defaultBatchSize    uint16
+	defaultBatchTimeout time.Duration
 }
 
 func newSubscriptionManager(ctx context.Context, ns *core.Namespace, enricher *eventEnricher, di database.Plugin, dm data.Manager, en *eventNotifier, bm broadcast.Manager, pm privatemessaging.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin) (*subscriptionManager, error) {
@@ -116,6 +120,8 @@ func newSubscriptionManager(ctx context.Context, ns *core.Namespace, enricher *e
 			MaximumDelay: config.GetDuration(coreconfig.SubscriptionsRetryMaxDelay),
 			Factor:       config.GetFloat64(coreconfig.SubscriptionsRetryFactor),
 		},
+		defaultBatchSize:    uint16(config.GetInt(coreconfig.SubscriptionDefaultsBatchSize)),
+		defaultBatchTimeout: config.GetDuration(coreconfig.SubscriptionDefaultsBatchTimeout),
 	}
 
 	for _, ei := range sm.transports {
@@ -268,6 +274,18 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 
 	if subDef.Options.TLSConfigName != "" && sm.namespace.TLSConfigs[subDef.Options.TLSConfigName] != nil {
 		subDef.Options.TLSConfig = sm.namespace.TLSConfigs[subDef.Options.TLSConfigName]
+	}
+
+	// Defaults that only apply in batch mode
+	if subDef.Options.Batch != nil && *subDef.Options.Batch {
+		if subDef.Options.ReadAhead == nil || *subDef.Options.ReadAhead == 0 {
+			defaultBatchSize := sm.defaultBatchSize
+			subDef.Options.ReadAhead = &defaultBatchSize
+		}
+		if subDef.Options.BatchTimeout == nil || *subDef.Options.BatchTimeout == "" {
+			defaultBatchTimeout := sm.defaultBatchTimeout.String()
+			subDef.Options.BatchTimeout = &defaultBatchTimeout
+		}
 	}
 
 	if err := transport.ValidateOptions(ctx, &subDef.Options); err != nil {

@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -77,12 +77,9 @@ type eventDispatcher struct {
 
 func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.Plugin, di database.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, connID string, sub *subscription, en *eventNotifier, txHelper txcommon.Helper) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
-	readAhead := config.GetUint(coreconfig.SubscriptionDefaultsReadAhead)
+	readAhead := uint(0)
 	if sub.definition.Options.ReadAhead != nil {
 		readAhead = uint(*sub.definition.Options.ReadAhead)
-	}
-	if readAhead > maxReadAhead {
-		readAhead = maxReadAhead
 	}
 
 	batchTimeout := defaultBatchTimeout
@@ -387,6 +384,10 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) {
 func (ed *eventDispatcher) deliverBatchedEvents() {
 	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
 
+	batchSize := 1
+	if ed.readAhead > 1 {
+		batchSize = ed.readAhead
+	}
 	var events []*core.CombinedEventDataDelivery
 	var batchTimeoutContext context.Context
 	var batchTimeoutCancel func()
@@ -435,7 +436,7 @@ func (ed *eventDispatcher) deliverBatchedEvents() {
 			return
 		}
 
-		if len(events) == ed.readAhead || (timedOut && len(events) > 0) {
+		if len(events) == batchSize || (timedOut && len(events) > 0) {
 			_ = ed.transport.BatchDeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, events)
 			// If err handle all the delivery responses for all the events??
 			events = nil
