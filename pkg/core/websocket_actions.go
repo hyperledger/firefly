@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -60,4 +60,12 @@ type WSAck struct {
 type WSError struct {
 	Type  WSClientPayloadType `ffstruct:"WSAck" json:"type" ffenum:"wstype"`
 	Error string              `ffstruct:"WSAck" json:"error"`
+}
+
+// WSEventBatch is used when batched delivery is enabled over the websocket, allowing
+// an array of events to be ack'd as a whole (rather than ack'ing individually)
+type WSEventBatch struct {
+	ID           *fftypes.UUID    `ffstruct:"WSEventBatch" json:"id"`
+	Subscription SubscriptionRef  `ffstruct:"WSEventBatch" json:"subscription"`
+	Events       []*EventDelivery `ffstruct:"WSEventBatch" json:"events"`
 }

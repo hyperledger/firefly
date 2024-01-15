@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -49,6 +49,7 @@ type websocketConnection struct {
 	autoAck         bool
 	started         []*websocketStartedSub
 	inflight        []*core.EventDeliveryResponse
+	inflightBatches []*core.WSEventBatch
 	mux             sync.Mutex
 	closed          bool
 	remoteAddr      string
@@ -231,6 +232,47 @@ func (wc *websocketConnection) dispatch(event *core.EventDelivery) error {
 	return nil
 }
 
+func (wc *websocketConnection) dispatchBatch(sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
+	inflightBatch := &core.WSEventBatch{
+		ID:           fftypes.NewUUID(),
+		Subscription: sub.SubscriptionRef,
+		Events:       make([]*core.EventDelivery, len(events)),
+	}
+	for i, e := range events {
+		inflightBatch.Events[i] = e.Event
+	}
+
+	var autoAck bool
+	wc.mux.Lock()
+	autoAck = wc.autoAck
+	if !autoAck {
+		wc.inflightBatches = append(wc.inflightBatches, inflightBatch)
+	}
+	wc.mux.Unlock()
+
+	err := wc.send(inflightBatch)
+	if err != nil {
+		return err
+	}
+
+	if autoAck {
+		wc.ackBatch(inflightBatch)
+	}
+
+	return nil
+}
+
+func (wc *websocketConnection) ackBatch(batch *core.WSEventBatch) {
+	for _, e := range batch.Events {
+		// We individually drive an ack back on each event, but do so in one pass
+		// (this matches the webhook implementation of batching).
+		wc.ws.ack(wc.connID, &core.EventDeliveryResponse{
+			ID:           e.ID,
+			Subscription: batch.Subscription,
+		})
+	}
+}
+
 func (wc *websocketConnection) protocolError(err error) {
 	log.L(wc.ctx).Errorf("Sending protocol error to client: %s", err)
 	sendErr := wc.send(&core.WSError{
@@ -309,6 +351,22 @@ func (wc *websocketConnection) durableSubMatcher(sr core.SubscriptionRef) bool {
 	return false
 }
 
+func (wc *websocketConnection) handleBatchAck(ack *core.WSAck) (handled bool) {
+	wc.mux.Lock()
+	defer wc.mux.Unlock()
+	var newInflightBatches []*core.WSEventBatch
+	for _, batch := range wc.inflightBatches {
+		if batch.ID.Equals(ack.ID) { // nil safe check
+			wc.ackBatch(batch)
+			handled = true
+		} else {
+			newInflightBatches = append(newInflightBatches, batch)
+		}
+	}
+	wc.inflightBatches = newInflightBatches
+	return handled
+}
+
 func (wc *websocketConnection) checkAck(ack *core.WSAck) (*core.EventDeliveryResponse, error) {
 	l := log.L(wc.ctx)
 	var inflight *core.EventDeliveryResponse
@@ -363,6 +421,10 @@ func (wc *websocketConnection) checkAck(ack *core.WSAck) (*core.EventDeliveryRes
 }
 
 func (wc *websocketConnection) handleAck(ack *core.WSAck) error {
+	if handled := wc.handleBatchAck(ack); handled {
+		return nil
+	}
+
 	// Perform a locked set of check
 	inflight, err := wc.checkAck(ack)
 	if err != nil {
