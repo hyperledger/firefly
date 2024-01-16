@@ -219,6 +219,57 @@ func TestReadPageSingleCommitEvent(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestReadPageBatchTimeoutNotFull(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	processEventCalled := make(chan []core.LocallySequenced, 1)
+	ep, cancel := newTestEventPoller(t, mdi, func(events []core.LocallySequenced) (bool, error) {
+		processEventCalled <- events
+		return false, nil
+	}, nil)
+	ep.conf.eventBatchTimeout = 1 * time.Microsecond
+	ep.conf.eventBatchSize = 3
+	ev1 := core.NewEvent(core.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
+	ev2 := core.NewEvent(core.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return([]*core.Event{ev1}, nil, nil).Once() // half batch
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return([]*core.Event{ev1, ev2}, nil, nil).Run(func(args mock.Arguments) {
+		ep.shoulderTap()
+	}).Once()
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return(nil, nil, fmt.Errorf("context done")).Run(func(args mock.Arguments) {
+		cancel()
+	})
+	ep.eventLoop()
+
+	events := <-processEventCalled
+	assert.Equal(t, *ev1.ID, *events[0].(*core.Event).ID)
+	assert.Equal(t, *ev2.ID, *events[1].(*core.Event).ID)
+	mdi.AssertExpectations(t)
+}
+
+func TestReadPageBatchFull(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	processEventCalled := make(chan []core.LocallySequenced, 1)
+	ep, cancel := newTestEventPoller(t, mdi, func(events []core.LocallySequenced) (bool, error) {
+		processEventCalled <- events
+		return false, nil
+	}, nil)
+	ep.conf.eventBatchTimeout = 1 * time.Microsecond
+	ep.conf.eventBatchSize = 2
+	ev1 := core.NewEvent(core.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
+	ev2 := core.NewEvent(core.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return([]*core.Event{ev1, ev2}, nil, nil).Run(func(args mock.Arguments) {
+		ep.shoulderTap()
+	}).Once()
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return(nil, nil, fmt.Errorf("context done")).Run(func(args mock.Arguments) {
+		cancel()
+	})
+	ep.eventLoop()
+
+	events := <-processEventCalled
+	assert.Equal(t, *ev1.ID, *events[0].(*core.Event).ID)
+	assert.Equal(t, *ev2.ID, *events[1].(*core.Event).ID)
+	mdi.AssertExpectations(t)
+}
+
 func TestReadPageRewind(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	processEventCalled := make(chan core.LocallySequenced, 1)
@@ -323,6 +374,14 @@ func TestDoubleTap(t *testing.T) {
 	defer cancel()
 	ep.shoulderTap()
 	ep.shoulderTap() // this should not block
+}
+
+func TestWaitForBatchTimeoutClosedContext(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep.conf.eventBatchTimeout = 1 * time.Minute
+	cancel()
+	ep.waitForBatchTimeout()
 }
 
 func TestDoubleConfirm(t *testing.T) {

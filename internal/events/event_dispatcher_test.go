@@ -362,6 +362,171 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
+func TestEventDispatcherBatchBased(t *testing.T) {
+	log.SetLevel("debug")
+	three := uint16(3)
+	longTime := "1m"
+	subID := fftypes.NewUUID()
+	truthy := true
+	sub := &subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &core.Subscription{
+			SubscriptionRef: core.SubscriptionRef{ID: subID, Namespace: "ns1", Name: "sub1"},
+			Options: core.SubscriptionOptions{
+				SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+					Batch:        &truthy,
+					ReadAhead:    &three,
+					BatchTimeout: &longTime, // because the batch should fill
+				},
+			},
+		},
+		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", core.EventTypeMessageConfirmed, core.EventTypeMessageConfirmed)),
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	defer cancel()
+	go ed.deliverEvents()
+	ed.eventPoller.offsetCommitted = make(chan int64, 3)
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.Plugin)
+	mdm := ed.data.(*datamocks.Manager)
+
+	eventDeliveries := make(chan []*core.CombinedEventDataDelivery)
+	deliveryRequestMock := mei.On("BatchDeliveryRequest", ed.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock.RunFn = func(a mock.Arguments) {
+		eventDeliveries <- a.Get(3).([]*core.CombinedEventDataDelivery)
+	}
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+	ref2 := fftypes.NewUUID()
+	ev2 := fftypes.NewUUID()
+	ref3 := fftypes.NewUUID()
+	ev3 := fftypes.NewUUID()
+	ref4 := fftypes.NewUUID()
+	ev4 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&core.Message{
+		Header: core.MessageHeader{ID: ref1},
+	}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref2).Return(&core.Message{
+		Header: core.MessageHeader{ID: ref2},
+	}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref3).Return(&core.Message{
+		Header: core.MessageHeader{ID: ref3},
+	}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref4).Return(&core.Message{
+		Header: core.MessageHeader{ID: ref4},
+	}, nil, true, nil)
+
+	// Deliver a batch of messages
+	batch1Done := make(chan struct{})
+	go func() {
+		repoll, err := ed.bufferedDelivery([]core.LocallySequenced{
+			&core.Event{ID: ev1, Sequence: 10000001, Reference: ref1, Type: core.EventTypeMessageConfirmed}, // match
+			&core.Event{ID: ev2, Sequence: 10000002, Reference: ref2, Type: core.EventTypeMessageRejected},
+			&core.Event{ID: ev3, Sequence: 10000003, Reference: ref3, Type: core.EventTypeMessageConfirmed}, // match
+			&core.Event{ID: ev4, Sequence: 10000004, Reference: ref4, Type: core.EventTypeMessageConfirmed}, // match
+		})
+		assert.NoError(t, err)
+		assert.True(t, repoll)
+		close(batch1Done)
+	}()
+
+	// Expect to get the batch dispatched - with the three matching events
+	events := <-eventDeliveries
+	assert.Len(t, events, 3)
+	assert.Equal(t, *ev1, *events[0].Event.ID)
+	assert.Equal(t, *ref1, *events[0].Event.Message.Header.ID)
+	assert.Equal(t, *ev3, *events[1].Event.ID)
+	assert.Equal(t, *ref3, *events[1].Event.Message.Header.ID)
+	assert.Equal(t, *ev4, *events[2].Event.ID)
+	assert.Equal(t, *ref4, *events[2].Event.Message.Header.ID)
+
+	// Ack the batch
+	go func() {
+		ed.deliveryResponse(&core.EventDeliveryResponse{ID: events[0].Event.ID})
+		ed.deliveryResponse(&core.EventDeliveryResponse{ID: events[1].Event.ID})
+		ed.deliveryResponse(&core.EventDeliveryResponse{ID: events[2].Event.ID})
+	}()
+
+	assert.Equal(t, int64(10000001), <-ed.eventPoller.offsetCommitted)
+	assert.Equal(t, int64(10000003), <-ed.eventPoller.offsetCommitted)
+	assert.Equal(t, int64(10000004), <-ed.eventPoller.offsetCommitted)
+
+	// This should complete the batch
+	<-batch1Done
+
+	mdi.AssertExpectations(t)
+	mei.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestEventDispatcherBatchDispatchFail(t *testing.T) {
+	log.SetLevel("debug")
+	two := uint16(2)
+	longTime := "1m"
+	subID := fftypes.NewUUID()
+	truthy := true
+	sub := &subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &core.Subscription{
+			SubscriptionRef: core.SubscriptionRef{ID: subID, Namespace: "ns1", Name: "sub1"},
+			Options: core.SubscriptionOptions{
+				SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+					Batch:        &truthy,
+					ReadAhead:    &two,
+					BatchTimeout: &longTime, // because the batch should fill
+				},
+			},
+		},
+		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", core.EventTypeMessageConfirmed, core.EventTypeMessageConfirmed)),
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	defer cancel()
+	go ed.deliverEvents()
+	ed.eventPoller.offsetCommitted = make(chan int64, 3)
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.Plugin)
+	mdm := ed.data.(*datamocks.Manager)
+
+	eventDeliveries := make(chan []*core.CombinedEventDataDelivery)
+	deliveryRequestMock := mei.On("BatchDeliveryRequest", ed.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	deliveryRequestMock.RunFn = func(a mock.Arguments) {
+		eventDeliveries <- a.Get(3).([]*core.CombinedEventDataDelivery)
+	}
+
+	// Deliver a batch of messages
+	batch1Done := make(chan struct{})
+	go func() {
+		repoll, err := ed.bufferedDelivery([]core.LocallySequenced{
+			&core.Event{ID: fftypes.NewUUID(), Sequence: 10000001, Type: core.EventTypeMessageConfirmed},
+			&core.Event{ID: fftypes.NewUUID(), Sequence: 10000002, Type: core.EventTypeMessageConfirmed},
+		})
+		assert.NoError(t, err)
+		assert.True(t, repoll)
+		close(batch1Done)
+	}()
+
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(&core.Message{
+		Header: core.MessageHeader{ID: fftypes.NewUUID()},
+	}, nil, true, nil)
+
+	// Expect to get the batch dispatched - with the three matching events
+	events := <-eventDeliveries
+	assert.Len(t, events, 2)
+
+	// This should complete the batch
+	<-batch1Done
+
+	mdi.AssertExpectations(t)
+	mei.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
 func TestEnrichEventsFailGetMessages(t *testing.T) {
 
 	sub := &subscription{
