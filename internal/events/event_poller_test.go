@@ -36,7 +36,7 @@ func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHa
 	ctx, cancel := context.WithCancel(context.Background())
 	ep = newEventPoller(ctx, mdi, newEventNotifier(ctx, "ut"), &eventPollerConf{
 		eventBatchSize:             10,
-		eventBatchTimeout:          1 * time.Millisecond,
+		eventBatchTimeout:          0, // customized for individual tests that enable this
 		eventPollTimeout:           10 * time.Second,
 		startupOffsetRetryAttempts: 1,
 		retry: retry.Retry{

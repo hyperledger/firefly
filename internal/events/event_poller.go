@@ -196,7 +196,12 @@ func (ep *eventPoller) eventLoop() {
 		close(ep.offsetCommitted)
 	}()
 
+	doBatchDelay := false
 	for {
+		if doBatchDelay {
+			ep.waitForBatchTimeout()
+		}
+
 		// Read messages from the DB - in an error condition we retry until success, or a closed context
 		events, err := ep.readPage()
 		if err != nil {
@@ -205,6 +210,15 @@ func (ep *eventPoller) eventLoop() {
 		}
 
 		eventCount := len(events)
+
+		// We might want to wait for the batch to fill - so we delay and re-poll
+		if ep.conf.eventBatchTimeout > 0 && !doBatchDelay && eventCount < ep.conf.eventBatchSize {
+			doBatchDelay = true
+			l.Tracef("Batch delay: detected=%d, batchSize=%d batchTimeout=%s", eventCount, ep.conf.eventBatchSize, ep.conf.eventBatchTimeout)
+			continue
+		}
+		doBatchDelay = false // clear any batch delay for next iteration
+
 		repoll := false
 		if eventCount > 0 {
 			// We process all the events in the page in a single database run group, and
@@ -280,6 +294,16 @@ func (ep *eventPoller) shoulderTap() {
 	}
 }
 
+func (ep *eventPoller) waitForBatchTimeout() {
+	// For throughput optimized environments, we can set an eventBatchingTimeout to allow
+	// dispatching of incomplete batches at a shorter timeout than the
+	// long timeout between polling cycles (at the cost of some dispatch latency)
+	select {
+	case <-time.After(ep.conf.eventBatchTimeout):
+	case <-ep.ctx.Done():
+	}
+}
+
 func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount int) bool {
 	l := log.L(ep.ctx)
 	longTimeoutDuration := ep.conf.eventPollTimeout
@@ -287,21 +311,6 @@ func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount int) bool 
 	if lastEventCount >= ep.conf.eventBatchSize {
 		l.Tracef("Polling immediately due to full previous event batch")
 		return true
-	}
-
-	// For throughput optimized environments, we can set an eventBatchingTimeout to allow
-	// dispatching of incomplete batches at a shorter timeout than the
-	// long timeout between polling cycles (at the cost of some dispatch latency)
-	if ep.conf.eventBatchTimeout > 0 && lastEventCount > 0 {
-		shortTimeout := time.NewTimer(ep.conf.eventBatchTimeout)
-		select {
-		case <-shortTimeout.C:
-			l.Tracef("Woken after batch timeout")
-			return true
-		case <-ep.ctx.Done():
-			l.Debugf("Exiting due to cancelled context")
-			return false
-		}
 	}
 
 	longTimeout := time.NewTimer(longTimeoutDuration)
