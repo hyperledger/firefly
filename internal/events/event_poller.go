@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -289,18 +289,19 @@ func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount int) bool 
 		return true
 	}
 
-	// For throughput optimized environments, we can set an eventBatchingTimeout to allow messages to arrive
-	// between polling cycles (at the cost of some dispatch latency)
+	// For throughput optimized environments, we can set an eventBatchingTimeout to allow
+	// dispatching of incomplete batches at a shorter timeout than the
+	// long timeout between polling cycles (at the cost of some dispatch latency)
 	if ep.conf.eventBatchTimeout > 0 && lastEventCount > 0 {
 		shortTimeout := time.NewTimer(ep.conf.eventBatchTimeout)
 		select {
 		case <-shortTimeout.C:
 			l.Tracef("Woken after batch timeout")
+			return true
 		case <-ep.ctx.Done():
 			l.Debugf("Exiting due to cancelled context")
 			return false
 		}
-		longTimeoutDuration -= ep.conf.eventBatchTimeout
 	}
 
 	longTimeout := time.NewTimer(longTimeoutDuration)
