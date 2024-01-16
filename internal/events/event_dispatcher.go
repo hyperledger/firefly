@@ -65,12 +65,11 @@ type eventDispatcher struct {
 	elected       bool
 	eventPoller   *eventPoller
 	inflight      map[fftypes.UUID]*core.Event
-	eventDelivery chan *core.EventDelivery
+	eventDelivery chan []*core.EventDelivery
 	mux           sync.Mutex
 	namespace     string
 	readAhead     int
 	batch         bool
-	batchTimeout  time.Duration
 	subscription  *subscription
 	txHelper      txcommon.Helper
 }
@@ -105,13 +104,12 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 		subscription:  sub,
 		namespace:     sub.definition.Namespace,
 		inflight:      make(map[fftypes.UUID]*core.Event),
-		eventDelivery: make(chan *core.EventDelivery, readAhead+1),
+		eventDelivery: make(chan []*core.EventDelivery, readAhead+1),
 		readAhead:     int(readAhead),
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		txHelper:      txHelper,
 		batch:         batch,
-		batchTimeout:  batchTimeout,
 	}
 
 	pollerConf := &eventPollerConf{
@@ -133,6 +131,20 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 		newEventsHandler: ed.bufferedDelivery,
 		ephemeral:        sub.definition.Ephemeral,
 		firstEvent:       sub.definition.Options.FirstEvent,
+	}
+
+	// Users can tune the batch related settings.
+	// This is always true in batch:true cases, and optionally you can use the batchTimeout setting
+	// to tweak how we optimize ourselves for readahead / latency detection without batching
+	// (most likely users with this requirement would be best to just move to batch:true).
+	if batchTimeout > 0 {
+		pollerConf.eventBatchTimeout = batchTimeout
+		if batchTimeout > pollerConf.eventPollTimeout {
+			pollerConf.eventPollTimeout = batchTimeout
+		}
+	}
+	if batch || pollerConf.eventBatchSize < int(readAhead) {
+		pollerConf.eventBatchSize = ed.readAhead
 	}
 
 	ed.eventPoller = newEventPoller(ctx, di, en, pollerConf)
@@ -162,11 +174,8 @@ func (ed *eventDispatcher) electAndStart() {
 	ed.elected = true
 	ed.eventPoller.start()
 
-	if ed.batch {
-		go ed.deliverBatchedEvents()
-	} else {
-		go ed.deliverEvents()
-	}
+	go ed.deliverEvents()
+
 	// Wait until the event poller closes
 	<-ed.eventPoller.closed
 }
@@ -323,7 +332,15 @@ func (ed *eventDispatcher) bufferedDelivery(events []core.LocallySequenced) (boo
 			ed.mux.Unlock()
 
 			dispatched++
-			ed.eventDelivery <- event
+			if !ed.batch {
+				// dispatch individually
+				ed.eventDelivery <- []*core.EventDelivery{event}
+			}
+		}
+
+		if ed.batch && len(dispatchable) > 0 {
+			// Dispatch the whole batch now marked in-flight
+			ed.eventDelivery <- dispatchable
 		}
 
 		if inflightCount == 0 {
@@ -381,92 +398,48 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) {
 	}
 }
 
-func (ed *eventDispatcher) deliverBatchedEvents() {
-	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
-
-	batchSize := 1
-	if ed.readAhead > 1 {
-		batchSize = ed.readAhead
-	}
-	var events []*core.CombinedEventDataDelivery
-	var batchTimeoutContext context.Context
-	var batchTimeoutCancel func()
-	for {
-		var timeoutContext context.Context
-		var timedOut bool
-		if batchTimeoutContext != nil {
-			timeoutContext = batchTimeoutContext
-		} else {
-			timeoutContext = ed.ctx
-		}
-		select {
-		case event, ok := <-ed.eventDelivery:
-			if !ok {
-				if batchTimeoutCancel != nil {
-					batchTimeoutCancel()
-				}
-				return
-			}
-
-			if events == nil {
-				events = []*core.CombinedEventDataDelivery{}
-				batchTimeoutContext, batchTimeoutCancel = context.WithTimeout(ed.ctx, ed.batchTimeout)
-			}
-
-			log.L(ed.ctx).Debugf("Dispatching %s event in a batch: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-
-			var data []*core.Data
-			var err error
-			if withData && event.Message != nil {
-				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
-			}
-
-			events = append(events, &core.CombinedEventDataDelivery{Event: event, Data: data})
-
-			if err != nil {
-				ed.deliveryResponse(&core.EventDeliveryResponse{ID: event.ID, Rejected: true})
-			}
-
-		case <-timeoutContext.Done():
-			timedOut = true
-		case <-ed.ctx.Done():
-			if batchTimeoutCancel != nil {
-				batchTimeoutCancel()
-			}
-			return
-		}
-
-		if len(events) == batchSize || (timedOut && len(events) > 0) {
-			_ = ed.transport.BatchDeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, events)
-			// If err handle all the delivery responses for all the events??
-			events = nil
-		}
-	}
-}
-
 // TODO issue here, we can't just call DeliveryRequest with one thing.
 func (ed *eventDispatcher) deliverEvents() {
 	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
 	for {
 		select {
-		case event, ok := <-ed.eventDelivery:
+		case events, ok := <-ed.eventDelivery:
 			if !ok {
 				return
 			}
 
-			log.L(ed.ctx).Debugf("Dispatching %s event: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-			var data []*core.Data
+			// As soon as we hit an error, we need to trigger into nack mode
 			var err error
-			if withData && event.Message != nil {
-				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
+			eventsWithData := make([]*core.CombinedEventDataDelivery, len(events))
+			for i := 0; i < len(events) && err == nil; i++ {
+				e := &core.CombinedEventDataDelivery{
+					Event: events[i],
+				}
+				eventsWithData[i] = e
+				log.L(ed.ctx).Debugf("Dispatching %s event: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), e.Event.Sequence, e.Event.ID, e.Event.Type, e.Event.Namespace, e.Event.Reference)
+				if withData && e.Event.Message != nil {
+					e.Data, _, err = ed.data.GetMessageDataCached(ed.ctx, e.Event.Message)
+				}
+				// Individual events (in reality there is only ever i==0 for this case)
+				if err == nil && !ed.batch {
+					err = ed.transport.DeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, e.Event, e.Data)
+				}
+				if err != nil {
+					ed.deliveryResponse(&core.EventDeliveryResponse{ID: e.Event.ID, Rejected: true})
+				}
 			}
 
-			if err == nil {
-				err = ed.transport.DeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, event, data)
+			// In batch mode we do one dispatch of the whole set as one
+			if err == nil && ed.batch {
+				err = ed.transport.BatchDeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, eventsWithData)
+				if err != nil {
+					// nack everything on behalf of the failed delivery
+					for _, e := range events {
+						ed.deliveryResponse(&core.EventDeliveryResponse{ID: e.Event.ID, Rejected: true})
+					}
+				}
 			}
-			if err != nil {
-				ed.deliveryResponse(&core.EventDeliveryResponse{ID: event.ID, Rejected: true})
-			}
+
 		case <-ed.ctx.Done():
 			return
 		}
