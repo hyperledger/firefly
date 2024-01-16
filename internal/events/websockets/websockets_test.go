@@ -305,12 +305,13 @@ func TestStartReceiveDurable(t *testing.T) {
 	var connID string
 	sub := cbs.On("RegisterConnection",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
-			return subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
-		}),
-	).Return(nil)
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		subMatch := args[1].(events.SubscriptionMatcher)
+		assert.True(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"}))
+	})
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
@@ -385,12 +386,13 @@ func TestStartReceiveDurableBatch(t *testing.T) {
 	var connID string
 	mrg := cbs.On("RegisterConnection",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
-			return subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
-		}),
-	).Return(nil)
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		subMatch := args[1].(events.SubscriptionMatcher)
+		assert.True(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"}))
+	})
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
@@ -463,22 +465,20 @@ func TestStartReceiveDurableWithAuth(t *testing.T) {
 	ws, wsc, cancel := newTestWebsockets(t, cbs, &testAuthorizer{})
 	defer cancel()
 	var connID string
-	sub := cbs.On("RegisterConnection",
+	waitSubscribed := make(chan struct{})
+	cbs.On("RegisterConnection",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
-			return subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
-		}),
-	).Return(nil)
+		mock.Anything,
+	).Run(func(args mock.Arguments) {
+		subMatch := args[1].(events.SubscriptionMatcher)
+		assert.True(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"}))
+		close(waitSubscribed)
+	}).Return(nil)
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
-
-	waitSubscribed := make(chan struct{})
-	sub.RunFn = func(a mock.Arguments) {
-		close(waitSubscribed)
-	}
 
 	waitAcked := make(chan struct{})
 	ack.RunFn = func(a mock.Arguments) {
@@ -543,21 +543,19 @@ func TestStartReceiveDurableUnauthorized(t *testing.T) {
 	_, wsc, cancel := newTestWebsockets(t, cbs, &testAuthorizer{})
 	defer cancel()
 	var connID string
-	sub := cbs.On("RegisterConnection",
+	waitSubscribed := make(chan struct{})
+	cbs.On("RegisterConnection",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
-			return subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
-		}),
-	).Return(nil)
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		subMatch := args[1].(events.SubscriptionMatcher)
+		assert.True(t, subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"}))
+		close(waitSubscribed)
+	})
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
-
-	waitSubscribed := make(chan struct{})
-	sub.RunFn = func(a mock.Arguments) {
-		close(waitSubscribed)
-	}
 
 	waitAcked := make(chan struct{})
 	ack.RunFn = func(a mock.Arguments) {
@@ -577,17 +575,17 @@ func TestStartReceiveDurableUnauthorized(t *testing.T) {
 func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 	var connID string
 	cbs := &eventsmocks.Callbacks{}
-	sub := cbs.On("EphemeralSubscription",
+	waitSubscribed := make(chan struct{})
+	cbs.On("EphemeralSubscription",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		"ns1", mock.Anything, mock.Anything).Return(nil)
+		"ns1", mock.Anything, mock.Anything).
+		Return(nil).
+		Run(func(args mock.Arguments) {
+			close(waitSubscribed)
+		})
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
-
-	waitSubscribed := make(chan struct{})
-	sub.RunFn = func(a mock.Arguments) {
-		close(waitSubscribed)
-	}
 
 	waitAcked := make(chan struct{})
 	ack.RunFn = func(a mock.Arguments) {
@@ -623,17 +621,17 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 func TestAutoStartReceiveAckBatchEphemeral(t *testing.T) {
 	var connID string
 	cbs := &eventsmocks.Callbacks{}
-	sub := cbs.On("EphemeralSubscription",
+	waitSubscribed := make(chan struct{})
+	cbs.On("EphemeralSubscription",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		"ns1", mock.Anything, mock.Anything).Return(nil)
+		"ns1", mock.Anything, mock.Anything).
+		Return(nil).
+		Run(func(args mock.Arguments) {
+			close(waitSubscribed)
+		})
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
-
-	waitSubscribed := make(chan struct{})
-	sub.RunFn = func(a mock.Arguments) {
-		close(waitSubscribed)
-	}
 
 	waitAcked := make(chan struct{})
 	ack.RunFn = func(a mock.Arguments) {
@@ -1131,22 +1129,21 @@ func TestNamespaceScopedSuccess(t *testing.T) {
 	ws, wsc, cancel := newTestWebsocketsCommon(t, cbs, nil, "ns1")
 	defer cancel()
 	var connID string
-	sub := cbs.On("RegisterConnection",
+	waitSubscribed := make(chan struct{})
+
+	cbs.On("RegisterConnection",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
-			return subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
-		}),
-	).Return(nil)
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		subMatch := args[1].(events.SubscriptionMatcher)
+		assert.True(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"}))
+		close(waitSubscribed)
+	})
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
-
-	waitSubscribed := make(chan struct{})
-	sub.RunFn = func(a mock.Arguments) {
-		close(waitSubscribed)
-	}
 
 	waitAcked := make(chan struct{})
 	ack.RunFn = func(a mock.Arguments) {
