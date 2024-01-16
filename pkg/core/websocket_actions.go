@@ -29,6 +29,9 @@ var (
 
 	// WSProtocolErrorEventType is a special event "type" field for server to send the client, if it performs a ProtocolError
 	WSProtocolErrorEventType = fftypes.FFEnumValue("wstype", "protocol_error")
+
+	// WSEventBatchType is the type set when the message contains an array of events
+	WSEventBatchType = fftypes.FFEnumValue("wstype", "event_batch")
 )
 
 // WSActionBase is the base fields of all client actions sent on the websocket
@@ -65,7 +68,8 @@ type WSError struct {
 // WSEventBatch is used when batched delivery is enabled over the websocket, allowing
 // an array of events to be ack'd as a whole (rather than ack'ing individually)
 type WSEventBatch struct {
-	ID           *fftypes.UUID    `ffstruct:"WSEventBatch" json:"id"`
-	Subscription SubscriptionRef  `ffstruct:"WSEventBatch" json:"subscription"`
-	Events       []*EventDelivery `ffstruct:"WSEventBatch" json:"events"`
+	Type         WSClientPayloadType `ffstruct:"WSEventBatch" json:"type" ffenum:"wstype"`
+	ID           *fftypes.UUID       `ffstruct:"WSEventBatch" json:"id"`
+	Subscription SubscriptionRef     `ffstruct:"WSEventBatch" json:"subscription"`
+	Events       []*EventDelivery    `ffstruct:"WSEventBatch" json:"events"`
 }
