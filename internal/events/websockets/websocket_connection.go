@@ -267,6 +267,7 @@ func (wc *websocketConnection) dispatch(event *core.EventDelivery) error {
 
 func (wc *websocketConnection) dispatchBatch(sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
 	inflightBatch := &core.WSEventBatch{
+		Type:   core.WSEventBatchType,
 		ID:     fftypes.NewUUID(),
 		Events: make([]*core.EventDelivery, len(events)),
 	}
