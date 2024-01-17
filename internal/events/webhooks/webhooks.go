@@ -402,7 +402,7 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 		Status:  resp.StatusCode(),
 		Headers: fftypes.JSONObject{},
 	}
-	log.L(wh.ctx).Infof("Webhook<- %s %s on subscription %s returned %d", req.method, req.url, sub.ID, res.Status)
+	log.L(wh.ctx).Debugf("Webhook<- %s %s on subscription %s returned %d", req.method, req.url, sub.ID, res.Status)
 	header := resp.Header()
 	for h := range header {
 		res.Headers[h] = header.Get(h)
