@@ -499,7 +499,9 @@ func TestRequestWithBodyReplyEndToEndWithTLS(t *testing.T) {
 	groupHash := fftypes.NewRandB32()
 
 	client := ffresty.NewWithConfig(ctx, ffresty.Config{
-		TLSClientConfig: clientTLSConfig,
+		HTTPConfig: ffresty.HTTPConfig{
+			TLSClientConfig: clientTLSConfig,
+		},
 	})
 	sub := &core.Subscription{
 		SubscriptionRef: core.SubscriptionRef{

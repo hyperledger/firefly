@@ -1,6 +1,6 @@
 components: {}
 info:
-  title: FireFly
+  title: Hyperledger FireFly
   version: "1.0"
 openapi: 3.0.2
 paths:
@@ -8642,6 +8642,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -8973,6 +8974,7 @@ paths:
                           description: The type of the verifier
                           enum:
                           - ethereum_address
+                          - tezos_address
                           - fabric_msp_id
                           - dx_peer_id
                           type: string
@@ -9468,6 +9470,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -21417,6 +21420,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -21762,6 +21766,7 @@ paths:
                           description: The type of the verifier
                           enum:
                           - ethereum_address
+                          - tezos_address
                           - fabric_msp_id
                           - dx_peer_id
                           type: string
@@ -22285,6 +22290,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -25060,6 +25066,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -25194,6 +25201,7 @@ paths:
                           description: The type of the verifier
                           enum:
                           - ethereum_address
+                          - tezos_address
                           - fabric_msp_id
                           - dx_peer_id
                           type: string
@@ -26729,6 +26737,9 @@ paths:
                     description: The time the operation was created
                     format: date-time
                     type: string
+                  detail:
+                    description: Additional detailed information about an operation
+                      provided by the connector
                   error:
                     description: Any error reported back from the plugin for this
                       operation
@@ -27293,6 +27304,7 @@ paths:
                               description: The type of the verifier
                               enum:
                               - ethereum_address
+                              - tezos_address
                               - fabric_msp_id
                               - dx_peer_id
                               type: string
@@ -31164,6 +31176,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: active
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: connector
         schema:
           type: string
@@ -31220,11 +31237,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: standard
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: state
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -31288,6 +31300,10 @@ paths:
               schema:
                 items:
                   properties:
+                    active:
+                      description: Indicates whether the pool has been successfully
+                        activated with the token connector
+                      type: boolean
                     connector:
                       description: The name of the token connector, as specified in
                         the FireFly core configuration file that is responsible for
@@ -31347,7 +31363,7 @@ paths:
                       type: string
                     message:
                       description: The UUID of the broadcast message used to inform
-                        the network to index this pool
+                        the network about this pool
                       format: uuid
                       type: string
                     methods:
@@ -31371,12 +31387,6 @@ paths:
                     standard:
                       description: The ERC standard the token pool conforms to, as
                         reported by the token connector
-                      type: string
-                    state:
-                      description: The current state of the token pool
-                      enum:
-                      - pending
-                      - confirmed
                       type: string
                     symbol:
                       description: The token symbol. If supplied on input for an existing
@@ -31507,6 +31517,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -31565,7 +31579,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -31589,12 +31603,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -31625,6 +31633,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -31683,7 +31695,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -31707,12 +31719,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -31806,6 +31812,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -31864,7 +31874,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -31888,12 +31898,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -31969,6 +31973,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -32027,7 +32035,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -32051,12 +32059,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -32087,6 +32089,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -32145,7 +32151,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -32169,12 +32175,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -33667,6 +33667,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -33735,6 +33736,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -33776,6 +33778,7 @@ paths:
                   description: The type of the verifier
                   enum:
                   - ethereum_address
+                  - tezos_address
                   - fabric_msp_id
                   - dx_peer_id
                   type: string
@@ -33794,6 +33797,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -34124,6 +34128,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -34251,6 +34256,7 @@ paths:
                           description: The type of the verifier
                           enum:
                           - ethereum_address
+                          - tezos_address
                           - fabric_msp_id
                           - dx_peer_id
                           type: string
@@ -35716,6 +35722,9 @@ paths:
                     description: The time the operation was created
                     format: date-time
                     type: string
+                  detail:
+                    description: Additional detailed information about an operation
+                      provided by the connector
                   error:
                     description: Any error reported back from the plugin for this
                       operation
@@ -36252,6 +36261,7 @@ paths:
                               description: The type of the verifier
                               enum:
                               - ethereum_address
+                              - tezos_address
                               - fabric_msp_id
                               - dx_peer_id
                               type: string
@@ -40010,6 +40020,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: active
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: connector
         schema:
           type: string
@@ -40066,11 +40081,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: standard
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: state
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -40134,6 +40144,10 @@ paths:
               schema:
                 items:
                   properties:
+                    active:
+                      description: Indicates whether the pool has been successfully
+                        activated with the token connector
+                      type: boolean
                     connector:
                       description: The name of the token connector, as specified in
                         the FireFly core configuration file that is responsible for
@@ -40193,7 +40207,7 @@ paths:
                       type: string
                     message:
                       description: The UUID of the broadcast message used to inform
-                        the network to index this pool
+                        the network about this pool
                       format: uuid
                       type: string
                     methods:
@@ -40217,12 +40231,6 @@ paths:
                     standard:
                       description: The ERC standard the token pool conforms to, as
                         reported by the token connector
-                      type: string
-                    state:
-                      description: The current state of the token pool
-                      enum:
-                      - pending
-                      - confirmed
                       type: string
                     symbol:
                       description: The token symbol. If supplied on input for an existing
@@ -40346,6 +40354,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -40404,7 +40416,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -40428,12 +40440,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -40464,6 +40470,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -40522,7 +40532,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -40546,12 +40556,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -40631,6 +40635,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -40689,7 +40697,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -40713,12 +40721,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -40787,6 +40789,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -40845,7 +40851,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -40869,12 +40875,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -40905,6 +40905,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -40963,7 +40967,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -40987,12 +40991,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -42422,6 +42420,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -42483,6 +42482,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -42517,6 +42517,7 @@ paths:
                   description: The type of the verifier
                   enum:
                   - ethereum_address
+                  - tezos_address
                   - fabric_msp_id
                   - dx_peer_id
                   type: string
@@ -42535,6 +42536,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -42702,4 +42704,4 @@ paths:
       tags:
       - Global
 servers:
-- url: http://localhost:5000
+- url: http://localhost:5000/api/v1

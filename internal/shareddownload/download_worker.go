@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/operations"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type downloadWorker struct {
@@ -59,15 +59,17 @@ func (dw *downloadWorker) attemptWork(work *downloadWork) {
 
 	work.attempts++
 	isLastAttempt := work.attempts >= dw.dm.retryMaxAttempts
-	options := []operations.RunOperationOption{operations.RemainPendingOnFailure}
-	if isLastAttempt {
-		options = []operations.RunOperationOption{}
-	}
-
-	_, err := dw.dm.operations.RunOperation(dw.ctx, work.preparedOp, options...)
+	_, err := dw.dm.operations.RunOperation(dw.ctx, work.preparedOp, work.idempotentSubmit)
 	if err != nil {
 		log.L(dw.ctx).Errorf("Download operation %s/%s attempt=%d/%d failed: %s", work.preparedOp.Type, work.preparedOp.ID, work.attempts, dw.dm.retryMaxAttempts, err)
-		if !isLastAttempt {
+		if isLastAttempt {
+			dw.dm.operations.SubmitOperationUpdate(&core.OperationUpdate{
+				NamespacedOpID: work.preparedOp.NamespacedIDString(),
+				Plugin:         work.preparedOp.Plugin,
+				Status:         core.OpStatusFailed,
+				ErrorMessage:   err.Error(),
+			})
+		} else {
 			go dw.dm.waitAndRetryDownload(work)
 		}
 	}

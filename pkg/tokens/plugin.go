@@ -50,10 +50,10 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
-	CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error)
+	CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (phase core.OpPhase, err error)
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (complete bool, err error)
+	ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (phase core.OpPhase, err error)
 
 	// DectivateTokenPool deactivates a pool in order to stop receiving events and remove underlying listeners
 	DeactivateTokenPool(ctx context.Context, pool *core.TokenPool) error

@@ -19,6 +19,7 @@ package gateway
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"testing"
 
@@ -93,16 +94,40 @@ func simpleStorageFFIGet() *fftypes.FFIMethod {
 	}
 }
 
-func deploySimpleStorageContract(t *testing.T, stackName, contract string) string {
+func deployTestContractFromCompiledJSON(t *testing.T, stackName, contract string) (*fftypes.JSONAny, string) {
 	path := "../../data/contracts/" + contract
 	out, err := exec.Command("ff", "deploy", "ethereum", stackName, path).Output()
-	require.NoError(t, err)
+	var stderr []byte
+	if err != nil {
+		stderr = err.(*exec.ExitError).Stderr
+	}
+	require.NoError(t, err, fmt.Sprintf("ff deploy failed: %s", stderr))
 	var output map[string]interface{}
 	err = json.Unmarshal(out, &output)
 	require.NoError(t, err)
 	address := output["address"].(string)
 	t.Logf("Contract address: %s", address)
-	return address
+
+	type solcJSON struct {
+		Contracts map[string]struct {
+			ABI *fftypes.JSONAny `json:"abi"`
+		} `json:"contracts"`
+	}
+	b, err := os.ReadFile(path)
+	assert.NoError(t, err)
+	var contractJSON solcJSON
+	err = json.Unmarshal(b, &contractJSON)
+	assert.NoError(t, err)
+
+	var abiBytes *fftypes.JSONAny
+	for _, contract := range contractJSON.Contracts {
+		abiBytes = contract.ABI
+		if abiBytes != nil {
+			break
+		}
+	}
+	assert.NotNil(t, abiBytes)
+	return abiBytes, address
 }
 
 type EthereumSimpleStorageTestSuite struct {
@@ -122,7 +147,7 @@ func (suite *EthereumSimpleStorageTestSuite) SetupSuite() {
 	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
 	account := stackState.Accounts[0].(map[string]interface{})
 	suite.ethIdentity = account["address"].(string)
-	suite.contractAddress = deploySimpleStorageContract(suite.T(), stack.Name, "simplestorage/simple_storage.json")
+	_, suite.contractAddress = deployTestContractFromCompiledJSON(suite.T(), stack.Name, "simplestorage/simple_storage.json")
 
 	res, err := suite.testState.client1.CreateFFI(suite.T(), simpleStorageFFI(), false)
 	suite.interfaceID = res.ID

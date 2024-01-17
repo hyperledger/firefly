@@ -2387,7 +2387,7 @@ func TestHandleMessageContractEventNoNamespaceHandlers(t *testing.T) {
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sub2",
 		httpmock.NewJsonResponderOrPanic(200, subscription{
-			ID: "sub2", Stream: "es12345", Name: "ff-sub-ns1-1132312312312",
+			ID: "sub2", Stream: "es12345", Name: "ff-sub-ns1-58113723-0cc3-411f-aa1b-948eca83b9cd",
 		}))
 
 	e.SetHandler("ns2", em)
@@ -2535,7 +2535,7 @@ func TestDeployContractOK(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	_, err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
 	assert.NoError(t, err)
 }
 
@@ -2557,10 +2557,36 @@ func TestDeployContractFFEC100130(t *testing.T) {
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
-			return httpmock.NewJsonResponderOrPanic(500, `{"error":"FFEC100130: failure"}`)(req)
+			return httpmock.NewJsonResponderOrPanic(500, fftypes.JSONAnyPtr(`{"error":"FFEC100130: failure"}`))(req)
 		})
-	err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	submissionRejected, err := e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
 	assert.Regexp(t, "FF10429", err)
+	assert.True(t, submissionRejected)
+}
+
+func TestDeployContractRevert(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	input := []interface{}{
+		float64(1),
+		"1000000000000000000000000",
+	}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+	definitionBytes, err := json.Marshal([]interface{}{})
+	contractBytes, err := json.Marshal("0x123456")
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(500, fftypes.JSONAnyPtr(`{"error":"FF23021: EVM reverted", "submissionRejected": true}`))(req)
+		})
+	submissionRejected, err := e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	assert.Regexp(t, "FF10111.*FF23021", err)
+	assert.True(t, submissionRejected)
 }
 
 func TestDeployContractInvalidOption(t *testing.T) {
@@ -2591,8 +2617,9 @@ func TestDeployContractInvalidOption(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(400, "pop")(req)
 		})
-	err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	submissionRejected, err := e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
 	assert.Regexp(t, "FF10398", err)
+	assert.True(t, submissionRejected)
 }
 
 func TestDeployContractError(t *testing.T) {
@@ -2623,8 +2650,9 @@ func TestDeployContractError(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(400, "pop")(req)
 		})
-	err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	submissionRejected, err := e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
 	assert.Regexp(t, "FF10111", err)
+	assert.False(t, submissionRejected)
 }
 
 func TestInvokeContractOK(t *testing.T) {
@@ -2662,7 +2690,7 @@ func TestInvokeContractOK(t *testing.T) {
 		})
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.NoError(t, err)
 }
 
@@ -2703,7 +2731,7 @@ func TestInvokeContractWithBatchOK(t *testing.T) {
 
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, nil, nil, batch)
+	_, err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, nil, nil, batch)
 	assert.NoError(t, err)
 }
 
@@ -2721,8 +2749,9 @@ func TestInvokeContractWithBatchUnsupported(t *testing.T) {
 	batch := &blockchain.BatchPin{}
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, nil, nil, batch)
+	submissionRejected, err := e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, nil, nil, batch)
 	assert.Regexp(t, "FF10443", err)
+	assert.True(t, submissionRejected)
 }
 
 func TestInvokeContractInvalidOption(t *testing.T) {
@@ -2758,8 +2787,9 @@ func TestInvokeContractInvalidOption(t *testing.T) {
 		})
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	submissionRejected, err := e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF10398", err)
+	assert.True(t, submissionRejected)
 }
 
 func TestInvokeContractInvalidInput(t *testing.T) {
@@ -2796,7 +2826,7 @@ func TestInvokeContractInvalidInput(t *testing.T) {
 		})
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "unsupported type", err)
 }
 
@@ -2816,8 +2846,9 @@ func TestInvokeContractAddressNotSet(t *testing.T) {
 	assert.NoError(t, err)
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	submissionRejected, err := e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "'address' not set", err)
+	assert.True(t, submissionRejected)
 }
 
 func TestInvokeContractEthconnectError(t *testing.T) {
@@ -2844,8 +2875,38 @@ func TestInvokeContractEthconnectError(t *testing.T) {
 		})
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	submissionRejected, err := e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF10111", err)
+	assert.False(t, submissionRejected)
+}
+
+func TestInvokeContractEVMConnectRejectErr(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	errors := testFFIErrors()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	options := map[string]interface{}{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(400, fftypes.JSONAnyPtr(`{"error":"FF23021: EVM reverted", "submissionRejected": true}`))(req)
+		})
+	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
+	assert.NoError(t, err)
+	submissionRejected, err := e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	assert.Regexp(t, "FF10111", err)
+	assert.True(t, submissionRejected)
 }
 
 func TestInvokeContractPrepareFail(t *testing.T) {
@@ -2864,8 +2925,9 @@ func TestInvokeContractPrepareFail(t *testing.T) {
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), "wrong", params, options, nil)
+	submissionRejected, err := e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), "wrong", params, options, nil)
 	assert.Regexp(t, "FF10457", err)
+	assert.True(t, submissionRejected)
 }
 
 func TestParseInterfaceFailFFIMethod(t *testing.T) {

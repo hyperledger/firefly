@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -174,7 +174,7 @@ func (s *SQLCommon) GetContractListeners(ctx context.Context, namespace string, 
 		subs = append(subs, sub)
 	}
 
-	return subs, s.QueryRes(ctx, contractlistenersTable, tx, fop, fi), err
+	return subs, s.QueryRes(ctx, contractlistenersTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) UpdateContractListener(ctx context.Context, ns string, id *fftypes.UUID, update ffapi.Update) (err error) {

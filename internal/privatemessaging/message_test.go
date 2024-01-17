@@ -663,7 +663,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(batchSendData)
 		return op.Type == core.OpTypeDataExchangeSendBatch && *data.Node.ID == *node2.ID
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchPayload{
 		Batch: core.BatchPersisted{
@@ -767,7 +767,7 @@ func TestSendDataTransferFail(t *testing.T) {
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(batchSendData)
 		return op.Type == core.OpTypeDataExchangeSendBatch && *data.Node.ID == *node2.ID
-	})).Return(nil, fmt.Errorf("pop"))
+	}), false).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.sendData(pm.ctx, &core.TransportWrapper{
 		Batch: &core.Batch{

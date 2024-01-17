@@ -140,7 +140,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 	}
 }
 
-func (bm *broadcastManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (bm *broadcastManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 	switch data := op.Data.(type) {
 	case uploadBatchData:
 		return bm.uploadBatch(ctx, data)
@@ -149,71 +149,71 @@ func (bm *broadcastManager) RunOperation(ctx context.Context, op *core.PreparedO
 	case uploadValue:
 		return bm.uploadValue(ctx, data)
 	default:
-		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
+		return nil, core.OpPhaseInitializing, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 
 // uploadBatch uploads the serialized batch to public storage
-func (bm *broadcastManager) uploadBatch(ctx context.Context, data uploadBatchData) (outputs fftypes.JSONObject, complete bool, err error) {
+func (bm *broadcastManager) uploadBatch(ctx context.Context, data uploadBatchData) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
 	data.Batch.Namespace = bm.namespace.NetworkName
 	payload, err := json.Marshal(data.Batch)
 	if err != nil {
-		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
+		return nil, core.OpPhaseInitializing, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 	}
 
 	// Write it to IPFS to get a payload reference
 	payloadRef, err := bm.sharedstorage.UploadData(ctx, bytes.NewReader(payload))
 	if err != nil {
-		return nil, false, err
+		return nil, core.OpPhaseInitializing, err
 	}
 	log.L(ctx).Infof("Published batch '%s' to shared storage: '%s'", data.Batch.ID, payloadRef)
-	return getUploadBatchOutputs(payloadRef), true, nil
+	return getUploadBatchOutputs(payloadRef), core.OpPhaseComplete, nil
 }
 
 // uploadBlob streams a blob from the local data exchange, to public storage
-func (bm *broadcastManager) uploadBlob(ctx context.Context, data uploadBlobData) (outputs fftypes.JSONObject, complete bool, err error) {
+func (bm *broadcastManager) uploadBlob(ctx context.Context, data uploadBlobData) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 
 	// Stream from the local data exchange ...
 	reader, err := bm.exchange.DownloadBlob(ctx, data.Blob.PayloadRef)
 	if err != nil {
-		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadBlobFailed, data.Blob.PayloadRef)
+		return nil, core.OpPhaseInitializing, i18n.WrapError(ctx, err, coremsgs.MsgDownloadBlobFailed, data.Blob.PayloadRef)
 	}
 	defer reader.Close()
 
 	// ... to the shared storage
 	data.Data.Blob.Public, err = bm.sharedstorage.UploadData(ctx, reader)
 	if err != nil {
-		return nil, false, err
+		return nil, core.OpPhaseInitializing, err
 	}
 
 	// Update the data in the DB
 	err = bm.database.UpdateData(ctx, bm.namespace.Name, data.Data.ID, database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", data.Data.Blob.Public))
 	if err != nil {
-		return nil, false, err
+		return nil, core.OpPhaseInitializing, err
 	}
 
 	log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to shared storage: '%s'", data.Data.Blob.Hash, data.Data.ID, data.Data.Blob.Public)
-	return getUploadBlobOutputs(data.Data.Blob.Public), true, nil
+	return getUploadBlobOutputs(data.Data.Blob.Public), core.OpPhaseComplete, nil
 }
 
 // uploadValue streams the value JSON from a data record to public storage
-func (bm *broadcastManager) uploadValue(ctx context.Context, data uploadValue) (outputs fftypes.JSONObject, complete bool, err error) {
+func (bm *broadcastManager) uploadValue(ctx context.Context, data uploadValue) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 
 	// Upload to shared storage
 	data.Data.Public, err = bm.sharedstorage.UploadData(ctx, bytes.NewReader(data.Data.Value.Bytes()))
 	if err != nil {
-		return nil, false, err
+		return nil, core.OpPhaseInitializing, err
 	}
 
 	// Update the public reference for the data in the DB
 	err = bm.database.UpdateData(ctx, bm.namespace.Name, data.Data.ID, database.DataQueryFactory.NewUpdate(ctx).Set("public", data.Data.Public))
 	if err != nil {
-		return nil, false, err
+		return nil, core.OpPhaseInitializing, err
 	}
 
 	log.L(ctx).Infof("Published value for data '%s' to shared storage: '%s'", data.Data.ID, data.Data.Public)
-	return getUploadBlobOutputs(data.Data.Public), true, nil
+	return getUploadBlobOutputs(data.Data.Public), core.OpPhaseComplete, nil
 }
 
 func (bm *broadcastManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {

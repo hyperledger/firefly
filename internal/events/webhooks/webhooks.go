@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -285,7 +285,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 			if err != nil {
 				return err
 			}
-			newFFRestyConfig.RetryInitialDelay = time.Duration(ffd)
+			newFFRestyConfig.RetryInitialDelay = fftypes.FFDuration(time.Duration(ffd))
 		}
 
 		if options.Retry.MaximumDelay != "" {
@@ -293,7 +293,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 			if err != nil {
 				return err
 			}
-			newFFRestyConfig.RetryMaximumDelay = time.Duration(ffd)
+			newFFRestyConfig.RetryMaximumDelay = fftypes.FFDuration(time.Duration(ffd))
 		}
 	}
 
@@ -306,7 +306,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		if err != nil {
 			return err
 		}
-		newFFRestyConfig.HTTPRequestTimeout = time.Duration(ffd)
+		newFFRestyConfig.HTTPRequestTimeout = fftypes.FFDuration(time.Duration(ffd))
 	}
 
 	if options.HTTPOptions.HTTPIdleConnTimeout != "" {
@@ -314,7 +314,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		if err != nil {
 			return err
 		}
-		newFFRestyConfig.HTTPIdleConnTimeout = time.Duration(ffd)
+		newFFRestyConfig.HTTPIdleConnTimeout = fftypes.FFDuration(time.Duration(ffd))
 	}
 
 	if options.HTTPOptions.HTTPExpectContinueTimeout != "" {
@@ -322,7 +322,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		if err != nil {
 			return err
 		}
-		newFFRestyConfig.HTTPExpectContinueTimeout = time.Duration(ffd)
+		newFFRestyConfig.HTTPExpectContinueTimeout = fftypes.FFDuration(time.Duration(ffd))
 	}
 
 	if options.HTTPOptions.HTTPConnectionTimeout != "" {
@@ -330,7 +330,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		if err != nil {
 			return err
 		}
-		newFFRestyConfig.HTTPConnectionTimeout = time.Duration(ffd)
+		newFFRestyConfig.HTTPConnectionTimeout = fftypes.FFDuration(time.Duration(ffd))
 	}
 
 	if options.HTTPOptions.HTTPTLSHandshakeTimeout != "" {
@@ -338,7 +338,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		if err != nil {
 			return err
 		}
-		newFFRestyConfig.HTTPTLSHandshakeTimeout = time.Duration(ffd)
+		newFFRestyConfig.HTTPTLSHandshakeTimeout = fftypes.FFDuration(time.Duration(ffd))
 	}
 
 	if options.HTTPOptions.HTTPProxyURL != nil {

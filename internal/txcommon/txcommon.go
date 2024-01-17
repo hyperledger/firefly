@@ -38,6 +38,7 @@ type Helper interface {
 	SubmitNewTransactionBatch(ctx context.Context, namespace string, batch []*BatchedTransactionInsert) error
 	PersistTransaction(ctx context.Context, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error
+	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
 	InsertNewBlockchainEvents(ctx context.Context, events []*core.BlockchainEvent) (inserted []*core.BlockchainEvent, err error)
 	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error)
 	GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
@@ -312,6 +313,19 @@ func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id
 	return chainEvent, nil
 }
 
+func (t *transactionHelper) InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error) {
+	existing, err = t.database.InsertOrGetBlockchainEvent(ctx, event)
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil {
+		t.addBlockchainEventToCache(existing)
+		return existing, nil
+	}
+	t.addBlockchainEventToCache(event)
+	return nil, nil
+}
+
 func (t *transactionHelper) InsertNewBlockchainEvents(ctx context.Context, events []*core.BlockchainEvent) (inserted []*core.BlockchainEvent, err error) {
 	// First we try and insert the whole bundle using batch insert
 	err = t.database.InsertBlockchainEvents(ctx, events, func() {
@@ -323,6 +337,7 @@ func (t *transactionHelper) InsertNewBlockchainEvents(ctx context.Context, event
 		// happy path worked - all new events
 		return events, nil
 	}
+
 	// Fall back to insert-or-get
 	log.L(ctx).Warnf("Blockchain event insert-many optimization failed: %s", err)
 	inserted = make([]*core.BlockchainEvent, 0, len(events))
@@ -331,14 +346,31 @@ func (t *transactionHelper) InsertNewBlockchainEvents(ctx context.Context, event
 		if err != nil {
 			return nil, err
 		}
+
 		if existing != nil {
-			log.L(ctx).Debugf("Ignoring duplicate blockchain event %s", existing.ProtocolID)
+			// It's possible the batch insert was partially successful, and this is actually a "new" row.
+			// Look to see if the corresponding entry also exists in the "events" table.
+			fb := database.EventQueryFactory.NewFilter(ctx)
+			notifications, _, err := t.database.GetEvents(ctx, t.namespace, fb.And(
+				fb.Eq("type", core.EventTypeBlockchainEventReceived),
+				fb.Eq("reference", existing.ID),
+			))
+			if err != nil {
+				return nil, err
+			}
+			if len(notifications) == 0 {
+				log.L(ctx).Debugf("Detected partial success from batch insert on blockchain event %s", existing.ProtocolID)
+				inserted = append(inserted, existing) // notify caller that this is actually a new row
+			} else {
+				log.L(ctx).Debugf("Ignoring duplicate blockchain event %s", existing.ProtocolID)
+			}
 			t.addBlockchainEventToCache(existing)
 		} else {
 			inserted = append(inserted, event)
 			t.addBlockchainEventToCache(event)
 		}
 	}
+
 	return inserted, nil
 }
 

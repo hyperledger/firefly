@@ -31,6 +31,10 @@ import (
 	"github.com/hyperledger/firefly/pkg/events"
 )
 
+type WebSocketsNamespaced interface {
+	ServeHTTPNamespaced(namespace string, res http.ResponseWriter, req *http.Request)
+}
+
 type WebSockets struct {
 	ctx          context.Context
 	capabilities *events.Capabilities
@@ -120,6 +124,25 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	ws.connMux.Unlock()
 
 	wc.processAutoStart(req)
+}
+
+func (ws *WebSockets) ServeHTTPNamespaced(namespace string, res http.ResponseWriter, req *http.Request) {
+
+	wsConn, err := ws.upgrader.Upgrade(res, req, nil)
+	if err != nil {
+		log.L(ws.ctx).Errorf("WebSocket upgrade failed: %s", err)
+		return
+	}
+
+	ws.connMux.Lock()
+	wc := newConnection(ws.ctx, ws, wsConn, req, ws.auth)
+	wc.namespaceScoped = true
+	wc.namespace = namespace
+	ws.connections[wc.connID] = wc
+	ws.connMux.Unlock()
+
+	wc.processAutoStart(req)
+
 }
 
 func (ws *WebSockets) ack(connID string, inflight *core.EventDeliveryResponse) {

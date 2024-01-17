@@ -27,5 +27,15 @@ func TestEthereumGatewayE2ESuite(t *testing.T) {
 	suite.Run(t, new(gateway.TokensTestSuite))
 	suite.Run(t, new(gateway.EthereumCouponTestSuite))
 	suite.Run(t, new(gateway.EthereumSimpleStorageTestSuite))
+	suite.Run(t, new(gateway.EthereumRevertTestSuite))
+	suite.Run(t, new(gateway.TokensOnlyTestSuite))
+}
+
+func TestEthereumGatewayLegacyEthE2ESuite(t *testing.T) {
+	// Note EthereumRevertTestSuite does not work with legacy EthConnect, as the
+	// submissionRejected boolean is only supported by the EVMConnect (FFTM) generation.
+	suite.Run(t, new(gateway.TokensTestSuite))
+	suite.Run(t, new(gateway.EthereumCouponTestSuite))
+	suite.Run(t, new(gateway.EthereumSimpleStorageTestSuite))
 	suite.Run(t, new(gateway.TokensOnlyTestSuite))
 }

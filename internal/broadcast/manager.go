@@ -55,7 +55,7 @@ type Manager interface {
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error)
 }
 
 type broadcastManager struct {
@@ -137,7 +137,7 @@ func (bm *broadcastManager) Name() string {
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, payload *batch.DispatchPayload) error {
 
 	// Ensure all the blobs are published
-	if err := bm.uploadBlobs(ctx, payload.Batch.TX.ID, payload.Data); err != nil {
+	if err := bm.uploadBlobs(ctx, payload.Batch.TX.ID, payload.Data, false /* batch processing does not currently use idempotency keys */); err != nil {
 		return err
 	}
 
@@ -156,20 +156,20 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, payload *batch.Di
 	// We are in an (indefinite) retry cycle from the batch processor to dispatch this batch, that is only
 	// terminated with shutdown. So we leave the operation pending on failure, as it is still being retried.
 	// The user will still have the failure details recorded.
-	outputs, err := bm.operations.RunOperation(ctx, opUploadBatch(op, batch), operations.RemainPendingOnFailure)
+	outputs, err := bm.operations.RunOperation(ctx, opUploadBatch(op, batch), false /* batch processing does not currently use idempotency keys */)
 	if err != nil {
 		return err
 	}
 	payloadRef := outputs.GetString("payloadRef")
 	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payloadRef=%s", batch.ID, batch.Author, batch.Key, payloadRef)
-	return bm.multiparty.SubmitBatchPin(ctx, &payload.Batch, payload.Pins, payloadRef)
+	return bm.multiparty.SubmitBatchPin(ctx, &payload.Batch, payload.Pins, payloadRef, false /* batch processing does not currently use idempotency keys */)
 }
 
-func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data core.DataArray) error {
+func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data core.DataArray, idempotentSubmit bool) error {
 	for _, d := range data {
 		// We only need to send a blob if there is one, and it's not been uploaded to the shared storage
 		if d.Blob != nil && d.Blob.Hash != nil && d.Blob.Public == "" {
-			if err := bm.uploadDataBlob(ctx, tx, d); err != nil {
+			if err := bm.uploadDataBlob(ctx, tx, d, idempotentSubmit); err != nil {
 				return err
 			}
 		}
@@ -195,7 +195,7 @@ func (bm *broadcastManager) resolveData(ctx context.Context, id string) (*core.D
 	return d, nil
 }
 
-func (bm *broadcastManager) uploadDataBlob(ctx context.Context, tx *fftypes.UUID, d *core.Data) error {
+func (bm *broadcastManager) uploadDataBlob(ctx context.Context, tx *fftypes.UUID, d *core.Data, idempotentSubmit bool) error {
 	if d.Blob == nil || d.Blob.Hash == nil {
 		return i18n.NewError(ctx, coremsgs.MsgDataDoesNotHaveBlob)
 	}
@@ -218,7 +218,7 @@ func (bm *broadcastManager) uploadDataBlob(ctx context.Context, tx *fftypes.UUID
 		return i18n.NewError(ctx, coremsgs.MsgBlobNotFound, d.Blob.Hash)
 	}
 
-	_, err = bm.operations.RunOperation(ctx, opUploadBlob(op, d, blobs[0]))
+	_, err = bm.operations.RunOperation(ctx, opUploadBlob(op, d, blobs[0]), idempotentSubmit)
 	return err
 }
 
@@ -233,18 +233,27 @@ func (bm *broadcastManager) PublishDataValue(ctx context.Context, id string, ide
 	if err != nil {
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
+		resubmitWholeTX := false
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			resubmitted, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			total, resubmitted, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
-			if resubmitErr != nil {
+			switch {
+			case resubmitErr != nil:
 				// Error doing resubmit, return the new error
 				err = resubmitErr
-			} else if len(resubmitted) > 0 {
+			case total == 0:
+				// We didn't do anything last time - just start again
+				txid = idemErr.ExistingTXID
+				resubmitWholeTX = true
+				err = nil
+			case len(resubmitted) > 0:
 				// We successfully resubmitted an initialized operation, return 2xx not 409
 				err = nil
 			}
 		}
-		return d, err
+		if !resubmitWholeTX {
+			return d, err
+		}
 	}
 
 	op := core.NewOperation(
@@ -257,7 +266,7 @@ func (bm *broadcastManager) PublishDataValue(ctx context.Context, id string, ide
 		return nil, err
 	}
 
-	if _, err := bm.operations.RunOperation(ctx, opUploadValue(op, d)); err != nil {
+	if _, err := bm.operations.RunOperation(ctx, opUploadValue(op, d), idempotencyKey != ""); err != nil {
 		return nil, err
 	}
 
@@ -275,21 +284,30 @@ func (bm *broadcastManager) PublishDataBlob(ctx context.Context, id string, idem
 	if err != nil {
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
+		resubmitWholeTX := false
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			resubmitted, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			total, resubmitted, resubmitErr := bm.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 
-			if resubmitErr != nil {
+			switch {
+			case resubmitErr != nil:
 				// Error doing resubmit, return the new error
 				err = resubmitErr
-			} else if len(resubmitted) > 0 {
+			case total == 0:
+				// We didn't do anything last time - just start again
+				txid = idemErr.ExistingTXID
+				resubmitWholeTX = true
+				err = nil
+			case len(resubmitted) > 0:
 				// We successfully resubmitted an initialized operation, return 2xx not 409
 				err = nil
 			}
 		}
-		return d, err
+		if !resubmitWholeTX {
+			return d, err
+		}
 	}
 
-	if err = bm.uploadDataBlob(ctx, txid, d); err != nil {
+	if err = bm.uploadDataBlob(ctx, txid, d, idempotencyKey != ""); err != nil {
 		return nil, err
 	}
 

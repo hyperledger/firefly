@@ -100,6 +100,7 @@ func (dh *definitionHandler) reconcilePublishedFFI(ctx context.Context, existing
 }
 
 func (dh *definitionHandler) persistContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, isAuthor bool) (retry bool, err error) {
+	l := log.L(ctx)
 	for i := 1; ; i++ {
 		if err := dh.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
 			return false, i18n.WrapError(ctx, err, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID)
@@ -108,21 +109,25 @@ func (dh *definitionHandler) persistContractAPI(ctx context.Context, httpServerU
 		// Check if this conflicts with an existing API
 		existing, err := dh.database.InsertOrGetContractAPI(ctx, api)
 		if err != nil {
+			l.Errorf("Failed to InsertOrGetContractAPI due to err: %+v", err)
 			return true, err
 		}
 
 		if existing == nil {
 			// No conflict - new API was inserted successfully
+			l.Tracef("Successfully inserted the new contract API with ID %s", api.ID)
 			break
 		}
 
-		if api.Published {
-			if existing.ID.Equals(api.ID) {
-				// ID conflict - check if this matches (or should overwrite) the existing record
-				return dh.reconcilePublishedContractAPI(ctx, existing, api, isAuthor)
-			}
+		if existing.ID.Equals(api.ID) {
+			// the matching record has the same ID, perform an update
+			l.Trace("Found an existing contract API with the same ID, reconciling the contract API")
+			// ID conflict - check if this matches (or should overwrite) the existing record
+			return dh.reconcileContractAPI(ctx, existing, api, isAuthor)
+		} else if api.Published {
 
 			if existing.Name == api.Name {
+				l.Trace("Local name conflict, generating a unique name to retry")
 				// Local name conflict - generate a unique name and try again
 				api.Name = fmt.Sprintf("%s-%d", api.NetworkName, i)
 				continue
@@ -137,15 +142,27 @@ func (dh *definitionHandler) persistContractAPI(ctx context.Context, httpServerU
 	return false, nil
 }
 
-func (dh *definitionHandler) reconcilePublishedContractAPI(ctx context.Context, existing, api *core.ContractAPI, isAuthor bool) (retry bool, err error) {
-	if existing.Message.Equals(api.Message) {
-		// Message already recorded
-		return false, nil
-	}
+func (dh *definitionHandler) reconcileContractAPI(ctx context.Context, existing, api *core.ContractAPI, isAuthor bool) (retry bool, err error) {
+	l := log.L(ctx)
 
-	if existing.Message == nil && isAuthor {
-		// API was previously unpublished - if it was now published by this node, upsert the new version
-		api.Name = existing.Name
+	if api.Published {
+		l.Trace("Reconciling a published API")
+		if existing.Message.Equals(api.Message) {
+			l.Trace("Reconciling a published API: message already recorded, no action required")
+			// Message already recorded
+			return false, nil
+		}
+
+		if existing.Message == nil && isAuthor {
+			// API was previously unpublished - if it was now published by this node, upsert the new version
+			api.Name = existing.Name
+			l.Tracef("Reconciling a published API: update API name from '%s' to the existing name '%s'", api.Name, existing.Name)
+			if err := dh.database.UpsertContractAPI(ctx, api, database.UpsertOptimizationExisting); err != nil {
+				return true, err
+			}
+			return false, nil
+		}
+	} else {
 		if err := dh.database.UpsertContractAPI(ctx, api, database.UpsertOptimizationExisting); err != nil {
 			return true, err
 		}
@@ -161,11 +178,11 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
 	}
 
-	org, err := dh.identity.GetRootOrg(ctx)
+	org, err := dh.identity.GetRootOrgDID(ctx)
 	if err != nil {
 		return HandlerResult{Action: core.ActionRetry}, err
 	}
-	isAuthor := org.DID == msg.Header.Author
+	isAuthor := org == msg.Header.Author
 
 	ffi.Message = msg.Header.ID
 	ffi.Name = ffi.NetworkName
@@ -198,11 +215,11 @@ func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, sta
 		return HandlerResult{Action: core.ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract API", msg.Header.ID)
 	}
 
-	org, err := dh.identity.GetRootOrg(ctx)
+	org, err := dh.identity.GetRootOrgDID(ctx)
 	if err != nil {
 		return HandlerResult{Action: core.ActionRetry}, err
 	}
-	isAuthor := org.DID == msg.Header.Author
+	isAuthor := org == msg.Header.Author
 
 	api.Message = msg.Header.ID
 	api.Name = api.NetworkName

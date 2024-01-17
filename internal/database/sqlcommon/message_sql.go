@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -531,7 +531,7 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, namespace string, quer
 			return nil, nil, err
 		}
 	}
-	return msgs, s.QueryRes(ctx, messagesTable, tx, fop, fi), err
+	return msgs, s.QueryRes(ctx, messagesTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) GetMessageIDs(ctx context.Context, namespace string, filter ffapi.Filter) (ids []*core.IDAndSequence, err error) {

@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -44,7 +44,7 @@ var (
 		"symbol",
 		"decimals",
 		"message_id",
-		"state",
+		"active",
 		"created",
 		"tx_type",
 		"tx_id",
@@ -86,7 +86,7 @@ func (s *SQLCommon) attemptTokenPoolUpdate(ctx context.Context, tx *dbsql.TXWrap
 			Set("symbol", pool.Symbol).
 			Set("decimals", pool.Decimals).
 			Set("message_id", pool.Message).
-			Set("state", pool.State).
+			Set("active", pool.Active).
 			Set("tx_type", pool.TX.Type).
 			Set("tx_id", pool.TX.ID).
 			Set("info", pool.Info).
@@ -123,7 +123,7 @@ func (s *SQLCommon) setTokenPoolInsertValues(query sq.InsertBuilder, pool *core.
 		pool.Symbol,
 		pool.Decimals,
 		pool.Message,
-		pool.State,
+		pool.Active,
 		created,
 		pool.TX.Type,
 		pool.TX.ID,
@@ -244,7 +244,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*core.T
 		&pool.Symbol,
 		&pool.Decimals,
 		&pool.Message,
-		&pool.State,
+		&pool.Active,
 		&pool.Created,
 		&pool.TX.Type,
 		&pool.TX.ID,
@@ -325,7 +325,7 @@ func (s *SQLCommon) GetTokenPools(ctx context.Context, namespace string, filter 
 		pools = append(pools, d)
 	}
 
-	return pools, s.QueryRes(ctx, tokenpoolTable, tx, fop, fi), err
+	return pools, s.QueryRes(ctx, tokenpoolTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) DeleteTokenPool(ctx context.Context, namespace string, id *fftypes.UUID) error {

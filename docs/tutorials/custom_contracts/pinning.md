@@ -3,7 +3,7 @@ layout: default
 title: Pinning Data
 parent: pages.custom_smart_contracts
 grand_parent: pages.tutorials
-nav_order: 3
+nav_order: 4
 ---
 
 # Pin off-chain data to a custom blockchain transaction
@@ -18,11 +18,10 @@ This guide describes how to associate an arbitrary off-chain payload with a bloc
 > fundamentals of how FireFly interacts with [custom contracts](../).
 
 ## Table of contents
-
 {: .no_toc .text-delta }
 
 1. TOC
-   {:toc}
+{:toc}
 
 ---
 

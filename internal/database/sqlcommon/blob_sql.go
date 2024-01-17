@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -162,7 +162,7 @@ func (s *SQLCommon) GetBlobs(ctx context.Context, namespace string, filter ffapi
 		blob = append(blob, d)
 	}
 
-	return blob, s.QueryRes(ctx, blobsTable, tx, fop, fi), err
+	return blob, s.QueryRes(ctx, blobsTable, tx, fop, nil, fi), err
 
 }
 
