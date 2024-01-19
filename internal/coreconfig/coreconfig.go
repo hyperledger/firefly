@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -327,8 +327,10 @@ var (
 	OrgDescription = ffc("org.description")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
 	OrchestratorStartupAttempts = ffc("orchestrator.startupAttempts")
-	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
-	SubscriptionDefaultsReadAhead = ffc("subscription.defaults.batchSize")
+	// SubscriptionDefaultsBatchSize default read ahead to enable for subscriptions that do not explicitly configure readahead
+	SubscriptionDefaultsBatchSize = ffc("subscription.defaults.batchSize")
+	// SubscriptionDefaultsBatchTimeout default batch timeout
+	SubscriptionDefaultsBatchTimeout = ffc("subscription.defaults.batchTimeout")
 	// SubscriptionMax maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)
 	SubscriptionMax = ffc("subscription.max")
 	// SubscriptionsRetryInitialDelay is the initial retry delay
@@ -404,7 +406,7 @@ func setDefaults() {
 	viper.SetDefault(string(DownloadRetryFactor), 2.0)
 	viper.SetDefault(string(EventAggregatorFirstEvent), core.SubOptsFirstEventOldest)
 	viper.SetDefault(string(EventAggregatorBatchSize), 200)
-	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
+	viper.SetDefault(string(EventAggregatorBatchTimeout), "0ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
 	viper.SetDefault(string(EventAggregatorRewindTimeout), "50ms")
 	viper.SetDefault(string(EventAggregatorRewindQueueLength), 10)
@@ -414,7 +416,7 @@ func setDefaults() {
 	viper.SetDefault(string(EventAggregatorRetryMaxDelay), "30s")
 	viper.SetDefault(string(EventDBEventsBufferSize), 100)
 	viper.SetDefault(string(EventDispatcherBufferLength), 5)
-	viper.SetDefault(string(EventDispatcherBatchTimeout), "250ms")
+	viper.SetDefault(string(EventDispatcherBatchTimeout), "0ms")
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
 	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets", "webhooks"})
 	viper.SetDefault(string(EventTransportsDefault), "websockets")
@@ -451,7 +453,8 @@ func setDefaults() {
 	viper.SetDefault(string(PrivateMessagingBatchSize), 200)
 	viper.SetDefault(string(PrivateMessagingBatchTimeout), "1s")
 	viper.SetDefault(string(PrivateMessagingBatchPayloadLimit), "800Kb")
-	viper.SetDefault(string(SubscriptionDefaultsReadAhead), 0)
+	viper.SetDefault(string(SubscriptionDefaultsBatchSize), 50)
+	viper.SetDefault(string(SubscriptionDefaultsBatchTimeout), "50ms")
 	viper.SetDefault(string(SubscriptionMax), 500)
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
