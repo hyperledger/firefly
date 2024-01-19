@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -133,6 +133,7 @@ var (
 	APIEndpointsGetWebSockets                   = ffm("api.endpoints.getStatusWebSockets", "Gets a list of the current WebSocket connections to this node")
 	APIEndpointsGetStatus                       = ffm("api.endpoints.getStatus", "Gets the status of this namespace")
 	APIEndpointsGetSubscriptionByID             = ffm("api.endpoints.getSubscriptionByID", "Gets a subscription by its ID")
+	APIEndpointsGetSubscriptionEventsFiltered   = ffm("api.endpoints.getSubscriptionEventsFiltered", "Gets a collection of events filtered by the subscription for further filtering")
 	APIEndpointsGetSubscriptions                = ffm("api.endpoints.getSubscriptions", "Gets a list of subscriptions")
 	APIEndpointsGetTokenAccountPools            = ffm("api.endpoints.getTokenAccountPools", "Gets a list of token pools that contain a given token account key")
 	APIEndpointsGetTokenAccounts                = ffm("api.endpoints.getTokenAccounts", "Gets a list of token accounts")

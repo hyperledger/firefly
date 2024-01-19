@@ -169,6 +169,26 @@ func (_m *EventManager) EnrichEvent(ctx context.Context, event *core.Event) (*co
 	return r0, r1
 }
 
+// FilterEventsOnSubscription provides a mock function with given fields: _a0, subscription
+func (_m *EventManager) FilterEventsOnSubscription(_a0 []*core.EnrichedEvent, subscription *core.Subscription) []*core.EnrichedEvent {
+	ret := _m.Called(_a0, subscription)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FilterEventsOnSubscription")
+	}
+
+	var r0 []*core.EnrichedEvent
+	if rf, ok := ret.Get(0).(func([]*core.EnrichedEvent, *core.Subscription) []*core.EnrichedEvent); ok {
+		r0 = rf(_a0, subscription)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*core.EnrichedEvent)
+		}
+	}
+
+	return r0
+}
+
 // GetPlugins provides a mock function with given fields:
 func (_m *EventManager) GetPlugins() []*core.NamespaceStatusPlugin {
 	ret := _m.Called()

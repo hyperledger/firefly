@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -133,4 +133,57 @@ func (or *orchestrator) GetSubscriptionByIDWithStatus(ctx context.Context, id st
 	}
 
 	return subWithStatus, nil
+}
+
+func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, subscription *core.Subscription, filter ffapi.AndFilter) ([]*core.EnrichedEvent, *ffapi.FilterResult, error) {
+
+	// Internally we need to know the limit/count from the inbound filter
+	inboundFilterOptions, err := filter.Finalize()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var ssFilters = &ffapi.QueryFields{}
+	fb := ssFilters.NewFilter(ctx)
+	ssFilter := fb.And()
+
+	// This references the final offset on the FILTERED list
+	finalDesiredOffset := inboundFilterOptions.Skip + inboundFilterOptions.Limit
+	var subscriptionFilteredEvents []*core.EnrichedEvent
+
+	internalLimit := 20
+	internalSkip := 0
+	ssFilter.Limit(uint64(internalLimit))
+
+	for len(subscriptionFilteredEvents) < int(finalDesiredOffset) {
+		ssFilter.Skip(uint64(internalSkip))
+
+		allEvents, _, err := or.GetEventsWithReferences(ctx, ssFilter)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if len(allEvents) == 0 {
+			break
+		}
+
+		filteredEvents := or.events.FilterEventsOnSubscription(allEvents, subscription)
+
+		remainingEventCount := int(finalDesiredOffset) - len(subscriptionFilteredEvents)
+		if len(filteredEvents)+len(subscriptionFilteredEvents) > int(finalDesiredOffset) {
+			subscriptionFilteredEvents = append(subscriptionFilteredEvents, filteredEvents[0:remainingEventCount]...)
+		} else {
+			subscriptionFilteredEvents = append(subscriptionFilteredEvents, filteredEvents...)
+		}
+
+		internalSkip += internalLimit
+	}
+
+	subscriptionFilteredEvents = subscriptionFilteredEvents[inboundFilterOptions.Skip:]
+
+	filterResultLength := int64(len(subscriptionFilteredEvents))
+
+	return subscriptionFilteredEvents, &ffapi.FilterResult{
+		TotalCount: &filterResultLength,
+	}, nil
 }

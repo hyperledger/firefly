@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -649,4 +649,56 @@ func TestResolveTransportAndCapabilitiesDefault(t *testing.T) {
 	assert.True(t, c.BatchDelivery)
 
 	em.mev.AssertExpectations(t)
+}
+
+func TestEventFilterOnSubscriptionMatchesEvent(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	listenerUuid := fftypes.NewUUID()
+	group := &fftypes.Bytes32{}
+
+	events := []*core.EnrichedEvent{
+		{
+			Event: core.Event{
+				Type: core.EventTypeIdentityConfirmed,
+				Topic: "someTopic",
+			},
+			BlockchainEvent: &core.BlockchainEvent{
+				Name: "someEvent",
+				Listener: listenerUuid,
+			},
+			Transaction: &core.Transaction{
+				Type: "someTxType",
+			},
+			Message: &core.Message{
+				Header: core.MessageHeader{
+					Group: group,
+					Tag: "someTag",
+				},
+			},
+		},
+	}
+
+	subscription := &core.Subscription{
+		Filter: core.SubscriptionFilter{
+			Events: core.EventTypeIdentityConfirmed.String(),
+			Topic: "someTopic",
+			Message: core.MessageFilter{
+				Tag: "some*",
+				Group: ".*",
+			},
+			BlockchainEvent: core.BlockchainEventFilter{
+				Name: "some*",
+				Listener: ".*",
+			},
+			Transaction: core.TransactionFilter{
+				Type: "some*",
+			},
+		},
+	}
+
+	filteredEvents := em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
 }

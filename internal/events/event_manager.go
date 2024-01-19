@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"regexp"
 	"strconv"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -61,6 +62,7 @@ type EventManager interface {
 	DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error)
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
 	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
+	FilterEventsOnSubscription(events []*core.EnrichedEvent, subscription *core.Subscription) []*core.EnrichedEvent
 	QueueBatchRewind(batchID *fftypes.UUID)
 	ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *events.Capabilities, error)
 	Start() error
@@ -302,4 +304,105 @@ func (em *eventManager) EnrichEvent(ctx context.Context, event *core.Event) (*co
 
 func (em *eventManager) QueueBatchRewind(batchID *fftypes.UUID) {
 	em.aggregator.queueBatchRewind(batchID)
+}
+
+func (em *eventManager) FilterEventsOnSubscription(events []*core.EnrichedEvent, subscription *core.Subscription) []*core.EnrichedEvent {
+	matchingEvents := make([]*core.EnrichedEvent, 0, len(events))
+	for _, event := range events {
+		filter := subscription.Filter
+
+		if filter.Events != "" {
+			matched, _ := regexp.MatchString(filter.Events, string(event.Type))
+
+			if !matched {
+				continue
+			}
+		}
+
+		msg := event.Message
+		tx := event.Transaction
+		be := event.BlockchainEvent
+		tag := ""
+		topic := event.Topic
+		group := ""
+		author := ""
+		txType := ""
+		beName := ""
+		beListener := ""
+
+		if msg != nil {
+			tag = msg.Header.Tag
+			author = msg.Header.Author
+			if msg.Header.Group != nil {
+				group = msg.Header.Group.String()
+			}
+		}
+
+		if tx != nil {
+			txType = tx.Type.String()
+		}
+
+		if be != nil {
+			beName = be.Name
+			beListener = be.Listener.String()
+		}
+
+		if filter.Topic != "" {
+			matched, err := regexp.MatchString(filter.Topic, topic)
+			if !matched || err != nil {
+				continue
+			}
+		}
+
+		if filter.Message.Tag != "" {
+			matched, err := regexp.MatchString(filter.Message.Tag, tag)
+
+			if !matched || err != nil {
+				continue
+			}
+		}
+
+		if filter.Message.Author != "" {
+			matched, err := regexp.MatchString(filter.Message.Author, author)
+
+			if !matched || err != nil {
+				continue
+			}
+		}
+
+		if filter.Message.Group != "" {
+			matched, err := regexp.MatchString(filter.Message.Group, group)
+
+			if !matched || err != nil {
+				continue
+			}
+		}
+
+		if filter.Transaction.Type != "" {
+			matched, err := regexp.MatchString(filter.Transaction.Type, txType)
+
+			if !matched || err != nil {
+				continue
+			}
+		}
+
+		if filter.BlockchainEvent.Name != "" {
+			matched, err := regexp.MatchString(filter.BlockchainEvent.Name, beName)
+
+			if !matched || err != nil {
+				continue
+			}
+		}
+
+		if filter.BlockchainEvent.Listener != "" {
+			matched, err := regexp.MatchString(filter.BlockchainEvent.Listener, beListener)
+
+			if !matched || err != nil {
+				continue
+			}
+		}
+
+		matchingEvents = append(matchingEvents, event)
+	}
+	return matchingEvents
 }
