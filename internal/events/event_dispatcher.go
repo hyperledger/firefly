@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
@@ -39,7 +40,8 @@ import (
 )
 
 const (
-	maxReadAhead = 65536
+	maxReadAhead        = 65536
+	defaultBatchTimeout = time.Duration(2) * time.Second
 )
 
 type ackNack struct {
@@ -67,6 +69,8 @@ type eventDispatcher struct {
 	mux           sync.Mutex
 	namespace     string
 	readAhead     int
+	batch         bool
+	batchTimeout  time.Duration
 	subscription  *subscription
 	txHelper      txcommon.Helper
 }
@@ -79,6 +83,15 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 	}
 	if readAhead > maxReadAhead {
 		readAhead = maxReadAhead
+	}
+
+	batchTimeout := defaultBatchTimeout
+	if sub.definition.Options.BatchTimeout != nil && *sub.definition.Options.BatchTimeout != "" {
+		batchTimeout = fftypes.ParseToDuration(*sub.definition.Options.BatchTimeout)
+	}
+	batch := false
+	if sub.definition.Options.Batch != nil {
+		batch = *sub.definition.Options.Batch
 	}
 	ed := &eventDispatcher{
 		ctx: log.WithLogField(log.WithLogField(ctx,
@@ -100,6 +113,8 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		txHelper:      txHelper,
+		batch:         batch,
+		batchTimeout:  batchTimeout,
 	}
 
 	pollerConf := &eventPollerConf{
@@ -146,10 +161,15 @@ func (ed *eventDispatcher) electAndStart() {
 		l.Debugf("Closed before we became leader")
 		return
 	}
-	// We're ready to go - not
+	// We're ready to go
 	ed.elected = true
 	ed.eventPoller.start()
-	go ed.deliverEvents()
+
+	if ed.batch {
+		go ed.deliverBatchedEvents()
+	} else {
+		go ed.deliverEvents()
+	}
 	// Wait until the event poller closes
 	<-ed.eventPoller.closed
 }
@@ -284,22 +304,22 @@ func (ed *eventDispatcher) bufferedDelivery(events []core.LocallySequenced) (boo
 	// or a reset event happens
 	for {
 		ed.mux.Lock()
-		var disapatchable []*core.EventDelivery
+		var dispatchable []*core.EventDelivery
 		inflightCount := len(ed.inflight)
 		maxDispatch := 1 + ed.readAhead - inflightCount
 		if maxDispatch >= len(matching) {
-			disapatchable = matching
+			dispatchable = matching
 			matching = nil
 		} else if maxDispatch > 0 {
-			disapatchable = matching[0:maxDispatch]
+			dispatchable = matching[0:maxDispatch]
 			matching = matching[maxDispatch:]
 		}
 		ed.mux.Unlock()
 
 		l.Debugf("Dispatcher event state: readahead=%d candidates=%d matched=%d inflight=%d queued=%d dispatched=%d dispatchable=%d lastAck=%d nacks=%d highest=%d",
-			ed.readAhead, len(candidates), matchCount, inflightCount, len(matching), dispatched, len(disapatchable), lastAck, nacks, highestOffset)
+			ed.readAhead, len(candidates), matchCount, inflightCount, len(matching), dispatched, len(dispatchable), lastAck, nacks, highestOffset)
 
-		for _, event := range disapatchable {
+		for _, event := range dispatchable {
 			ed.mux.Lock()
 			ed.inflight[*event.ID] = &event.Event
 			inflightCount = len(ed.inflight)
@@ -364,6 +384,66 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) {
 	}
 }
 
+func (ed *eventDispatcher) deliverBatchedEvents() {
+	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
+
+	var events []*core.CombinedEventDataDelivery
+	var batchTimeoutContext context.Context
+	var batchTimeoutCancel func()
+	for {
+		var timeoutContext context.Context
+		var timedOut bool
+		if batchTimeoutContext != nil {
+			timeoutContext = batchTimeoutContext
+		} else {
+			timeoutContext = ed.ctx
+		}
+		select {
+		case event, ok := <-ed.eventDelivery:
+			if !ok {
+				if batchTimeoutCancel != nil {
+					batchTimeoutCancel()
+				}
+				return
+			}
+
+			if events == nil {
+				events = []*core.CombinedEventDataDelivery{}
+				batchTimeoutContext, batchTimeoutCancel = context.WithTimeout(ed.ctx, ed.batchTimeout)
+			}
+
+			log.L(ed.ctx).Debugf("Dispatching %s event in a batch: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
+
+			var data []*core.Data
+			var err error
+			if withData && event.Message != nil {
+				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
+			}
+
+			events = append(events, &core.CombinedEventDataDelivery{Event: event, Data: data})
+
+			if err != nil {
+				ed.deliveryResponse(&core.EventDeliveryResponse{ID: event.ID, Rejected: true})
+			}
+
+		case <-timeoutContext.Done():
+			timedOut = true
+		case <-ed.ctx.Done():
+			if batchTimeoutCancel != nil {
+				batchTimeoutCancel()
+			}
+			return
+		}
+
+		if len(events) == ed.readAhead || (timedOut && len(events) > 0) {
+			_ = ed.transport.BatchDeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, events)
+			// If err handle all the delivery responses for all the events??
+			events = nil
+		}
+	}
+}
+
+// TODO issue here, we can't just call DeliveryRequest with one thing.
 func (ed *eventDispatcher) deliverEvents() {
 	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
 	for {
@@ -372,14 +452,16 @@ func (ed *eventDispatcher) deliverEvents() {
 			if !ok {
 				return
 			}
+
 			log.L(ed.ctx).Debugf("Dispatching %s event: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
 			var data []*core.Data
 			var err error
 			if withData && event.Message != nil {
 				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
 			}
+
 			if err == nil {
-				err = ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event, data)
+				err = ed.transport.DeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, event, data)
 			}
 			if err != nil {
 				ed.deliveryResponse(&core.EventDeliveryResponse{ID: event.ID, Rejected: true})

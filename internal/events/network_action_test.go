@@ -39,13 +39,23 @@ func TestNetworkAction(t *testing.T) {
 	}
 
 	em.mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
-	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(be *core.BlockchainEvent) bool {
-		return be.ProtocolID == "0001"
-	})).Return(nil, nil)
+	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(be []*core.BlockchainEvent) bool {
+		return len(be) == 1 && be[0].ProtocolID == "0001"
+	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil)
 	em.mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	em.mmp.On("TerminateContract", em.ctx, location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
-	err := em.BlockchainNetworkAction("terminate", location, event, verifier)
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeNetworkAction,
+			NetworkAction: &blockchain.NetworkActionEvent{
+				Action:     "terminate",
+				Location:   location,
+				Event:      event,
+				SigningKey: verifier,
+			},
+		},
+	})
 	assert.NoError(t, err)
 }
 
@@ -62,7 +72,17 @@ func TestNetworkActionUnknownIdentity(t *testing.T) {
 	em.mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, fmt.Errorf("pop")).Once()
 	em.mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, nil).Once()
 
-	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeNetworkAction,
+			NetworkAction: &blockchain.NetworkActionEvent{
+				Action:     "terminate",
+				Location:   location,
+				Event:      &blockchain.Event{},
+				SigningKey: verifier,
+			},
+		},
+	})
 	assert.NoError(t, err)
 }
 
@@ -82,7 +102,17 @@ func TestNetworkActionNonRootIdentity(t *testing.T) {
 		},
 	}, nil)
 
-	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeNetworkAction,
+			NetworkAction: &blockchain.NetworkActionEvent{
+				Action:     "terminate",
+				Location:   location,
+				Event:      &blockchain.Event{},
+				SigningKey: verifier,
+			},
+		},
+	})
 	assert.NoError(t, err)
 }
 
@@ -97,7 +127,17 @@ func TestNetworkActionNonMultiparty(t *testing.T) {
 		Value: "0x1234",
 	}
 
-	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeNetworkAction,
+			NetworkAction: &blockchain.NetworkActionEvent{
+				Action:     "terminate",
+				Location:   location,
+				Event:      &blockchain.Event{},
+				SigningKey: verifier,
+			},
+		},
+	})
 	assert.NoError(t, err)
 }
 
@@ -113,7 +153,17 @@ func TestNetworkActionUnknown(t *testing.T) {
 
 	em.mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
 
-	err := em.BlockchainNetworkAction("bad", location, &blockchain.Event{}, verifier)
+	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
+		{
+			Type: blockchain.EventTypeNetworkAction,
+			NetworkAction: &blockchain.NetworkActionEvent{
+				Action:     "bad",
+				Location:   location,
+				Event:      &blockchain.Event{},
+				SigningKey: verifier,
+			},
+		},
+	})
 	assert.NoError(t, err)
 }
 
@@ -125,6 +175,6 @@ func TestActionTerminateFail(t *testing.T) {
 
 	em.mmp.On("TerminateContract", em.ctx, location, mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
 
-	err := em.actionTerminate(location, &blockchain.Event{})
+	err := em.actionTerminate(em.ctx, location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
 }

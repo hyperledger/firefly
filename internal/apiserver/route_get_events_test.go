@@ -61,7 +61,7 @@ func TestGetEventsWithReferences(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, resWithCount.Items)
 	assert.Equal(t, int64(0), resWithCount.Count)
-	assert.Equal(t, int64(10), resWithCount.Total)
+	assert.Equal(t, int64(10), *resWithCount.Total)
 }
 
 func TestGetEventsWithFetchReference(t *testing.T) {
@@ -84,5 +84,5 @@ func TestGetEventsWithFetchReference(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, resWithCount.Items)
 	assert.Equal(t, int64(0), resWithCount.Count)
-	assert.Equal(t, int64(10), resWithCount.Total)
+	assert.Equal(t, int64(10), *resWithCount.Total)
 }

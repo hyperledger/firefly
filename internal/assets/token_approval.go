@@ -34,10 +34,11 @@ func (am *assetManager) GetTokenApprovals(ctx context.Context, filter ffapi.AndF
 }
 
 type approveSender struct {
-	mgr       *assetManager
-	approval  *core.TokenApprovalInput
-	resolved  bool
-	msgSender syncasync.Sender
+	mgr              *assetManager
+	approval         *core.TokenApprovalInput
+	resolved         bool
+	msgSender        syncasync.Sender
+	idempotentSubmit bool
 }
 
 func (s *approveSender) Prepare(ctx context.Context) error {
@@ -58,8 +59,9 @@ func (s *approveSender) setDefaults() {
 
 func (am *assetManager) NewApproval(approval *core.TokenApprovalInput) syncasync.Sender {
 	sender := &approveSender{
-		mgr:      am,
-		approval: approval,
+		mgr:              am,
+		approval:         approval,
+		idempotentSubmit: approval.IdempotencyKey != "",
 	}
 	sender.setDefaults()
 	return sender
@@ -107,17 +109,28 @@ func (s *approveSender) resolve(ctx context.Context) (opResubmitted bool, err er
 	if err != nil {
 		// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 		// submitting to their handlers
+		resubmitWholeTX := false
 		if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-			operation, resubmitErr := s.mgr.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+			total, resubmitted, resubmitErr := s.mgr.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 			if resubmitErr != nil {
 				// Error doing resubmit, return the new error
-				err = resubmitErr
-			} else if operation != nil {
-				// We successfully resubmitted an initialized operation, return 2xx not 409
+				return false, resubmitErr
+			}
+			if total == 0 {
+				// We didn't do anything last time - just start again
+				txid = idemErr.ExistingTXID
+				resubmitWholeTX = true
+				err = nil
+			} else if len(resubmitted) > 0 {
+				// We resubmitted something - translate the status code to 200 (true return)
+				s.approval.TX.ID = idemErr.ExistingTXID
+				s.approval.TX.Type = core.TransactionTypeTokenApproval
 				return true, nil
 			}
 		}
-		return false, err
+		if !resubmitWholeTX {
+			return false, err
+		}
 	}
 	s.approval.TX.ID = txid
 	s.approval.TX.Type = core.TransactionTypeTokenApproval
@@ -191,7 +204,7 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 		}
 	}
 
-	_, err = s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval))
+	_, err = s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval), s.idempotentSubmit)
 	return err
 }
 
@@ -210,8 +223,8 @@ func (am *assetManager) validateApproval(ctx context.Context, approval *core.Tok
 	approval.TokenApproval.Pool = pool.ID
 	approval.TokenApproval.Connector = pool.Connector
 
-	if pool.State != core.TokenPoolStateConfirmed {
-		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
+	if !pool.Active {
+		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotActive)
 	}
 	approval.Key, err = am.identity.ResolveInputSigningKey(ctx, approval.Key, am.keyNormalization)
 	return pool, err

@@ -23,6 +23,8 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/events"
 )
@@ -73,6 +75,10 @@ func (se *Events) Init(ctx context.Context, config config.Section) (err error) {
 func (se *Events) SetHandler(namespace string, handler events.Callbacks) error {
 	se.callbacks.writeLock.Lock()
 	defer se.callbacks.writeLock.Unlock()
+	if handler == nil {
+		delete(se.callbacks.handlers, namespace)
+		return nil
+	}
 	se.callbacks.handlers[namespace] = handler
 	// We have a single logical connection, that matches all subscriptions
 	return handler.RegisterConnection(se.connID, func(sr core.SubscriptionRef) bool { return true })
@@ -82,7 +88,7 @@ func (se *Events) Capabilities() *events.Capabilities {
 	return se.capabilities
 }
 
-func (se *Events) ValidateOptions(options *core.SubscriptionOptions) error {
+func (se *Events) ValidateOptions(ctx context.Context, options *core.SubscriptionOptions) error {
 	return nil
 }
 
@@ -107,7 +113,7 @@ func (se *Events) AddListener(ns string, el EventListener) error {
 	return nil
 }
 
-func (se *Events) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
+func (se *Events) DeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	se.mux.Lock()
 	defer se.mux.Unlock()
 	for ns, listeners := range se.listeners {
@@ -128,6 +134,10 @@ func (se *Events) DeliveryRequest(connID string, sub *core.Subscription, event *
 		})
 	}
 	return nil
+}
+
+func (se *Events) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
+	return i18n.NewError(ctx, coremsgs.MsgBatchDeliveryNotSupported, se.Name()) // should never happen
 }
 
 func (se *Events) NamespaceRestarted(ns string, startTime time.Time) {

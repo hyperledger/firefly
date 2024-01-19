@@ -21,9 +21,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 
+	"github.com/go-resty/resty/v2"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -32,13 +35,21 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
+// EventsToDispatch is a by-namespace map of ordered blockchain events.
+// Note there are some old listeners that do not have a namespace on them, and hence are stored under the empty string, and dispatched to all namespaces.
+type EventsToDispatch map[string][]*blockchain.EventToDispatch
+
 type BlockchainCallbacks interface {
 	SetHandler(namespace string, handler blockchain.Callbacks)
 	SetOperationalHandler(namespace string, handler core.OperationCallbacks)
 
 	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
-	BatchPinOrNetworkAction(ctx context.Context, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams) error
-	BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error
+	// Common logic for parsing a BatchPinOrNetworkAction event, and if not discarded to add it to the by-namespace map
+	PrepareBatchPinOrNetworkAction(ctx context.Context, events EventsToDispatch, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams)
+	// Common logic for parsing a BatchPinOrNetworkAction event, and if not discarded to add it to the by-namespace map
+	PrepareBlockchainEvent(ctx context.Context, events EventsToDispatch, namespace string, event *blockchain.EventForListener)
+	// Dispatch logic, that ensures all the right namespace callbacks get called for the event batch
+	DispatchBlockchainEvents(ctx context.Context, events EventsToDispatch) error
 }
 
 type FireflySubscriptions interface {
@@ -48,7 +59,7 @@ type FireflySubscriptions interface {
 }
 
 type callbacks struct {
-	writeLock  sync.Mutex
+	lock       sync.RWMutex
 	handlers   map[string]blockchain.Callbacks
 	opHandlers map[string]core.OperationCallbacks
 }
@@ -88,6 +99,24 @@ type BlockchainReceiptNotification struct {
 	ContractLocation *fftypes.JSONAny         `json:"contractLocation,omitempty"`
 }
 
+type BlockchainRESTError struct {
+	Error string `json:"error,omitempty"`
+	// See https://github.com/hyperledger/firefly-transaction-manager/blob/main/pkg/ffcapi/submission_error.go
+	SubmissionRejected bool `json:"submissionRejected,omitempty"`
+}
+
+type conflictError struct {
+	err error
+}
+
+func (ce *conflictError) Error() string {
+	return ce.err.Error()
+}
+
+func (ce *conflictError) IsConflictError() bool {
+	return true
+}
+
 func NewBlockchainCallbacks() BlockchainCallbacks {
 	return &callbacks{
 		handlers:   make(map[string]blockchain.Callbacks),
@@ -102,15 +131,23 @@ func NewFireflySubscriptions() FireflySubscriptions {
 }
 
 func (cb *callbacks) SetHandler(namespace string, handler blockchain.Callbacks) {
-	cb.writeLock.Lock()
-	defer cb.writeLock.Unlock()
-	cb.handlers[namespace] = handler
+	cb.lock.Lock()
+	defer cb.lock.Unlock()
+	if handler == nil {
+		delete(cb.handlers, namespace)
+	} else {
+		cb.handlers[namespace] = handler
+	}
 }
 
 func (cb *callbacks) SetOperationalHandler(namespace string, handler core.OperationCallbacks) {
-	cb.writeLock.Lock()
-	defer cb.writeLock.Unlock()
-	cb.opHandlers[namespace] = handler
+	cb.lock.Lock()
+	defer cb.lock.Unlock()
+	if handler == nil {
+		delete(cb.opHandlers, namespace)
+	} else {
+		cb.opHandlers[namespace] = handler
+	}
 }
 
 func (cb *callbacks) OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
@@ -129,7 +166,7 @@ func (cb *callbacks) OperationUpdate(ctx context.Context, plugin core.Named, nsO
 	log.L(ctx).Errorf("No handler found for blockchain operation '%s'", nsOpID)
 }
 
-func (cb *callbacks) BatchPinOrNetworkAction(ctx context.Context, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams) error {
+func (cb *callbacks) PrepareBatchPinOrNetworkAction(ctx context.Context, events EventsToDispatch, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams) {
 	// Check if this is actually an operator action
 	if len(params.Contexts) == 0 && strings.HasPrefix(params.NsOrAction, blockchain.FireFlyActionPrefix) {
 		action := params.NsOrAction[len(blockchain.FireFlyActionPrefix):]
@@ -141,14 +178,16 @@ func (cb *callbacks) BatchPinOrNetworkAction(ctx context.Context, subInfo *Subsc
 			for _, localNames := range subInfo.V1Namespace {
 				namespaces = append(namespaces, localNames...)
 			}
-			return cb.networkAction(ctx, namespaces, action, location, event, signingKey)
+			cb.addNetworkAction(ctx, events, namespaces, action, location, event, signingKey)
+			return
 		}
-		return cb.networkAction(ctx, []string{subInfo.V2Namespace}, action, location, event, signingKey)
+		cb.addNetworkAction(ctx, events, []string{subInfo.V2Namespace}, action, location, event, signingKey)
+		return
 	}
 
 	batch, err := buildBatchPin(ctx, event, params)
 	if err != nil {
-		return nil // move on
+		return // move on
 	}
 
 	// For V1 of the FireFly contract, namespace is passed explicitly, but needs to be mapped to local name(s).
@@ -158,9 +197,10 @@ func (cb *callbacks) BatchPinOrNetworkAction(ctx context.Context, subInfo *Subsc
 		namespaces := subInfo.V1Namespace[networkNamespace]
 		if len(namespaces) == 0 {
 			log.L(ctx).Errorf("No handler found for blockchain batch pin on network namespace '%s'", networkNamespace)
-			return nil
+			return
 		}
-		return cb.batchPinComplete(ctx, namespaces, batch, signingKey)
+		cb.addBatchPinComplete(ctx, events, namespaces, batch, signingKey)
+		return
 	}
 	batch.TransactionType = core.TransactionTypeBatchPin
 	if strings.HasPrefix(params.NsOrAction, blockchain.FireFlyActionPrefix) {
@@ -169,48 +209,82 @@ func (cb *callbacks) BatchPinOrNetworkAction(ctx context.Context, subInfo *Subsc
 			batch.TransactionType = core.TransactionTypeContractInvokePin
 		}
 	}
-	return cb.batchPinComplete(ctx, []string{subInfo.V2Namespace}, batch, signingKey)
+	cb.addBatchPinComplete(ctx, events, []string{subInfo.V2Namespace}, batch, signingKey)
 }
 
-func (cb *callbacks) batchPinComplete(ctx context.Context, namespaces []string, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+func (cb *callbacks) addBatchPinComplete(ctx context.Context, events EventsToDispatch, namespaces []string, batch *blockchain.BatchPin, signingKey *core.VerifierRef) {
+	cb.lock.RLock()
+	defer cb.lock.RUnlock()
 	for _, namespace := range namespaces {
-		if handler, ok := cb.handlers[namespace]; ok {
-			if err := handler.BatchPinComplete(namespace, batch, signingKey); err != nil {
-				return err
-			}
+		if _, ok := cb.handlers[namespace]; ok {
+			events[namespace] = append(events[namespace], &blockchain.EventToDispatch{
+				Type: blockchain.EventTypeBatchPinComplete,
+				BatchPinComplete: &blockchain.BatchPinCompleteEvent{
+					Namespace:  namespace,
+					Batch:      batch,
+					SigningKey: signingKey,
+				},
+			})
 		} else {
 			log.L(ctx).Errorf("No handler found for blockchain batch pin on local namespace '%s'", namespace)
 		}
 	}
-	return nil
 }
 
-func (cb *callbacks) networkAction(ctx context.Context, namespaces []string, action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
+func (cb *callbacks) addNetworkAction(ctx context.Context, events EventsToDispatch, namespaces []string, action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) {
+	cb.lock.RLock()
+	defer cb.lock.RUnlock()
 	for _, namespace := range namespaces {
-		if handler, ok := cb.handlers[namespace]; ok {
-			if err := handler.BlockchainNetworkAction(action, location, event, signingKey); err != nil {
-				return err
-			}
+		if _, ok := cb.handlers[namespace]; ok {
+			events[namespace] = append(events[namespace], &blockchain.EventToDispatch{
+				Type: blockchain.EventTypeNetworkAction,
+				NetworkAction: &blockchain.NetworkActionEvent{
+					Action:     action,
+					Location:   location,
+					Event:      event,
+					SigningKey: signingKey,
+				},
+			})
 		} else {
 			log.L(ctx).Errorf("No handler found for blockchain network action on local namespace '%s'", namespace)
 		}
 	}
-	return nil
 }
 
-func (cb *callbacks) BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error {
+func (cb *callbacks) PrepareBlockchainEvent(ctx context.Context, events EventsToDispatch, namespace string, event *blockchain.EventForListener) {
+	cb.lock.RLock()
+	defer cb.lock.RUnlock()
 	if namespace == "" {
 		// Older subscriptions don't populate namespace, so deliver the event to every handler
-		for _, cb := range cb.handlers {
-			if err := cb.BlockchainEvent(event); err != nil {
+		for namespace := range cb.handlers {
+			events[namespace] = append(events[namespace], &blockchain.EventToDispatch{
+				Type:        blockchain.EventTypeForListener,
+				ForListener: event,
+			})
+		}
+	} else {
+		if _, ok := cb.handlers[namespace]; ok {
+			events[namespace] = append(events[namespace], &blockchain.EventToDispatch{
+				Type:        blockchain.EventTypeForListener,
+				ForListener: event,
+			})
+		} else {
+			log.L(ctx).Errorf("No handler found for blockchain event on namespace '%s'", namespace)
+		}
+	}
+}
+
+func (cb *callbacks) DispatchBlockchainEvents(ctx context.Context, events EventsToDispatch) error {
+	cb.lock.RLock()
+	defer cb.lock.RUnlock()
+	// The event batches for each namespace are already built, and ready to dispatch.
+	// Just run around the handlers dispatching the list of events for each.
+	for namespace, events := range events {
+		if handler, ok := cb.handlers[namespace]; ok {
+			if err := handler.BlockchainEventBatch(events); err != nil {
 				return err
 			}
 		}
-	} else {
-		if handler, ok := cb.handlers[namespace]; ok {
-			return handler.BlockchainEvent(event)
-		}
-		log.L(ctx).Errorf("No handler found for blockchain event on namespace '%s'", namespace)
 	}
 	return nil
 }
@@ -260,13 +334,24 @@ func buildBatchPin(ctx context.Context, event *blockchain.Event, params *BatchPi
 }
 
 func GetNamespaceFromSubName(subName string) string {
-	var parts = strings.Split(subName, "-")
 	// Subscription names post version 1.1 are in the format `ff-sub-<namespace>-<listener ID>`
-	if len(parts) != 4 {
-		// Assume older subscription and return empty string
-		return ""
+	// Priot to that they had the format `ff-sub-<listener ID>`
+
+	// Strip the "ff-sub-" prefix from the beginning of the name
+	withoutPrefix := strings.TrimPrefix(subName, "ff-sub-")
+	if len(withoutPrefix) < len(subName) {
+		// Strip the listener ID from the end of the name
+		const UUIDLength = 36
+		if len(withoutPrefix) > UUIDLength {
+			uuidSplit := len(withoutPrefix) - UUIDLength - 1
+			namespace := withoutPrefix[:uuidSplit]
+			listenerID := withoutPrefix[uuidSplit:]
+			if strings.HasPrefix(listenerID, "-") {
+				return namespace
+			}
+		}
 	}
-	return parts[2]
+	return ""
 }
 
 func (s *subscriptions) AddSubscription(ctx context.Context, namespace *core.Namespace, version int, subID string, extra interface{}) {
@@ -336,4 +421,17 @@ func HandleReceipt(ctx context.Context, plugin core.Named, reply *BlockchainRece
 	callbacks.OperationUpdate(ctx, plugin, reply.Headers.ReceiptID, updateType, reply.TxHash, reply.Message, output)
 
 	return nil
+}
+
+func WrapRESTError(ctx context.Context, errRes *BlockchainRESTError, res *resty.Response, err error, defMsgKey i18n.ErrorMessageKey) error {
+	if errRes != nil && errRes.Error != "" {
+		if res != nil && res.StatusCode() == http.StatusConflict {
+			return &conflictError{err: i18n.WrapError(ctx, err, coremsgs.MsgBlockchainConnectorRESTErrConflict, errRes.Error)}
+		}
+		return i18n.WrapError(ctx, err, defMsgKey, errRes.Error)
+	}
+	if res != nil && res.StatusCode() == http.StatusConflict {
+		return &conflictError{err: ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgBlockchainConnectorRESTErrConflict)}
+	}
+	return ffresty.WrapRestErr(ctx, res, err, defMsgKey)
 }

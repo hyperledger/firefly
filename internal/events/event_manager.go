@@ -62,13 +62,12 @@ type EventManager interface {
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
 	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
 	QueueBatchRewind(batchID *fftypes.UUID)
+	ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *events.Capabilities, error)
 	Start() error
 	WaitStop()
 
 	// Bound blockchain callbacks
-	BatchPinComplete(namespace string, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
-	BlockchainEvent(event *blockchain.EventWithSubscription) error
-	BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error
+	BlockchainEventBatch(batch []*blockchain.EventToDispatch) error
 
 	// Bound dataexchange callbacks
 	DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) error
@@ -172,7 +171,7 @@ func NewEventManager(ctx context.Context, ns *core.Namespace, di database.Plugin
 
 	em.enricher = newEventEnricher(ns.Name, di, dm, om, txHelper)
 
-	if em.subManager, err = newSubscriptionManager(ctx, ns.Name, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, ns, em.enricher, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
 		return nil, err
 	}
 
@@ -210,6 +209,17 @@ func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 	return em.subManager.deletedSubscriptions
 }
 
+func (em *eventManager) ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *events.Capabilities, error) {
+	if transportName == "" {
+		transportName = em.defaultTransport
+	}
+	t, err := em.subManager.getTransport(ctx, transportName)
+	if err != nil {
+		return "", nil, err
+	}
+	return transportName, t.Capabilities(), nil
+}
+
 func (em *eventManager) WaitStop() {
 	em.subManager.close()
 	if em.blobReceiver != nil {
@@ -224,10 +234,6 @@ func (em *eventManager) WaitStop() {
 func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error) {
 	if subDef.Namespace == "" || subDef.Name == "" || subDef.ID == nil {
 		return i18n.NewError(ctx, coremsgs.MsgInvalidSubscription)
-	}
-
-	if subDef.Transport == "" {
-		subDef.Transport = em.defaultTransport
 	}
 
 	// Check it can be parsed before inserting (the submanager will check again when processing the creation, so we discard the result)

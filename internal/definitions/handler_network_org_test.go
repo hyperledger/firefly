@@ -22,8 +22,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -89,24 +87,21 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 
 	org, msg, data := testDeprecatedRootOrg(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, "ns1", org.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", org.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", msg.Header.Key).Return(nil, nil)
-	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
+	dh.mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, "ns1", org.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", org.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", msg.Header.Key).Return(nil, nil)
+	dh.mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *msg.Header.ID, *identity.Messages.Claim)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
+	dh.mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
 		assert.Equal(t, core.VerifierTypeEthAddress, verifier.Type)
 		assert.Equal(t, msg.Header.Key, verifier.Value)
 		assert.Equal(t, *org.ID, *verifier.Identity)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+	dh.mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
 		return event.Type == core.EventTypeIdentityConfirmed
 	})).Return(nil)
 
@@ -118,9 +113,6 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 
 	err = bs.RunFinalize(ctx)
 	assert.NoError(t, err)
-
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestHandleDeprecatedOrgDefinitionBadData(t *testing.T) {

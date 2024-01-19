@@ -87,7 +87,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -101,7 +101,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.NoError(t, err)
@@ -132,7 +132,46 @@ func TestMintTokensIdempotentResubmit(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(op, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{op}, nil)
+
+	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
+	_, err := am.MintTokens(context.Background(), mint, false)
+	assert.NoError(t, err)
+
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestMintTokensIdempotentResubmitAll(t *testing.T) {
+	am, cancel := newTestAssetsWithMetrics(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	mint := &core.TokenTransferInput{
+		TokenTransfer: core.TokenTransfer{
+			Amount: *fftypes.NewFFBigInt(5),
+		},
+		Pool:           "pool1",
+		IdempotencyKey: "idem1",
+	}
+	pool := &core.TokenPool{
+		Name:      "pool1",
+		Connector: "magic-tokens",
+		Active:    true,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
+		ExistingTXID:  id,
+		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(0, nil, nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("RunOperation", context.Background(), mock.Anything, true).Return(nil, nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
 	_, err := am.MintTokens(context.Background(), mint, false)
@@ -160,7 +199,7 @@ func TestMintTokensIdempotentNoOperationToResubmit(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* total */, nil /* to resumit */, nil)
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
 	_, err := am.MintTokens(context.Background(), mint, false)
@@ -189,7 +228,7 @@ func TestMintTokensIdempotentErrorOnResubmit(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenTransfer, core.IdempotencyKey("idem1")).Return(id, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
 	_, err := am.MintTokens(context.Background(), mint, false)
@@ -213,7 +252,7 @@ func TestMintTokensBadConnector(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "bad",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -253,7 +292,7 @@ func TestMintTokenDefaultPoolSuccess(t *testing.T) {
 		{
 			Name:      "pool1",
 			Connector: "magic-tokens",
-			State:     core.TokenPoolStateConfirmed,
+			Active:    true,
 		},
 	}
 	totalCount := int64(1)
@@ -270,7 +309,7 @@ func TestMintTokenDefaultPoolSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == tokenPools[0] && data.Transfer == &mint.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.NoError(t, err)
@@ -416,7 +455,7 @@ func TestMintTokensIdentityFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -447,7 +486,7 @@ func TestMintTokensFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -461,7 +500,7 @@ func TestMintTokensFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.EqualError(t, err, "pop")
@@ -486,7 +525,7 @@ func TestMintTokensOperationFail(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -520,7 +559,7 @@ func TestMintTokensConfirm(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -541,7 +580,7 @@ func TestMintTokensConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), mint, true)
 	assert.NoError(t, err)
@@ -564,7 +603,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -578,7 +617,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &burn.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.BurnTokens(context.Background(), burn, false)
 	assert.NoError(t, err)
@@ -602,7 +641,7 @@ func TestBurnTokensIdentityFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -633,7 +672,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -654,7 +693,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &burn.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.BurnTokens(context.Background(), burn, true)
 	assert.NoError(t, err)
@@ -680,7 +719,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -694,7 +733,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.NoError(t, err)
@@ -721,7 +760,7 @@ func TestTransferTokensUnconfirmedPool(t *testing.T) {
 	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -751,7 +790,7 @@ func TestTransferTokensIdentityFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -779,7 +818,7 @@ func TestTransferTokensNoFromOrTo(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -850,7 +889,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -869,7 +908,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.NoError(t, err)
@@ -953,7 +992,7 @@ func TestTransferTokensWithBroadcastMessageSendFail(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1050,7 +1089,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1069,7 +1108,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, false)
 	assert.NoError(t, err)
@@ -1174,7 +1213,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1195,7 +1234,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, true)
 	assert.NoError(t, err)
@@ -1237,7 +1276,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1269,7 +1308,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == core.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), transfer, true)
 	assert.NoError(t, err)
@@ -1326,7 +1365,7 @@ func TestTransferPrepare(t *testing.T) {
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 	}
 
 	sender := am.NewTransfer(transfer)

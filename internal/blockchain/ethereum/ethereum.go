@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
@@ -41,6 +42,7 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -75,6 +77,8 @@ type Ethereum struct {
 	ethconnectConf       config.Section
 	subs                 common.FireflySubscriptions
 	cache                cache.CInterface
+	backgroundRetry      *retry.Retry
+	backgroundStart      bool
 }
 
 type eventStreamWebsocket struct {
@@ -90,10 +94,6 @@ type ethWSCommandPayload struct {
 	Topic       string `json:"topic,omitempty"`
 	BatchNumber int64  `json:"batchNumber,omitempty"`
 	Message     string `json:"message,omitempty"`
-}
-
-type ethError struct {
-	Error string `json:"error,omitempty"`
 }
 
 type Location struct {
@@ -161,7 +161,12 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	if ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", ethconnectConf)
 	}
-	e.client, err = ffresty.New(e.ctx, ethconnectConf)
+
+	wsConfig, err := wsclient.GenerateConfig(ctx, ethconnectConf)
+	if err == nil {
+		e.client, err = ffresty.New(e.ctx, ethconnectConf)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -172,11 +177,6 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	}
 	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
 	e.prefixLong = ethconnectConf.GetString(EthconnectPrefixLong)
-
-	wsConfig, err := wsclient.GenerateConfig(ctx, ethconnectConf)
-	if err != nil {
-		return err
-	}
 
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
@@ -199,13 +199,24 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	}
 	e.cache = cache
 
-	e.streams = newStreamManager(e.client, e.cache)
-	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
-	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
-	stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)
+	e.streams = newStreamManager(e.client, e.cache, e.ethconnectConf.GetUint(EthconnectConfigBatchSize), uint(e.ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds()))
+
+	e.backgroundStart = e.ethconnectConf.GetBool(EthconnectBackgroundStart)
+	if e.backgroundStart {
+		e.backgroundRetry = &retry.Retry{
+			InitialDelay: e.ethconnectConf.GetDuration(EthconnectBackgroundStartInitialDelay),
+			MaximumDelay: e.ethconnectConf.GetDuration(EthconnectBackgroundStartMaxDelay),
+			Factor:       e.ethconnectConf.GetFloat64(EthconnectBackgroundStartFactor),
+		}
+
+		return nil
+	}
+
+	stream, err := e.streams.ensureEventStream(e.ctx, e.topic)
 	if err != nil {
 		return err
 	}
+
 	e.streamID = stream.ID
 	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
 
@@ -223,7 +234,33 @@ func (e *Ethereum) SetOperationHandler(namespace string, handler core.OperationC
 	e.callbacks.SetOperationalHandler(namespace, handler)
 }
 
+func (e *Ethereum) startBackgroundLoop() {
+	_ = e.backgroundRetry.Do(e.ctx, fmt.Sprintf("ethereum connector %s", e.Name()), func(attempt int) (retry bool, err error) {
+		stream, err := e.streams.ensureEventStream(e.ctx, e.topic)
+		if err != nil {
+			return true, err
+		}
+
+		e.streamID = stream.ID
+		log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
+		err = e.wsconn.Connect()
+		if err != nil {
+			return true, err
+		}
+
+		e.closed = make(chan struct{})
+		go e.eventLoop()
+
+		return false, nil
+	})
+}
+
 func (e *Ethereum) Start() (err error) {
+	if e.backgroundStart {
+		go e.startBackgroundLoop()
+		return nil
+	}
+
 	return e.wsconn.Connect()
 }
 
@@ -316,10 +353,10 @@ func (e *Ethereum) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSO
 	}
 }
 
-func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *common.SubscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
+func (e *Ethereum) processBatchPinEvent(ctx context.Context, events common.EventsToDispatch, location *fftypes.JSONAny, subInfo *common.SubscriptionInfo, msgJSON fftypes.JSONObject) {
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
-		return nil // move on
+		return // move on
 	}
 
 	authorAddress := event.Output.GetString("author")
@@ -338,41 +375,45 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 
 	// Validate the ethereum address - it must already be a valid address, we do not
 	// engage the address resolve on this blockchain-driven path.
-	authorAddress, err = formatEthAddress(ctx, authorAddress)
+	authorAddress, err := formatEthAddress(ctx, authorAddress)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
-		return nil // move on
+		return // move on
 	}
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: authorAddress,
 	}
 
-	return e.callbacks.BatchPinOrNetworkAction(ctx, subInfo, location, event, verifier, params)
+	e.callbacks.PrepareBatchPinOrNetworkAction(ctx, events, subInfo, location, event, verifier, params)
 }
 
-func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
-	subName, err := e.streams.getSubscriptionName(ctx, msgJSON.GetString("subId"))
+func (e *Ethereum) processContractEvent(ctx context.Context, events common.EventsToDispatch, msgJSON fftypes.JSONObject) error {
+	subID := msgJSON.GetString("subId")
+	subName, err := e.streams.getSubscriptionName(ctx, subID)
 	if err != nil {
-		return err
+		return err // this is a problem - we should be able to find the listener that dispatched this to us
 	}
 
 	namespace := common.GetNamespaceFromSubName(subName)
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event != nil {
-		err = e.callbacks.BlockchainEvent(ctx, namespace, &blockchain.EventWithSubscription{
-			Event:        *event,
-			Subscription: msgJSON.GetString("subId"),
+		e.callbacks.PrepareBlockchainEvent(ctx, events, namespace, &blockchain.EventForListener{
+			Event:      event,
+			ListenerID: subID,
 		})
 	}
-	return err
+	return nil
 }
 
 func (e *Ethereum) buildEventLocationString(msgJSON fftypes.JSONObject) string {
 	return fmt.Sprintf("address=%s", msgJSON.GetString("address"))
 }
 
-func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{}) error {
+func (e *Ethereum) handleMessageBatch(ctx context.Context, batchID int64, messages []interface{}) error {
+	// Build the set of events that need handling
+	events := make(common.EventsToDispatch)
+	count := len(messages)
 	for i, msgI := range messages {
 		msgMap, ok := msgI.(map[string]interface{})
 		if !ok {
@@ -381,12 +422,10 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 		}
 		msgJSON := fftypes.JSONObject(msgMap)
 
-		logger := log.L(ctx).WithField("ethmsgidx", i)
-		eventCtx, done := context.WithCancel(log.WithLogger(ctx, logger))
-
 		signature := msgJSON.GetString("signature")
 		sub := msgJSON.GetString("subId")
-		logger.Infof("Received '%s' message on '%s'", signature, sub)
+		logger := log.L(ctx)
+		logger.Infof("[EVM:%d:%d/%d]: '%s' on '%s'", batchID, i+1, count, signature, sub)
 		logger.Tracef("Message: %+v", msgJSON)
 
 		// Matches one of the active FireFly BatchPin subscriptions
@@ -395,7 +434,6 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 				Address: msgJSON.GetString("address"),
 			})
 			if err != nil {
-				done()
 				return err
 			}
 
@@ -405,25 +443,21 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 			}
 			switch signature {
 			case broadcastBatchEventSignature:
-				if err := e.handleBatchPinEvent(eventCtx, location, subInfo, msgJSON); err != nil {
-					done()
-					return err
-				}
+				e.processBatchPinEvent(ctx, events, location, subInfo, msgJSON)
 			default:
 				log.L(ctx).Infof("Ignoring event with unknown signature: %s", signature)
 			}
 		} else {
 			// Subscription not recognized - assume it's from a custom contract listener
 			// (event manager will reject it if it's not)
-			if err := e.handleContractEvent(eventCtx, msgJSON); err != nil {
-				done()
+			if err := e.processContractEvent(ctx, events, msgJSON); err != nil {
 				return err
 			}
 		}
-		done()
 	}
-
-	return nil
+	// Dispatch all the events from this patch that were successfully parsed and routed to namespaces
+	// (could be zero - that's ok)
+	return e.callbacks.DispatchBlockchainEvents(ctx, events)
 }
 
 func (e *Ethereum) eventLoop() {
@@ -451,7 +485,7 @@ func (e *Ethereum) eventLoop() {
 			}
 			switch msgTyped := msgParsed.(type) {
 			case []interface{}:
-				err = e.handleMessageBatch(ctx, msgTyped)
+				err = e.handleMessageBatch(ctx, 0, msgTyped)
 				if err == nil {
 					ack, _ := json.Marshal(&ethWSCommandPayload{
 						Type:  "ack",
@@ -465,7 +499,7 @@ func (e *Ethereum) eventLoop() {
 					if events, ok := msgTyped["events"].([]interface{}); ok {
 						// FFTM delivery with a batch number to use in the ack
 						isBatch = true
-						err = e.handleMessageBatch(ctx, events)
+						err = e.handleMessageBatch(ctx, (int64)(batchNumber), events)
 						// Errors processing messages are converted into nacks
 						ackOrNack := &ethWSCommandPayload{
 							Topic:       e.topic,
@@ -531,13 +565,6 @@ func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string, intent blo
 	return resolved, err
 }
 
-func wrapError(ctx context.Context, errRes *ethError, res *resty.Response, err error) error {
-	if errRes != nil && errRes.Error != "" {
-		return i18n.WrapError(ctx, err, coremsgs.MsgEthConnectorRESTErr, errRes.Error)
-	}
-	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
-}
-
 func (e *Ethereum) buildEthconnectRequestBody(ctx context.Context, messageType, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (map[string]interface{}, error) {
 	headers := EthconnectMessageHeaders{
 		Type: messageType,
@@ -557,7 +584,15 @@ func (e *Ethereum) buildEthconnectRequestBody(ctx context.Context, messageType, 
 	if len(errors) > 0 {
 		body["errors"] = errors
 	}
-	return e.applyOptions(ctx, body, options)
+	finalBody, err := e.applyOptions(ctx, body, options)
+	if err != nil {
+		return nil, err
+	}
+	if logrus.IsLevelEnabled(logrus.DebugLevel) {
+		jsonBody, _ := json.Marshal(finalBody)
+		log.L(ctx).Debugf("EVMConnectorBody: %s", string(jsonBody))
+	}
+	return finalBody, nil
 }
 
 func (e *Ethereum) applyOptions(ctx context.Context, body, options map[string]interface{}) (map[string]interface{}, error) {
@@ -572,25 +607,25 @@ func (e *Ethereum) applyOptions(ctx context.Context, body, options map[string]in
 	return body, nil
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}, errors []*abi.Entry, options map[string]interface{}) error {
+func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (submissionRejected bool, err error) {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainTransaction(address, abi.Name)
 	}
 	messageType := "SendTransaction"
 	body, err := e.buildEthconnectRequestBody(ctx, messageType, address, signingKey, abi, requestID, input, errors, options)
 	if err != nil {
-		return err
+		return true, err
 	}
-	var resErr ethError
+	var resErr common.BlockchainRESTError
 	res, err := e.client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
 		Post("/")
 	if err != nil || !res.IsSuccess() {
-		return wrapError(ctx, &resErr, res, err)
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
-	return nil
+	return false, nil
 }
 
 func (e *Ethereum) queryContractMethod(ctx context.Context, address, signingKey string, abi *abi.Entry, input []interface{}, errors []*abi.Entry, options map[string]interface{}) (*resty.Response, error) {
@@ -602,14 +637,14 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address, signingKey 
 	if err != nil {
 		return nil, err
 	}
-	var resErr ethError
+	var resErr common.BlockchainRESTError
 	res, err := e.client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
 		Post("/")
 	if err != nil || !res.IsSuccess() {
-		return res, wrapError(ctx, &resErr, res, err)
+		return res, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return res, nil
 }
@@ -662,7 +697,8 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace,
 	method, input := e.buildBatchPinInput(ctx, version, networkNamespace, batch)
 
 	var emptyErrors []*abi.Entry
-	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
+	_, err = e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
+	return err
 }
 
 func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
@@ -696,10 +732,11 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signi
 		}
 	}
 	var emptyErrors []*abi.Entry
-	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
+	_, err = e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
+	return err
 }
 
-func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) error {
+func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainContractDeployment()
 	}
@@ -717,12 +754,12 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 	if signingKey != "" {
 		body["from"] = signingKey
 	}
-	body, err := e.applyOptions(ctx, body, options)
+	body, err = e.applyOptions(ctx, body, options)
 	if err != nil {
-		return err
+		return true, err
 	}
 
-	var resErr ethError
+	var resErr common.BlockchainRESTError
 	res, err := e.client.R().
 		SetContext(ctx).
 		SetBody(body).
@@ -732,11 +769,11 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 		if strings.Contains(string(res.Body()), "FFEC100130") {
 			// This error is returned by ethconnect because it does not support deploying contracts with this syntax
 			// Return a more helpful and clear error message
-			return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
+			return true, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 		}
-		return wrapError(ctx, &resErr, res, err)
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
-	return nil
+	return false, nil
 }
 
 // Check if a method supports passing extra data via conformance to ERC5750.
@@ -751,27 +788,27 @@ func (e *Ethereum) checkDataSupport(ctx context.Context, method *abi.Entry) erro
 	return i18n.NewError(ctx, coremsgs.MsgMethodDoesNotSupportPinning)
 }
 
-func (e *Ethereum) ValidateInvokeRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, hasMessage bool) error {
-	abi, _, _, err := e.prepareRequest(ctx, method, errors, input)
+func (e *Ethereum) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
+	methodInfo, _, err := e.prepareRequest(ctx, parsedMethod, input)
 	if err == nil && hasMessage {
-		if err = e.checkDataSupport(ctx, abi); err != nil {
+		if err = e.checkDataSupport(ctx, methodInfo.methodABI); err != nil {
 			return err
 		}
 	}
 	return err
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}, batch *blockchain.BatchPin) error {
+func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) (bool, error) {
 	ethereumLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
-		return err
+		return true, err
 	}
-	abi, errorsAbi, orderedInput, err := e.prepareRequest(ctx, method, errors, input)
+	methodInfo, orderedInput, err := e.prepareRequest(ctx, parsedMethod, input)
 	if err != nil {
-		return err
+		return true, err
 	}
 	if batch != nil {
-		err := e.checkDataSupport(ctx, abi)
+		err := e.checkDataSupport(ctx, methodInfo.methodABI)
 		if err == nil {
 			method, batchPin := e.buildBatchPinInput(ctx, 2, "", batch)
 			encoded, err := method.Inputs.EncodeABIDataValuesCtx(ctx, batchPin)
@@ -780,30 +817,31 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 			}
 		}
 		if err != nil {
-			return err
+			return true, err
 		}
 	}
-	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, nsOpID, orderedInput, errorsAbi, options)
+	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, methodInfo.methodABI, nsOpID, orderedInput, methodInfo.errorsABI, options)
 }
 
-func (e *Ethereum) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, errors []*fftypes.FFIError, options map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
 	ethereumLocation, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
-	abi, errorsAbi, orderedInput, err := e.prepareRequest(ctx, method, errors, input)
+	methodInfo, orderedInput, err := e.prepareRequest(ctx, parsedMethod, input)
 	if err != nil {
 		return nil, err
 	}
-	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, signingKey, abi, orderedInput, errorsAbi, options)
+	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, signingKey, methodInfo.methodABI, orderedInput, methodInfo.errorsABI, options)
 	if err != nil || !res.IsSuccess() {
 		return nil, err
 	}
-	output := &queryOutput{}
-	if err = json.Unmarshal(res.Body(), output); err != nil {
+
+	var output interface{}
+	if err = json.Unmarshal(res.Body(), &output); err != nil {
 		return nil, err
 	}
-	return output, nil
+	return output, nil // note UNLIKE fabric this is just `output`, not `output.Result` - but either way the top level of what we return to the end user, is whatever the Connector sent us
 }
 
 func (e *Ethereum) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
@@ -905,23 +943,41 @@ func (e *Ethereum) GenerateErrorSignature(ctx context.Context, errorDef *fftypes
 	return ffi2abi.ABIMethodToSignature(abi)
 }
 
-func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError, input map[string]interface{}) (*abi.Entry, []*abi.Entry, []interface{}, error) {
-	errorsAbi := make([]*abi.Entry, len(errors))
-	orderedInput := make([]interface{}, len(method.Params))
-	abi, err := ffi2abi.ConvertFFIMethodToABI(ctx, method)
+type parsedFFIMethod struct {
+	methodABI *abi.Entry
+	errorsABI []*abi.Entry
+}
+
+func (e *Ethereum) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
+	methodABI, err := ffi2abi.ConvertFFIMethodToABI(ctx, method)
 	if err != nil {
-		return abi, errorsAbi, orderedInput, err
+		return nil, err
+	}
+	methodInfo := &parsedFFIMethod{
+		methodABI: methodABI,
+		errorsABI: make([]*abi.Entry, len(errors)),
 	}
 	for i, ffiError := range errors {
-		abi, err := ffi2abi.ConvertFFIErrorDefinitionToABI(ctx, &ffiError.FFIErrorDefinition)
-		if err == nil {
-			errorsAbi[i] = abi
+		errorABI, err := ffi2abi.ConvertFFIErrorDefinitionToABI(ctx, &ffiError.FFIErrorDefinition)
+		if err != nil {
+			return nil, err
 		}
+		methodInfo.errorsABI[i] = errorABI
 	}
-	for i, ffiParam := range method.Params {
-		orderedInput[i] = input[ffiParam.Name]
+	return methodInfo, nil
+}
+
+func (e *Ethereum) prepareRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}) (*parsedFFIMethod, []interface{}, error) {
+	methodInfo, ok := parsedMethod.(*parsedFFIMethod)
+	if !ok || methodInfo.methodABI == nil {
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgUnexpectedInterfaceType, parsedMethod)
 	}
-	return abi, errorsAbi, orderedInput, nil
+	inputs := methodInfo.methodABI.Inputs
+	orderedInput := make([]interface{}, len(inputs))
+	for i, param := range inputs {
+		orderedInput[i] = input[param.Name]
+	}
+	return methodInfo, orderedInput, nil
 }
 
 func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) (string, error) {
@@ -944,7 +1000,7 @@ func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.F
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgFFIGenerationFailed, "unable to deserialize JSON as ABI")
 	}
-	if len(*input.ABI) == 0 {
+	if input.ABI == nil || len(*input.ABI) == 0 {
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationFailed, "ABI is empty")
 	}
 	return ffi2abi.ConvertABIToFFI(ctx, generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
@@ -978,6 +1034,8 @@ func (e *Ethereum) queryNetworkVersion(ctx context.Context, address string) (ver
 		}
 		return 0, err
 	}
+
+	// Leave as queryOutput as it only has one value
 	output := &queryOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {
 		return 0, err
@@ -1029,7 +1087,7 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 
 	transactionRequestPath := fmt.Sprintf("/transactions/%s", txnID)
 	client := e.client
-	var resErr ethError
+	var resErr common.BlockchainRESTError
 	var statusResponse fftypes.JSONObject
 	res, err := client.R().
 		SetContext(ctx).
@@ -1040,7 +1098,7 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 		if res.StatusCode() == 404 {
 			return nil, nil
 		}
-		return nil, wrapError(ctx, &resErr, res, err)
+		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 
 	receiptInfo := statusResponse.GetObject("receipt")

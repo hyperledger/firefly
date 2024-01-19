@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -37,12 +38,15 @@ import (
 type Sender interface {
 	core.Named
 
-	ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error
+	ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef) error
 	UpdateIdentity(ctx context.Context, identity *core.Identity, def *core.IdentityUpdate, signingIdentity *core.SignerRef, waitConfirm bool) error
 	DefineDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) error
-	DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error
+	DefineTokenPool(ctx context.Context, pool *core.TokenPool, waitConfirm bool) error
+	PublishTokenPool(ctx context.Context, poolNameOrID, networkName string, waitConfirm bool) (*core.TokenPool, error)
 	DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm bool) error
+	PublishFFI(ctx context.Context, name, version, networkName string, waitConfirm bool) (*fftypes.FFI, error)
 	DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error
+	PublishContractAPI(ctx context.Context, httpServerURL, name, networkName string, waitConfirm bool) (api *core.ContractAPI, err error)
 }
 
 type definitionSender struct {
@@ -54,8 +58,9 @@ type definitionSender struct {
 	identity            identity.Manager
 	data                data.Manager
 	contracts           contracts.Manager // optional
+	assets              assets.Manager
 	handler             *definitionHandler
-	tokenBroadcastNames map[string]string // mapping of token connector name => remote name
+	tokenBroadcastNames map[string]string // mapping of token connector name => broadcast name
 }
 
 // Definitions that get processed immediately will create a temporary batch state and then finalize it inline
@@ -84,6 +89,7 @@ func NewDefinitionSender(ctx context.Context, ns *core.Namespace, multiparty boo
 		identity:            im,
 		data:                dm,
 		contracts:           cm,
+		assets:              am,
 		tokenBroadcastNames: tokenBroadcastNames,
 	}
 	dh, err := newDefinitionHandler(ctx, ns, multiparty, di, bi, dx, dm, im, am, cm, reverseMap(tokenBroadcastNames))
@@ -100,36 +106,53 @@ func reverseMap(orderedMap map[string]string) map[string]string {
 	return reverseMap
 }
 
-func (bm *definitionSender) Name() string {
+func (ds *definitionSender) Name() string {
 	return "DefinitionSender"
 }
 
-func (bm *definitionSender) sendDefinitionDefault(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
-	org, err := bm.identity.GetMultipartyRootOrg(ctx)
-	if err != nil {
-		return nil, err
-	}
+type sendWrapper struct {
+	sender  syncasync.Sender
+	message *core.Message
+	err     error
+}
 
-	return bm.sendDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */
+func wrapSendError(err error) *sendWrapper {
+	return &sendWrapper{err: err}
+}
+
+func (w *sendWrapper) send(ctx context.Context, waitConfirm bool) (*core.Message, error) {
+	switch {
+	case w.err != nil:
+		return nil, w.err
+	case waitConfirm:
+		return w.message, w.sender.SendAndWait(ctx)
+	default:
+		return w.message, w.sender.Send(ctx)
+	}
+}
+
+func (ds *definitionSender) getSenderDefault(ctx context.Context, def core.Definition, tag string) *sendWrapper {
+	org, err := ds.identity.GetRootOrg(ctx)
+	if err != nil {
+		return wrapSendError(err)
+	}
+	return ds.getSender(ctx, def, &core.SignerRef{ /* resolve to node default */
 		Author: org.DID,
-	}, tag, waitConfirm)
+	}, tag)
 }
 
-func (bm *definitionSender) sendDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
-
-	err = bm.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
+func (ds *definitionSender) getSender(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string) *sendWrapper {
+	err := ds.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
 	if err != nil {
-		return nil, err
+		return wrapSendError(err)
 	}
-
-	return bm.sendDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
+	return ds.getSenderResolved(ctx, def, signingIdentity, tag)
 }
 
-func (bm *definitionSender) sendDefinitionCommon(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
-
+func (ds *definitionSender) getSenderResolved(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string) *sendWrapper {
 	b, err := json.Marshal(&def)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
+		return wrapSendError(i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed))
 	}
 	dataValue := fftypes.JSONAnyPtrBytes(b)
 	message := &core.MessageInOut{
@@ -146,12 +169,8 @@ func (bm *definitionSender) sendDefinitionCommon(ctx context.Context, def core.D
 			&core.DataRefOrValue{Value: dataValue},
 		},
 	}
-
-	sender := bm.broadcast.NewBroadcast(message)
-	if waitConfirm {
-		err = sender.SendAndWait(ctx)
-	} else {
-		err = sender.Send(ctx)
+	return &sendWrapper{
+		message: &message.Message,
+		sender:  ds.broadcast.NewBroadcast(message),
 	}
-	return &message.Message, err
 }

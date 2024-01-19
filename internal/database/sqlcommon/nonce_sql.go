@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -141,7 +141,7 @@ func (s *SQLCommon) GetNonces(ctx context.Context, filter ffapi.Filter) (message
 		nonce = append(nonce, d)
 	}
 
-	return nonce, s.QueryRes(ctx, noncesTable, tx, fop, fi), err
+	return nonce, s.QueryRes(ctx, noncesTable, tx, fop, nil, fi), err
 
 }
 

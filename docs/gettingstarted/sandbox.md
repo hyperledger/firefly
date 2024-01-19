@@ -47,7 +47,7 @@ The FireFly explorer is a part of FireFly Core itself. It is a view into the sys
 When you set up your FireFly stack in the previous section, it should have printed some URLs like the following. Open the link in a browser for the `Sandbox UI for member '0'. It should be: [http://127.0.0.1:5109](http://127.0.0.1:5109)
 
 ```
-ff start demo
+ff start dev
 this will take a few seconds longer since this is the first time you're running this stack...
 done
 
@@ -63,7 +63,7 @@ Sandbox UI for member '2': http://127.0.0.1:5309
 
 To see logs for your stack run:
 
-ff logs demo
+ff logs dev
 ```
 
 
@@ -126,4 +126,4 @@ The Contracts section of the Sandbox lets you interact with custom smart contrac
 - Use the Swagger UI to call a smart contract function that emits an event. Verify that the event is received in the Sandbox and shows up in the FireFly Explorer.
 
 ## Go forth and build!
-At this point you should have a pretty good understanding of some of the major features of Hyperledger FireFly. Now, using what you've learned, you can go and build your own Web3 app! Don't forget to [join the Hyperledger Discord server](https://discord.gg/Fy7MJuqw86) and come chat with us in the #firefly channel.
+At this point you should have a pretty good understanding of some of the major features of Hyperledger FireFly. Now, using what you've learned, you can go and build your own Web3 app! Don't forget to [join the Hyperledger Discord server](https://discord.gg/hyperledger) and come chat with us in the #firefly channel.

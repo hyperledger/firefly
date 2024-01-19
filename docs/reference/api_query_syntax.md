@@ -66,11 +66,13 @@ perform against the match string.
 Modifiers can appear before the operator, to change its
 behavior.
 
-| Modifier | Description                        |
-|----------|------------------------------------|
-| `!`      | Not - negates the match            |
-| `:`      | Case insensitive                   |
-| `?`      | Treat empty match string as null   |
+| Modifier | Description                                    |
+|----------|------------------------------------------------|
+| `!`      | Not - negates the match                        |
+| `:`      | Case insensitive                               |
+| `?`      | Treat empty match string as null               |
+| `[`      | Combine using `AND` on the same field          |
+| `]`      | Combine using `OR` on the same field (default) |
 
 ## Detailed examples
 
@@ -88,3 +90,17 @@ behavior.
 | `!$-cat`     | Does not end with "-cat"                   |
 | `?=`         | Is null                                    |
 | `!?=`        | Is not null                                |
+
+## Time range example
+
+For this case we need to combine multiple queries on the same `created`
+field using AND semantics (with the `[`) modifier:
+
+```
+?created=[>>2021-01-01T00:00:00Z&created=[<=2021-01-02T00:00:00Z
+```
+
+So this means:
+- `created` greater than `2021-01-01T00:00:00Z`
+- `AND`
+- `created` less than or equal to `2021-01-02T00:00:00Z`

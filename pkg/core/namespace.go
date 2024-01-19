@@ -18,6 +18,7 @@ package core
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql/driver"
 	"encoding/json"
 
@@ -28,11 +29,12 @@ import (
 // Namespace is an isolated set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
-	Name        string               `ffstruct:"Namespace" json:"name"`
-	NetworkName string               `ffstruct:"Namespace" json:"networkName"`
-	Description string               `ffstruct:"Namespace" json:"description"`
-	Created     *fftypes.FFTime      `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
-	Contracts   *MultipartyContracts `ffstruct:"Namespace" json:"-"`
+	Name        string                 `ffstruct:"Namespace" json:"name"`
+	NetworkName string                 `ffstruct:"Namespace" json:"networkName"`
+	Description string                 `ffstruct:"Namespace" json:"description"`
+	Created     *fftypes.FFTime        `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
+	Contracts   *MultipartyContracts   `ffstruct:"Namespace" json:"-"`
+	TLSConfigs  map[string]*tls.Config `ffstruct:"Namespace" json:"-" ffexcludeinput:"true"`
 }
 
 type NamespaceWithInitStatus struct {

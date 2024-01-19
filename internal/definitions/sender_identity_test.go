@@ -21,8 +21,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -30,16 +28,14 @@ import (
 )
 
 func TestClaimIdentity(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
-	mms.On("SendAndWait", mock.Anything).Return(nil)
+	ds.mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	mms.On("Send", mock.Anything).Return(nil)
 
 	ds.multiparty = true
 
@@ -47,25 +43,19 @@ func TestClaimIdentity(t *testing.T) {
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, true)
+	}, nil)
 	assert.NoError(t, err)
-
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
-	mms.AssertExpectations(t)
 }
 
 func TestClaimIdentityFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
-	mms.On("SendAndWait", mock.Anything).Return(fmt.Errorf("pop"))
+	ds.mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	mms.On("Send", mock.Anything).Return(fmt.Errorf("pop"))
 
 	ds.multiparty = true
 
@@ -73,21 +63,17 @@ func TestClaimIdentityFail(t *testing.T) {
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, true)
+	}, nil)
 	assert.EqualError(t, err, "pop")
 
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
 func TestClaimIdentityFailKey(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
-	mim := ds.identity.(*identitymanagermocks.Manager)
-
-	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	ds.mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
 	ds.multiparty = true
 
@@ -95,27 +81,23 @@ func TestClaimIdentityFailKey(t *testing.T) {
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, true)
+	}, nil)
 	assert.EqualError(t, err, "pop")
-
-	mim.AssertExpectations(t)
 }
 
 func TestClaimIdentityChild(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms1 := &syncasyncmocks.Sender{}
 	mms2 := &syncasyncmocks.Sender{}
 
-	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms1).Once()
-	mbm.On("NewBroadcast", mock.Anything).Return(mms2).Once()
-	mms1.On("SendAndWait", mock.Anything).Return(nil)
+	ds.mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms1).Once()
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms2).Once()
+	mms1.On("Send", mock.Anything).Return(nil)
 	mms2.On("Send", mock.Anything).Return(nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.MatchedBy(func(signer *core.SignerRef) bool {
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.MatchedBy(func(signer *core.SignerRef) bool {
 		return signer.Key == "0x2345"
 	})).Return(nil)
 
@@ -127,29 +109,25 @@ func TestClaimIdentityChild(t *testing.T) {
 		Key: "0x1234",
 	}, &core.SignerRef{
 		Key: "0x2345",
-	}, true)
+	})
 	assert.NoError(t, err)
 
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms1.AssertExpectations(t)
 }
 
 func TestClaimIdentityChildFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms1 := &syncasyncmocks.Sender{}
 	mms2 := &syncasyncmocks.Sender{}
 
-	mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms1).Once()
-	mbm.On("NewBroadcast", mock.Anything).Return(mms2).Once()
-	mms1.On("SendAndWait", mock.Anything).Return(nil)
+	ds.mim.On("ResolveInputSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms1).Once()
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms2).Once()
+	mms1.On("Send", mock.Anything).Return(nil)
 	mms2.On("Send", mock.Anything).Return(fmt.Errorf("pop"))
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.MatchedBy(func(signer *core.SignerRef) bool {
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.MatchedBy(func(signer *core.SignerRef) bool {
 		return signer.Key == "0x2345"
 	})).Return(nil)
 
@@ -161,21 +139,17 @@ func TestClaimIdentityChildFail(t *testing.T) {
 		Key: "0x1234",
 	}, &core.SignerRef{
 		Key: "0x2345",
-	}, true)
+	})
 	assert.EqualError(t, err, "pop")
 
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms1.AssertExpectations(t)
 }
 
 func TestClaimIdentityNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
-	dh := ds.handler
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", mock.Anything, mock.AnythingOfType("*core.Identity")).Return(nil, false, fmt.Errorf("pop"))
+	ds.mim.On("VerifyIdentityChain", mock.Anything, mock.AnythingOfType("*core.Identity")).Return(nil, false, fmt.Errorf("pop"))
 
 	ds.multiparty = false
 
@@ -183,23 +157,19 @@ func TestClaimIdentityNonMultiparty(t *testing.T) {
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, true)
+	}, nil)
 	assert.NoError(t, err)
-
-	mim.AssertExpectations(t)
 }
 
 func TestUpdateIdentity(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", mock.Anything).Return(nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.MatchedBy(func(signer *core.SignerRef) bool {
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.MatchedBy(func(signer *core.SignerRef) bool {
 		return signer.Key == "0x1234"
 	})).Return(nil)
 
@@ -213,14 +183,12 @@ func TestUpdateIdentity(t *testing.T) {
 	}, false)
 	assert.NoError(t, err)
 
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
 func TestUpdateIdentityNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	ds.multiparty = false
 

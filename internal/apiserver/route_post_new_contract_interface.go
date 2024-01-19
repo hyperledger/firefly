@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,6 +33,7 @@ var postNewContractInterface = &ffapi.Route{
 	PathParams: nil,
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
+		{Name: "publish", Description: coremsgs.APIPublishQueryParam, IsBool: true},
 	},
 	Description:     coremsgs.APIEndpointsPostNewContractInterface,
 	JSONInputValue:  func() interface{} { return &fftypes.FFI{} },
@@ -46,6 +47,7 @@ var postNewContractInterface = &ffapi.Route{
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
 			ffi := r.Input.(*fftypes.FFI)
+			ffi.Published = strings.EqualFold(r.QP["publish"], "true")
 			err = cr.or.DefinitionSender().DefineFFI(cr.ctx, ffi, waitConfirm)
 			return ffi, err
 		},

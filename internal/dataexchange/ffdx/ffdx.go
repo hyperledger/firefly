@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,18 +40,20 @@ import (
 const DXIDSeparator = "/"
 
 type FFDX struct {
-	ctx          context.Context
-	cancelCtx    context.CancelFunc
-	capabilities *dataexchange.Capabilities
-	callbacks    callbacks
-	client       *resty.Client
-	wsconn       wsclient.WSClient
-	needsInit    bool
-	initialized  bool
-	initMutex    sync.Mutex
-	nodes        map[string]*dxNode
-	ackChannel   chan *ack
-	retry        *retry.Retry
+	ctx             context.Context
+	cancelCtx       context.CancelFunc
+	capabilities    *dataexchange.Capabilities
+	callbacks       callbacks
+	client          *resty.Client
+	wsconn          wsclient.WSClient
+	needsInit       bool
+	initialized     bool
+	initMutex       sync.Mutex
+	nodes           map[string]*dxNode
+	ackChannel      chan *ack
+	retry           *retry.Retry
+	backgroundStart bool
+	backgroundRetry *retry.Retry
 }
 
 type dxNode struct {
@@ -182,7 +184,11 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
 	}
 
-	h.client, err = ffresty.New(h.ctx, config)
+	wsConfig, err := wsclient.GenerateConfig(ctx, config)
+	if err == nil {
+		h.client, err = ffresty.New(h.ctx, config)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -196,11 +202,6 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 		Factor:       config.GetFloat64(DataExchangeEventRetryFactor),
 	}
 
-	wsConfig, err := wsclient.GenerateConfig(ctx, config)
-	if err != nil {
-		return err
-	}
-
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
 	}
@@ -209,6 +210,18 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 	if err != nil {
 		return err
 	}
+
+	h.backgroundStart = config.GetBool(DataExchangeBackgroundStart)
+
+	if h.backgroundStart {
+		h.backgroundRetry = &retry.Retry{
+			InitialDelay: config.GetDuration(DataExchangeBackgroundStartInitialDelay),
+			MaximumDelay: config.GetDuration(DataExchangeBackgroundStartMaxDelay),
+			Factor:       config.GetFloat64(DataExchangeBackgroundStartFactor),
+		}
+		return nil
+	}
+
 	go h.eventLoop()
 	go h.ackLoop()
 	return nil
@@ -218,16 +231,41 @@ func (h *FFDX) SetHandler(networkNamespace, nodeName string, handler dataexchang
 	h.callbacks.writeLock.Lock()
 	defer h.callbacks.writeLock.Unlock()
 	key := networkNamespace + ":" + nodeName
-	h.callbacks.handlers[key] = handler
+	if handler == nil {
+		delete(h.callbacks.handlers, key)
+	} else {
+		h.callbacks.handlers[key] = handler
+	}
 }
 
 func (h *FFDX) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
 	h.callbacks.writeLock.Lock()
 	defer h.callbacks.writeLock.Unlock()
-	h.callbacks.opHandlers[namespace] = handler
+	if handler == nil {
+		delete(h.callbacks.opHandlers, namespace)
+	} else {
+		h.callbacks.opHandlers[namespace] = handler
+	}
+}
+
+func (h *FFDX) backgroundStartLoop() {
+	_ = h.backgroundRetry.Do(h.ctx, fmt.Sprintf("Background start %s", h.Name()), func(attempt int) (retry bool, err error) {
+		err = h.wsconn.Connect()
+		if err != nil {
+			return true, err
+		}
+
+		go h.eventLoop()
+		go h.ackLoop()
+		return false, nil
+	})
 }
 
 func (h *FFDX) Start() error {
+	if h.backgroundStart {
+		go h.backgroundStartLoop()
+		return nil
+	}
 	return h.wsconn.Connect()
 }
 
@@ -235,7 +273,7 @@ func (h *FFDX) Capabilities() *dataexchange.Capabilities {
 	return h.capabilities
 }
 
-func (h *FFDX) beforeConnect(ctx context.Context) error {
+func (h *FFDX) beforeConnect(ctx context.Context, w wsclient.WSClient) error {
 	h.initMutex.Lock()
 	defer h.initMutex.Unlock()
 

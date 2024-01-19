@@ -105,6 +105,8 @@ nav_order: 3
 | `firstEvent` | Whether your application would like to receive events from the 'oldest' event emitted by your FireFly node (from the beginning of time), or the 'newest' event (from now), or a specific event sequence. Default is 'newest' | `SubOptsFirstEvent` |
 | `readAhead` | The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts | `uint16` |
 | `withData` | Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data. May not be supported on some transports. | `bool` |
+| `batch` | Events are delivered in batches in an ordered array. The batch size is capped to the readAhead limit. The event payload is always an array even if there is a single event in the batch. Commonly used with Webhooks to allow events to be delivered and acknowledged in batches. | `bool` |
+| `batchTimeout` | When batching is enabled, the optional timeout to send events even when the batch hasn't filled. | `string` |
 | `fastack` | Webhooks only: When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations | `bool` |
 | `url` | Webhooks only: HTTP url to invoke. Can be relative if a base URL is set in the webhook plugin config | `string` |
 | `method` | Webhooks only: HTTP method to invoke. Default=POST | `string` |
@@ -114,7 +116,10 @@ nav_order: 3
 | `replytx` | Webhooks only: The transaction type to set on the reply message | `string` |
 | `headers` | Webhooks only: Static headers to set on the webhook request | `` |
 | `query` | Webhooks only: Static query params to set on the webhook request | `` |
+| `tlsConfigName` | The name of an existing TLS configuration associated to the namespace to use | `string` |
 | `input` | Webhooks only: A set of options to extract data from the first JSON input data in the incoming message. Only applies if withData=true | [`WebhookInputOptions`](#webhookinputoptions) |
+| `retry` | Webhooks only: a set of options for retrying the webhook call | [`WebhookRetryOptions`](#webhookretryoptions) |
+| `httpOptions` | Webhooks only: a set of options for HTTP | [`WebhookHTTPOptions`](#webhookhttpoptions) |
 
 ## WebhookInputOptions
 
@@ -125,6 +130,29 @@ nav_order: 3
 | `body` | A top-level property of the first data input, to use for the request body. Default is the whole first body | `string` |
 | `path` | A top-level property of the first data input, to use for a path to append with escaping to the webhook path | `string` |
 | `replytx` | A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose) | `string` |
+
+
+## WebhookRetryOptions
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `enabled` | Enables retry on HTTP calls, defaults to false | `bool` |
+| `count` | Number of times to retry the webhook call in case of failure | `int` |
+| `initialDelay` | Initial delay between retries when we retry the webhook call | `string` |
+| `maxDelay` | Max delay between retries when we retry the webhookcall | `string` |
+
+
+## WebhookHTTPOptions
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `proxyURL` | HTTP proxy URL to use for outbound requests to the webhook | `string` |
+| `tlsHandshakeTimeout` | The max duration to hold a TLS handshake alive | `string` |
+| `requestTimeout` | The max duration to hold a TLS handshake alive | `string` |
+| `maxIdleConns` | The max number of idle connections to hold pooled | `int` |
+| `idleTimeout` | The max duration to hold a HTTP keepalive connection between calls | `string` |
+| `connectionTimeout` | The maximum amount of time that a connection is allowed to remain with no data transmitted. | `string` |
+| `expectContinueTimeout` | See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport) | `string` |
 
 
 

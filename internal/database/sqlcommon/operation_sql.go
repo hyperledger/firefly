@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/dbsql"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -55,6 +56,33 @@ var (
 
 const operationsTable = "operations"
 
+func (s *SQLCommon) setOperationInsertValues(query sq.InsertBuilder, operation *core.Operation) sq.InsertBuilder {
+	return query.Values(
+		operation.ID,
+		operation.Namespace,
+		operation.Transaction,
+		string(operation.Type),
+		string(operation.Status),
+		operation.Plugin,
+		operation.Created,
+		operation.Updated,
+		operation.Error,
+		operation.Input,
+		operation.Output,
+		operation.Retry,
+	)
+}
+
+func (s *SQLCommon) attemptOperationInsert(ctx context.Context, tx *dbsql.TXWrapper, operation *core.Operation) error {
+	_, err := s.InsertTx(ctx, operationsTable, tx,
+		s.setOperationInsertValues(sq.Insert(operationsTable).Columns(opColumns...), operation),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, core.ChangeEventTypeCreated, operation.Namespace, operation.ID)
+		},
+	)
+	return err
+}
+
 func (s *SQLCommon) InsertOperation(ctx context.Context, operation *core.Operation, hooks ...database.PostCompletionHook) (err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
 	if err != nil {
@@ -62,34 +90,55 @@ func (s *SQLCommon) InsertOperation(ctx context.Context, operation *core.Operati
 	}
 	defer s.RollbackTx(ctx, tx, autoCommit)
 
-	if _, err = s.InsertTx(ctx, operationsTable, tx,
-		sq.Insert(operationsTable).
-			Columns(opColumns...).
-			Values(
-				operation.ID,
-				operation.Namespace,
-				operation.Transaction,
-				string(operation.Type),
-				string(operation.Status),
-				operation.Plugin,
-				operation.Created,
-				operation.Updated,
-				operation.Error,
-				operation.Input,
-				operation.Output,
-				operation.Retry,
-			),
-		func() {
-			s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, core.ChangeEventTypeCreated, operation.Namespace, operation.ID)
-			for _, hook := range hooks {
-				hook()
-			}
-		},
-	); err != nil {
+	if err := s.attemptOperationInsert(ctx, tx, operation); err != nil {
 		return err
 	}
 
+	for _, hook := range hooks {
+		tx.AddPostCommitHook(hook)
+	}
+
 	return s.CommitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) InsertOperations(ctx context.Context, operations []*core.Operation, hooks ...database.PostCompletionHook) (err error) {
+
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+	if s.Features().MultiRowInsert {
+		query := sq.Insert(operationsTable).Columns(opColumns...)
+		for _, operation := range operations {
+			query = s.setOperationInsertValues(query, operation)
+		}
+		sequences := make([]int64, len(operations))
+
+		// Use a single multi-row insert for the operations
+		err := s.InsertTxRows(ctx, operationsTable, tx, query, func() {
+			for _, operation := range operations {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, core.ChangeEventTypeCreated, operation.Namespace, operation.ID)
+			}
+		}, sequences, false /* no circumstances where we expect partial success inserting operations */)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Fall back to individual inserts grouped in a TX
+		for _, operation := range operations {
+			if err := s.attemptOperationInsert(ctx, tx, operation); err != nil {
+				return err
+			}
+		}
+	}
+
+	for _, hook := range hooks {
+		tx.AddPostCommitHook(hook)
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
+
 }
 
 func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*core.Operation, error) {
@@ -161,7 +210,7 @@ func (s *SQLCommon) GetOperations(ctx context.Context, namespace string, filter 
 		ops = append(ops, op)
 	}
 
-	return ops, s.QueryRes(ctx, operationsTable, tx, fop, fi), err
+	return ops, s.QueryRes(ctx, operationsTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, filter ffapi.Filter, update ffapi.Update) (updated bool, err error) {

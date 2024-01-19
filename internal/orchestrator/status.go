@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -92,7 +92,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 		status.Org = &core.NamespaceStatusOrg{Name: or.config.Multiparty.Org.Name}
 		status.Multiparty.Contracts = or.namespace.Contracts
 
-		org, err := or.identity.GetMultipartyRootOrg(ctx)
+		org, err := or.identity.GetRootOrg(ctx)
 		if err != nil {
 			log.L(ctx).Warnf("Failed to query local org for status: %s", err)
 		}

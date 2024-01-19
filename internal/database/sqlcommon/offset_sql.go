@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -171,7 +171,7 @@ func (s *SQLCommon) GetOffsets(ctx context.Context, filter ffapi.Filter) (messag
 		offset = append(offset, d)
 	}
 
-	return offset, s.QueryRes(ctx, offsetsTable, tx, fop, fi), err
+	return offset, s.QueryRes(ctx, offsetsTable, tx, fop, nil, fi), err
 
 }
 

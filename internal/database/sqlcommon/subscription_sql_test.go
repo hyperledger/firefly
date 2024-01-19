@@ -68,6 +68,9 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 			FirstEvent: &newest,
 			ReadAhead:  &fifty,
 		},
+		WebhookSubOptions: core.WebhookSubOptions{
+			TLSConfigName: "myconfig",
+		},
 	}
 	subOpts.TransportOptions()["my-transport-option"] = true
 	subscriptionUpdated := &core.Subscription{
@@ -101,12 +104,13 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the subscription elements
-	subscriptionRead, err = s.GetSubscriptionByID(ctx, "ns1", subscription.ID)
+	subscriptionRead, err = s.GetSubscriptionByID(ctx, "ns1", subscriptionUpdated.ID)
 	assert.NoError(t, err)
 	subscriptionJson, _ = json.Marshal(&subscriptionUpdated)
 	subscriptionReadJson, _ = json.Marshal(&subscriptionRead)
 	assert.Equal(t, string(subscriptionJson), string(subscriptionReadJson))
 	assert.Equal(t, true, subscriptionRead.Options.TransportOptions()["my-transport-option"])
+	assert.Equal(t, "myconfig", subscriptionRead.Options.TLSConfigName)
 
 	// Query back the subscription
 	fb := database.SubscriptionQueryFactory.NewFilter(ctx)

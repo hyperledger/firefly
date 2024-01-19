@@ -23,9 +23,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -102,34 +99,29 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	node, msg, data := testDeprecatedRootNode(t)
 	parent, _, _ := testDeprecatedRootOrg(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
+	dh.mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(parent.Migrated().Identity, nil)
-	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(parent.Migrated().Identity, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, "ns1", node.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", node.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, "ns1", "member_0").Return(nil, nil)
-	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
+	dh.mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(parent.Migrated().Identity, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, "ns1", node.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", node.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, "ns1", "member_0").Return(nil, nil)
+	dh.mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *msg.Header.ID, *identity.Messages.Claim)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
+	dh.mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
 		assert.Equal(t, core.VerifierTypeFFDXPeerID, verifier.Type)
 		assert.Equal(t, "member_0", verifier.Value)
 		assert.Equal(t, *node.ID, *verifier.Identity)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+	dh.mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
 		return event.Type == core.EventTypeIdentityConfirmed
 	})).Return(nil)
-
-	mdx := dh.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetPeerID", node.DX.Endpoint).Return("member_0")
-	mdx.On("AddNode", ctx, "ns1", node.Name, node.DX.Endpoint).Return(nil)
+	dh.mdx.On("GetPeerID", node.DX.Endpoint).Return("member_0")
+	dh.mdx.On("AddNode", ctx, "ns1", node.Name, node.DX.Endpoint).Return(nil)
 
 	dh.multiparty = true
 
@@ -141,11 +133,6 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	assert.NoError(t, err)
 	err = bs.RunFinalize(ctx)
 	assert.NoError(t, err)
-
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mdx.AssertExpectations(t)
-
 }
 
 func TestHandleDeprecatedNodeDefinitionBadData(t *testing.T) {
@@ -165,8 +152,7 @@ func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
 
 	node, msg, data := testDeprecatedRootNode(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
+	dh.mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(nil, fmt.Errorf("pop"))
@@ -175,7 +161,6 @@ func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
-	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
 
 }
@@ -186,8 +171,7 @@ func TestHandleDeprecatedNodeDefinitionOrgNotFound(t *testing.T) {
 
 	node, msg, data := testDeprecatedRootNode(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
+	dh.mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(nil, nil)
@@ -196,7 +180,6 @@ func TestHandleDeprecatedNodeDefinitionOrgNotFound(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
-	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
 
 }

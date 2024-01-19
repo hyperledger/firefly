@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -210,7 +210,7 @@ func (s *SQLCommon) GetSubscriptions(ctx context.Context, namespace string, filt
 		subscription = append(subscription, d)
 	}
 
-	return subscription, s.QueryRes(ctx, subscriptionsTable, tx, fop, fi), err
+	return subscription, s.QueryRes(ctx, subscriptionsTable, tx, fop, nil, fi), err
 
 }
 

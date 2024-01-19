@@ -38,11 +38,24 @@ import (
 )
 
 type mockHandler struct {
-	Complete  bool
+	Phase     core.OpPhase
+	PrepErr   error
 	RunErr    error
 	Prepared  *core.PreparedOperation
 	Outputs   fftypes.JSONObject
 	UpdateErr error
+}
+
+type mockConflictErr struct {
+	err error
+}
+
+func (ce *mockConflictErr) Error() string {
+	return ce.err.Error()
+}
+
+func (ce *mockConflictErr) IsConflictError() bool {
+	return true
 }
 
 func (m *mockHandler) Name() string {
@@ -50,11 +63,11 @@ func (m *mockHandler) Name() string {
 }
 
 func (m *mockHandler) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
-	return m.Prepared, m.RunErr
+	return m.Prepared, m.PrepErr
 }
 
-func (m *mockHandler) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
-	return m.Outputs, m.Complete, m.RunErr
+func (m *mockHandler) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
+	return m.Outputs, m.Phase, m.RunErr
 }
 
 func (m *mockHandler) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {
@@ -149,7 +162,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 
 	op := &core.PreparedOperation{}
 
-	_, err := om.RunOperation(context.Background(), op)
+	_, err := om.RunOperation(context.Background(), op, true)
 	assert.Regexp(t, "FF10371", err)
 }
 
@@ -163,7 +176,7 @@ func TestRunOperationSuccess(t *testing.T) {
 	}
 
 	om.RegisterHandler(ctx, &mockHandler{Outputs: fftypes.JSONObject{"test": "output"}}, []core.OpType{core.OpTypeBlockchainPinBatch})
-	outputs, err := om.RunOperation(context.Background(), op)
+	outputs, err := om.RunOperation(context.Background(), op, true)
 	assert.Equal(t, "output", outputs.GetString("test"))
 
 	assert.NoError(t, err)
@@ -185,20 +198,19 @@ func TestRunOperationSyncSuccess(t *testing.T) {
 		Type:      core.OpTypeBlockchainPinBatch,
 	}
 
-	om.RegisterHandler(ctx, &mockHandler{Complete: true}, []core.OpType{core.OpTypeBlockchainPinBatch})
-	_, err := om.RunOperation(ctx, op)
+	om.RegisterHandler(ctx, &mockHandler{Phase: core.OpPhaseComplete}, []core.OpType{core.OpTypeBlockchainPinBatch})
+	_, err := om.RunOperation(ctx, op, true)
 
 	assert.NoError(t, err)
 }
 
-func TestRunOperationFail(t *testing.T) {
+func TestRunOperationFailIdempotentInit(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
 	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate),
+		make(chan *core.OperationUpdate, 1),
 	}
-	om.updater.cancelFunc()
 
 	ctx := context.Background()
 	op := &core.PreparedOperation{
@@ -207,8 +219,68 @@ func TestRunOperationFail(t *testing.T) {
 		Type:      core.OpTypeBlockchainPinBatch,
 	}
 
-	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
-	_, err := om.RunOperation(ctx, op)
+	om.RegisterHandler(ctx, &mockHandler{
+		RunErr: fmt.Errorf("pop"),
+		Phase:  core.OpPhaseInitializing,
+	}, []core.OpType{core.OpTypeBlockchainPinBatch})
+	_, err := om.RunOperation(ctx, op, true)
+
+	update := <-om.updater.workQueues[0]
+	assert.Equal(t, "ns1:"+op.ID.String(), update.NamespacedOpID)
+	assert.Equal(t, core.OpStatusInitialized, update.Status)
+
+	assert.EqualError(t, err, "pop")
+}
+
+func TestRunOperationFailNonIdempotentInit(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate, 1),
+	}
+
+	ctx := context.Background()
+	op := &core.PreparedOperation{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Type:      core.OpTypeBlockchainPinBatch,
+	}
+
+	om.RegisterHandler(ctx, &mockHandler{
+		RunErr: fmt.Errorf("pop"),
+		Phase:  core.OpPhaseInitializing,
+	}, []core.OpType{core.OpTypeBlockchainPinBatch})
+	_, err := om.RunOperation(ctx, op, false)
+
+	update := <-om.updater.workQueues[0]
+	assert.Equal(t, "ns1:"+op.ID.String(), update.NamespacedOpID)
+	assert.Equal(t, core.OpStatusFailed, update.Status)
+
+	assert.EqualError(t, err, "pop")
+}
+
+func TestRunOperationFailConflict(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate, 1),
+	}
+
+	ctx := context.Background()
+	op := &core.PreparedOperation{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Type:      core.OpTypeBlockchainPinBatch,
+	}
+
+	om.RegisterHandler(ctx, &mockHandler{RunErr: &mockConflictErr{err: fmt.Errorf("pop")}}, []core.OpType{core.OpTypeBlockchainPinBatch})
+	_, err := om.RunOperation(ctx, op, true)
+
+	update := <-om.updater.workQueues[0]
+	assert.Equal(t, "ns1:"+op.ID.String(), update.NamespacedOpID)
+	assert.Equal(t, core.OpStatusPending, update.Status)
 
 	assert.EqualError(t, err, "pop")
 }
@@ -229,8 +301,11 @@ func TestRunOperationFailRemainPending(t *testing.T) {
 		Type:      core.OpTypeBlockchainPinBatch,
 	}
 
-	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
-	_, err := om.RunOperation(ctx, op, RemainPendingOnFailure)
+	om.RegisterHandler(ctx, &mockHandler{
+		RunErr: fmt.Errorf("pop"),
+		Phase:  core.OpPhasePending,
+	}, []core.OpType{core.OpTypeBlockchainPinBatch})
+	_, err := om.RunOperation(ctx, op, false)
 
 	assert.EqualError(t, err, "pop")
 }
@@ -241,12 +316,14 @@ func TestRetryOperationSuccess(t *testing.T) {
 
 	ctx := context.Background()
 	opID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
 	op := &core.Operation{
-		ID:        opID,
-		Namespace: "ns1",
-		Plugin:    "blockchain",
-		Type:      core.OpTypeBlockchainPinBatch,
-		Status:    core.OpStatusFailed,
+		ID:          opID,
+		Namespace:   "ns1",
+		Plugin:      "blockchain",
+		Transaction: txID,
+		Type:        core.OpTypeBlockchainPinBatch,
+		Status:      core.OpStatusFailed,
 	}
 	po := &core.PreparedOperation{
 		ID:   op.ID,
@@ -274,6 +351,11 @@ func TestRetryOperationSuccess(t *testing.T) {
 		assert.Equal(t, op.ID.String(), val)
 		return true
 	})).Return(true, nil)
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", txID).Return(&core.Transaction{
+		ID:             txID,
+		Namespace:      "ns1",
+		IdempotencyKey: "idem1",
+	}, nil)
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	newOp, err := om.RetryOperation(ctx, op.ID)
@@ -281,6 +363,39 @@ func TestRetryOperationSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, newOp)
 
+	mdi.AssertExpectations(t)
+}
+
+func TestRetryOperationGetTXFail(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	opID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
+	op := &core.Operation{
+		ID:          opID,
+		Namespace:   "ns1",
+		Plugin:      "blockchain",
+		Transaction: txID,
+		Type:        core.OpTypeBlockchainPinBatch,
+		Status:      core.OpStatusFailed,
+	}
+	po := &core.PreparedOperation{
+		ID:   op.ID,
+		Type: op.Type,
+	}
+
+	om.cache = cache.NewUmanagedCache(ctx, 100, 10*time.Minute)
+	om.cacheOperation(op)
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", txID).Return(nil, fmt.Errorf("pop"))
+
+	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
+	_, err := om.RetryOperation(ctx, op.ID)
+
+	assert.Regexp(t, "pop", err)
 	mdi.AssertExpectations(t)
 }
 
@@ -340,6 +455,7 @@ func TestRetryTwiceOperationInsertFail(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, nil)
 	mdi.On("GetOperationByID", ctx, "ns1", opID2).Return(op2, nil)
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
@@ -369,6 +485,7 @@ func TestRetryOperationInsertFail(t *testing.T) {
 
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, nil)
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
@@ -399,6 +516,7 @@ func TestRetryOperationUpdateFail(t *testing.T) {
 
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, nil)
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(nil)
 	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
 
@@ -490,7 +608,7 @@ func TestResubmitIdempotentOperation(t *testing.T) {
 		ID:     opID,
 		Plugin: "blockchain",
 		Type:   core.OpTypeBlockchainPinBatch,
-		Status: core.OpStatusFailed,
+		Status: core.OpStatusInitialized,
 	}
 	po := &core.PreparedOperation{
 		ID:   op.ID,
@@ -502,17 +620,56 @@ func TestResubmitIdempotentOperation(t *testing.T) {
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", id),
-		fb.Eq("status", core.OpStatusInitialized),
 	)
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	mdi.On("GetOperations", ctx, "ns1", filter).Return(operations, nil, nil)
-	resubOp, err := om.ResubmitOperations(ctx, id)
+	total, resubmitted, err := om.ResubmitOperations(ctx, id)
 	assert.NoError(t, err)
-	assert.Equal(t, op, resubOp)
+	assert.Equal(t, total, 1)
+	assert.Len(t, resubmitted, 1)
 
 	mdi.AssertExpectations(t)
 }
-func TestResubmitIdempotentOperationError(t *testing.T) {
+
+func TestResubmitIdempotentOperationSkipCached(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	var id = fftypes.NewUUID()
+	defer cancel()
+
+	ctx := context.Background()
+	opID := fftypes.NewUUID()
+	operations := make([]*core.Operation, 0)
+	op := &core.Operation{
+		ID:     opID,
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainPinBatch,
+		Status: core.OpStatusInitialized,
+	}
+	po := &core.PreparedOperation{
+		ID:   op.ID,
+		Type: op.Type,
+	}
+	operations = append(operations, op)
+	opFlushInFlight := *op
+	opFlushInFlight.Status = core.OpStatusFailed
+	om.cache.Set(op.ID.String(), &opFlushInFlight)
+
+	mdi := om.database.(*databasemocks.Plugin)
+	fb := database.OperationQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("tx", id),
+	)
+	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
+	mdi.On("GetOperations", ctx, "ns1", filter).Return(operations, nil, nil)
+	total, resubmitted, err := om.ResubmitOperations(ctx, id)
+	assert.NoError(t, err)
+	assert.Equal(t, total, 1)
+	assert.Empty(t, resubmitted)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestResubmitIdempotentOperationLookupError(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	var id = fftypes.NewUUID()
 	defer cancel()
@@ -536,12 +693,49 @@ func TestResubmitIdempotentOperationError(t *testing.T) {
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", id),
-		fb.Eq("status", core.OpStatusInitialized),
 	)
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	mdi.On("GetOperations", ctx, "ns1", filter).Return(operations, nil, fmt.Errorf("pop"))
-	_, err := om.ResubmitOperations(ctx, id)
+	_, _, err := om.ResubmitOperations(ctx, id)
 	assert.Error(t, err)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestResubmitIdempotentOperationExecError(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	var id = fftypes.NewUUID()
+	defer cancel()
+
+	ctx := context.Background()
+	opID := fftypes.NewUUID()
+	operations := make([]*core.Operation, 0)
+	op := &core.Operation{
+		ID:     opID,
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainPinBatch,
+		Status: core.OpStatusInitialized,
+	}
+	po := &core.PreparedOperation{
+		ID:   op.ID,
+		Type: op.Type,
+	}
+	operations = append(operations, op)
+
+	mdi := om.database.(*databasemocks.Plugin)
+	fb := database.OperationQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("tx", id),
+	)
+	om.RegisterHandler(ctx, &mockHandler{Prepared: po, RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
+	mdi.On("GetOperations", ctx, "ns1", filter).Return(operations, nil, nil)
+	_, _, err := om.ResubmitOperations(ctx, id)
+	assert.Error(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestErrTernaryHelper(t *testing.T) {
+	assert.Equal(t, core.OpPhasePending, ErrTernary(nil, core.OpPhaseInitializing, core.OpPhasePending))
+	assert.Equal(t, core.OpPhaseInitializing, ErrTernary(fmt.Errorf("pop"), core.OpPhaseInitializing, core.OpPhasePending))
 }

@@ -1113,7 +1113,7 @@ func TestUpdateMessageCacheCRORequirePins(t *testing.T) {
 	}
 
 	now := fftypes.Now()
-	dm.UpdateMessageStateIfCached(ctx, msgWithPins.Header.ID, core.MessageStateConfirmed, now)
+	dm.UpdateMessageStateIfCached(ctx, msgWithPins.Header.ID, core.MessageStateConfirmed, now, "")
 	assert.Equal(t, core.MessageStateConfirmed, msgWithPins.State)
 	assert.Equal(t, now, msgWithPins.Confirmed)
 

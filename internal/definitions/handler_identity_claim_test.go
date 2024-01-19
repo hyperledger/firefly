@@ -23,9 +23,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -141,38 +138,34 @@ func testCustomClaimAndVerification(t *testing.T) (*core.Identity, *core.Identit
 
 func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	dh.mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{
 		{Header: core.MessageHeader{ID: fftypes.NewUUID(), Tag: "skipped missing data"}},
 	}, nil, nil)
-	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
+	dh.mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *claimMsg.Header.ID, *identity.Messages.Claim)
 		assert.Equal(t, *verifyMsg.Header.ID, *identity.Messages.Verification)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
+	dh.mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
 		assert.Equal(t, core.VerifierTypeEthAddress, verifier.Type)
 		assert.Equal(t, "0x12345", verifier.Value)
 		assert.Equal(t, *custom1.ID, *verifier.Identity)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+	dh.mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
 		return event.Type == core.EventTypeIdentityConfirmed
 	})).Return(nil)
-
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, false, nil).Once()
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
+	dh.mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, false, nil).Once()
+	dh.mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
 
 	dh.multiparty = true
 
@@ -185,26 +178,19 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 
 	err = bs.RunFinalize(ctx)
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
-	mim.AssertExpectations(t)
-
 }
 
 func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(custom1, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(&core.Verifier{
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(custom1, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(&core.Verifier{
 		Identity:  custom1.ID,
 		Namespace: "ns1",
 		VerifierRef: core.VerifierRef{
@@ -212,16 +198,14 @@ func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 			Value: "0x12345",
 		},
 	}, nil)
-	mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{
+	dh.mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{
 		{Header: core.MessageHeader{ID: fftypes.NewUUID(), Tag: "skipped missing data"}},
 	}, nil, nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+	dh.mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
 		return event.Type == core.EventTypeIdentityConfirmed
 	})).Return(nil)
-
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, false, nil).Once()
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
+	dh.mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, false, nil).Once()
+	dh.mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
 
 	dh.multiparty = true
 
@@ -233,31 +217,23 @@ func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 
 	err = bs.RunFinalize(ctx)
 	assert.NoError(t, err)
-
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 }
 
 func TestHandleDefinitionIdentityClaimFailInsertIdentity(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{}, nil, nil)
-	mdi.On("UpsertVerifier", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertIdentity", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
-
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	dh.mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{}, nil, nil)
+	dh.mdi.On("UpsertVerifier", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	dh.mdi.On("UpsertIdentity", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+	dh.mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
 
 	dh.multiparty = true
 
@@ -267,29 +243,22 @@ func TestHandleDefinitionIdentityClaimFailInsertIdentity(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimVerificationDataFail(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, verifyMsg, _ := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{}, nil, nil)
-
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	dh.mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{}, nil, nil)
+	dh.mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 
 	dh.multiparty = true
 
@@ -299,29 +268,22 @@ func TestHandleDefinitionIdentityClaimVerificationDataFail(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimVerificationMissingData(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, verifyMsg, _ := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{}, nil, nil)
-
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{}, true, nil)
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	dh.mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{}, nil, nil)
+	dh.mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{}, true, nil)
 
 	dh.multiparty = true
 
@@ -331,30 +293,23 @@ func TestHandleDefinitionIdentityClaimVerificationMissingData(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action)
 	assert.NoError(t, err)
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimFailInsertVerifier(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{}, nil, nil)
-	mdi.On("UpsertVerifier", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
-
-	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	dh.mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{}, nil, nil)
+	dh.mdi.On("UpsertVerifier", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+	dh.mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
 
 	dh.multiparty = true
 
@@ -364,26 +319,21 @@ func TestHandleDefinitionIdentityClaimFailInsertVerifier(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimCustomMissingParentVerificationOk(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{}, nil, nil)
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	dh.mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return([]*core.Message{}, nil, nil)
 
 	dh.multiparty = true
 
@@ -391,25 +341,21 @@ func TestHandleDefinitionIdentityClaimCustomMissingParentVerificationOk(t *testi
 	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action) // Just wait for the verification to come in later
 	assert.NoError(t, err)
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimCustomParentVerificationFail(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	dh.mdi.On("GetMessages", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	dh.multiparty = true
 
@@ -417,24 +363,20 @@ func TestHandleDefinitionIdentityClaimCustomParentVerificationFail(t *testing.T)
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimVerifierClash(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(&core.Verifier{
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(&core.Verifier{
 		Hash: fftypes.NewRandB32(),
 	}, nil)
 
@@ -444,24 +386,20 @@ func TestHandleDefinitionIdentityClaimVerifierClash(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimVerifierError(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, fmt.Errorf("pop"))
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, fmt.Errorf("pop"))
 
 	dh.multiparty = true
 
@@ -469,22 +407,18 @@ func TestHandleDefinitionIdentityClaimVerifierError(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimIdentityClash(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(&core.Identity{
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
@@ -496,23 +430,19 @@ func TestHandleDefinitionIdentityClaimIdentityClash(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimIdentityError(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
-
-	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, fmt.Errorf("pop"))
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, fmt.Errorf("pop"))
 
 	dh.multiparty = true
 
@@ -520,20 +450,18 @@ func TestHandleDefinitionIdentityClaimIdentityError(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityMissingAuthor(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 	claimMsg.Header.Author = ""
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
 
 	dh.multiparty = true
 
@@ -541,19 +469,18 @@ func TestHandleDefinitionIdentityMissingAuthor(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
-	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimBadSignature(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 	claimMsg.Header.Author = org1.DID // should be the child for the claim
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
 
 	dh.multiparty = true
 
@@ -561,50 +488,48 @@ func TestHandleDefinitionIdentityClaimBadSignature(t *testing.T) {
 	assert.Equal(t, HandlerResult{Action: core.ActionReject}, action)
 	assert.Error(t, err)
 
-	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityVerifyChainFail(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 	claimMsg.Header.Author = org1.DID // should be the child for the claim
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, true, fmt.Errorf("pop"))
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, true, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
-	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityVerifyChainInvalid(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 	claimMsg.Header.Author = org1.DID // should be the child for the claim
 
-	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, false, fmt.Errorf("wrong"))
+	dh.mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, false, fmt.Errorf("wrong"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: core.ActionWait}, action)
 	assert.NoError(t, err)
 
-	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimBadData(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	ctx := context.Background()
+	defer dh.cleanup(t)
 
+	ctx := context.Background()
 	_, org1, claimMsg, _, _, _ := testCustomClaimAndVerification(t)
 	claimMsg.Header.Author = org1.DID // should be the child for the claim
 

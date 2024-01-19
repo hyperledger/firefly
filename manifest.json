@@ -1,18 +1,23 @@
 {
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
-    "tag": "v3.2.9",
-    "sha": "a9aed053d57d56532084e8d0229d3a6e8843054006cd82bb48c4800dcccc6449"
+    "tag": "v3.3.0",
+    "sha": "fde5083def6bd9f96bac9dacc3ac571d20ef9b8acf1049c1c30684eba1392f35"
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.2.8",
-    "sha": "44cac586392a4b9c43f57e9955b53cdc1a9d71f7d12b97f9fe81ef0b92314ad0"
+    "tag": "v1.3.2",
+    "sha": "9752a2c8b9c6cbd3f2b7327a309609a6b33ec80973004aed37e193b4e7f4a7c4"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
     "tag": "v0.9.17",
     "sha": "7d4aa158f9dff31f200ae7a04f68665f32930f7739156b25a0da80e5353f3245"
+  },
+  "tezosconnect": {
+    "image": "ghcr.io/hyperledger/firefly-tezosconnect",
+    "tag": "v0.1.0",
+    "sha": "2c20731765f9203fceca6e28a5fa443e4ce5c3a9eb1de7710ed46f8e24db1c00"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
@@ -21,32 +26,32 @@
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v1.2.2",
-    "sha": "3d259bd4b68dad4634704c9a58c20bdf80457e8bc58ee7ded73292e10702aceb"
+    "tag": "v1.2.4",
+    "sha": "cd65eab2e5836b52dfed29a517049e21e2bacd534203b191cee7df42544847f7"
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
-    "tag": "v1.2.3",
-    "sha": "e1c65bdf95bd5cd88102e539c0aa193edeaefc73fd268606c5550e2d1aae6b31"
+    "tag": "v1.2.6",
+    "sha": "4e902d1d9f115c4dc608f5d68c4bd9920e118c7eec8c99a2abdb3aa9de7e7368"
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",
-    "tag": "v1.1.5",
-    "sha": "4ee8549d12339f6d4224a277faf143da1749a51a5994e074224c95e3cce64670"
+    "tag": "v1.1.9",
+    "sha": "515271ea722e6bf9601524880e7280a1fc052453733338d6ed474f85d6618aa1"
   },
   "build": {
     "firefly-builder": {
-      "image": "golang:1.18-alpine3.16"
+      "image": "golang:1.21-alpine3.19"
     },
     "fabric-builder": {
-      "image": "golang:1.18-alpine3.16",
+      "image": "golang:1.21-alpine3.19",
       "platform": "linux/x86_64"
     },
     "solidity-builder": {
       "image": "ethereum/solc:0.8.11-alpine"
     },
     "base": {
-      "image": "alpine:3.16"
+      "image": "alpine:3.19"
     }
   },
   "ui": {

@@ -47,6 +47,7 @@ pages:
   remote_fabric_network: Remote Fabric Network
   release_notes: Release Notes
   security: Security
+  tls: TLS
   tools: Tools
   tutorials: Tutorials
   understanding_firefly: Understanding FireFly
@@ -57,3 +58,4 @@ pages:
   xdc_testnet: XDC Testnet
   zksync_testnet: zkSync Testnet
   rotate_dx_certs: Rotate Data Exchange Certificates
+  tezos_testnet: Tezos Testnet

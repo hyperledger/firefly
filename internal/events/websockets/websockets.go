@@ -31,6 +31,10 @@ import (
 	"github.com/hyperledger/firefly/pkg/events"
 )
 
+type WebSocketsNamespaced interface {
+	ServeHTTPNamespaced(namespace string, res http.ResponseWriter, req *http.Request)
+}
+
 type WebSockets struct {
 	ctx          context.Context
 	capabilities *events.Capabilities
@@ -75,6 +79,10 @@ func (ws *WebSockets) SetAuthorizer(auth core.Authorizer) {
 func (ws *WebSockets) SetHandler(namespace string, handler events.Callbacks) error {
 	ws.callbacks.writeLock.Lock()
 	defer ws.callbacks.writeLock.Unlock()
+	if handler == nil {
+		delete(ws.callbacks.handlers, namespace)
+		return nil
+	}
 	ws.callbacks.handlers[namespace] = handler
 	return nil
 }
@@ -83,22 +91,22 @@ func (ws *WebSockets) Capabilities() *events.Capabilities {
 	return ws.capabilities
 }
 
-func (ws *WebSockets) ValidateOptions(options *core.SubscriptionOptions) error {
+func (ws *WebSockets) ValidateOptions(ctx context.Context, options *core.SubscriptionOptions) error {
 	// We don't support streaming the full data over websockets
 	if options.WithData != nil && *options.WithData {
-		return i18n.NewError(ws.ctx, coremsgs.MsgWebsocketsNoData)
+		return i18n.NewError(ctx, coremsgs.MsgWebsocketsNoData)
 	}
 	forceFalse := false
 	options.WithData = &forceFalse
 	return nil
 }
 
-func (ws *WebSockets) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
+func (ws *WebSockets) DeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	ws.connMux.Lock()
 	conn, ok := ws.connections[connID]
 	ws.connMux.Unlock()
 	if !ok {
-		return i18n.NewError(ws.ctx, coremsgs.MsgWSConnectionNotActive, connID)
+		return i18n.NewError(ctx, coremsgs.MsgWSConnectionNotActive, connID)
 	}
 	return conn.dispatch(event)
 }
@@ -116,6 +124,25 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	ws.connMux.Unlock()
 
 	wc.processAutoStart(req)
+}
+
+func (ws *WebSockets) ServeHTTPNamespaced(namespace string, res http.ResponseWriter, req *http.Request) {
+
+	wsConn, err := ws.upgrader.Upgrade(res, req, nil)
+	if err != nil {
+		log.L(ws.ctx).Errorf("WebSocket upgrade failed: %s", err)
+		return
+	}
+
+	ws.connMux.Lock()
+	wc := newConnection(ws.ctx, ws, wsConn, req, ws.auth)
+	wc.namespaceScoped = true
+	wc.namespace = namespace
+	ws.connections[wc.connID] = wc
+	ws.connMux.Unlock()
+
+	wc.processAutoStart(req)
+
 }
 
 func (ws *WebSockets) ack(connID string, inflight *core.EventDeliveryResponse) {
@@ -212,4 +239,9 @@ func (ws *WebSockets) GetStatus() *core.WebSocketStatus {
 		wc.mux.Unlock()
 	}
 	return status
+}
+
+func (ws *WebSockets) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
+	// We should have rejected creation of the subscription, due to us not supporting this in our capabilities
+	return i18n.NewError(ctx, coremsgs.MsgBatchDeliveryNotSupported, ws.Name())
 }

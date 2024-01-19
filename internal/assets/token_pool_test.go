@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -109,7 +110,7 @@ func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
@@ -149,7 +150,45 @@ func TestCreateTokenPoolIdempotentResubmit(t *testing.T) {
 		Return(id, &sqlcommon.IdempotencyError{
 			ExistingTXID:  id,
 			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(op, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{op}, nil)
+
+	_, err := am.CreateTokenPool(context.Background(), pool, false)
+
+	// SubmitNewTransction returned 409 idempotency clash, ResubmitOperations returned that it resubmitted an operation. Shouldn't
+	// see the original 409 Conflict error
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestCreateTokenPoolIdempotentResubmitAll(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	var id = fftypes.NewUUID()
+
+	pool := &core.TokenPoolInput{
+		TokenPool: core.TokenPool{
+			Name: "testpool",
+		},
+		IdempotencyKey: "idem1",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
+	mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenPool, core.IdempotencyKey("idem1")).
+		Return(id, &sqlcommon.IdempotencyError{
+			ExistingTXID:  id,
+			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
+	mom.On("ResubmitOperations", context.Background(), id).Return(0, nil, nil)
+	mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(nil)
+	mom.On("RunOperation", context.Background(), mock.Anything, true).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 
@@ -185,7 +224,7 @@ func TestCreateTokenPoolIdempotentNoOperationToResubmit(t *testing.T) {
 		Return(id, &sqlcommon.IdempotencyError{
 			ExistingTXID:  id,
 			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* total */, nil /* to resubmit */, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 
@@ -222,7 +261,7 @@ func TestCreateTokenPoolIdempotentErrorOnOperationResubmit(t *testing.T) {
 		Return(id, &sqlcommon.IdempotencyError{
 			ExistingTXID:  id,
 			OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 
@@ -368,7 +407,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "pop", err)
@@ -486,7 +525,7 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
@@ -520,7 +559,7 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
@@ -561,7 +600,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == core.OpTypeTokenCreatePool && data.Pool == &pool.TokenPool
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), pool, true)
 	assert.NoError(t, err)
@@ -595,7 +634,7 @@ func TestActivateTokenPool(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
 		return op.Type == core.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
@@ -664,7 +703,7 @@ func TestActivateTokenPoolFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
 		return op.Type == core.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(nil, fmt.Errorf("pop"))
+	}), false).Return(nil, fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.EqualError(t, err, "pop")
@@ -736,7 +775,7 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
 		return op.Type == core.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
@@ -745,56 +784,77 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
-func TestGetTokenPool(t *testing.T) {
+func TestGetTokenPoolByLocator(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(&core.TokenPool{}, nil)
-	_, err := am.GetTokenPool(context.Background(), "magic-tokens", "abc")
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy(func(filter ffapi.AndFilter) bool {
+		f, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Len(t, f.Children, 2)
+		assert.Equal(t, "connector", f.Children[0].Field)
+		val, _ := f.Children[0].Value.Value()
+		assert.Equal(t, "magic-tokens", val)
+		assert.Equal(t, "locator", f.Children[1].Field)
+		val, _ = f.Children[1].Value.Value()
+		assert.Equal(t, "abc", val)
+		return true
+	})).Return([]*core.TokenPool{{}}, nil, nil)
+	result, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByLocatorBadPlugin(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	am.tokens = make(map[string]tokens.Plugin)
+	mdi := am.database.(*databasemocks.Plugin)
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.Regexp(t, "FF10272", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByLocatorCached(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	am.cache.Set("ns=ns1,connector=magic-tokens,poollocator=abc", &core.TokenPool{})
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 }
 
-func TestGetTokenPoolNotFound(t *testing.T) {
+func TestGetTokenPoolByLocatorNotFound(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(nil, nil)
-	_, err := am.GetTokenPool(context.Background(), "magic-tokens", "abc")
-	assert.Regexp(t, "FF10109", err)
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.Anything).Return([]*core.TokenPool{}, nil, nil)
+	result, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.NoError(t, err)
+	assert.Nil(t, result)
 
 	mdi.AssertExpectations(t)
 }
 
-func TestGetTokenPoolFailed(t *testing.T) {
+func TestGetTokenPoolByLocatorFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(nil, fmt.Errorf("pop"))
-	_, err := am.GetTokenPool(context.Background(), "magic-tokens", "abc")
-	assert.Regexp(t, "pop", err)
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	_, err := am.GetTokenPoolByLocator(context.Background(), "magic-tokens", "abc")
+	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
-}
-
-func TestGetTokenPoolBadPlugin(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	_, err := am.GetTokenPool(context.Background(), "", "")
-	assert.Regexp(t, "FF10272", err)
-}
-
-func TestGetTokenPoolBadName(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	_, err := am.GetTokenPool(context.Background(), "magic-tokens", "")
-	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetTokenPoolByID(t *testing.T) {
@@ -804,6 +864,20 @@ func TestGetTokenPoolByID(t *testing.T) {
 	u := fftypes.NewUUID()
 	mdi := am.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", context.Background(), "ns1", u).Return(&core.TokenPool{}, nil)
+	_, err := am.GetTokenPoolByNameOrID(context.Background(), u.String())
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetTokenPoolByIDCached(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	mdi := am.database.(*databasemocks.Plugin)
+
+	am.cache.Set(fmt.Sprintf("ns=ns1,poolnameorid=%s", u.String()), &core.TokenPool{})
 	_, err := am.GetTokenPoolByNameOrID(context.Background(), u.String())
 	assert.NoError(t, err)
 
@@ -916,4 +990,180 @@ func TestResolvePoolMethods(t *testing.T) {
 
 	mcm.AssertExpectations(t)
 	mti.AssertExpectations(t)
+}
+
+func TestDeletePoolNotFound(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, nil)
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.Regexp(t, "FF10109", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mdi.On("DeleteTokenPool", context.Background(), "ns1", pool.ID).Return(fmt.Errorf("pop"))
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolPublished(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+		Published: true,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.Regexp(t, "FF10449", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolTransfersFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mdi.On("DeleteTokenPool", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenTransfers", context.Background(), "ns1", pool.ID).Return(fmt.Errorf("pop"))
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolApprovalsFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mdi.On("DeleteTokenPool", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenTransfers", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenApprovals", context.Background(), "ns1", pool.ID).Return(fmt.Errorf("pop"))
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolBalancesFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mdi.On("DeleteTokenPool", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenTransfers", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenApprovals", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenBalances", context.Background(), "ns1", pool.ID).Return(fmt.Errorf("pop"))
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDeletePoolSuccess(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "magic-tokens",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mdi.On("DeleteTokenPool", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenTransfers", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenApprovals", context.Background(), "ns1", pool.ID).Return(nil)
+	mdi.On("DeleteTokenBalances", context.Background(), "ns1", pool.ID).Return(nil)
+
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mti.On("DeactivateTokenPool", context.Background(), pool).Return(nil)
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}
+
+func TestDeletePoolBadPlugin(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Connector: "BAD",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+
+	err := am.DeleteTokenPool(context.Background(), "pool1")
+	assert.Regexp(t, "FF10272", err)
+
+	mdi.AssertExpectations(t)
 }

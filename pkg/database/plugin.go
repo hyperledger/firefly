@@ -158,16 +158,19 @@ type iBatchCollection interface {
 
 type iTransactionCollection interface {
 	// InsertTransaction - Insert a new transaction
-	InsertTransaction(ctx context.Context, data *core.Transaction) (err error)
+	InsertTransaction(ctx context.Context, txn *core.Transaction) (err error)
+
+	// InsertTransactions performs a batch insert of transactions - returns error if idempotency keys clash while inserting the non-clashing ones, so caller can query to find the existing ones
+	InsertTransactions(ctx context.Context, txns []*core.Transaction) (err error)
 
 	// UpdateTransaction - Update transaction
 	UpdateTransaction(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) (err error)
 
 	// GetTransactionByID - Get a transaction by ID
-	GetTransactionByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Transaction, err error)
+	GetTransactionByID(ctx context.Context, namespace string, id *fftypes.UUID) (txn *core.Transaction, err error)
 
 	// GetTransactions - Get transactions
-	GetTransactions(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Transaction, res *ffapi.FilterResult, err error)
+	GetTransactions(ctx context.Context, namespace string, filter ffapi.Filter) (txn []*core.Transaction, res *ffapi.FilterResult, err error)
 }
 
 type iDatatypeCollection interface {
@@ -218,6 +221,9 @@ type iPinCollection interface {
 type iOperationCollection interface {
 	// InsertOperation - Insert an operation
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
+
+	// InsertOperations bulk insert operations - all must succeed/fail together (idempotency clashes are handled by containing transaction)
+	InsertOperations(ctx context.Context, ops []*core.Operation, hooks ...PostCompletionHook) (err error)
 
 	// UpdateOperation - Update an operation
 	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, filter ffapi.Filter, update ffapi.Update) (updated bool, err error)
@@ -352,8 +358,12 @@ type iBlobCollection interface {
 }
 
 type iTokenPoolCollection interface {
+	// InsertTokenPool - Insert a new token pool
+	// If a pool with the same name has already been recorded, does not insert but returns the existing row
+	InsertOrGetTokenPool(ctx context.Context, pool *core.TokenPool) (existing *core.TokenPool, err error)
+
 	// UpsertTokenPool - Upsert a token pool
-	UpsertTokenPool(ctx context.Context, pool *core.TokenPool) error
+	UpsertTokenPool(ctx context.Context, pool *core.TokenPool, optimization UpsertOptimization) error
 
 	// GetTokenPool - Get a token pool by name
 	GetTokenPool(ctx context.Context, namespace, name string) (*core.TokenPool, error)
@@ -361,11 +371,14 @@ type iTokenPoolCollection interface {
 	// GetTokenPoolByID - Get a token pool by pool ID
 	GetTokenPoolByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.TokenPool, error)
 
-	// GetTokenPoolByLocator - Get a token pool by locator
-	GetTokenPoolByLocator(ctx context.Context, namespace, connector, locator string) (*core.TokenPool, error)
+	// GetTokenPoolByNetworkName - Get a token pool by network name
+	GetTokenPoolByNetworkName(ctx context.Context, namespace, networkName string) (*core.TokenPool, error)
 
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenPool, *ffapi.FilterResult, error)
+
+	// DeleteTokenPool - delete a token pool
+	DeleteTokenPool(ctx context.Context, namespace string, id *fftypes.UUID) error
 }
 
 type iTokenBalanceCollection interface {
@@ -383,20 +396,27 @@ type iTokenBalanceCollection interface {
 
 	// GetTokenAccountPools - Get the list of pools referenced by a given account
 	GetTokenAccountPools(ctx context.Context, namespace, key string, filter ffapi.Filter) ([]*core.TokenAccountPool, *ffapi.FilterResult, error)
+
+	// DeleteTokenBalances - Delete token balances from a particular pool
+	DeleteTokenBalances(ctx context.Context, namespace string, poolID *fftypes.UUID) error
 }
 
 type iTokenTransferCollection interface {
-	// UpsertTokenTransfer - Upsert a token transfer
-	UpsertTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) error
+	// InsertOrGetTokenTransfer - insert a token transfer event from the blockchain
+	// If the ProtocolID has already been recorded, it does not insert but returns the existing row
+	InsertOrGetTokenTransfer(ctx context.Context, approval *core.TokenTransfer) (existing *core.TokenTransfer, err error)
 
 	// GetTokenTransferByID - Get a token transfer by ID
 	GetTokenTransferByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenTransfer, error)
 
 	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenTransferByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenTransfer, error)
+	GetTokenTransferByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenTransfer, *ffapi.FilterResult, error)
+
+	// DeleteTokenTransfers - Delete token transfers from a particular pool
+	DeleteTokenTransfers(ctx context.Context, namespace string, poolID *fftypes.UUID) error
 }
 
 type iTokenApprovalCollection interface {
@@ -410,15 +430,22 @@ type iTokenApprovalCollection interface {
 	GetTokenApprovalByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenApproval, error)
 
 	// GetTokenTransferByProtocolID - Get a token approval by protocol ID
-	GetTokenApprovalByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenApproval, error)
+	GetTokenApprovalByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
 	GetTokenApprovals(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenApproval, *ffapi.FilterResult, error)
+
+	// DeleteTokenApprovals - Delete token approvals from a particular pool
+	DeleteTokenApprovals(ctx context.Context, namespace string, poolID *fftypes.UUID) error
 }
 
 type iFFICollection interface {
+	// InsertOrGetFFI - Insert an FFI
+	// If an FFI with the same name has already been recorded, does not insert but returns the existing row
+	InsertOrGetFFI(ctx context.Context, ffi *fftypes.FFI) (*fftypes.FFI, error)
+
 	// UpsertFFI - Upsert an FFI
-	UpsertFFI(ctx context.Context, cd *fftypes.FFI) error
+	UpsertFFI(ctx context.Context, ffi *fftypes.FFI, optimization UpsertOptimization) error
 
 	// GetFFIs - Get FFIs
 	GetFFIs(ctx context.Context, namespace string, filter ffapi.Filter) ([]*fftypes.FFI, *ffapi.FilterResult, error)
@@ -428,6 +455,12 @@ type iFFICollection interface {
 
 	// GetFFI - Get an FFI by name and version
 	GetFFI(ctx context.Context, namespace, name, version string) (*fftypes.FFI, error)
+
+	// GetFFIByNetworkName - Get an FFI by network name and version
+	GetFFIByNetworkName(ctx context.Context, namespace, networkName, version string) (*fftypes.FFI, error)
+
+	// DeleteFFI - Delete an FFI
+	DeleteFFI(ctx context.Context, namespace string, id *fftypes.UUID) error
 }
 
 type iFFIMethodCollection interface {
@@ -461,8 +494,12 @@ type iFFIErrorCollection interface {
 }
 
 type iContractAPICollection interface {
+	// InsertOrGetContractAPI - Insert a contract API
+	// If an API with the same name has already been recorded, does not insert but returns the existing row
+	InsertOrGetContractAPI(ctx context.Context, api *core.ContractAPI) (*core.ContractAPI, error)
+
 	// UpsertFFIEvent - Upsert a contract API
-	UpsertContractAPI(ctx context.Context, cd *core.ContractAPI) error
+	UpsertContractAPI(ctx context.Context, api *core.ContractAPI, optimization UpsertOptimization) error
 
 	// GetContractAPIs - Get contract APIs
 	GetContractAPIs(ctx context.Context, namespace string, filter ffapi.AndFilter) ([]*core.ContractAPI, *ffapi.FilterResult, error)
@@ -472,6 +509,12 @@ type iContractAPICollection interface {
 
 	// GetContractAPIByName - Get a contract API by name
 	GetContractAPIByName(ctx context.Context, namespace, name string) (*core.ContractAPI, error)
+
+	// GetContractAPIByNetworkName - Get a contract API by network name
+	GetContractAPIByNetworkName(ctx context.Context, namespace, networkName string) (*core.ContractAPI, error)
+
+	// DeleteContractAPI - Delete a contract API
+	DeleteContractAPI(ctx context.Context, namespace string, id *fftypes.UUID) error
 }
 
 type iContractListenerCollection interface {
@@ -498,6 +541,10 @@ type iContractListenerCollection interface {
 }
 
 type iBlockchainEventCollection interface {
+
+	// InsertBlockchainEvents performs a batch insert of blockchain events - fails if they already exist, so caller can fall back to InsertOrGetBlockchainEvent individually
+	InsertBlockchainEvents(ctx context.Context, messages []*core.BlockchainEvent, hooks ...PostCompletionHook) (err error)
+
 	// InsertOrGetBlockchainEvent - insert an event from the blockchain
 	// If the ProtocolID has already been recorded, it does not insert but returns the existing row
 	InsertOrGetBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (existing *core.BlockchainEvent, err error)
@@ -705,6 +752,7 @@ var MessageQueryFactory = &ffapi.QueryFields{
 	"pins":           &ffapi.FFStringArrayField{},
 	"state":          &ffapi.StringField{},
 	"confirmed":      &ffapi.TimeField{},
+	"rejectreason":   &ffapi.StringField{},
 	"sequence":       &ffapi.Int64Field{},
 	"txtype":         &ffapi.StringField{},
 	"batch":          &ffapi.UUIDField{},
@@ -883,18 +931,20 @@ var TokenPoolQueryFactory = &ffapi.QueryFields{
 	"id":              &ffapi.UUIDField{},
 	"type":            &ffapi.StringField{},
 	"name":            &ffapi.StringField{},
+	"networkname":     &ffapi.StringField{},
 	"standard":        &ffapi.StringField{},
 	"locator":         &ffapi.StringField{},
 	"symbol":          &ffapi.StringField{},
 	"decimals":        &ffapi.Int64Field{},
 	"message":         &ffapi.UUIDField{},
-	"state":           &ffapi.StringField{},
+	"active":          &ffapi.BoolField{},
 	"created":         &ffapi.TimeField{},
 	"connector":       &ffapi.StringField{},
 	"tx.type":         &ffapi.StringField{},
 	"tx.id":           &ffapi.UUIDField{},
 	"interface":       &ffapi.UUIDField{},
 	"interfaceformat": &ffapi.StringField{},
+	"published":       &ffapi.BoolField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances
@@ -961,9 +1011,11 @@ var TokenApprovalQueryFactory = &ffapi.QueryFields{
 
 // FFIQueryFactory filter fields for contract definitions
 var FFIQueryFactory = &ffapi.QueryFields{
-	"id":      &ffapi.UUIDField{},
-	"name":    &ffapi.StringField{},
-	"version": &ffapi.StringField{},
+	"id":          &ffapi.UUIDField{},
+	"name":        &ffapi.StringField{},
+	"networkname": &ffapi.StringField{},
+	"version":     &ffapi.StringField{},
+	"published":   &ffapi.BoolField{},
 }
 
 // FFIMethodQueryFactory filter fields for contract methods
@@ -1022,7 +1074,9 @@ var BlockchainEventQueryFactory = &ffapi.QueryFields{
 
 // ContractAPIQueryFactory filter fields for Contract APIs
 var ContractAPIQueryFactory = &ffapi.QueryFields{
-	"id":        &ffapi.UUIDField{},
-	"name":      &ffapi.StringField{},
-	"interface": &ffapi.UUIDField{},
+	"id":          &ffapi.UUIDField{},
+	"name":        &ffapi.StringField{},
+	"networkname": &ffapi.StringField{},
+	"interface":   &ffapi.UUIDField{},
+	"published":   &ffapi.BoolField{},
 }

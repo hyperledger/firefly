@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,6 +26,18 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
+type eventBatchContext struct {
+	contractListenerResults map[string]*core.ContractListener
+	topicsByEventID         map[string]string
+	chainEventsToInsert     []*core.BlockchainEvent
+	postInsert              []func() error
+}
+
+func (bc *eventBatchContext) addEventToInsert(event *core.BlockchainEvent, topic string) {
+	bc.chainEventsToInsert = append(bc.chainEventsToInsert, event)
+	bc.topicsByEventID[event.ID.String()] = topic
+}
+
 func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event, tx *core.BlockchainTransactionRef) *core.BlockchainEvent {
 	ev := &core.BlockchainEvent{
 		ID:         fftypes.NewUUID(),
@@ -44,10 +56,35 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 	return ev
 }
 
-func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, protocolID string) (*core.ContractListener, error) {
-	return em.getChainListenerCached(fmt.Sprintf("pid:%s", protocolID), func() (*core.ContractListener, error) {
+func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, protocolID string, bc *eventBatchContext) (*core.ContractListener, error) {
+	// Event a negative result is cached in te scope of the event batch (so we don't spam the DB hundreds of times in one tight loop to get not-found)
+	if l, batchResult := bc.contractListenerResults[protocolID]; batchResult {
+		return l, nil
+	}
+	l, err := em.getChainListenerCached(fmt.Sprintf("pid:%s", protocolID), func() (*core.ContractListener, error) {
 		return em.database.GetContractListenerByBackendID(ctx, em.namespace.Name, protocolID)
 	})
+	if err != nil {
+		return nil, err
+	}
+	bc.contractListenerResults[protocolID] = l // includes nil results
+	return l, nil
+}
+
+func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent, listener *core.ContractListener) error {
+	existing, err := em.txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		log.L(ctx).Debugf("Ignoring duplicate blockchain event %s", chainEvent.ProtocolID)
+		// Return the ID of the existing event
+		chainEvent.ID = existing.ID
+		return nil
+	}
+	topic := em.getTopicForChainListener(listener)
+	ffEvent := core.NewEvent(core.EventTypeBlockchainEventReceived, chainEvent.Namespace, chainEvent.ID, chainEvent.TX.ID, topic)
+	return em.database.InsertEvent(ctx, ffEvent)
 }
 
 func (em *eventManager) getChainListenerCached(cacheKey string, getter func() (*core.ContractListener, error)) (*core.ContractListener, error) {
@@ -76,19 +113,19 @@ func (em *eventManager) getTopicForChainListener(listener *core.ContractListener
 	return topic
 }
 
-func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent, listener *core.ContractListener) error {
-	if existing, err := em.txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent); err != nil {
+func (em *eventManager) maybePersistBlockchainEvents(ctx context.Context, bc *eventBatchContext) error {
+	// Attempt to insert all the events in one go, using efficient InsertMany semantics
+	inserted, err := em.txHelper.InsertNewBlockchainEvents(ctx, bc.chainEventsToInsert)
+	if err != nil {
 		return err
-	} else if existing != nil {
-		log.L(ctx).Debugf("Ignoring duplicate blockchain event %s", chainEvent.ProtocolID)
-		// Return the ID of the existing event
-		chainEvent.ID = existing.ID
-		return nil
 	}
-	topic := em.getTopicForChainListener(listener)
-	ffEvent := core.NewEvent(core.EventTypeBlockchainEventReceived, chainEvent.Namespace, chainEvent.ID, chainEvent.TX.ID, topic)
-	if err := em.database.InsertEvent(ctx, ffEvent); err != nil {
-		return err
+	// Only the ones newly inserted need events emitting
+	for _, chainEvent := range inserted {
+		topic := bc.topicsByEventID[chainEvent.ID.String()] // bc.addEvent() ensures this is there
+		ffEvent := core.NewEvent(core.EventTypeBlockchainEventReceived, chainEvent.Namespace, chainEvent.ID, chainEvent.TX.ID, topic)
+		if err := em.database.InsertEvent(ctx, ffEvent); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -99,32 +136,66 @@ func (em *eventManager) emitBlockchainEventMetric(event *blockchain.Event) {
 	}
 }
 
-func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription) error {
+func (em *eventManager) BlockchainEventBatch(batch []*blockchain.EventToDispatch) error {
 	return em.retry.Do(em.ctx, "persist blockchain event", func(attempt int) (bool, error) {
-		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			listener, err := em.getChainListenerByProtocolIDCached(ctx, event.Subscription)
-			if err != nil {
-				return err
+		bc := &eventBatchContext{
+			contractListenerResults: make(map[string]*core.ContractListener),
+			topicsByEventID:         make(map[string]string),
+		}
+		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+			// Process the events, generating the optimized list of event inserts
+			for _, event := range batch {
+				switch event.Type {
+				case blockchain.EventTypeForListener:
+					if err := em.handleBlockchainEventForListener(ctx, event.ForListener, bc); err != nil {
+						return err
+					}
+				case blockchain.EventTypeBatchPinComplete:
+					if err := em.handleBlockchainBatchPinEvent(ctx, event.BatchPinComplete, bc); err != nil {
+						return err
+					}
+				case blockchain.EventTypeNetworkAction:
+					if err := em.handleBlockchainNetworkAction(ctx, event.NetworkAction, bc); err != nil {
+						return err
+					}
+				}
 			}
-			if listener == nil {
-				log.L(ctx).Warnf("Event received from unknown subscription %s", event.Subscription)
-				return nil // no retry
+			// Do the optimized inserts
+			if len(bc.chainEventsToInsert) > 0 {
+				if err := em.maybePersistBlockchainEvents(ctx, bc); err != nil {
+					return err
+				}
 			}
-			if listener.Namespace != em.namespace.Name {
-				log.L(em.ctx).Debugf("Ignoring blockchain event from different namespace '%s'", listener.Namespace)
-				return nil
+			// Batch pins require processing after the event is inserted
+			for _, postEvent := range bc.postInsert {
+				if err := postEvent(); err != nil {
+					return err
+				}
 			}
-			listener.Namespace = em.namespace.Name
-
-			chainEvent := buildBlockchainEvent(listener.Namespace, listener.ID, &event.Event, &core.BlockchainTransactionRef{
-				BlockchainID: event.BlockchainTXID,
-			})
-			if err := em.maybePersistBlockchainEvent(ctx, chainEvent, listener); err != nil {
-				return err
-			}
-			em.emitBlockchainEventMetric(&event.Event)
 			return nil
 		})
-		return err != nil, err
 	})
+}
+
+func (em *eventManager) handleBlockchainEventForListener(ctx context.Context, event *blockchain.EventForListener, bc *eventBatchContext) error {
+	listener, err := em.getChainListenerByProtocolIDCached(ctx, event.ListenerID, bc)
+	if err != nil {
+		return err
+	}
+	if listener == nil {
+		log.L(ctx).Warnf("Event received from unknown subscription %s", event.ListenerID)
+		return nil // no retry
+	}
+	if listener.Namespace != em.namespace.Name {
+		log.L(ctx).Debugf("Ignoring blockchain event from different namespace '%s'", listener.Namespace)
+		return nil
+	}
+	listener.Namespace = em.namespace.Name
+
+	chainEvent := buildBlockchainEvent(listener.Namespace, listener.ID, event.Event, &core.BlockchainTransactionRef{
+		BlockchainID: event.BlockchainTXID,
+	})
+	bc.addEventToInsert(chainEvent, em.getTopicForChainListener(listener))
+	em.emitBlockchainEventMetric(event.Event)
+	return nil
 }

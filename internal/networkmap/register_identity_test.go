@@ -54,7 +54,7 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
-		false).Return(nil)
+	).Return(nil)
 
 	org, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "child1",
@@ -101,7 +101,7 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
-		false).Return(nil)
+	).Return(nil)
 
 	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "child1",
@@ -139,7 +139,7 @@ func TestRegisterIdentityOrgNonMultiparty(t *testing.T) {
 			return sr.Key == "0x12345"
 		}),
 		(*core.SignerRef)(nil),
-		false).Return(fmt.Errorf("pop"))
+	).Return(fmt.Errorf("pop"))
 
 	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
@@ -175,7 +175,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
-		false).Return(nil)
+	).Return(nil)
 
 	org, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "child1",

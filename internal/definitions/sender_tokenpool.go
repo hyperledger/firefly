@@ -26,32 +26,101 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
+func (ds *definitionSender) PublishTokenPool(ctx context.Context, poolNameOrID, networkName string, waitConfirm bool) (pool *core.TokenPool, err error) {
+	if !ds.multiparty {
+		return nil, i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
+	}
 
-	if bm.multiparty {
-		// Map token connector name -> broadcast name
-		if broadcastName, exists := bm.tokenBroadcastNames[pool.Pool.Connector]; exists {
-			pool.Pool.Connector = broadcastName
-		} else {
-			log.L(ctx).Infof("Could not find broadcast name for token connector: %s", pool.Pool.Connector)
-			return i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, broadcastName, "token")
-		}
-
-		if err := pool.Pool.Validate(ctx); err != nil {
+	var sender *sendWrapper
+	err = ds.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		if pool, err = ds.assets.GetTokenPoolByNameOrID(ctx, poolNameOrID); err != nil {
 			return err
 		}
-
-		pool.Pool.Namespace = ""
-		msg, err := bm.sendDefinitionDefault(ctx, pool, core.SystemTagDefinePool, waitConfirm)
-		if msg != nil {
-			pool.Pool.Message = msg.Header.ID
+		if pool.Published {
+			return i18n.NewError(ctx, coremsgs.MsgAlreadyPublished)
 		}
-		pool.Pool.Namespace = bm.namespace
+		pool.NetworkName = networkName
+		sender = ds.getTokenPoolSender(ctx, pool)
+		if sender.err != nil {
+			return sender.err
+		}
+		return sender.sender.Prepare(ctx)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sender.send(ctx, waitConfirm)
+	return pool, err
+}
+
+func (ds *definitionSender) getTokenPoolSender(ctx context.Context, pool *core.TokenPool) *sendWrapper {
+	// Map token connector name -> broadcast name
+	if broadcastName, exists := ds.tokenBroadcastNames[pool.Connector]; exists {
+		pool.Connector = broadcastName
+	} else {
+		log.L(ctx).Infof("Could not find broadcast name for token connector: %s", pool.Connector)
+		return wrapSendError(i18n.NewError(ctx, coremsgs.MsgInvalidConnectorName, broadcastName, "token"))
+	}
+
+	if pool.NetworkName == "" {
+		pool.NetworkName = pool.Name
+	}
+
+	// Validate the pool before sending
+	if err := pool.Validate(ctx); err != nil {
+		return wrapSendError(err)
+	}
+	existing, err := ds.database.GetTokenPoolByNetworkName(ctx, ds.namespace, pool.NetworkName)
+	if err != nil {
+		return wrapSendError(err)
+	} else if existing != nil {
+		return wrapSendError(i18n.NewError(ctx, coremsgs.MsgNetworkNameExists))
+	}
+	if pool.Interface != nil && pool.Interface.ID != nil {
+		iface, err := ds.database.GetFFIByID(ctx, ds.namespace, pool.Interface.ID)
+		switch {
+		case err != nil:
+			return wrapSendError(err)
+		case iface == nil:
+			return wrapSendError(i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotFound, pool.Interface.ID))
+		case !iface.Published:
+			return wrapSendError(i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotPublished, pool.Interface.ID))
+		}
+	}
+
+	// Prepare the pool definition to be serialized for broadcast
+	localName := pool.Name
+	pool.Name = ""
+	pool.Namespace = ""
+	pool.Published = true
+	pool.Active = false
+	definition := &core.TokenPoolDefinition{Pool: pool}
+
+	sender := ds.getSenderDefault(ctx, definition, core.SystemTagDefinePool)
+	if sender.message != nil {
+		pool.Message = sender.message.Header.ID
+	}
+
+	pool.Name = localName
+	pool.Namespace = ds.namespace
+	pool.Active = true
+	return sender
+}
+
+func (ds *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPool, waitConfirm bool) error {
+	if pool.Published {
+		if !ds.multiparty {
+			return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
+		}
+		_, err := ds.getTokenPoolSender(ctx, pool).send(ctx, waitConfirm)
 		return err
 	}
 
+	pool.NetworkName = ""
+
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		hr, err := bm.handler.handleTokenPoolDefinition(ctx, state, pool.Pool)
+		hr, err := ds.handler.handleTokenPoolDefinition(ctx, state, pool, true)
 		if err != nil {
 			if innerErr := errors.Unwrap(err); innerErr != nil {
 				return hr, innerErr

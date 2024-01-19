@@ -92,3 +92,19 @@ func (om *operationsManager) AddOrReuseOperation(ctx context.Context, op *core.O
 	}
 	return err
 }
+
+func (om *operationsManager) BulkInsertOperations(ctx context.Context, ops ...*core.Operation) error {
+	// This efficiently inserts the operations.
+	// It's all-or nothing success/failure, as ops individually don't have idempotency duplicates to
+	// worry about - that's handled by the wrapping transaction layer.
+	//
+	// Thin wrapper on the database, that manages cache. Expected to be run on a batch worker setting
+	// up idempotent transactions, not the context of an individual operation.
+	if err := om.database.InsertOperations(ctx, ops); err != nil {
+		return err
+	}
+	for _, op := range ops {
+		om.cacheOperation(op)
+	}
+	return nil
+}

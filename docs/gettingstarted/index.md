@@ -23,7 +23,7 @@ With this easy-to-follow guide, you'll go from "zero" to blockchain-hero in the 
 ![FireFly Sandbox](../images/sandbox/sandbox_broadcast.png)
 
 ### We're here to help!
-We want to make it as easy as possible for anyone to get started with FireFly, and we don't want anyone to feel like they're stuck. If you're having trouble, or are just curious about what else you can do with FireFly we encourage you to [join the Hyperledger Discord server](https://discord.gg/Fy7MJuqw86) and come chat with us in the #firefly channel.
+We want to make it as easy as possible for anyone to get started with FireFly, and we don't want anyone to feel like they're stuck. If you're having trouble, or are just curious about what else you can do with FireFly we encourage you to [join the Hyperledger Discord server](https://discord.gg/hyperledger) and come chat with us in the #firefly channel.
 
 ## Get started: Install the FireFly CLI
 Now that you've got the FireFly CLI set up on your machine, the next step is to create and start a FireFly stack.

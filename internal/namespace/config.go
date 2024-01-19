@@ -19,6 +19,7 @@ package namespace
 import (
 	"github.com/hyperledger/firefly-common/pkg/auth/authfactory"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/database/difactory"
@@ -70,6 +71,11 @@ func InitConfig() {
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractFirstEvent, string(core.SubOptsFirstEventOldest))
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractLocation)
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractOptions)
+
+	tlsConfigs := namespacePredefined.SubArray(coreconfig.NamespaceTLSConfigs)
+	tlsConfigs.AddKnownKey(coreconfig.NamespaceTLSConfigName)
+	tlsConf := tlsConfigs.SubSection(coreconfig.NamespaceTLSConfigTLSSection)
+	fftls.InitTLSConfig(tlsConf)
 
 	bifactory.InitConfig(blockchainConfig)
 	difactory.InitConfig(databaseConfig)

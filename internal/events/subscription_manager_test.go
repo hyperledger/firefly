@@ -18,11 +18,13 @@ package events
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -62,7 +64,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.Plugin) (*subscriptionMana
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything).Return(&core.Offset{RowID: 3333333, Current: 0}, nil).Maybe()
-	sm, err := newSubscriptionManager(ctx, "ns1", enricher, mdi, mdm, newEventNotifier(ctx, "ut"), mbm, mpm, txHelper, nil)
+	sm, err := newSubscriptionManager(ctx, &core.Namespace{Name: "ns1"}, enricher, mdi, mdm, newEventNotifier(ctx, "ut"), mbm, mpm, txHelper, nil)
 	assert.NoError(t, err)
 	sm.transports = map[string]events.Plugin{
 		"ut": mei,
@@ -93,7 +95,7 @@ func TestRegisterDurableSubscriptions(t *testing.T) {
 			ID: sub2,
 		}, Transport: "ut"},
 	}, nil, nil)
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	err := sm.start()
 	assert.NoError(t, err)
 
@@ -151,7 +153,7 @@ func TestReloadDurableSubscription(t *testing.T) {
 			Name:      "sub1",
 		}, Transport: "ut"},
 	}, nil, nil)
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	err := sm.start()
 	assert.NoError(t, err)
 
@@ -168,7 +170,7 @@ func TestRegisterEphemeralSubscriptions(t *testing.T) {
 	mdi := sm.database.(*databasemocks.Plugin)
 
 	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{}, nil, nil)
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 
 	err := sm.start()
 	assert.NoError(t, err)
@@ -197,7 +199,7 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 	mdi := sm.database.(*databasemocks.Plugin)
 
 	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{}, nil, nil)
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	err := sm.start()
 	assert.NoError(t, err)
 	be := &boundCallbacks{sm: sm, ei: mei}
@@ -288,7 +290,7 @@ func TestCreateSubscriptionBadTransportOptions(t *testing.T) {
 		Options:   core.SubscriptionOptions{},
 	}
 	sub.Options.TransportOptions()["myoption"] = "badvalue"
-	mei.On("ValidateOptions", mock.MatchedBy(func(opts *core.SubscriptionOptions) bool {
+	mei.On("ValidateOptions", mock.Anything, mock.MatchedBy(func(opts *core.SubscriptionOptions) bool {
 		return opts.TransportOptions()["myoption"] == "badvalue"
 	})).Return(fmt.Errorf("pop"))
 	_, err := sm.parseSubscriptionDef(sm.ctx, sub)
@@ -299,7 +301,7 @@ func TestCreateSubscriptionBadEventilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Events: "[[[[! badness",
@@ -313,7 +315,7 @@ func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Topic: "[[[[! badness",
@@ -327,7 +329,7 @@ func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Message: core.MessageFilter{
@@ -343,7 +345,7 @@ func TestCreateSubscriptionBadAuthorFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Message: core.MessageFilter{
@@ -359,7 +361,7 @@ func TestCreateSubscriptionBadTxTypeFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Transaction: core.TransactionFilter{
@@ -375,7 +377,7 @@ func TestCreateSubscriptionBadBlockchainEventNameFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			BlockchainEvent: core.BlockchainEventFilter{
@@ -391,7 +393,7 @@ func TestCreateSubscriptionBadDeprecatedGroupFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			DeprecatedGroup: "[[[[! badness",
@@ -405,7 +407,7 @@ func TestCreateSubscriptionBadDeprecatedTagFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			DeprecatedTag: "[[[[! badness",
@@ -419,7 +421,7 @@ func TestCreateSubscriptionBadMessageTagFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Message: core.MessageFilter{
@@ -435,7 +437,7 @@ func TestCreateSubscriptionBadDeprecatedAuthorFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			DeprecatedAuthor: "[[[[! badness",
@@ -449,7 +451,7 @@ func TestCreateSubscriptionBadDeprecatedTopicsFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			DeprecatedTopics: "[[[[! badness",
@@ -463,7 +465,7 @@ func TestCreateSubscriptionBadBlockchainEventListenerFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			BlockchainEvent: core.BlockchainEventFilter{
@@ -479,7 +481,7 @@ func TestCreateSubscriptionSuccessMessageFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Message: core.MessageFilter{
@@ -495,7 +497,7 @@ func TestCreateSubscriptionSuccessTxFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Transaction: core.TransactionFilter{
@@ -511,7 +513,7 @@ func TestCreateSubscriptionSuccessBlockchainEvent(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			BlockchainEvent: core.BlockchainEventFilter{
@@ -523,11 +525,37 @@ func TestCreateSubscriptionSuccessBlockchainEvent(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestCreateSubscriptionSuccessTLSConfig(t *testing.T) {
+	coreconfig.Reset()
+
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+
+	sm.namespace.TLSConfigs = map[string]*tls.Config{
+		"myconfig": {},
+	}
+
+	mei.On("GetFFRestyConfig", mock.Anything).Return(&ffresty.Config{})
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
+	sub, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
+		Options: core.SubscriptionOptions{
+			WebhookSubOptions: core.WebhookSubOptions{
+				TLSConfigName: "myconfig",
+			},
+		},
+		Transport: "ut",
+	})
+	assert.NoError(t, err)
+
+	assert.NotNil(t, sub.definition.Options.TLSConfig)
+}
+
 func TestCreateSubscriptionWithDeprecatedFilters(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Topic:            "flop",
@@ -548,7 +576,7 @@ func TestDispatchDeliveryResponseOK(t *testing.T) {
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
 	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{}, nil, nil)
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 	err := sm.start()
 	assert.NoError(t, err)
 	be := &boundCallbacks{sm: sm, ei: mei}
@@ -673,7 +701,7 @@ func TestNewDurableSubscriptionOK(t *testing.T) {
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 
 	sm.connections["conn1"] = &connection{
 		ei:        mei,
@@ -705,7 +733,7 @@ func TestUpdatedDurableSubscriptionNoOp(t *testing.T) {
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 
 	subID := fftypes.NewUUID()
 	sub := &core.Subscription{
@@ -747,7 +775,7 @@ func TestUpdatedDurableSubscriptionOK(t *testing.T) {
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
 
 	subID := fftypes.NewUUID()
 	sub := &core.Subscription{

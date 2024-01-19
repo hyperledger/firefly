@@ -45,11 +45,15 @@ type Plugin interface {
 
 	// ValidateOptions verifies a set of input options, prior to storage of a new subscription
 	// The plugin can modify the core subscription options, such as overriding whether data is delivered.
-	ValidateOptions(options *core.SubscriptionOptions) error
+	ValidateOptions(ctx context.Context, options *core.SubscriptionOptions) error
 
 	// DeliveryRequest requests delivery of work on a connection, which must later be responded to
 	// Data will only be supplied as non-nil if the subscription is set to include data
-	DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error
+	DeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error
+
+	// DeliveryBatchRequest requests delivery of multiple events on a connection, which must later be responded to
+	// Data will only be supplied as non-nil if the subscription is set to include data
+	BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error
 
 	// NamespaceRestarted is called after a namespace restarts. For a connect-in style plugin, like
 	// WebSockets, this must re-register any active connections that started before the time passed in.
@@ -83,4 +87,6 @@ type Callbacks interface {
 	DeliveryResponse(connID string, inflight *core.EventDeliveryResponse)
 }
 
-type Capabilities struct{}
+type Capabilities struct {
+	BatchDelivery bool
+}

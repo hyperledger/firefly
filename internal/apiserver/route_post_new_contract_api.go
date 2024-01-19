@@ -33,6 +33,7 @@ var postNewContractAPI = &ffapi.Route{
 	PathParams: nil,
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
+		{Name: "publish", Description: coremsgs.APIPublishQueryParam, IsBool: true},
 	},
 	Description:     coremsgs.APIEndpointsPostNewContractAPI,
 	JSONInputValue:  func() interface{} { return &core.ContractAPI{} },
@@ -47,6 +48,7 @@ var postNewContractAPI = &ffapi.Route{
 			r.SuccessStatus = syncRetcode(waitConfirm)
 			api := r.Input.(*core.ContractAPI)
 			api.ID = nil
+			api.Published = strings.EqualFold(r.QP["publish"], "true")
 			err = cr.or.DefinitionSender().DefineContractAPI(cr.ctx, cr.apiBaseURL, api, waitConfirm)
 			return api, err
 		},

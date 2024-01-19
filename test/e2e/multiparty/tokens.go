@@ -61,7 +61,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		Config: fftypes.JSONObject{},
 	}
 
-	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, false)
+	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, true, false)
 	poolID := poolResp.ID
 
 	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolID)
@@ -72,15 +72,17 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), core.TokenTypeFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].Locator)
+	assert.NotNil(suite.T(), pools[0].Message)
 
 	e2e.WaitForEvent(suite.T(), received2, core.EventTypePoolConfirmed, poolID)
-	pools = suite.testState.client1.GetTokenPools(suite.T(), suite.testState.startTime)
+	pools = suite.testState.client2.GetTokenPools(suite.T(), suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
 	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), core.TokenTypeFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].Locator)
+	assert.NotNil(suite.T(), pools[0].Message)
 
 	approval := &core.TokenApprovalInput{
 		TokenApproval: core.TokenApproval{
@@ -216,6 +218,9 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
 	accountPools = suite.testState.client2.GetTokenAccountPools(suite.T(), suite.testState.org2key.Value)
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
+
+	// Cannot delete pools in multiparty mode
+	suite.testState.client1.DeleteTokenPool(suite.T(), poolID, 409)
 }
 
 func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
@@ -231,11 +236,12 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		Config: fftypes.JSONObject{},
 	}
 
-	poolOut := suite.testState.client1.CreateTokenPool(suite.T(), pool, true)
+	poolOut := suite.testState.client1.CreateTokenPool(suite.T(), pool, true, true)
 	assert.Equal(suite.T(), suite.testState.namespace, poolOut.Namespace)
 	assert.Equal(suite.T(), poolName, poolOut.Name)
 	assert.Equal(suite.T(), core.TokenTypeNonFungible, poolOut.Type)
 	assert.NotEmpty(suite.T(), poolOut.Locator)
+	assert.NotNil(suite.T(), poolOut.Message)
 
 	poolID := poolOut.ID
 
@@ -247,6 +253,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), core.TokenTypeNonFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].Locator)
+	assert.NotNil(suite.T(), pools[0].Message)
 
 	approval := &core.TokenApprovalInput{
 		TokenApproval: core.TokenApproval{
@@ -371,4 +378,53 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
 	accountPools = suite.testState.client2.GetTokenAccountPools(suite.T(), suite.testState.org2key.Value)
 	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
+
+	// Cannot delete published pools
+	suite.testState.client1.DeleteTokenPool(suite.T(), poolID, 409)
+}
+
+func (suite *TokensTestSuite) TestE2ETokenPoolPublish() {
+	received1 := e2e.WsReader(suite.testState.ws1)
+	received2 := e2e.WsReader(suite.testState.ws2)
+
+	poolName := fmt.Sprintf("pool_%s", e2e.RandomName(suite.T()))
+	localName := poolName + "-local"
+	networkName := poolName + "-shared"
+	suite.T().Logf("Pool local name: %s", localName)
+	suite.T().Logf("Pool network name: %s", networkName)
+
+	pool := &core.TokenPool{
+		Name:   localName,
+		Type:   core.TokenTypeFungible,
+		Config: fftypes.JSONObject{},
+	}
+
+	poolResp := suite.testState.client1.CreateTokenPool(suite.T(), pool, false, false)
+	poolID := poolResp.ID
+
+	e2e.WaitForEvent(suite.T(), received1, core.EventTypePoolConfirmed, poolID)
+	pools := suite.testState.client1.GetTokenPools(suite.T(), suite.testState.startTime)
+	assert.Equal(suite.T(), 1, len(pools))
+	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
+	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
+	assert.Equal(suite.T(), localName, pools[0].Name) // sending party uses local name
+	assert.Equal(suite.T(), core.TokenTypeFungible, pools[0].Type)
+	assert.NotEmpty(suite.T(), pools[0].Locator)
+	assert.Nil(suite.T(), pools[0].Message)
+
+	suite.testState.client1.PublishTokenPool(suite.T(), poolID, networkName, false)
+
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeDefinition)
+	e2e.WaitForEvent(suite.T(), received2, core.EventTypePoolConfirmed, poolID)
+	pools = suite.testState.client2.GetTokenPools(suite.T(), suite.testState.startTime)
+	assert.Equal(suite.T(), 1, len(pools))
+	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
+	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
+	assert.Equal(suite.T(), networkName, pools[0].Name) // receiving party gets network name
+	assert.Equal(suite.T(), core.TokenTypeFungible, pools[0].Type)
+	assert.NotEmpty(suite.T(), pools[0].Locator)
+	assert.NotNil(suite.T(), pools[0].Message)
+
+	// Cannot delete published pools
+	suite.testState.client1.DeleteTokenPool(suite.T(), poolID, 409)
 }

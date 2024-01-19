@@ -256,3 +256,17 @@ func VerifyAllOperationsSucceeded(t *testing.T, clients []*client.FireFlyClient,
 
 	assert.Fail(t, pending)
 }
+
+func VerifyOperationsAlreadyMarkedFailed(t *testing.T, clients []*client.FireFlyClient, startTime time.Time) {
+	// Note we do NOT wait in this function - use this function when failure should already have been recorded,
+	// and the work has been done in FF Core to ensure that is reflected in the operation cache.
+	pending := ""
+	for _, client := range clients {
+		for _, op := range client.GetOperations(t, startTime) {
+			if op.Status != core.OpStatusFailed {
+				pending += fmt.Sprintf("Operation '%s' (%s) on '%s' status=%s\n", op.ID, op.Type, client.Client.BaseURL, op.Status)
+			}
+		}
+	}
+	assert.Empty(t, pending, pending)
+}

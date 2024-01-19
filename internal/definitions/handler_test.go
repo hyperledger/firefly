@@ -33,7 +33,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestDefinitionHandler(t *testing.T) (*definitionHandler, *testDefinitionBatchState) {
+type testDefinitionHandler struct {
+	definitionHandler
+
+	mdi *databasemocks.Plugin
+	mbi *blockchainmocks.Plugin
+	mdx *dataexchangemocks.Plugin
+	mim *identitymanagermocks.Manager
+	mdm *datamocks.Manager
+	mam *assetmocks.Manager
+	mcm *contractmocks.Manager
+}
+
+func (tdh *testDefinitionHandler) cleanup(t *testing.T) {
+	tdh.mdi.AssertExpectations(t)
+	tdh.mbi.AssertExpectations(t)
+	tdh.mdx.AssertExpectations(t)
+	tdh.mim.AssertExpectations(t)
+	tdh.mdm.AssertExpectations(t)
+	tdh.mam.AssertExpectations(t)
+	tdh.mcm.AssertExpectations(t)
+}
+
+func newTestDefinitionHandler(t *testing.T) (*testDefinitionHandler, *testDefinitionBatchState) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
@@ -46,7 +68,16 @@ func newTestDefinitionHandler(t *testing.T) (*definitionHandler, *testDefinition
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	dh, _ := newDefinitionHandler(context.Background(), ns, false, mdi, mbi, mdx, mdm, mim, mam, mcm, tokenNames)
-	return dh, newTestDefinitionBatchState(t)
+	return &testDefinitionHandler{
+		definitionHandler: *dh,
+		mdi:               mdi,
+		mbi:               mbi,
+		mdx:               mdx,
+		mim:               mim,
+		mdm:               mdm,
+		mam:               mam,
+		mcm:               mcm,
+	}, newTestDefinitionBatchState(t)
 }
 
 type testDefinitionBatchState struct {
@@ -77,6 +108,8 @@ func TestInitFail(t *testing.T) {
 
 func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
+
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: "unknown",
@@ -89,6 +122,8 @@ func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 
 func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 	dh, _ := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
+
 	valid := dh.getSystemBroadcastPayload(context.Background(), &core.Message{
 		Header: core.MessageHeader{
 			Tag: "unknown",
@@ -99,6 +134,8 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 
 func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 	dh, _ := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
+
 	valid := dh.getSystemBroadcastPayload(context.Background(), &core.Message{
 		Header: core.MessageHeader{
 			Tag: "unknown",

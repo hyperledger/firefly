@@ -22,6 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
@@ -112,7 +113,7 @@ func (cm *contractManager) PrepareOperation(ctx context.Context, op *core.Operat
 	}
 }
 
-func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 	switch data := op.Data.(type) {
 	case txcommon.BlockchainInvokeData:
 		req := data.Request
@@ -126,14 +127,30 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOp
 				Contexts:        data.BatchPin.Contexts,
 			}
 		}
-		return nil, false, cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, req.Method, req.Input, req.Errors, req.Options, batchPin)
-
+		bcParsedMethod, err := cm.validateInvokeContractRequest(ctx, req, false /* do-not revalidate with the blockchain connector - just send it */)
+		if err != nil {
+			return nil, core.OpPhaseInitializing, err
+		}
+		submissionRejected, err := cm.blockchain.InvokeContract(ctx, op.NamespacedIDString(), req.Key, req.Location, bcParsedMethod, req.Input, req.Options, batchPin)
+		return nil, submissionPhase(ctx, submissionRejected, err), err
 	case blockchainContractDeployData:
 		req := data.Request
-		return nil, false, cm.blockchain.DeployContract(ctx, op.NamespacedIDString(), req.Key, req.Definition, req.Contract, req.Input, req.Options)
+		submissionRejected, err := cm.blockchain.DeployContract(ctx, op.NamespacedIDString(), req.Key, req.Definition, req.Contract, req.Input, req.Options)
+		return nil, submissionPhase(ctx, submissionRejected, err), err
 	default:
-		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
+		return nil, core.OpPhaseInitializing, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
+}
+
+func submissionPhase(ctx context.Context, submissionRejected bool, err error) core.OpPhase {
+	if err == nil {
+		return core.OpPhasePending
+	}
+	log.L(ctx).Errorf("Transaction submission failed [submissionRejected=%t]: %s", submissionRejected, err)
+	if submissionRejected {
+		return core.OpPhaseComplete
+	}
+	return core.OpPhaseInitializing
 }
 
 func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {

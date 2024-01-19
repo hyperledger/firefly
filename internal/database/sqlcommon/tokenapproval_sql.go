@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -202,10 +202,10 @@ func (s *SQLCommon) GetTokenApprovalByID(ctx context.Context, namespace string, 
 	return s.getTokenApprovalPred(ctx, localID.String(), sq.Eq{"local_id": localID, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenApproval, error) {
+func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, namespace string, poolID *fftypes.UUID, protocolID string) (*core.TokenApproval, error) {
 	return s.getTokenApprovalPred(ctx, protocolID, sq.And{
 		sq.Eq{"namespace": namespace},
-		sq.Eq{"connector": connector},
+		sq.Eq{"pool_id": poolID},
 		sq.Eq{"protocol_id": protocolID},
 	})
 }
@@ -232,7 +232,7 @@ func (s *SQLCommon) GetTokenApprovals(ctx context.Context, namespace string, fil
 		approvals = append(approvals, d)
 	}
 
-	return approvals, s.QueryRes(ctx, tokenapprovalTable, tx, fop, fi), err
+	return approvals, s.QueryRes(ctx, tokenapprovalTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) UpdateTokenApprovals(ctx context.Context, filter ffapi.Filter, update ffapi.Update) (err error) {
@@ -254,6 +254,24 @@ func (s *SQLCommon) UpdateTokenApprovals(ctx context.Context, filter ffapi.Filte
 
 	_, err = s.UpdateTx(ctx, tokenapprovalTable, tx, query, nil /* no change events filter based update */)
 	if err != nil {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) DeleteTokenApprovals(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	err = s.DeleteTx(ctx, tokenapprovalTable, tx, sq.Delete(tokenapprovalTable).Where(sq.Eq{
+		"namespace": namespace,
+		"pool_id":   poolID,
+	}), nil)
+	if err != nil && err != fftypes.DeleteRecordNotFound {
 		return err
 	}
 

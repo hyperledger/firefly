@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -197,7 +197,7 @@ func (s *SQLCommon) GetPins(ctx context.Context, namespace string, filter ffapi.
 		pin = append(pin, d)
 	}
 
-	return pin, s.QueryRes(ctx, pinsTable, tx, fop, fi), err
+	return pin, s.QueryRes(ctx, pinsTable, tx, fop, nil, fi), err
 
 }
 

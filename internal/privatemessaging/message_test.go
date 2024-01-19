@@ -81,7 +81,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	intermediateOrg.Parent = rootOrg.ID
 	localNode := newTestNode("node1", intermediateOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(intermediateOrg, nil)
+	mim.On("GetRootOrg", pm.ctx).Return(intermediateOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(intermediateOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
@@ -224,7 +224,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	localOrg := newTestOrg("localorg")
 	localNode := newTestNode("node1", localOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[2].(*core.SignerRef)
@@ -341,7 +341,7 @@ func TestMessagePrepare(t *testing.T) {
 	localOrg := newTestOrg("localorg")
 	localNode := newTestNode("node1", localOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(localNode, nil)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[1].(*core.SignerRef)
@@ -663,7 +663,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(batchSendData)
 		return op.Type == core.OpTypeDataExchangeSendBatch && *data.Node.ID == *node2.ID
-	})).Return(nil, nil)
+	}), false).Return(nil, nil)
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchPayload{
 		Batch: core.BatchPersisted{
@@ -709,7 +709,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(node1, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -767,7 +767,7 @@ func TestSendDataTransferFail(t *testing.T) {
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(batchSendData)
 		return op.Type == core.OpTypeDataExchangeSendBatch && *data.Node.ID == *node2.ID
-	})).Return(nil, fmt.Errorf("pop"))
+	}), false).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.sendData(pm.ctx, &core.TransportWrapper{
 		Batch: &core.Batch{
@@ -814,7 +814,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetRootOrg", pm.ctx).Return(localOrg, nil)
 	mim.On("GetLocalNode", pm.ctx).Return(node1, nil)
 
 	mom := pm.operations.(*operationmocks.Manager)

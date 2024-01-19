@@ -81,6 +81,15 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 	}
 	for _, op := range ops {
 		result.Details = append(result.Details, txOperationStatus(op))
+		if op.Status == core.OpStatusPending {
+			// Check to see if there's an update
+			// Operations can stay in "Pending" if FireFly was down when a TX receipt became available
+			opWithDetail, err := or.GetOperationByIDWithStatus(ctx, op.ID.String())
+			if err != nil {
+				return nil, err
+			}
+			op = &opWithDetail.Operation
+		}
 		if op.Retry == nil {
 			updateStatus(result, op.Status)
 		}
@@ -126,7 +135,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 		case len(pools) == 0:
 			result.Details = append(result.Details, pendingPlaceholder(core.TransactionStatusTypeTokenPool))
 			updateStatus(result, core.OpStatusPending)
-		case pools[0].State != core.TokenPoolStateConfirmed:
+		case !pools[0].Active:
 			result.Details = append(result.Details, &core.TransactionStatusDetails{
 				Status:  core.OpStatusPending,
 				Type:    core.TransactionStatusTypeTokenPool,

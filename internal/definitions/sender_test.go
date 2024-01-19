@@ -35,7 +35,33 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
+type testDefinitionSender struct {
+	definitionSender
+
+	cancel func()
+	mdi    *databasemocks.Plugin
+	mbi    *blockchainmocks.Plugin
+	mdx    *dataexchangemocks.Plugin
+	mbm    *broadcastmocks.Manager
+	mim    *identitymanagermocks.Manager
+	mdm    *datamocks.Manager
+	mam    *assetmocks.Manager
+	mcm    *contractmocks.Manager
+}
+
+func (tds *testDefinitionSender) cleanup(t *testing.T) {
+	tds.cancel()
+	tds.mdi.AssertExpectations(t)
+	tds.mbi.AssertExpectations(t)
+	tds.mdx.AssertExpectations(t)
+	tds.mbm.AssertExpectations(t)
+	tds.mim.AssertExpectations(t)
+	tds.mdm.AssertExpectations(t)
+	tds.mam.AssertExpectations(t)
+	tds.mcm.AssertExpectations(t)
+}
+
+func newTestDefinitionSender(t *testing.T) *testDefinitionSender {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
@@ -51,7 +77,27 @@ func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	ds, _, err := NewDefinitionSender(ctx, ns, false, mdi, mbi, mdx, mbm, mim, mdm, mam, mcm, tokenBroadcastNames)
 	assert.NoError(t, err)
-	return ds.(*definitionSender), cancel
+
+	return &testDefinitionSender{
+		definitionSender: *ds.(*definitionSender),
+		cancel:           cancel,
+		mdi:              mdi,
+		mbi:              mbi,
+		mdx:              mdx,
+		mbm:              mbm,
+		mim:              mim,
+		mdm:              mdm,
+		mam:              mam,
+		mcm:              mcm,
+	}
+}
+
+func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		fn := a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
 }
 
 func TestInitSenderFail(t *testing.T) {
@@ -60,20 +106,20 @@ func TestInitSenderFail(t *testing.T) {
 }
 
 func TestName(t *testing.T) {
-	bm, cancel := newTestDefinitionSender(t)
-	defer cancel()
-	assert.Equal(t, "DefinitionSender", bm.Name())
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+	assert.Equal(t, "DefinitionSender", ds.Name())
 }
 
 func TestCreateDefinitionConfirm(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	mim.On("GetMultipartyRootOrg", ds.ctx).Return(&core.Identity{
+	mim.On("GetRootOrg", ds.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -83,7 +129,7 @@ func TestCreateDefinitionConfirm(t *testing.T) {
 	mms.On("SendAndWait", mock.Anything).Return(nil)
 
 	ds.multiparty = true
-	_, err := ds.sendDefinitionDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype, true)
+	_, err := ds.getSenderDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype).send(ds.ctx, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -92,14 +138,14 @@ func TestCreateDefinitionConfirm(t *testing.T) {
 }
 
 func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	mim.On("GetMultipartyRootOrg", ds.ctx).Return(&core.Identity{
+	mim.On("GetRootOrg", ds.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
@@ -110,7 +156,7 @@ func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 
 	ds.multiparty = true
 
-	_, err := ds.sendDefinitionDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype, true)
+	_, err := ds.getSenderDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype).send(ds.ctx, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -119,16 +165,16 @@ func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 }
 
 func TestCreateDefinitionBadIdentity(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 
 	ds.multiparty = true
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := ds.sendDefinition(ds.ctx, &core.Datatype{}, &core.SignerRef{
+	_, err := ds.getSender(ds.ctx, &core.Datatype{}, &core.SignerRef{
 		Author: "wrong",
 		Key:    "wrong",
-	}, core.SystemTagDefineDatatype, false)
+	}, core.SystemTagDefineDatatype).send(ds.ctx, false)
 	assert.Regexp(t, "pop", err)
 }

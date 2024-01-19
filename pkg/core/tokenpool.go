@@ -29,16 +29,6 @@ var (
 	TokenTypeNonFungible = fftypes.FFEnumValue("tokentype", "nonfungible")
 )
 
-// TokenPoolState is the current confirmation state of a token pool
-type TokenPoolState = fftypes.FFEnum
-
-var (
-	// TokenPoolStatePending is a token pool that has been announced but not yet confirmed
-	TokenPoolStatePending = fftypes.FFEnumValue("tokenpoolstate", "pending")
-	// TokenPoolStateConfirmed is a token pool that has been confirmed on chain
-	TokenPoolStateConfirmed = fftypes.FFEnumValue("tokenpoolstate", "confirmed")
-)
-
 type TokenInterfaceFormat = fftypes.FFEnum
 
 var (
@@ -56,6 +46,7 @@ type TokenPool struct {
 	Type            TokenType             `ffstruct:"TokenPool" json:"type" ffenum:"tokentype"`
 	Namespace       string                `ffstruct:"TokenPool" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Name            string                `ffstruct:"TokenPool" json:"name,omitempty"`
+	NetworkName     string                `ffstruct:"TokenPool" json:"networkName,omitempty"`
 	Standard        string                `ffstruct:"TokenPool" json:"standard,omitempty" ffexcludeinput:"true"`
 	Locator         string                `ffstruct:"TokenPool" json:"locator,omitempty" ffexcludeinput:"true"`
 	Key             string                `ffstruct:"TokenPool" json:"key,omitempty"`
@@ -63,7 +54,7 @@ type TokenPool struct {
 	Decimals        int                   `ffstruct:"TokenPool" json:"decimals,omitempty" ffexcludeinput:"true"`
 	Connector       string                `ffstruct:"TokenPool" json:"connector,omitempty"`
 	Message         *fftypes.UUID         `ffstruct:"TokenPool" json:"message,omitempty" ffexcludeinput:"true"`
-	State           TokenPoolState        `ffstruct:"TokenPool" json:"state,omitempty" ffenum:"tokenpoolstate" ffexcludeinput:"true"`
+	Active          bool                  `ffstruct:"TokenPool" json:"active" ffexcludeinput:"true"`
 	Created         *fftypes.FFTime       `ffstruct:"TokenPool" json:"created,omitempty" ffexcludeinput:"true"`
 	Config          fftypes.JSONObject    `ffstruct:"TokenPool" json:"config,omitempty" ffexcludeoutput:"true"` // for REST calls only (not stored)
 	Info            fftypes.JSONObject    `ffstruct:"TokenPool" json:"info,omitempty" ffexcludeinput:"true"`
@@ -71,9 +62,11 @@ type TokenPool struct {
 	Interface       *fftypes.FFIReference `ffstruct:"TokenPool" json:"interface,omitempty"`
 	InterfaceFormat TokenInterfaceFormat  `ffstruct:"TokenPool" json:"interfaceFormat,omitempty" ffenum:"tokeninterfaceformat" ffexcludeinput:"true"`
 	Methods         *fftypes.JSONAny      `ffstruct:"TokenPool" json:"methods,omitempty" ffexcludeinput:"true"`
+	Published       bool                  `ffstruct:"TokenPool" json:"published" ffexcludeinput:"true"`
+	PluginData      string                `ffstruct:"TokenPool" json:"-" ffexcludeinput:"true"` // reserved for internal plugin use (not returned on API)
 }
 
-type TokenPoolAnnouncement struct {
+type TokenPoolDefinition struct {
 	Pool *TokenPool `json:"pool"`
 }
 
@@ -81,13 +74,18 @@ func (t *TokenPool) Validate(ctx context.Context) (err error) {
 	if err = fftypes.ValidateFFNameFieldNoUUID(ctx, t.Name, "name"); err != nil {
 		return err
 	}
+	if t.NetworkName != "" {
+		if err = fftypes.ValidateFFNameFieldNoUUID(ctx, t.NetworkName, "networkName"); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (t *TokenPoolAnnouncement) Topic() string {
-	return fftypes.TypeNamespaceNameTopicHash("tokenpool", t.Pool.Namespace, t.Pool.Name)
+func (t *TokenPoolDefinition) Topic() string {
+	return fftypes.TypeNamespaceNameTopicHash("tokenpool", t.Pool.Namespace, t.Pool.NetworkName)
 }
 
-func (t *TokenPoolAnnouncement) SetBroadcastMessage(msgID *fftypes.UUID) {
+func (t *TokenPoolDefinition) SetBroadcastMessage(msgID *fftypes.UUID) {
 	t.Pool.Message = msgID
 }

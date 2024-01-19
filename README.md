@@ -4,6 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger/firefly)](https://goreportcard.com/report/github.com/hyperledger/firefly)
 [![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://hyperledger.github.io/firefly//)
 ![build](https://github.com/hyperledger/firefly/actions/workflows/docker_main.yml/badge.svg?branch=main)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/7826/badge)](https://www.bestpractices.dev/projects/7826)
 
 ![Hyperledger FireFly](./images/hyperledger_firefly_logo.png)
 
@@ -26,7 +27,7 @@ FireFly CLI                   |  FireFly Explorer UI                | FireFly Sa
 
 ## Engage with the community
 
-- [Join us on Discord](https://discord.gg/Fy7MJuqw86)
+- [Join us on Discord](https://discord.gg/hyperledger)
 
 ## Technical architecture
 

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -111,5 +111,5 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCr
 }
 
 func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *core.Identity, claimSigner *core.SignerRef, parentSigner *core.SignerRef) error {
-	return nm.defsender.ClaimIdentity(ctx, &core.IdentityClaim{Identity: identity}, claimSigner, parentSigner, false)
+	return nm.defsender.ClaimIdentity(ctx, &core.IdentityClaim{Identity: identity}, claimSigner, parentSigner)
 }

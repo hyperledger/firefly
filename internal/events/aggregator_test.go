@@ -216,6 +216,7 @@ func TestCacheInitFail(t *testing.T) {
 	_, err := newAggregator(ctx, ns, mdi, mbi, mpm, mdh, mim, mdm, newEventNotifier(ctx, "ut"), mmi, cmi)
 	assert.Equal(t, cacheInitError, err)
 }
+
 func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	ag := newTestAggregatorWithMetrics()
@@ -305,7 +306,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	// Validate the message is ok
 	ag.mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	ag.mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
-	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything).Return()
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything, "").Return()
 	// Insert the confirmed event
 	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
@@ -316,7 +317,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	ag.mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.MatchedBy(func(u ffapi.Update) bool {
 		update, err := u.Finalize()
 		assert.NoError(t, err)
-		assert.Len(t, update.SetOperations, 2)
+		assert.Len(t, update.SetOperations, 3)
 
 		assert.Equal(t, "confirmed", update.SetOperations[0].Field)
 		v, err := update.SetOperations[0].Value.Value()
@@ -423,7 +424,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	// Validate the message is ok
 	ag.mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	ag.mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
-	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything).Return()
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything, "").Return()
 	// Insert the confirmed event
 	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
@@ -515,7 +516,7 @@ func TestAggregationBroadcast(t *testing.T) {
 	// Validate the message is ok
 	ag.mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	ag.mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
-	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything).Return()
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything, "").Return()
 	// Insert the confirmed event
 	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
@@ -602,7 +603,7 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	// Validate the message is ok
 	ag.mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	ag.mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
-	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything).Return()
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything, "").Return()
 	// Insert the confirmed event
 	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
@@ -1711,19 +1712,13 @@ func TestReadyForDispatchApprovalMismatch(t *testing.T) {
 
 }
 
-func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
+func TestDefinitionBroadcastActionRejectFailUpdate(t *testing.T) {
 	ag := newTestAggregator()
 	defer ag.cleanup(t)
 	bs := newBatchState(&ag.aggregator)
 	org1 := newTestOrg("org1")
 
-	customCorrelator := fftypes.NewUUID()
-
-	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(event *core.Event) bool {
-		return event.Type == core.EventTypeMessageRejected && event.Correlator.Equals(customCorrelator)
-	})).Return(nil)
-
-	newState := ag.completeDispatch(core.ActionReject, customCorrelator, &core.Message{
+	msg := &core.Message{
 		Header: core.MessageHeader{
 			Type:      core.MessageTypeDefinition,
 			ID:        fftypes.NewUUID(),
@@ -1735,10 +1730,22 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 		Data: core.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, bs)
+	}
+	customCorrelator := fftypes.NewUUID()
+
+	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeMessageRejected && event.Correlator.Equals(customCorrelator)
+	})).Return(nil)
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, msg.Header.ID, core.MessageStateRejected, mock.Anything, "reject-reason").Return()
+	ag.mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	newState := ag.completeDispatch(core.ActionReject, customCorrelator, msg, nil, bs)
 	assert.Equal(t, core.MessageStateRejected, newState)
+	msg.RejectReason = "reject-reason"
+
+	bs.markMessageDispatched(fftypes.NewUUID(), msg, 0, newState)
 	err := bs.RunFinalize(ag.ctx)
-	assert.NoError(t, err)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestDispatchBroadcastQueuesLaterDispatch(t *testing.T) {
@@ -1877,13 +1884,49 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 func TestDefinitionBroadcastActionReject(t *testing.T) {
 	ag := newTestAggregator()
 	defer ag.cleanup(t)
+	bs := newBatchState(&ag.aggregator)
 
-	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
+	msg1, _, org1, manifest := newTestManifest(core.MessageTypeDefinition, nil)
 
+	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
+	ag.mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePublicBlobRefs).Return(msg1, core.DataArray{}, true, nil).Once()
+	ag.mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil).Once()
 	ag.mdh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(definitions.HandlerResult{Action: core.ActionReject}, fmt.Errorf("pop"))
 
-	_, _, err := ag.readyForDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	pin1 := &core.Pin{Masked: false, Sequence: 12345, Signer: msg1.Header.Key}
+	err := ag.processMessage(ag.ctx, manifest, pin1, 0, manifest.Messages[0], &core.BatchPersisted{}, bs)
+	assert.NoError(t, err)
+
+	ag.mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *core.Event) bool {
+		return *e.Reference == *msg1.Header.ID && e.Type == core.EventTypeMessageRejected
+	})).Return(nil)
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateRejected, mock.Anything, "pop").Return()
+	ag.mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.MatchedBy(func(u ffapi.Update) bool {
+		update, err := u.Finalize()
+		assert.NoError(t, err)
+		assert.Len(t, update.SetOperations, 3)
+
+		assert.Equal(t, "confirmed", update.SetOperations[0].Field)
+		v, err := update.SetOperations[0].Value.Value()
+		assert.NoError(t, err)
+		assert.Greater(t, v, int64(0))
+
+		assert.Equal(t, "state", update.SetOperations[1].Field)
+		v, err = update.SetOperations[1].Value.Value()
+		assert.NoError(t, err)
+		assert.Equal(t, "rejected", v)
+
+		assert.Equal(t, "rejectreason", update.SetOperations[2].Field)
+		v, err = update.SetOperations[2].Value.Value()
+		assert.NoError(t, err)
+		assert.Equal(t, "pop", v)
+
+		return true
+	})).Return(nil)
+	ag.mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
+
+	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
 
 }
@@ -1897,8 +1940,8 @@ func TestDefinitionBroadcastRejectSignerLookupWrongOrg(t *testing.T) {
 	ag.mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(newTestOrg("org2"), nil)
 
 	action, err := ag.checkOnchainConsistency(ag.ctx, msg1, &core.Pin{Signer: "0x12345"})
-	assert.NoError(t, err)
 	assert.Equal(t, core.ActionReject, action)
+	assert.Regexp(t, "FF10453", err)
 
 }
 
@@ -1980,7 +2023,7 @@ func TestReadyForDispatchGroupInit(t *testing.T) {
 	bs := newBatchState(&ag.aggregator)
 	org1 := newTestOrg("org1")
 
-	_, _, err := ag.readyForDispatch(ag.ctx, &core.Message{
+	action, _, err := ag.readyForDispatch(ag.ctx, &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Type:      core.MessageTypeGroupInit,
@@ -1988,6 +2031,7 @@ func TestReadyForDispatchGroupInit(t *testing.T) {
 		},
 	}, nil, nil, bs, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
+	assert.Equal(t, core.ActionConfirm, action)
 
 }
 

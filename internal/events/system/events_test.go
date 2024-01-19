@@ -47,7 +47,7 @@ func newTestEvents(t *testing.T) (se *Events, cancel func()) {
 	se.SetHandler("ns1", cbs)
 	assert.Equal(t, "system", se.Name())
 	assert.NotNil(t, se.Capabilities())
-	assert.Nil(t, se.ValidateOptions(&core.SubscriptionOptions{}))
+	assert.Nil(t, se.ValidateOptions(ctx, &core.SubscriptionOptions{}))
 	return se, cancelCtx
 }
 
@@ -73,7 +73,7 @@ func TestDeliveryRequestOk(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = se.DeliveryRequest(se.connID, sub, &core.EventDelivery{
+	err = se.DeliveryRequest(se.ctx, se.connID, sub, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{
 				Namespace: "ns1",
@@ -82,7 +82,7 @@ func TestDeliveryRequestOk(t *testing.T) {
 	}, nil)
 	assert.NoError(t, err)
 
-	err = se.DeliveryRequest(se.connID, &core.Subscription{}, &core.EventDelivery{
+	err = se.DeliveryRequest(se.ctx, se.connID, &core.Subscription{}, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{
 				Namespace: "ns2",
@@ -93,6 +93,9 @@ func TestDeliveryRequestOk(t *testing.T) {
 
 	assert.Equal(t, 1, called)
 	cbs.AssertExpectations(t)
+
+	se.SetHandler("ns1", nil)
+	assert.Empty(t, se.callbacks.handlers)
 
 }
 
@@ -109,7 +112,7 @@ func TestDeliveryRequestFail(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = se.DeliveryRequest(mock.Anything, &core.Subscription{}, &core.EventDelivery{
+	err = se.DeliveryRequest(se.ctx, mock.Anything, &core.Subscription{}, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{
 				Namespace: "ns1",
@@ -138,4 +141,18 @@ func TestNamespaceRestarted(t *testing.T) {
 	defer cancel()
 
 	se.NamespaceRestarted("ns1", time.Now())
+}
+
+func TestEventDeliveryBatch(t *testing.T) {
+	se, cancel := newTestEvents(t)
+	defer cancel()
+
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
+
+	err := se.BatchDeliveryRequest(se.ctx, "id", sub, []*core.CombinedEventDataDelivery{})
+	assert.Regexp(t, "FF10461", err)
 }

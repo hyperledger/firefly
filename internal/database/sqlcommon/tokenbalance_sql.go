@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -201,7 +201,7 @@ func (s *SQLCommon) GetTokenBalances(ctx context.Context, namespace string, filt
 		accounts = append(accounts, d)
 	}
 
-	return accounts, s.QueryRes(ctx, tokenbalanceTable, tx, fop, fi), err
+	return accounts, s.QueryRes(ctx, tokenbalanceTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) GetTokenAccounts(ctx context.Context, namespace string, filter ffapi.Filter) ([]*core.TokenAccount, *ffapi.FilterResult, error) {
@@ -229,7 +229,7 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, namespace string, filt
 		accounts = append(accounts, &account)
 	}
 
-	return accounts, s.QueryRes(ctx, tokenbalanceTable, tx, fop, fi), err
+	return accounts, s.QueryRes(ctx, tokenbalanceTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, namespace, key string, filter ffapi.Filter) ([]*core.TokenAccountPool, *ffapi.FilterResult, error) {
@@ -257,5 +257,23 @@ func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, namespace, key str
 		pools = append(pools, &pool)
 	}
 
-	return pools, s.QueryRes(ctx, tokenbalanceTable, tx, fop, fi), err
+	return pools, s.QueryRes(ctx, tokenbalanceTable, tx, fop, nil, fi), err
+}
+
+func (s *SQLCommon) DeleteTokenBalances(ctx context.Context, namespace string, poolID *fftypes.UUID) error {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	err = s.DeleteTx(ctx, tokenbalanceTable, tx, sq.Delete(tokenbalanceTable).Where(sq.Eq{
+		"namespace": namespace,
+		"pool_id":   poolID,
+	}), nil)
+	if err != nil && err != fftypes.DeleteRecordNotFound {
+		return err
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
 }

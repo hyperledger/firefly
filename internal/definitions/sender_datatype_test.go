@@ -22,9 +22,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -32,8 +29,8 @@ import (
 )
 
 func TestDefineDatatypeBadType(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
 	err := ds.DefineDatatype(context.Background(), &core.Datatype{
 		Validator: core.ValidatorType("wrong"),
@@ -42,18 +39,18 @@ func TestDefineDatatypeBadType(t *testing.T) {
 }
 
 func TestBroadcastDatatypeBadValue(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
-	mdm := ds.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+
+	ds.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+
 	err := ds.DefineDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
@@ -61,20 +58,14 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 		Value:     fftypes.JSONAnyPtr(`!unparsable`),
 	}, false)
 	assert.Regexp(t, "FF10137.*value", err)
-
-	mdm.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestDefineDatatypeInvalid(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
-	mdm := ds.data.(*datamocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
 
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ds.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := ds.DefineDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
@@ -83,27 +74,22 @@ func TestDefineDatatypeInvalid(t *testing.T) {
 		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
 	}, false)
 	assert.EqualError(t, err, "pop")
-
-	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastOk(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = true
-	mdm := ds.data.(*datamocks.Manager)
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
 	mms := &syncasyncmocks.Sender{}
 
-	mim.On("GetMultipartyRootOrg", context.Background()).Return(&core.Identity{
+	ds.mim.On("GetRootOrg", context.Background()).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			DID: "firefly:org1",
 		},
 	}, nil)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	ds.mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	ds.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
+	ds.mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
 	err := ds.DefineDatatype(context.Background(), &core.Datatype{
@@ -114,15 +100,12 @@ func TestBroadcastOk(t *testing.T) {
 	}, false)
 	assert.NoError(t, err)
 
-	mdm.AssertExpectations(t)
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
 func TestDefineDatatypeNonMultiparty(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
 	ds.multiparty = false
 
 	err := ds.DefineDatatype(context.Background(), &core.Datatype{

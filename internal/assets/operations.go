@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -60,7 +61,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 		if err != nil {
 			return nil, err
 		}
-		pool, err := am.database.GetTokenPoolByID(ctx, am.namespace, poolID)
+		pool, err := am.GetTokenPoolByID(ctx, poolID)
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
@@ -73,7 +74,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 		if err != nil {
 			return nil, err
 		}
-		pool, err := am.database.GetTokenPoolByID(ctx, am.namespace, transfer.Pool)
+		pool, err := am.GetTokenPoolByID(ctx, transfer.Pool)
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
@@ -86,7 +87,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 		if err != nil {
 			return nil, err
 		}
-		pool, err := am.database.GetTokenPoolByID(ctx, am.namespace, approval.Pool)
+		pool, err := am.GetTokenPoolByID(ctx, approval.Pool)
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
@@ -99,49 +100,50 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 	}
 }
 
-func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 	switch data := op.Data.(type) {
 	case createPoolData:
 		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
 		if err != nil {
-			return nil, false, err
+			return nil, core.OpPhaseInitializing, err
 		}
-		complete, err = plugin.CreateTokenPool(ctx, op.NamespacedIDString(), data.Pool)
-		return nil, complete, err
+		phase, err = plugin.CreateTokenPool(ctx, op.NamespacedIDString(), data.Pool)
+		return nil, phase, err
 
 	case activatePoolData:
 		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
 		if err != nil {
-			return nil, false, err
+			return nil, core.OpPhaseInitializing, err
 		}
-		complete, err = plugin.ActivateTokenPool(ctx, op.NamespacedIDString(), data.Pool)
-		return nil, complete, err
+		phase, err = plugin.ActivateTokenPool(ctx, data.Pool)
+		return nil, phase, err
 
 	case transferData:
 		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
 		if err != nil {
-			return nil, false, err
+			return nil, core.OpPhaseInitializing, err
 		}
 		switch data.Transfer.Type {
 		case core.TokenTransferTypeMint:
-			return nil, false, plugin.MintTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
+			err = plugin.MintTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
 		case core.TokenTransferTypeTransfer:
-			return nil, false, plugin.TransferTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
+			err = plugin.TransferTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
 		case core.TokenTransferTypeBurn:
-			return nil, false, plugin.BurnTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
+			err = plugin.BurnTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer, data.Pool.Methods)
 		default:
 			panic(fmt.Sprintf("unknown transfer type: %v", data.Transfer.Type))
 		}
+		return nil, operations.ErrTernary(err, core.OpPhaseInitializing, core.OpPhasePending), err
 
 	case approvalData:
 		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
 		if err != nil {
-			return nil, false, err
+			return nil, core.OpPhaseInitializing, err
 		}
-		return nil, false, plugin.TokensApproval(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Approval, data.Pool.Methods)
+		return nil, core.OpPhaseInitializing, plugin.TokensApproval(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Approval, data.Pool.Methods)
 
 	default:
-		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
+		return nil, core.OpPhaseInitializing, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

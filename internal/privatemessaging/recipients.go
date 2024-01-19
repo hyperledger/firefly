@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -108,7 +108,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, identity *core.Iden
 
 func (pm *privateMessaging) getRecipients(ctx context.Context, in *core.MessageInOut) (gi *core.GroupIdentity, err error) {
 
-	localOrg, err := pm.identity.GetMultipartyRootOrg(ctx)
+	localOrg, err := pm.identity.GetRootOrg(ctx)
 	if err != nil {
 		return nil, err
 	}

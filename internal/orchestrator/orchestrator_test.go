@@ -51,7 +51,10 @@ import (
 	"github.com/hyperledger/firefly/mocks/spieventsmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/mocks/txwritermocks"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -85,6 +88,7 @@ type testOrchestrator struct {
 	mdh *definitionsmocks.Handler
 	mmp *multipartymocks.Manager
 	mds *definitionsmocks.Sender
+	mtw *txwritermocks.Writer
 }
 
 func (tor *testOrchestrator) cleanup(t *testing.T) {
@@ -146,6 +150,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mdh: &definitionsmocks.Handler{},
 		mmp: &multipartymocks.Manager{},
 		mds: &definitionsmocks.Sender{},
+		mtw: &txwritermocks.Writer{},
 	}
 	tor.orchestrator.multiparty = tor.mmp
 	tor.orchestrator.data = tor.mdm
@@ -162,6 +167,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.txHelper = tor.mth
+	tor.orchestrator.txWriter = tor.mtw
 	tor.orchestrator.defhandler = tor.mdh
 	tor.orchestrator.defsender = tor.mds
 	tor.orchestrator.config.Multiparty.Enabled = true
@@ -194,6 +200,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mcm.On("Name").Return("mock-cm").Maybe()
 	tor.mmi.On("Name").Return("mock-mm").Maybe()
 	tor.mmp.On("Name").Return("mock-mp").Maybe()
+	tor.mem.On("ResolveTransportAndCapabilities", mock.Anything, mock.Anything).Return("websockets", &events.Capabilities{}, nil).Maybe()
 	tor.mds.On("Init", mock.Anything).Maybe()
 	tor.cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tor.ctx, 100, 5*time.Minute), nil).Maybe()
 	return tor
@@ -431,6 +438,16 @@ func TestStartBatchFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestInitTXWriter(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.txWriter = nil
+	or.config.Multiparty.Enabled = false
+	or.mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
+	err := or.initManagers(context.Background())
+	assert.NoError(t, err)
+}
+
 func TestStartStopOk(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
@@ -441,16 +458,34 @@ func TestStartStopOk(t *testing.T) {
 	or.mbm.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
+	or.mtw.On("Start").Return()
 	or.mba.On("WaitStop").Return(nil)
 	or.mbm.On("WaitStop").Return(nil)
 	or.mdm.On("WaitStop").Return(nil)
 	or.msd.On("WaitStop").Return(nil)
 	or.mom.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
+	or.mtw.On("Close").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
 	or.WaitStop() // swallows dups
+}
+
+func TestPurge(t *testing.T) {
+	coreconfig.Reset()
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	// Note additional testing of this happens in namespace manager
+	or.mdi.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("SetHandler", mock.Anything, "Test1", mock.Anything).Return(nil)
+	or.mdx.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mti.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mti.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	Purge(context.Background(), or.namespace, or.plugins, "Test1")
 }
 
 func TestNetworkAction(t *testing.T) {
@@ -458,7 +493,7 @@ func TestNetworkAction(t *testing.T) {
 	or.namespace.Name = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
-	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action).Return(nil)
+	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action, false).Return(nil)
 	err := or.SubmitNetworkAction(context.Background(), action)
 	assert.NoError(t, err)
 }

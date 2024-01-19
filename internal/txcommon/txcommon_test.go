@@ -28,7 +28,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/cache"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/mocks/cachemocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -38,15 +37,33 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func NewTestTransactionHelper(di database.Plugin, dm data.Manager) (Helper, cache.CInterface, cache.CInterface) {
-	t := &transactionHelper{
+type testTransactionHelper struct {
+	transactionHelper
+
+	mdi *databasemocks.Plugin
+	mdm *datamocks.Manager
+}
+
+func (tth *testTransactionHelper) cleanup(t *testing.T) {
+	tth.mdi.AssertExpectations(t)
+	tth.mdm.AssertExpectations(t)
+}
+
+func NewTestTransactionHelper() (*testTransactionHelper, cache.CInterface, cache.CInterface) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	t := transactionHelper{
 		namespace: "ns1",
-		database:  di,
-		data:      dm,
+		database:  mdi,
+		data:      mdm,
 	}
 	t.transactionCache = cache.NewUmanagedCache(context.Background(), config.GetByteSize(coreconfig.CacheTransactionSize), config.GetDuration(coreconfig.CacheTransactionTTL))
 	t.blockchainEventCache = cache.NewUmanagedCache(context.Background(), config.GetByteSize(coreconfig.CacheBlockchainEventLimit), config.GetDuration(coreconfig.CacheBlockchainEventTTL))
-	return t, t.transactionCache, t.blockchainEventCache
+	return &testTransactionHelper{
+		transactionHelper: t,
+		mdi:               mdi,
+		mdm:               mdm,
+	}, t.transactionCache, t.blockchainEventCache
 }
 
 func TestSubmitNewTransactionOK(t *testing.T) {
@@ -205,7 +222,7 @@ func TestPersistTransactionExistingAddBlockchainID(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	ctx := context.Background()
 	cmi := &cachemocks.Manager{}
-	cache := cache.NewUmanagedCache(ctx, 100, 5*time.Minute)
+	cache := cache.NewUmanagedCache(ctx, 1024, 5*time.Minute)
 	cmi.On("GetCache", mock.Anything).Return(cache, nil)
 	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 
@@ -449,13 +466,12 @@ func TestAddBlockchainTXUnchanged(t *testing.T) {
 
 func TestGetTransactionByIDCached(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper, _, _ := NewTestTransactionHelper(mdi, mdm)
+	txHelper, _, _ := NewTestTransactionHelper()
+	defer txHelper.cleanup(t)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(&core.Transaction{
+	txHelper.mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(&core.Transaction{
 		ID:            txid,
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeContractInvoke,
@@ -472,24 +488,19 @@ func TestGetTransactionByIDCached(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, txid, tx.ID)
 
-	mdi.AssertExpectations(t)
-
 }
 
 func TestGetTransactionByIDCachedFail(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper, _, _ := NewTestTransactionHelper(mdi, mdm)
+	txHelper, _, _ := NewTestTransactionHelper()
+	defer txHelper.cleanup(t)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(nil, fmt.Errorf("pop"))
+	txHelper.mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(nil, fmt.Errorf("pop"))
 
 	_, err := txHelper.GetTransactionByIDCached(ctx, txid)
 	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
 
 }
 
@@ -567,7 +578,6 @@ func TestInsertGetBlockchainEventCached(t *testing.T) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
-
 	evID := fftypes.NewUUID()
 	chainEvent := &core.BlockchainEvent{
 		ID:        evID,
@@ -581,12 +591,11 @@ func TestInsertGetBlockchainEventCached(t *testing.T) {
 	cached, err := txHelper.GetBlockchainEventByIDCached(ctx, evID)
 	assert.NoError(t, err)
 	assert.Equal(t, chainEvent, cached)
-
 	mdi.AssertExpectations(t)
 
 }
 
-func TestInsertBlockchainEventDuplicate(t *testing.T) {
+func TestInsertGetBlockchainEventDuplicate(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -594,7 +603,6 @@ func TestInsertBlockchainEventDuplicate(t *testing.T) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
-
 	evID := fftypes.NewUUID()
 	chainEvent := &core.BlockchainEvent{
 		ID:        evID,
@@ -608,6 +616,152 @@ func TestInsertBlockchainEventDuplicate(t *testing.T) {
 	assert.Equal(t, existingEvent, result)
 
 	mdi.AssertExpectations(t)
+
+}
+
+func TestInsertGetBlockchainEventErr(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+	evID := fftypes.NewUUID()
+	chainEvent := &core.BlockchainEvent{
+		ID:        evID,
+		Namespace: "ns1",
+	}
+	mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(nil, fmt.Errorf("pop"))
+
+	_, err := txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestInsertNewBlockchainEventsOptimized(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	evID := fftypes.NewUUID()
+	chainEvent := &core.BlockchainEvent{
+		ID:        evID,
+		Namespace: "ns1",
+	}
+	mdi.On("InsertBlockchainEvents", ctx, []*core.BlockchainEvent{chainEvent}, mock.Anything).
+		Run(func(args mock.Arguments) {
+			cb := args[2].(database.PostCompletionHook)
+			cb()
+		}).
+		Return(nil)
+
+	_, err := txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
+	assert.NoError(t, err)
+
+	cached, err := txHelper.GetBlockchainEventByIDCached(ctx, evID)
+	assert.NoError(t, err)
+	assert.Equal(t, chainEvent, cached)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestInsertNewBlockchainEventsEventCached(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	evID := fftypes.NewUUID()
+	chainEvent := &core.BlockchainEvent{
+		ID:        evID,
+		Namespace: "ns1",
+	}
+	mdi.On("InsertBlockchainEvents", ctx, []*core.BlockchainEvent{chainEvent}, mock.Anything).Return(fmt.Errorf("optimization bypass"))
+	mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(nil, nil)
+
+	_, err := txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
+	assert.NoError(t, err)
+
+	cached, err := txHelper.GetBlockchainEventByIDCached(ctx, evID)
+	assert.NoError(t, err)
+	assert.Equal(t, chainEvent, cached)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestInsertBlockchainEventDuplicate(t *testing.T) {
+
+	txHelper, _, _ := NewTestTransactionHelper()
+	defer txHelper.cleanup(t)
+	ctx := context.Background()
+
+	evID := fftypes.NewUUID()
+	chainEvent := &core.BlockchainEvent{
+		ID:        evID,
+		Namespace: "ns1",
+	}
+	existingEvent := &core.BlockchainEvent{}
+	txHelper.mdi.On("InsertBlockchainEvents", ctx, []*core.BlockchainEvent{chainEvent}, mock.Anything).Return(fmt.Errorf("optimization bypass"))
+	txHelper.mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(existingEvent, nil)
+	txHelper.mdi.On("GetEvents", ctx, "ns1", mock.Anything).Return([]*core.Event{{}}, nil, nil)
+
+	result, err := txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
+	assert.NoError(t, err)
+	assert.Empty(t, result)
+
+}
+
+func TestInsertBlockchainEventFailEventQuery(t *testing.T) {
+
+	txHelper, _, _ := NewTestTransactionHelper()
+	defer txHelper.cleanup(t)
+	ctx := context.Background()
+
+	chainEvent := &core.BlockchainEvent{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	existingEvent := &core.BlockchainEvent{}
+	txHelper.mdi.On("InsertBlockchainEvents", ctx, []*core.BlockchainEvent{chainEvent}, mock.Anything).Return(fmt.Errorf("optimization bypass"))
+	txHelper.mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(existingEvent, nil)
+	txHelper.mdi.On("GetEvents", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestInsertBlockchainEventPartialBatch(t *testing.T) {
+
+	txHelper, _, _ := NewTestTransactionHelper()
+	defer txHelper.cleanup(t)
+	ctx := context.Background()
+
+	chainEvent := &core.BlockchainEvent{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	existingEvent := &core.BlockchainEvent{}
+	txHelper.mdi.On("InsertBlockchainEvents", ctx, []*core.BlockchainEvent{chainEvent}, mock.Anything).Return(fmt.Errorf("optimization bypass"))
+	txHelper.mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(existingEvent, nil)
+	txHelper.mdi.On("GetEvents", ctx, "ns1", mock.Anything).Return([]*core.Event{}, nil, nil)
+
+	result, err := txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, existingEvent, result[0])
 
 }
 
@@ -625,9 +779,10 @@ func TestInsertBlockchainEventErr(t *testing.T) {
 		ID:        evID,
 		Namespace: "ns1",
 	}
+	mdi.On("InsertBlockchainEvents", ctx, []*core.BlockchainEvent{chainEvent}, mock.Anything).Return(fmt.Errorf("optimization bypass"))
 	mdi.On("InsertOrGetBlockchainEvent", ctx, chainEvent).Return(nil, fmt.Errorf("pop"))
 
-	_, err := txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
+	_, err := txHelper.InsertNewBlockchainEvents(ctx, []*core.BlockchainEvent{chainEvent})
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -669,6 +824,261 @@ func TestFindOperationInTransactionFail(t *testing.T) {
 
 	_, err := txHelper.FindOperationInTransaction(ctx, txID, core.OpTypeTokenTransfer)
 
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestSubmitNewTransactionBatchAllPlainOk(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	batch := make([]*BatchedTransactionInsert, 5)
+	for i := 0; i < len(batch); i++ {
+		batch[i] = &BatchedTransactionInsert{
+			Input: TransactionInsertInput{
+				Type:           core.BatchTypePrivate,
+				IdempotencyKey: "", // this makes them all plain
+			},
+		}
+	}
+	mdi.On("InsertTransactions", ctx, mock.MatchedBy(func(transactions []*core.Transaction) bool {
+		return len(transactions) == len(batch)
+	})).Return(nil).Once()
+	mdi.On("InsertEvent", ctx, mock.MatchedBy(func(e *core.Event) bool {
+		return e.Type == core.EventTypeTransactionSubmitted
+	})).Return(nil).Times(len(batch))
+
+	err := txHelper.SubmitNewTransactionBatch(ctx, "ns1", batch)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestSubmitNewTransactionBatchAllPlainFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	batch := make([]*BatchedTransactionInsert, 5)
+	for i := 0; i < len(batch); i++ {
+		batch[i] = &BatchedTransactionInsert{
+			Input: TransactionInsertInput{
+				Type:           core.BatchTypePrivate,
+				IdempotencyKey: "", // this makes them all plain
+			},
+		}
+	}
+	mdi.On("InsertTransactions", ctx, mock.MatchedBy(func(transactions []*core.Transaction) bool {
+		return len(transactions) == len(batch)
+	})).Return(fmt.Errorf("pop")).Once()
+
+	err := txHelper.SubmitNewTransactionBatch(ctx, "ns1", batch)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestSubmitNewTransactionBatchMixSucceedOptimized(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	batch := make([]*BatchedTransactionInsert, 6)
+	for i := 0; i < len(batch); i++ {
+		batch[i] = &BatchedTransactionInsert{
+			Input: TransactionInsertInput{
+				Type: core.BatchTypePrivate,
+			},
+		}
+		if i%2 == 0 {
+			batch[i].Input.IdempotencyKey = core.IdempotencyKey(fmt.Sprintf("idem_%.3d", i))
+		}
+	}
+	mdi.On("InsertTransactions", ctx, mock.MatchedBy(func(transactions []*core.Transaction) bool {
+		return len(transactions) == len(batch)/2
+	})).Return(nil).Twice() // once for non-idempotent, once for idempotent
+	mdi.On("InsertEvent", ctx, mock.MatchedBy(func(e *core.Event) bool {
+		return e.Type == core.EventTypeTransactionSubmitted
+	})).Return(nil).Times(len(batch))
+
+	err := txHelper.SubmitNewTransactionBatch(ctx, "ns1", batch)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestSubmitNewTransactionBatchAllIdempotentDup(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	batch := make([]*BatchedTransactionInsert, 3)
+	for i := 0; i < len(batch); i++ {
+		batch[i] = &BatchedTransactionInsert{
+			Input: TransactionInsertInput{
+				Type:           core.BatchTypePrivate,
+				IdempotencyKey: core.IdempotencyKey(fmt.Sprintf("idem_%.3d", i)),
+			},
+		}
+	}
+	mdi.On("InsertTransactions", ctx, mock.MatchedBy(func(transactions []*core.Transaction) bool {
+		return len(transactions) == len(batch)
+	})).Return(fmt.Errorf("go check for dups")).Once()
+	mdi.On("GetTransactions", ctx, "ns1", mock.Anything).Return(
+		[]*core.Transaction{
+			{ID: fftypes.NewUUID(), IdempotencyKey: "idem_002"},
+			{ID: fftypes.NewUUID(), IdempotencyKey: "idem_000"},
+			{ID: fftypes.NewUUID(), IdempotencyKey: "idem_001"},
+		},
+		nil, nil,
+	).Once()
+
+	err := txHelper.SubmitNewTransactionBatch(ctx, "ns1", batch)
+	assert.NoError(t, err)
+
+	for i := 0; i < len(batch); i++ {
+		assert.Regexp(t, "FF10431.*"+batch[i].Input.IdempotencyKey, batch[i].Output.IdempotencyError)
+	}
+
+	mdi.AssertExpectations(t)
+}
+
+func TestSubmitNewTransactionBatchQueryFailForIdempotencyCheck(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	batch := make([]*BatchedTransactionInsert, 3)
+	for i := 0; i < len(batch); i++ {
+		batch[i] = &BatchedTransactionInsert{
+			Input: TransactionInsertInput{
+				Type:           core.BatchTypePrivate,
+				IdempotencyKey: core.IdempotencyKey(fmt.Sprintf("idem_%.3d", i)),
+			},
+		}
+	}
+	mdi.On("InsertTransactions", ctx, mock.MatchedBy(func(transactions []*core.Transaction) bool {
+		return len(transactions) == len(batch)
+	})).Return(fmt.Errorf("fallback to throw this err")).Once()
+	mdi.On("GetTransactions", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("do not throw this error")).Once()
+
+	err := txHelper.SubmitNewTransactionBatch(ctx, "ns1", batch)
+	assert.Regexp(t, "fallback to throw this err", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestSubmitNewTransactionBatchFindWrongNumberOfRecords(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	batch := make([]*BatchedTransactionInsert, 3)
+	for i := 0; i < len(batch); i++ {
+		batch[i] = &BatchedTransactionInsert{
+			Input: TransactionInsertInput{
+				Type:           core.BatchTypePrivate,
+				IdempotencyKey: core.IdempotencyKey(fmt.Sprintf("idem_%.3d", i)),
+			},
+		}
+	}
+	mdi.On("InsertTransactions", ctx, mock.MatchedBy(func(transactions []*core.Transaction) bool {
+		return len(transactions) == len(batch)
+	})).Return(fmt.Errorf("fallback to throw this err")).Once()
+	mdi.On("GetTransactions", ctx, "ns1", mock.Anything).Return(
+		[]*core.Transaction{
+			{ID: fftypes.NewUUID(), IdempotencyKey: "idem_002"}, // only one came back
+		},
+		nil, nil,
+	).Once()
+
+	err := txHelper.SubmitNewTransactionBatch(ctx, "ns1", batch)
+	assert.Regexp(t, "fallback to throw this err", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestSubmitNewTransactionBatchIdempotentDupInBatch(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	batch := make([]*BatchedTransactionInsert, 3)
+	for i := 0; i < len(batch); i++ {
+		batch[i] = &BatchedTransactionInsert{
+			Input: TransactionInsertInput{
+				Type:           core.BatchTypePrivate,
+				IdempotencyKey: "duplicated_in_all",
+			},
+		}
+	}
+	mdi.On("InsertTransactions", ctx, mock.MatchedBy(func(transactions []*core.Transaction) bool {
+		return len(transactions) == 1
+	})).Return(nil).Once()
+	mdi.On("InsertEvent", ctx, mock.MatchedBy(func(e *core.Event) bool {
+		return e.Type == core.EventTypeTransactionSubmitted
+	})).Return(nil).Once()
+
+	err := txHelper.SubmitNewTransactionBatch(ctx, "ns1", batch)
+	assert.NoError(t, err)
+
+	for i := 0; i < len(batch); i++ {
+		if i == 0 {
+			assert.NoError(t, batch[i].Output.IdempotencyError)
+		} else {
+			assert.Regexp(t, "FF10431.*duplicated_in_all", batch[i].Output.IdempotencyError)
+		}
+	}
+
+	mdi.AssertExpectations(t)
+}
+
+func TestSubmitNewTransactionBatchInsertEventFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx := context.Background()
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+
+	batch := []*BatchedTransactionInsert{
+		{
+			Input: TransactionInsertInput{
+				Type: core.BatchTypePrivate,
+			},
+		},
+	}
+	mdi.On("InsertTransactions", ctx, mock.MatchedBy(func(transactions []*core.Transaction) bool {
+		return len(transactions) == 1
+	})).Return(nil).Once()
+	mdi.On("InsertEvent", ctx, mock.MatchedBy(func(e *core.Event) bool {
+		return e.Type == core.EventTypeTransactionSubmitted
+	})).Return(fmt.Errorf("pop")).Once()
+
+	err := txHelper.SubmitNewTransactionBatch(ctx, "ns1", batch)
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)

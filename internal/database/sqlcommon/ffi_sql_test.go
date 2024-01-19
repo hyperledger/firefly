@@ -43,6 +43,7 @@ func TestFFIE2EWithDB(t *testing.T) {
 		ID:          id,
 		Namespace:   "ns1",
 		Name:        "math",
+		NetworkName: "math",
 		Version:     "v1.0.0",
 		Description: "Does things and stuff",
 		Message:     fftypes.NewUUID(),
@@ -71,8 +72,9 @@ func TestFFIE2EWithDB(t *testing.T) {
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIs, core.ChangeEventTypeCreated, "ns1", ffi.ID).Return()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIs, core.ChangeEventTypeUpdated, "ns1", ffi.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIs, core.ChangeEventTypeDeleted, "ns1", ffi.ID).Return()
 
-	err := s.UpsertFFI(ctx, ffi)
+	_, err := s.InsertOrGetFFI(ctx, ffi)
 	assert.NoError(t, err)
 
 	// Check we get the correct fields back
@@ -86,8 +88,7 @@ func TestFFIE2EWithDB(t *testing.T) {
 	assert.Equal(t, ffi.Message, dataRead.Message)
 
 	ffi.Version = "v1.1.0"
-
-	err = s.UpsertFFI(ctx, ffi)
+	err = s.UpsertFFI(ctx, ffi, database.UpsertOptimizationExisting)
 	assert.NoError(t, err)
 
 	// Check we get the correct fields back
@@ -99,12 +100,43 @@ func TestFFIE2EWithDB(t *testing.T) {
 	assert.Equal(t, ffi.Name, dataRead.Name)
 	assert.Equal(t, ffi.Version, dataRead.Version)
 	assert.Equal(t, ffi.Message, dataRead.Message)
+
+	dataRead, err = s.GetFFIByNetworkName(ctx, "ns1", "math", "v1.1.0")
+	assert.NoError(t, err)
+	assert.NotNil(t, dataRead)
+	assert.Equal(t, ffi.ID, dataRead.ID)
+	assert.Equal(t, ffi.Namespace, dataRead.Namespace)
+	assert.Equal(t, ffi.Name, dataRead.Name)
+	assert.Equal(t, ffi.Version, dataRead.Version)
+	assert.Equal(t, ffi.Message, dataRead.Message)
+
+	// Cannot insert again with same name or network name
+	existing, err := s.InsertOrGetFFI(ctx, &fftypes.FFI{
+		ID:        fftypes.NewUUID(),
+		Name:      "math",
+		Version:   "v1.1.0",
+		Namespace: "ns1",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, ffi.ID, existing.ID)
+	existing, err = s.InsertOrGetFFI(ctx, &fftypes.FFI{
+		ID:          fftypes.NewUUID(),
+		NetworkName: "math",
+		Version:     "v1.1.0",
+		Namespace:   "ns1",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, ffi.ID, existing.ID)
+
+	// Delete the FFI
+	err = s.DeleteFFI(ctx, "ns1", ffi.ID)
+	assert.NoError(t, err)
 }
 
 func TestFFIDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFI(context.Background(), &fftypes.FFI{})
+	err := s.UpsertFFI(context.Background(), &fftypes.FFI{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -113,20 +145,39 @@ func TestFFIDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFI(context.Background(), &fftypes.FFI{})
+	err := s.UpsertFFI(context.Background(), &fftypes.FFI{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestFFIDBFailInsert(t *testing.T) {
-	rows := sqlmock.NewRows([]string{"id", "namespace", "name", "version"})
+func TestFFIDBFailUpsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	err := s.UpsertFFI(context.Background(), &fftypes.FFI{}, database.UpsertOptimizationNew)
+	assert.Regexp(t, "pop", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestFFIDBInsertFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	_, err := s.InsertOrGetFFI(context.Background(), &fftypes.FFI{})
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestFFIDBFailInsert(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
+	mock.ExpectRollback()
 	ffi := &fftypes.FFI{
 		ID: fftypes.NewUUID(),
 	}
-	err := s.UpsertFFI(context.Background(), ffi)
+	_, err := s.InsertOrGetFFI(context.Background(), ffi)
 	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -141,7 +192,7 @@ func TestFFIDBFailUpdate(t *testing.T) {
 	ffi := &fftypes.FFI{
 		ID: fftypes.NewUUID(),
 	}
-	err := s.UpsertFFI(context.Background(), ffi)
+	err := s.UpsertFFI(context.Background(), ffi, database.UpsertOptimizationNew)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -176,7 +227,7 @@ func TestGetFFIs(t *testing.T) {
 	fb := database.FFIQueryFactory.NewFilter(context.Background())
 	s, mock := newMockProvider().init()
 	rows := sqlmock.NewRows(ffiColumns).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "v1.0.0", "super mathy things", "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "math", "v1.0.0", "super mathy things", "acfe07a2-117f-46b7-8d47-e3beb7cc382f", false)
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	_, _, err := s.GetFFIs(context.Background(), "ns1", fb.And())
 	assert.NoError(t, err)
@@ -214,12 +265,30 @@ func TestGetFFIsQueryResultFail(t *testing.T) {
 func TestGetFFI(t *testing.T) {
 	s, mock := newMockProvider().init()
 	rows := sqlmock.NewRows(ffiColumns).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "v1.0.0", "super mathy things", "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "math", "v1.0.0", "super mathy things", "acfe07a2-117f-46b7-8d47-e3beb7cc382f", false)
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	ffi, err := s.GetFFI(context.Background(), "ns1", "math", "v1.0.0")
 	assert.NoError(t, err)
 	assert.Equal(t, "ns1", ffi.Namespace)
 	assert.Equal(t, "math", ffi.Name)
 	assert.Equal(t, "v1.0.0", ffi.Version)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteFFIFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteFFI(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteFFIFailDelete(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteFFI(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00179", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

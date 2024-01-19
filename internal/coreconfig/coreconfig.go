@@ -37,6 +37,12 @@ const (
 	NamespaceDescription = "description"
 	// NamespacePlugins is the list of namespace plugins
 	NamespacePlugins = "plugins"
+	// NamespaceTLSConfigName is the user-supplied name for the TLS Config
+	NamespaceTLSConfigName = "name"
+	// NamespaceTLSConfigs is the list of tls configs
+	NamespaceTLSConfigs = "tlsConfigs"
+	// NamespaceTLSConfigTLSSection is the section to provide the paths to CA , cert and key files
+	NamespaceTLSConfigTLSSection = "tls"
 	// NamespaceDefaultKey is the default signing key for blockchain transactions within this namespace
 	NamespaceDefaultKey = "defaultKey"
 	// NamespaceAssetKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization
@@ -80,6 +86,8 @@ var (
 	APIRequestTimeout = ffc("api.requestTimeout")
 	// APIRequestMaxTimeout is the maximum timeout an application can set using a Request-Timeout header
 	APIRequestMaxTimeout = ffc("api.requestMaxTimeout")
+	// APIDynamicPublicURLHeader is a header that can be used on requests to generate Swagger to influence the PublicURL on a per-request basis
+	APIDynamicPublicURLHeader = ffc("api.dynamicPublicURLHeader")
 	// APIOASPanicOnMissingDescription controls whether the OpenAPI Spec generator will strongly enforce descriptions on every field or not
 	APIOASPanicOnMissingDescription = ffc("api.oas.panicOnMissingDescription")
 	// APIPassThroughHeaders is a list of HTTP request headers to pass through to requests made to dependency microservices
@@ -154,6 +162,11 @@ var (
 	// DataManager Message cache config
 	CacheMessageSize = ffc("cache.message.size")
 	CacheMessageTTL  = ffc("cache.message.ttl")
+
+	// Token pool cache config
+	CacheTokenPoolTTL   = ffc("cache.tokenpool.ttl")
+	CacheTokenPoolLimit = ffc("cache.tokenpool.limit")
+
 	// DataManager Validator cache config
 	CacheValidatorSize = ffc("cache.validator.size")
 	CacheValidatorTTL  = ffc("cache.validator.ttl")
@@ -165,6 +178,10 @@ var (
 	// Operations cache config
 	CacheOperationsLimit = ffc("cache.operations.limit")
 	CacheOperationsTTL   = ffc("cache.operations.ttl")
+
+	// Invoke methods cache config
+	CacheMethodsLimit = ffc("cache.methods.limit")
+	CacheMethodsTTL   = ffc("cache.methods.ttl")
 
 	// DownloadWorkerCount is the number of download workers created to pull data from shared storage to the local DX
 	DownloadWorkerCount = ffc("download.worker.count")
@@ -320,6 +337,12 @@ var (
 	SubscriptionsRetryMaxDelay = ffc("subscription.retry.maxDelay")
 	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
 	SubscriptionsRetryFactor = ffc("subscription.retry.factor")
+	// TransactionWriterCount
+	TransactionWriterCount = ffc("transaction.writer.count")
+	// TransactionWriterBatchTimeout
+	TransactionWriterBatchTimeout = ffc("transaction.writer.batchTimeout")
+	// TransactionWriterBatchMaxTransactions
+	TransactionWriterBatchMaxTransactions = ffc("transaction.writer.batchMaxTransactions")
 
 	// AssetManagerKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization
 	AssetManagerKeyNormalization = ffc("asset.manager.keyNormalization")
@@ -356,7 +379,7 @@ func setDefaults() {
 	viper.SetDefault(string(BlobReceiverWorkerBatchTimeout), "50ms")
 	viper.SetDefault(string(BlobReceiverWorkerCount), 5)
 	viper.SetDefault(string(BlobReceiverWorkerBatchMaxInserts), 200)
-	viper.SetDefault(string(CacheBlockchainEventLimit), 100)
+	viper.SetDefault(string(CacheBlockchainEventLimit), 1000)
 	viper.SetDefault(string(CacheBlockchainEventTTL), "5m")
 	viper.SetDefault(string(BroadcastBatchAgentTimeout), "2m")
 	viper.SetDefault(string(BroadcastBatchSize), 200)
@@ -367,8 +390,10 @@ func setDefaults() {
 	viper.SetDefault(string(CacheAddressResolverLimit), 1000)
 	viper.SetDefault(string(CacheAddressResolverTTL), "24h")
 	viper.SetDefault(string(CacheEnabled), true)
-	viper.SetDefault(string(CacheOperationsLimit), 200)
+	viper.SetDefault(string(CacheOperationsLimit), 1000)
 	viper.SetDefault(string(CacheOperationsTTL), "5m")
+	viper.SetDefault(string(CacheMethodsLimit), 200)
+	viper.SetDefault(string(CacheMethodsTTL), "5m")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DebugAddress), "localhost")
@@ -431,6 +456,9 @@ func setDefaults() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
+	viper.SetDefault(string(TransactionWriterBatchMaxTransactions), 100)
+	viper.SetDefault(string(TransactionWriterBatchTimeout), "10ms")
+	viper.SetDefault(string(TransactionWriterCount), 5)
 	viper.SetDefault(string(CacheTransactionSize), "1Mb")
 	viper.SetDefault(string(CacheTransactionTTL), "5m")
 	viper.SetDefault(string(UIEnabled), true)
@@ -438,6 +466,8 @@ func setDefaults() {
 	viper.SetDefault(string(CacheValidatorTTL), "1h")
 	viper.SetDefault(string(CacheIdentityLimit), 100)
 	viper.SetDefault(string(CacheIdentityTTL), "1h")
+	viper.SetDefault(string(CacheTokenPoolLimit), 100)
+	viper.SetDefault(string(CacheTokenPoolTTL), "1h")
 }
 
 func Reset() {

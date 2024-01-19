@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -50,6 +50,7 @@ var (
 		"pins",
 		"state",
 		"confirmed",
+		"reject_reason",
 		"tx_type",
 		"tx_id",
 		"tx_parent_type",
@@ -66,6 +67,7 @@ var (
 		"batch":          "batch_id",
 		"group":          "group_hash",
 		"idempotencykey": "idempotency_key",
+		"rejectreason":   "reject_reason",
 	}
 )
 
@@ -95,6 +97,7 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *dbsql.TXWrappe
 			Set("pins", message.Pins).
 			Set("state", message.State).
 			Set("confirmed", message.Confirmed).
+			Set("reject_reason", message.RejectReason).
 			Set("tx_type", message.Header.TxType).
 			Set("tx_id", message.TransactionID).
 			Set("tx_parent_type", txParentType).
@@ -137,6 +140,7 @@ func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *core
 		message.Pins,
 		message.State,
 		message.Confirmed,
+		message.RejectReason,
 		message.Header.TxType,
 		message.TransactionID,
 		txParentType,
@@ -450,6 +454,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message
 		&msg.Pins,
 		&msg.State,
 		&msg.Confirmed,
+		&msg.RejectReason,
 		&msg.Header.TxType,
 		&msg.TransactionID,
 		&txParent.Type,
@@ -526,7 +531,7 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, namespace string, quer
 			return nil, nil, err
 		}
 	}
-	return msgs, s.QueryRes(ctx, messagesTable, tx, fop, fi), err
+	return msgs, s.QueryRes(ctx, messagesTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) GetMessageIDs(ctx context.Context, namespace string, filter ffapi.Filter) (ids []*core.IDAndSequence, err error) {

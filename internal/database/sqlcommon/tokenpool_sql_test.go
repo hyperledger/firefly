@@ -38,17 +38,18 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	// Create a new token pool entry
 	poolID := fftypes.NewUUID()
 	pool := &core.TokenPool{
-		ID:        poolID,
-		Namespace: "ns1",
-		Name:      "my-pool",
-		Standard:  "ERC1155",
-		Type:      core.TokenTypeFungible,
-		Locator:   "12345",
-		Connector: "erc1155",
-		Symbol:    "COIN",
-		Decimals:  18,
-		Message:   fftypes.NewUUID(),
-		State:     core.TokenPoolStateConfirmed,
+		ID:          poolID,
+		Namespace:   "ns1",
+		Name:        "my-pool",
+		NetworkName: "my-pool",
+		Standard:    "ERC1155",
+		Type:        core.TokenTypeFungible,
+		Locator:     "12345",
+		Connector:   "erc1155",
+		Symbol:      "COIN",
+		Decimals:    18,
+		Message:     fftypes.NewUUID(),
+		Active:      true,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
@@ -66,10 +67,12 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		Return().Once()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, core.ChangeEventTypeUpdated, "ns1", poolID, mock.Anything).
 		Return().Once()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, core.ChangeEventTypeDeleted, "ns1", poolID, mock.Anything).
+		Return().Once()
 
-	err := s.UpsertTokenPool(ctx, pool)
+	// Insert the pool
+	_, err := s.InsertOrGetTokenPool(ctx, pool)
 	assert.NoError(t, err)
-
 	assert.NotNil(t, pool.Created)
 	poolJson, _ := json.Marshal(&pool)
 
@@ -87,8 +90,8 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
-	// Query back the token pool (by locator)
-	poolRead, err = s.GetTokenPoolByLocator(ctx, "ns1", pool.Connector, pool.Locator)
+	// Query back the token pool (by network name)
+	poolRead, err = s.GetTokenPoolByNetworkName(ctx, pool.Namespace, pool.NetworkName)
 	assert.NoError(t, err)
 	assert.NotNil(t, poolRead)
 	poolReadJson, _ = json.Marshal(&poolRead)
@@ -110,10 +113,32 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(pools[0])
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
+	// Cannot insert again with same ID, name, or network name
+	existing, err := s.InsertOrGetTokenPool(ctx, &core.TokenPool{
+		ID:        pool.ID,
+		Namespace: "ns1",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pool.ID, existing.ID)
+	existing, err = s.InsertOrGetTokenPool(ctx, &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Name:      "my-pool",
+		Namespace: "ns1",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pool.ID, existing.ID)
+	existing, err = s.InsertOrGetTokenPool(ctx, &core.TokenPool{
+		ID:          fftypes.NewUUID(),
+		NetworkName: "my-pool",
+		Namespace:   "ns1",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pool.ID, existing.ID)
+
 	// Update the token pool
 	pool.Locator = "67890"
 	pool.Type = core.TokenTypeNonFungible
-	err = s.UpsertTokenPool(ctx, pool)
+	err = s.UpsertTokenPool(ctx, pool, database.UpsertOptimizationExisting)
 	assert.NoError(t, err)
 
 	// Query back the token pool (by ID)
@@ -124,30 +149,23 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
-	// Cannot create with new ID but different name
-	newPool := &core.TokenPool{
-		ID:        fftypes.NewUUID(),
-		Namespace: pool.Namespace,
-		Name:      pool.Name,
-	}
-	err = s.UpsertTokenPool(ctx, newPool)
-	assert.Equal(t, database.IDMismatch, err)
-
-	// Cannot create with new ID but different locator
-	newPool = &core.TokenPool{
-		ID:        fftypes.NewUUID(),
-		Namespace: pool.Namespace,
-		Connector: pool.Connector,
-		Locator:   pool.Locator,
-	}
-	err = s.UpsertTokenPool(ctx, newPool)
-	assert.Equal(t, database.IDMismatch, err)
+	// Delete the token pool
+	err = s.DeleteTokenPool(ctx, "ns1", pool.ID)
+	assert.NoError(t, err)
 }
 
 func TestUpsertTokenPoolFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{}, database.UpsertOptimizationNew)
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertOrGetTokenPoolFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	_, err := s.InsertOrGetTokenPool(context.Background(), &core.TokenPool{})
 	assert.Regexp(t, "FF00175", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -156,18 +174,40 @@ func TestUpsertTokenPoolFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
+	mock.ExpectRollback()
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00176", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertOrGetTokenPoolFailSelectName(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	_, err := s.InsertOrGetTokenPool(context.Background(), &core.TokenPool{})
+	assert.Regexp(t, "FF00176", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertOrGetTokenPoolFailInsert(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
+	mock.ExpectRollback()
+	_, err := s.InsertOrGetTokenPool(context.Background(), &core.TokenPool{})
+	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertTokenPoolFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00177", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -175,10 +215,11 @@ func TestUpsertTokenPoolFailInsert(t *testing.T) {
 func TestUpsertTokenPoolFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00178", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -186,10 +227,9 @@ func TestUpsertTokenPoolFailUpdate(t *testing.T) {
 func TestUpsertTokenPoolFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{}, database.UpsertOptimizationNew)
 	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -244,5 +284,23 @@ func TestGetTokenPoolsScanFail(t *testing.T) {
 	f := database.TokenPoolQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, _, err := s.GetTokenPools(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteTokenPoolFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteTokenPool(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteTokenPoolFailDelete(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteTokenPool(context.Background(), "ns1", fftypes.NewUUID())
+	assert.Regexp(t, "FF00179", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

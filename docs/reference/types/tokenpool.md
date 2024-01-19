@@ -33,7 +33,7 @@ nav_order: 11
     "decimals": 18,
     "connector": "erc20_erc721",
     "message": "43923040-b1e5-4164-aa20-47636c7177ee",
-    "state": "confirmed",
+    "active": true,
     "created": "2022-05-16T01:23:15Z",
     "info": {
         "address": "0x056df1c53c3c00b0e13d37543f46930b42f71db0",
@@ -43,7 +43,8 @@ nav_order: 11
     "tx": {
         "type": "token_pool",
         "id": "a23ffc87-81a2-4cbc-97d6-f53d320c36cd"
-    }
+    },
+    "published": false
 }
 ```
 
@@ -55,14 +56,15 @@ nav_order: 11
 | `type` | The type of token the pool contains, such as fungible/non-fungible | `FFEnum`:<br/>`"fungible"`<br/>`"nonfungible"` |
 | `namespace` | The namespace for the token pool | `string` |
 | `name` | The name of the token pool. Note the name is not validated against the description of the token on the blockchain | `string` |
+| `networkName` | The published name of the token pool within the multiparty network | `string` |
 | `standard` | The ERC standard the token pool conforms to, as reported by the token connector | `string` |
 | `locator` | A unique identifier for the pool, as provided by the token connector | `string` |
 | `key` | The signing key used to create the token pool. On input for token connectors that support on-chain deployment of new tokens (vs. only index existing ones) this determines the signing key used to create the token on-chain | `string` |
 | `symbol` | The token symbol. If supplied on input for an existing on-chain token, this must match the on-chain information | `string` |
 | `decimals` | Number of decimal places that this token has | `int` |
 | `connector` | The name of the token connector, as specified in the FireFly core configuration file that is responsible for the token pool. Required on input when multiple token connectors are configured | `string` |
-| `message` | The UUID of the broadcast message used to inform the network to index this pool | [`UUID`](simpletypes#uuid) |
-| `state` | The current state of the token pool | `FFEnum`:<br/>`"pending"`<br/>`"confirmed"` |
+| `message` | The UUID of the broadcast message used to inform the network about this pool | [`UUID`](simpletypes#uuid) |
+| `active` | Indicates whether the pool has been successfully activated with the token connector | `bool` |
 | `created` | The creation time of the pool | [`FFTime`](simpletypes#fftime) |
 | `config` | Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |
 | `info` | Token connector specific information about the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |
@@ -70,6 +72,7 @@ nav_order: 11
 | `interface` | A reference to an existing FFI, containing pre-registered type information for the token contract | [`FFIReference`](#ffireference) |
 | `interfaceFormat` | The interface encoding format supported by the connector for this token pool | `FFEnum`:<br/>`"abi"`<br/>`"ffi"` |
 | `methods` | The method definitions resolved by the token connector to be used by each token operation | [`JSONAny`](simpletypes#jsonany) |
+| `published` | Indicates if the token pool is published to other members of the multiparty network | `bool` |
 
 ## TransactionRef
 

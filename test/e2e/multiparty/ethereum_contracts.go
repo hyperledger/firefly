@@ -35,7 +35,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var contractVersion, _ = nanoid.Generate("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", nanoid.DefaultSize)
+func contractVersion() string {
+	versionAlphabet := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	version, _ := nanoid.Generate(versionAlphabet, nanoid.DefaultSize)
+	return version
+}
 
 func simpleStorageFFIChanged() *fftypes.FFIEvent {
 	return &fftypes.FFIEvent{
@@ -55,10 +59,10 @@ func simpleStorageFFIChanged() *fftypes.FFIEvent {
 	}
 }
 
-func simpleStorageFFI() *fftypes.FFI {
+func simpleStorageFFI(version string) *fftypes.FFI {
 	return &fftypes.FFI{
 		Name:    "SimpleStorage",
-		Version: contractVersion,
+		Version: version,
 		Methods: []*fftypes.FFIMethod{
 			simpleStorageFFISet(),
 			simpleStorageFFIGet(),
@@ -124,7 +128,7 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.ethIdentity = suite.testState.org1key.Value
 	suite.contractAddress = deployContract(suite.T(), stack.Name, "simplestorage/simple_storage.json")
 
-	res, err := suite.testState.client1.CreateFFI(suite.T(), simpleStorageFFI())
+	res, err := suite.testState.client1.CreateFFI(suite.T(), simpleStorageFFI(contractVersion()), true)
 	suite.interfaceID = res.ID
 	suite.T().Logf("interfaceID: %s", suite.interfaceID)
 	assert.NoError(suite.T(), err)
@@ -229,7 +233,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 
 	// Idempotency check
 	_, err = suite.testState.client1.InvokeContractMethod(suite.T(), invokeContractRequest, 409)
-	assert.NoError(suite.T(), err)
+	assert.Regexp(suite.T(), "FF10431|FF10458" /* idempotency check could come from FF or blockchain connector, depending on the operation update that is async */, err)
 
 	match := map[string]interface{}{
 		"info": map[string]interface{}{
@@ -272,7 +276,7 @@ func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
 	}
 	locationBytes, _ := json.Marshal(location)
 
-	createContractAPIResult, err := suite.testState.client1.CreateContractAPI(suite.T(), APIName, ffiReference, fftypes.JSONAnyPtr(string(locationBytes)))
+	createContractAPIResult, err := suite.testState.client1.CreateContractAPI(suite.T(), APIName, ffiReference, fftypes.JSONAnyPtr(string(locationBytes)), true)
 	assert.NotNil(suite.T(), createContractAPIResult)
 	assert.NoError(suite.T(), err)
 
@@ -322,4 +326,71 @@ func readContractJSON(t *testing.T, contract string) fftypes.JSONObject {
 	err = json.Unmarshal(byteValue, &jsonValue)
 	assert.NoError(t, err)
 	return jsonValue
+}
+
+func (suite *EthereumContractTestSuite) TestContractPublish() {
+	received1 := e2e.WsReader(suite.testState.ws1)
+	received2 := e2e.WsReader(suite.testState.ws2)
+
+	ffi := simpleStorageFFI(contractVersion())
+	networkName := ffi.Name + "-shared"
+	suite.T().Logf("Interface local name: %s", ffi.Name)
+	suite.T().Logf("Interface network name: %s", networkName)
+	suite.T().Logf("Interface version: %s", ffi.Version)
+
+	ffiResult, err := suite.testState.client1.CreateFFI(suite.T(), ffi, false)
+	assert.NoError(suite.T(), err)
+
+	e2e.WaitForEvent(suite.T(), received1, core.EventTypeContractInterfaceConfirmed, ffiResult.ID)
+
+	// Delete and recreate
+	suite.testState.client1.DeleteFFI(suite.T(), ffiResult.ID, 204)
+	ffiResult, err = suite.testState.client1.CreateFFI(suite.T(), ffi, false)
+	assert.NoError(suite.T(), err)
+
+	e2e.WaitForEvent(suite.T(), received1, core.EventTypeContractInterfaceConfirmed, ffiResult.ID)
+
+	suite.testState.client1.PublishFFI(suite.T(), ffi.Name, ffi.Version, networkName, false)
+
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeDefinition)
+	e2e.WaitForEvent(suite.T(), received2, core.EventTypeContractInterfaceConfirmed, ffiResult.ID)
+
+	ffiReceived := suite.testState.client2.GetFFI(suite.T(), networkName, ffi.Version)
+	assert.Equal(suite.T(), networkName, ffiReceived.Name)
+	assert.Equal(suite.T(), networkName, ffiReceived.NetworkName)
+
+	// Cannot delete published interfaces
+	suite.testState.client1.DeleteFFI(suite.T(), ffiResult.ID, 409)
+
+	APIName := fftypes.NewUUID().String()
+	networkName = APIName + "-shared"
+	suite.T().Logf("API local name: %s", APIName)
+	suite.T().Logf("API network name: %s", networkName)
+
+	apiResult, err := suite.testState.client1.CreateContractAPI(suite.T(), APIName, &fftypes.FFIReference{
+		ID: ffiResult.ID,
+	}, nil, false)
+	assert.NoError(suite.T(), err)
+	suite.T().Logf("API ID: %s", apiResult.ID)
+
+	e2e.WaitForEvent(suite.T(), received1, core.EventTypeContractAPIConfirmed, apiResult.ID)
+
+	// Delete and recreate
+	suite.testState.client1.DeleteContractAPI(suite.T(), APIName, 204)
+	apiResult, err = suite.testState.client1.CreateContractAPI(suite.T(), APIName, &fftypes.FFIReference{
+		ID: ffiResult.ID,
+	}, nil, false)
+	assert.NoError(suite.T(), err)
+
+	suite.testState.client1.PublishContractAPI(suite.T(), APIName, networkName, false)
+
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeDefinition)
+	e2e.WaitForEvent(suite.T(), received2, core.EventTypeContractAPIConfirmed, apiResult.ID)
+
+	apiReceived := suite.testState.client2.GetContractAPI(suite.T(), networkName)
+	assert.Equal(suite.T(), networkName, apiReceived.Name)
+	assert.Equal(suite.T(), networkName, apiReceived.NetworkName)
+
+	// Cannot delete published APIs
+	suite.testState.client1.DeleteContractAPI(suite.T(), APIName, 409)
 }

@@ -60,27 +60,34 @@ type ContractURLs struct {
 }
 
 type ContractAPI struct {
-	ID        *fftypes.UUID         `ffstruct:"ContractAPI" json:"id,omitempty" ffexcludeinput:"true"`
-	Namespace string                `ffstruct:"ContractAPI" json:"namespace,omitempty" ffexcludeinput:"true"`
-	Interface *fftypes.FFIReference `ffstruct:"ContractAPI" json:"interface"`
-	Location  *fftypes.JSONAny      `ffstruct:"ContractAPI" json:"location,omitempty"`
-	Name      string                `ffstruct:"ContractAPI" json:"name"`
-	Message   *fftypes.UUID         `ffstruct:"ContractAPI" json:"message,omitempty" ffexcludeinput:"true"`
-	URLs      ContractURLs          `ffstruct:"ContractAPI" json:"urls" ffexcludeinput:"true"`
+	ID          *fftypes.UUID         `ffstruct:"ContractAPI" json:"id,omitempty" ffexcludeinput:"true"`
+	Namespace   string                `ffstruct:"ContractAPI" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Interface   *fftypes.FFIReference `ffstruct:"ContractAPI" json:"interface"`
+	Location    *fftypes.JSONAny      `ffstruct:"ContractAPI" json:"location,omitempty"`
+	Name        string                `ffstruct:"ContractAPI" json:"name"`
+	NetworkName string                `ffstruct:"ContractAPI" json:"networkName,omitempty"`
+	Message     *fftypes.UUID         `ffstruct:"ContractAPI" json:"message,omitempty" ffexcludeinput:"true"`
+	URLs        ContractURLs          `ffstruct:"ContractAPI" json:"urls" ffexcludeinput:"true"`
+	Published   bool                  `ffstruct:"ContractAPI" json:"published" ffexcludeinput:"true"`
 }
 
-func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {
+func (c *ContractAPI) Validate(ctx context.Context) (err error) {
 	if err = fftypes.ValidateFFNameField(ctx, c.Namespace, "namespace"); err != nil {
 		return err
 	}
 	if err = fftypes.ValidateFFNameField(ctx, c.Name, "name"); err != nil {
 		return err
 	}
+	if c.NetworkName != "" {
+		if err = fftypes.ValidateFFNameField(ctx, c.NetworkName, "networkName"); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (c *ContractAPI) Topic() string {
-	return fftypes.TypeNamespaceNameTopicHash("contractapi", c.Namespace, c.Name)
+	return fftypes.TypeNamespaceNameTopicHash("contractapi", c.Namespace, c.NetworkName)
 }
 
 func (c *ContractAPI) SetBroadcastMessage(msgID *fftypes.UUID) {
