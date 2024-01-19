@@ -27717,8 +27717,9 @@ paths:
                           description: Events are delivered in batches in an ordered
                             array. The batch size is capped to the readAhead limit.
                             The event payload is always an array even if there is
-                            a single event in the batch. Commonly used with Webhooks
-                            to allow events to be delivered and acknowledged in batches.
+                            a single event in the batch, allowing client-side optimizations
+                            when processing the events in a group. Available for both
+                            Webhooks and WebSockets.
                           type: boolean
                         batchTimeout:
                           description: When batching is enabled, the optional timeout
@@ -28006,8 +28007,8 @@ paths:
                       description: Events are delivered in batches in an ordered array.
                         The batch size is capped to the readAhead limit. The event
                         payload is always an array even if there is a single event
-                        in the batch. Commonly used with Webhooks to allow events
-                        to be delivered and acknowledged in batches.
+                        in the batch, allowing client-side optimizations when processing
+                        the events in a group. Available for both Webhooks and WebSockets.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -28276,8 +28277,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -28561,8 +28563,8 @@ paths:
                       description: Events are delivered in batches in an ordered array.
                         The batch size is capped to the readAhead limit. The event
                         payload is always an array even if there is a single event
-                        in the batch. Commonly used with Webhooks to allow events
-                        to be delivered and acknowledged in batches.
+                        in the batch, allowing client-side optimizations when processing
+                        the events in a group. Available for both Webhooks and WebSockets.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -28831,8 +28833,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -29178,8 +29181,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -36660,8 +36664,9 @@ paths:
                           description: Events are delivered in batches in an ordered
                             array. The batch size is capped to the readAhead limit.
                             The event payload is always an array even if there is
-                            a single event in the batch. Commonly used with Webhooks
-                            to allow events to be delivered and acknowledged in batches.
+                            a single event in the batch, allowing client-side optimizations
+                            when processing the events in a group. Available for both
+                            Webhooks and WebSockets.
                           type: boolean
                         batchTimeout:
                           description: When batching is enabled, the optional timeout
@@ -36942,8 +36947,8 @@ paths:
                       description: Events are delivered in batches in an ordered array.
                         The batch size is capped to the readAhead limit. The event
                         payload is always an array even if there is a single event
-                        in the batch. Commonly used with Webhooks to allow events
-                        to be delivered and acknowledged in batches.
+                        in the batch, allowing client-side optimizations when processing
+                        the events in a group. Available for both Webhooks and WebSockets.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -37212,8 +37217,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -37490,8 +37496,8 @@ paths:
                       description: Events are delivered in batches in an ordered array.
                         The batch size is capped to the readAhead limit. The event
                         payload is always an array even if there is a single event
-                        in the batch. Commonly used with Webhooks to allow events
-                        to be delivered and acknowledged in batches.
+                        in the batch, allowing client-side optimizations when processing
+                        the events in a group. Available for both Webhooks and WebSockets.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -37760,8 +37766,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -38093,8 +38100,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
