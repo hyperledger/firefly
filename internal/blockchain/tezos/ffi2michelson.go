@@ -34,6 +34,7 @@ const (
 	_internalBoolean = "boolean"
 	_internalList    = "list"
 	_internalStruct  = "struct"
+	_internalMap     = "map"
 	_internalInteger = "integer"
 	_internalNat     = "nat"
 	_internalString  = "string"
@@ -143,6 +144,45 @@ func processMichelson(entry interface{}, details map[string]interface{}) (resp m
 func processSchemaEntry(entry interface{}, schema map[string]interface{}) (resp micheline.Prim, err error) {
 	entryType := schema["type"].(string)
 	switch entryType {
+	case _internalMap:
+		schemaArgs := schema["args"].([]interface{})
+
+		mapResp := micheline.NewMap()
+		mapEntries := entry.(map[string]interface{})["mapEntries"]
+		if mapEntries == nil {
+			return resp, fmt.Errorf("mapEntries property in the map payload schema must be not nil")
+		}
+		for _, mapEntry := range mapEntries.([]interface{}) {
+			elem := mapEntry.(map[string]interface{})
+
+			var k micheline.Prim
+			var v micheline.Prim
+			for i := len(schemaArgs) - 1; i >= 0; i-- {
+				arg := schemaArgs[i].(map[string]interface{})
+
+				if arg["name"] == "key" {
+					k, err = processSchemaEntry(elem["key"], arg)
+					if err != nil {
+						return resp, err
+					}
+				}
+
+				if arg["name"] == "value" {
+					v, err = processSchemaEntry(elem["value"], arg)
+					if err != nil {
+						return resp, err
+					}
+				}
+			}
+
+			if k.IsNil() {
+				return resp, fmt.Errorf("key property in the map payload schema must be not nil")
+			}
+			mapElem := micheline.NewMapElem(k, v)
+			mapResp.Args = append(mapResp.Args, mapElem)
+		}
+
+		resp = mapResp
 	case _internalStruct:
 		schemaArgs := schema["args"].([]interface{})
 
