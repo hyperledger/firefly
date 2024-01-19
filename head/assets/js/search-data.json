@@ -913,7 +913,7 @@
   },"152": {
     "doc": "Configuration Reference",
     "title": "event.aggregator",
-    "content": "| Key | Description | Type | Default Value | . | batchSize | The maximum number of records to read from the DB before performing an aggregation run | BytesSize | 200 | . | batchTimeout | How long to wait for new events to arrive before performing aggregation on a page of events | time.Duration | 250ms | . | firstEvent | The first event the aggregator should process, if no previous offest is stored in the DB. Valid options are oldest or newest | string | oldest | . | pollTimeout | The time to wait without a notification of new events, before trying a select on the table | time.Duration | 30s | . | rewindQueryLimit | Safety limit on the maximum number of records to search when performing queries to search for rewinds | int | 1000 | . | rewindQueueLength | The size of the queue into the rewind dispatcher | int | 10 | . | rewindTimeout | The minimum time to wait for rewinds to accumulate before resolving them | time.Duration | 50ms | . ",
+    "content": "| Key | Description | Type | Default Value | . | batchSize | The maximum number of records to read from the DB before performing an aggregation run | BytesSize | 200 | . | batchTimeout | How long to wait for new events to arrive before performing aggregation on a page of events | time.Duration | 0ms | . | firstEvent | The first event the aggregator should process, if no previous offest is stored in the DB. Valid options are oldest or newest | string | oldest | . | pollTimeout | The time to wait without a notification of new events, before trying a select on the table | time.Duration | 30s | . | rewindQueryLimit | Safety limit on the maximum number of records to search when performing queries to search for rewinds | int | 1000 | . | rewindQueueLength | The size of the queue into the rewind dispatcher | int | 10 | . | rewindTimeout | The minimum time to wait for rewinds to accumulate before resolving them | time.Duration | 50ms | . ",
     "url": "/firefly/head/reference/config.html#eventaggregator",
     "relUrl": "/reference/config.html#eventaggregator"
   },"153": {
@@ -931,7 +931,7 @@
   },"155": {
     "doc": "Configuration Reference",
     "title": "event.dispatcher",
-    "content": "| Key | Description | Type | Default Value | . | batchTimeout | A short time to wait for new events to arrive before re-polling for new events | time.Duration | 250ms | . | bufferLength | The number of events + attachments an individual dispatcher should hold in memory ready for delivery to the subscription | int | 5 | . | pollTimeout | The time to wait without a notification of new events, before trying a select on the table | time.Duration | 30s | . ",
+    "content": "| Key | Description | Type | Default Value | . | batchTimeout | A short time to wait for new events to arrive before re-polling for new events | time.Duration | 0ms | . | bufferLength | The number of events + attachments an individual dispatcher should hold in memory ready for delivery to the subscription | int | 5 | . | pollTimeout | The time to wait without a notification of new events, before trying a select on the table | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#eventdispatcher",
     "relUrl": "/reference/config.html#eventdispatcher"
   },"156": {
@@ -1651,7 +1651,7 @@
   },"275": {
     "doc": "Configuration Reference",
     "title": "subscription.defaults",
-    "content": "| Key | Description | Type | Default Value | . | batchSize | Default read ahead to enable for subscriptions that do not explicitly configure readahead | int | 0 | . ",
+    "content": "| Key | Description | Type | Default Value | . | batchSize | Default read ahead to enable for subscriptions that do not explicitly configure readahead | int | 50 | . | batchTimeout | Default batch timeout | int | 50ms | . ",
     "url": "/firefly/head/reference/config.html#subscriptiondefaults",
     "relUrl": "/reference/config.html#subscriptiondefaults"
   },"276": {
@@ -5029,7 +5029,7 @@
   },"838": {
     "doc": "WSAck",
     "title": "WSAck",
-    "content": "An ack must be sent on a WebSocket for each event delivered to an application. Unless autoack is set in the WSStart payload/URL parameters to cause automatic acknowledgement. Your application should specify the id of each event that it acknowledges. If the id is omitted, then FireFly will assume the oldest message delivered to the application that has not been acknowledged is the one the ack is associated with. If multiple subscriptions are started on a WebSocket, then you need to specify the subscription namespace+name as part of each ack. If you send an acknowledgement that cannot be correlated, then a WSError payload will be sent to the application. Example . { \"type\": \"ack\", \"id\": \"f78bf82b-1292-4c86-8a08-e53d855f1a64\", \"subscription\": { \"namespace\": \"ns1\", \"name\": \"app1_subscription\" } } . Field Descriptions . | Field Name | Description | Type | . | type | WSActionBase.type | FFEnum:\"start\"\"ack\"\"protocol_error\" | . | id | WSAck.id | UUID | . | subscription | WSAck.subscription | SubscriptionRef | . ",
+    "content": "An ack must be sent on a WebSocket for each event delivered to an application. Unless autoack is set in the WSStart payload/URL parameters to cause automatic acknowledgement. Your application should specify the id of each event that it acknowledges. If the id is omitted, then FireFly will assume the oldest message delivered to the application that has not been acknowledged is the one the ack is associated with. If multiple subscriptions are started on a WebSocket, then you need to specify the subscription namespace+name as part of each ack. If you send an acknowledgement that cannot be correlated, then a WSError payload will be sent to the application. Example . { \"type\": \"ack\", \"id\": \"f78bf82b-1292-4c86-8a08-e53d855f1a64\", \"subscription\": { \"namespace\": \"ns1\", \"name\": \"app1_subscription\" } } . Field Descriptions . | Field Name | Description | Type | . | type | WSActionBase.type | FFEnum:\"start\"\"ack\"\"protocol_error\"\"event_batch\" | . | id | WSAck.id | UUID | . | subscription | WSAck.subscription | SubscriptionRef | . ",
     "url": "/firefly/head/reference/types/wsack.html",
     "relUrl": "/reference/types/wsack.html"
   },"839": {
@@ -5053,7 +5053,7 @@
   },"842": {
     "doc": "WSError",
     "title": "WSError",
-    "content": "Example . { \"type\": \"protocol_error\", \"error\": \"FF10175: Acknowledgment does not match an inflight event + subscription\" } . Field Descriptions . | Field Name | Description | Type | . | type | WSAck.type | FFEnum:\"start\"\"ack\"\"protocol_error\" | . | error | WSAck.error | string | . ",
+    "content": "Example . { \"type\": \"protocol_error\", \"error\": \"FF10175: Acknowledgment does not match an inflight event + subscription\" } . Field Descriptions . | Field Name | Description | Type | . | type | WSAck.type | FFEnum:\"start\"\"ack\"\"protocol_error\"\"event_batch\" | . | error | WSAck.error | string | . ",
     "url": "/firefly/head/reference/types/wserror.html",
     "relUrl": "/reference/types/wserror.html"
   },"843": {
@@ -5071,7 +5071,7 @@
   },"845": {
     "doc": "WSStart",
     "title": "WSStart",
-    "content": "The start payload is sent after an application connects to a WebSocket, to start delivery of events over that connection. The start command can refer to a subscription by name in order to reliably receive all matching events for that subscription, including those that were emitted when the application was disconnected. Alternatively the start command can request \"ephemeral\": true in order to dynamically create a new subscription that lasts only for the duration that the connection is active. Example . { \"type\": \"start\", \"autoack\": false, \"namespace\": \"ns1\", \"name\": \"app1_subscription\", \"ephemeral\": false, \"filter\": { \"message\": {}, \"transaction\": {}, \"blockchainevent\": {} }, \"options\": {} } . Field Descriptions . | Field Name | Description | Type | . | type | WSActionBase.type | FFEnum:\"start\"\"ack\"\"protocol_error\" | . | autoack | WSStart.autoack | bool | . | namespace | WSStart.namespace | string | . | name | WSStart.name | string | . | ephemeral | WSStart.ephemeral | bool | . | filter | WSStart.filter | SubscriptionFilter | . | options | WSStart.options | SubscriptionOptions | . ",
+    "content": "The start payload is sent after an application connects to a WebSocket, to start delivery of events over that connection. The start command can refer to a subscription by name in order to reliably receive all matching events for that subscription, including those that were emitted when the application was disconnected. Alternatively the start command can request \"ephemeral\": true in order to dynamically create a new subscription that lasts only for the duration that the connection is active. Example . { \"type\": \"start\", \"autoack\": false, \"namespace\": \"ns1\", \"name\": \"app1_subscription\", \"ephemeral\": false, \"filter\": { \"message\": {}, \"transaction\": {}, \"blockchainevent\": {} }, \"options\": {} } . Field Descriptions . | Field Name | Description | Type | . | type | WSActionBase.type | FFEnum:\"start\"\"ack\"\"protocol_error\"\"event_batch\" | . | autoack | WSStart.autoack | bool | . | namespace | WSStart.namespace | string | . | name | WSStart.name | string | . | ephemeral | WSStart.ephemeral | bool | . | filter | WSStart.filter | SubscriptionFilter | . | options | WSStart.options | SubscriptionOptions | . ",
     "url": "/firefly/head/reference/types/wsstart.html",
     "relUrl": "/reference/types/wsstart.html"
   },"846": {

@@ -1294,7 +1294,7 @@
       <td>batchTimeout</td>
       <td>How long to wait for new events to arrive before performing aggregation on a page of events</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">250ms</code></td>
+      <td><code class="language-plaintext highlighter-rouge">0ms</code></td>
     </tr>
     <tr>
       <td>firstEvent</td>
@@ -1417,7 +1417,7 @@
       <td>batchTimeout</td>
       <td>A short time to wait for new events to arrive before re-polling for new events</td>
       <td><a href="https://pkg.go.dev/time#Duration"><code class="language-plaintext highlighter-rouge">time.Duration</code></a></td>
-      <td><code class="language-plaintext highlighter-rouge">250ms</code></td>
+      <td><code class="language-plaintext highlighter-rouge">0ms</code></td>
     </tr>
     <tr>
       <td>bufferLength</td>
@@ -7165,7 +7165,13 @@
       <td>batchSize</td>
       <td>Default read ahead to enable for subscriptions that do not explicitly configure readahead</td>
       <td><code class="language-plaintext highlighter-rouge">int</code></td>
-      <td><code class="language-plaintext highlighter-rouge">0</code></td>
+      <td><code class="language-plaintext highlighter-rouge">50</code></td>
+    </tr>
+    <tr>
+      <td>batchTimeout</td>
+      <td>Default batch timeout</td>
+      <td><code class="language-plaintext highlighter-rouge">int</code></td>
+      <td><code class="language-plaintext highlighter-rouge">50ms</code></td>
     </tr>
   </tbody>
 </table>
