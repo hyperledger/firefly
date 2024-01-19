@@ -28,12 +28,15 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	firstEvent := SubOptsFirstEventNewest
 	readAhead := uint16(50)
 	yes := true
+	oneSec := "1s"
 	sub1 := &Subscription{
 		Options: SubscriptionOptions{
 			SubscriptionCoreOptions: SubscriptionCoreOptions{
-				FirstEvent: &firstEvent,
-				ReadAhead:  &readAhead,
-				WithData:   &yes,
+				FirstEvent:   &firstEvent,
+				ReadAhead:    &readAhead,
+				WithData:     &yes,
+				Batch:        &yes,
+				BatchTimeout: &oneSec,
 			},
 			WebhookSubOptions: WebhookSubOptions{
 				TLSConfigName: "myconfig",
@@ -49,7 +52,18 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	// Verify it serializes as bytes to the database
 	b1, err := sub1.Options.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, `{"firstEvent":"newest","my-nested-opts":{"myopt1":12345,"myopt2":"test"},"readAhead":50,"tlsConfigName":"myconfig","withData":true}`, string(b1.([]byte)))
+	assert.JSONEq(t, `{
+		"firstEvent":"newest",
+		"my-nested-opts":{
+			"myopt1":12345,
+			"myopt2":"test"
+		},
+		"readAhead":50,
+		"tlsConfigName":"myconfig",
+		"withData":true,
+		"batch":true,
+		"batchTimeout":"1s"
+	}`, string(b1.([]byte)))
 
 	f1, err := sub1.Filter.Value()
 	assert.NoError(t, err)
