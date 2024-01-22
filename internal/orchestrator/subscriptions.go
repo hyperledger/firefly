@@ -151,7 +151,7 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 	finalDesiredOffset := inboundFilterOptions.Skip + inboundFilterOptions.Limit
 	var subscriptionFilteredEvents []*core.EnrichedEvent
 
-	internalLimit := 20
+	internalLimit := 50
 	internalSkip := 0
 	ssFilter.Limit(uint64(internalLimit))
 

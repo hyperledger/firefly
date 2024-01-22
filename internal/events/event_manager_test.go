@@ -651,46 +651,6 @@ func TestResolveTransportAndCapabilitiesDefault(t *testing.T) {
 	em.mev.AssertExpectations(t)
 }
 
-// func TestEventFilterOnSubscriptionMatchesEvent(t *testing.T) {
-// 	em := newTestEventManager(t)
-// 	defer em.cleanup(t)
-
-// 	listenerUuid := fftypes.NewUUID()
-// 	group := &fftypes.Bytes32{}
-
-// 	events := []*core.EnrichedEvent{
-// 		{
-// 			Event: core.Event{
-// 				Type: core.EventTypeIdentityConfirmed,
-// 				Topic: "someTopic",
-// 			},
-// 			BlockchainEvent: &core.BlockchainEvent{
-// 				Name: "someEvent",
-// 				Listener: listenerUuid,
-// 			},
-// 			Transaction: &core.Transaction{
-// 				Type: "someTxType",
-// 			},
-// 			Message: &core.Message{
-// 				Header: core.MessageHeader{
-// 					Group: group,
-// 					Tag: "someTag",
-// 				},
-// 			},
-// 		},
-// 	}
-
-// 	subscription := &core.Subscription{
-// 		Filter: core.SubscriptionFilter{
-// 			Events: core.EventTypeIdentityConfirmed.String(),
-// 		},
-// 	}
-
-// 	filteredEvents := em.FilterEventsOnSubscription(events, subscription)
-// 	assert.NotNil(t, filteredEvents)
-// 	assert.Equal(t, 1, len(filteredEvents))
-// }
-
 func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
