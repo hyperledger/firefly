@@ -754,6 +754,41 @@ func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
+
+	events[0].Transaction.Type = ""
+	subscription.Filter.Transaction.Type = ""
+	events[0].Message = &core.Message{
+		Header: core.MessageHeader{
+			Tag: "someTag",
+		},
+	}
+	subscription.Filter.Message.Tag = "someTag"
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+
+	group := &fftypes.Bytes32{}
+
+	events[0].Message.Header.Tag = ""
+	subscription.Filter.Message.Tag = ""
+	events[0].Message.Header.Group = group
+	subscription.Filter.Message.Group = group.String()
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+
+	events[0].Message.Header.Group = nil
+	subscription.Filter.Message.Group = ""
+	events[0].Message.Header.SignerRef = core.SignerRef{
+		Author: "someAuthor",
+	}
+	subscription.Filter.Message.Author = "someAuthor"
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
 }
 
 func TestEventFilterOnSubscriptionFailsWithBadRegex(t *testing.T) {
@@ -817,6 +852,41 @@ func TestEventFilterOnSubscriptionFailsWithBadRegex(t *testing.T) {
 		Type: core.TransactionTypeContractInvoke,
 	}
 	subscription.Filter.Transaction.Type = regexThatFailsToCompile
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 0, len(filteredEvents))
+
+	events[0].Transaction.Type = ""
+	subscription.Filter.Transaction.Type = ""
+	events[0].Message = &core.Message{
+		Header: core.MessageHeader{
+			Tag: "someTag",
+		},
+	}
+	subscription.Filter.Message.Tag = regexThatFailsToCompile
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 0, len(filteredEvents))
+
+	group := &fftypes.Bytes32{}
+
+	events[0].Message.Header.Tag = ""
+	subscription.Filter.Message.Tag = ""
+	events[0].Message.Header.Group = group
+	subscription.Filter.Message.Group = regexThatFailsToCompile
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 0, len(filteredEvents))
+
+	events[0].Message.Header.Group = nil
+	subscription.Filter.Message.Group = ""
+	events[0].Message.Header.SignerRef = core.SignerRef{
+		Author: "someAuthor",
+	}
+	subscription.Filter.Message.Author = regexThatFailsToCompile
 
 	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
 	assert.NotNil(t, filteredEvents)
