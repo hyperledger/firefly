@@ -358,3 +358,95 @@ func TestGetSGetSubscriptionsByIDWithStatusUnknownSub(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, subWithStatus)
 }
+
+func TestGetHistoricalEventsForSubscriptionNotEnoughEventsToSatisfySkipLimit(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	
+	eventCount := 20
+	
+	baseEvents := []*core.Event{}
+	enrichedEvents := []*core.EnrichedEvent{}
+	baseEvent := &core.Event{
+		Type: core.EventTypeIdentityConfirmed,
+		Topic: "topic1", 
+	}
+	enrichedEvent := &core.EnrichedEvent{
+		Event: *baseEvent,
+		BlockchainEvent: &core.BlockchainEvent{
+			Namespace: "ns1",
+		},
+	}
+
+	for i := 0; i < eventCount; i++ {
+		baseEvents = append(baseEvents, baseEvent)
+		enrichedEvents = append(enrichedEvents, enrichedEvent)
+	}
+
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return(baseEvents, nil, nil)
+	or.mem.On("EnrichEvent", mock.Anything, mock.Anything).Return(enrichedEvent, nil)
+	or.mem.On("FilterEventsOnSubscription", mock.Anything, mock.Anything).Return(enrichedEvents)
+
+	u := fftypes.NewUUID()
+	// Subscription will match all of the the fake events
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			ID:        u,
+			Name:      "sub1",
+			Namespace: "ns1",
+		},
+	}
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+	filter.Limit(20)
+	retEvents, _, err := or.GetSubscriptionEventsHistorical(context.Background(), sub, filter)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, len(retEvents), 20)
+}
+
+func TestGetHistoricalEventsForSubscription(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	
+	eventCount := 20
+	
+	baseEvents := []*core.Event{}
+	enrichedEvents := []*core.EnrichedEvent{}
+	baseEvent := &core.Event{
+		Type: core.EventTypeIdentityConfirmed,
+		Topic: "topic1", 
+	}
+	enrichedEvent := &core.EnrichedEvent{
+		Event: *baseEvent,
+		BlockchainEvent: &core.BlockchainEvent{
+			Namespace: "ns1",
+		},
+	}
+
+	for i := 0; i < eventCount; i++ {
+		baseEvents = append(baseEvents, baseEvent)
+		enrichedEvents = append(enrichedEvents, enrichedEvent)
+	}
+
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return(baseEvents, nil, nil)
+	or.mem.On("EnrichEvent", mock.Anything, mock.Anything).Return(enrichedEvent, nil)
+	or.mem.On("FilterEventsOnSubscription", mock.Anything, mock.Anything).Return(enrichedEvents)
+
+	u := fftypes.NewUUID()
+	// Subscription will match all of the the fake events
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			ID:        u,
+			Name:      "sub1",
+			Namespace: "ns1",
+		},
+	}
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+	filter.Limit(20)
+	retEvents, _, err := or.GetSubscriptionEventsHistorical(context.Background(), sub, filter)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, len(retEvents), 20)
+}

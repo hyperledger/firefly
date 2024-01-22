@@ -182,7 +182,6 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 	subscriptionFilteredEvents = subscriptionFilteredEvents[inboundFilterOptions.Skip:]
 
 	filterResultLength := int64(len(subscriptionFilteredEvents))
-
 	return subscriptionFilteredEvents, &ffapi.FilterResult{
 		TotalCount: &filterResultLength,
 	}, nil
