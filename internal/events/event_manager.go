@@ -312,9 +312,9 @@ func (em *eventManager) FilterEventsOnSubscription(events []*core.EnrichedEvent,
 		filter := subscription.Filter
 
 		if filter.Events != "" {
-			matched, _ := regexp.MatchString(filter.Events, string(event.Type))
+			matched, err := regexp.MatchString(filter.Events, string(event.Type))
 
-			if !matched {
+			if !matched || err != nil {
 				continue
 			}
 		}

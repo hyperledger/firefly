@@ -35,7 +35,7 @@ var getSubscriptionEventsFiltered = &ffapi.Route{
 	FilterFactory:   database.EventQueryFactory,
 	Description:     coremsgs.APIEndpointsGetSubscriptionEventsFiltered,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []core.EnrichedEvent{} },
+	JSONOutputValue: func() interface{} { return []*core.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {

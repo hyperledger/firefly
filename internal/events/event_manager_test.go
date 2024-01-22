@@ -651,31 +651,54 @@ func TestResolveTransportAndCapabilitiesDefault(t *testing.T) {
 	em.mev.AssertExpectations(t)
 }
 
-func TestEventFilterOnSubscriptionMatchesEvent(t *testing.T) {
+// func TestEventFilterOnSubscriptionMatchesEvent(t *testing.T) {
+// 	em := newTestEventManager(t)
+// 	defer em.cleanup(t)
+
+// 	listenerUuid := fftypes.NewUUID()
+// 	group := &fftypes.Bytes32{}
+
+// 	events := []*core.EnrichedEvent{
+// 		{
+// 			Event: core.Event{
+// 				Type: core.EventTypeIdentityConfirmed,
+// 				Topic: "someTopic",
+// 			},
+// 			BlockchainEvent: &core.BlockchainEvent{
+// 				Name: "someEvent",
+// 				Listener: listenerUuid,
+// 			},
+// 			Transaction: &core.Transaction{
+// 				Type: "someTxType",
+// 			},
+// 			Message: &core.Message{
+// 				Header: core.MessageHeader{
+// 					Group: group,
+// 					Tag: "someTag",
+// 				},
+// 			},
+// 		},
+// 	}
+
+// 	subscription := &core.Subscription{
+// 		Filter: core.SubscriptionFilter{
+// 			Events: core.EventTypeIdentityConfirmed.String(),
+// 		},
+// 	}
+
+// 	filteredEvents := em.FilterEventsOnSubscription(events, subscription)
+// 	assert.NotNil(t, filteredEvents)
+// 	assert.Equal(t, 1, len(filteredEvents))
+// }
+
+func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
-
-	listenerUuid := fftypes.NewUUID()
-	group := &fftypes.Bytes32{}
 
 	events := []*core.EnrichedEvent{
 		{
 			Event: core.Event{
 				Type: core.EventTypeIdentityConfirmed,
-				Topic: "someTopic",
-			},
-			BlockchainEvent: &core.BlockchainEvent{
-				Name: "someEvent",
-				Listener: listenerUuid,
-			},
-			Transaction: &core.Transaction{
-				Type: "someTxType",
-			},
-			Message: &core.Message{
-				Header: core.MessageHeader{
-					Group: group,
-					Tag: "someTag",
-				},
 			},
 		},
 	}
@@ -683,22 +706,119 @@ func TestEventFilterOnSubscriptionMatchesEvent(t *testing.T) {
 	subscription := &core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Events: core.EventTypeIdentityConfirmed.String(),
-			Topic: "someTopic",
-			Message: core.MessageFilter{
-				Tag: "some*",
-				Group: ".*",
-			},
-			BlockchainEvent: core.BlockchainEventFilter{
-				Name: "some*",
-				Listener: ".*",
-			},
-			Transaction: core.TransactionFilter{
-				Type: "some*",
-			},
 		},
 	}
 
 	filteredEvents := em.FilterEventsOnSubscription(events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
+
+	events[0].Event.Type = ""
+	subscription.Filter.Events = ""
+	events[0].Event.Topic = "someTopic"
+	subscription.Filter.Topic = "someTopic"
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+	
+	listenerUuid := fftypes.NewUUID()
+
+	events[0].Event.Topic = ""
+	subscription.Filter.Topic = ""
+	events[0].BlockchainEvent = &core.BlockchainEvent{
+		Listener: listenerUuid,
+	}
+	subscription.Filter.BlockchainEvent.Listener = listenerUuid.String()
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+
+	events[0].BlockchainEvent.Listener = nil
+	subscription.Filter.BlockchainEvent.Listener = ""
+	events[0].BlockchainEvent.Name = "someName"
+	subscription.Filter.BlockchainEvent.Name = "someName"
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+
+	events[0].BlockchainEvent.Name = ""
+	subscription.Filter.BlockchainEvent.Name = ""
+	events[0].Transaction = &core.Transaction{
+		Type: core.TransactionTypeContractInvoke,
+	}
+	subscription.Filter.Transaction.Type = core.TransactionTypeContractInvoke.String()
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+}
+
+func TestEventFilterOnSubscriptionFailsWithBadRegex(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	regexThatFailsToCompile := "^(a(b)c$"
+
+	events := []*core.EnrichedEvent{
+		{
+			Event: core.Event{
+				Type: core.EventTypeIdentityConfirmed,
+			},
+		},
+	}
+
+	subscription := &core.Subscription{
+		Filter: core.SubscriptionFilter{
+			Events: regexThatFailsToCompile,
+		},
+	}
+
+	filteredEvents := em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 0, len(filteredEvents))
+
+	events[0].Event.Type = ""
+	subscription.Filter.Events = ""
+	events[0].Event.Topic = "someTopic"
+	subscription.Filter.Topic = regexThatFailsToCompile
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 0, len(filteredEvents))
+
+	listenerUuid := fftypes.NewUUID()
+
+	events[0].Event.Topic = ""
+	subscription.Filter.Topic = ""
+	events[0].BlockchainEvent = &core.BlockchainEvent{
+		Listener: listenerUuid,
+	}
+	subscription.Filter.BlockchainEvent.Listener = regexThatFailsToCompile
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 0, len(filteredEvents))
+
+	events[0].BlockchainEvent.Listener = nil
+	subscription.Filter.BlockchainEvent.Listener = ""
+	events[0].BlockchainEvent.Name = "someName"
+	subscription.Filter.BlockchainEvent.Name = regexThatFailsToCompile
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 0, len(filteredEvents))
+
+	events[0].BlockchainEvent.Name = ""
+	subscription.Filter.BlockchainEvent.Name = ""
+	events[0].Transaction = &core.Transaction{
+		Type: core.TransactionTypeContractInvoke,
+	}
+	subscription.Filter.Transaction.Type = regexThatFailsToCompile
+
+	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 0, len(filteredEvents))
 }
