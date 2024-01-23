@@ -151,7 +151,7 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 	finalDesiredOffset := inboundFilterOptions.Skip + inboundFilterOptions.Limit
 	var subscriptionFilteredEvents []*core.EnrichedEvent
 
-	internalLimit := 50
+	internalLimit := 200
 	internalSkip := 0
 	ssFilter.Limit(uint64(internalLimit))
 
@@ -179,6 +179,12 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 		internalSkip += internalLimit
 	}
 
+	var zero int64 = 0
+	if int(inboundFilterOptions.Skip) > len(subscriptionFilteredEvents) {
+		return []*core.EnrichedEvent{}, &ffapi.FilterResult{
+			TotalCount: &zero,
+		}, nil
+	}
 	subscriptionFilteredEvents = subscriptionFilteredEvents[inboundFilterOptions.Skip:]
 
 	filterResultLength := int64(len(subscriptionFilteredEvents))
