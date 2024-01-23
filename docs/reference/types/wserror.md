@@ -33,6 +33,6 @@ nav_order: 25
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `type` | WSAck.type | `FFEnum`:<br/>`"start"`<br/>`"ack"`<br/>`"protocol_error"` |
+| `type` | WSAck.type | `FFEnum`:<br/>`"start"`<br/>`"ack"`<br/>`"protocol_error"`<br/>`"event_batch"` |
 | `error` | WSAck.error | `string` |
 

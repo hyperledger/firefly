@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -88,6 +88,7 @@ const (
 )
 
 // SubscriptionCoreOptions are the core options that apply across all transports
+// REMEMBER TO ADD OPTIONS HERE TO MarshalJSON()
 type SubscriptionCoreOptions struct {
 	FirstEvent   *SubOptsFirstEvent `ffstruct:"SubscriptionCoreOptions" json:"firstEvent,omitempty"`
 	ReadAhead    *uint16            `ffstruct:"SubscriptionCoreOptions" json:"readAhead,omitempty"`
@@ -166,6 +167,12 @@ func (so SubscriptionOptions) MarshalJSON() ([]byte, error) {
 	}
 	if so.TLSConfigName != "" {
 		so.additionalOptions["tlsConfigName"] = so.TLSConfigName
+	}
+	if so.Batch != nil {
+		so.additionalOptions["batch"] = so.Batch
+	}
+	if so.BatchTimeout != nil {
+		so.additionalOptions["batchTimeout"] = so.BatchTimeout
 	}
 
 	return json.Marshal(&so.additionalOptions)

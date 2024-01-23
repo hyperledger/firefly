@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -49,6 +51,7 @@ type websocketConnection struct {
 	autoAck         bool
 	started         []*websocketStartedSub
 	inflight        []*core.EventDeliveryResponse
+	inflightBatches []*core.WSEventBatch
 	mux             sync.Mutex
 	closed          bool
 	remoteAddr      string
@@ -94,21 +97,45 @@ func (wc *websocketConnection) assertNamespace(namespace string) (string, error)
 	return namespace, nil
 }
 
+func isBoolQuerySet(query url.Values, boolOption string) bool {
+	optionValues, hasOptionValues := query[boolOption]
+	return hasOptionValues && (len(optionValues) == 0 || optionValues[0] != "false")
+}
+
+func (wc *websocketConnection) getReadAhead(query url.Values, isBatch bool) *uint16 {
+	readaheadStr := query.Get("readahead")
+	if readaheadStr != "" {
+		readAheadInt, err := strconv.ParseUint(readaheadStr, 10, 16)
+		if err == nil {
+			readahead := uint16(readAheadInt)
+			return &readahead
+		}
+	}
+	return nil
+}
+
+func (wc *websocketConnection) getBatchTimeout(query url.Values) *string {
+	batchTimeout := query.Get("batchtimeout")
+	if batchTimeout != "" {
+		return &batchTimeout
+	}
+	return nil
+}
+
 // processAutoStart gives a helper to specify query parameters to auto-start your subscription
 func (wc *websocketConnection) processAutoStart(req *http.Request) {
 	query := req.URL.Query()
-	ephemeral, hasEphemeral := req.URL.Query()["ephemeral"]
-	isEphemeral := hasEphemeral && (len(ephemeral) == 0 || ephemeral[0] != "false")
+	isEphemeral := isBoolQuerySet(query, "ephemeral")
 	_, hasName := query["name"]
-	autoAck, hasAutoack := req.URL.Query()["autoack"]
-	isAutoack := hasAutoack && (len(autoAck) == 0 || autoAck[0] != "false")
+	isAutoack := isBoolQuerySet(query, "autoack")
 	namespace, err := wc.assertNamespace(query.Get("namespace"))
 	if err != nil {
 		wc.protocolError(err)
 		return
 	}
 
-	if hasEphemeral || hasName {
+	if isEphemeral || hasName {
+		isBatch := isBoolQuerySet(query, "batch")
 		filter := core.NewSubscriptionFilterFromQuery(query)
 		err := wc.handleStart(&core.WSStart{
 			AutoAck:   &isAutoack,
@@ -116,6 +143,13 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 			Namespace: namespace,
 			Name:      query.Get("name"),
 			Filter:    filter,
+			Options: core.SubscriptionOptions{
+				SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+					Batch:        &isBatch,
+					BatchTimeout: wc.getBatchTimeout(query),
+					ReadAhead:    wc.getReadAhead(query, isBatch),
+				},
+			},
 		})
 		if err != nil {
 			wc.protocolError(err)
@@ -231,6 +265,54 @@ func (wc *websocketConnection) dispatch(event *core.EventDelivery) error {
 	return nil
 }
 
+func (wc *websocketConnection) dispatchBatch(sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
+	inflightBatch := &core.WSEventBatch{
+		Type:   core.WSEventBatchType,
+		ID:     fftypes.NewUUID(),
+		Events: make([]*core.EventDelivery, len(events)),
+	}
+	if sub != nil {
+		inflightBatch.Subscription = sub.SubscriptionRef
+	}
+	for i, e := range events {
+		// For ephemeral there's no sub, so we pick up from first event
+		if inflightBatch.Subscription.Namespace == "" {
+			inflightBatch.Subscription = e.Event.Subscription
+		}
+		inflightBatch.Events[i] = e.Event
+	}
+
+	var autoAck bool
+	wc.mux.Lock()
+	autoAck = wc.autoAck
+	if !autoAck {
+		wc.inflightBatches = append(wc.inflightBatches, inflightBatch)
+	}
+	wc.mux.Unlock()
+
+	err := wc.send(inflightBatch)
+	if err != nil {
+		return err
+	}
+
+	if autoAck {
+		wc.ackBatch(inflightBatch)
+	}
+
+	return nil
+}
+
+func (wc *websocketConnection) ackBatch(batch *core.WSEventBatch) {
+	for _, e := range batch.Events {
+		// We individually drive an ack back on each event, but do so in one pass
+		// (this matches the webhook implementation of batching).
+		wc.ws.ack(wc.connID, &core.EventDeliveryResponse{
+			ID:           e.ID,
+			Subscription: batch.Subscription,
+		})
+	}
+}
+
 func (wc *websocketConnection) protocolError(err error) {
 	log.L(wc.ctx).Errorf("Sending protocol error to client: %s", err)
 	sendErr := wc.send(&core.WSError{
@@ -309,6 +391,22 @@ func (wc *websocketConnection) durableSubMatcher(sr core.SubscriptionRef) bool {
 	return false
 }
 
+func (wc *websocketConnection) handleBatchAck(ack *core.WSAck) (handled bool) {
+	wc.mux.Lock()
+	defer wc.mux.Unlock()
+	var newInflightBatches []*core.WSEventBatch
+	for _, batch := range wc.inflightBatches {
+		if batch.ID.Equals(ack.ID) { // nil safe check
+			wc.ackBatch(batch)
+			handled = true
+		} else {
+			newInflightBatches = append(newInflightBatches, batch)
+		}
+	}
+	wc.inflightBatches = newInflightBatches
+	return handled
+}
+
 func (wc *websocketConnection) checkAck(ack *core.WSAck) (*core.EventDeliveryResponse, error) {
 	l := log.L(wc.ctx)
 	var inflight *core.EventDeliveryResponse
@@ -363,6 +461,10 @@ func (wc *websocketConnection) checkAck(ack *core.WSAck) (*core.EventDeliveryRes
 }
 
 func (wc *websocketConnection) handleAck(ack *core.WSAck) error {
+	if handled := wc.handleBatchAck(ack); handled {
+		return nil
+	}
+
 	// Perform a locked set of check
 	inflight, err := wc.checkAck(ack)
 	if err != nil {
