@@ -101,6 +101,8 @@ type BlockchainReceiptNotification struct {
 
 type BlockchainRESTError struct {
 	Error string `json:"error,omitempty"`
+	// See https://github.com/hyperledger/firefly-transaction-manager/blob/main/pkg/ffcapi/submission_error.go
+	SubmissionRejected bool `json:"submissionRejected,omitempty"`
 }
 
 type conflictError struct {

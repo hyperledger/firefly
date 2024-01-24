@@ -23,7 +23,7 @@ lint: ${LINT}
 ${MOCKERY}:
 		$(VGO) install github.com/vektra/mockery/v2@latest
 ${LINT}:
-		$(VGO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.47.3
+		$(VGO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.0
 ffcommon:
 		$(eval WSCLIENT_PATH := $(shell $(VGO) list -f '{{.Dir}}' github.com/hyperledger/firefly-common/pkg/wsclient))
 
@@ -79,6 +79,7 @@ $(eval $(call makemock, internal/operations,        Manager,              operat
 $(eval $(call makemock, internal/multiparty,        Manager,              multipartymocks))
 $(eval $(call makemock, internal/apiserver,         FFISwaggerGen,        apiservermocks))
 $(eval $(call makemock, internal/apiserver,         Server,               apiservermocks))
+$(eval $(call makemock, internal/events/websockets, WebSocketsNamespaced, websocketsmocks))
 
 firefly-nocgo: ${GOFILES}
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=$(DATE) -X main.buildVersion=$(BUILD_VERSION) -X 'github.com/hyperledger/firefly/cmd.BuildVersionOverride=$(BUILD_VERSION)' -X 'github.com/hyperledger/firefly/cmd.BuildDate=$(DATE)' -X 'github.com/hyperledger/firefly/cmd.BuildCommit=$(GIT_REF)'" -tags=prod -tags=prod -v

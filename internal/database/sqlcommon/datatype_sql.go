@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -196,6 +196,6 @@ func (s *SQLCommon) GetDatatypes(ctx context.Context, namespace string, filter f
 		datatypes = append(datatypes, datatype)
 	}
 
-	return datatypes, s.QueryRes(ctx, datatypesTable, tx, fop, fi), err
+	return datatypes, s.QueryRes(ctx, datatypesTable, tx, fop, nil, fi), err
 
 }

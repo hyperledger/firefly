@@ -98,9 +98,9 @@ func testFFI() *fftypes.FFI {
 	}
 }
 
-func pathNames(p openapi3.Paths) []string {
+func pathNames(p *openapi3.Paths) []string {
 	var keys []string
-	for k := range p {
+	for k := range p.Map() {
 		keys = append(keys, k)
 	}
 	return keys
@@ -126,25 +126,25 @@ func TestGenerate(t *testing.T) {
 
 	assert.ElementsMatch(t, []string{"/interface", "/invoke/method1", "/invoke/method2", "/query/method1", "/query/method2", "/listeners/event1"}, pathNames(doc.Paths))
 
-	invokeMethod1 := doc.Paths["/invoke/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	invokeMethod1 := doc.Paths.Value("/invoke/method1").Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", invokeMethod1.Type)
 	assert.ElementsMatch(t, []string{"input", "location", "options", "key", "idempotencyKey"}, paramNames(invokeMethod1.Properties))
 	assert.Equal(t, "object", invokeMethod1.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(invokeMethod1.Properties["input"].Value.Properties))
 
-	invokeMethod2 := doc.Paths["/invoke/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	invokeMethod2 := doc.Paths.Value("/invoke/method2").Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", invokeMethod2.Type)
 	assert.ElementsMatch(t, []string{"input", "location", "options", "key", "idempotencyKey"}, paramNames(invokeMethod2.Properties))
 	assert.Equal(t, "object", invokeMethod2.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{}, paramNames(invokeMethod2.Properties["input"].Value.Properties))
 
-	queryMethod1 := doc.Paths["/query/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	queryMethod1 := doc.Paths.Value("/query/method1").Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", queryMethod1.Type)
 	assert.ElementsMatch(t, []string{"input", "location", "options", "key", "idempotencyKey"}, paramNames(queryMethod1.Properties))
 	assert.Equal(t, "object", queryMethod1.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(queryMethod1.Properties["input"].Value.Properties))
 
-	queryMethod2 := doc.Paths["/query/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	queryMethod2 := doc.Paths.Value("/query/method2").Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", queryMethod2.Type)
 	assert.ElementsMatch(t, []string{"input", "location", "options", "key", "idempotencyKey"}, paramNames(queryMethod2.Properties))
 	assert.Equal(t, "object", queryMethod2.Properties["input"].Value.Type)
@@ -163,25 +163,25 @@ func TestGenerateWithLocation(t *testing.T) {
 
 	assert.ElementsMatch(t, []string{"/interface", "/invoke/method1", "/invoke/method2", "/query/method1", "/query/method2", "/listeners/event1"}, pathNames(doc.Paths))
 
-	invokeMethod1 := doc.Paths["/invoke/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	invokeMethod1 := doc.Paths.Value("/invoke/method1").Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", invokeMethod1.Type)
 	assert.ElementsMatch(t, []string{"input", "options", "key", "idempotencyKey"}, paramNames(invokeMethod1.Properties))
 	assert.Equal(t, "object", invokeMethod1.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(invokeMethod1.Properties["input"].Value.Properties))
 
-	invokeMethod2 := doc.Paths["/invoke/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	invokeMethod2 := doc.Paths.Value("/invoke/method2").Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", invokeMethod2.Type)
 	assert.ElementsMatch(t, []string{"input", "options", "key", "idempotencyKey"}, paramNames(invokeMethod2.Properties))
 	assert.Equal(t, "object", invokeMethod2.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{}, paramNames(invokeMethod2.Properties["input"].Value.Properties))
 
-	queryMethod1 := doc.Paths["/query/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	queryMethod1 := doc.Paths.Value("/query/method1").Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", queryMethod1.Type)
 	assert.ElementsMatch(t, []string{"input", "options", "key", "idempotencyKey"}, paramNames(queryMethod1.Properties))
 	assert.Equal(t, "object", queryMethod1.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(queryMethod1.Properties["input"].Value.Properties))
 
-	queryMethod2 := doc.Paths["/query/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	queryMethod2 := doc.Paths.Value("/query/method2").Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", queryMethod2.Type)
 	assert.ElementsMatch(t, []string{"input", "options", "key", "idempotencyKey"}, paramNames(queryMethod2.Properties))
 	assert.Equal(t, "object", queryMethod2.Properties["input"].Value.Type)
@@ -196,7 +196,7 @@ func TestFFIParamBadSchema(t *testing.T) {
 			Schema: fftypes.JSONAnyPtr(`{`),
 		},
 	}
-	_, err := contractJSONSchema(ctx, params, true)
+	_, err := contractRequestJSONSchema(ctx, params, true)
 	assert.Error(t, err)
 
 	params = &fftypes.FFIParams{
@@ -205,6 +205,56 @@ func TestFFIParamBadSchema(t *testing.T) {
 			Schema: fftypes.JSONAnyPtr(`{"type": false}`),
 		},
 	}
-	_, err = contractJSONSchema(ctx, params, true)
+	_, err = contractRequestJSONSchema(ctx, params, true)
+	assert.Error(t, err)
+}
+
+func TestUnnamedOutputs(t *testing.T) {
+	ctx := context.Background()
+	params := &fftypes.FFIParams{
+		{
+			Name:   "",
+			Schema: fftypes.JSONAnyPtr(`{}`),
+		},
+		{
+			Name:   "",
+			Schema: fftypes.JSONAnyPtr(`{}`),
+		},
+	}
+
+	expectedJSON := `{
+		"description": "A map of named outputs",
+		"properties": {
+			"output": {},
+			"output1": {}
+		},
+		"type": "object"
+	}`
+
+	ref, err := contractQueryResponseJSONSchema(ctx, params)
+	assert.NoError(t, err)
+	b, err := ref.MarshalJSON()
+	assert.JSONEq(t, expectedJSON, string(b))
+}
+
+func TestBadSchema(t *testing.T) {
+	ctx := context.Background()
+	params := &fftypes.FFIParams{
+		{
+			Name:   "",
+			Schema: fftypes.JSONAnyPtr(`{`),
+		},
+	}
+	_, err := contractQueryResponseJSONSchema(ctx, params)
+	assert.Error(t, err)
+
+	ctx = context.Background()
+	params = &fftypes.FFIParams{
+		{
+			Name:   "",
+			Schema: fftypes.JSONAnyPtr(`{"type": false}`),
+		},
+	}
+	_, err = contractQueryResponseJSONSchema(ctx, params)
 	assert.Error(t, err)
 }

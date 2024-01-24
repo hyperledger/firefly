@@ -605,7 +605,7 @@ func TestAddFireflySubscriptionEventstreamFail(t *testing.T) {
 	assert.NoError(t, err)
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
-	assert.Regexp(t, "FF10462", err)
+	assert.Regexp(t, "FF10463", err)
 }
 
 func TestAddFireflySubscriptionBadOptions(t *testing.T) {
@@ -2463,7 +2463,7 @@ func TestInvokeContractOK(t *testing.T) {
 	var errors []*fftypes.FFIError
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.NoError(t, err)
 }
 
@@ -2503,7 +2503,7 @@ func TestInvokeContractWithBatchOK(t *testing.T) {
 
 	parsedMethod, err := e.ParseInterface(context.Background(), method, nil)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, nil, nil, batch)
+	_, err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, nil, nil, batch)
 	assert.NoError(t, err)
 }
 
@@ -2535,7 +2535,7 @@ func TestDeployContractOK(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(400, "pop")(req)
 		})
-	err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+	_, err = e.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
 	assert.Regexp(t, "FF10429", err)
 }
 
@@ -2570,7 +2570,7 @@ func TestInvokeContractBadSchema(t *testing.T) {
 	var errors []*fftypes.FFIError
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -2595,7 +2595,7 @@ func TestInvokeContractInvalidOption(t *testing.T) {
 	var errors []*fftypes.FFIError
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF10398", err)
 }
 
@@ -2615,7 +2615,7 @@ func TestInvokeContractChaincodeNotSet(t *testing.T) {
 	var errors []*fftypes.FFIError
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -2644,7 +2644,7 @@ func TestInvokeContractFabconnectError(t *testing.T) {
 	var errors []*fftypes.FFIError
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF10284", err)
 }
 
@@ -2856,7 +2856,7 @@ func TestInvokeJSONEncodeParamsError(t *testing.T) {
 	var errors []*fftypes.FFIError
 	parsedMethod, err := e.ParseInterface(context.Background(), method, errors)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
+	_, err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -3387,7 +3387,7 @@ func TestInvokeContractBadFFI(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 
-	err := e.InvokeContract(context.Background(), "", "", nil, nil, nil, nil, nil)
+	_, err := e.InvokeContract(context.Background(), "", "", nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10457", err)
 }
 

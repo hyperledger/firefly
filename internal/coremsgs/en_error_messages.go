@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -245,7 +245,7 @@ var (
 	MsgDefRejectedIDMismatch              = ffe("FF10404", "Rejected %s '%s' - ID mismatch with existing record")
 	MsgDefRejectedLocationMismatch        = ffe("FF10405", "Rejected %s '%s' - location mismatch with existing record")
 	MsgDefRejectedSchemaFail              = ffe("FF10406", "Rejected %s '%s' - schema check: %s")
-	MsgDefRejectedConflict                = ffe("FF10407", "Rejected %s '%s' - conflicts with existing: %s")
+	MsgDefRejectedConflict                = ffe("FF10407", "Rejected %s '%s' - conflicts with existing: %s", 409)
 	MsgDefRejectedIdentityNotFound        = ffe("FF10408", "Rejected %s '%s' - identity not found: %s")
 	MsgDefRejectedWrongAuthor             = ffe("FF10409", "Rejected %s '%s' - wrong author: %s")
 	MsgDefRejectedHashMismatch            = ffe("FF10410", "Rejected %s '%s' - hash mismatch: %s != %s")
@@ -300,5 +300,6 @@ var (
 	MsgTokensRESTErrConflict              = ffe("FF10459", "Conflict from tokens service: %s", 409)
 	MsgBatchWithDataNotSupported          = ffe("FF10460", "Provided subscription '%s' enables batching and withData which is not supported", 400)
 	MsgBatchDeliveryNotSupported          = ffe("FF10461", "Batch delivery not supported by transport '%s'", 400)
-	MsgInternalServerError                = ffe("FF10462", "Internal server error: %s", 500)
+	MsgWSWrongNamespace                   = ffe("FF10462", "Websocket request received on a namespace scoped connection but the provided namespace does not match")
+	MsgInternalServerError                = ffe("FF10463", "Internal server error: %s", 500)
 )

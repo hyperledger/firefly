@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -306,5 +306,5 @@ func (s *SQLCommon) GetGroups(ctx context.Context, namespace string, filter ffap
 		}
 	}
 
-	return groups, s.QueryRes(ctx, groupsTable, tx, fop, fi), err
+	return groups, s.QueryRes(ctx, groupsTable, tx, fop, nil, fi), err
 }
