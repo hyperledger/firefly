@@ -71,8 +71,6 @@ const (
 	NamespaceMultipartyContractLocation = "location"
 	// NamespaceMultipartyContractOptions is an object of additional blockchain-specific configuration
 	NamespaceMultipartyContractOptions = "options"
-	// SubscriptionMaxHistoricalEventScanLength the maximum amount of historical events we scan for in the DB when indexing through old events against a subscription
-	SubscriptionMaxHistoricalEventScanLength = "subscription.events.maxScanLength"
 )
 
 // The following keys can be access from the root configuration.
@@ -341,6 +339,8 @@ var (
 	SubscriptionsRetryMaxDelay = ffc("subscription.retry.maxDelay")
 	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
 	SubscriptionsRetryFactor = ffc("subscription.retry.factor")
+	// SubscriptionMaxHistoricalEventScanLength the maximum amount of historical events we scan for in the DB when indexing through old events against a subscription
+	SubscriptionMaxHistoricalEventScanLength = ffc("subscription.events.maxScanLength")
 	// TransactionWriterCount
 	TransactionWriterCount = ffc("transaction.writer.count")
 	// TransactionWriterBatchTimeout
@@ -461,6 +461,7 @@ func setDefaults() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
+	viper.SetDefault(string(SubscriptionMaxHistoricalEventScanLength), 1000)
 	viper.SetDefault(string(TransactionWriterBatchMaxTransactions), 100)
 	viper.SetDefault(string(TransactionWriterBatchTimeout), "10ms")
 	viper.SetDefault(string(TransactionWriterCount), 5)

@@ -890,16 +890,11 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		return nil, err
 	}
 
-	historicalEventsScanLength := config.GetInt(coreconfig.SubscriptionMaxHistoricalEventScanLength)
-	if historicalEventsScanLength == 0 {
-		historicalEventsScanLength = 1000
-	}
-
 	config := orchestrator.Config{
 		DefaultKey:                  conf.GetString(coreconfig.NamespaceDefaultKey),
 		TokenBroadcastNames:         nm.tokenBroadcastNames,
 		KeyNormalization:            keyNormalization,
-		MaxHistoricalEventScanLimit: historicalEventsScanLength,
+		MaxHistoricalEventScanLimit: config.GetInt(coreconfig.SubscriptionsRetryFactor),
 	}
 	if multipartyEnabled.(bool) {
 		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)

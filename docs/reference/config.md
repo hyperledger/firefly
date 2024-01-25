@@ -1390,6 +1390,12 @@ nav_order: 2
 |batchSize|Default read ahead to enable for subscriptions that do not explicitly configure readahead|`int`|`50`
 |batchTimeout|Default batch timeout|`int`|`50ms`
 
+## subscription.events
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|maxScanLength|The maximum number of events a search for historical events matching a subscription will index from the database|`int`|`1000`
+
 ## subscription.retry
 
 |Key|Description|Type|Default Value|
