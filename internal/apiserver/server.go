@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -346,6 +346,13 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 
 	for _, route := range routes {
 		if ce, ok := route.Extensions.(*coreExtensions); ok {
+			if route.Name == getSubscriptionEventsFiltered.Name {
+				nhf := as.handlerFactory()
+				nhf.MaxFilterSkip = uint64(config.GetInt(coreconfig.SubscriptionMaxHistoricalEventSkipLimit))
+				r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(nhf, mgr, "", route)).
+					Methods(route.Method)
+			}
+
 			if ce.CoreJSONHandler != nil {
 				r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(hf, mgr, "", route)).
 					Methods(route.Method)

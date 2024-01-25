@@ -341,6 +341,8 @@ var (
 	SubscriptionsRetryFactor = ffc("subscription.retry.factor")
 	// SubscriptionMaxHistoricalEventScanLength the maximum amount of historical events we scan for in the DB when indexing through old events against a subscription
 	SubscriptionMaxHistoricalEventScanLength = ffc("subscription.events.maxScanLength")
+	// SubscriptionMaxHistoricalEventSkipLimit is the maximum number of events that can be skipped for historical event queries
+	SubscriptionMaxHistoricalEventSkipLimit = ffc("subscription.events.skipLimit")
 	// TransactionWriterCount
 	TransactionWriterCount = ffc("transaction.writer.count")
 	// TransactionWriterBatchTimeout
@@ -462,6 +464,7 @@ func setDefaults() {
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
 	viper.SetDefault(string(SubscriptionMaxHistoricalEventScanLength), 1000)
+	viper.SetDefault(string(SubscriptionMaxHistoricalEventSkipLimit), 0)
 	viper.SetDefault(string(TransactionWriterBatchMaxTransactions), 100)
 	viper.SetDefault(string(TransactionWriterBatchTimeout), "10ms")
 	viper.SetDefault(string(TransactionWriterCount), 5)
