@@ -894,7 +894,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		DefaultKey:                  conf.GetString(coreconfig.NamespaceDefaultKey),
 		TokenBroadcastNames:         nm.tokenBroadcastNames,
 		KeyNormalization:            keyNormalization,
-		MaxHistoricalEventScanLimit: config.GetInt(coreconfig.SubscriptionsRetryFactor),
+		MaxHistoricalEventScanLimit: config.GetInt(coreconfig.SubscriptionMaxHistoricalEventScanLength),
 	}
 	if multipartyEnabled.(bool) {
 		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)

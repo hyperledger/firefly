@@ -471,6 +471,35 @@ func TestGetHistoricalEventsForSubscription(t *testing.T) {
 	assert.Equal(t, len(retEvents), 20)
 }
 
+func TestGetHistoricalEventsForSubscriptionShouldReturnExactlyTheNumberOfRecordsSpecified(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	baseEvents, enrichedEvents := generateFakeEvents(200)
+
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return(baseEvents, nil, nil)
+	or.mem.On("EnrichEvent", mock.Anything, mock.Anything).Return(&core.EnrichedEvent{}, nil)
+	or.mem.On("FilterHistoricalEventsOnSubscription", mock.Anything, mock.Anything, mock.Anything).Return(enrichedEvents, nil)
+
+	u := fftypes.NewUUID()
+	// Subscription will match all of the the fake events
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			ID:        u,
+			Name:      "sub1",
+			Namespace: "ns1",
+		},
+	}
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+	filter.Limit(451)
+
+	retEvents, _, err := or.GetSubscriptionEventsHistorical(context.Background(), sub, filter)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, 451, len(retEvents))
+}
+
 func TestGetHistoricalEventsForSubscriptionSkipHigherThanNumberOfEvents(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)

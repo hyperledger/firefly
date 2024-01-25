@@ -176,8 +176,8 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 			return nil, nil, err
 		}
 
-		if len(filteredEvents) > int(requestedFiltering.Limit) {
-			filteredEventsMatchingSubscription = append(filteredEventsMatchingSubscription, filteredEvents[:requestedFiltering.Limit]...)
+		if (len(filteredEvents) + len(filteredEventsMatchingSubscription)) > int(requestedFiltering.Limit) {
+			filteredEventsMatchingSubscription = append(filteredEventsMatchingSubscription, filteredEvents[:int(requestedFiltering.Limit)-len(filteredEventsMatchingSubscription)]...)
 		} else {
 			filteredEventsMatchingSubscription = append(filteredEventsMatchingSubscription, filteredEvents...)
 		}
