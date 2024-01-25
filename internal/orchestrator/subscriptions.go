@@ -146,7 +146,7 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 	// Generate our own filter to go through the DB, we keep changing the skip until we can fulfill the requested skip + limit
 	var internalFilterFactory = &ffapi.QueryFields{}
 	fb := internalFilterFactory.NewFilter(ctx)
-	internalFilter := fb.And()
+	internalFilter := fb.And(filter)
 	internalLimit := 200
 	internalSkip := requestedFiltering.Skip
 	internalFilter.Limit(uint64(internalLimit))

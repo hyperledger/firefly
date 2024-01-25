@@ -509,3 +509,21 @@ func TestGetHistoricalEventsForSubscriptionProcessingMoreThanMaxNumberOfEvents(t
 	_, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter)
 	assert.NotNil(t, err)
 }
+
+func TestGetHistoricalEventsForSubscriptionGettingHistoricalEventsThrows(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	baseEvents, _ := generateFakeEvents(20)
+
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return(baseEvents, nil, nil)
+	or.mem.On("EnrichEvent", mock.Anything, mock.Anything).Return(&core.EnrichedEvent{}, nil)
+	or.mem.On("FilterHistoricalEventsOnSubscription", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("KERRR-BOOM!"))
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+	filter.Limit(20)
+
+	_, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter)
+	assert.NotNil(t, err)
+}
