@@ -669,7 +669,7 @@ func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 		},
 	}
 
-	filteredEvents := em.FilterEventsOnSubscription(events, subscription)
+	filteredEvents, _ := em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
 
@@ -678,7 +678,7 @@ func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	events[0].Event.Topic = "someTopic"
 	subscription.Filter.Topic = "someTopic"
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
 	
@@ -691,7 +691,7 @@ func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	}
 	subscription.Filter.BlockchainEvent.Listener = listenerUuid.String()
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
 
@@ -700,7 +700,7 @@ func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	events[0].BlockchainEvent.Name = "someName"
 	subscription.Filter.BlockchainEvent.Name = "someName"
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
 
@@ -711,7 +711,7 @@ func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	}
 	subscription.Filter.Transaction.Type = core.TransactionTypeContractInvoke.String()
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
 
@@ -724,7 +724,7 @@ func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	}
 	subscription.Filter.Message.Tag = "someTag"
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
 
@@ -735,7 +735,7 @@ func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	events[0].Message.Header.Group = group
 	subscription.Filter.Message.Group = group.String()
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
 
@@ -746,7 +746,7 @@ func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	}
 	subscription.Filter.Message.Author = "someAuthor"
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
 }
@@ -771,18 +771,16 @@ func TestEventFilterOnSubscriptionFailsWithBadRegex(t *testing.T) {
 		},
 	}
 
-	filteredEvents := em.FilterEventsOnSubscription(events, subscription)
-	assert.NotNil(t, filteredEvents)
-	assert.Equal(t, 0, len(filteredEvents))
+	_, err := em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
 
 	events[0].Event.Type = ""
 	subscription.Filter.Events = ""
 	events[0].Event.Topic = "someTopic"
 	subscription.Filter.Topic = regexThatFailsToCompile
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
-	assert.NotNil(t, filteredEvents)
-	assert.Equal(t, 0, len(filteredEvents))
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
 
 	listenerUuid := fftypes.NewUUID()
 
@@ -793,18 +791,16 @@ func TestEventFilterOnSubscriptionFailsWithBadRegex(t *testing.T) {
 	}
 	subscription.Filter.BlockchainEvent.Listener = regexThatFailsToCompile
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
-	assert.NotNil(t, filteredEvents)
-	assert.Equal(t, 0, len(filteredEvents))
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
 
 	events[0].BlockchainEvent.Listener = nil
 	subscription.Filter.BlockchainEvent.Listener = ""
 	events[0].BlockchainEvent.Name = "someName"
 	subscription.Filter.BlockchainEvent.Name = regexThatFailsToCompile
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
-	assert.NotNil(t, filteredEvents)
-	assert.Equal(t, 0, len(filteredEvents))
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
 
 	events[0].BlockchainEvent.Name = ""
 	subscription.Filter.BlockchainEvent.Name = ""
@@ -813,9 +809,8 @@ func TestEventFilterOnSubscriptionFailsWithBadRegex(t *testing.T) {
 	}
 	subscription.Filter.Transaction.Type = regexThatFailsToCompile
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
-	assert.NotNil(t, filteredEvents)
-	assert.Equal(t, 0, len(filteredEvents))
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
 
 	events[0].Transaction.Type = ""
 	subscription.Filter.Transaction.Type = ""
@@ -826,9 +821,8 @@ func TestEventFilterOnSubscriptionFailsWithBadRegex(t *testing.T) {
 	}
 	subscription.Filter.Message.Tag = regexThatFailsToCompile
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
-	assert.NotNil(t, filteredEvents)
-	assert.Equal(t, 0, len(filteredEvents))
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
 
 	group := &fftypes.Bytes32{}
 
@@ -837,9 +831,8 @@ func TestEventFilterOnSubscriptionFailsWithBadRegex(t *testing.T) {
 	events[0].Message.Header.Group = group
 	subscription.Filter.Message.Group = regexThatFailsToCompile
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
-	assert.NotNil(t, filteredEvents)
-	assert.Equal(t, 0, len(filteredEvents))
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
 
 	events[0].Message.Header.Group = nil
 	subscription.Filter.Message.Group = ""
@@ -848,7 +841,6 @@ func TestEventFilterOnSubscriptionFailsWithBadRegex(t *testing.T) {
 	}
 	subscription.Filter.Message.Author = regexThatFailsToCompile
 
-	filteredEvents = em.FilterEventsOnSubscription(events, subscription)
-	assert.NotNil(t, filteredEvents)
-	assert.Equal(t, 0, len(filteredEvents))
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
 }

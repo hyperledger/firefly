@@ -209,77 +209,9 @@ func (ed *eventDispatcher) enrichEvents(events []core.LocallySequenced) ([]*core
 func (ed *eventDispatcher) filterEvents(candidates []*core.EventDelivery) []*core.EventDelivery {
 	matchingEvents := make([]*core.EventDelivery, 0, len(candidates))
 	for _, event := range candidates {
-		filter := ed.subscription
-		if filter.eventMatcher != nil && !filter.eventMatcher.MatchString(string(event.Type)) {
-			continue
+		if ed.subscription.MatchesEvent(&event.EnrichedEvent) {
+			matchingEvents = append(matchingEvents, event)
 		}
-
-		msg := event.Message
-		tx := event.Transaction
-		be := event.BlockchainEvent
-		tag := ""
-		topic := event.Topic
-		group := ""
-		author := ""
-		txType := ""
-		beName := ""
-		beListener := ""
-
-		if msg != nil {
-			tag = msg.Header.Tag
-			author = msg.Header.Author
-			if msg.Header.Group != nil {
-				group = msg.Header.Group.String()
-			}
-		}
-
-		if tx != nil {
-			txType = tx.Type.String()
-		}
-
-		if be != nil {
-			beName = be.Name
-			beListener = be.Listener.String()
-		}
-
-		if filter.topicFilter != nil {
-			topicsMatch := false
-			if filter.topicFilter.MatchString(topic) {
-				topicsMatch = true
-			}
-			if !topicsMatch {
-				continue
-			}
-		}
-
-		if filter.messageFilter != nil {
-			if filter.messageFilter.tagFilter != nil && !filter.messageFilter.tagFilter.MatchString(tag) {
-				continue
-			}
-			if filter.messageFilter.authorFilter != nil && !filter.messageFilter.authorFilter.MatchString(author) {
-				continue
-			}
-			if filter.messageFilter.groupFilter != nil && !filter.messageFilter.groupFilter.MatchString(group) {
-				continue
-			}
-		}
-
-		if filter.transactionFilter != nil {
-			if filter.transactionFilter.typeFilter != nil && !filter.transactionFilter.typeFilter.MatchString(txType) {
-				continue
-			}
-		}
-
-		if filter.blockchainFilter != nil {
-			if filter.blockchainFilter.nameFilter != nil && !filter.blockchainFilter.nameFilter.MatchString(beName) {
-				continue
-			}
-			if filter.blockchainFilter.listenerFilter != nil && !filter.blockchainFilter.listenerFilter.MatchString(beListener) {
-				continue
-			}
-		}
-
-		matchingEvents = append(matchingEvents, event)
 	}
 	return matchingEvents
 }

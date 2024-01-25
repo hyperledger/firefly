@@ -182,10 +182,11 @@ type Plugins struct {
 }
 
 type Config struct {
-	DefaultKey          string
-	KeyNormalization    string
-	Multiparty          multiparty.Config
-	TokenBroadcastNames map[string]string
+	DefaultKey                  string
+	KeyNormalization            string
+	Multiparty                  multiparty.Config
+	TokenBroadcastNames         map[string]string
+	MaxHistoricalEventScanLimit int
 }
 
 type orchestrator struct {

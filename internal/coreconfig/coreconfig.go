@@ -71,6 +71,8 @@ const (
 	NamespaceMultipartyContractLocation = "location"
 	// NamespaceMultipartyContractOptions is an object of additional blockchain-specific configuration
 	NamespaceMultipartyContractOptions = "options"
+	// SubscriptionMaxHistoricalEventScanLength the maximum amount of historical events we scan for in the DB when indexing through old events against a subscription
+	SubscriptionMaxHistoricalEventScanLength = "subscription.events.maxScanLength"
 )
 
 // The following keys can be access from the root configuration.

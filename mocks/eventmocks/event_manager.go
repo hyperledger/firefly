@@ -169,24 +169,34 @@ func (_m *EventManager) EnrichEvent(ctx context.Context, event *core.Event) (*co
 	return r0, r1
 }
 
-// FilterEventsOnSubscription provides a mock function with given fields: _a0, subscription
-func (_m *EventManager) FilterEventsOnSubscription(_a0 []*core.EnrichedEvent, subscription *core.Subscription) []*core.EnrichedEvent {
-	ret := _m.Called(_a0, subscription)
+// FilterHistoricalEventsOnSubscription provides a mock function with given fields: ctx, _a1, sub
+func (_m *EventManager) FilterHistoricalEventsOnSubscription(ctx context.Context, _a1 []*core.EnrichedEvent, sub *core.Subscription) ([]*core.EnrichedEvent, error) {
+	ret := _m.Called(ctx, _a1, sub)
 
 	if len(ret) == 0 {
-		panic("no return value specified for FilterEventsOnSubscription")
+		panic("no return value specified for FilterHistoricalEventsOnSubscription")
 	}
 
 	var r0 []*core.EnrichedEvent
-	if rf, ok := ret.Get(0).(func([]*core.EnrichedEvent, *core.Subscription) []*core.EnrichedEvent); ok {
-		r0 = rf(_a0, subscription)
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.EnrichedEvent, *core.Subscription) ([]*core.EnrichedEvent, error)); ok {
+		return rf(ctx, _a1, sub)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.EnrichedEvent, *core.Subscription) []*core.EnrichedEvent); ok {
+		r0 = rf(ctx, _a1, sub)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.EnrichedEvent)
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, []*core.EnrichedEvent, *core.Subscription) error); ok {
+		r1 = rf(ctx, _a1, sub)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GetPlugins provides a mock function with given fields:

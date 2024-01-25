@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"regexp"
 	"strconv"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -62,7 +61,7 @@ type EventManager interface {
 	DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error)
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
 	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
-	FilterEventsOnSubscription(events []*core.EnrichedEvent, subscription *core.Subscription) []*core.EnrichedEvent
+	FilterHistoricalEventsOnSubscription(ctx context.Context, events []*core.EnrichedEvent, sub *core.Subscription) ([]*core.EnrichedEvent, error)
 	QueueBatchRewind(batchID *fftypes.UUID)
 	ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *events.Capabilities, error)
 	Start() error
@@ -211,6 +210,10 @@ func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 	return em.subManager.deletedSubscriptions
 }
 
+func (em *eventManager) ParseSubscriptionDef(ctx context.Context, sub *core.Subscription) (*subscription, error) {
+	return em.subManager.parseSubscriptionDef(ctx, sub)
+}
+
 func (em *eventManager) ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *events.Capabilities, error) {
 	if transportName == "" {
 		transportName = em.defaultTransport
@@ -306,103 +309,18 @@ func (em *eventManager) QueueBatchRewind(batchID *fftypes.UUID) {
 	em.aggregator.queueBatchRewind(batchID)
 }
 
-func (em *eventManager) FilterEventsOnSubscription(events []*core.EnrichedEvent, subscription *core.Subscription) []*core.EnrichedEvent {
-	matchingEvents := make([]*core.EnrichedEvent, 0, len(events))
-	for _, event := range events {
-		filter := subscription.Filter
-
-		if filter.Events != "" {
-			matched, err := regexp.MatchString(filter.Events, string(event.Type))
-
-			if !matched || err != nil {
-				continue
-			}
-		}
-
-		msg := event.Message
-		tx := event.Transaction
-		be := event.BlockchainEvent
-		tag := ""
-		topic := event.Topic
-		group := ""
-		author := ""
-		txType := ""
-		beName := ""
-		beListener := ""
-
-		if msg != nil {
-			tag = msg.Header.Tag
-			author = msg.Header.Author
-			if msg.Header.Group != nil {
-				group = msg.Header.Group.String()
-			}
-		}
-
-		if tx != nil {
-			txType = tx.Type.String()
-		}
-
-		if be != nil {
-			beName = be.Name
-			beListener = be.Listener.String()
-		}
-
-		if filter.Topic != "" {
-			matched, err := regexp.MatchString(filter.Topic, topic)
-			if !matched || err != nil {
-				continue
-			}
-		}
-
-		if filter.Message.Tag != "" {
-			matched, err := regexp.MatchString(filter.Message.Tag, tag)
-
-			if !matched || err != nil {
-				continue
-			}
-		}
-
-		if filter.Message.Author != "" {
-			matched, err := regexp.MatchString(filter.Message.Author, author)
-
-			if !matched || err != nil {
-				continue
-			}
-		}
-
-		if filter.Message.Group != "" {
-			matched, err := regexp.MatchString(filter.Message.Group, group)
-
-			if !matched || err != nil {
-				continue
-			}
-		}
-
-		if filter.Transaction.Type != "" {
-			matched, err := regexp.MatchString(filter.Transaction.Type, txType)
-
-			if !matched || err != nil {
-				continue
-			}
-		}
-
-		if filter.BlockchainEvent.Name != "" {
-			matched, err := regexp.MatchString(filter.BlockchainEvent.Name, beName)
-
-			if !matched || err != nil {
-				continue
-			}
-		}
-
-		if filter.BlockchainEvent.Listener != "" {
-			matched, err := regexp.MatchString(filter.BlockchainEvent.Listener, beListener)
-
-			if !matched || err != nil {
-				continue
-			}
-		}
-
-		matchingEvents = append(matchingEvents, event)
+func (em *eventManager) FilterHistoricalEventsOnSubscription(ctx context.Context, events []*core.EnrichedEvent, sub *core.Subscription) ([]*core.EnrichedEvent, error) {
+	subscriptionDef, err := em.subManager.parseSubscriptionDef(ctx, sub)
+	if err != nil {
+		return nil, err
 	}
-	return matchingEvents
+
+	matchingEvents := []*core.EnrichedEvent{}
+	for _, event := range events {
+		if subscriptionDef.MatchesEvent(event) {
+			matchingEvents = append(matchingEvents, event)
+		}
+	}
+
+	return matchingEvents, nil
 }

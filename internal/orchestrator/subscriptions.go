@@ -136,59 +136,57 @@ func (or *orchestrator) GetSubscriptionByIDWithStatus(ctx context.Context, id st
 }
 
 func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, subscription *core.Subscription, filter ffapi.AndFilter) ([]*core.EnrichedEvent, *ffapi.FilterResult, error) {
-
-	// Internally we need to know the limit/count from the inbound filter
-	inboundFilterOptions, err := filter.Finalize()
+	requestedFiltering, err := filter.Finalize()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var ssFilters = &ffapi.QueryFields{}
-	fb := ssFilters.NewFilter(ctx)
-	ssFilter := fb.And()
+	finalRequestedCursorPosition := requestedFiltering.Skip + requestedFiltering.Limit
 
-	// This references the final offset on the FILTERED list
-	finalDesiredOffset := inboundFilterOptions.Skip + inboundFilterOptions.Limit
-	var subscriptionFilteredEvents []*core.EnrichedEvent
-
+	// Generate our own filter to go through the DB, we keep changing the skip until we can fulfill the requested skip + limit
+	var internalFilterFactory = &ffapi.QueryFields{}
+	fb := internalFilterFactory.NewFilter(ctx)
+	internalFilter := fb.And()
 	internalLimit := 200
-	internalSkip := 0
-	ssFilter.Limit(uint64(internalLimit))
+	internalSkip := requestedFiltering.Skip
+	internalFilter.Limit(uint64(internalLimit))
 
-	for len(subscriptionFilteredEvents) < int(finalDesiredOffset) {
-		ssFilter.Skip(uint64(internalSkip))
+	filteredEventsMatchingSubscription := []*core.EnrichedEvent{}
 
-		allEvents, _, err := or.GetEventsWithReferences(ctx, ssFilter)
+	for (internalSkip - requestedFiltering.Skip) < finalRequestedCursorPosition {
+		internalFilter.Skip(internalSkip)
+
+		// Enforce a maximum number of unfiltered events to index
+		currentCursorPosition := requestedFiltering.Skip + internalSkip
+		if int(currentCursorPosition-requestedFiltering.Skip) >= or.config.MaxHistoricalEventScanLimit {
+			return nil, nil, i18n.NewError(ctx, coremsgs.MsgMaxSubscriptionEventScanLimitBreached, len(filteredEventsMatchingSubscription), internalSkip)
+		}
+
+		unfilteredEvents, _, err := or.GetEventsWithReferences(ctx, internalFilter)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		if len(allEvents) == 0 {
+		if len(unfilteredEvents) == 0 {
 			break
 		}
 
-		filteredEvents := or.events.FilterEventsOnSubscription(allEvents, subscription)
-
-		remainingEventCount := int(finalDesiredOffset) - len(subscriptionFilteredEvents)
-		if len(filteredEvents)+len(subscriptionFilteredEvents) > int(finalDesiredOffset) {
-			subscriptionFilteredEvents = append(subscriptionFilteredEvents, filteredEvents[0:remainingEventCount]...)
-		} else {
-			subscriptionFilteredEvents = append(subscriptionFilteredEvents, filteredEvents...)
+		filteredEvents, err := or.events.FilterHistoricalEventsOnSubscription(ctx, unfilteredEvents, subscription)
+		if err != nil {
+			return nil, nil, err
 		}
 
-		internalSkip += internalLimit
+		if len(filteredEvents) > int(requestedFiltering.Limit) {
+			filteredEventsMatchingSubscription = append(filteredEventsMatchingSubscription, filteredEvents[:requestedFiltering.Limit]...)
+		} else {
+			filteredEventsMatchingSubscription = append(filteredEventsMatchingSubscription, filteredEvents...)
+		}
+
+		internalSkip += uint64(internalLimit)
 	}
 
-	var zero int64 = 0
-	if int(inboundFilterOptions.Skip) > len(subscriptionFilteredEvents) {
-		return []*core.EnrichedEvent{}, &ffapi.FilterResult{
-			TotalCount: &zero,
-		}, nil
-	}
-	subscriptionFilteredEvents = subscriptionFilteredEvents[inboundFilterOptions.Skip:]
-
-	filterResultLength := int64(len(subscriptionFilteredEvents))
-	return subscriptionFilteredEvents, &ffapi.FilterResult{
+	filterResultLength := int64(len(filteredEventsMatchingSubscription))
+	return filteredEventsMatchingSubscription, &ffapi.FilterResult{
 		TotalCount: &filterResultLength,
 	}, nil
 }
