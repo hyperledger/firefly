@@ -23,8 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
@@ -40,6 +39,7 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/orchestrator"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -174,6 +174,12 @@ func (as *apiServer) baseSwaggerGenOptions() ffapi.SwaggerGenOptions {
 		APIDefaultFilterLimit:     config.GetString(coreconfig.APIDefaultFilterLimit),
 		APIMaxFilterLimit:         config.GetUint(coreconfig.APIMaxFilterLimit),
 		APIMaxFilterSkip:          config.GetUint(coreconfig.APIMaxFilterSkip),
+		RouteCustomizations: func(ctx context.Context, sg *ffapi.SwaggerGen, route *ffapi.Route, op *openapi3.Operation) {
+			if route.Name == getSubscriptionEventsFiltered.Name {
+				param := op.Parameters.GetByInAndName("query", "skip")
+				param.Description = fmt.Sprintf("The number of records to skip (max: %d)", config.GetInt(coreconfig.SubscriptionMaxHistoricalEventSkipLimit))
+			}
+		},
 	}
 }
 

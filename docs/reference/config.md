@@ -1395,7 +1395,7 @@ nav_order: 2
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |maxScanLength|The maximum number of events a search for historical events matching a subscription will index from the database|`int`|`1000`
-|skipLimit|The maximum number of events a search for historical events can skip when indexing events|`int`|`0`
+|skipLimit|The maximum number of events a search for historical events can skip when indexing events|`int`|`2147483647`
 
 ## subscription.retry
 

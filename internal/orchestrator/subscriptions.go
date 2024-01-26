@@ -157,8 +157,8 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 		internalFilter.Skip(internalSkip)
 
 		// Enforce a maximum number of unfiltered events to index
-		currentCursorPosition := requestedFiltering.Skip + internalSkip
-		if int(currentCursorPosition-requestedFiltering.Skip) >= or.config.MaxHistoricalEventScanLimit {
+		recordsRead := internalSkip - requestedFiltering.Skip
+		if int(recordsRead-requestedFiltering.Skip) >= or.config.MaxHistoricalEventScanLimit {
 			return nil, nil, i18n.NewError(ctx, coremsgs.MsgMaxSubscriptionEventScanLimitBreached, len(filteredEventsMatchingSubscription), internalSkip)
 		}
 

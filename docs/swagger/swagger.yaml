@@ -38529,8 +38529,7 @@ paths:
         name: descending
         schema:
           type: string
-      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
-          operations'
+      - description: 'The number of records to skip (max: 2147483647)'
         in: query
         name: skip
         schema:

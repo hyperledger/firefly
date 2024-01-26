@@ -17,6 +17,8 @@
 package coreconfig
 
 import (
+	"math"
+
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/spf13/viper"
@@ -464,7 +466,7 @@ func setDefaults() {
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
 	viper.SetDefault(string(SubscriptionMaxHistoricalEventScanLength), 1000)
-	viper.SetDefault(string(SubscriptionMaxHistoricalEventSkipLimit), 0)
+	viper.SetDefault(string(SubscriptionMaxHistoricalEventSkipLimit), math.MaxInt32) // Essentially no limit
 	viper.SetDefault(string(TransactionWriterBatchMaxTransactions), 100)
 	viper.SetDefault(string(TransactionWriterBatchTimeout), "10ms")
 	viper.SetDefault(string(TransactionWriterCount), 5)
