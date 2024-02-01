@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -448,6 +448,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, eventData fftypes
 
 	tokenType := eventData.GetString("type")
 	poolLocator := eventData.GetString("poolLocator")
+	alternateLocators := eventData.GetStringArray("alternateLocators")
 
 	if tokenType == "" || poolLocator == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", eventData)
@@ -483,10 +484,11 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, eventData fftypes
 	}
 
 	pool := &tokens.TokenPool{
-		ID:          poolID,
-		Type:        fftypes.FFEnum(tokenType),
-		PoolLocator: poolLocator,
-		PluginData:  poolData,
+		ID:                poolID,
+		Type:              fftypes.FFEnum(tokenType),
+		PoolLocator:       poolLocator,
+		AlternateLocators: alternateLocators,
+		PluginData:        poolData,
 		TX: core.TransactionRef{
 			ID:   txData.TX,
 			Type: txType,
