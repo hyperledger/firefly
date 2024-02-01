@@ -37,6 +37,14 @@ RUN apk add jq \
     && cd ../build/contracts \
     && mv combined.json Firefly.json
 
+FROM alpine:3.19 AS SBOM
+WORKDIR /
+ADD . /SBOM
+RUN apk add --no-cache curl 
+RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.48.3
+RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
+RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --exit-code 1
+
 FROM $BASE_TAG
 ARG UI_TAG
 ARG UI_RELEASE
@@ -52,5 +60,6 @@ COPY --from=fabric-builder /firefly/smart_contracts/fabric/firefly-go/firefly_fa
 ENV UI_RELEASE https://github.com/hyperledger/firefly-ui/releases/download/$UI_TAG/$UI_RELEASE.tgz
 RUN mkdir /firefly/frontend \
     && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
+COPY --from=SBOM /sbom.spdx.json /sbom.spdx.json
 RUN ln -s /firefly/firefly /usr/bin/firefly
 ENTRYPOINT [ "firefly" ]
