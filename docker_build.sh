@@ -16,9 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
 echo $@
 
- if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
+if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
 
 FIREFLY_BUILDER_TAG=$(cat manifest.json | jq -r '.build."firefly-builder".image')
 FABRIC_BUILDER_TAG=$(cat manifest.json | jq -r '.build."fabric-builder".image')
