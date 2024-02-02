@@ -2,8 +2,6 @@ module github.com/hyperledger/firefly/chaincode-go
 
 go 1.21
 
-toolchain go1.21.6
-
 require (
 	github.com/golang/protobuf v1.5.3
 	github.com/hyperledger/fabric-chaincode-go v0.0.0-20240124143825-7dec3c7e7d45
