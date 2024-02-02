@@ -201,7 +201,9 @@ We will use the FFI JSON constructed above and `POST` that to the `/contracts/in
 
 ### Request
 
-`POST` `http://localhost:5000/api/v1/namespaces/default/contracts/interfaces`
+`POST` `http://localhost:5000/api/v1/namespaces/default/contracts/interfaces?publish=true`
+
+> *NOTE*: Without passing the query parameter `publish=true` when the interface is created, it will initially be unpublished and not broadcasted to other members of the network (if configured in multi-party). To publish the interface, a subsequent API call would need to be made to `/contracts/interfaces/{name}/{version}/publish`
 
 ```json
 {
@@ -387,7 +389,9 @@ We need to copy the `id` field we got in the response from the previous step to 
 
 ### Request
 
-`POST` `http://localhost:5000/api/v1/namespaces/default/apis`
+`POST` `http://localhost:5000/api/v1/namespaces/default/apis?publish=true`
+
+> *NOTE*: Without passing the query parameter `publish=true` when the API is created, it will initially be unpublished and not broadcasted to other members of the network (if configured in multi-party). To publish the API, a subsequent API call would need to be made to `/apis/{apiName}/publish`
 
 ```json
 {
