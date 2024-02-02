@@ -9,6 +9,18 @@ has_children: true
 
 [Full release notes](https://github.com/hyperledger/firefly/releases)
 
+## [v1.3.0 - February XX, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.1.0)
+
+[Migration guide](1.3_migration_guide.md)
+
+What's New:
+
+- Namespaces now have individual event streams
+- Contract listeners now support having multiple filters
+- Contract interfaces, contract APIs, and token pools can now be seperately defined and published
+- Support for batching events when delivering over websockets
+- Lots of bug fixes and miscellaneous enhancements
+
 ## [v1.2.0 - February 6, 2023](https://github.com/hyperledger/firefly/releases/tag/v1.2.0)
 
 [Migration guide](1.2_migration_guide.md)
