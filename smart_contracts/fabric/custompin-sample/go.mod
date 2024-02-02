@@ -2,8 +2,6 @@ module github.com/hyperledger/firefly/custompin_sample
 
 go 1.21
 
-toolchain go1.21.6
-
 require (
 	github.com/hyperledger/fabric-chaincode-go v0.0.0-20240124143825-7dec3c7e7d45
 	github.com/hyperledger/fabric-contract-api-go v1.2.2
