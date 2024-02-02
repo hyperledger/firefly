@@ -15,9 +15,8 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-
-        # This is a regex from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-        # It is used in this GitHub action in a couple places to find semver named directories (with a 'v' on the front)
+      # This is a regex from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+      # It is used in this GitHub action in a couple places to find semver named directories (with a 'v' on the front)
       - name: Set SEMVER_REGEX
         run: echo "SEMVER_REGEX='^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'" >> $GITHUB_ENV
 
@@ -25,7 +24,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      
+
       # If this is a new release, get the previous versions of the docs to build the full list of versions
       - name: Checkout the gh-pages branch
         if: github.event_name == 'release'
@@ -37,10 +36,10 @@ jobs:
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.0'
+          ruby-version: "3.0"
 
       - name: Install bundler
-        run: gem install bundler:1.17.2
+        run: gem install bundler:2.4.10
 
       # If this was a merge to main, set the version to "head"
       - name: Set version env var to 'head'
@@ -110,7 +109,7 @@ jobs:
         if: github.event_name == 'release'
         working-directory: docs
         run: bundle exec jekyll build --baseurl /firefly
-      
+
       - name: Deploy docs (latest)
         if: github.event_name == 'release'
         uses: peaceiris/actions-gh-pages@v3
@@ -118,4 +117,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: ./docs/_site
-
