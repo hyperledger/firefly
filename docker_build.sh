@@ -19,8 +19,6 @@
 set -e
 echo $@
 
-if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
-
  if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
 
 FIREFLY_BUILDER_TAG=$(cat manifest.json | jq -r '.build."firefly-builder".image')
