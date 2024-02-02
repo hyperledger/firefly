@@ -98,7 +98,7 @@ func (em *eventManager) loadExisting(ctx context.Context, pool *tokens.TokenPool
 			}
 			if existingPool != nil {
 				log.L(ctx).Debugf("Updating locator for existing pool ns=%s connector=%s oldLocator=%s newLocator=%s", em.namespace.Name, pool.Connector, existingPool.Locator, pool.PoolLocator)
-				existingPool.Locator = alternateLocator
+				existingPool.Locator = pool.PoolLocator
 				if err := em.database.UpsertTokenPool(ctx, existingPool, database.UpsertOptimizationExisting); err != nil {
 					return existingPool, err
 				}
