@@ -87,21 +87,29 @@ func (em *eventManager) getPoolByIDOrLocator(ctx context.Context, id *fftypes.UU
 }
 
 func (em *eventManager) loadExisting(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
-	if existingPool, err = em.getPoolByIDOrLocator(ctx, pool.ID, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
-		log.L(ctx).Debugf("Pool not found with ns=%s connector=%s locator=%s (err=%v)", em.namespace.Name, pool.Connector, pool.PoolLocator, err)
+	if existingPool, err = em.getPoolByIDOrLocator(ctx, pool.ID, pool.Connector, pool.PoolLocator); err != nil || existingPool != nil {
 		return existingPool, err
 	}
 
-	for _, alternateLocator := range pool.AlternateLocators {
-		if existingPool, err = em.getPoolByIDOrLocator(ctx, pool.ID, pool.Connector, alternateLocator); err != nil {
-			return nil, err
+	if existingPool == nil {
+		for _, alternateLocator := range pool.AlternateLocators {
+			if existingPool, err = em.getPoolByIDOrLocator(ctx, pool.ID, pool.Connector, alternateLocator); err != nil {
+				return existingPool, err
+			}
+			if existingPool != nil {
+				log.L(ctx).Debugf("Updating locator for existing pool ns=%s connector=%s oldLocator=%s newLocator=%s", em.namespace.Name, pool.Connector, existingPool.Locator, pool.PoolLocator)
+				existingPool.Locator = alternateLocator
+				if err := em.database.UpsertTokenPool(ctx, existingPool, database.UpsertOptimizationExisting); err != nil {
+					return existingPool, err
+				}
+				break
+			}
 		}
-		if existingPool != nil {
-			log.L(ctx).Debugf("Updating locator for existing pool ns=%s connector=%s oldLocator=%s newLocator=%s", em.namespace.Name, pool.Connector, existingPool.Locator, pool.PoolLocator)
-			existingPool.Locator = alternateLocator
-			err := em.database.UpsertTokenPool(ctx, existingPool, database.UpsertOptimizationExisting)
-			return existingPool, err
-		}
+	}
+
+	if existingPool == nil {
+		log.L(ctx).Debugf("Pool not found with ns=%s connector=%s locator=%s (err=%v)", em.namespace.Name, pool.Connector, pool.PoolLocator, err)
+		return existingPool, err
 	}
 
 	if err = addPoolDetailsFromPlugin(existingPool, pool); err != nil {
