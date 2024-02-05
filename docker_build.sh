@@ -16,9 +16,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+handle_error() {
+    docker buildx rm firefly --keep-state
+    exit 1
+}
+trap handle_error ERR
+
 echo $@
 
- if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
+if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
 
 FIREFLY_BUILDER_TAG=$(cat manifest.json | jq -r '.build."firefly-builder".image')
 FABRIC_BUILDER_TAG=$(cat manifest.json | jq -r '.build."fabric-builder".image')
@@ -52,4 +58,3 @@ docker buildx build \
     --build-arg GIT_REF=$GIT_REF \
     $@ \
     .
-docker buildx rm firefly --keep-state
