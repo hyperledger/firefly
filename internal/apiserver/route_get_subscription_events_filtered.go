@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -32,6 +33,10 @@ var getSubscriptionEventsFiltered = &ffapi.Route{
 	PathParams: []*ffapi.PathParam{
 		{Name: "subid", Description: coremsgs.APIParamsSubscriptionID},
 	},
+	QueryParams: []*ffapi.QueryParam{
+		{Name: "startsequence", IsBool: false, Description: coremsgs.APIFetchDataDesc},
+		{Name: "endsequence", IsBool: false, Description: coremsgs.APIFetchDataDesc},
+	},
 	FilterFactory:   database.EventQueryFactory,
 	Description:     coremsgs.APIEndpointsGetSubscriptionEventsFiltered,
 	JSONInputValue:  nil,
@@ -40,7 +45,18 @@ var getSubscriptionEventsFiltered = &ffapi.Route{
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			subscription, _ := cr.or.GetSubscriptionByID(cr.ctx, r.PP["subid"])
-			return r.FilterResult(cr.or.GetSubscriptionEventsHistorical(cr.ctx, subscription, r.Filter))
+
+			startSeq, err := strconv.Atoi(r.QP["startsequence"])
+			if err != nil {
+				return nil, err
+			}
+
+			endSeq, err := strconv.Atoi(r.QP["endsequence"])
+			if err != nil {
+				return nil, err
+			}
+
+			return r.FilterResult(cr.or.GetSubscriptionEventsHistorical(cr.ctx, subscription, r.Filter, startSeq, endSeq))
 		},
 	},
 }

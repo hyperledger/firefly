@@ -1347,9 +1347,9 @@ func (_m *Orchestrator) GetSubscriptionByIDWithStatus(ctx context.Context, id st
 	return r0, r1
 }
 
-// GetSubscriptionEventsHistorical provides a mock function with given fields: ctx, subscription, filter
-func (_m *Orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, subscription *core.Subscription, filter ffapi.AndFilter) ([]*core.EnrichedEvent, *ffapi.FilterResult, error) {
-	ret := _m.Called(ctx, subscription, filter)
+// GetSubscriptionEventsHistorical provides a mock function with given fields: ctx, subscription, filter, startSequence, endSequence
+func (_m *Orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, subscription *core.Subscription, filter ffapi.AndFilter, startSequence int, endSequence int) ([]*core.EnrichedEvent, *ffapi.FilterResult, error) {
+	ret := _m.Called(ctx, subscription, filter, startSequence, endSequence)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetSubscriptionEventsHistorical")
@@ -1358,27 +1358,27 @@ func (_m *Orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 	var r0 []*core.EnrichedEvent
 	var r1 *ffapi.FilterResult
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Subscription, ffapi.AndFilter) ([]*core.EnrichedEvent, *ffapi.FilterResult, error)); ok {
-		return rf(ctx, subscription, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Subscription, ffapi.AndFilter, int, int) ([]*core.EnrichedEvent, *ffapi.FilterResult, error)); ok {
+		return rf(ctx, subscription, filter, startSequence, endSequence)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Subscription, ffapi.AndFilter) []*core.EnrichedEvent); ok {
-		r0 = rf(ctx, subscription, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Subscription, ffapi.AndFilter, int, int) []*core.EnrichedEvent); ok {
+		r0 = rf(ctx, subscription, filter, startSequence, endSequence)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.EnrichedEvent)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *core.Subscription, ffapi.AndFilter) *ffapi.FilterResult); ok {
-		r1 = rf(ctx, subscription, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Subscription, ffapi.AndFilter, int, int) *ffapi.FilterResult); ok {
+		r1 = rf(ctx, subscription, filter, startSequence, endSequence)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*ffapi.FilterResult)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, *core.Subscription, ffapi.AndFilter) error); ok {
-		r2 = rf(ctx, subscription, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, *core.Subscription, ffapi.AndFilter, int, int) error); ok {
+		r2 = rf(ctx, subscription, filter, startSequence, endSequence)
 	} else {
 		r2 = ret.Error(2)
 	}

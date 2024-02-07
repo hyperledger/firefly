@@ -81,7 +81,7 @@ type Orchestrator interface {
 	GetSubscriptions(ctx context.Context, filter ffapi.AndFilter) ([]*core.Subscription, *ffapi.FilterResult, error)
 	GetSubscriptionByID(ctx context.Context, id string) (*core.Subscription, error)
 	GetSubscriptionByIDWithStatus(ctx context.Context, id string) (*core.SubscriptionWithStatus, error)
-	GetSubscriptionEventsHistorical(ctx context.Context, subscription *core.Subscription, filter ffapi.AndFilter) ([]*core.EnrichedEvent, *ffapi.FilterResult, error)
+	GetSubscriptionEventsHistorical(ctx context.Context, subscription *core.Subscription, filter ffapi.AndFilter, startSequence int, endSequence int) ([]*core.EnrichedEvent, *ffapi.FilterResult, error)
 	CreateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
 	CreateUpdateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
 	DeleteSubscription(ctx context.Context, id string) error

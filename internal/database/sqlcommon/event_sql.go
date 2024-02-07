@@ -196,12 +196,9 @@ func (s *SQLCommon) GetEventByID(ctx context.Context, namespace string, id *ffty
 	return event, nil
 }
 
-func (s *SQLCommon) GetEvents(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Event, res *ffapi.FilterResult, err error) {
-
-	cols := append([]string{}, eventColumns...)
-	cols = append(cols, s.SequenceColumn())
+func (s *SQLCommon) getEventsGeneric(ctx context.Context, namespace string, sql sq.SelectBuilder, filter ffapi.Filter) (message []*core.Event, res *ffapi.FilterResult, err error) {
 	query, fop, fi, err := s.FilterSelect(
-		ctx, "", sq.Select(cols...).From(eventsTable),
+		ctx, "", sql,
 		filter, eventFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
@@ -223,5 +220,27 @@ func (s *SQLCommon) GetEvents(ctx context.Context, namespace string, filter ffap
 	}
 
 	return events, s.QueryRes(ctx, eventsTable, tx, fop, nil, fi), err
+}
+
+func (s *SQLCommon) GetEvents(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Event, res *ffapi.FilterResult, err error) {
+
+	cols := append([]string{}, eventColumns...)
+	cols = append(cols, s.SequenceColumn())
+
+	query := sq.Select(cols...).From(eventsTable)
+
+	return s.getEventsGeneric(ctx, namespace, query, filter)
+
+}
+
+func (s *SQLCommon) GetEventsInSequenceRange(ctx context.Context, namespace string, filter ffapi.Filter, startSequence int, endSequence int) (message []*core.Event, res *ffapi.FilterResult, err error) {
+	filter.Limit(0) // We calculate the limit below using the sequence IDs
+
+	cols := append([]string{}, eventColumns...)
+	cols = append(cols, s.SequenceColumn())
+
+	query := sq.Select(cols...).FromSelect(sq.Select(cols...).From(eventsTable).OrderBy("seq").Offset(uint64(startSequence)).Limit(uint64(endSequence-startSequence)), "raw_events")
+
+	return s.getEventsGeneric(ctx, namespace, query, filter)
 
 }

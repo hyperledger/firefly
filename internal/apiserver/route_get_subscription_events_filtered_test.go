@@ -28,13 +28,13 @@ import (
 func TestGetSubscriptionEventsFiltered(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/subscriptions/abcd12345/events", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/subscriptions/abcd12345/events?startsequence=100&endsequence=200", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
 	o.On("GetSubscriptionByID", mock.Anything, "abcd12345").
 		Return(&core.Subscription{}, nil)
-	o.On("GetSubscriptionEventsHistorical", mock.Anything, mock.Anything, mock.Anything).
+	o.On("GetSubscriptionEventsHistorical", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return([]*core.EnrichedEvent{}, nil, nil)
 
 	r.ServeHTTP(res, req)

@@ -61,6 +61,7 @@ type EventManager interface {
 	DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error)
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
 	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
+	EnrichEvents(ctx context.Context, events []*core.Event) ([]*core.EnrichedEvent, error)
 	FilterHistoricalEventsOnSubscription(ctx context.Context, events []*core.EnrichedEvent, sub *core.Subscription) ([]*core.EnrichedEvent, error)
 	QueueBatchRewind(batchID *fftypes.UUID)
 	ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *events.Capabilities, error)
@@ -303,6 +304,18 @@ func (em *eventManager) GetPlugins() []*core.NamespaceStatusPlugin {
 
 func (em *eventManager) EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
 	return em.enricher.enrichEvent(ctx, event)
+}
+
+func (em *eventManager) EnrichEvents(ctx context.Context, events []*core.Event) ([]*core.EnrichedEvent, error) {
+	enriched := make([]*core.EnrichedEvent, len(events))
+	for i, event := range events {
+		enrichedEvent, err := em.EnrichEvent(ctx, event)
+		if err != nil {
+			return nil, err
+		}
+		enriched[i] = enrichedEvent
+	}
+	return enriched, nil
 }
 
 func (em *eventManager) QueueBatchRewind(batchID *fftypes.UUID) {

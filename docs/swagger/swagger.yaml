@@ -29369,6 +29369,16 @@ paths:
         schema:
           example: default
           type: string
+      - description: Fetch the data and include it in the messages returned
+        in: query
+        name: startsequence
+        schema:
+          type: string
+      - description: Fetch the data and include it in the messages returned
+        in: query
+        name: endsequence
+        schema:
+          type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
@@ -38463,6 +38473,16 @@ paths:
         in: path
         name: subid
         required: true
+        schema:
+          type: string
+      - description: Fetch the data and include it in the messages returned
+        in: query
+        name: startsequence
+        schema:
+          type: string
+      - description: Fetch the data and include it in the messages returned
+        in: query
+        name: endsequence
         schema:
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
