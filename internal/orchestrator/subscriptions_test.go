@@ -489,3 +489,15 @@ func TestGetHistoricalEventsForSubscriptionGettingHistoricalEventsThrows(t *test
 	_, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter, 0, 100)
 	assert.NotNil(t, err)
 }
+
+func TestGetHistoricalEventsForSubscriptionGettingHistoricalEventsGoesPastScanLimit(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+
+	_, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter, 0, 2000) // Default limit is 1000
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Event scan limit breached")
+}
