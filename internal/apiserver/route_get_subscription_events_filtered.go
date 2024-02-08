@@ -36,8 +36,8 @@ var getSubscriptionEventsFiltered = &ffapi.Route{
 		{Name: "subid", Description: coremsgs.APIParamsSubscriptionID},
 	},
 	QueryParams: []*ffapi.QueryParam{
-		{Name: "startsequence", IsBool: false, Description: coremsgs.APISubscriptionStartSequenceID},
-		{Name: "endsequence", IsBool: false, Description: coremsgs.APISubscriptionEndSequenceID},
+		{Name: "startsequence", IsBool: false, Description: coremsgs.APISubscriptionStartSequenceID, Default: "0"},
+		{Name: "endsequence", IsBool: false, Description: coremsgs.APISubscriptionEndSequenceID, Default: "100"},
 	},
 	FilterFactory:   database.EventQueryFactory,
 	Description:     coremsgs.APIEndpointsGetSubscriptionEventsFiltered,
