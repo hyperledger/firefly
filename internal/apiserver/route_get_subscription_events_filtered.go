@@ -17,10 +17,12 @@
 package apiserver
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -45,15 +47,21 @@ var getSubscriptionEventsFiltered = &ffapi.Route{
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			subscription, _ := cr.or.GetSubscriptionByID(cr.ctx, r.PP["subid"])
+			var startSeq int
+			var endSeq int
 
-			startSeq, err := strconv.Atoi(r.QP["startsequence"])
-			if err != nil {
-				return nil, err
+			if r.QP["startsequence"] != "" {
+				startSeq, err = strconv.Atoi(r.QP["startsequence"])
+				if err != nil {
+					return nil, i18n.NewError(cr.ctx, coremsgs.MsgSequenceIDDidNotParseToInt, fmt.Sprintf("startsequence: %s", r.QP["startsequence"]))
+				}
 			}
 
-			endSeq, err := strconv.Atoi(r.QP["endsequence"])
-			if err != nil {
-				return nil, err
+			if r.QP["endsequence"] != "" {
+				endSeq, err = strconv.Atoi(r.QP["endsequence"])
+				if err != nil {
+					return nil, i18n.NewError(cr.ctx, coremsgs.MsgSequenceIDDidNotParseToInt, fmt.Sprintf("endsequence: %s", r.QP["endsequence"]))
+				}
 			}
 
 			return r.FilterResult(cr.or.GetSubscriptionEventsHistorical(cr.ctx, subscription, r.Filter, startSeq, endSeq))

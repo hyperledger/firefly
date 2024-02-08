@@ -40,3 +40,31 @@ func TestGetSubscriptionEventsFiltered(t *testing.T) {
 	r.ServeHTTP(res, req)
 	assert.Equal(t, 200, res.Result().StatusCode)
 }
+
+func TestGetSubscriptionEventsFilteredStartSequenceIDDoesNotParse(t *testing.T) {
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/subscriptions/abcd12345/events?startsequence=helloworld", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+	o.On("GetSubscriptionByID", mock.Anything, "abcd12345").
+		Return(&core.Subscription{}, nil)
+
+	r.ServeHTTP(res, req)
+	assert.Equal(t, 400, res.Result().StatusCode)
+	assert.Contains(t, res.Body.String(), "helloworld")
+}
+
+func TestGetSubscriptionEventsFilteredEndSequenceIDDoesNotParse(t *testing.T) {
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/subscriptions/abcd12345/events?endsequence=helloworld", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+	o.On("GetSubscriptionByID", mock.Anything, "abcd12345").
+		Return(&core.Subscription{}, nil)
+
+	r.ServeHTTP(res, req)
+	assert.Equal(t, 400, res.Result().StatusCode)
+	assert.Contains(t, res.Body.String(), "helloworld")
+}

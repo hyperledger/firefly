@@ -302,4 +302,5 @@ var (
 	MsgBatchDeliveryNotSupported             = ffe("FF10461", "Batch delivery not supported by transport '%s'", 400)
 	MsgWSWrongNamespace                      = ffe("FF10462", "Websocket request received on a namespace scoped connection but the provided namespace does not match")
 	MsgMaxSubscriptionEventScanLimitBreached = ffe("FF10463", "Event scan limit reached after matching %d events and skipping %d events. Please restrict your query to a narrower range")
+	MsgSequenceIDDidNotParseToInt            = ffe("FF10464", "Could not parse provided %s to an integer sequence ID", 400)
 )

@@ -253,3 +253,19 @@ func TestGettEventsReadMessageFail(t *testing.T) {
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
+
+func TestGetEventsInSequenceRangeQueryFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, _, err := s.GetEventsInSequenceRange(context.Background(), "ns1", f, 0, 100)
+	assert.Regexp(t, "FF00176", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetEventsInSequenceRangeBuildQueryFail(t *testing.T) {
+	s, _ := newMockProvider().init()
+	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, _, err := s.GetEventsInSequenceRange(context.Background(), "ns1", f, 0, 100)
+	assert.Regexp(t, "FF00143.*id", err)
+}
