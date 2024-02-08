@@ -211,10 +211,6 @@ func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 	return em.subManager.deletedSubscriptions
 }
 
-func (em *eventManager) ParseSubscriptionDef(ctx context.Context, sub *core.Subscription) (*subscription, error) {
-	return em.subManager.parseSubscriptionDef(ctx, sub)
-}
-
 func (em *eventManager) ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *events.Capabilities, error) {
 	if transportName == "" {
 		transportName = em.defaultTransport
@@ -307,15 +303,7 @@ func (em *eventManager) EnrichEvent(ctx context.Context, event *core.Event) (*co
 }
 
 func (em *eventManager) EnrichEvents(ctx context.Context, events []*core.Event) ([]*core.EnrichedEvent, error) {
-	enriched := make([]*core.EnrichedEvent, len(events))
-	for i, event := range events {
-		enrichedEvent, err := em.EnrichEvent(ctx, event)
-		if err != nil {
-			return nil, err
-		}
-		enriched[i] = enrichedEvent
-	}
-	return enriched, nil
+	return em.enricher.enrichEvents(ctx, events)
 }
 
 func (em *eventManager) QueueBatchRewind(batchID *fftypes.UUID) {

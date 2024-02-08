@@ -70,6 +70,33 @@ func TestEnrichMessageConfirmed(t *testing.T) {
 	assert.Equal(t, ref1, enriched.Message.Header.ID)
 }
 
+func TestEnrichEventsMessageConfirmed(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	em.mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&core.Message{
+		Header: core.MessageHeader{ID: ref1},
+	}, nil, true, nil)
+
+	event := []*core.Event{
+		{
+			ID:        ev1,
+			Type:      core.EventTypeMessageConfirmed,
+			Reference: ref1,
+		},
+	}
+
+	enriched, err := em.EnrichEvents(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched[0].Message.Header.ID)
+}
+
 func TestEnrichMessageFail(t *testing.T) {
 	em := newTestEventEnricher()
 	ctx := context.Background()
@@ -612,4 +639,64 @@ func TestEnrichOperationFail(t *testing.T) {
 
 	_, err := em.enrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichEventsFails(t *testing.T) {
+	em := newTestEventEnricher()
+	ctx := context.Background()
+
+	ev1 := fftypes.NewUUID()
+	ev2 := fftypes.NewUUID()
+	ref1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mom := em.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", mock.Anything, mock.Anything).Return(&core.Operation{
+		ID: ref1,
+	}, nil).Once()
+	mom.On("GetOperationByIDCached", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	events := []*core.Event{
+		{
+			ID:   ev1,
+			Type: core.EventTypeApprovalOpFailed,
+		},
+		{
+			ID:   ev2,
+			Type: core.EventTypeApprovalOpFailed,
+		},
+	}
+
+	_, err := em.enrichEvents(ctx, events)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichEventsOK(t *testing.T) {
+	em := newTestEventEnricher()
+	ctx := context.Background()
+
+	ev1 := fftypes.NewUUID()
+	ev2 := fftypes.NewUUID()
+	ref1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mom := em.operations.(*operationmocks.Manager)
+	mom.On("GetOperationByIDCached", mock.Anything, mock.Anything).Return(&core.Operation{
+		ID: ref1,
+	}, nil)
+
+	events := []*core.Event{
+		{
+			ID:   ev1,
+			Type: core.EventTypeApprovalOpFailed,
+		},
+		{
+			ID:   ev2,
+			Type: core.EventTypeApprovalOpFailed,
+		},
+	}
+
+	result, err := em.enrichEvents(ctx, events)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(result))
 }

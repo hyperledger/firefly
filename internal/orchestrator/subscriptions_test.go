@@ -359,6 +359,28 @@ func TestGetSGetSubscriptionsByIDWithStatusUnknownSub(t *testing.T) {
 	assert.Nil(t, subWithStatus)
 }
 
+func generateFakeEvents(eventCount int) ([]*core.Event, []*core.EnrichedEvent) {
+	baseEvents := []*core.Event{}
+	enrichedEvents := []*core.EnrichedEvent{}
+	baseEvent := &core.Event{
+		Type:  core.EventTypeIdentityConfirmed,
+		Topic: "Topic1",
+	}
+	enrichedEvent := &core.EnrichedEvent{
+		Event: *baseEvent,
+		BlockchainEvent: &core.BlockchainEvent{
+			Namespace: "ns1",
+		},
+	}
+
+	for i := 0; i < eventCount; i++ {
+		baseEvents = append(baseEvents, baseEvent)
+		enrichedEvents = append(enrichedEvents, enrichedEvent)
+	}
+
+	return baseEvents, enrichedEvents
+}
+
 func TestGetHistoricalEventsForSubscription(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
@@ -447,28 +469,6 @@ func TestGetHistoricalEventsForSubscriptionBadQueryFilter(t *testing.T) {
 	filter := fb.And(fb.Eq("tag", map[bool]bool{true: false}))
 	_, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter, 0, 100)
 	assert.NotNil(t, err)
-}
-
-func generateFakeEvents(eventCount int) ([]*core.Event, []*core.EnrichedEvent) {
-	baseEvents := []*core.Event{}
-	enrichedEvents := []*core.EnrichedEvent{}
-	baseEvent := &core.Event{
-		Type:  core.EventTypeIdentityConfirmed,
-		Topic: "Topic1",
-	}
-	enrichedEvent := &core.EnrichedEvent{
-		Event: *baseEvent,
-		BlockchainEvent: &core.BlockchainEvent{
-			Namespace: "ns1",
-		},
-	}
-
-	for i := 0; i < eventCount; i++ {
-		baseEvents = append(baseEvents, baseEvent)
-		enrichedEvents = append(enrichedEvents, enrichedEvent)
-	}
-
-	return baseEvents, enrichedEvents
 }
 
 func TestGetHistoricalEventsForSubscriptionGettingHistoricalEventsThrows(t *testing.T) {
