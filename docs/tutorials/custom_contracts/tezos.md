@@ -426,7 +426,8 @@ We will use the FFI JSON constructed above and `POST` that to the `/contracts/in
             "params": [],
             "returns": []
         }
-    ]
+    ],
+    "published": true
 }
 ```
 
@@ -481,7 +482,8 @@ We need to copy the `id` field we got in the response from the previous step to 
   "urls": {
     "openapi": "http://127.0.0.1:5000/api/v1/namespaces/default/apis/simple-storage/api/swagger.json",
     "ui": "http://127.0.0.1:5000/api/v1/namespaces/default/apis/simple-storage/api"
-  }
+  },
+  "published": true
 }
 ```
 

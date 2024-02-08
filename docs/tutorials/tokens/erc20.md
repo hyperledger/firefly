@@ -61,7 +61,8 @@ If you're using the default ERC-20 / ERC-721 token connector and its sample toke
     "tx": {
         "type": "token_pool",
         "id": "e901921e-ffc4-4776-b20a-9e9face70a47"
-    }
+    },
+    "published": true
 }
 ```
 
