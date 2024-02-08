@@ -209,4 +209,7 @@ var (
 	APISmartContractDetails      = ffm("api.smartContractDetails", "Additional smart contract details")
 	APISmartContractDetailsKey   = ffm("api.smartContractDetailsKey", "Key")
 	APISmartContractDetailsValue = ffm("api.smartContractDetailsValue", "Value")
+
+	APISubscriptionStartSequenceID = ffm("api.startsequenceid", "The sequence ID in the raw event stream to start indexing through events from")
+	APISubscriptionEndSequenceID   = ffm("api.endsequenceid", "The sequence ID in the raw event stream to stop indexing through events at")
 )
