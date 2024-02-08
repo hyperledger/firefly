@@ -1083,17 +1083,3 @@ var ContractAPIQueryFactory = &ffapi.QueryFields{
 	"interface":   &ffapi.UUIDField{},
 	"published":   &ffapi.BoolField{},
 }
-
-// HistoricalEventSubscriptionQueryFactory filter fields for events matching a subscription
-var HistoricalEventSubscriptionQueryFactory = &ffapi.QueryFields{
-	"id":            &ffapi.UUIDField{},
-	"type":          &ffapi.StringField{},
-	"reference":     &ffapi.UUIDField{},
-	"correlator":    &ffapi.UUIDField{},
-	"tx":            &ffapi.UUIDField{},
-	"topic":         &ffapi.StringField{},
-	"sequence":      &ffapi.Int64Field{},
-	"created":       &ffapi.TimeField{},
-	"startsequence": &ffapi.Int64Field{},
-	"endsequence":   &ffapi.Int64Field{},
-}
