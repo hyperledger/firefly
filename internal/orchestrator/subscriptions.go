@@ -147,8 +147,6 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 		return nil, nil, err
 	}
 
-	filteredEventsMatchingSubscription := []*core.EnrichedEvent{}
-
 	unfilteredEvents, _, err := or.GetEventsWithReferencesInSequenceRange(ctx, filter, startSequence, endSequence)
 	if err != nil {
 		return nil, nil, err
@@ -159,10 +157,11 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 		return nil, nil, err
 	}
 
-	if (len(filteredEvents) + len(filteredEventsMatchingSubscription)) > int(requestedFiltering.Limit) {
-		filteredEventsMatchingSubscription = append(filteredEventsMatchingSubscription, filteredEvents[:int(requestedFiltering.Limit)-len(filteredEventsMatchingSubscription)]...)
+	var filteredEventsMatchingSubscription []*core.EnrichedEvent
+	if len(filteredEvents) > int(requestedFiltering.Limit) {
+		filteredEventsMatchingSubscription = filteredEvents[len(filteredEvents)-int(requestedFiltering.Limit):]
 	} else {
-		filteredEventsMatchingSubscription = append(filteredEventsMatchingSubscription, filteredEvents...)
+		filteredEventsMatchingSubscription = filteredEvents
 	}
 
 	filterResultLength := int64(len(filteredEventsMatchingSubscription))

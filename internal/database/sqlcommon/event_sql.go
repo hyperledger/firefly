@@ -239,7 +239,9 @@ func (s *SQLCommon) GetEventsInSequenceRange(ctx context.Context, namespace stri
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, s.SequenceColumn())
 
-	query := sq.Select(cols...).FromSelect(sq.Select(cols...).From(eventsTable).OrderBy("seq").Offset(uint64(startSequence)).Limit(uint64(endSequence-startSequence)), "raw_events")
+	query := sq.Select(cols...).FromSelect(sq.Select(cols...).From(eventsTable).Where(sq.GtOrEq{
+		"seq": startSequence,
+	}).Limit(uint64(endSequence-startSequence)), "raw_events")
 
 	return s.getEventsGeneric(ctx, namespace, query, filter)
 
