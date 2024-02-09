@@ -477,7 +477,6 @@ func TestGetHistoricalEventsForSubscriptionGettingHistoricalEventsThrows(t *test
 
 	baseEvents, _ := generateFakeEvents(20)
 
-
 	or.mdi.On("GetEventsInSequenceRange", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(baseEvents, nil, nil)
 	or.mem.On("EnrichEvents", mock.Anything, mock.Anything).Return([]*core.EnrichedEvent{}, nil)
 	or.mem.On("FilterHistoricalEventsOnSubscription", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("KERRR-BOOM!"))
@@ -582,3 +581,35 @@ func TestGetHistoricalEventsForSubscriptionStartSequenceNotProvided(t *testing.T
 	assert.Equal(t, 1000, len(retEvents))
 }
 
+func TestGetHistoricalEventsForSubscriptionNoStartOrEndSequence(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+	filter.Limit(1000)
+
+	baseEvents, enrichedEvents := generateFakeEvents(1000)
+
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return(baseEvents, nil, nil)
+	or.mem.On("EnrichEvents", mock.Anything, mock.Anything).Return(enrichedEvents, nil)
+	or.mem.On("FilterHistoricalEventsOnSubscription", mock.Anything, mock.Anything, mock.Anything).Return(enrichedEvents, nil)
+
+	retEvents, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter, -1, -1)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, 1000, len(retEvents))
+}
+
+func TestGetHistoricalEventsForSubscriptionNoStartOrEndSequenceFails(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+	filter.Limit(1000)
+
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("boom!"))
+
+	_, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter, -1, -1)
+	assert.NotNil(t, err)
+}

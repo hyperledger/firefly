@@ -148,23 +148,31 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 		return nil, nil, err
 	}
 
-	if startSequence == -1 {
-		recordLimit := math.Min(float64(requestedFiltering.Limit), float64(config.GetInt(coreconfig.SubscriptionMaxHistoricalEventScanLength)))
-		if endSequence-int(recordLimit) > 0 {
-			startSequence = endSequence - int(recordLimit)
-		} else {
-			startSequence = 0
+	var unfilteredEvents []*core.EnrichedEvent
+	if startSequence == -1 && endSequence == -1 {
+		unfilteredEvents, _, err = or.GetEventsWithReferences(ctx, filter)
+		if err != nil {
+			return nil, nil, err
 		}
-	}
+	} else {
+		if startSequence == -1 {
+			recordLimit := math.Min(float64(requestedFiltering.Limit), float64(config.GetInt(coreconfig.SubscriptionMaxHistoricalEventScanLength)))
+			if endSequence-int(recordLimit) > 0 {
+				startSequence = endSequence - int(recordLimit)
+			} else {
+				startSequence = 0
+			}
+		}
 
-	if endSequence == -1 {
-		// This blind assertion is safe since the DB won't blow up, it'll just return nothing
-		endSequence = startSequence + 1000
-	}
+		if endSequence == -1 {
+			// This blind assertion is safe since the DB won't blow up, it'll just return nothing
+			endSequence = startSequence + 1000
+		}
 
-	unfilteredEvents, _, err := or.GetEventsWithReferencesInSequenceRange(ctx, filter, startSequence, endSequence)
-	if err != nil {
-		return nil, nil, err
+		unfilteredEvents, _, err = or.GetEventsWithReferencesInSequenceRange(ctx, filter, startSequence, endSequence)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	filteredEvents, err := or.events.FilterHistoricalEventsOnSubscription(ctx, unfilteredEvents, subscription)
