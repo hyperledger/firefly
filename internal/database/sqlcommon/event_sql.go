@@ -230,14 +230,13 @@ func (s *SQLCommon) GetEvents(ctx context.Context, namespace string, filter ffap
 	query := sq.Select(cols...).From(eventsTable)
 
 	return s.getEventsGeneric(ctx, namespace, query, filter)
-
 }
 
 func (s *SQLCommon) GetEventsInSequenceRange(ctx context.Context, namespace string, filter ffapi.Filter, startSequence int, endSequence int) (message []*core.Event, res *ffapi.FilterResult, err error) {
-	filter.Limit(0) // We calculate the limit below using the sequence IDs
-
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, s.SequenceColumn())
+
+	filter.Limit(0)
 
 	query := sq.Select(cols...).From(eventsTable).Where(sq.GtOrEq{
 		"seq": startSequence,
@@ -246,5 +245,4 @@ func (s *SQLCommon) GetEventsInSequenceRange(ctx context.Context, namespace stri
 	})
 
 	return s.getEventsGeneric(ctx, namespace, query, filter)
-
 }

@@ -36,8 +36,8 @@ var getSubscriptionEventsFiltered = &ffapi.Route{
 		{Name: "subid", Description: coremsgs.APIParamsSubscriptionID},
 	},
 	QueryParams: []*ffapi.QueryParam{
-		{Name: "startsequence", IsBool: false, Description: coremsgs.APISubscriptionStartSequenceID, Default: "0"},
-		{Name: "endsequence", IsBool: false, Description: coremsgs.APISubscriptionEndSequenceID, Default: "100"},
+		{Name: "startsequence", IsBool: false, Description: coremsgs.APISubscriptionStartSequenceID},
+		{Name: "endsequence", IsBool: false, Description: coremsgs.APISubscriptionEndSequenceID},
 	},
 	FilterFactory:   database.EventQueryFactory,
 	Description:     coremsgs.APIEndpointsGetSubscriptionEventsFiltered,
@@ -55,6 +55,8 @@ var getSubscriptionEventsFiltered = &ffapi.Route{
 				if err != nil {
 					return nil, i18n.NewError(cr.ctx, coremsgs.MsgSequenceIDDidNotParseToInt, fmt.Sprintf("startsequence: %s", r.QP["startsequence"]))
 				}
+			} else {
+				startSeq = -1
 			}
 
 			if r.QP["endsequence"] != "" {
@@ -62,6 +64,8 @@ var getSubscriptionEventsFiltered = &ffapi.Route{
 				if err != nil {
 					return nil, i18n.NewError(cr.ctx, coremsgs.MsgSequenceIDDidNotParseToInt, fmt.Sprintf("endsequence: %s", r.QP["endsequence"]))
 				}
+			} else {
+				endSeq = -1
 			}
 
 			return r.FilterResult(cr.or.GetSubscriptionEventsHistorical(cr.ctx, subscription, r.Filter, startSeq, endSeq))

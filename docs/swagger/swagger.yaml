@@ -29370,18 +29370,16 @@ paths:
           example: default
           type: string
       - description: The sequence ID in the raw event stream to start indexing through
-          events from
+          events from. Leave blank to start indexing from the most recent events
         in: query
         name: startsequence
         schema:
-          default: "0"
           type: string
       - description: The sequence ID in the raw event stream to stop indexing through
-          events at
+          events at. Leave blank to start indexing from the most recent events
         in: query
         name: endsequence
         schema:
-          default: "100"
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
@@ -38480,18 +38478,16 @@ paths:
         schema:
           type: string
       - description: The sequence ID in the raw event stream to start indexing through
-          events from
+          events from. Leave blank to start indexing from the most recent events
         in: query
         name: startsequence
         schema:
-          default: "0"
           type: string
       - description: The sequence ID in the raw event stream to stop indexing through
-          events at
+          events at. Leave blank to start indexing from the most recent events
         in: query
         name: endsequence
         schema:
-          default: "100"
           type: string
       - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)

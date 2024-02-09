@@ -18,6 +18,7 @@ package orchestrator
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -138,13 +139,27 @@ func (or *orchestrator) GetSubscriptionByIDWithStatus(ctx context.Context, id st
 }
 
 func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, subscription *core.Subscription, filter ffapi.AndFilter, startSequence int, endSequence int) ([]*core.EnrichedEvent, *ffapi.FilterResult, error) {
-	if endSequence-startSequence > config.GetInt(coreconfig.SubscriptionMaxHistoricalEventScanLength) {
+	if startSequence != -1 && endSequence != -1 && endSequence-startSequence > config.GetInt(coreconfig.SubscriptionMaxHistoricalEventScanLength) {
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgMaxSubscriptionEventScanLimitBreached, startSequence, endSequence)
 	}
 
 	requestedFiltering, err := filter.Finalize()
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if startSequence == -1 {
+		recordLimit := math.Min(float64(requestedFiltering.Limit), float64(config.GetInt(coreconfig.SubscriptionMaxHistoricalEventScanLength)))
+		if endSequence-int(recordLimit) > 0 {
+			startSequence = endSequence - int(recordLimit)
+		} else {
+			startSequence = 0
+		}
+	}
+
+	if endSequence == -1 {
+		// This blind assertion is safe since the DB won't blow up, it'll just return nothing
+		endSequence = startSequence + 1000
 	}
 
 	unfilteredEvents, _, err := or.GetEventsWithReferencesInSequenceRange(ctx, filter, startSequence, endSequence)

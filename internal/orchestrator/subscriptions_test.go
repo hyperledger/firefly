@@ -501,3 +501,84 @@ func TestGetHistoricalEventsForSubscriptionGettingHistoricalEventsGoesPastScanLi
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "Event scan limit breached")
 }
+
+func TestGetHistoricalEventsForSubscriptionEndSequenceNotProvided(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+	filter.Limit(1000)
+
+	// Generate more events than the overall limit
+	baseEvents, enrichedEvents := generateFakeEvents(1500)
+
+	or.mdi.On("GetEventsInSequenceRange", mock.Anything, mock.Anything, mock.Anything, 0, 1000).Return(baseEvents, nil, nil)
+	or.mem.On("EnrichEvents", mock.Anything, mock.Anything).Return(enrichedEvents, nil)
+	or.mem.On("FilterHistoricalEventsOnSubscription", mock.Anything, mock.Anything, mock.Anything).Return(enrichedEvents, nil)
+
+	retEvents, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter, 0, -1)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, 1000, len(retEvents))
+}
+
+func TestGetHistoricalEventsForSubscriptionEndSequencePastRecordCount(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+	filter.Limit(1000)
+
+	// Generate more events than the overall limit
+	baseEvents, _ := generateFakeEvents(1500)
+
+	or.mdi.On("GetEventsInSequenceRange", mock.Anything, mock.Anything, mock.Anything, 1000, 2000).Return(baseEvents, nil, nil)
+	or.mem.On("EnrichEvents", mock.Anything, mock.Anything).Return([]*core.EnrichedEvent{}, nil)
+	or.mem.On("FilterHistoricalEventsOnSubscription", mock.Anything, mock.Anything, mock.Anything).Return([]*core.EnrichedEvent{}, nil)
+
+	retEvents, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter, 1000, -1)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, 0, len(retEvents))
+}
+
+func TestGetHistoricalEventsForSubscriptionStartSequenceNotProvidedAndBelowTotalLimit(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+	filter.Limit(1000)
+
+	// Generate more events than the overall limit
+	baseEvents, enrichedEvents := generateFakeEvents(200)
+
+	or.mdi.On("GetEventsInSequenceRange", mock.Anything, mock.Anything, mock.Anything, 0, 200).Return(baseEvents, nil, nil)
+	or.mem.On("EnrichEvents", mock.Anything, mock.Anything).Return(enrichedEvents, nil)
+	or.mem.On("FilterHistoricalEventsOnSubscription", mock.Anything, mock.Anything, mock.Anything).Return(enrichedEvents, nil)
+
+	retEvents, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter, -1, 200)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, 200, len(retEvents))
+}
+
+func TestGetHistoricalEventsForSubscriptionStartSequenceNotProvided(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
+	filter := fb.And()
+	filter.Limit(1000)
+
+	// Generate more events than the overall limit
+	baseEvents, enrichedEvents := generateFakeEvents(1000)
+
+	or.mdi.On("GetEventsInSequenceRange", mock.Anything, mock.Anything, mock.Anything, 100, 1100).Return(baseEvents, nil, nil)
+	or.mem.On("EnrichEvents", mock.Anything, mock.Anything).Return(enrichedEvents, nil)
+	or.mem.On("FilterHistoricalEventsOnSubscription", mock.Anything, mock.Anything, mock.Anything).Return(enrichedEvents, nil)
+
+	retEvents, _, err := or.GetSubscriptionEventsHistorical(context.Background(), &core.Subscription{}, filter, -1, 1100)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, 1000, len(retEvents))
+}
+

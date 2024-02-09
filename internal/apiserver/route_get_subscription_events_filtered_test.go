@@ -68,3 +68,18 @@ func TestGetSubscriptionEventsFilteredEndSequenceIDDoesNotParse(t *testing.T) {
 	assert.Equal(t, 400, res.Result().StatusCode)
 	assert.Contains(t, res.Body.String(), "helloworld")
 }
+
+func TestGetSubscriptionEventsFilteredNoSequenceIDsProvided(t *testing.T) {
+	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/subscriptions/abcd12345/events", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+	o.On("GetSubscriptionByID", mock.Anything, "abcd12345").
+		Return(&core.Subscription{}, nil)
+	o.On("GetSubscriptionEventsHistorical", mock.Anything, mock.Anything, mock.Anything, -1, -1).
+		Return([]*core.EnrichedEvent{}, nil, nil)
+
+	r.ServeHTTP(res, req)
+	assert.Equal(t, 200, res.Result().StatusCode)
+}
