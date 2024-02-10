@@ -246,10 +246,10 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ interface     │    * Standardized operations, and custom on-chain coupling
   │           └─────┬─────────┘
   │                 │
-  │                 ├─────────────────────┬───────────────────┐
-  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
-  │           │ ethereum      │   │ fabric        │   │ corda/cordapps │
-  │           └─────┬─────────┘   └───────────────┘   └────────────────┘
+  │                 ├─────────────────────┬───────────────────┬-───────────────────┐
+  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐   ┌───────┴────────┐
+  │           │ ethereum      │   │ fabric        │   │ corda/cordapps │   │ tezos          │
+  │           └─────┬─────────┘   └───────────────┘   └────────────────┘   └────────────────┘
   │           [REST/WebSockets]
   │           ┌─────┴────────────────────┐   ┌────────────────────────┐   ┌─ 
   │           │ transaction manager [Tm] ├───┤ Connector API [ffcapi] ├───┤  Simple framework for building blockchain connectors
