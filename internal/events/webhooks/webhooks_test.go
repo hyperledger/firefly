@@ -466,7 +466,7 @@ func TestRequestWithBodyReplyEndToEndWithTLS(t *testing.T) {
 
 	// Create a Server instance to listen on port 8443 with the TLS config
 	server := &http.Server{
-		Addr:      "127.0.0.1:8443",
+		Addr:      ":8443",
 		TLSConfig: tlsConfig,
 	}
 
