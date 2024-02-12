@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -649,4 +649,198 @@ func TestResolveTransportAndCapabilitiesDefault(t *testing.T) {
 	assert.True(t, c.BatchDelivery)
 
 	em.mev.AssertExpectations(t)
+}
+
+func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	events := []*core.EnrichedEvent{
+		{
+			Event: core.Event{
+				Type: core.EventTypeIdentityConfirmed,
+			},
+		},
+	}
+
+	subscription := &core.Subscription{
+		Filter: core.SubscriptionFilter{
+			Events: core.EventTypeIdentityConfirmed.String(),
+		},
+	}
+
+	filteredEvents, _ := em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+
+	events[0].Event.Type = ""
+	subscription.Filter.Events = ""
+	events[0].Event.Topic = "someTopic"
+	subscription.Filter.Topic = "someTopic"
+
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+	
+	listenerUuid := fftypes.NewUUID()
+
+	events[0].Event.Topic = ""
+	subscription.Filter.Topic = ""
+	events[0].BlockchainEvent = &core.BlockchainEvent{
+		Listener: listenerUuid,
+	}
+	subscription.Filter.BlockchainEvent.Listener = listenerUuid.String()
+
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+
+	events[0].BlockchainEvent.Listener = nil
+	subscription.Filter.BlockchainEvent.Listener = ""
+	events[0].BlockchainEvent.Name = "someName"
+	subscription.Filter.BlockchainEvent.Name = "someName"
+
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+
+	events[0].BlockchainEvent.Name = ""
+	subscription.Filter.BlockchainEvent.Name = ""
+	events[0].Transaction = &core.Transaction{
+		Type: core.TransactionTypeContractInvoke,
+	}
+	subscription.Filter.Transaction.Type = core.TransactionTypeContractInvoke.String()
+
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+
+	events[0].Transaction.Type = ""
+	subscription.Filter.Transaction.Type = ""
+	events[0].Message = &core.Message{
+		Header: core.MessageHeader{
+			Tag: "someTag",
+		},
+	}
+	subscription.Filter.Message.Tag = "someTag"
+
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+
+	group := &fftypes.Bytes32{}
+
+	events[0].Message.Header.Tag = ""
+	subscription.Filter.Message.Tag = ""
+	events[0].Message.Header.Group = group
+	subscription.Filter.Message.Group = group.String()
+
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+
+	events[0].Message.Header.Group = nil
+	subscription.Filter.Message.Group = ""
+	events[0].Message.Header.SignerRef = core.SignerRef{
+		Author: "someAuthor",
+	}
+	subscription.Filter.Message.Author = "someAuthor"
+
+	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, filteredEvents)
+	assert.Equal(t, 1, len(filteredEvents))
+}
+
+func TestEventFilterOnSubscriptionFailsWithBadRegex(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	regexThatFailsToCompile := "^(a(b)c$"
+
+	events := []*core.EnrichedEvent{
+		{
+			Event: core.Event{
+				Type: core.EventTypeIdentityConfirmed,
+			},
+		},
+	}
+
+	subscription := &core.Subscription{
+		Filter: core.SubscriptionFilter{
+			Events: regexThatFailsToCompile,
+		},
+	}
+
+	_, err := em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
+
+	events[0].Event.Type = ""
+	subscription.Filter.Events = ""
+	events[0].Event.Topic = "someTopic"
+	subscription.Filter.Topic = regexThatFailsToCompile
+
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
+
+	listenerUuid := fftypes.NewUUID()
+
+	events[0].Event.Topic = ""
+	subscription.Filter.Topic = ""
+	events[0].BlockchainEvent = &core.BlockchainEvent{
+		Listener: listenerUuid,
+	}
+	subscription.Filter.BlockchainEvent.Listener = regexThatFailsToCompile
+
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
+
+	events[0].BlockchainEvent.Listener = nil
+	subscription.Filter.BlockchainEvent.Listener = ""
+	events[0].BlockchainEvent.Name = "someName"
+	subscription.Filter.BlockchainEvent.Name = regexThatFailsToCompile
+
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
+
+	events[0].BlockchainEvent.Name = ""
+	subscription.Filter.BlockchainEvent.Name = ""
+	events[0].Transaction = &core.Transaction{
+		Type: core.TransactionTypeContractInvoke,
+	}
+	subscription.Filter.Transaction.Type = regexThatFailsToCompile
+
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
+
+	events[0].Transaction.Type = ""
+	subscription.Filter.Transaction.Type = ""
+	events[0].Message = &core.Message{
+		Header: core.MessageHeader{
+			Tag: "someTag",
+		},
+	}
+	subscription.Filter.Message.Tag = regexThatFailsToCompile
+
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
+
+	group := &fftypes.Bytes32{}
+
+	events[0].Message.Header.Tag = ""
+	subscription.Filter.Message.Tag = ""
+	events[0].Message.Header.Group = group
+	subscription.Filter.Message.Group = regexThatFailsToCompile
+
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
+
+	events[0].Message.Header.Group = nil
+	subscription.Filter.Message.Group = ""
+	events[0].Message.Header.SignerRef = core.SignerRef{
+		Author: "someAuthor",
+	}
+	subscription.Filter.Message.Author = regexThatFailsToCompile
+
+	_, err = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
+	assert.NotNil(t, err)
 }

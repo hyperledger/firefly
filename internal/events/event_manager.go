@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -61,6 +61,8 @@ type EventManager interface {
 	DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error)
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
 	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
+	EnrichEvents(ctx context.Context, events []*core.Event) ([]*core.EnrichedEvent, error)
+	FilterHistoricalEventsOnSubscription(ctx context.Context, events []*core.EnrichedEvent, sub *core.Subscription) ([]*core.EnrichedEvent, error)
 	QueueBatchRewind(batchID *fftypes.UUID)
 	ResolveTransportAndCapabilities(ctx context.Context, transportName string) (string, *events.Capabilities, error)
 	Start() error
@@ -300,6 +302,28 @@ func (em *eventManager) EnrichEvent(ctx context.Context, event *core.Event) (*co
 	return em.enricher.enrichEvent(ctx, event)
 }
 
+func (em *eventManager) EnrichEvents(ctx context.Context, events []*core.Event) ([]*core.EnrichedEvent, error) {
+	return em.enricher.enrichEvents(ctx, events)
+}
+
 func (em *eventManager) QueueBatchRewind(batchID *fftypes.UUID) {
 	em.aggregator.queueBatchRewind(batchID)
+}
+
+func (em *eventManager) FilterHistoricalEventsOnSubscription(ctx context.Context, events []*core.EnrichedEvent, sub *core.Subscription) ([]*core.EnrichedEvent, error) {
+	// Transport must be provided for validation, but we're not using it for event delivery so fake the transport
+	sub.Transport = "websockets"
+	subscriptionDef, err := em.subManager.parseSubscriptionDef(ctx, sub)
+	if err != nil {
+		return nil, err
+	}
+
+	matchingEvents := []*core.EnrichedEvent{}
+	for _, event := range events {
+		if subscriptionDef.MatchesEvent(event) {
+			matchingEvents = append(matchingEvents, event)
+		}
+	}
+
+	return matchingEvents, nil
 }
