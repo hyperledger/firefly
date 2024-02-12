@@ -307,7 +307,16 @@
       <li><a href="#smart-contract-languages" id="markdown-toc-smart-contract-languages">Smart Contract Languages</a></li>
       <li><a href="#example-smart-contract" id="markdown-toc-example-smart-contract">Example smart contract</a></li>
       <li><a href="#contract-deployment" id="markdown-toc-contract-deployment">Contract deployment</a></li>
-      <li><a href="#the-firefly-interface-format" id="markdown-toc-the-firefly-interface-format">The FireFly Interface Format</a></li>
+      <li><a href="#the-firefly-interface-format" id="markdown-toc-the-firefly-interface-format">The FireFly Interface Format</a>        <ol>
+          <li><a href="#schema-details" id="markdown-toc-schema-details">Schema details</a>            <ol>
+              <li><a href="#supported-tezos-types" id="markdown-toc-supported-tezos-types">Supported Tezos types</a></li>
+              <li><a href="#internal-type-vs-internal-schema" id="markdown-toc-internal-type-vs-internal-schema">Internal type vs Internal schema</a></li>
+              <li><a href="#options" id="markdown-toc-options">Options</a></li>
+            </ol>
+          </li>
+          <li><a href="#fa2-example" id="markdown-toc-fa2-example">FA2 example</a></li>
+        </ol>
+      </li>
       <li><a href="#broadcast-the-contract-interface" id="markdown-toc-broadcast-the-contract-interface">Broadcast the contract interface</a>        <ol>
           <li><a href="#request" id="markdown-toc-request">Request</a></li>
           <li><a href="#response" id="markdown-toc-response">Response</a></li>
@@ -432,6 +441,162 @@ def test():
 
 <p>As we know from the previous section - smart contracts on the Tezos blockchain are using the domain-specific, stack-based programming language called <a href="https://tezos.gitlab.io/active/michelson.html">Michelson</a>. It is a key component of the Tezos platform and plays a fundamental role in defining the behavior of smart contracts and facilitating their execution.
 This language is very efficient but also a bit tricky and challenging for learning, so in order to teach FireFly how to interact with the smart contract, we will be using <a href="/firefly/head/reference/firefly_interface_format.html">FireFly Interface (FFI)</a> to define the contract inteface which later will be encoded to Michelson.</p>
+      <h3 id="schema-details">
+        
+        
+          <a href="#schema-details" class="anchor-heading" aria-labelledby="schema-details"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Schema details
+        
+        
+      </h3>
+    
+
+<p>The <code class="language-plaintext highlighter-rouge">details</code> field is used to encapsulate blockchain specific type information about a specific field. (More details at <a href="/firefly/head/reference/firefly_interface_format.html#schema-details">schema details</a>)</p>
+      <h4 id="supported-tezos-types">
+        
+        
+          <a href="#supported-tezos-types" class="anchor-heading" aria-labelledby="supported-tezos-types"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Supported Tezos types
+        
+        
+      </h4>
+    
+
+<ul>
+  <li>nat</li>
+  <li>integer</li>
+  <li>string</li>
+  <li>address</li>
+  <li>bytes</li>
+  <li>boolean</li>
+  <li>variant</li>
+  <li>list</li>
+  <li>struct</li>
+</ul>
+      <h4 id="internal-type-vs-internal-schema">
+        
+        
+          <a href="#internal-type-vs-internal-schema" class="anchor-heading" aria-labelledby="internal-type-vs-internal-schema"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Internal type vs Internal schema
+        
+        
+      </h4>
+    
+
+<p><i>internalType</i> is a field which is used to describe tezos primitive types</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p><i>internalSchema</i> in turn is used to describe more complex tezos types as <b>list</b>, <b>struct</b> or <b>variant</b></p>
+
+<p><i>Struct example:</i></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"schema"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"internalSchema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"struct"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"metadata"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"bytes"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"token_id"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nat"</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p><i>List example:</i></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"schema"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"internalSchema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"struct"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"metadata"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"bytes"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"token_id"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nat"</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p><i>Variant example:</i></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"schema"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"internalSchema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"variant"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"variants"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="s2">"add_operator"</span><span class="p">,</span><span class="w">
+                </span><span class="s2">"remove_operator"</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"struct"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"owner"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"operator"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"token_id"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nat"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">]</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h4 id="options">
+        
+        
+          <a href="#options" class="anchor-heading" aria-labelledby="options"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Options
+        
+        
+      </h4>
+    
+
+<p><i>Option</i> type is used to indicate a value as optional (see more at <a href="https://smartpy.io/manual/syntax/options-and-variants#options">smartpy options</a>)</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"kind"</span><span class="p">:</span><span class="w"> </span><span class="s2">"option"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="fa2-example">
+        
+        
+          <a href="#fa2-example" class="anchor-heading" aria-labelledby="fa2-example"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FA2 example
+        
+        
+      </h3>
+    
 
 <p>The following FFI sample demonstrates the specification for the widely used FA2 (analogue of ERC721 for EVM) smart contract:</p>
 
