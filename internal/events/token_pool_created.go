@@ -87,8 +87,8 @@ func (em *eventManager) getPoolByIDOrLocator(ctx context.Context, id *fftypes.UU
 }
 
 func (em *eventManager) loadExisting(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
-	if existingPool, err = em.getPoolByIDOrLocator(ctx, pool.ID, pool.Connector, pool.PoolLocator); err != nil || existingPool != nil {
-		return existingPool, err
+	if existingPool, err = em.getPoolByIDOrLocator(ctx, pool.ID, pool.Connector, pool.PoolLocator); err != nil {
+		return nil, err
 	}
 
 	if existingPool == nil {
