@@ -37,7 +37,7 @@ nav_order: 24
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `type` | WSActionBase.type | `FFEnum`:<br/>`"start"`<br/>`"ack"`<br/>`"protocol_error"` |
+| `type` | WSActionBase.type | `FFEnum`:<br/>`"start"`<br/>`"ack"`<br/>`"protocol_error"`<br/>`"event_batch"` |
 | `id` | WSAck.id | [`UUID`](simpletypes#uuid) |
 | `subscription` | WSAck.subscription | [`SubscriptionRef`](#subscriptionref) |
 

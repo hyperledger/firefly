@@ -192,3 +192,79 @@ func TestUpdateIdentityProfileBadID(t *testing.T) {
 	_, err := nm.UpdateIdentity(nm.ctx, "badness", &core.IdentityUpdateDTO{}, true)
 	assert.Regexp(t, "FF00138", err)
 }
+
+func TestUpdateIdentityProfileExistingIdNotSpecified(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	identity := testOrg("org1")
+	identity.Profile["id"] = "member_0/node_aaaaaa"
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
+	signerRef := &core.SignerRef{Key: "0x12345"}
+	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
+
+	mds := nm.defsender.(*definitionsmocks.Sender)
+
+	mds.On("UpdateIdentity", nm.ctx,
+		mock.AnythingOfType("*core.Identity"),
+		mock.MatchedBy(func(iden *core.IdentityUpdate) bool {
+			return iden.Updates.Profile.GetString("id") == "member_0/node_aaaaaa"
+		}),
+		mock.MatchedBy(func(sr *core.SignerRef) bool {
+			return sr.Key == "0x12345"
+		}),
+		true).Return(nil)
+
+	org, err := nm.UpdateIdentity(nm.ctx, identity.ID.String(), &core.IdentityUpdateDTO{
+		IdentityProfile: core.IdentityProfile{
+			Description: "new desc",
+			Profile:     fftypes.JSONObject{"new": "profile"},
+		},
+	}, true)
+	assert.NoError(t, err)
+	assert.NotNil(t, org)
+
+	mim.AssertExpectations(t)
+	mds.AssertExpectations(t)
+}
+
+func TestUpdateIdentityProfileOverwrite(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	identity := testOrg("org1")
+	identity.Profile["id"] = "member_0/node_aaaaaa"
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
+	signerRef := &core.SignerRef{Key: "0x12345"}
+	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
+
+	mds := nm.defsender.(*definitionsmocks.Sender)
+
+	mds.On("UpdateIdentity", nm.ctx,
+		mock.AnythingOfType("*core.Identity"),
+		mock.MatchedBy(func(iden *core.IdentityUpdate) bool {
+			return iden.Updates.Profile.GetString("id") == "member_0/node_bbbbbb"
+		}),
+		mock.MatchedBy(func(sr *core.SignerRef) bool {
+			return sr.Key == "0x12345"
+		}),
+		true).Return(nil)
+
+	org, err := nm.UpdateIdentity(nm.ctx, identity.ID.String(), &core.IdentityUpdateDTO{
+		IdentityProfile: core.IdentityProfile{
+			Description: "new desc",
+			Profile:     fftypes.JSONObject{"new": "profile", "id": "member_0/node_bbbbbb"},
+		},
+	}, true)
+	assert.NoError(t, err)
+	assert.NotNil(t, org)
+
+	mim.AssertExpectations(t)
+	mds.AssertExpectations(t)
+}

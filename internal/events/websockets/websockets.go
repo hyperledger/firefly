@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -54,9 +54,11 @@ func (ws *WebSockets) Name() string { return "websockets" }
 
 func (ws *WebSockets) Init(ctx context.Context, config config.Section) error {
 	*ws = WebSockets{
-		ctx:          ctx,
-		connections:  make(map[string]*websocketConnection),
-		capabilities: &events.Capabilities{},
+		ctx:         ctx,
+		connections: make(map[string]*websocketConnection),
+		capabilities: &events.Capabilities{
+			BatchDelivery: true,
+		},
 		callbacks: callbacks{
 			handlers: make(map[string]events.Callbacks),
 		},
@@ -242,6 +244,11 @@ func (ws *WebSockets) GetStatus() *core.WebSocketStatus {
 }
 
 func (ws *WebSockets) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
-	// We should have rejected creation of the subscription, due to us not supporting this in our capabilities
-	return i18n.NewError(ctx, coremsgs.MsgBatchDeliveryNotSupported, ws.Name())
+	ws.connMux.Lock()
+	conn, ok := ws.connections[connID]
+	ws.connMux.Unlock()
+	if !ok {
+		return i18n.NewError(ctx, coremsgs.MsgWSConnectionNotActive, connID)
+	}
+	return conn.dispatchBatch(sub, events)
 }

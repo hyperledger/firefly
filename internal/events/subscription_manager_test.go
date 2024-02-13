@@ -551,6 +551,30 @@ func TestCreateSubscriptionSuccessTLSConfig(t *testing.T) {
 	assert.NotNil(t, sub.definition.Options.TLSConfig)
 }
 
+func TestCreateSubscriptionSuccessBatch(t *testing.T) {
+	coreconfig.Reset()
+
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+
+	mei.On("GetFFRestyConfig", mock.Anything).Return(&ffresty.Config{})
+	mei.On("ValidateOptions", mock.Anything, mock.Anything).Return(nil)
+	truthy := true
+	sub, err := sm.parseSubscriptionDef(sm.ctx, &core.Subscription{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+				Batch: &truthy,
+			},
+		},
+		Transport: "ut",
+	})
+	assert.NoError(t, err)
+
+	assert.Equal(t, uint16(50), *sub.definition.Options.ReadAhead)
+	assert.Equal(t, "50ms", *sub.definition.Options.BatchTimeout)
+}
+
 func TestCreateSubscriptionWithDeprecatedFilters(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)

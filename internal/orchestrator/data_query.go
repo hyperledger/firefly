@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -322,13 +322,24 @@ func (or *orchestrator) GetEventsWithReferences(ctx context.Context, filter ffap
 		return nil, nil, err
 	}
 
-	enriched := make([]*core.EnrichedEvent, len(events))
-	for i, event := range events {
-		enrichedEvent, err := or.events.EnrichEvent(or.ctx, event)
-		if err != nil {
-			return nil, nil, err
-		}
-		enriched[i] = enrichedEvent
+	enriched, err := or.events.EnrichEvents(ctx, events)
+	if err != nil {
+		return nil, nil, err
 	}
+
+	return enriched, fr, err
+}
+
+func (or *orchestrator) GetEventsWithReferencesInSequenceRange(ctx context.Context, filter ffapi.AndFilter, startSequence int, endSequence int) ([]*core.EnrichedEvent, *ffapi.FilterResult, error) {
+	events, fr, err := or.database().GetEventsInSequenceRange(ctx, or.namespace.Name, filter, startSequence, endSequence)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	enriched, err := or.events.EnrichEvents(ctx, events)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return enriched, fr, err
 }

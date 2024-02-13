@@ -4141,7 +4141,7 @@ func TestAddFireflySubscriptionEventstreamFail(t *testing.T) {
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
-	assert.Regexp(t, "FF10463", err)
+	assert.Regexp(t, "FF10465", err)
 }
 
 func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {

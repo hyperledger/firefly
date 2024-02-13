@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -110,6 +110,7 @@ var routes = append(
 		getStatusBatchManager,
 		getSubscriptionByID,
 		getSubscriptions,
+		getSubscriptionEventsFiltered,
 		getTokenAccountPools,
 		getTokenAccounts,
 		getTokenApprovals,

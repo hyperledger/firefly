@@ -95,6 +95,7 @@ The type field here is the JSON input type when making a request to FireFly to i
 
 ### Schema details
 
+<a name="schema-details"></a>
 The details field is quite important in some cases. Because the `details` field is passed to the blockchain plugin, it is used to encapsulate blockchain specific type information about a particular field. Additionally, because each blockchain plugin can add rules to the list of schema requirements above, a blockchain plugin can enforce that certain fields are always present within the `details` field. 
 
 For example, the Ethereum plugin always needs to know what Solidity type the field is. It also defines several optional fields. A full Ethereum details field may look like:

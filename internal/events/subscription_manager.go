@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,6 +20,7 @@ import (
 	"context"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -90,6 +91,9 @@ type subscriptionManager struct {
 	newOrUpdatedSubscriptions chan *fftypes.UUID
 	deletedSubscriptions      chan *fftypes.UUID
 	retry                     retry.Retry
+
+	defaultBatchSize    uint16
+	defaultBatchTimeout time.Duration
 }
 
 func newSubscriptionManager(ctx context.Context, ns *core.Namespace, enricher *eventEnricher, di database.Plugin, dm data.Manager, en *eventNotifier, bm broadcast.Manager, pm privatemessaging.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin) (*subscriptionManager, error) {
@@ -116,6 +120,8 @@ func newSubscriptionManager(ctx context.Context, ns *core.Namespace, enricher *e
 			MaximumDelay: config.GetDuration(coreconfig.SubscriptionsRetryMaxDelay),
 			Factor:       config.GetFloat64(coreconfig.SubscriptionsRetryFactor),
 		},
+		defaultBatchSize:    uint16(config.GetInt(coreconfig.SubscriptionDefaultsBatchSize)),
+		defaultBatchTimeout: config.GetDuration(coreconfig.SubscriptionDefaultsBatchTimeout),
 	}
 
 	for _, ei := range sm.transports {
@@ -268,6 +274,18 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 
 	if subDef.Options.TLSConfigName != "" && sm.namespace.TLSConfigs[subDef.Options.TLSConfigName] != nil {
 		subDef.Options.TLSConfig = sm.namespace.TLSConfigs[subDef.Options.TLSConfigName]
+	}
+
+	// Defaults that only apply in batch mode
+	if subDef.Options.Batch != nil && *subDef.Options.Batch {
+		if subDef.Options.ReadAhead == nil || *subDef.Options.ReadAhead == 0 {
+			defaultBatchSize := sm.defaultBatchSize
+			subDef.Options.ReadAhead = &defaultBatchSize
+		}
+		if subDef.Options.BatchTimeout == nil || *subDef.Options.BatchTimeout == "" {
+			defaultBatchTimeout := sm.defaultBatchTimeout.String()
+			subDef.Options.BatchTimeout = &defaultBatchTimeout
+		}
 	}
 
 	if err := transport.ValidateOptions(ctx, &subDef.Options); err != nil {
@@ -554,4 +572,76 @@ func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string,
 	}
 	sm.mux.Unlock()
 	dispatcher.deliveryResponse(inflight)
+}
+
+func (sub *subscription) MatchesEvent(event *core.EnrichedEvent) bool {
+	if sub.eventMatcher != nil && !sub.eventMatcher.MatchString(string(event.Type)) {
+		return false
+	}
+
+	msg := event.Message
+	tx := event.Transaction
+	be := event.BlockchainEvent
+	tag := ""
+	topic := event.Topic
+	group := ""
+	author := ""
+	txType := ""
+	beName := ""
+	beListener := ""
+
+	if msg != nil {
+		tag = msg.Header.Tag
+		author = msg.Header.Author
+		if msg.Header.Group != nil {
+			group = msg.Header.Group.String()
+		}
+	}
+
+	if tx != nil {
+		txType = tx.Type.String()
+	}
+
+	if be != nil {
+		beName = be.Name
+		beListener = be.Listener.String()
+	}
+
+	if sub.topicFilter != nil {
+		topicsMatch := false
+		if sub.topicFilter.MatchString(topic) {
+			topicsMatch = true
+		}
+		if !topicsMatch {
+			return false
+		}
+	}
+
+	if sub.messageFilter != nil {
+		if sub.messageFilter.tagFilter != nil && !sub.messageFilter.tagFilter.MatchString(tag) {
+			return false
+		}
+		if sub.messageFilter.authorFilter != nil && !sub.messageFilter.authorFilter.MatchString(author) {
+			return false
+		}
+		if sub.messageFilter.groupFilter != nil && !sub.messageFilter.groupFilter.MatchString(group) {
+			return false
+		}
+	}
+
+	if sub.transactionFilter != nil {
+		if sub.transactionFilter.typeFilter != nil && !sub.transactionFilter.typeFilter.MatchString(txType) {
+			return false
+		}
+	}
+
+	if sub.blockchainFilter != nil {
+		if sub.blockchainFilter.nameFilter != nil && !sub.blockchainFilter.nameFilter.MatchString(beName) {
+			return false
+		}
+		if sub.blockchainFilter.listenerFilter != nil && !sub.blockchainFilter.listenerFilter.MatchString(beListener) {
+			return false
+		}
+	}
+	return true
 }
