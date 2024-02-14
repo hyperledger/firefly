@@ -105,6 +105,7 @@ The `details` field is used to encapsulate blockchain specific type information 
 - variant
 - list
 - struct
+- map
 
 #### Internal type vs Internal schema
 
@@ -196,6 +197,29 @@ The `details` field is used to encapsulate blockchain specific type information 
                             "type": "nat"
                         }
                     ]
+                }
+            ]
+        }
+    }
+}
+```
+
+<i>Map example:</i>
+
+``` json
+{
+    "details": {
+        "type": "schema",
+        "internalSchema": {
+            "type": "map",
+            "args": [
+                {
+                    "name": "key",
+                    "type": "integer"
+                },
+                {
+                    "name": "value",
+                    "type": "string"
                 }
             ]
         }
