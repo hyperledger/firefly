@@ -11,13 +11,13 @@
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.18",
-    "sha": "683b4ef1373b3d9decd591906298878561218489a6279c3f4f208e2e1c7ace3f"
+    "tag": "v0.9.19",
+    "sha": "9479213b0114619c7690fa924ebbe7f837cf851c4ea9bd901798c7783edfc7e7"
   },
   "tezosconnect": {
     "image": "ghcr.io/hyperledger/firefly-tezosconnect",
-    "tag": "v0.2.0",
-    "sha": "3238b5118eaf84440890ac9f047753f9b08b983dab296748da81e961754e3afd"
+    "tag": "v0.2.2",
+    "sha": "238cef711f2ee8f841ad767be12ad33710136d6f5ab160de74715c0225188b94"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
@@ -36,8 +36,8 @@
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",
-    "tag": "v1.1.11",
-    "sha": "bf4b33be20338b229ce451bc61bd4c3ff6a11e7cbd5513d72267807483a1e024"
+    "tag": "v1.1.12",
+    "sha": "7d6760b611853c8f99ad462ebd8e6df6930e71c22d68f460e95bdd007b928eca"
   },
   "build": {
     "firefly-builder": {
