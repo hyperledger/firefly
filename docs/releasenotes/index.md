@@ -15,8 +15,8 @@ has_children: true
 
 What's New:
 
-- Namespaces now have individual event streams
-- Contract listeners now support having multiple filters
+- Implementation of [FIR-17](link when it finalised), allowing for off-chain data and on-chain logic to be tied together into a single blockchain transaction 
+- Sample contract implementation for custom pin contracts
 - Contract interfaces, contract APIs, and token pools can now be seperately defined and published
 - Support for batching events when delivering over websockets
 - Lots of bug fixes and miscellaneous enhancements
