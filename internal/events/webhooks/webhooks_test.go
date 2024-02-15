@@ -462,8 +462,6 @@ func TestRequestWithBodyReplyEndToEndWithTLS(t *testing.T) {
 		ClientCAs:  caCertPool,
 		ClientAuth: tls.RequireAndVerifyClientCert,
 	}
-	tlsConfig.BuildNameToCertificate()
-
 	// Create a Server instance to listen on port 8443 with the TLS config
 	server := &http.Server{
 		Addr:      "127.0.0.1:8443",
