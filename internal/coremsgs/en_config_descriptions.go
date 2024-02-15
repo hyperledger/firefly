@@ -383,9 +383,10 @@ var (
 	ConfigPluginSharedstorageIpfsGatewayURL      = ffc("config.plugins.sharedstorage[].ipfs.gateway.url", "The URL for the IPFS Gateway", urlStringType)
 	ConfigPluginSharedstorageIpfsGatewayProxyURL = ffc("config.plugins.sharedstorage[].ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", urlStringType)
 
-	ConfigSubscriptionMax                  = ffc("config.subscription.max", "The maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)", i18n.IntType)
-	ConfigSubscriptionDefaultsBatchSize    = ffc("config.subscription.defaults.batchSize", "Default read ahead to enable for subscriptions that do not explicitly configure readahead", i18n.IntType)
-	ConfigSubscriptionDefaultsBatchTimeout = ffc("config.subscription.defaults.batchTimeout", "Default batch timeout", i18n.IntType)
+	ConfigSubscriptionMax                          = ffc("config.subscription.max", "The maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)", i18n.IntType)
+	ConfigSubscriptionDefaultsBatchSize            = ffc("config.subscription.defaults.batchSize", "Default read ahead to enable for subscriptions that do not explicitly configure readahead", i18n.IntType)
+	ConfigSubscriptionDefaultsBatchTimeout         = ffc("config.subscription.defaults.batchTimeout", "Default batch timeout", i18n.IntType)
+	ConfigSubscriptionMaxHistoricalEventScanLength = ffc("config.subscription.events.maxScanLength", "The maximum number of events a search for historical events matching a subscription will index from the database", i18n.IntType)
 
 	ConfigTokensName     = ffc("config.tokens[].name", "A name to identify this token plugin", i18n.StringType)
 	ConfigTokensPlugin   = ffc("config.tokens[].plugin", "The type of the token plugin to use", i18n.StringType)
