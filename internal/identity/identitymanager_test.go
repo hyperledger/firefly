@@ -1436,8 +1436,11 @@ func TestGetLocalNode(t *testing.T) {
 func TestGetLocalNodeNotSet(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 	mmp := im.multiparty.(*multipartymocks.Manager)
+	mdi := im.database.(*databasemocks.Plugin)
 
 	mmp.On("LocalNode").Return(multiparty.LocalNode{})
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:node/").Return(nil, nil).Once()
+	mmp.On("GetNetworkVersion").Return(2)
 
 	_, err := im.GetLocalNode(ctx)
 	assert.Regexp(t, "FF10225", err)
