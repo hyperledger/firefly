@@ -105,13 +105,12 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 
 func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identity, err error) {
 	nodeName := im.multiparty.LocalNode().Name
-	nodeDID := fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, nodeName)
-	node, _, err = im.CachedIdentityLookupNilOK(ctx, nodeDID)
-
-	if nodeName == "" && node == nil {
+	if nodeName == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgLocalNodeNotSet)
 	}
 
+	nodeDID := fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, nodeName)
+	node, _, err = im.CachedIdentityLookupNilOK(ctx, nodeDID)
 	return node, err
 }
 
