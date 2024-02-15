@@ -90,6 +90,135 @@ Here we can see that our new contract address is `KT1ED4gj2xZnp8318yxa5NpvyvW15p
 As we know from the previous section - smart contracts on the Tezos blockchain are using the domain-specific, stack-based programming language called [Michelson](https://tezos.gitlab.io/active/michelson.html). It is a key component of the Tezos platform and plays a fundamental role in defining the behavior of smart contracts and facilitating their execution.
 This language is very efficient but also a bit tricky and challenging for learning, so in order to teach FireFly how to interact with the smart contract, we will be using [FireFly Interface (FFI)](../../reference/firefly_interface_format.md) to define the contract inteface which later will be encoded to Michelson.
 
+### Schema details
+
+The `details` field is used to encapsulate blockchain specific type information about a specific field. (More details at [schema details](../../reference/firefly_interface_format.md#schema-details))
+
+#### Supported Tezos types
+
+- nat
+- integer
+- string
+- address
+- bytes
+- boolean
+- variant
+- list
+- struct
+
+#### Internal type vs Internal schema
+
+<i>internalType</i> is a field which is used to describe tezos primitive types
+
+``` json
+{
+    "details": {
+        "type": "address",
+        "internalType": "address"
+    }
+}
+```
+
+<i>internalSchema</i> in turn is used to describe more complex tezos types as <b>list</b>, <b>struct</b> or <b>variant</b>
+
+<i>Struct example:</i>
+
+``` json
+{
+    "details": {
+        "type": "schema",
+        "internalSchema": {
+            "type": "struct",
+            "args": [
+                {
+                    "name": "metadata",
+                    "type": "bytes"
+                },
+                {
+                    "name": "token_id",
+                    "type": "nat"
+                }
+            ]
+        }
+    }
+}
+```
+
+<i>List example:</i>
+
+``` json
+{
+    "details": {
+        "type": "schema",
+        "internalSchema": {
+            "type": "struct",
+            "args": [
+                {
+                    "name": "metadata",
+                    "type": "bytes"
+                },
+                {
+                    "name": "token_id",
+                    "type": "nat"
+                }
+            ]
+        }
+    }
+}
+```
+
+<i>Variant example:</i>
+
+``` json
+{
+    "details": {
+        "type": "schema",
+        "internalSchema": {
+            "type": "variant",
+            "variants": [
+                "add_operator",
+                "remove_operator"
+            ],
+            "args": [
+                {
+                    "type": "struct",
+                    "args": [
+                        {
+                            "name": "owner",
+                            "type": "address"
+                        },
+                        {
+                            "name": "operator",
+                            "type": "address"
+                        },
+                        {
+                            "name": "token_id",
+                            "type": "nat"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
+```
+
+#### Options
+
+<i>Option</i> type is used to indicate a value as optional (see more at [smartpy options](https://smartpy.io/manual/syntax/options-and-variants#options))
+
+``` json
+{
+    "details": {
+        "type": "string",
+        "internalType": "string",
+        "kind": "option"
+    }
+}
+```
+
+### FA2 example
+
 The following FFI sample demonstrates the specification for the widely used FA2 (analogue of ERC721 for EVM) smart contract:
 
 ```json

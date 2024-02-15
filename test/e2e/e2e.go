@@ -138,7 +138,7 @@ func WaitForEvent(t *testing.T, c chan *core.EventDelivery, eventType core.Event
 			t.Logf("Detected '%s' event for ref '%s'", ed.Type, ed.Reference)
 			return
 		}
-		t.Logf("Ignored event '%s'", ed.ID)
+		t.Logf("Ignored event '%s' [%s]", ed.ID, ed.Type)
 	}
 }
 
@@ -149,7 +149,7 @@ func WaitForMessageConfirmed(t *testing.T, c chan *core.EventDelivery, msgType c
 			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
 			return ed
 		}
-		t.Logf("Ignored event '%s'", ed.ID)
+		t.Logf("Ignored event '%s' [%s]", ed.ID, ed.Type)
 	}
 }
 
@@ -160,7 +160,7 @@ func WaitForMessageRejected(t *testing.T, c chan *core.EventDelivery, msgType co
 			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
 			return ed
 		}
-		t.Logf("Ignored event '%s'", ed.ID)
+		t.Logf("Ignored event '%s' [%s]", ed.ID, ed.Type)
 	}
 }
 
@@ -171,7 +171,7 @@ func WaitForIdentityConfirmed(t *testing.T, c chan *core.EventDelivery) *core.Ev
 			t.Logf("Detected '%s' event for identity '%s'", ed.Type, ed.Reference)
 			return ed
 		}
-		t.Logf("Ignored event '%s'", ed.ID)
+		t.Logf("Ignored event '%s' [%s]", ed.ID, ed.Type)
 	}
 }
 

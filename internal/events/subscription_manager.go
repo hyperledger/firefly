@@ -573,3 +573,75 @@ func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string,
 	sm.mux.Unlock()
 	dispatcher.deliveryResponse(inflight)
 }
+
+func (sub *subscription) MatchesEvent(event *core.EnrichedEvent) bool {
+	if sub.eventMatcher != nil && !sub.eventMatcher.MatchString(string(event.Type)) {
+		return false
+	}
+
+	msg := event.Message
+	tx := event.Transaction
+	be := event.BlockchainEvent
+	tag := ""
+	topic := event.Topic
+	group := ""
+	author := ""
+	txType := ""
+	beName := ""
+	beListener := ""
+
+	if msg != nil {
+		tag = msg.Header.Tag
+		author = msg.Header.Author
+		if msg.Header.Group != nil {
+			group = msg.Header.Group.String()
+		}
+	}
+
+	if tx != nil {
+		txType = tx.Type.String()
+	}
+
+	if be != nil {
+		beName = be.Name
+		beListener = be.Listener.String()
+	}
+
+	if sub.topicFilter != nil {
+		topicsMatch := false
+		if sub.topicFilter.MatchString(topic) {
+			topicsMatch = true
+		}
+		if !topicsMatch {
+			return false
+		}
+	}
+
+	if sub.messageFilter != nil {
+		if sub.messageFilter.tagFilter != nil && !sub.messageFilter.tagFilter.MatchString(tag) {
+			return false
+		}
+		if sub.messageFilter.authorFilter != nil && !sub.messageFilter.authorFilter.MatchString(author) {
+			return false
+		}
+		if sub.messageFilter.groupFilter != nil && !sub.messageFilter.groupFilter.MatchString(group) {
+			return false
+		}
+	}
+
+	if sub.transactionFilter != nil {
+		if sub.transactionFilter.typeFilter != nil && !sub.transactionFilter.typeFilter.MatchString(txType) {
+			return false
+		}
+	}
+
+	if sub.blockchainFilter != nil {
+		if sub.blockchainFilter.nameFilter != nil && !sub.blockchainFilter.nameFilter.MatchString(beName) {
+			return false
+		}
+		if sub.blockchainFilter.listenerFilter != nil && !sub.blockchainFilter.listenerFilter.MatchString(beListener) {
+			return false
+		}
+	}
+	return true
+}

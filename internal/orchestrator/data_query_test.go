@@ -691,25 +691,25 @@ func TestGetEventsWithReferences(t *testing.T) {
 		Type:      core.EventTypeMessageConfirmed,
 	}
 
-	or.mem.On("EnrichEvent", mock.Anything, blockchainEvent).Return(&core.EnrichedEvent{
-		Event: *blockchainEvent,
-		BlockchainEvent: &core.BlockchainEvent{
-			ID: ref1,
+	or.mem.On("EnrichEvents", mock.Anything, mock.Anything).Return([]*core.EnrichedEvent{
+		{
+			Event: *blockchainEvent,
+			BlockchainEvent: &core.BlockchainEvent{
+				ID: ref1,
+			},
 		},
-	}, nil)
-
-	or.mem.On("EnrichEvent", mock.Anything, txEvent).Return(&core.EnrichedEvent{
-		Event: *txEvent,
-		Transaction: &core.Transaction{
-			ID: ref2,
+		{
+			Event: *txEvent,
+			Transaction: &core.Transaction{
+				ID: ref2,
+			},
 		},
-	}, nil)
-
-	or.mem.On("EnrichEvent", mock.Anything, msgEvent).Return(&core.EnrichedEvent{
-		Event: *msgEvent,
-		Message: &core.Message{
-			Header: core.MessageHeader{
-				ID: ref3,
+		{
+			Event: *msgEvent,
+			Message: &core.Message{
+				Header: core.MessageHeader{
+					ID: ref3,
+				},
 			},
 		},
 	}, nil)
@@ -731,7 +731,7 @@ func TestGetEventsWithReferencesEnrichFail(t *testing.T) {
 	u := fftypes.NewUUID()
 
 	or.mdi.On("GetEvents", mock.Anything, "ns", mock.Anything).Return([]*core.Event{{ID: fftypes.NewUUID()}}, nil, nil)
-	or.mem.On("EnrichEvent", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	or.mem.On("EnrichEvents", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetEventsWithReferences(context.Background(), f)
@@ -847,4 +847,16 @@ func TestGetNextPins(t *testing.T) {
 	f := fb.And(fb.Eq("hash", u))
 	_, _, err := or.GetNextPins(context.Background(), f)
 	assert.NoError(t, err)
+}
+
+func TestGetEventsInSequenceWithReferencesWhenEnrichEventsFails(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	u := fftypes.NewUUID()
+	or.mdi.On("GetEventsInSequenceRange", mock.Anything, "ns", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil)
+	or.mem.On("EnrichEvents", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("Oops..."))
+	fb := database.EventQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("id", u))
+	_, _, err := or.GetEventsWithReferencesInSequenceRange(context.Background(), f, 0, 100)
+	assert.EqualError(t, err, "Oops...")
 }

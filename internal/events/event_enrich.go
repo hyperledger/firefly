@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,6 +42,18 @@ func newEventEnricher(ns string, di database.Plugin, dm data.Manager, om operati
 		operations: om,
 		txHelper:   txHelper,
 	}
+}
+
+func (em *eventEnricher) enrichEvents(ctx context.Context, events []*core.Event) ([]*core.EnrichedEvent, error) {
+	enriched := make([]*core.EnrichedEvent, len(events))
+	for i, event := range events {
+		enrichedEvent, err := em.enrichEvent(ctx, event)
+		if err != nil {
+			return nil, err
+		}
+		enriched[i] = enrichedEvent
+	}
+	return enriched, nil
 }
 
 func (em *eventEnricher) enrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
