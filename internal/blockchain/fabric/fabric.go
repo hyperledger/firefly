@@ -273,7 +273,7 @@ func (f *Fabric) StartNamespace(ctx context.Context, namespace string) (err erro
 	if err != nil {
 		return err
 	}
-	// Otherwise, make sure that our event stream is in place
+	// Make sure that our event stream is in place
 	stream, err := f.streams.ensureEventStream(ctx, topic, f.pluginTopic)
 	if err != nil {
 		return err
@@ -296,6 +296,7 @@ func (f *Fabric) StartNamespace(ctx context.Context, namespace string) (err erro
 func (f *Fabric) StopNamespace(ctx context.Context, namespace string) (err error) {
 	wsconn, ok := f.wsconn[namespace]
 	if ok {
+		<-f.closed[namespace]
 		wsconn.Close()
 	}
 	delete(f.wsconn, namespace)
@@ -504,7 +505,7 @@ func (f *Fabric) eventLoop(namespace string, wsconn wsclient.WSClient, closed ch
 	topic := f.getTopic(namespace)
 	defer wsconn.Close()
 	defer close(closed)
-	l := log.L(f.ctx).WithField("role", "event-loop")
+	l := log.L(f.ctx).WithField("role", "event-loop").WithField("namespace", namespace)
 	ctx := log.WithLogger(f.ctx, l)
 	log.L(ctx).Debugf("Starting event loop for namespace '%s'", namespace)
 	for {

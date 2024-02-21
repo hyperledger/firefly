@@ -227,7 +227,7 @@ func (e *Ethereum) StartNamespace(ctx context.Context, namespace string) (err er
 	if err != nil {
 		return err
 	}
-	// Otherwise, make sure that our event stream is in place
+	// Make sure that our event stream is in place
 	stream, err := e.streams.ensureEventStream(ctx, topic, e.pluginTopic)
 	if err != nil {
 		return err
@@ -250,6 +250,7 @@ func (e *Ethereum) StartNamespace(ctx context.Context, namespace string) (err er
 func (e *Ethereum) StopNamespace(ctx context.Context, namespace string) (err error) {
 	wsconn, ok := e.wsconn[namespace]
 	if ok {
+		<-e.closed[namespace]
 		wsconn.Close()
 	}
 	delete(e.wsconn, namespace)
@@ -456,7 +457,7 @@ func (e *Ethereum) eventLoop(namespace string, wsconn wsclient.WSClient, closed 
 	topic := e.getTopic(namespace)
 	defer wsconn.Close()
 	defer close(closed)
-	l := log.L(e.ctx).WithField("role", "event-loop")
+	l := log.L(e.ctx).WithField("role", "event-loop").WithField("namespace", namespace)
 	ctx := log.WithLogger(e.ctx, l)
 	log.L(ctx).Debugf("Starting event loop for namespace '%s'", namespace)
 	for {
