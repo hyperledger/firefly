@@ -296,7 +296,6 @@ func (f *Fabric) StartNamespace(ctx context.Context, namespace string) (err erro
 func (f *Fabric) StopNamespace(ctx context.Context, namespace string) (err error) {
 	wsconn, ok := f.wsconn[namespace]
 	if ok {
-		<-f.closed[namespace]
 		wsconn.Close()
 	}
 	delete(f.wsconn, namespace)

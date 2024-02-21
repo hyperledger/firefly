@@ -250,7 +250,6 @@ func (e *Ethereum) StartNamespace(ctx context.Context, namespace string) (err er
 func (e *Ethereum) StopNamespace(ctx context.Context, namespace string) (err error) {
 	wsconn, ok := e.wsconn[namespace]
 	if ok {
-		<-e.closed[namespace]
 		wsconn.Close()
 	}
 	delete(e.wsconn, namespace)

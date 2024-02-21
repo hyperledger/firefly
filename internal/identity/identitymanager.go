@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -105,13 +105,12 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 
 func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identity, err error) {
 	nodeName := im.multiparty.LocalNode().Name
-	if nodeName != "" {
-		nodeDID := fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, nodeName)
-		node, _, err = im.CachedIdentityLookupNilOK(ctx, nodeDID)
-	}
-	if err == nil && node == nil {
+	if nodeName == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgLocalNodeNotSet)
 	}
+
+	nodeDID := fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, nodeName)
+	node, _, err = im.CachedIdentityLookupNilOK(ctx, nodeDID)
 	return node, err
 }
 
