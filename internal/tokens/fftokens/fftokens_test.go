@@ -998,7 +998,7 @@ func TestIgnoredEvents(t *testing.T) {
 	assert.Equal(t, "{\"type\":\"start\",\"autoack\":null,\"namespace\":\"ns1\",\"name\":\"\",\"ephemeral\":false,\"filter\":{\"message\":{},\"transaction\":{},\"blockchainevent\":{}},\"options\":{}}", string(msg))
 
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"1"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"1","type":"ack"}`, string(msg))
 
 	fromServer <- fftypes.JSONObject{
 		"namespace": "ns1",
@@ -1121,7 +1121,7 @@ func TestPoolEvents(t *testing.T) {
 	assert.Equal(t, "{\"type\":\"start\",\"autoack\":null,\"namespace\":\"ns1\",\"name\":\"\",\"ephemeral\":false,\"filter\":{\"message\":{},\"transaction\":{},\"blockchainevent\":{}},\"options\":{}}", string(msg))
 
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"6"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"6","type":"ack"}`, string(msg))
 
 	// token-pool: invalid uuid (success)
 	mcb.On("TokenPoolCreated", mock.Anything, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
@@ -1146,7 +1146,7 @@ func TestPoolEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"7"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"7","type":"ack"}`, string(msg))
 
 	// token-pool: success
 	mcb.On("TokenPoolCreated", mock.Anything, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
@@ -1171,7 +1171,7 @@ func TestPoolEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"8","type":"ack"}`, string(msg))
 
 	// token-pool: no handler
 	fromServer <- fftypes.JSONObject{
@@ -1242,7 +1242,7 @@ func TestTransferEvents(t *testing.T) {
 	assert.Equal(t, "{\"type\":\"start\",\"autoack\":null,\"namespace\":\"ns1\",\"name\":\"\",\"ephemeral\":false,\"filter\":{\"message\":{},\"transaction\":{},\"blockchainevent\":{}},\"options\":{}}", string(msg))
 
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"9"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"9","type":"ack"}`, string(msg))
 
 	// token-mint: invalid amount
 	fromServer <- fftypes.JSONObject{
@@ -1265,7 +1265,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"10"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"10","type":"ack"}`, string(msg))
 
 	// token-mint: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
@@ -1291,7 +1291,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"11"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"11","type":"ack"}`, string(msg))
 
 	// token-mint: invalid uuid (success)
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
@@ -1317,7 +1317,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"12"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"12","type":"ack"}`, string(msg))
 
 	// token-transfer: missing from
 	fromServer <- fftypes.JSONObject{
@@ -1339,7 +1339,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"13"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"13","type":"ack"}`, string(msg))
 
 	// token-transfer: bad message hash (success)
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
@@ -1365,7 +1365,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"14"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"14","type":"ack"}`, string(msg))
 
 	// token-transfer: success
 	messageID := fftypes.NewUUID()
@@ -1392,7 +1392,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"15"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"15","type":"ack"}`, string(msg))
 
 	// token-burn: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
@@ -1418,7 +1418,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"16"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"16","type":"ack"}`, string(msg))
 
 	// token-transfer: callback fail
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
@@ -1489,7 +1489,7 @@ func TestApprovalEvents(t *testing.T) {
 	assert.Equal(t, "{\"type\":\"start\",\"autoack\":null,\"namespace\":\"ns1\",\"name\":\"\",\"ephemeral\":false,\"filter\":{\"message\":{},\"transaction\":{},\"blockchainevent\":{}},\"options\":{}}", string(msg))
 
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"17"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"17","type":"ack"}`, string(msg))
 
 	// token-approval: success (no data)
 	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
@@ -1515,7 +1515,7 @@ func TestApprovalEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"18"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"18","type":"ack"}`, string(msg))
 
 	// token-approval: missing data
 	fromServer <- fftypes.JSONObject{
@@ -1523,7 +1523,7 @@ func TestApprovalEvents(t *testing.T) {
 		"event": "token-approval",
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"19"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"19","type":"ack"}`, string(msg))
 
 	// token-approval: callback fail
 	errProcessed := make(chan struct{})
