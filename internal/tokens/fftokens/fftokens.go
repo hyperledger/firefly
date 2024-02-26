@@ -258,6 +258,11 @@ type tokenError struct {
 	Message string `json:"message,omitempty"`
 }
 
+type wsAck struct {
+	core.WSActionBase
+	ID string `json:"id"`
+}
+
 func packPoolData(namespace string, id *fftypes.UUID) string {
 	if id == nil {
 		return namespace
@@ -679,11 +684,11 @@ func (ft *FFTokens) handleMessage(ctx context.Context, namespace string, msgByte
 	}
 	if msg.Event != messageReceipt && msg.ID != "" {
 		log.L(ctx).Debugf("Sending ack %s", msg.ID)
-		ack, _ := json.Marshal(fftypes.JSONObject{
-			"event": "ack",
-			"data": fftypes.JSONObject{
-				"id": msg.ID,
+		ack, _ := json.Marshal(wsAck{
+			WSActionBase: core.WSActionBase{
+				Type: core.WSClientActionAck,
 			},
+			ID: msg.ID,
 		})
 		// Do not retry this
 		return false, ft.wsconn[namespace].Send(ctx, ack)
