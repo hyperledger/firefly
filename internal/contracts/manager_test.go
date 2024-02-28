@@ -3800,3 +3800,62 @@ func TestEnsureParamNamesIncludedInCacheKeys(t *testing.T) {
 	assert.NotEqual(t, hex.EncodeToString(paramUniqueHash1.Sum(nil)), hex.EncodeToString(paramUniqueHash2.Sum(nil)))
 
 }
+
+func TestFilterHash(t *testing.T) {
+	cm := newTestContractManager()
+
+	filterSet1 := core.ListenerFilters{
+		&core.ListenerFilter{
+			Signature: "Changed(uint256)",
+			Location:  fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+		},
+	}
+
+	filterSet2 := core.ListenerFilters{
+		&core.ListenerFilter{
+			Signature: "Changed(uint256)",
+			Location:  fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+		},
+	}
+
+	hash1, err := cm.generateFilterHash(filterSet1)
+	assert.NoError(t, err)
+	hash2, err := cm.generateFilterHash(filterSet2)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "5b4b14f9da842c8db443b9e4542f84baf0e1a216c3d06b17383b68389db82df2", hash1.String())
+	assert.Equal(t, hash1.String(), hash2.String())
+
+	filterSet1 = core.ListenerFilters{
+		&core.ListenerFilter{
+			Signature: "Changed(uint256)",
+			Location:  fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+		},
+		&core.ListenerFilter{
+			Signature: "Changed(uint256)",
+			Location:  fftypes.JSONAnyPtr(`{"address":"0x217e63be04ddac2a6e28eb653131aeb00a3fd0f4"}`),
+		},
+	}
+
+	filterSet2 = core.ListenerFilters{
+		&core.ListenerFilter{
+			Signature: "Changed(uint256)",
+			Location:  fftypes.JSONAnyPtr(`{"address":"0x217e63be04ddac2a6e28eb653131aeb00a3fd0f4"}`),
+		},
+		&core.ListenerFilter{
+			Signature: "Changed(uint256)",
+			Interface: &fftypes.FFIReference{
+				ID: fftypes.NewUUID(),
+			},
+			Location: fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+		},
+	}
+
+	hash1, err = cm.generateFilterHash(filterSet1)
+	assert.NoError(t, err)
+	hash2, err = cm.generateFilterHash(filterSet2)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "ecf24a607244d2dcdc245f694665ce8acd21391a2291978a27a5fbe82c0d4689", hash1.String())
+	assert.Equal(t, hash1.String(), hash2.String())
+}

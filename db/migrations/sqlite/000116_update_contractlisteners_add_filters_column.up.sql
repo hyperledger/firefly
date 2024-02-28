@@ -10,3 +10,6 @@ UPDATE contractlisteners SET event = event_tmp;
 UPDATE contractlisteners SET location = location_tmp;
 ALTER TABLE contractlisteners DROP COLUMN event_tmp;
 ALTER TABLE contractlisteners DROP COLUMN location_tmp;
+
+ALTER TABLE contractlisteners ADD COLUMN filter_hash CHAR(64);
+CREATE INDEX contractlisteners_filter_hash ON contractlisteners(filter_hash);

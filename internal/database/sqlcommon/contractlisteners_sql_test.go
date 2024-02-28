@@ -237,7 +237,7 @@ func TestContractListenerDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(contractListenerColumns).AddRow(
-		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "sig", "topic1", nil, fftypes.Now(), "[]"),
+		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "sig", "topic1", nil, fftypes.Now(), "[]", ""),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteContractListenerByID(context.Background(), "ns", fftypes.NewUUID())

@@ -45,6 +45,7 @@ var (
 		"options",
 		"created",
 		"filters",
+		"filter_hash",
 	}
 	contractListenerFilterFieldMap = map[string]string{
 		"interface": "interface_id",
@@ -83,6 +84,7 @@ func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.C
 				listener.Options,
 				listener.Created,
 				listener.Filters,
+				listener.FilterHash,
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeCreated, listener.Namespace, listener.ID)
@@ -111,6 +113,7 @@ func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (
 		&listener.Options,
 		&listener.Created,
 		&listener.Filters,
+		&listener.FilterHash,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, contractlistenersTable)

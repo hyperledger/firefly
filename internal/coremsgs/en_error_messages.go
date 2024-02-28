@@ -223,7 +223,7 @@ var (
 	MsgOperationDataIncorrect                = ffe("FF10378", "Operation data type incorrect: %T", 400)
 	MsgDataMissingBlobHash                   = ffe("FF10379", "Blob for data %s cannot be transferred as it is missing a hash", 500)
 	MsgUnexpectedDXMessageType               = ffe("FF10380", "Unexpected websocket event type from DX plugin: %s", 500)
-	MsgContractListenerExists                = ffe("FF10383", "A contract listener already exists for this combination of topic + location + event", 409)
+	MsgContractListenerExists                = ffe("FF10383", "A contract listener already exists for this combination of topic + filters (location + event)", 409)
 	MsgInvalidOutputOption                   = ffe("FF10385", "invalid output option '%s'")
 	MsgInvalidPluginConfiguration            = ffe("FF10386", "Invalid %s plugin configuration - name and type are required")
 	MsgReferenceMarkdownMissing              = ffe("FF10387", "Reference markdown file missing: '%s'")
