@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -139,7 +139,7 @@ func (p *whPayload) firstData() fftypes.JSONObject {
 }
 
 func (wh *WebHooks) buildPayload(ctx context.Context, sub *core.Subscription, event *core.CombinedEventDataDelivery) *whPayload {
-
+	log.L(wh.ctx).Debugf("Webhook-> %s event %s on subscription %s", sub.Options.URL, event.Event.ID, sub.ID)
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 	options := sub.Options.TransportOptions()
 	p := &whPayload{
@@ -285,7 +285,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 			if err != nil {
 				return err
 			}
-			newFFRestyConfig.RetryInitialDelay = time.Duration(ffd)
+			newFFRestyConfig.RetryInitialDelay = fftypes.FFDuration(time.Duration(ffd))
 		}
 
 		if options.Retry.MaximumDelay != "" {
@@ -293,7 +293,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 			if err != nil {
 				return err
 			}
-			newFFRestyConfig.RetryMaximumDelay = time.Duration(ffd)
+			newFFRestyConfig.RetryMaximumDelay = fftypes.FFDuration(time.Duration(ffd))
 		}
 	}
 
@@ -306,7 +306,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		if err != nil {
 			return err
 		}
-		newFFRestyConfig.HTTPRequestTimeout = time.Duration(ffd)
+		newFFRestyConfig.HTTPRequestTimeout = fftypes.FFDuration(time.Duration(ffd))
 	}
 
 	if options.HTTPOptions.HTTPIdleConnTimeout != "" {
@@ -314,7 +314,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		if err != nil {
 			return err
 		}
-		newFFRestyConfig.HTTPIdleConnTimeout = time.Duration(ffd)
+		newFFRestyConfig.HTTPIdleConnTimeout = fftypes.FFDuration(time.Duration(ffd))
 	}
 
 	if options.HTTPOptions.HTTPExpectContinueTimeout != "" {
@@ -322,7 +322,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		if err != nil {
 			return err
 		}
-		newFFRestyConfig.HTTPExpectContinueTimeout = time.Duration(ffd)
+		newFFRestyConfig.HTTPExpectContinueTimeout = fftypes.FFDuration(time.Duration(ffd))
 	}
 
 	if options.HTTPOptions.HTTPConnectionTimeout != "" {
@@ -330,7 +330,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		if err != nil {
 			return err
 		}
-		newFFRestyConfig.HTTPConnectionTimeout = time.Duration(ffd)
+		newFFRestyConfig.HTTPConnectionTimeout = fftypes.FFDuration(time.Duration(ffd))
 	}
 
 	if options.HTTPOptions.HTTPTLSHandshakeTimeout != "" {
@@ -338,7 +338,7 @@ func (wh *WebHooks) ValidateOptions(ctx context.Context, options *core.Subscript
 		if err != nil {
 			return err
 		}
-		newFFRestyConfig.HTTPTLSHandshakeTimeout = time.Duration(ffd)
+		newFFRestyConfig.HTTPTLSHandshakeTimeout = fftypes.FFDuration(time.Duration(ffd))
 	}
 
 	if options.HTTPOptions.HTTPProxyURL != nil {
@@ -391,10 +391,9 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 		req.r.SetBody(requestBody)
 	}
 
-	// log.L(wh.ctx).Debugf("Webhook-> %s %s event %s on subscription %s", req.method, req.url, event.ID, sub.ID)
 	resp, err := req.r.Execute(req.method, req.url)
 	if err != nil {
-		// log.L(ctx).Errorf("Webhook<- %s %s event %s on subscription %s failed: %s", req.method, req.url, event.ID, sub.ID, err)
+		log.L(ctx).Errorf("Webhook<- %s %s on subscription %s failed: %s", req.method, req.url, sub.ID, err)
 		return nil, nil, err
 	}
 	defer func() { _ = resp.RawBody().Close() }()
@@ -403,7 +402,7 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 		Status:  resp.StatusCode(),
 		Headers: fftypes.JSONObject{},
 	}
-	// log.L(wh.ctx).Infof("Webhook<- %s %s event %s on subscription %s returned %d", req.method, req.url, event.ID, sub.ID, res.Status)
+	log.L(wh.ctx).Debugf("Webhook<- %s %s on subscription %s returned %d", req.method, req.url, sub.ID, res.Status)
 	header := resp.Header()
 	for h := range header {
 		res.Headers[h] = header.Get(h)

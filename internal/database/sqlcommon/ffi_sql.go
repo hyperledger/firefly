@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -248,7 +248,7 @@ func (s *SQLCommon) GetFFIs(ctx context.Context, namespace string, filter ffapi.
 		ffis = append(ffis, cd)
 	}
 
-	return ffis, s.QueryRes(ctx, ffiTable, tx, fop, fi), err
+	return ffis, s.QueryRes(ctx, ffiTable, tx, fop, nil, fi), err
 
 }
 

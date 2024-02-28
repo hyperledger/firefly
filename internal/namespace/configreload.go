@@ -61,6 +61,8 @@ func (nm *namespaceManager) configFileChanged() {
 }
 
 func (nm *namespaceManager) configReloaded(ctx context.Context) {
+	// Always make sure log level is up to date
+	log.SetLevel(config.GetString(config.LogLevel))
 
 	// Get Viper to dump the whole new config, with everything resolved across env vars
 	// and the config file etc.

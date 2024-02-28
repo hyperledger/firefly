@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -322,7 +322,7 @@ func (s *SQLCommon) GetData(ctx context.Context, namespace string, filter ffapi.
 		data = append(data, d)
 	}
 
-	return data, s.QueryRes(ctx, dataTable, tx, fop, fi), err
+	return data, s.QueryRes(ctx, dataTable, tx, fop, nil, fi), err
 
 }
 
@@ -354,7 +354,7 @@ func (s *SQLCommon) GetDataRefs(ctx context.Context, namespace string, filter ff
 		refs = append(refs, &ref)
 	}
 
-	return refs, s.QueryRes(ctx, dataTable, tx, fop, fi), err
+	return refs, s.QueryRes(ctx, dataTable, tx, fop, nil, fi), err
 
 }
 

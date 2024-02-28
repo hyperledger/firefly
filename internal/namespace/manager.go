@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -798,6 +798,7 @@ func (nm *namespaceManager) loadTLSConfig(ctx context.Context, tlsConfigs map[st
 	return nil
 }
 
+// nolint: gocyclo
 func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section, rawNSConfig fftypes.JSONObject, availablePlugins map[string]*plugin) (ns *namespace, err error) {
 	if err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
 		return nil, err
@@ -890,9 +891,10 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}
 
 	config := orchestrator.Config{
-		DefaultKey:          conf.GetString(coreconfig.NamespaceDefaultKey),
-		TokenBroadcastNames: nm.tokenBroadcastNames,
-		KeyNormalization:    keyNormalization,
+		DefaultKey:                  conf.GetString(coreconfig.NamespaceDefaultKey),
+		TokenBroadcastNames:         nm.tokenBroadcastNames,
+		KeyNormalization:            keyNormalization,
+		MaxHistoricalEventScanLimit: config.GetInt(coreconfig.SubscriptionMaxHistoricalEventScanLength),
 	}
 	if multipartyEnabled.(bool) {
 		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)

@@ -171,6 +171,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.defhandler = tor.mdh
 	tor.orchestrator.defsender = tor.mds
 	tor.orchestrator.config.Multiparty.Enabled = true
+	tor.orchestrator.config.MaxHistoricalEventScanLimit = 1000
 	tor.orchestrator.plugins = &Plugins{
 		Blockchain: BlockchainPlugin{
 			Plugin: tor.mbi,

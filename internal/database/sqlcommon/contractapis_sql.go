@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -259,7 +259,7 @@ func (s *SQLCommon) GetContractAPIs(ctx context.Context, namespace string, filte
 		apis = append(apis, api)
 	}
 
-	return apis, s.QueryRes(ctx, contractapisTable, tx, fop, fi), err
+	return apis, s.QueryRes(ctx, contractapisTable, tx, fop, nil, fi), err
 
 }
 

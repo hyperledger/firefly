@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,11 +18,14 @@ package orchestrator
 
 import (
 	"context"
+	"math"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -133,4 +136,59 @@ func (or *orchestrator) GetSubscriptionByIDWithStatus(ctx context.Context, id st
 	}
 
 	return subWithStatus, nil
+}
+
+func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, subscription *core.Subscription, filter ffapi.AndFilter, startSequence int, endSequence int) ([]*core.EnrichedEvent, *ffapi.FilterResult, error) {
+	if startSequence != -1 && endSequence != -1 && endSequence-startSequence > config.GetInt(coreconfig.SubscriptionMaxHistoricalEventScanLength) {
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgMaxSubscriptionEventScanLimitBreached, startSequence, endSequence)
+	}
+
+	requestedFiltering, err := filter.Finalize()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var unfilteredEvents []*core.EnrichedEvent
+	if startSequence == -1 && endSequence == -1 {
+		unfilteredEvents, _, err = or.GetEventsWithReferences(ctx, filter)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		if startSequence == -1 {
+			recordLimit := math.Min(float64(requestedFiltering.Limit), float64(config.GetInt(coreconfig.SubscriptionMaxHistoricalEventScanLength)))
+			if endSequence-int(recordLimit) > 0 {
+				startSequence = endSequence - int(recordLimit)
+			} else {
+				startSequence = 0
+			}
+		}
+
+		if endSequence == -1 {
+			// This blind assertion is safe since the DB won't blow up, it'll just return nothing
+			endSequence = startSequence + 1000
+		}
+
+		unfilteredEvents, _, err = or.GetEventsWithReferencesInSequenceRange(ctx, filter, startSequence, endSequence)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	filteredEvents, err := or.events.FilterHistoricalEventsOnSubscription(ctx, unfilteredEvents, subscription)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var filteredEventsMatchingSubscription []*core.EnrichedEvent
+	if len(filteredEvents) > int(requestedFiltering.Limit) {
+		filteredEventsMatchingSubscription = filteredEvents[len(filteredEvents)-int(requestedFiltering.Limit):]
+	} else {
+		filteredEventsMatchingSubscription = filteredEvents
+	}
+
+	filterResultLength := int64(len(filteredEventsMatchingSubscription))
+	return filteredEventsMatchingSubscription, &ffapi.FilterResult{
+		TotalCount: &filterResultLength,
+	}, nil
 }
