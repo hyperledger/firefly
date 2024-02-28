@@ -9,11 +9,11 @@ ARG GIT_REF
 FROM $FIREFLY_BUILDER_TAG AS firefly-builder
 ARG BUILD_VERSION
 ARG GIT_REF
-RUN apk add make=4.3-r0 \
-    gcc=11.2.1_git20220219-r2 \
+RUN apk add make=4.4.1-r2 \
+    gcc=13.2.1_git20231014-r0 \
     build-base=0.5-r3 \
     curl=8.5.0-r0 \
-    git=2.36.6-r0
+    git=2.43.0-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
@@ -27,7 +27,7 @@ ADD --chown=1001:0 . .
 RUN make build
 
 FROM --platform=$FABRIC_BUILDER_PLATFORM $FABRIC_BUILDER_TAG AS fabric-builder
-RUN apk add libc6-compat=1.2.3-r3
+RUN apk add gcompat=1.1.0-r4
 WORKDIR /firefly/smart_contracts/fabric/firefly-go
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
@@ -67,10 +67,10 @@ FROM $BASE_TAG
 ARG UI_TAG
 ARG UI_RELEASE
 RUN apk add --update --no-cache \
-    sqlite=3.40.1-r0 \
-    postgresql14-client=14.10-r0 \
+    sqlite=3.44.2-r0 \
+    postgresql16-client=16.2-r0 \
     curl=8.5.0-r0 \
-    jq=1.6-r1
+    jq=1.7.1-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
