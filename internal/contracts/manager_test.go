@@ -1064,8 +1064,8 @@ func TestAddContractListenerVerifyOk(t *testing.T) {
 		fi, _ := f.Finalize()
 		return fi.Skip == 0 && fi.Limit == 50
 	})).Return([]*core.ContractListener{
-		{ID: fftypes.NewUUID(), BackendID: "12345"},
-		{ID: fftypes.NewUUID(), BackendID: "23456"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
 	}, nil, nil).Once()
 	mdi.On("GetContractListeners", mock.Anything, "ns1", mock.MatchedBy(func(f ffapi.Filter) bool {
 		fi, _ := f.Finalize()
@@ -1073,8 +1073,8 @@ func TestAddContractListenerVerifyOk(t *testing.T) {
 	})).Return([]*core.ContractListener{}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "12345", true).Return(true, struct{}{}, nil)
-	mbi.On("GetContractListenerStatus", ctx, "23456", true).Return(false, nil, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
@@ -1103,13 +1103,13 @@ func TestAddContractListenerVerifyUpdateFail(t *testing.T) {
 		fi, _ := f.Finalize()
 		return fi.Skip == 0 && fi.Limit == 50
 	})).Return([]*core.ContractListener{
-		{ID: fftypes.NewUUID(), BackendID: "12345"},
-		{ID: fftypes.NewUUID(), BackendID: "23456"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
 	}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "12345", true).Return(true, struct{}{}, nil)
-	mbi.On("GetContractListenerStatus", ctx, "23456", true).Return(false, nil, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
@@ -1138,13 +1138,13 @@ func TestAddContractListenerVerifyAddFail(t *testing.T) {
 		fi, _ := f.Finalize()
 		return fi.Skip == 0 && fi.Limit == 50
 	})).Return([]*core.ContractListener{
-		{ID: fftypes.NewUUID(), BackendID: "12345"},
-		{ID: fftypes.NewUUID(), BackendID: "23456"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
 	}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "12345", true).Return(true, struct{}{}, nil)
-	mbi.On("GetContractListenerStatus", ctx, "23456", true).Return(false, nil, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
@@ -1168,12 +1168,12 @@ func TestAddContractListenerVerifyGetFail(t *testing.T) {
 		fi, _ := f.Finalize()
 		return fi.Skip == 0 && fi.Limit == 50
 	})).Return([]*core.ContractListener{
-		{ID: fftypes.NewUUID(), BackendID: "12345"},
-		{ID: fftypes.NewUUID(), BackendID: "23456"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
 	}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "12345", true).Return(false, nil, fmt.Errorf("pop"))
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(false, nil, fmt.Errorf("pop"))
 
 	err := cm.verifyListeners(ctx)
 	assert.Regexp(t, "pop", err)
@@ -2878,8 +2878,8 @@ func TestGetContractListenerByNameOrIDWithStatus(t *testing.T) {
 
 	id := fftypes.NewUUID()
 	backendID := "testID"
-	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{BackendID: backendID}, nil)
-	mbi.On("GetContractListenerStatus", context.Background(), backendID, false).Return(true, fftypes.JSONAnyPtr(fftypes.JSONObject{}.String()), nil)
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{Namespace: "ns1", BackendID: backendID}, nil)
+	mbi.On("GetContractListenerStatus", context.Background(), "ns1", backendID, false).Return(true, fftypes.JSONAnyPtr(fftypes.JSONObject{}.String()), nil)
 
 	_, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
 	assert.NoError(t, err)
@@ -2903,8 +2903,8 @@ func TestGetContractListenerByNameOrIDWithStatusPluginFail(t *testing.T) {
 
 	id := fftypes.NewUUID()
 	backendID := "testID"
-	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{BackendID: backendID}, nil)
-	mbi.On("GetContractListenerStatus", context.Background(), backendID, false).Return(false, nil, fmt.Errorf("pop"))
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{Namespace: "ns1", BackendID: backendID}, nil)
+	mbi.On("GetContractListenerStatus", context.Background(), "ns1", backendID, false).Return(false, nil, fmt.Errorf("pop"))
 
 	listener, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
 

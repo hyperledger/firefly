@@ -71,6 +71,9 @@ type Manager interface {
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error)
+
+	// Starts the namespace on each of the configured token plugins
+	Start(ctx context.Context) error
 }
 
 type assetManager struct {
@@ -168,6 +171,28 @@ func (am *assetManager) GetTokenConnectors(ctx context.Context) []*core.TokenCon
 		)
 	}
 	return connectors
+}
+
+func (am *assetManager) Start(ctx context.Context) error {
+	f := database.TokenPoolQueryFactory.NewFilter(ctx).And()
+	pools, _, err := am.database.GetTokenPools(ctx, am.namespace, f)
+	if err != nil {
+		return err
+	}
+
+	for _, plugin := range am.tokens {
+		activePools := []*core.TokenPool{}
+		for _, pool := range pools {
+			if pool.Connector == plugin.ConnectorName() && pool.Active {
+				activePools = append(activePools, pool)
+			}
+		}
+		err := plugin.StartNamespace(ctx, am.namespace, activePools)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (am *assetManager) getDefaultTokenConnector(ctx context.Context) (string, error) {

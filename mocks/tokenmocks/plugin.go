@@ -117,6 +117,20 @@ func (_m *Plugin) CheckInterface(ctx context.Context, pool *core.TokenPool, meth
 	return r0, r1
 }
 
+// ConnectorName provides a mock function with given fields:
+func (_m *Plugin) ConnectorName() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // CreateTokenPool provides a mock function with given fields: ctx, nsOpID, pool
 func (_m *Plugin) CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (core.OpPhase, error) {
 	ret := _m.Called(ctx, nsOpID, pool)
@@ -232,17 +246,31 @@ func (_m *Plugin) SetOperationHandler(namespace string, handler core.OperationCa
 	_m.Called(namespace, handler)
 }
 
-// Start provides a mock function with given fields:
-func (_m *Plugin) Start() error {
-	ret := _m.Called()
+// StartNamespace provides a mock function with given fields: ctx, namespace, tokenPools
+func (_m *Plugin) StartNamespace(ctx context.Context, namespace string, tokenPools []*core.TokenPool) error {
+	ret := _m.Called(ctx, namespace, tokenPools)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Start")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*core.TokenPool) error); ok {
+		r0 = rf(ctx, namespace, tokenPools)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// StopNamespace provides a mock function with given fields: ctx, namespace
+func (_m *Plugin) StopNamespace(ctx context.Context, namespace string) error {
+	ret := _m.Called(ctx, namespace)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, namespace)
 	} else {
 		r0 = ret.Error(0)
 	}

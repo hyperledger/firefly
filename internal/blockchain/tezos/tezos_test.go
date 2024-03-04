@@ -1650,7 +1650,7 @@ func TestGetContractListenerStatus(t *testing.T) {
 	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := tz.GetContractListenerStatus(context.Background(), "sub1", true)
+	found, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
 	assert.NotNil(t, status)
 	assert.NoError(t, err)
 	assert.True(t, found)
@@ -1683,7 +1683,7 @@ func TestGetContractListenerStatusGetSubFail(t *testing.T) {
 	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := tz.GetContractListenerStatus(context.Background(), "sub1", true)
+	found, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
 	assert.Nil(t, status)
 	assert.Regexp(t, "FF10283", err)
 	assert.False(t, found)
@@ -1716,7 +1716,7 @@ func TestGetContractListenerStatusGetSubNotFound(t *testing.T) {
 	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := tz.GetContractListenerStatus(context.Background(), "sub1", true)
+	found, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
 	assert.Nil(t, status)
 	assert.Nil(t, err)
 	assert.False(t, found)
@@ -1880,5 +1880,19 @@ func TestSubmitBatchPin(t *testing.T) {
 	singer := "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN"
 
 	err := tz.SubmitBatchPin(context.Background(), "", "", singer, nil, location)
+	assert.NoError(t, err)
+}
+
+func TestStartNamespace(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	err := tz.StartNamespace(context.Background(), "ns1")
+	assert.NoError(t, err)
+}
+
+func TestStopNamespace(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	err := tz.StopNamespace(context.Background(), "ns1")
 	assert.NoError(t, err)
 }

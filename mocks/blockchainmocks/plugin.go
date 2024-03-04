@@ -239,9 +239,9 @@ func (_m *Plugin) GetAndConvertDeprecatedContractConfig(ctx context.Context) (*f
 	return r0, r1, r2
 }
 
-// GetContractListenerStatus provides a mock function with given fields: ctx, subID, okNotFound
-func (_m *Plugin) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (bool, interface{}, error) {
-	ret := _m.Called(ctx, subID, okNotFound)
+// GetContractListenerStatus provides a mock function with given fields: ctx, namespace, subID, okNotFound
+func (_m *Plugin) GetContractListenerStatus(ctx context.Context, namespace string, subID string, okNotFound bool) (bool, interface{}, error) {
+	ret := _m.Called(ctx, namespace, subID, okNotFound)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetContractListenerStatus")
@@ -250,25 +250,25 @@ func (_m *Plugin) GetContractListenerStatus(ctx context.Context, subID string, o
 	var r0 bool
 	var r1 interface{}
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, bool) (bool, interface{}, error)); ok {
-		return rf(ctx, subID, okNotFound)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) (bool, interface{}, error)); ok {
+		return rf(ctx, namespace, subID, okNotFound)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, bool) bool); ok {
-		r0 = rf(ctx, subID, okNotFound)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) bool); ok {
+		r0 = rf(ctx, namespace, subID, okNotFound)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, bool) interface{}); ok {
-		r1 = rf(ctx, subID, okNotFound)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, bool) interface{}); ok {
+		r1 = rf(ctx, namespace, subID, okNotFound)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, string, bool) error); ok {
-		r2 = rf(ctx, subID, okNotFound)
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, bool) error); ok {
+		r2 = rf(ctx, namespace, subID, okNotFound)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -566,17 +566,31 @@ func (_m *Plugin) SetOperationHandler(namespace string, handler core.OperationCa
 	_m.Called(namespace, handler)
 }
 
-// Start provides a mock function with given fields:
-func (_m *Plugin) Start() error {
-	ret := _m.Called()
+// StartNamespace provides a mock function with given fields: ctx, namespace
+func (_m *Plugin) StartNamespace(ctx context.Context, namespace string) error {
+	ret := _m.Called(ctx, namespace)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Start")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, namespace)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// StopNamespace provides a mock function with given fields: ctx, namespace
+func (_m *Plugin) StopNamespace(ctx context.Context, namespace string) error {
+	ret := _m.Called(ctx, namespace)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, namespace)
 	} else {
 		r0 = ret.Error(0)
 	}

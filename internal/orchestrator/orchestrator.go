@@ -306,6 +306,16 @@ func (or *orchestrator) WaitStop() {
 	if !or.started {
 		return
 	}
+	err := or.plugins.Blockchain.Plugin.StopNamespace(or.ctx, or.namespace.Name)
+	if err != nil {
+		log.L(or.ctx).Errorf("Error purging namespace '%s' from blockchain plugin '%s': %s", or.namespace.Name, or.plugins.Blockchain.Name, err.Error())
+	}
+	for _, t := range or.plugins.Tokens {
+		err := t.Plugin.StopNamespace(or.ctx, or.namespace.Name)
+		if err != nil {
+			log.L(or.ctx).Errorf("Error purging namespace '%s' from tokens plugin '%s': %s", or.namespace.Name, t.Name, err.Error())
+		}
+	}
 	if or.batch != nil {
 		or.batch.WaitStop()
 		or.batch = nil
@@ -534,6 +544,9 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
+		if err := or.assets.Start(ctx); err != nil {
+			return err
+		}
 	}
 
 	if or.defsender == nil {
@@ -554,6 +567,13 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
+	if or.blockchain() != nil {
+		err = or.blockchain().StartNamespace(ctx, or.namespace.Name)
+		if err != nil {
+			return err
+		}
+	}
+
 	if or.data == nil {
 		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.dataexchange(), or.cacheManager)
 		if err != nil {

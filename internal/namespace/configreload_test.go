@@ -424,9 +424,7 @@ func mockInitConfig(nmm *nmMocks) {
 	nmm.mdi.On("GetNamespace", mock.Anything, "ns3").Return(nil, nil).Maybe()
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	nmm.mai.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nmm.mbi.On("Start").Return(nil)
 	nmm.mdx.On("Start").Return(nil)
-	nmm.mti[1].On("Start").Return(nil)
 
 	nmm.mo.On("PreInit", mock.Anything, mock.Anything, mock.Anything).Return()
 	nmm.mo.On("Init").
@@ -817,6 +815,7 @@ func mockPurge(nmm *nmMocks, nsName string) {
 	for _, mti := range nmm.mti {
 		mti.On("SetHandler", nsName, matchNil).Return().Maybe()
 		mti.On("SetOperationHandler", nsName, matchNil).Return().Maybe()
+		mti.On("StartNamespace", mock.Anything, nsName).Return(nil).Maybe()
 	}
 }
 

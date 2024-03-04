@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -230,6 +230,16 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 	return nil
 }
 
+func (t *Tezos) StartNamespace(ctx context.Context, namespace string) (err error) {
+	// TODO: Implement
+	return nil
+}
+
+func (t *Tezos) StopNamespace(ctx context.Context, namespace string) (err error) {
+	// TODO: Implement
+	return nil
+}
+
 func (t *Tezos) SetHandler(namespace string, handler blockchain.Callbacks) {
 	t.callbacks.SetHandler(namespace, handler)
 }
@@ -391,7 +401,7 @@ func (t *Tezos) DeleteContractListener(ctx context.Context, subscription *core.C
 }
 
 // Note: In state of development. Approach can be changed.
-func (t *Tezos) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (found bool, status interface{}, err error) {
+func (t *Tezos) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, status interface{}, err error) {
 	sub, err := t.streams.getSubscription(ctx, subID, okNotFound)
 	if err != nil || sub == nil {
 		return false, nil, err

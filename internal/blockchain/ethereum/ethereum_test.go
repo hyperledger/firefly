@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftls"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/blockchain/common"
 	"github.com/hyperledger/firefly/internal/cache"
@@ -120,30 +119,38 @@ func resetConf(e *Ethereum) {
 
 func newTestEthereum() (*Ethereum, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
-	wsm := &wsmocks.WSClient{}
 	mm := &metricsmocks.Manager{}
 	mm.On("IsMetricsEnabled").Return(true)
 	mm.On("BlockchainTransaction", mock.Anything, mock.Anything).Return(nil)
 	mm.On("BlockchainContractDeployment", mock.Anything, mock.Anything).Return(nil)
 	mm.On("BlockchainQuery", mock.Anything, mock.Anything).Return(nil)
+	r := resty.New().SetBaseURL("http://localhost:12345")
 	e := &Ethereum{
 		ctx:         ctx,
 		cancelCtx:   cancel,
-		client:      resty.New().SetBaseURL("http://localhost:12345"),
-		topic:       "topic1",
+		client:      r,
+		pluginTopic: "topic1",
 		prefixShort: defaultPrefixShort,
 		prefixLong:  defaultPrefixLong,
-		wsconn:      wsm,
+		streamID:    make(map[string]string),
+		wsconn:      make(map[string]wsclient.WSClient),
+		closed:      make(map[string]chan struct{}),
+		wsConfig:    &wsclient.WSConfig{},
 		metrics:     mm,
 		cache:       cache.NewUmanagedCache(ctx, 100, 5*time.Minute),
 		callbacks:   common.NewBlockchainCallbacks(),
 		subs:        common.NewFireflySubscriptions(),
+		streams: &streamManager{
+			client: r,
+		},
 	}
 	return e, func() {
 		cancel()
 		if e.closed != nil {
 			// We've init'd, wait to close
-			<-e.closed
+			for _, cls := range e.closed {
+				<-cls
+			}
 		}
 	}
 }
@@ -255,20 +262,20 @@ func TestInitAndStartWithEthConnect(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	assert.Equal(t, 2, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.streamID)
-	assert.NotNil(t, e.Capabilities())
-
-	err = e.Start()
+	err = e.StartNamespace(e.ctx, "ns1")
 	assert.NoError(t, err)
 
+	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.Equal(t, "es12345", e.streamID["ns1"])
+	assert.NotNil(t, e.Capabilities())
+
 	startupMessage := <-toServer
-	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	assert.Equal(t, `{"type":"listen","topic":"topic1/ns1"}`, startupMessage)
 	startupMessage = <-toServer
 	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
 	fromServer <- `[]` // empty batch, will be ignored, but acked
 	reply := <-toServer
-	assert.Equal(t, `{"type":"ack","topic":"topic1"}`, reply)
+	assert.Equal(t, `{"type":"ack","topic":"topic1/ns1"}`, reply)
 
 	// Bad data will be ignored
 	fromServer <- `!json`
@@ -311,6 +318,9 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
+	err = e.StartNamespace(e.ctx, "ns1")
+	assert.NoError(t, err)
+
 	msb := &blockchaincommonmocks.FireflySubscriptions{}
 	e.subs = msb
 	msb.On("GetSubscription", mock.Anything).Return(&common.SubscriptionInfo{
@@ -323,41 +333,35 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.streamID)
+	assert.Equal(t, "es12345", e.streamID["ns1"])
 	assert.NotNil(t, e.Capabilities())
 
-	err = e.Start()
-	assert.NoError(t, err)
-
 	startupMessage := <-toServer
-	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	assert.Equal(t, `{"type":"listen","topic":"topic1/ns1"}`, startupMessage)
 	startupMessage = <-toServer
 	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
 	fromServer <- `{"bad":"receipt"}`                 // bad receipt that cannot be handled - will be swallowed
 	fromServer <- `{"batchNumber":12345,"events":[]}` // empty batch, will be ignored, but acked
 	reply := <-toServer
-	assert.Equal(t, `{"type":"ack","topic":"topic1","batchNumber":12345}`, reply)
+	assert.Equal(t, `{"type":"ack","topic":"topic1/ns1","batchNumber":12345}`, reply)
 
 	fromServer <- `{"batchNumber":12345,"events":[{
 		"bad":"batch"
 	}]}` // empty batch, will be ignored, but nack'd as it is invalid
 	reply = <-toServer
-	assert.Regexp(t, `{"type":"error","topic":"topic1","batchNumber":12345,"message":"FF10141.*"}`, reply)
+	assert.Regexp(t, `{"type":"error","topic":"topic1/ns1","batchNumber":12345,"message":"FF10141.*"}`, reply)
 
 	// Bad data will be ignored
 	fromServer <- `!json`
 	fromServer <- `{"not": "a reply"}`
 	fromServer <- `42`
-
 }
 
-func TestBackgroundStart(t *testing.T) {
-
-	log.SetLevel("trace")
+func TestStartStopNamespace(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
-	toServer, fromServer, wsURL, done := wsclient.NewTestWSServer(nil)
+	toServer, _, wsURL, done := wsclient.NewTestWSServer(nil)
 	defer done()
 
 	mockedClient := &http.Client{}
@@ -378,49 +382,27 @@ func TestBackgroundStart(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utEthconnectConf.Set(EthconnectBackgroundStart, true)
-	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://ethc.example.com:12345")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, httpURL)
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "ethereum", e.Name())
-	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
-
+	err = e.StartNamespace(e.ctx, "ns1")
 	assert.NoError(t, err)
 
-	assert.NotNil(t, e.Capabilities())
+	<-toServer
 
-	err = e.Start()
+	err = e.StopNamespace(e.ctx, "ns1")
 	assert.NoError(t, err)
-
-	assert.Eventually(t, func() bool { return httpmock.GetTotalCallCount() == 2 }, time.Second*5, time.Microsecond)
-	assert.Eventually(t, func() bool { return e.streamID == "es12345" }, time.Second*5, time.Microsecond)
-
-	startupMessage := <-toServer
-	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
-	startupMessage = <-toServer
-	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
-	fromServer <- `[]` // empty batch, will be ignored, but acked
-	reply := <-toServer
-	assert.Equal(t, `{"type":"ack","topic":"topic1"}`, reply)
-
-	// Bad data will be ignored
-	fromServer <- `!json`
-	fromServer <- `{"not": "a reply"}`
-	fromServer <- `42`
-
 }
 
-func TestBackgroundStartFail(t *testing.T) {
-
-	log.SetLevel("trace")
+func TestStartStopNamespaceOldEventstream(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
-	_, _, wsURL, done := wsclient.NewTestWSServer(nil)
+	toServer, _, wsURL, done := wsclient.NewTestWSServer(nil)
 	defer done()
 
 	mockedClient := &http.Client{}
@@ -432,59 +414,14 @@ func TestBackgroundStartFail(t *testing.T) {
 	httpURL := u.String()
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
-		httpmock.NewJsonResponderOrPanic(500, "Failed to get eventstreams"))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utEthconnectConf.Set(EthconnectBackgroundStart, true)
-	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://ethc.example.com:12345")
-
-	cmi := &cachemocks.Manager{}
-	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "ethereum", e.Name())
-	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
-
-	assert.NoError(t, err)
-
-	err = e.Start()
-	assert.NoError(t, err)
-
-	capturedErr := make(chan error)
-	e.backgroundRetry = &retry.Retry{
-		ErrCallback: func(err error) {
-			capturedErr <- err
-		},
-	}
-
-	err = e.Start()
-	assert.NoError(t, err)
-
-	err = <-capturedErr
-	assert.Regexp(t, "FF10111", err)
-}
-
-func TestBackgroundStartWSFail(t *testing.T) {
-
-	log.SetLevel("trace")
-	e, cancel := newTestEthereum()
-	defer cancel()
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	u, _ := url.Parse("http://localhost:12345")
-	u.Scheme = "http"
-	httpURL := u.String()
-
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{
+			{
+				ID:   "es12345",
+				Name: "topic1",
+			},
+		}))
+	httpmock.RegisterResponder("DELETE", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
+		httpmock.NewJsonResponderOrPanic(204, ""))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
 
@@ -493,38 +430,88 @@ func TestBackgroundStartWSFail(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utEthconnectConf.Set(EthconnectBackgroundStart, true)
-	utEthconnectConf.Set(wsclient.WSConfigKeyInitialConnectAttempts, 1)
-	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://ethc.example.com:12345")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, httpURL)
 
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
-	originalContext := e.ctx
-	err := e.Init(e.ctx, e.cancelCtx, utConfig, &metricsmocks.Manager{}, cmi)
-	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(
-		originalContext,
-		coreconfig.CacheBlockchainLimit,
-		coreconfig.CacheBlockchainTTL,
-		"",
-	))
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
-	capturedErr := make(chan error)
-	e.backgroundRetry = &retry.Retry{
-		ErrCallback: func(err error) {
-			capturedErr <- err
-		},
-	}
-
-	err = e.Start()
+	err = e.StartNamespace(e.ctx, "ns1")
 	assert.NoError(t, err)
 
-	err = <-capturedErr
-	assert.Regexp(t, "FF00148", err)
+	<-toServer
+
+	err = e.StopNamespace(e.ctx, "ns1")
+	assert.NoError(t, err)
 }
 
-func TestWSInitFail(t *testing.T) {
+func TestEnsureEventStreamDeleteFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
 
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpURL := "http://localhost:12345"
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{
+			{
+				ID:   "es12345",
+				Name: "topic1",
+			},
+		}))
+	httpmock.RegisterResponder("DELETE", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, "pop"))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, httpURL)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	_, err = e.streams.ensureEventStream(context.Background(), "topic1/ns1", "topic1")
+	assert.Regexp(t, "pop", err)
+}
+
+func TestDeleteStreamOKNotFound(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpURL := "http://localhost:12345"
+
+	httpmock.RegisterResponder("DELETE", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
+		httpmock.NewJsonResponderOrPanic(404, "pop"))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, httpURL)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	err = e.streams.deleteEventStream(context.Background(), "es12345", true)
+	assert.NoError(t, err)
+}
+
+func TestStartNamespaceWSCreateFail(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
@@ -536,8 +523,43 @@ func TestWSInitFail(t *testing.T) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
-	assert.Regexp(t, "FF00149", err)
+	assert.NoError(t, err)
 
+	err = e.StartNamespace(e.ctx, "ns1")
+	assert.Regexp(t, "FF00149", err)
+}
+
+func TestStartNamespaceWSConnectFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpURL := "http://fftm.example.com:12345"
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/ws", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, "{}"))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, httpURL)
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+
+	err = e.StartNamespace(e.ctx, "ns1")
+	assert.Regexp(t, "FF00148", err)
 }
 
 func TestEthCacheInitFail(t *testing.T) {
@@ -629,7 +651,6 @@ func TestInitOldInstancePathContracts(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
-	assert.NoError(t, err)
 }
 
 func TestInitOldInstancePathInstances(t *testing.T) {
@@ -651,7 +672,7 @@ func TestInitOldInstancePathInstances(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "es12345", body["stream"])
+			assert.Equal(t, "es12345/ns1", body["stream"])
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
@@ -678,11 +699,6 @@ func TestInitNewConfig(t *testing.T) {
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-
 	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
@@ -691,7 +707,6 @@ func TestInitNewConfig(t *testing.T) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
-	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.NoError(t, err)
 }
 
@@ -773,8 +788,10 @@ func TestStreamQueryError(t *testing.T) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
-	assert.Regexp(t, "FF10111.*pop", err)
+	assert.NoError(t, err)
 
+	err = e.StartNamespace(e.ctx, "ns1")
+	assert.Regexp(t, "FF10111.*pop", err)
 }
 
 func TestStreamCreateError(t *testing.T) {
@@ -801,8 +818,10 @@ func TestStreamCreateError(t *testing.T) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
-	assert.Regexp(t, "FF10111.*pop", err)
+	assert.NoError(t, err)
 
+	err = e.StartNamespace(e.ctx, "ns1")
+	assert.Regexp(t, "FF10111.*pop", err)
 }
 
 func TestStreamUpdateError(t *testing.T) {
@@ -815,7 +834,7 @@ func TestStreamUpdateError(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1/ns1"}}))
 	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
 		httpmock.NewStringResponder(500, `pop`))
 
@@ -829,6 +848,8 @@ func TestStreamUpdateError(t *testing.T) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	assert.NoError(t, err)
+	err = e.StartNamespace(e.ctx, "ns1")
 	assert.Regexp(t, "FF10111.*pop", err)
 }
 
@@ -836,27 +857,36 @@ func TestInitAllExistingStreams(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
+	toServer, _, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1/ns1"}}))
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "ns1_BatchPin_3078373143373635" /* this is the subname for our combo of instance path and BatchPin */},
 		}))
-	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
-		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1"}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+
+	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1/ns1"}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(t, 2))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
 
 	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://fftm.example.com:12345")
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
@@ -870,36 +900,48 @@ func TestInitAllExistingStreams(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
+	err = e.StartNamespace(e.ctx, "ns1")
+	assert.NoError(t, err)
+
+	<-toServer
+
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.streamID)
+	assert.Equal(t, "es12345", e.streamID["ns1"])
 }
 
 func TestInitAllExistingStreamsV1(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
+	toServer, _, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1/ns1"}}))
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin_3078373143373635" /* this is the subname for our combo of instance path and BatchPin */},
 		}))
-	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
-		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1"}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1/ns1"}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(t, 1))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
 
 	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
@@ -916,36 +958,48 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
+	err = e.StartNamespace(e.ctx, "ns1")
+	assert.NoError(t, err)
+
+	<-toServer
+
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.streamID)
+	assert.Equal(t, "es12345", e.streamID["ns1"])
 }
 
 func TestInitAllExistingStreamsOld(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
+	toServer, _, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1/ns1"}}))
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
 		}))
-	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
-		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1"}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1/ns1"}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(t, 1))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
 
 	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
@@ -962,36 +1016,48 @@ func TestInitAllExistingStreamsOld(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
+	err = e.StartNamespace(e.ctx, "ns1")
+	assert.NoError(t, err)
+
+	<-toServer
+
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.streamID)
+	assert.Equal(t, "es12345", e.streamID["ns1"])
 }
 
 func TestInitAllExistingStreamsInvalidName(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
+	toServer, _, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1/ns1"}}))
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin_3078373143373635" /* this is the subname for our combo of instance path and BatchPin */},
 		}))
-	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
-		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1"}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1/ns1"}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(t, 2))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
 
 	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
@@ -1008,6 +1074,11 @@ func TestInitAllExistingStreamsInvalidName(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
+
+	err = e.StartNamespace(e.ctx, "ns1")
+	assert.NoError(t, err)
+
+	<-toServer
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10416", err)
@@ -1670,11 +1741,12 @@ func TestEventLoopContextCancelled(t *testing.T) {
 	e, cancel := newTestEthereum()
 	cancel()
 	r := make(<-chan []byte)
-	wsm := e.wsconn.(*wsmocks.WSClient)
+	wsm := &wsmocks.WSClient{}
+	e.wsconn["ns1"] = wsm
 	wsm.On("Receive").Return(r)
 	wsm.On("Close").Return()
-	e.closed = make(chan struct{})
-	e.eventLoop() // we're simply looking for it exiting
+	e.closed["ns1"] = make(chan struct{})
+	e.eventLoop("ns1", wsm, e.closed["ns1"]) // we're simply looking for it exiting
 	wsm.AssertExpectations(t)
 }
 
@@ -1682,12 +1754,13 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	r := make(chan []byte)
-	wsm := e.wsconn.(*wsmocks.WSClient)
+	wsm := &wsmocks.WSClient{}
+	e.wsconn["ns1"] = wsm
 	close(r)
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Close").Return()
-	e.closed = make(chan struct{})
-	e.eventLoop() // we're simply looking for it exiting
+	e.closed["ns1"] = make(chan struct{})
+	e.eventLoop("ns1", wsm, e.closed["ns1"]) // we're simply looking for it exiting
 	wsm.AssertExpectations(t)
 }
 
@@ -1696,15 +1769,16 @@ func TestEventLoopSendClosed(t *testing.T) {
 	s := make(chan []byte, 1)
 	s <- []byte(`[]`)
 	r := make(chan []byte)
-	wsm := e.wsconn.(*wsmocks.WSClient)
+	wsm := &wsmocks.WSClient{}
+	e.wsconn["ns1"] = wsm
 	wsm.On("Receive").Return((<-chan []byte)(s))
 	wsm.On("Send", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		go cancel()
 		close(r)
 	}).Return(fmt.Errorf("pop"))
 	wsm.On("Close").Return()
-	e.closed = make(chan struct{})
-	e.eventLoop() // we're simply looking for it exiting
+	e.closed["ns1"] = make(chan struct{})
+	e.eventLoop("ns1", wsm, e.closed["ns1"]) // we're simply looking for it exiting
 	wsm.AssertExpectations(t)
 }
 
@@ -1712,10 +1786,10 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	em := &coremocks.OperationCallbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
-		ctx:       context.Background(),
-		topic:     "topic1",
-		callbacks: common.NewBlockchainCallbacks(),
-		wsconn:    wsm,
+		ctx:         context.Background(),
+		pluginTopic: "topic1",
+		callbacks:   common.NewBlockchainCallbacks(),
+		wsconn:      map[string]wsclient.WSClient{"ns1": wsm},
 	}
 	e.SetOperationHandler("ns1", em)
 
@@ -1763,10 +1837,10 @@ func TestHandleReceiptTXUpdateEVMConnect(t *testing.T) {
 	em := &coremocks.OperationCallbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
-		ctx:       context.Background(),
-		topic:     "topic1",
-		callbacks: common.NewBlockchainCallbacks(),
-		wsconn:    wsm,
+		ctx:         context.Background(),
+		pluginTopic: "topic1",
+		callbacks:   common.NewBlockchainCallbacks(),
+		wsconn:      map[string]wsclient.WSClient{"ns1": wsm},
 	}
 	e.SetOperationHandler("ns1", em)
 
@@ -1850,8 +1924,9 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	r := make(chan []byte)
-	wsm := e.wsconn.(*wsmocks.WSClient)
-	e.closed = make(chan struct{})
+	wsm := &wsmocks.WSClient{}
+	e.wsconn["ns1"] = wsm
+	e.closed["ns1"] = make(chan struct{})
 
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Close").Return()
@@ -1884,7 +1959,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 		close(done)
 	}
 
-	go e.eventLoop()
+	go e.eventLoop("ns1", wsm, e.closed["ns1"])
 	r <- []byte(`!badjson`)        // ignored bad json
 	r <- []byte(`"not an object"`) // ignored wrong type
 	r <- data.Bytes()
@@ -1896,9 +1971,9 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 func TestHandleMsgBatchBadData(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
-		ctx:    context.Background(),
-		topic:  "topic1",
-		wsconn: wsm,
+		ctx:         context.Background(),
+		pluginTopic: "topic1",
+		wsconn:      map[string]wsclient.WSClient{"ns1": wsm},
 	}
 
 	var reply common.BlockchainReceiptNotification
@@ -1917,7 +1992,7 @@ func TestAddSubscription(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1955,7 +2030,7 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1990,7 +2065,7 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -2026,7 +2101,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -2047,7 +2122,7 @@ func TestAddSubscriptionFail(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -2077,7 +2152,7 @@ func TestDeleteSubscription(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -2100,7 +2175,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -2123,7 +2198,7 @@ func TestDeleteSubscriptionNotFound(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -3971,6 +4046,7 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 		FirstEvent: "newest",
 	}
 
+	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	subID, err := e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
@@ -4018,10 +4094,54 @@ func TestAddFireflySubscriptionV1(t *testing.T) {
 		FirstEvent: "newest",
 	}
 
+	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.NoError(t, err)
 	assert.NotNil(t, e.subs.GetSubscription("sub1"))
+}
+
+func TestAddFireflySubscriptionEventstreamFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sub1",
+		}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
+
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(e.ctx, 100, 5*time.Minute), nil)
+	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
+	// assert.NoError(t, err)
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+	contract := &blockchain.MultipartyContract{
+		Location:   location,
+		FirstEvent: "newest",
+	}
+
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	assert.Regexp(t, "FF10465", err)
 }
 
 func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
@@ -4060,6 +4180,7 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 		FirstEvent: "oldest",
 	}
 
+	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10111", err)
@@ -4143,6 +4264,7 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 		FirstEvent: "oldest",
 	}
 
+	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
 	assert.Regexp(t, "FF10111", err)
@@ -4186,7 +4308,8 @@ func TestGetContractListenerStatus(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := e.GetContractListenerStatus(context.Background(), "sub1", true)
+	e.streamID["ns1"] = "es12345"
+	found, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
 	assert.NotNil(t, status)
 	assert.NoError(t, err)
 	assert.True(t, found)
@@ -4219,7 +4342,8 @@ func TestGetContractListenerStatusGetSubFail(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := e.GetContractListenerStatus(context.Background(), "sub1", true)
+	e.streamID["ns1"] = "es12345"
+	found, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
 	assert.Nil(t, status)
 	assert.Regexp(t, "FF10111", err)
 	assert.False(t, found)
@@ -4252,7 +4376,8 @@ func TestGetContractListenerStatusGetSubNotFound(t *testing.T) {
 	err := e.Init(e.ctx, e.cancelCtx, utConfig, e.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := e.GetContractListenerStatus(context.Background(), "sub1", true)
+	e.streamID["ns1"] = "es12345"
+	found, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
 	assert.Nil(t, status)
 	assert.Nil(t, err)
 	assert.False(t, found)
