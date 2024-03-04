@@ -26,13 +26,13 @@
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v1.2.4",
-    "sha": "cd65eab2e5836b52dfed29a517049e21e2bacd534203b191cee7df42544847f7"
+    "tag": "v1.3.0-rc.1",
+    "sha": "028defcd14372231b878e3a214cead685f3c7577b4d2541e56f1e4111e777272"
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
-    "tag": "v1.2.6",
-    "sha": "4e902d1d9f115c4dc608f5d68c4bd9920e118c7eec8c99a2abdb3aa9de7e7368"
+    "tag": "v1.3.0-rc.1",
+    "sha": "9a5efe3e3f4dd15383a1db22387a91e01b0d2ba5aae6d8e09d11a01883ac37c1"
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",
@@ -59,6 +59,6 @@
     "release": "v1.2.0"
   },
   "cli": {
-    "tag": "c71842f6d2df5167859d5ae87caf14a4e16c5ee1"
+    "tag": "v1.3.0-rc.2"
   }
 }
