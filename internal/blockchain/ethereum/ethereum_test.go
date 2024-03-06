@@ -2065,7 +2065,7 @@ func TestAddSubscriptionMultipleFilters(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -2118,7 +2118,7 @@ func TestAddSubscriptionInvalidAbi(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -2214,7 +2214,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.streamID = "es-1"
+	e.streamID["ns1"] = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}

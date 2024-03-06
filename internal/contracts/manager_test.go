@@ -1235,10 +1235,10 @@ func TestAddContractListenerNameConflict(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(&core.ContractListener{}, nil)
+	// mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(&core.ContractListener{}, nil)
 
 	_, err := cm.AddContractListener(context.Background(), sub)
-	assert.Regexp(t, "FF10312", err)
+	assert.Regexp(t, "FF10317", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -1249,6 +1249,8 @@ func TestAddContractListenerNameError(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mdi := cm.database.(*databasemocks.Plugin)
 
+	ffiID := fftypes.NewUUID()
+
 	sub := &core.ContractListenerInput{
 		ContractListener: core.ContractListener{
 			Name: "sub1",
@@ -1257,9 +1259,25 @@ func TestAddContractListenerNameError(t *testing.T) {
 			}.String()),
 			Topic: "test-topic",
 		},
-		EventPath: "changed",
+		Filters: core.ListenerFiltersInput{
+			&core.ListenerFilterInput{
+				ListenerFilter: core.ListenerFilter{
+					Interface: &fftypes.FFIReference{
+						ID: ffiID,
+					},
+				},
+				EventPath: "set",
+			},
+		},
 	}
 
+	mdi.On("GetFFIByID", context.Background(), "ns1", ffiID).Return(&fftypes.FFI{}, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", ffiID, "set").Return(&fftypes.FFIEvent{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name: "eventName",
+		},
+	}, nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("eventSignature")
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(nil, fmt.Errorf("pop"))
 
