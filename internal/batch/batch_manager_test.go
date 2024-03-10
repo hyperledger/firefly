@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -81,7 +81,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		h := sha256.New()
 		nonceBytes, _ := hex.DecodeString(
 			"746f70696331",
-		/*|  topic1   | */
+			/*|  topic1   | */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[0].String())
@@ -89,7 +89,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
 			"746f70696332",
-		/*|   topic2  | */
+			/*|   topic2  | */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[1].String())
@@ -203,8 +203,8 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		h := sha256.New()
 		nonceBytes, _ := hex.DecodeString(
 			"746f70696331" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "6469643a66697265666c793a6f72672f61626364" + "0000000000003039",
-		/*|  topic1   |    | ---- group id -------------------------------------------------|   |author'"did:firefly:org/abcd'            |  |i64 nonce (12345) */
-		/*|               context                                                           |   |          sender + nonce             */
+			/*|  topic1   |    | ---- group id -------------------------------------------------|   |author'"did:firefly:org/abcd'            |  |i64 nonce (12345) */
+			/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[0].String())
@@ -212,8 +212,8 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
 			"746f70696332" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "6469643a66697265666c793a6f72672f61626364" + "0000000000003039",
-		/*|   topic2  |    | ---- group id -------------------------------------------------|   |author'"did:firefly:org/abcd'            |  |i64 nonce (12345) */
-		/*|               context                                                           |   |          sender + nonce             */
+			/*|   topic2  |    | ---- group id -------------------------------------------------|   |author'"did:firefly:org/abcd'            |  |i64 nonce (12345) */
+			/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[1].String())

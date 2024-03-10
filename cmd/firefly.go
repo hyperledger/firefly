@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -128,7 +128,7 @@ func run() error {
 
 	config.SetupLogging(rootCtx)
 	log.L(rootCtx).Infof("Hyperledger FireFly")
-	log.L(rootCtx).Infof("© Copyright 2023 Kaleido, Inc.")
+	log.L(rootCtx).Infof("© Copyright 2024 Kaleido, Inc.")
 	_, ok := debug.ReadBuildInfo()
 	if ok {
 		log.L(rootCtx).Infof("Version: %s", info.Version)
