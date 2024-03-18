@@ -311,7 +311,36 @@ func (t *Tezos) SubmitNetworkAction(ctx context.Context, nsOpID string, signingK
 }
 
 func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
-	return true, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
+	if t.metrics.IsMetricsEnabled() {
+		t.metrics.BlockchainContractDeployment()
+	}
+	headers := TezosconnectMessageHeaders{
+		Type: "DeployContract",
+		ID:   nsOpID,
+	}
+	body := map[string]interface{}{
+		"headers":  &headers,
+		"contract": contract,
+	}
+	if signingKey != "" {
+		body["from"] = signingKey
+	}
+	body, err = t.applyOptions(ctx, body, options)
+	if err != nil {
+		return true, err
+	}
+
+	var resErr common.BlockchainRESTError
+	res, err := t.client.R().
+		SetContext(ctx).
+		SetBody(body).
+		SetError(&resErr).
+		Post("/")
+
+	if err != nil || !res.IsSuccess() {
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgTezosconnectRESTErr)
+	}
+	return false, nil
 }
 
 func (t *Tezos) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
