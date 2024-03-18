@@ -336,10 +336,10 @@ func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, d
 		SetBody(body).
 		SetError(&resErr).
 		Post("/")
-
 	if err != nil || !res.IsSuccess() {
 		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgTezosconnectRESTErr)
 	}
+
 	return false, nil
 }
 
