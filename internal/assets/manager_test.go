@@ -188,7 +188,7 @@ func TestStart(t *testing.T) {
 	txHelper, _ := txcommon.NewTransactionHelper(context.Background(), "ns1", mdi, mdm, cmi)
 	am, err := NewAssetManager(context.Background(), "ns1", "blockchain_plugin", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, mcm, txHelper, cmi)
 	assert.NoError(t, err)
-	err = am.Start(context.Background())
+	err = am.Start()
 	assert.NoError(t, err)
 }
 
@@ -211,7 +211,7 @@ func TestStartDBError(t *testing.T) {
 	txHelper, _ := txcommon.NewTransactionHelper(context.Background(), "ns1", mdi, mdm, cmi)
 	am, err := NewAssetManager(context.Background(), "ns1", "blockchain_plugin", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, mcm, txHelper, cmi)
 	assert.NoError(t, err)
-	err = am.Start(context.Background())
+	err = am.Start()
 	assert.Regexp(t, "pop", err)
 }
 
@@ -241,6 +241,6 @@ func TestStartError(t *testing.T) {
 	txHelper, _ := txcommon.NewTransactionHelper(context.Background(), "ns1", mdi, mdm, cmi)
 	am, err := NewAssetManager(context.Background(), "ns1", "blockchain_plugin", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, mcm, txHelper, cmi)
 	assert.NoError(t, err)
-	err = am.Start(context.Background())
+	err = am.Start()
 	assert.Regexp(t, "pop", err)
 }

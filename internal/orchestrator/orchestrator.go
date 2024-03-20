@@ -297,6 +297,9 @@ func (or *orchestrator) Start() (err error) {
 	if err == nil {
 		or.txWriter.Start()
 	}
+	if err == nil {
+		err = or.assets.Start()
+	}
 
 	or.started = true
 	return err
@@ -542,9 +545,6 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	if or.assets == nil {
 		or.assets, err = assets.NewAssetManager(ctx, or.namespace.Name, or.config.KeyNormalization, or.database(), or.tokens(), or.identity, or.syncasync, or.broadcast, or.messaging, or.metrics, or.operations, or.contracts, or.txHelper, or.cacheManager)
 		if err != nil {
-			return err
-		}
-		if err := or.assets.Start(ctx); err != nil {
 			return err
 		}
 	}
