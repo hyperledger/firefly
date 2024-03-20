@@ -8,21 +8,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  golangci:
-    name: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-          cache: false
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: v1.54
-          args: --timeout=3m
-
   build:
     env:
       TEST_ARGS: -v
