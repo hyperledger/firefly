@@ -735,7 +735,7 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 		e.metrics.BlockchainContractDeployment()
 	}
 	headers := EthconnectMessageHeaders{
-		Type: "DeployContract",
+		Type: core.DeployContract,
 		ID:   nsOpID,
 	}
 	body := map[string]interface{}{
@@ -745,9 +745,7 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 		"definition": definition,
 		"contract":   contract,
 	}
-	if signingKey != "" {
-		body["from"] = signingKey
-	}
+
 	body, err = e.applyOptions(ctx, body, options)
 	if err != nil {
 		return true, err

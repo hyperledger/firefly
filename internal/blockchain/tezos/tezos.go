@@ -315,16 +315,15 @@ func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, d
 		t.metrics.BlockchainContractDeployment()
 	}
 	headers := TezosconnectMessageHeaders{
-		Type: "DeployContract",
+		Type: core.DeployContract,
 		ID:   nsOpID,
 	}
 	body := map[string]interface{}{
 		"headers":  &headers,
 		"contract": contract,
+		"from":     signingKey,
 	}
-	if signingKey != "" {
-		body["from"] = signingKey
-	}
+
 	body, err = t.applyOptions(ctx, body, options)
 	if err != nil {
 		return true, err

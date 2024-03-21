@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -990,7 +990,7 @@ func TestDeployContractOK(t *testing.T) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
 			headers := body["headers"].(map[string]interface{})
-			assert.Equal(t, "DeployContract", headers["type"])
+			assert.Equal(t, core.DeployContract, headers["type"])
 			assert.Equal(t, "123", headers["id"])
 			assert.Equal(t, contract, body["contract"])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
@@ -1048,7 +1048,7 @@ func TestDeployContractInvalidOption(t *testing.T) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
 			headers := body["headers"].(map[string]interface{})
-			assert.Equal(t, "DeployContract", headers["type"])
+			assert.Equal(t, core.DeployContract, headers["type"])
 			assert.Equal(t, "123", headers["id"])
 			assert.Equal(t, contract, body["contract"])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
