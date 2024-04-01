@@ -63,7 +63,7 @@ def test():
     # Initialize the contract
     c = main.SimpleStorage(12)
 
-    # Fun some test cases
+    # Run some test cases
     scenario += c
     c.set(value=15)
     scenario.verify(c.data.x == 15)
