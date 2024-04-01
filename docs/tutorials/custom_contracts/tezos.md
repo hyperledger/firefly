@@ -21,7 +21,7 @@ This guide describes the steps to deploy a smart contract to a Tezos blockchain 
 
 ## Smart Contract Languages
 
-Smart contracts on Tezos can be programmed using familiar, developer-friendly languages. All features available on Tezos can be written in any of the high-level languages used to write smart contracts, such as Archetype, LIGO, and SmartPy. These languages all compile down to [Michelton](https://tezos.gitlab.io/active/michelson.html) and you can switch between languages based on your preferences and projects.
+Smart contracts on Tezos can be programmed using familiar, developer-friendly languages. All features available on Tezos can be written in any of the high-level languages used to write smart contracts, such as Archetype, LIGO, and SmartPy. These languages all compile down to [Michelson](https://tezos.gitlab.io/active/michelson.html) and you can switch between languages based on your preferences and projects.
 
 > **NOTE:** For this tutorial we are going to use [SmartPy](https://smartpy.io/) for building Tezos smart contracts utilizing the broadly adopted Python language.
 
@@ -54,31 +54,34 @@ def main():
         def get(self):
             return self.data.x
 
-@sp.add_test(name="SimpleStorage")
+@sp.add_test()
 def test():
+    # Create a test scenario
+    scenario = sp.test_scenario("Test simple storage", main)
+    scenario.h1("SimpleStorage")
+
     # Initialize the contract
     c = main.SimpleStorage(12)
 
-    # Create a test scenario and run some test cases
-    scenario = sp.test_scenario(main)
-    scenario.h1("SimpleStorage")
+    # Fun some test cases
     scenario += c
     c.set(value=15)
     scenario.verify(c.data.x == 15)
     scenario.verify(scenario.compute(c.get()) == 15)
 ```
 
-## Contract deployment
+## Contract deployment (manually)
 
 To deploy the contract, we will use [SmartPy IDE](https://smartpy.io/ide).
 1. Open an IDE;
 2. Paste the contract code;
 3. Click "Run code" button;
-4. Then you will see "Deploy Michelson Contract" button, click on that;
-5. Choose the Ghostnet network;
-6. Select an account, which you're going to use to deploy the contract;
-7. Click "Estimate Cost From RPC" button;
-8. Click "Deploy Contract" button;
+4. Then you will see "Show Michelson" button, click on that;
+5. On the opened pop-up click button "Deploy Contract";
+6. Choose the Ghostnet network;
+7. Select an account, which you're going to use to deploy the contract;
+8. Click "Estimate Cost From RPC" button;
+9. Click "Deploy Contract" button;
 
 ![ContractDeployment](images/tezos_contract_deployment.png)
 ![ContractDeployment2](images/tezos_contract_deployment2.png)
