@@ -84,6 +84,7 @@ To deploy the contract, we will use [SmartPy IDE](https://smartpy.io/ide).
 9. Click "Deploy Contract" button;
 
 ![ContractDeployment](images/tezos_contract_deployment.png)
+![ContractDeployment3](images/tezos_contract_deployment3.png)
 ![ContractDeployment2](images/tezos_contract_deployment2.png)
 
 Here we can see that our new contract address is `KT1ED4gj2xZnp8318yxa5NpvyvW15pqe4yFg`. This is the address that we will reference in the rest of this guide.
