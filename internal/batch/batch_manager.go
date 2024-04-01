@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -76,6 +77,7 @@ func NewBatchManager(ctx context.Context, ns string, di database.Plugin, dm data
 type Manager interface {
 	RegisterDispatcher(name string, txType core.TransactionType, msgTypes []core.MessageType, handler DispatchHandler, batchOptions DispatcherOptions)
 	LoadContexts(ctx context.Context, payload *DispatchPayload) error
+	CancelBatch(ctx context.Context, batchID string) error
 	NewMessages() chan<- int64
 	Start() error
 	Close()
@@ -172,7 +174,7 @@ func (bm *batchManager) NewMessages() chan<- int64 {
 	return bm.newMessages
 }
 
-func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.MessageType, group *fftypes.Bytes32, author string) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.MessageType, group *fftypes.Bytes32, author string, create bool) (*batchProcessor, error) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
@@ -183,7 +185,7 @@ func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.M
 	}
 	name := bm.getProcessorKey(author, group)
 	processor, ok := dispatcher.processors[name]
-	if !ok {
+	if !ok && create {
 		processor = newBatchProcessor(
 			bm,
 			&batchProcessorConf{
@@ -320,7 +322,7 @@ func (bm *batchManager) messageSequencer() {
 				// the database store. Meaning we cannot rely on the sequence having been set.
 				msg.Sequence = entry.Sequence
 
-				processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.SignerRef.Author)
+				processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.SignerRef.Author, true)
 				if err != nil {
 					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
 					continue
@@ -559,6 +561,10 @@ func (bm *batchManager) loadContext(ctx context.Context, msg *core.Message) ([]*
 			return nil, i18n.NewError(ctx, coremsgs.MsgPinsNotAssigned)
 		}
 		for _, pinStr := range msg.Pins {
+			if len(pinStr) > 64 {
+				pinParts := strings.SplitN(pinStr, ":", 2)
+				pinStr = pinParts[0]
+			}
 			pin, err := fftypes.ParseBytes32(ctx, pinStr)
 			if err != nil {
 				return nil, err
@@ -587,4 +593,31 @@ func (bm *batchManager) LoadContexts(ctx context.Context, payload *DispatchPaylo
 		payload.Pins = append(payload.Pins, pins...)
 	}
 	return nil
+}
+
+func (bm *batchManager) CancelBatch(ctx context.Context, batchID string) error {
+	id, err := fftypes.ParseUUID(ctx, batchID)
+	if err != nil {
+		return err
+	}
+	bp, err := bm.database.GetBatchByID(ctx, bm.namespace, id)
+	if err != nil {
+		return err
+	}
+	batch, err := bm.data.HydrateBatch(ctx, bp)
+	if err != nil {
+		return err
+	}
+	if len(batch.Payload.Messages) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgErrorLoadingBatch)
+	}
+	msg := batch.Payload.Messages[0]
+	processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.SignerRef.Author, false)
+	if err != nil {
+		return err
+	}
+	if processor == nil {
+		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchState)
+	}
+	return processor.cancelFlush(ctx, id)
 }

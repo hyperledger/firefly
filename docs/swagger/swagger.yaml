@@ -2449,6 +2449,36 @@ paths:
           description: ""
       tags:
       - Default Namespace
+  /batches/{batchid}/cancel:
+    post:
+      description: Cancel a batch that has failed to dispatch
+      operationId: postBatchCancel
+      parameters:
+      - description: The batch ID
+        in: path
+        name: batchid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json: {}
+      responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
   /blockchainevents:
     get:
       description: Gets a list of blockchain events
@@ -7264,6 +7294,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -9679,6 +9710,7 @@ paths:
                       - pending
                       - confirmed
                       - rejected
+                      - cancelled
                       type: string
                     txid:
                       description: The ID of the transaction used to order/deliver
@@ -9958,6 +9990,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -10598,6 +10631,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -10757,6 +10791,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -11087,6 +11122,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -11252,6 +11288,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -11663,6 +11700,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -14704,6 +14742,43 @@ paths:
                     - private
                     type: string
                 type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/batches/{batchid}/cancel:
+    post:
+      description: Cancel a batch that has failed to dispatch
+      operationId: postBatchCancelNamespace
+      parameters:
+      - description: The batch ID
+        in: path
+        name: batchid
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json: {}
+      responses:
+        "204":
+          content:
+            application/json: {}
           description: Success
         default:
           description: ""
@@ -19838,6 +19913,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -22372,6 +22448,7 @@ paths:
                       - pending
                       - confirmed
                       - rejected
+                      - cancelled
                       type: string
                     txid:
                       description: The ID of the transaction used to order/deliver
@@ -22658,6 +22735,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -23370,6 +23448,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -23535,6 +23614,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -23872,6 +23952,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -24037,6 +24118,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -24455,6 +24537,7 @@ paths:
                     - pending
                     - confirmed
                     - rejected
+                    - cancelled
                     type: string
                   txid:
                     description: The ID of the transaction used to order/deliver this
@@ -27217,6 +27300,10 @@ paths:
                             blocked:
                               description: True if the batch flush is in a retry loop,
                                 due to errors being returned by the plugins
+                              type: boolean
+                            cancelled:
+                              description: True if the current batch flush has been
+                                cancelled
                               type: boolean
                             flushing:
                               description: If a flush is in progress, this is the
@@ -36371,6 +36458,10 @@ paths:
                             blocked:
                               description: True if the batch flush is in a retry loop,
                                 due to errors being returned by the plugins
+                              type: boolean
+                            cancelled:
+                              description: True if the current batch flush has been
+                                cancelled
                               type: boolean
                             flushing:
                               description: If a flush is in progress, this is the

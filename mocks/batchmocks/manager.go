@@ -17,6 +17,24 @@ type Manager struct {
 	mock.Mock
 }
 
+// CancelBatch provides a mock function with given fields: ctx, batchID
+func (_m *Manager) CancelBatch(ctx context.Context, batchID string) error {
+	ret := _m.Called(ctx, batchID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CancelBatch")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, batchID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Close provides a mock function with given fields:
 func (_m *Manager) Close() {
 	_m.Called()

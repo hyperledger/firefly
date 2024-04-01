@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -68,6 +68,8 @@ var (
 	MessageStateConfirmed = fftypes.FFEnumValue("messagestate", "confirmed")
 	// MessageStateRejected is a message that has completed confirmation, but has been rejected by FireFly
 	MessageStateRejected = fftypes.FFEnumValue("messagestate", "rejected")
+	// MessageStateCancelled is a message that was cancelled without being sent
+	MessageStateCancelled = fftypes.FFEnumValue("messagestate", "cancelled")
 )
 
 // MessageHeader contains all fields that contribute to the hash

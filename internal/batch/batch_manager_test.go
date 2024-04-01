@@ -339,7 +339,7 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bm, _ := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
 	defer bm.Close()
-	_, err := bm.(*batchManager).getProcessor(core.BatchTypeBroadcast, "wrong", nil, "")
+	_, err := bm.(*batchManager).getProcessor(core.BatchTypeBroadcast, "wrong", nil, "", true)
 	assert.Regexp(t, "FF10126", err)
 }
 

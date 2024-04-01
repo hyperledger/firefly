@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -24,8 +24,10 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -53,6 +55,7 @@ type batchProcessorConf struct {
 type FlushStatus struct {
 	LastFlushTime        *fftypes.FFTime `ffstruct:"BatchFlushStatus" json:"lastFlushStartTime"`
 	Flushing             *fftypes.UUID   `ffstruct:"BatchFlushStatus" json:"flushing,omitempty"`
+	Cancelled            bool            `ffstruct:"BatchFlushStatus" json:"cancelled"`
 	Blocked              bool            `ffstruct:"BatchFlushStatus" json:"blocked"`
 	LastFlushError       string          `ffstruct:"BatchFlushStatus" json:"lastFlushError,omitempty"`
 	LastFlushErrorTime   *fftypes.FFTime `ffstruct:"BatchFlushStatus" json:"lastFlushErrorTime,omitempty"`
@@ -103,6 +106,7 @@ type DispatchPayload struct {
 	Messages []*core.Message
 	Data     core.DataArray
 	Pins     []*fftypes.Bytes32
+	State    core.MessageState
 }
 
 const batchSizeEstimateBase = int64(512)
@@ -216,7 +220,6 @@ func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAsse
 	bp.statusMux.Lock()
 	defer bp.statusMux.Unlock()
 	// Start the clock
-	bp.flushStatus.Blocked = false
 	bp.flushStatus.LastFlushTime = fftypes.Now()
 	// Split the current work if required for overflow
 	overflowWork := make([]*batchWork, 0)
@@ -250,6 +253,8 @@ func (bp *batchProcessor) updateFlushStats(payload *DispatchPayload, byteSize in
 
 	duration := time.Since(*fs.LastFlushTime.Time())
 	fs.Flushing = nil
+	fs.Blocked = false
+	fs.Cancelled = false
 
 	fs.TotalBatches++
 
@@ -275,6 +280,29 @@ func (bp *batchProcessor) captureFlushError(err error) {
 	fs.Blocked = true
 	fs.LastFlushErrorTime = fftypes.Now()
 	fs.LastFlushError = err.Error()
+}
+
+func (bp *batchProcessor) cancelFlush(ctx context.Context, id *fftypes.UUID) error {
+	bp.statusMux.Lock()
+	defer bp.statusMux.Unlock()
+	fs := &bp.flushStatus
+
+	if bp.conf.txType != core.TransactionTypeContractInvokePin {
+		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchType)
+	}
+	if !fs.Blocked || !id.Equals(fs.Flushing) {
+		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchState)
+	}
+	fs.Cancelled = true
+	return nil
+}
+
+func (bp *batchProcessor) isCancelled() bool {
+	bp.statusMux.Lock()
+	defer bp.statusMux.Unlock()
+	fs := &bp.flushStatus
+
+	return fs.Cancelled
 }
 
 func (bp *batchProcessor) startQuiesce() {
@@ -376,7 +404,7 @@ func (bp *batchProcessor) flush(overflow bool) error {
 	}
 	log.L(bp.ctx).Debugf("Dispatched batch %s", id)
 
-	// Finalization phase: Writes back the changes to the DB, so that these messages will not be
+	// Finalization phase: Writes back the changes to the DB, so that these messages
 	//   are all tagged as part of this batch, and won't be included in any future batches.
 	err = bp.markPayloadDispatched(state)
 	if err != nil {
@@ -432,6 +460,11 @@ func (bp *batchProcessor) calculateContexts(ctx context.Context, payload *Dispat
 		if isPrivate && len(msg.Pins) > 0 {
 			// We have already allocated pins to this message, we cannot re-allocate.
 			log.L(ctx).Debugf("Message %s already has %d pins allocated", msg.Header.ID, len(msg.Pins))
+			pins, err := bp.bm.loadContext(ctx, msg)
+			if err != nil {
+				return err
+			}
+			payload.Pins = append(payload.Pins, pins...)
 			continue
 		}
 		var pins fftypes.FFStringArray
@@ -475,7 +508,7 @@ func (bp *batchProcessor) flushNonceState(ctx context.Context, state *dispatchSt
 	return nil
 }
 
-func (bp *batchProcessor) updateMessagePins(ctx context.Context, batchID *fftypes.UUID, messages []*core.Message, state *dispatchState) error {
+func (bp *batchProcessor) updateMessagePins(ctx context.Context, messages []*core.Message, state *dispatchState) error {
 	// It's important we update the message pins at this phase, as we have "spent" a nonce
 	// on this topic from the database. So this message has grabbed a slot in our queue.
 	// If we fail the dispatch, and redo the batch sealing process, we must not allocate
@@ -515,7 +548,7 @@ func (bp *batchProcessor) sealBatch(payload *DispatchPayload) (err error) {
 				if err = bp.flushNonceState(ctx, state); err != nil {
 					return err
 				}
-				if err = bp.updateMessagePins(ctx, payload.Batch.ID, payload.Messages, state); err != nil {
+				if err = bp.updateMessagePins(ctx, payload.Messages, state); err != nil {
 					return err
 				}
 			}
@@ -568,9 +601,51 @@ func (bp *batchProcessor) dispatchBatch(payload *DispatchPayload) error {
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
 	return operations.RunWithOperationContext(bp.ctx, func(ctx context.Context) error {
 		return bp.retry.Do(ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
-			return true, bp.conf.dispatch(ctx, payload)
+			err = bp.conf.dispatch(ctx, payload)
+			if err != nil {
+				if bp.isCancelled() {
+					log.L(ctx).Warnf("Batch %s was cancelled - replacing with gap fill", payload.Batch.ID)
+					for _, msg := range payload.Messages {
+						if err := bp.writeGapFill(ctx, msg); err != nil {
+							return true, err
+						}
+					}
+					err = nil
+					payload.State = core.MessageStateCancelled
+				}
+			} else {
+				if core.IsPinned(bp.conf.txType) {
+					payload.State = core.MessageStateSent
+				} else {
+					payload.State = core.MessageStateConfirmed
+				}
+			}
+			return true, err
 		})
 	})
+}
+
+func (bp *batchProcessor) writeGapFill(ctx context.Context, msg *core.Message) error {
+	// Gap fill is only needed for private messages
+	if msg.Header.Type != core.MessageTypePrivate {
+		return nil
+	}
+	gapFill := &core.MessageInOut{
+		Message: core.Message{
+			Header:         msg.Header,
+			LocalNamespace: bp.bm.namespace,
+			State:          core.MessageStateReady,
+			Pins:           msg.Pins, // reuse any assigned pins to fill the nonce gap
+		},
+	}
+	gapFill.Header.ID = fftypes.NewUUID()
+	gapFill.Header.CID = msg.Header.ID
+	gapFill.Header.Tag = core.SystemTagGapFill
+	gapFill.Header.TxType = core.TransactionTypeBatchPin
+	if err := gapFill.Seal(ctx); err != nil {
+		return err
+	}
+	return bp.data.WriteNewMessage(ctx, &data.NewMessage{Message: gapFill})
 }
 
 func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error {
@@ -583,10 +658,7 @@ func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error 
 				msgIDs[i] = msg.Header.ID
 				msg.BatchID = payload.Batch.ID
 				msg.TransactionID = payload.Batch.TX.ID
-				if core.IsPinned(bp.conf.txType) {
-					msg.State = core.MessageStateSent
-				} else {
-					msg.State = core.MessageStateConfirmed
+				if payload.State == core.MessageStateConfirmed {
 					msg.Confirmed = confirmTime
 				}
 				bp.data.UpdateMessageIfCached(ctx, msg)
@@ -600,21 +672,16 @@ func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error 
 			)
 			allMsgsUpdate := database.MessageQueryFactory.NewUpdate(ctx).
 				Set("batch", payload.Batch.ID).
-				Set("txid", payload.Batch.TX.ID)
-			if core.IsPinned(bp.conf.txType) {
-				// Sent state, waiting for confirm
-				allMsgsUpdate.Set("state", core.MessageStateSent)
-			} else {
-				// Immediate confirmation if no batch pinning
-				allMsgsUpdate.
-					Set("state", core.MessageStateConfirmed).
-					Set("confirmed", confirmTime)
+				Set("txid", payload.Batch.TX.ID).
+				Set("state", payload.State)
+			if payload.State == core.MessageStateConfirmed {
+				allMsgsUpdate.Set("confirmed", confirmTime)
 			}
 			if err = bp.database.UpdateMessages(ctx, bp.bm.namespace, filter, allMsgsUpdate); err != nil {
 				return err
 			}
 
-			if !core.IsPinned(bp.conf.txType) {
+			if payload.State == core.MessageStateConfirmed {
 				for _, msg := range payload.Messages {
 					// Emit a confirmation event locally immediately
 					for _, topic := range msg.Header.Topics {

@@ -75,7 +75,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 		}, mock.Anything, mock.Anything).Return()
 
 	mba.On("RegisterDispatcher",
-		pinnedPrivateDispatcherName,
+		pinnedPrivateCustomDispatcherName,
 		core.TransactionTypeContractInvokePin,
 		[]core.MessageType{
 			core.MessageTypePrivate,

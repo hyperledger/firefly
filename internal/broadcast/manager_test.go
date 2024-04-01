@@ -74,7 +74,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 		}, mock.Anything, mock.Anything).Return()
 
 	mba.On("RegisterDispatcher",
-		broadcastDispatcherName,
+		broadcastCustomDispatcherName,
 		core.TransactionTypeContractInvokePin,
 		[]core.MessageType{
 			core.MessageTypeBroadcast,

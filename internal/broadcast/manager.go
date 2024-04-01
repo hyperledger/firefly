@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,6 +42,7 @@ import (
 )
 
 const broadcastDispatcherName = "pinned_broadcast"
+const broadcastCustomDispatcherName = "pinned_broadcast_custom"
 
 type Manager interface {
 	core.Named
@@ -114,7 +115,7 @@ func NewBroadcastManager(ctx context.Context, ns *core.Namespace, di database.Pl
 				core.MessageTypeDeprecatedApprovalBroadcast,
 			}, bm.dispatchBatch, bo)
 
-		ba.RegisterDispatcher(broadcastDispatcherName,
+		ba.RegisterDispatcher(broadcastCustomDispatcherName,
 			core.TransactionTypeContractInvokePin,
 			[]core.MessageType{
 				core.MessageTypeBroadcast,

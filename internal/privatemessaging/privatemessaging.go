@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,6 +42,7 @@ import (
 )
 
 const pinnedPrivateDispatcherName = "pinned_private"
+const pinnedPrivateCustomDispatcherName = "pinned_private_custom"
 const unpinnedPrivateDispatcherName = "unpinned_private"
 
 type Manager interface {
@@ -146,7 +147,7 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 		},
 		pm.dispatchPinnedBatch, bo)
 
-	ba.RegisterDispatcher(pinnedPrivateDispatcherName,
+	ba.RegisterDispatcher(pinnedPrivateCustomDispatcherName,
 		core.TransactionTypeContractInvokePin,
 		[]core.MessageType{
 			core.MessageTypePrivate,

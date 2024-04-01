@@ -304,4 +304,7 @@ var (
 	MsgMaxSubscriptionEventScanLimitBreached = ffe("FF10463", "Event scan limit breached with start sequence ID %d and end sequence ID %d. Please restrict your query to a narrower range", 400)
 	MsgSequenceIDDidNotParseToInt            = ffe("FF10464", "Could not parse provided %s to an integer sequence ID", 400)
 	MsgInternalServerError                   = ffe("FF10465", "Internal server error: %s", 500)
+	MsgCannotCancelBatchType                 = ffe("FF10466", "Cannot cancel batch of this type", 400)
+	MsgErrorLoadingBatch                     = ffe("FF10467", "Error loading batch messages")
+	MsgCannotCancelBatchState                = ffe("FF10468", "Batch is not currently dispatching", 400)
 )

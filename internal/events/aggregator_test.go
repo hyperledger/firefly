@@ -1515,7 +1515,7 @@ func TestReadyForDispatchFailValidateData(t *testing.T) {
 		Data: core.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	}, core.DataArray{}, nil, &batchState{})
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1537,7 +1537,7 @@ func TestReadyForDispatchMissingBlobs(t *testing.T) {
 			Hash:   blobHash,
 			Public: "public-ref",
 		}},
-	}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	}, nil, &batchState{})
 	assert.NoError(t, err)
 	assert.Equal(t, core.ActionWait, action)
 
@@ -1560,7 +1560,7 @@ func TestReadyForDispatchBlobsError(t *testing.T) {
 			Hash:   blobHash,
 			Public: "public-ref",
 		}},
-	}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	}, nil, &batchState{})
 	assert.EqualError(t, err, "pop")
 	assert.Equal(t, core.ActionRetry, action)
 
@@ -1584,7 +1584,7 @@ func TestReadyForDispatchMissingTransfers(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{})
 	assert.NoError(t, err)
 	assert.Equal(t, core.ActionWait, action)
 
@@ -1606,7 +1606,7 @@ func TestReadyForDispatchGetTransfersFail(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{})
 	assert.EqualError(t, err, "pop")
 	assert.Equal(t, core.ActionRetry, action)
 
@@ -1634,7 +1634,7 @@ func TestReadyForDispatchTransferMismatch(t *testing.T) {
 
 	ag.mdi.On("GetTokenTransfers", ag.ctx, "ns1", mock.Anything).Return(transfers, nil, nil)
 
-	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{})
 	assert.NoError(t, err)
 	assert.Equal(t, core.ActionWait, action)
 
@@ -1656,7 +1656,7 @@ func TestReadyForDispatchGetApprovalsFail(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{})
 	assert.EqualError(t, err, "pop")
 	assert.Equal(t, core.ActionRetry, action)
 
@@ -1678,7 +1678,7 @@ func TestReadyForDispatchGetApprovalsMissing(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{})
 	assert.NoError(t, err)
 	assert.Equal(t, core.ActionWait, action)
 
@@ -1706,7 +1706,7 @@ func TestReadyForDispatchApprovalMismatch(t *testing.T) {
 
 	ag.mdi.On("GetTokenApprovals", ag.ctx, "ns1", mock.Anything).Return(approvals, nil, nil)
 
-	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	action, _, err := ag.readyForDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{})
 	assert.NoError(t, err)
 	assert.Equal(t, core.ActionWait, action)
 
@@ -1876,7 +1876,7 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 	ag.mdh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(definitions.HandlerResult{Action: core.ActionRetry}, fmt.Errorf("pop"))
 
-	_, _, err := ag.readyForDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	_, _, err := ag.readyForDispatch(ag.ctx, msg1, nil, nil, &batchState{})
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1982,7 +1982,7 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 
 	ag.mdh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: core.ActionWait}, nil)
 
-	_, _, err := ag.readyForDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
+	_, _, err := ag.readyForDispatch(ag.ctx, msg1, nil, nil, &batchState{})
 	assert.NoError(t, err)
 
 }
@@ -2029,7 +2029,7 @@ func TestReadyForDispatchGroupInit(t *testing.T) {
 			Type:      core.MessageTypeGroupInit,
 			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
-	}, nil, nil, bs, &core.Pin{Signer: "0x12345"})
+	}, nil, nil, bs)
 	assert.NoError(t, err)
 	assert.Equal(t, core.ActionConfirm, action)
 
