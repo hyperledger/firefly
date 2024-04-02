@@ -290,7 +290,7 @@ func (bp *batchProcessor) cancelFlush(ctx context.Context, id *fftypes.UUID) err
 	if bp.conf.txType != core.TransactionTypeContractInvokePin {
 		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchType)
 	}
-	if !fs.Blocked || !id.Equals(fs.Flushing) {
+	if !id.Equals(fs.Flushing) {
 		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchState)
 	}
 	fs.Cancelled = true
@@ -604,13 +604,13 @@ func (bp *batchProcessor) dispatchBatch(payload *DispatchPayload) error {
 			err = bp.conf.dispatch(ctx, payload)
 			if err != nil {
 				if bp.isCancelled() {
+					err = nil
 					log.L(ctx).Warnf("Batch %s was cancelled - replacing with gap fill", payload.Batch.ID)
 					for _, msg := range payload.Messages {
-						if err := bp.writeGapFill(ctx, msg); err != nil {
-							return true, err
+						if err == nil {
+							err = bp.writeGapFill(ctx, msg)
 						}
 					}
-					err = nil
 					payload.State = core.MessageStateCancelled
 				}
 			} else {
@@ -642,10 +642,11 @@ func (bp *batchProcessor) writeGapFill(ctx context.Context, msg *core.Message) e
 	gapFill.Header.CID = msg.Header.ID
 	gapFill.Header.Tag = core.SystemTagGapFill
 	gapFill.Header.TxType = core.TransactionTypeBatchPin
-	if err := gapFill.Seal(ctx); err != nil {
-		return err
+	err := gapFill.Seal(ctx)
+	if err == nil {
+		err = bp.data.WriteNewMessage(ctx, &data.NewMessage{Message: gapFill})
 	}
-	return bp.data.WriteNewMessage(ctx, &data.NewMessage{Message: gapFill})
+	return err
 }
 
 func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error {

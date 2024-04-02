@@ -734,3 +734,219 @@ func TestLoadContextsPrivateBadPin(t *testing.T) {
 
 	assert.Regexp(t, "FF00107", err)
 }
+
+func TestCancelBatchBadID(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	err := bm.CancelBatch(context.Background(), "bad-id")
+	assert.Regexp(t, "FF00138", err)
+}
+
+func TestCancelBatchFailLoad(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	batchID := fftypes.NewUUID()
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, fmt.Errorf("pop"))
+
+	err := bm.CancelBatch(context.Background(), batchID.String())
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestCancelBatchFailHydrate(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	batchID := fftypes.NewUUID()
+	bp := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: batchID,
+		},
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(bp, nil)
+	mdm.On("HydrateBatch", context.Background(), bp).Return(nil, fmt.Errorf("pop"))
+
+	err := bm.CancelBatch(context.Background(), batchID.String())
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestCancelBatchNoPayload(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	batchID := fftypes.NewUUID()
+	bp := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: batchID,
+		},
+	}
+	batch := &core.Batch{
+		BatchHeader: bp.BatchHeader,
+		Payload:     core.BatchPayload{},
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(bp, nil)
+	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
+
+	err := bm.CancelBatch(context.Background(), batchID.String())
+	assert.Regexp(t, "FF10467", err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestCancelBatchUnregisteredProcessor(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	group := fftypes.NewRandB32()
+
+	batchID := fftypes.NewUUID()
+	bp := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: batchID,
+		},
+	}
+	msgid := fftypes.NewUUID()
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID:     msgid,
+			Type:   core.MessageTypePrivate,
+			TxType: core.TransactionTypeBatchPin,
+			Group:  group,
+			SignerRef: core.SignerRef{
+				Author: "did:firefly:org/abcd",
+			},
+		},
+	}
+	batch := &core.Batch{
+		BatchHeader: bp.BatchHeader,
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{msg},
+		},
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(bp, nil)
+	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
+
+	err := bm.CancelBatch(context.Background(), batchID.String())
+	assert.Regexp(t, "FF10126", err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestCancelBatchInactiveProcessor(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypePrivate},
+		func(c context.Context, state *DispatchPayload) error {
+			return nil
+		},
+		DispatcherOptions{BatchType: core.BatchTypePrivate},
+	)
+	group := fftypes.NewRandB32()
+
+	batchID := fftypes.NewUUID()
+	bp := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: batchID,
+		},
+	}
+	msgid := fftypes.NewUUID()
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID:     msgid,
+			Type:   core.MessageTypePrivate,
+			TxType: core.TransactionTypeBatchPin,
+			Group:  group,
+			SignerRef: core.SignerRef{
+				Author: "did:firefly:org/abcd",
+			},
+		},
+	}
+	batch := &core.Batch{
+		BatchHeader: bp.BatchHeader,
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{msg},
+		},
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(bp, nil)
+	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
+
+	err := bm.CancelBatch(context.Background(), batchID.String())
+	assert.Regexp(t, "FF10468", err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestCancelBatchInvalidType(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypePrivate},
+		func(c context.Context, state *DispatchPayload) error {
+			return nil
+		},
+		DispatcherOptions{BatchType: core.BatchTypePrivate},
+	)
+	group := fftypes.NewRandB32()
+	_, err := bm.getProcessor(core.TransactionTypeBatchPin, core.MessageTypePrivate, group, "did:firefly:org/abcd", true)
+	assert.NoError(t, err)
+
+	batchID := fftypes.NewUUID()
+	bp := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: batchID,
+		},
+	}
+	msgid := fftypes.NewUUID()
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID:     msgid,
+			Type:   core.MessageTypePrivate,
+			TxType: core.TransactionTypeBatchPin,
+			Group:  group,
+			SignerRef: core.SignerRef{
+				Author: "did:firefly:org/abcd",
+			},
+		},
+	}
+	batch := &core.Batch{
+		BatchHeader: bp.BatchHeader,
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{msg},
+		},
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(bp, nil)
+	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
+
+	err = bm.CancelBatch(context.Background(), batchID.String())
+	assert.Regexp(t, "FF10466", err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
