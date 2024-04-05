@@ -617,7 +617,7 @@ func (bm *batchManager) CancelBatch(ctx context.Context, batchID string) error {
 		return err
 	}
 	if processor == nil {
-		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchState)
+		return i18n.NewError(ctx, coremsgs.MsgBatchNotDispatching, batchID, nil)
 	}
 	return processor.cancelFlush(ctx, id)
 }

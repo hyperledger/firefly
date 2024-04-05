@@ -288,10 +288,10 @@ func (bp *batchProcessor) cancelFlush(ctx context.Context, id *fftypes.UUID) err
 	fs := &bp.flushStatus
 
 	if bp.conf.txType != core.TransactionTypeContractInvokePin {
-		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchType)
+		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchType, bp.conf.txType)
 	}
 	if !id.Equals(fs.Flushing) {
-		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchState)
+		return i18n.NewError(ctx, coremsgs.MsgBatchNotDispatching, id, fs.Flushing)
 	}
 	fs.Cancelled = true
 	return nil
