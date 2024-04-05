@@ -1193,6 +1193,63 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 
 }
 
+func TestProcessMsgGapFill(t *testing.T) {
+	ag := newTestAggregator()
+	defer ag.cleanup(t)
+	bs := newBatchState(&ag.aggregator)
+	pin := fftypes.NewRandB32()
+	org1 := newTestOrg("org1")
+
+	groupID := fftypes.NewRandB32()
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Group:     groupID,
+			Topics:    fftypes.FFStringArray{"topic1"},
+			Namespace: "ns1",
+			SignerRef: core.SignerRef{
+				Author: org1.DID,
+				Key:    "0x12345",
+			},
+			CID: fftypes.NewUUID(),
+			Tag: core.SystemTagGapFill,
+		},
+		Pins: fftypes.FFStringArray{pin.String()},
+	}
+
+	ag.mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x12345",
+	}).Return(org1, nil)
+	ag.mdi.On("GetNextPinsForContext", ag.ctx, "ns1", mock.Anything).Return([]*core.NextPin{
+		{Context: fftypes.NewRandB32(), Hash: pin, Identity: org1.DID},
+	}, nil)
+	ag.mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, msg.Header.ID, core.MessageStateConfirmed, mock.Anything, "").Once().Return()
+	ag.mdm.On("UpdateMessageStateIfCached", ag.ctx, msg.Header.CID, core.MessageStateCancelled, mock.Anything, "").Once().Return()
+
+	ag.mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
+	ag.mdi.On("UpdateNextPin", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
+	ag.mdi.On("UpdatePins", ag.ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
+
+	ag.mdi.On("UpdateMessages", ag.ctx, "ns1", mock.Anything, mock.Anything).Twice().Return(nil)
+
+	err := ag.processMessage(ag.ctx, &core.BatchManifest{
+		ID: fftypes.NewUUID(),
+	}, &core.Pin{Masked: true, Sequence: 12345, Signer: "0x12345"}, 10, &core.MessageManifestEntry{
+		MessageRef: core.MessageRef{
+			ID:   msg.Header.ID,
+			Hash: msg.Hash,
+		},
+		Topics: len(msg.Header.Topics),
+	}, &core.BatchPersisted{}, bs)
+	assert.NoError(t, err)
+
+	err = bs.RunFinalize(ag.ctx)
+	assert.NoError(t, err)
+
+}
+
 func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 	ag := newTestAggregator()
 	defer ag.cleanup(t)
