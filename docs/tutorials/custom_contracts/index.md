@@ -18,7 +18,7 @@ FireFly defines the following constructs to support custom smart contracts:
 
 - **Contract Interface**: FireFly defines a common, blockchain agnostic way to describe smart contracts. This is referred to as a Contract Interface. A contract interface is written in the FireFly Interface (FFI) format. It is a simple JSON document that has a name, a namespace, a version, a list of methods, and a list of events.
 
-For more details, you can also have a look at the [Reference page for the FireFly Interface Format](../../reference/firefly_interface_format).
+For more details, you can also have a look at the [Reference page for the FireFly Interface Format](../../reference/firefly_interface_format.md).
 
 For blockchains that offer a DSL describing the smart contract interface, such as Ethereum's ABI (Application Binary Interface), FireFly offers a convenience tool to convert the DSL into the FFI format.
 
