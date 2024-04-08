@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -2529,7 +2529,7 @@ func TestDeployContractOK(t *testing.T) {
 			json.NewDecoder(req.Body).Decode(&body)
 			params := body["params"].([]interface{})
 			headers := body["headers"].(map[string]interface{})
-			assert.Equal(t, "DeployContract", headers["type"])
+			assert.Equal(t, core.DeployContract, headers["type"])
 			assert.Equal(t, float64(1), params[0])
 			assert.Equal(t, "1000000000000000000000000", params[1])
 			assert.Equal(t, body["customOption"].(string), "customValue")

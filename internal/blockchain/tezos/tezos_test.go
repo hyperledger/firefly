@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -100,6 +100,7 @@ func newTestTezos() (*Tezos, func()) {
 	mm.On("IsMetricsEnabled").Return(true)
 	mm.On("BlockchainTransaction", mock.Anything, mock.Anything).Return(nil)
 	mm.On("BlockchainQuery", mock.Anything, mock.Anything).Return(nil)
+	mm.On("BlockchainContractDeployment", mock.Anything, mock.Anything).Return(nil)
 	t := &Tezos{
 		ctx:         ctx,
 		cancelCtx:   cancel,
@@ -978,14 +979,84 @@ func TestDeployContractOK(t *testing.T) {
 	httpmock.ActivateNonDefault(tz.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 	signingKey := "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN"
-	options := map[string]interface{}{}
 	input := []interface{}{}
+	options := map[string]interface{}{}
 	definitionBytes, err := json.Marshal([]interface{}{})
-	contractBytes, err := json.Marshal("KT123")
+	contract := "{\"code\":[{\"args\":[{\"prim\":\"string\"}],\"prim\":\"parameter\"},{\"args\":[{\"prim\":\"string\"}],\"prim\":\"storage\"},{\"args\":[[{\"prim\":\"CAR\"},{\"args\":[{\"prim\":\"operation\"}],\"prim\":\"NIL\"},{\"prim\":\"PAIR\"}]],\"prim\":\"code\"}],\"storage\":{\"string\":\"hello\"}}"
+	contractBytes, err := json.Marshal(contract)
 	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, core.DeployContract, headers["type"])
+			assert.Equal(t, "123", headers["id"])
+			assert.Equal(t, contract, body["contract"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
 
-	_, err = tz.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
-	assert.Regexp(t, "FF10429", err)
+	_, err = tz.DeployContract(context.Background(), "123", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+
+	assert.NoError(t, err)
+}
+
+func TestDeployContractError(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	httpmock.ActivateNonDefault(tz.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN"
+	input := []interface{}{}
+	options := map[string]interface{}{}
+	definitionBytes, err := json.Marshal([]interface{}{})
+	contract := "{\"code\":[{\"args\":[{\"prim\":\"string\"}],\"prim\":\"parameter\"},{\"args\":[{\"prim\":\"string\"}],\"prim\":\"storage\"},{\"args\":[[{\"prim\":\"CAR\"},{\"args\":[{\"prim\":\"operation\"}],\"prim\":\"NIL\"},{\"prim\":\"PAIR\"}]],\"prim\":\"code\"}],\"storage\":{\"string\":\"hello\"}}"
+	contractBytes, err := json.Marshal(contract)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "DeployContract", headers["type"])
+			assert.Equal(t, "123", headers["id"])
+			assert.Equal(t, contract, body["contract"])
+			return httpmock.NewJsonResponderOrPanic(400, "error")(req)
+		})
+
+	_, err = tz.DeployContract(context.Background(), "123", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+
+	assert.Regexp(t, "FF10283", err)
+}
+
+func TestDeployContractInvalidOption(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	httpmock.ActivateNonDefault(tz.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN"
+	input := []interface{}{}
+	options := map[string]interface{}{
+		"contract": "shouldn't be allowed",
+	}
+	definitionBytes, err := json.Marshal([]interface{}{})
+	contract := "{\"code\":[{\"args\":[{\"prim\":\"string\"}],\"prim\":\"parameter\"},{\"args\":[{\"prim\":\"string\"}],\"prim\":\"storage\"},{\"args\":[[{\"prim\":\"CAR\"},{\"args\":[{\"prim\":\"operation\"}],\"prim\":\"NIL\"},{\"prim\":\"PAIR\"}]],\"prim\":\"code\"}],\"storage\":{\"string\":\"hello\"}}"
+	contractBytes, err := json.Marshal(contract)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, core.DeployContract, headers["type"])
+			assert.Equal(t, "123", headers["id"])
+			assert.Equal(t, contract, body["contract"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	_, err = tz.DeployContract(context.Background(), "123", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+
+	assert.Regexp(t, "FF10398", err)
 }
 
 func TestInvokeContractOK(t *testing.T) {
