@@ -108,7 +108,7 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	e2e.PollForUp(suite.T(), client1)
 	e2e.PollForUp(suite.T(), client2)
 
-	eventNames := "message_confirmed|blockchain_event_received"
+	eventNames := "message_confirmed|blockchain_event_received|identity_confirmed"
 	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s", testNamespace, eventNames)
 	received1 := e2e.WsReader(client1.WebSocket(suite.T(), queryString, nil))
 	received2 := e2e.WsReader(client2.WebSocket(suite.T(), queryString, nil))
@@ -148,6 +148,15 @@ func runMigrationTest(suite *ContractMigrationTestSuite, address1, address2 stri
 	client1.RegisterSelfNode(suite.T(), true)
 	client2.RegisterSelfOrg(suite.T(), true)
 	client2.RegisterSelfNode(suite.T(), true)
+
+	// Wait for the orgs to propagate (org2 to node1, and org1 to node 2)
+	orgConfs := append([]*core.EventDelivery{}, e2e.WaitForIdentityConfirmed(suite.T(), received1))
+	orgConfs = append(orgConfs, e2e.WaitForIdentityConfirmed(suite.T(), received1))
+	orgConfs = append(orgConfs, e2e.WaitForIdentityConfirmed(suite.T(), received2))
+	orgConfs = append(orgConfs, e2e.WaitForIdentityConfirmed(suite.T(), received2))
+	for _, oc := range orgConfs {
+		assert.Regexp(suite.T(), fmt.Sprintf("%s|%s", suite.testState.org1.Name, suite.testState.org2.Name), oc.Identity.DID)
+	}
 
 	// Migrate to the new contract
 	client1.NetworkAction(suite.T(), core.NetworkActionTerminate)

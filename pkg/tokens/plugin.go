@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,11 +43,17 @@ type Plugin interface {
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
 	SetOperationHandler(namespace string, handler core.OperationCallbacks)
 
-	// Token interface must not deliver any events until start is called
-	Start() error
+	// StartNamespace starts a specific namespace within the plugin
+	StartNamespace(ctx context.Context, namespace string, tokenPools []*core.TokenPool) error
+
+	// StopNamespace removes a namespace from use within the plugin
+	StopNamespace(ctx context.Context, namespace string) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
+
+	// ConnectorName returns the configured connector name (plugin instance)
+	ConnectorName() string
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
 	CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (phase core.OpPhase, err error)
@@ -115,6 +121,11 @@ type TokenPool struct {
 
 	// PoolLocator is the identifier assigned to this pool by the token connector (includes the contract address or other location info)
 	PoolLocator string
+
+	// AlternateLocators is a list of PoolLocators by which a previous version of the connector may have referred to this pool
+	// It will only be set on a TokenPoolCreated event and FireFly can use it to match and update an existing pool that is now
+	// referred to by a new locator
+	AlternateLocators []string
 
 	// TX is the FireFly-assigned information to correlate this to a transaction (optional)
 	TX core.TransactionRef

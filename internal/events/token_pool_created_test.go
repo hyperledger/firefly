@@ -531,3 +531,77 @@ func TestTokenPoolCreatedPublishBadSymbol(t *testing.T) {
 
 	mti.AssertExpectations(t)
 }
+
+func TestLoadExistingAlternateLocator(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	existingPool := &core.TokenPool{
+		Type:      core.TokenTypeFungible,
+		Locator:   "123",
+		Connector: "erc1155",
+		Symbol:    "ETH",
+	}
+	updatedPool := &tokens.TokenPool{
+		Type:              core.TokenTypeFungible,
+		PoolLocator:       "456",
+		AlternateLocators: []string{"123"},
+		Connector:         "erc1155",
+		Symbol:            "ETH",
+	}
+
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "456").Return(nil, nil).Once()
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(existingPool, nil).Once()
+	em.mdi.On("UpsertTokenPool", em.ctx, existingPool, database.UpsertOptimizationExisting).Return(nil).Once()
+
+	p, err := em.loadExisting(em.ctx, updatedPool)
+	assert.NoError(t, err)
+	assert.Equal(t, p, existingPool)
+}
+
+func TestLoadExistingAlternateLocatorError(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	updatedPool := &tokens.TokenPool{
+		Type:              core.TokenTypeFungible,
+		PoolLocator:       "456",
+		AlternateLocators: []string{"123"},
+		Connector:         "erc1155",
+		Symbol:            "ETH",
+	}
+
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "456").Return(nil, nil).Once()
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
+
+	p, err := em.loadExisting(em.ctx, updatedPool)
+	assert.Equal(t, err.Error(), "pop")
+	assert.Nil(t, p)
+}
+
+func TestLoadExistingAlternateLocatorUpsertError(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	existingPool := &core.TokenPool{
+		Type:      core.TokenTypeFungible,
+		Locator:   "123",
+		Connector: "erc1155",
+		Symbol:    "ETH",
+	}
+	updatedPool := &tokens.TokenPool{
+		Type:              core.TokenTypeFungible,
+		PoolLocator:       "456",
+		AlternateLocators: []string{"123"},
+		Connector:         "erc1155",
+		Symbol:            "ETH",
+	}
+
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "456").Return(nil, nil).Once()
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(existingPool, nil).Once()
+	em.mdi.On("UpsertTokenPool", em.ctx, existingPool, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop")).Once()
+
+	p, err := em.loadExisting(em.ctx, updatedPool)
+	assert.Equal(t, err.Error(), "pop")
+	assert.Equal(t, p, existingPool)
+}

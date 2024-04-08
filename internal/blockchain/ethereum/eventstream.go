@@ -127,7 +127,7 @@ func (s *streamManager) updateEventStream(ctx context.Context, topic string, bat
 	return stream, nil
 }
 
-func (s *streamManager) ensureEventStream(ctx context.Context, topic string) (*eventStream, error) {
+func (s *streamManager) ensureEventStream(ctx context.Context, topic, pluginTopic string) (*eventStream, error) {
 	existingStreams, err := s.getEventStreams(ctx)
 	if err != nil {
 		return nil, err
@@ -140,8 +140,27 @@ func (s *streamManager) ensureEventStream(ctx context.Context, topic string) (*e
 			}
 			return stream, nil
 		}
+		if stream.Name == pluginTopic {
+			// We have an old event stream that needs to get deleted
+			if err := s.deleteEventStream(ctx, stream.ID, false); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return s.createEventStream(ctx, topic)
+}
+
+func (s *streamManager) deleteEventStream(ctx context.Context, esID string, okNotFound bool) error {
+	res, err := s.client.R().
+		SetContext(ctx).
+		Delete("/eventstreams/" + esID)
+	if err != nil || !res.IsSuccess() {
+		if okNotFound && res.StatusCode() == 404 {
+			return nil
+		}
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
+	}
+	return nil
 }
 
 func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscription, err error) {

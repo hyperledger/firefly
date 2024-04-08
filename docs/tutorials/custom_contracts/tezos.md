@@ -21,7 +21,7 @@ This guide describes the steps to deploy a smart contract to a Tezos blockchain 
 
 ## Smart Contract Languages
 
-Smart contracts on Tezos can be programmed using familiar, developer-friendly languages. All features available on Tezos can be written in any of the high-level languages used to write smart contracts, such as Archetype, LIGO, and SmartPy. These languages all compile down to [Michelton](https://tezos.gitlab.io/active/michelson.html) and you can switch between languages based on your preferences and projects.
+Smart contracts on Tezos can be programmed using familiar, developer-friendly languages. All features available on Tezos can be written in any of the high-level languages used to write smart contracts, such as Archetype, LIGO, and SmartPy. These languages all compile down to [Michelson](https://tezos.gitlab.io/active/michelson.html) and you can switch between languages based on your preferences and projects.
 
 > **NOTE:** For this tutorial we are going to use [SmartPy](https://smartpy.io/) for building Tezos smart contracts utilizing the broadly adopted Python language.
 
@@ -54,41 +54,546 @@ def main():
         def get(self):
             return self.data.x
 
-@sp.add_test(name="SimpleStorage")
+@sp.add_test()
 def test():
+    # Create a test scenario
+    scenario = sp.test_scenario("Test simple storage", main)
+    scenario.h1("SimpleStorage")
+
     # Initialize the contract
     c = main.SimpleStorage(12)
 
-    # Create a test scenario and run some test cases
-    scenario = sp.test_scenario(main)
-    scenario.h1("SimpleStorage")
+    # Run some test cases
     scenario += c
     c.set(value=15)
     scenario.verify(c.data.x == 15)
     scenario.verify(scenario.compute(c.get()) == 15)
 ```
 
-## Contract deployment
+## Contract deployment via SmartPy IDE
 
 To deploy the contract, we will use [SmartPy IDE](https://smartpy.io/ide).
 1. Open an IDE;
 2. Paste the contract code;
 3. Click "Run code" button;
-4. Then you will see "Deploy Michelson Contract" button, click on that;
-5. Choose the Ghostnet network;
-6. Select an account, which you're going to use to deploy the contract;
-7. Click "Estimate Cost From RPC" button;
-8. Click "Deploy Contract" button;
+4. Then you will see "Show Michelson" button, click on that;
+5. On the opened pop-up click button "Deploy Contract";
+6. Choose the Ghostnet network;
+7. Select an account, which you're going to use to deploy the contract;
+8. Click "Estimate Cost From RPC" button;
+9. Click "Deploy Contract" button;
 
 ![ContractDeployment](images/tezos_contract_deployment.png)
 ![ContractDeployment2](images/tezos_contract_deployment2.png)
+![ContractDeployment3](images/tezos_contract_deployment3.png)
 
 Here we can see that our new contract address is `KT1ED4gj2xZnp8318yxa5NpvyvW15pqe4yFg`. This is the address that we will reference in the rest of this guide.
+
+## Contract deployment via HTTP API
+
+To deploy the contract we can use HTTP API:
+`POST` `http://localhost:5000/api/v1/namespaces/default/contracts/deploy`
+
+```json
+{
+    "contract": {
+        "code": [
+            {
+                "prim": "storage",
+                "args": [
+                    {
+                        "prim": "int"
+                    }
+                ]
+            },
+            {
+                "prim": "parameter",
+                "args": [
+                    {
+                        "prim": "int",
+                        "annots": [
+                            "%set"
+                        ]
+                    }
+                ]
+            },
+            {
+                "prim": "code",
+                "args": [
+                    [
+                        {
+                            "prim": "CAR"
+                        },
+                        {
+                            "prim": "NIL",
+                            "args": [
+                                {
+                                    "prim": "operation"
+                                }
+                            ]
+                        },
+                        {
+                            "prim": "PAIR"
+                        }
+                    ]
+                ]
+            },
+            {
+                "prim": "view",
+                "args": [
+                    {
+                        "string": "get"
+                    },
+                    {
+                        "prim": "unit"
+                    },
+                    {
+                        "prim": "int"
+                    },
+                    [
+                        {
+                            "prim": "CDR"
+                        }
+                    ]
+                ]
+            }
+        ],
+        "storage": {
+            "int": "12"
+        }
+    }
+}
+```
+
+The `contract` field has two fields - `code` with Michelson code of contract and `storage` with initial Storage values.
+
+The response of request above:
+
+``` json
+{
+    "id": "0c3810c7-baed-4077-9d2c-af316a4a567f",
+    "namespace": "default",
+    "tx": "21d03e6d-d106-48f4-aacd-688bf17b71fd",
+    "type": "blockchain_deploy",
+    "status": "Pending",
+    "plugin": "tezos",
+    "input": {
+        "contract": {
+            "code": [
+                {
+                    "args": [
+                        {
+                            "prim": "int"
+                        }
+                    ],
+                    "prim": "storage"
+                },
+                {
+                    "args": [
+                        {
+                            "annots": [
+                                "%set"
+                            ],
+                            "prim": "int"
+                        }
+                    ],
+                    "prim": "parameter"
+                },
+                {
+                    "args": [
+                        [
+                            {
+                                "prim": "CAR"
+                            },
+                            {
+                                "args": [
+                                    {
+                                        "prim": "operation"
+                                    }
+                                ],
+                                "prim": "NIL"
+                            },
+                            {
+                                "prim": "PAIR"
+                            }
+                        ]
+                    ],
+                    "prim": "code"
+                },
+                {
+                    "args": [
+                        {
+                            "string": "get"
+                        },
+                        {
+                            "prim": "unit"
+                        },
+                        {
+                            "prim": "int"
+                        },
+                        [
+                            {
+                                "prim": "CDR"
+                            }
+                        ]
+                    ],
+                    "prim": "view"
+                }
+            ],
+            "storage": {
+                "int": "12"
+            }
+        },
+        "definition": null,
+        "input": null,
+        "key": "tz1V3spuktTP2wuEZP7D2hJruLZ5uJTuJk31",
+        "options": null
+    },
+    "created": "2024-04-01T14:20:20.665039Z",
+    "updated": "2024-04-01T14:20:20.665039Z"
+}
+```
+
+The success result of deploy can be checked by
+`GET` `http://localhost:5000/api/v1/namespaces/default/operations/0c3810c7-baed-4077-9d2c-af316a4a567f`
+where `0c3810c7-baed-4077-9d2c-af316a4a567f` is operation id from response above.  
+
+The success response:
+
+``` json
+{
+    "id": "0c3810c7-baed-4077-9d2c-af316a4a567f",
+    "namespace": "default",
+    "tx": "21d03e6d-d106-48f4-aacd-688bf17b71fd",
+    "type": "blockchain_deploy",
+    "status": "Succeeded",
+    "plugin": "tezos",
+    "input": {
+        "contract": {
+            "code": [
+                {
+                    "args": [
+                        {
+                            "prim": "int"
+                        }
+                    ],
+                    "prim": "storage"
+                },
+                {
+                    "args": [
+                        {
+                            "annots": [
+                                "%set"
+                            ],
+                            "prim": "int"
+                        }
+                    ],
+                    "prim": "parameter"
+                },
+                {
+                    "args": [
+                        [
+                            {
+                                "prim": "CAR"
+                            },
+                            {
+                                "args": [
+                                    {
+                                        "prim": "operation"
+                                    }
+                                ],
+                                "prim": "NIL"
+                            },
+                            {
+                                "prim": "PAIR"
+                            }
+                        ]
+                    ],
+                    "prim": "code"
+                },
+                {
+                    "args": [
+                        {
+                            "string": "get"
+                        },
+                        {
+                            "prim": "unit"
+                        },
+                        {
+                            "prim": "int"
+                        },
+                        [
+                            {
+                                "prim": "CDR"
+                            }
+                        ]
+                    ],
+                    "prim": "view"
+                }
+            ],
+            "storage": {
+                "int": "12"
+            }
+        },
+        "definition": null,
+        "input": null,
+        "key": "tz1V3spuktTP2wuEZP7D2hJruLZ5uJTuJk31",
+        "options": null
+    },
+    "output": {
+        "headers": {
+            "requestId": "default:0c3810c7-baed-4077-9d2c-af316a4a567f",
+            "type": "TransactionSuccess"
+        },
+        "protocolId": "ProxfordYmVfjWnRcgjWH36fW6PArwqykTFzotUxRs6gmTcZDuH",
+        "transactionHash": "ootDut4xxR2yeYz6JuySuyTVZnXgda2t8SYrk3iuJpm531TZuCj"
+    },
+    "created": "2024-04-01T14:20:20.665039Z",
+    "updated": "2024-04-01T14:20:20.665039Z",
+    "detail": {
+        "created": "2024-04-01T14:20:21.928976Z",
+        "firstSubmit": "2024-04-01T14:20:22.714493Z",
+        "from": "tz1V3spuktTP2wuEZP7D2hJruLZ5uJTuJk31",
+        "gasPrice": "0",
+        "historySummary": [
+            {
+                "count": 1,
+                "firstOccurrence": "2024-04-01T14:20:21.930764Z",
+                "lastOccurrence": "2024-04-01T14:20:21.930765Z",
+                "subStatus": "Received"
+            },
+            {
+                "action": "AssignNonce",
+                "count": 2,
+                "firstOccurrence": "2024-04-01T14:20:21.930767Z",
+                "lastOccurrence": "2024-04-01T14:20:22.714772Z"
+            },
+            {
+                "action": "RetrieveGasPrice",
+                "count": 1,
+                "firstOccurrence": "2024-04-01T14:20:22.714774Z",
+                "lastOccurrence": "2024-04-01T14:20:22.714774Z"
+            },
+            {
+                "action": "SubmitTransaction",
+                "count": 1,
+                "firstOccurrence": "2024-04-01T14:20:22.715269Z",
+                "lastOccurrence": "2024-04-01T14:20:22.715269Z"
+            },
+            {
+                "action": "ReceiveReceipt",
+                "count": 1,
+                "firstOccurrence": "2024-04-01T14:20:29.244396Z",
+                "lastOccurrence": "2024-04-01T14:20:29.244396Z"
+            },
+            {
+                "action": "Confirm",
+                "count": 1,
+                "firstOccurrence": "2024-04-01T14:20:29.244762Z",
+                "lastOccurrence": "2024-04-01T14:20:29.244762Z"
+            }
+        ],
+        "id": "default:0c3810c7-baed-4077-9d2c-af316a4a567f",
+        "lastSubmit": "2024-04-01T14:20:22.714493Z",
+        "nonce": "23094946",
+        "policyInfo": {},
+        "receipt": {
+            "blockHash": "BLvWL4t8GbaufGcQwiv3hHCsvgD6qwXfAXofyvojSMoFeGMXMR1",
+            "blockNumber": "5868268",
+            "contractLocation": {
+                "address": "KT1CkTPsgTUQxR3CCpvtrcuQFV5Jf7cJgHFg"
+            },
+            "extraInfo": [
+                {
+                    "consumedGas": "584",
+                    "contractAddress": "KT1CkTPsgTUQxR3CCpvtrcuQFV5Jf7cJgHFg",
+                    "counter": null,
+                    "errorMessage": null,
+                    "fee": null,
+                    "from": null,
+                    "gasLimit": null,
+                    "paidStorageSizeDiff": "75",
+                    "status": "applied",
+                    "storage": null,
+                    "storageLimit": null,
+                    "storageSize": "75",
+                    "to": null
+                }
+            ],
+            "protocolId": "ProxfordYmVfjWnRcgjWH36fW6PArwqykTFzotUxRs6gmTcZDuH",
+            "success": true,
+            "transactionIndex": "0"
+        },
+        "sequenceId": "018e9a08-582a-01ec-9209-9d79ef742c9b",
+        "status": "Succeeded",
+        "transactionData": "c37274b662d68da8fdae2a02ad6c460a79933c70c6fa7500dc98a9ade6822f026d00673bb6e6298063f97940953de23d441ab20bf757f602a3cd810bad05b003000000000041020000003c0500045b00000004257365740501035b050202000000080316053d036d03420991000000130100000003676574036c035b020000000203170000000000000002000c",
+        "transactionHash": "ootDut4xxR2yeYz6JuySuyTVZnXgda2t8SYrk3iuJpm531TZuCj",
+        "transactionHeaders": {
+            "from": "tz1V3spuktTP2wuEZP7D2hJruLZ5uJTuJk31",
+            "nonce": "23094946"
+        },
+        "updated": "2024-04-01T14:20:29.245172Z"
+    }
+}
+```
 
 ## The FireFly Interface Format
 
 As we know from the previous section - smart contracts on the Tezos blockchain are using the domain-specific, stack-based programming language called [Michelson](https://tezos.gitlab.io/active/michelson.html). It is a key component of the Tezos platform and plays a fundamental role in defining the behavior of smart contracts and facilitating their execution.
 This language is very efficient but also a bit tricky and challenging for learning, so in order to teach FireFly how to interact with the smart contract, we will be using [FireFly Interface (FFI)](../../reference/firefly_interface_format.md) to define the contract inteface which later will be encoded to Michelson.
+
+### Schema details
+
+The `details` field is used to encapsulate blockchain specific type information about a specific field. (More details at [schema details](../../reference/firefly_interface_format.md#schema-details))
+
+#### Supported Tezos types
+
+- nat
+- integer
+- string
+- address
+- bytes
+- boolean
+- variant
+- list
+- struct
+- map
+
+#### Internal type vs Internal schema
+
+<i>internalType</i> is a field which is used to describe tezos primitive types
+
+``` json
+{
+    "details": {
+        "type": "address",
+        "internalType": "address"
+    }
+}
+```
+
+<i>internalSchema</i> in turn is used to describe more complex tezos types as <b>list</b>, <b>struct</b> or <b>variant</b>
+
+<i>Struct example:</i>
+
+``` json
+{
+    "details": {
+        "type": "schema",
+        "internalSchema": {
+            "type": "struct",
+            "args": [
+                {
+                    "name": "metadata",
+                    "type": "bytes"
+                },
+                {
+                    "name": "token_id",
+                    "type": "nat"
+                }
+            ]
+        }
+    }
+}
+```
+
+<i>List example:</i>
+
+``` json
+{
+    "details": {
+        "type": "schema",
+        "internalSchema": {
+            "type": "struct",
+            "args": [
+                {
+                    "name": "metadata",
+                    "type": "bytes"
+                },
+                {
+                    "name": "token_id",
+                    "type": "nat"
+                }
+            ]
+        }
+    }
+}
+```
+
+<i>Variant example:</i>
+
+``` json
+{
+    "details": {
+        "type": "schema",
+        "internalSchema": {
+            "type": "variant",
+            "variants": [
+                "add_operator",
+                "remove_operator"
+            ],
+            "args": [
+                {
+                    "type": "struct",
+                    "args": [
+                        {
+                            "name": "owner",
+                            "type": "address"
+                        },
+                        {
+                            "name": "operator",
+                            "type": "address"
+                        },
+                        {
+                            "name": "token_id",
+                            "type": "nat"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
+```
+
+<i>Map example:</i>
+
+``` json
+{
+    "details": {
+        "type": "schema",
+        "internalSchema": {
+            "type": "map",
+            "args": [
+                {
+                    "name": "key",
+                    "type": "integer"
+                },
+                {
+                    "name": "value",
+                    "type": "string"
+                }
+            ]
+        }
+    }
+}
+```
+
+#### Options
+
+<i>Option</i> type is used to indicate a value as optional (see more at [smartpy options](https://smartpy.io/manual/syntax/options-and-variants#options))
+
+``` json
+{
+    "details": {
+        "type": "string",
+        "internalType": "string",
+        "kind": "option"
+    }
+}
+```
+
+### FA2 example
 
 The following FFI sample demonstrates the specification for the widely used FA2 (analogue of ERC721 for EVM) smart contract:
 

@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -81,6 +81,7 @@ type Orchestrator interface {
 	GetSubscriptions(ctx context.Context, filter ffapi.AndFilter) ([]*core.Subscription, *ffapi.FilterResult, error)
 	GetSubscriptionByID(ctx context.Context, id string) (*core.Subscription, error)
 	GetSubscriptionByIDWithStatus(ctx context.Context, id string) (*core.SubscriptionWithStatus, error)
+	GetSubscriptionEventsHistorical(ctx context.Context, subscription *core.Subscription, filter ffapi.AndFilter, startSequence int, endSequence int) ([]*core.EnrichedEvent, *ffapi.FilterResult, error)
 	CreateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
 	CreateUpdateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
 	DeleteSubscription(ctx context.Context, id string) error
@@ -181,10 +182,11 @@ type Plugins struct {
 }
 
 type Config struct {
-	DefaultKey          string
-	KeyNormalization    string
-	Multiparty          multiparty.Config
-	TokenBroadcastNames map[string]string
+	DefaultKey                  string
+	KeyNormalization            string
+	Multiparty                  multiparty.Config
+	TokenBroadcastNames         map[string]string
+	MaxHistoricalEventScanLimit int
 }
 
 type orchestrator struct {
@@ -295,6 +297,9 @@ func (or *orchestrator) Start() (err error) {
 	if err == nil {
 		or.txWriter.Start()
 	}
+	if err == nil {
+		err = or.assets.Start()
+	}
 
 	or.started = true
 	return err
@@ -303,6 +308,16 @@ func (or *orchestrator) Start() (err error) {
 func (or *orchestrator) WaitStop() {
 	if !or.started {
 		return
+	}
+	err := or.plugins.Blockchain.Plugin.StopNamespace(or.ctx, or.namespace.Name)
+	if err != nil {
+		log.L(or.ctx).Errorf("Error purging namespace '%s' from blockchain plugin '%s': %s", or.namespace.Name, or.plugins.Blockchain.Name, err.Error())
+	}
+	for _, t := range or.plugins.Tokens {
+		err := t.Plugin.StopNamespace(or.ctx, or.namespace.Name)
+		if err != nil {
+			log.L(or.ctx).Errorf("Error purging namespace '%s' from tokens plugin '%s': %s", or.namespace.Name, t.Name, err.Error())
+		}
 	}
 	if or.batch != nil {
 		or.batch.WaitStop()
@@ -552,6 +567,13 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
+	if or.blockchain() != nil {
+		err = or.blockchain().StartNamespace(ctx, or.namespace.Name)
+		if err != nil {
+			return err
+		}
+	}
+
 	if or.data == nil {
 		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.dataexchange(), or.cacheManager)
 		if err != nil {

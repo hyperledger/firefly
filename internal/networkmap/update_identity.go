@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,6 +42,12 @@ func (nm *networkMap) updateIdentityID(ctx context.Context, id *fftypes.UUID, dt
 	}
 	if identity == nil || identity.Namespace != nm.namespace {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NoResult)
+	}
+
+	// We can't sparse merge the generic JSON fields, but we need to propagate the ID
+	if dto.IdentityProfile.Profile.GetString("id") == "" {
+		existingID := identity.IdentityProfile.Profile.GetString("id")
+		dto.IdentityProfile.Profile["id"] = existingID
 	}
 
 	var updateSigner *core.SignerRef

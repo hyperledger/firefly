@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -61,4 +61,9 @@ const (
 
 	// SystemTagIdentityUpdate is the tag for messages that broadcast an identity update
 	SystemTagIdentityUpdate = "ff_identity_update"
+)
+
+const (
+	// DeployContract is the header for DeployContract request
+	DeployContract = "DeployContract"
 )

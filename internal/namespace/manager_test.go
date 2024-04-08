@@ -1851,10 +1851,7 @@ func TestStart(t *testing.T) {
 
 	waitInit := namespaceInitWaiter(t, nmm, []string{"default"})
 
-	nmm.mbi.On("Start", mock.Anything).Return(nil)
 	nmm.mdx.On("Start", mock.Anything).Return(nil)
-	nmm.mti[0].On("Start", mock.Anything).Return(nil)
-	nmm.mti[1].On("Start", mock.Anything).Return(nil)
 	nmm.mdi.On("GetNamespace", mock.Anything, "default").Return(nil, nil)
 	nmm.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	nmm.mo.On("PreInit", mock.Anything, mock.Anything).Return(nil)
@@ -1869,20 +1866,6 @@ func TestStart(t *testing.T) {
 	waitInit.Wait()
 }
 
-func TestStartBlockchainFail(t *testing.T) {
-	nm, nmm, cleanup := newTestNamespaceManager(t, true)
-	defer cleanup()
-
-	nm.namespaces = nil
-	nmm.mbi.On("Start").Return(fmt.Errorf("pop"))
-
-	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{
-		"ethereum": nm.plugins["ethereum"],
-	})
-	assert.EqualError(t, err, "pop")
-
-}
-
 func TestStartDataExchangeFail(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
@@ -1892,20 +1875,6 @@ func TestStartDataExchangeFail(t *testing.T) {
 
 	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{
 		"ffdx": nm.plugins["ffdx"],
-	})
-	assert.EqualError(t, err, "pop")
-
-}
-
-func TestStartTokensFail(t *testing.T) {
-	nm, nmm, cleanup := newTestNamespaceManager(t, true)
-	defer cleanup()
-
-	nm.namespaces = nil
-	nmm.mti[0].On("Start").Return(fmt.Errorf("pop"))
-
-	err := nm.startNamespacesAndPlugins(nm.namespaces, map[string]*plugin{
-		"erc721": nm.plugins["erc721"],
 	})
 	assert.EqualError(t, err, "pop")
 

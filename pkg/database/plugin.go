@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -268,6 +268,9 @@ type iEventCollection interface {
 
 	// GetEvents - Get events
 	GetEvents(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Event, res *ffapi.FilterResult, err error)
+
+	// GetEventsInSequenceRange - Get a range of events between 2 sequence values
+	GetEventsInSequenceRange(ctx context.Context, namespace string, filter ffapi.Filter, startSequence int, endSequence int) (message []*core.Event, res *ffapi.FilterResult, err error)
 }
 
 type iIdentitiesCollection interface {

@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -230,6 +230,16 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 	return nil
 }
 
+func (t *Tezos) StartNamespace(ctx context.Context, namespace string) (err error) {
+	// TODO: Implement
+	return nil
+}
+
+func (t *Tezos) StopNamespace(ctx context.Context, namespace string) (err error) {
+	// TODO: Implement
+	return nil
+}
+
 func (t *Tezos) SetHandler(namespace string, handler blockchain.Callbacks) {
 	t.callbacks.SetHandler(namespace, handler)
 }
@@ -301,7 +311,35 @@ func (t *Tezos) SubmitNetworkAction(ctx context.Context, nsOpID string, signingK
 }
 
 func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
-	return true, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
+	if t.metrics.IsMetricsEnabled() {
+		t.metrics.BlockchainContractDeployment()
+	}
+	headers := TezosconnectMessageHeaders{
+		Type: core.DeployContract,
+		ID:   nsOpID,
+	}
+	body := map[string]interface{}{
+		"headers":  &headers,
+		"contract": contract,
+		"from":     signingKey,
+	}
+
+	body, err = t.applyOptions(ctx, body, options)
+	if err != nil {
+		return true, err
+	}
+
+	var resErr common.BlockchainRESTError
+	res, err := t.client.R().
+		SetContext(ctx).
+		SetBody(body).
+		SetError(&resErr).
+		Post("/")
+	if err != nil || !res.IsSuccess() {
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgTezosconnectRESTErr)
+	}
+
+	return false, nil
 }
 
 func (t *Tezos) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
@@ -391,7 +429,7 @@ func (t *Tezos) DeleteContractListener(ctx context.Context, subscription *core.C
 }
 
 // Note: In state of development. Approach can be changed.
-func (t *Tezos) GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (found bool, status interface{}, err error) {
+func (t *Tezos) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, status interface{}, err error) {
 	sub, err := t.streams.getSubscription(ctx, subID, okNotFound)
 	if err != nil || sub == nil {
 		return false, nil, err
