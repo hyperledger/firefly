@@ -44,7 +44,7 @@ type batchProcessorConf struct {
 	DispatcherOptions
 	name           string
 	dispatcherName string
-	txType         core.TransactionType
+	pinned         bool
 	author         string
 	group          *fftypes.Bytes32
 	dispatch       DispatchHandler
@@ -181,12 +181,13 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 
 	// Check for conditions that prevent this piece of work from going into the current batch
 	// (i.e. the new work is specifically assigned a separate transaction or signing key)
-	batchOfOne := bp.conf.txType == core.TransactionTypeContractInvokePin
+	batchOfOne := newWork.msg.Header.TxType == core.TransactionTypeContractInvokePin
 	if batchOfOne {
 		full = true
 		overflow = len(bp.assemblyQueue) > 0
 	} else if len(bp.assemblyQueue) > 0 {
-		full = newWork.msg.Header.Key != bp.assemblyQueue[0].msg.Header.Key
+		full = newWork.msg.Header.TxType != bp.assemblyQueue[0].msg.Header.TxType ||
+			newWork.msg.Header.Key != bp.assemblyQueue[0].msg.Header.Key
 		overflow = true
 	}
 
@@ -286,10 +287,6 @@ func (bp *batchProcessor) cancelFlush(ctx context.Context, id *fftypes.UUID) err
 	bp.statusMux.Lock()
 	defer bp.statusMux.Unlock()
 	fs := &bp.flushStatus
-
-	if bp.conf.txType != core.TransactionTypeContractInvokePin {
-		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchType, bp.conf.txType)
-	}
 	if !id.Equals(fs.Flushing) {
 		return i18n.NewError(ctx, coremsgs.MsgBatchNotDispatching, id, fs.Flushing)
 	}
@@ -434,6 +431,9 @@ func (bp *batchProcessor) initPayload(id *fftypes.UUID, flushWork []*batchWork) 
 				Group:   bp.conf.group,
 				Created: fftypes.Now(),
 			},
+			TX: core.TransactionRef{
+				Type: flushWork[0].msg.Header.TxType,
+			},
 		},
 	}
 	localNode, err := bp.bm.identity.GetLocalNode(bp.ctx)
@@ -530,6 +530,7 @@ func (bp *batchProcessor) updateMessagePins(ctx context.Context, messages []*cor
 
 func (bp *batchProcessor) sealBatch(payload *DispatchPayload) (err error) {
 	var state *dispatchState
+	txType := payload.Batch.TX.Type
 
 	err = bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
@@ -541,7 +542,7 @@ func (bp *batchProcessor) sealBatch(payload *DispatchPayload) (err error) {
 			}
 
 			// Assign nonces and update nonces/messages in the database
-			if core.IsPinned(bp.conf.txType) {
+			if core.IsPinned(txType) {
 				if err = bp.calculateContexts(ctx, payload, state); err != nil {
 					return err
 				}
@@ -553,14 +554,13 @@ func (bp *batchProcessor) sealBatch(payload *DispatchPayload) (err error) {
 				}
 			}
 
-			payload.Batch.TX.Type = bp.conf.txType
-			batchOfOne := bp.conf.txType == core.TransactionTypeContractInvokePin
+			batchOfOne := txType == core.TransactionTypeContractInvokePin
 			if batchOfOne && payload.Messages[0].TransactionID != nil {
 				// For a batch-of-one with a pre-assigned transaction ID, propagate it to the batch
 				payload.Batch.TX.ID = payload.Messages[0].TransactionID
 			} else {
 				// For all others, generate a new transaction
-				payload.Batch.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, bp.conf.txType, "" /* no idempotency key */)
+				payload.Batch.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, txType, "" /* no idempotency key */)
 				if err != nil {
 					return err
 				}
@@ -586,7 +586,7 @@ func (bp *batchProcessor) sealBatch(payload *DispatchPayload) (err error) {
 	// Once the DB transaction is done, we need to update the messages with the pins.
 	// We do this at this point, so the logic is re-entrant in a way that avoids re-allocating Pins to messages, but
 	// means the retry loops above using the batch state function correctly.
-	if state != nil && core.IsPinned(bp.conf.txType) {
+	if state != nil && core.IsPinned(txType) {
 		for _, msg := range payload.Messages {
 			if pins, ok := state.msgPins[*msg.Header.ID]; ok {
 				msg.Pins = pins
@@ -614,7 +614,7 @@ func (bp *batchProcessor) dispatchBatch(payload *DispatchPayload) error {
 					payload.State = core.MessageStateCancelled
 				}
 			} else {
-				if core.IsPinned(bp.conf.txType) {
+				if core.IsPinned(payload.Batch.TX.Type) {
 					payload.State = core.MessageStateSent
 				} else {
 					payload.State = core.MessageStateConfirmed

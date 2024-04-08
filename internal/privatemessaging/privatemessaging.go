@@ -42,7 +42,6 @@ import (
 )
 
 const pinnedPrivateDispatcherName = "pinned_private"
-const pinnedPrivateCustomDispatcherName = "pinned_private_custom"
 const unpinnedPrivateDispatcherName = "unpinned_private"
 
 type Manager interface {
@@ -138,7 +137,7 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 	}
 
 	ba.RegisterDispatcher(pinnedPrivateDispatcherName,
-		core.TransactionTypeBatchPin,
+		true,
 		[]core.MessageType{
 			core.MessageTypeGroupInit,
 			core.MessageTypePrivate,
@@ -147,15 +146,8 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 		},
 		pm.dispatchPinnedBatch, bo)
 
-	ba.RegisterDispatcher(pinnedPrivateCustomDispatcherName,
-		core.TransactionTypeContractInvokePin,
-		[]core.MessageType{
-			core.MessageTypePrivate,
-		},
-		pm.dispatchPinnedBatch, bo)
-
 	ba.RegisterDispatcher(unpinnedPrivateDispatcherName,
-		core.TransactionTypeUnpinned,
+		false,
 		[]core.MessageType{
 			core.MessageTypePrivate,
 		},

@@ -78,9 +78,9 @@ func (_m *Manager) NewMessages() chan<- int64 {
 	return r0
 }
 
-// RegisterDispatcher provides a mock function with given fields: name, txType, msgTypes, handler, batchOptions
-func (_m *Manager) RegisterDispatcher(name string, txType fftypes.FFEnum, msgTypes []fftypes.FFEnum, handler batch.DispatchHandler, batchOptions batch.DispatcherOptions) {
-	_m.Called(name, txType, msgTypes, handler, batchOptions)
+// RegisterDispatcher provides a mock function with given fields: name, pinned, msgTypes, handler, batchOptions
+func (_m *Manager) RegisterDispatcher(name string, pinned bool, msgTypes []fftypes.FFEnum, handler batch.DispatchHandler, batchOptions batch.DispatcherOptions) {
+	_m.Called(name, pinned, msgTypes, handler, batchOptions)
 }
 
 // Start provides a mock function with given fields:

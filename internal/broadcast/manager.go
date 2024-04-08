@@ -42,7 +42,6 @@ import (
 )
 
 const broadcastDispatcherName = "pinned_broadcast"
-const broadcastCustomDispatcherName = "pinned_broadcast_custom"
 
 type Manager interface {
 	core.Named
@@ -107,18 +106,12 @@ func NewBroadcastManager(ctx context.Context, ns *core.Namespace, di database.Pl
 		}
 
 		ba.RegisterDispatcher(broadcastDispatcherName,
-			core.TransactionTypeBatchPin,
+			true,
 			[]core.MessageType{
 				core.MessageTypeBroadcast,
 				core.MessageTypeDefinition,
 				core.MessageTypeDeprecatedTransferBroadcast,
 				core.MessageTypeDeprecatedApprovalBroadcast,
-			}, bm.dispatchBatch, bo)
-
-		ba.RegisterDispatcher(broadcastCustomDispatcherName,
-			core.TransactionTypeContractInvokePin,
-			[]core.MessageType{
-				core.MessageTypeBroadcast,
 			}, bm.dispatchBatch, bo)
 	}
 

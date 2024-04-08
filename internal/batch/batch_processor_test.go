@@ -49,7 +49,7 @@ func newTestBatchProcessor(t *testing.T, dispatch DispatchHandler) (func(), *dat
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bp := newBatchProcessor(bm, &batchProcessorConf{
-		txType:   core.TransactionTypeBatchPin,
+		pinned:   true,
 		author:   "did:firefly:org/abcd",
 		dispatch: dispatch,
 		DispatcherOptions: DispatcherOptions{
@@ -103,7 +103,12 @@ func TestUnfilledBatch(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			msgid := fftypes.NewUUID()
 			bp.newWork <- &batchWork{
-				msg: &core.Message{Header: core.MessageHeader{ID: msgid}, Sequence: int64(1000 + i)},
+				msg: &core.Message{
+					Header: core.MessageHeader{
+						ID:     msgid,
+						TxType: core.TransactionTypeBatchPin,
+					},
+					Sequence: int64(1000 + i)},
 			}
 		}
 	}()
@@ -152,7 +157,12 @@ func TestBatchSizeOverflow(t *testing.T) {
 	go func() {
 		for i := 0; i < 2; i++ {
 			bp.newWork <- &batchWork{
-				msg: &core.Message{Header: core.MessageHeader{ID: msgIDs[i]}, Sequence: int64(1000 + i)},
+				msg: &core.Message{
+					Header: core.MessageHeader{
+						ID:     msgIDs[i],
+						TxType: core.TransactionTypeBatchPin,
+					},
+					Sequence: int64(1000 + i)},
 			}
 		}
 	}()
@@ -212,7 +222,12 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	msgid := fftypes.NewUUID()
 	go func() {
 		bp.newWork <- &batchWork{
-			msg: &core.Message{Header: core.MessageHeader{ID: msgid}, Sequence: int64(1000)},
+			msg: &core.Message{
+				Header: core.MessageHeader{
+					ID:     msgid,
+					TxType: core.TransactionTypeBatchPin,
+				},
+				Sequence: int64(1000)},
 		}
 	}()
 
@@ -247,6 +262,9 @@ func TestInsertNewNonceFail(t *testing.T) {
 		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: gid,
+			},
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeBatchPin,
 			},
 		},
 		Messages: []*core.Message{
@@ -288,6 +306,9 @@ func TestUpdateExistingNonceFail(t *testing.T) {
 			BatchHeader: core.BatchHeader{
 				Group: gid,
 			},
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeBatchPin,
+			},
 		},
 		Messages: []*core.Message{
 			{Header: core.MessageHeader{
@@ -322,6 +343,9 @@ func TestGetNonceFail(t *testing.T) {
 		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: gid,
+			},
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeBatchPin,
 			},
 		},
 		Messages: []*core.Message{
@@ -358,6 +382,9 @@ func TestGetNonceMigrationFail(t *testing.T) {
 		Batch: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
 				Group: gid,
+			},
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeBatchPin,
 			},
 		},
 		Messages: []*core.Message{
@@ -403,25 +430,25 @@ func TestAddWorkBatchOfOne(t *testing.T) {
 		return nil
 	})
 	defer cancel()
-	bp.conf.txType = core.TransactionTypeContractInvokePin
+	header := core.MessageHeader{TxType: core.TransactionTypeContractInvokePin}
 
 	full, overflow := bp.addWork(&batchWork{
-		msg: &core.Message{Sequence: 200},
+		msg: &core.Message{Sequence: 200, Header: header},
 	})
 	assert.True(t, full)
 	assert.False(t, overflow)
 	assert.Equal(t, []*batchWork{
-		{msg: &core.Message{Sequence: 200}},
+		{msg: &core.Message{Sequence: 200, Header: header}},
 	}, bp.assemblyQueue)
 
 	full, overflow = bp.addWork(&batchWork{
-		msg: &core.Message{Sequence: 201},
+		msg: &core.Message{Sequence: 201, Header: header},
 	})
 	assert.True(t, full)
 	assert.True(t, overflow)
 	assert.Equal(t, []*batchWork{
-		{msg: &core.Message{Sequence: 200}},
-		{msg: &core.Message{Sequence: 201}},
+		{msg: &core.Message{Sequence: 200, Header: header}},
+		{msg: &core.Message{Sequence: 201, Header: header}},
 	}, bp.assemblyQueue)
 }
 
@@ -510,7 +537,6 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 		return nil
 	})
 	defer cancel()
-	bp.conf.txType = core.TransactionTypeUnpinned
 
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
@@ -532,7 +558,14 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			msgid := fftypes.NewUUID()
 			bp.newWork <- &batchWork{
-				msg: &core.Message{Header: core.MessageHeader{ID: msgid, Topics: fftypes.FFStringArray{"topic1"}}, Sequence: int64(1000 + i)},
+				msg: &core.Message{
+					Header: core.MessageHeader{
+						ID:     msgid,
+						Topics: fftypes.FFStringArray{"topic1"},
+						TxType: core.TransactionTypeUnpinned,
+					},
+					Sequence: int64(1000 + i),
+				},
 			}
 		}
 	}()
@@ -588,6 +621,7 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 			Type:   core.MessageTypePrivate,
 			Group:  groupID,
 			Topics: fftypes.FFStringArray{"topic1"},
+			TxType: core.TransactionTypeBatchPin,
 		},
 	}
 	msg2 := &core.Message{
@@ -596,6 +630,7 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 			Type:   core.MessageTypePrivate,
 			Group:  groupID,
 			Topics: fftypes.FFStringArray{"topic1"},
+			TxType: core.TransactionTypeBatchPin,
 		},
 	}
 
@@ -645,6 +680,7 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 			Type:   core.MessageTypePrivate,
 			Group:  fftypes.NewRandB32(),
 			Topics: fftypes.FFStringArray{"topic1"},
+			TxType: core.TransactionTypeBatchPin,
 		},
 	}
 
@@ -693,7 +729,6 @@ func TestSealBatchTXAlreadyAssigned(t *testing.T) {
 		TransactionID: txID,
 	}
 
-	bp.conf.txType = core.TransactionTypeContractInvokePin
 	state := bp.initPayload(fftypes.NewUUID(), []*batchWork{{msg: msg}})
 	err := bp.sealBatch(state)
 	assert.NoError(t, err)
@@ -874,7 +909,6 @@ func TestCancelBatchPrivate(t *testing.T) {
 		return nil
 	})
 	defer cancel()
-	bp.conf.txType = core.TransactionTypeContractInvokePin
 
 	msg1 := fftypes.NewUUID() // cancelled
 	msg2 := fftypes.NewUUID() // dispatched
@@ -938,12 +972,14 @@ func TestCancelBatchPrivate(t *testing.T) {
 			Type:   core.MessageTypePrivate,
 			Group:  fftypes.NewRandB32(),
 			Topics: fftypes.FFStringArray{"topic1"},
+			TxType: core.TransactionTypeContractInvokePin,
 		}}}
 		bp.newWork <- &batchWork{msg: &core.Message{Header: core.MessageHeader{
 			ID:     msg2,
 			Type:   core.MessageTypePrivate,
 			Group:  fftypes.NewRandB32(),
 			Topics: fftypes.FFStringArray{"topic1"},
+			TxType: core.TransactionTypeContractInvokePin,
 		}}}
 	}()
 	<-dispatched
@@ -969,7 +1005,6 @@ func TestCancelBatchBroadcast(t *testing.T) {
 		return nil
 	})
 	defer cancel()
-	bp.conf.txType = core.TransactionTypeContractInvokePin
 
 	msg1 := fftypes.NewUUID() // cancelled
 	msg2 := fftypes.NewUUID() // dispatched
@@ -1021,11 +1056,13 @@ func TestCancelBatchBroadcast(t *testing.T) {
 			ID:     msg1,
 			Type:   core.MessageTypeBroadcast,
 			Topics: fftypes.FFStringArray{"topic1"},
+			TxType: core.TransactionTypeContractInvokePin,
 		}}}
 		bp.newWork <- &batchWork{msg: &core.Message{Header: core.MessageHeader{
 			ID:     msg2,
 			Type:   core.MessageTypeBroadcast,
 			Topics: fftypes.FFStringArray{"topic1"},
+			TxType: core.TransactionTypeContractInvokePin,
 		}}}
 	}()
 	<-dispatched
@@ -1041,7 +1078,6 @@ func TestCancelBatchNotFlushing(t *testing.T) {
 		return nil
 	})
 	defer cancel()
-	bp.conf.txType = core.TransactionTypeContractInvokePin
 
 	err := bp.cancelFlush(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10468", err)

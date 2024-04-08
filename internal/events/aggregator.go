@@ -190,7 +190,7 @@ func (ag *aggregator) rewindOffchainBatches() (bool, int64) {
 		return false, 0
 	}
 
-	// Retry idefinitely for database errors (until the context closes)
+	// Retry indefinitely for database errors (until the context closes)
 	var rewindBatch *fftypes.UUID
 	var offset int64
 	_ = ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {

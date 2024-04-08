@@ -102,7 +102,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	bm := bmi.(*batchManager)
 	bm.readOffset = 1000
 
-	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypeBroadcast}, handler, DispatcherOptions{
+	bm.RegisterDispatcher("utdispatcher", true, []core.MessageType{core.MessageTypeBroadcast}, handler, DispatcherOptions{
 		BatchMaxSize:   2,
 		BatchTimeout:   0,
 		DisposeTimeout: 10 * time.Millisecond,
@@ -224,7 +224,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 	bmi, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
 	bm := bmi.(*batchManager)
 
-	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypePrivate}, handler, DispatcherOptions{
+	bm.RegisterDispatcher("utdispatcher", true, []core.MessageType{core.MessageTypePrivate}, handler, DispatcherOptions{
 		BatchMaxSize:   2,
 		BatchTimeout:   0,
 		DisposeTimeout: 120 * time.Second,
@@ -370,7 +370,7 @@ func TestMessageSequencerMissingMessageData(t *testing.T) {
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	bm, _ := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
-	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeNone, []core.MessageType{core.MessageTypeBroadcast},
+	bm.RegisterDispatcher("utdispatcher", false, []core.MessageType{core.MessageTypeBroadcast},
 		func(c context.Context, state *DispatchPayload) error {
 			return nil
 		},
@@ -417,7 +417,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
-	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypeBroadcast},
+	bm.RegisterDispatcher("utdispatcher", true, []core.MessageType{core.MessageTypeBroadcast},
 		func(c context.Context, state *DispatchPayload) error {
 			return nil
 		},
@@ -475,7 +475,7 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
-	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypeBroadcast},
+	bm.RegisterDispatcher("utdispatcher", true, []core.MessageType{core.MessageTypeBroadcast},
 		func(c context.Context, state *DispatchPayload) error {
 			cancelCtx()
 			return fmt.Errorf("fizzle")
@@ -517,7 +517,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 	bm, _ := NewBatchManager(ctx, "ns1", mdi, mdm, mim, txHelper)
-	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypeBroadcast},
+	bm.RegisterDispatcher("utdispatcher", true, []core.MessageType{core.MessageTypeBroadcast},
 		func(c context.Context, state *DispatchPayload) error {
 			return nil
 		},
@@ -767,6 +767,9 @@ func TestCancelBatchFailHydrate(t *testing.T) {
 		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeContractInvokePin,
+		},
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
@@ -789,6 +792,9 @@ func TestCancelBatchNoPayload(t *testing.T) {
 	bp := &core.BatchPersisted{
 		BatchHeader: core.BatchHeader{
 			ID: batchID,
+		},
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeContractInvokePin,
 		},
 	}
 	batch := &core.Batch{
@@ -819,13 +825,16 @@ func TestCancelBatchUnregisteredProcessor(t *testing.T) {
 		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeContractInvokePin,
+		},
 	}
 	msgid := fftypes.NewUUID()
 	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID:     msgid,
 			Type:   core.MessageTypePrivate,
-			TxType: core.TransactionTypeBatchPin,
+			TxType: core.TransactionTypeContractInvokePin,
 			Group:  group,
 			SignerRef: core.SignerRef{
 				Author: "did:firefly:org/abcd",
@@ -855,7 +864,7 @@ func TestCancelBatchInactiveProcessor(t *testing.T) {
 	bm, cancel := newTestBatchManager(t)
 	defer cancel()
 
-	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypePrivate},
+	bm.RegisterDispatcher("utdispatcher", true, []core.MessageType{core.MessageTypePrivate},
 		func(c context.Context, state *DispatchPayload) error {
 			return nil
 		},
@@ -868,13 +877,16 @@ func TestCancelBatchInactiveProcessor(t *testing.T) {
 		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeContractInvokePin,
+		},
 	}
 	msgid := fftypes.NewUUID()
 	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID:     msgid,
 			Type:   core.MessageTypePrivate,
-			TxType: core.TransactionTypeBatchPin,
+			TxType: core.TransactionTypeContractInvokePin,
 			Group:  group,
 			SignerRef: core.SignerRef{
 				Author: "did:firefly:org/abcd",
@@ -904,14 +916,44 @@ func TestCancelBatchInvalidType(t *testing.T) {
 	bm, cancel := newTestBatchManager(t)
 	defer cancel()
 
-	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypePrivate},
+	bm.RegisterDispatcher("utdispatcher", true, []core.MessageType{core.MessageTypePrivate},
+		func(c context.Context, state *DispatchPayload) error {
+			return nil
+		},
+		DispatcherOptions{BatchType: core.BatchTypePrivate},
+	)
+
+	batchID := fftypes.NewUUID()
+	bp := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: batchID,
+		},
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeBatchPin,
+		},
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(bp, nil)
+
+	err := bm.CancelBatch(context.Background(), batchID.String())
+	assert.Regexp(t, "FF10466", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestCancelBatch(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	bm.RegisterDispatcher("utdispatcher", true, []core.MessageType{core.MessageTypePrivate},
 		func(c context.Context, state *DispatchPayload) error {
 			return nil
 		},
 		DispatcherOptions{BatchType: core.BatchTypePrivate},
 	)
 	group := fftypes.NewRandB32()
-	_, err := bm.getProcessor(core.TransactionTypeBatchPin, core.MessageTypePrivate, group, "did:firefly:org/abcd", true)
+	_, err := bm.getProcessor(core.TransactionTypeContractInvokePin, core.MessageTypePrivate, group, "did:firefly:org/abcd", true)
 	assert.NoError(t, err)
 
 	batchID := fftypes.NewUUID()
@@ -919,13 +961,16 @@ func TestCancelBatchInvalidType(t *testing.T) {
 		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeContractInvokePin,
+		},
 	}
 	msgid := fftypes.NewUUID()
 	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID:     msgid,
 			Type:   core.MessageTypePrivate,
-			TxType: core.TransactionTypeBatchPin,
+			TxType: core.TransactionTypeContractInvokePin,
 			Group:  group,
 			SignerRef: core.SignerRef{
 				Author: "did:firefly:org/abcd",
@@ -945,7 +990,7 @@ func TestCancelBatchInvalidType(t *testing.T) {
 	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
 
 	err = bm.CancelBatch(context.Background(), batchID.String())
-	assert.Regexp(t, "FF10466", err)
+	assert.Regexp(t, "FF10468", err)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)

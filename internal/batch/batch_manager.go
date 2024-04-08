@@ -75,7 +75,7 @@ func NewBatchManager(ctx context.Context, ns string, di database.Plugin, dm data
 }
 
 type Manager interface {
-	RegisterDispatcher(name string, txType core.TransactionType, msgTypes []core.MessageType, handler DispatchHandler, batchOptions DispatcherOptions)
+	RegisterDispatcher(name string, pinned bool, msgTypes []core.MessageType, handler DispatchHandler, batchOptions DispatcherOptions)
 	LoadContexts(ctx context.Context, payload *DispatchPayload) error
 	CancelBatch(ctx context.Context, batchID string) error
 	NewMessages() chan<- int64
@@ -143,11 +143,15 @@ func (bm *batchManager) getProcessorKey(author string, groupID *fftypes.Bytes32)
 	return fmt.Sprintf("%s|%v", author, groupID)
 }
 
-func (bm *batchManager) getDispatcherKey(txType core.TransactionType, msgType core.MessageType) string {
-	return fmt.Sprintf("tx:%s/%s", txType, msgType)
+func (bm *batchManager) getDispatcherKey(pinned bool, msgType core.MessageType) string {
+	txType := "pinned"
+	if !pinned {
+		txType = "unpinned"
+	}
+	return fmt.Sprintf("%s|%s", txType, msgType)
 }
 
-func (bm *batchManager) RegisterDispatcher(name string, txType core.TransactionType, msgTypes []core.MessageType, handler DispatchHandler, options DispatcherOptions) {
+func (bm *batchManager) RegisterDispatcher(name string, pinned bool, msgTypes []core.MessageType, handler DispatchHandler, options DispatcherOptions) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
@@ -159,7 +163,7 @@ func (bm *batchManager) RegisterDispatcher(name string, txType core.TransactionT
 	}
 	bm.allDispatchers = append(bm.allDispatchers, dispatcher)
 	for _, msgType := range msgTypes {
-		bm.dispatcherMap[bm.getDispatcherKey(txType, msgType)] = dispatcher
+		bm.dispatcherMap[bm.getDispatcherKey(pinned, msgType)] = dispatcher
 	}
 }
 
@@ -178,7 +182,8 @@ func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.M
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
-	dispatcherKey := bm.getDispatcherKey(txType, msgType)
+	pinned := core.IsPinned(txType)
+	dispatcherKey := bm.getDispatcherKey(pinned, msgType)
 	dispatcher, ok := bm.dispatcherMap[dispatcherKey]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, coremsgs.MsgUnregisteredBatchType, dispatcherKey)
@@ -191,7 +196,7 @@ func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.M
 			&batchProcessorConf{
 				DispatcherOptions: dispatcher.options,
 				name:              name,
-				txType:            txType,
+				pinned:            pinned,
 				dispatcherName:    dispatcher.name,
 				author:            author,
 				group:             group,
@@ -603,6 +608,9 @@ func (bm *batchManager) CancelBatch(ctx context.Context, batchID string) error {
 	bp, err := bm.database.GetBatchByID(ctx, bm.namespace, id)
 	if err != nil {
 		return err
+	}
+	if bp.TX.Type != core.TransactionTypeContractInvokePin {
+		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchType, bp.TX.Type)
 	}
 	batch, err := bm.data.HydrateBatch(ctx, bp)
 	if err != nil {
