@@ -306,7 +306,8 @@
   <li><a href="#work-with-tezos-smart-contracts" id="markdown-toc-work-with-tezos-smart-contracts">Work with Tezos smart contracts</a>    <ol>
       <li><a href="#smart-contract-languages" id="markdown-toc-smart-contract-languages">Smart Contract Languages</a></li>
       <li><a href="#example-smart-contract" id="markdown-toc-example-smart-contract">Example smart contract</a></li>
-      <li><a href="#contract-deployment" id="markdown-toc-contract-deployment">Contract deployment</a></li>
+      <li><a href="#contract-deployment-via-smartpy-ide" id="markdown-toc-contract-deployment-via-smartpy-ide">Contract deployment via SmartPy IDE</a></li>
+      <li><a href="#contract-deployment-via-http-api" id="markdown-toc-contract-deployment-via-http-api">Contract deployment via HTTP API</a></li>
       <li><a href="#the-firefly-interface-format" id="markdown-toc-the-firefly-interface-format">The FireFly Interface Format</a>        <ol>
           <li><a href="#schema-details" id="markdown-toc-schema-details">Schema details</a>            <ol>
               <li><a href="#supported-tezos-types" id="markdown-toc-supported-tezos-types">Supported Tezos types</a></li>
@@ -350,7 +351,7 @@
       </h2>
     
 
-<p>Smart contracts on Tezos can be programmed using familiar, developer-friendly languages. All features available on Tezos can be written in any of the high-level languages used to write smart contracts, such as Archetype, LIGO, and SmartPy. These languages all compile down to <a href="https://tezos.gitlab.io/active/michelson.html">Michelton</a> and you can switch between languages based on your preferences and projects.</p>
+<p>Smart contracts on Tezos can be programmed using familiar, developer-friendly languages. All features available on Tezos can be written in any of the high-level languages used to write smart contracts, such as Archetype, LIGO, and SmartPy. These languages all compile down to <a href="https://tezos.gitlab.io/active/michelson.html">Michelson</a> and you can switch between languages based on your preferences and projects.</p>
 
 <blockquote>
   <p><strong>NOTE:</strong> For this tutorial we are going to use <a href="https://smartpy.io/">SmartPy</a> for building Tezos smart contracts utilizing the broadly adopted Python language.</p>
@@ -392,23 +393,25 @@ def main():
         def get(self):
             return self.data.x
 
-@sp.add_test(name="SimpleStorage")
+@sp.add_test()
 def test():
+    # Create a test scenario
+    scenario = sp.test_scenario("Test simple storage", main)
+    scenario.h1("SimpleStorage")
+
     # Initialize the contract
     c = main.SimpleStorage(12)
 
-    # Create a test scenario and run some test cases
-    scenario = sp.test_scenario(main)
-    scenario.h1("SimpleStorage")
+    # Run some test cases
     scenario += c
     c.set(value=15)
     scenario.verify(c.data.x == 15)
     scenario.verify(scenario.compute(c.get()) == 15)
 </code></pre></div></div>
-      <h2 id="contract-deployment">
+      <h2 id="contract-deployment-via-smartpy-ide">
         
         
-          <a href="#contract-deployment" class="anchor-heading" aria-labelledby="contract-deployment"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Contract deployment
+          <a href="#contract-deployment-via-smartpy-ide" class="anchor-heading" aria-labelledby="contract-deployment-via-smartpy-ide"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Contract deployment via SmartPy IDE
         
         
       </h2>
@@ -419,7 +422,8 @@ def test():
   <li>Open an IDE;</li>
   <li>Paste the contract code;</li>
   <li>Click “Run code” button;</li>
-  <li>Then you will see “Deploy Michelson Contract” button, click on that;</li>
+  <li>Then you will see “Show Michelson” button, click on that;</li>
+  <li>On the opened pop-up click button “Deploy Contract”;</li>
   <li>Choose the Ghostnet network;</li>
   <li>Select an account, which you’re going to use to deploy the contract;</li>
   <li>Click “Estimate Cost From RPC” button;</li>
@@ -427,9 +431,361 @@ def test():
 </ol>
 
 <p><img src="/firefly/head/tutorials/custom_contracts/images/tezos_contract_deployment.png" alt="ContractDeployment" />
-<img src="/firefly/head/tutorials/custom_contracts/images/tezos_contract_deployment2.png" alt="ContractDeployment2" /></p>
+<img src="/firefly/head/tutorials/custom_contracts/images/tezos_contract_deployment2.png" alt="ContractDeployment2" />
+<img src="/firefly/head/tutorials/custom_contracts/images/tezos_contract_deployment3.png" alt="ContractDeployment3" /></p>
 
 <p>Here we can see that our new contract address is <code class="language-plaintext highlighter-rouge">KT1ED4gj2xZnp8318yxa5NpvyvW15pqe4yFg</code>. This is the address that we will reference in the rest of this guide.</p>
+      <h2 id="contract-deployment-via-http-api">
+        
+        
+          <a href="#contract-deployment-via-http-api" class="anchor-heading" aria-labelledby="contract-deployment-via-http-api"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Contract deployment via HTTP API
+        
+        
+      </h2>
+    
+
+<p>To deploy the contract we can use HTTP API:
+<code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/contracts/deploy</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"contract"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"code"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"storage"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">]</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"parameter"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"annots"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                            </span><span class="s2">"%set"</span><span class="w">
+                        </span><span class="p">]</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">]</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"code"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CAR"</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NIL"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="p">{</span><span class="w">
+                                    </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"operation"</span><span class="w">
+                                </span><span class="p">}</span><span class="w">
+                            </span><span class="p">]</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PAIR"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">]</span><span class="w">
+                </span><span class="p">]</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"view"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"string"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"unit"</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                    </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+                    </span><span class="p">},</span><span class="w">
+                    </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CDR"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">]</span><span class="w">
+                </span><span class="p">]</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">],</span><span class="w">
+        </span><span class="nl">"storage"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"int"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12"</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">contract</code> field has two fields - <code class="language-plaintext highlighter-rouge">code</code> with Michelson code of contract and <code class="language-plaintext highlighter-rouge">storage</code> with initial Storage values.</p>
+
+<p>The response of request above:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0c3810c7-baed-4077-9d2c-af316a4a567f"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="s2">"21d03e6d-d106-48f4-aacd-688bf17b71fd"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_deploy"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Pending"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"plugin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tezos"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"contract"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"code"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"storage"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"annots"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="s2">"%set"</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"parameter"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">[</span><span class="w">
+                            </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CAR"</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                    </span><span class="p">{</span><span class="w">
+                                        </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"operation"</span><span class="w">
+                                    </span><span class="p">}</span><span class="w">
+                                </span><span class="p">],</span><span class="w">
+                                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NIL"</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PAIR"</span><span class="w">
+                            </span><span class="p">}</span><span class="w">
+                        </span><span class="p">]</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"code"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"string"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"unit"</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">[</span><span class="w">
+                            </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CDR"</span><span class="w">
+                            </span><span class="p">}</span><span class="w">
+                        </span><span class="p">]</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"view"</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"storage"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"int"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"definition"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tz1V3spuktTP2wuEZP7D2hJruLZ5uJTuJk31"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:20.665039Z"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"updated"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:20.665039Z"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>The success result of deploy can be checked by
+<code class="language-plaintext highlighter-rouge">GET</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/operations/0c3810c7-baed-4077-9d2c-af316a4a567f</code>
+where <code class="language-plaintext highlighter-rouge">0c3810c7-baed-4077-9d2c-af316a4a567f</code> is operation id from response above.</p>
+
+<p>The success response:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0c3810c7-baed-4077-9d2c-af316a4a567f"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="s2">"21d03e6d-d106-48f4-aacd-688bf17b71fd"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_deploy"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Succeeded"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"plugin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tezos"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"contract"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"code"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"storage"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"annots"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                </span><span class="s2">"%set"</span><span class="w">
+                            </span><span class="p">],</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"parameter"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">[</span><span class="w">
+                            </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CAR"</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                                    </span><span class="p">{</span><span class="w">
+                                        </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"operation"</span><span class="w">
+                                    </span><span class="p">}</span><span class="w">
+                                </span><span class="p">],</span><span class="w">
+                                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NIL"</span><span class="w">
+                            </span><span class="p">},</span><span class="w">
+                            </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PAIR"</span><span class="w">
+                            </span><span class="p">}</span><span class="w">
+                        </span><span class="p">]</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"code"</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"string"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"unit"</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+                        </span><span class="p">},</span><span class="w">
+                        </span><span class="p">[</span><span class="w">
+                            </span><span class="p">{</span><span class="w">
+                                </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CDR"</span><span class="w">
+                            </span><span class="p">}</span><span class="w">
+                        </span><span class="p">]</span><span class="w">
+                    </span><span class="p">],</span><span class="w">
+                    </span><span class="nl">"prim"</span><span class="p">:</span><span class="w"> </span><span class="s2">"view"</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"storage"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"int"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"definition"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tz1V3spuktTP2wuEZP7D2hJruLZ5uJTuJk31"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"headers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"requestId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default:0c3810c7-baed-4077-9d2c-af316a4a567f"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TransactionSuccess"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"protocolId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ProxfordYmVfjWnRcgjWH36fW6PArwqykTFzotUxRs6gmTcZDuH"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"transactionHash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ootDut4xxR2yeYz6JuySuyTVZnXgda2t8SYrk3iuJpm531TZuCj"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:20.665039Z"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"updated"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:20.665039Z"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"detail"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:21.928976Z"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"firstSubmit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:22.714493Z"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tz1V3spuktTP2wuEZP7D2hJruLZ5uJTuJk31"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"gasPrice"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"historySummary"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"firstOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:21.930764Z"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"lastOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:21.930765Z"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"subStatus"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Received"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"action"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AssignNonce"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"firstOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:21.930767Z"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"lastOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:22.714772Z"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"action"</span><span class="p">:</span><span class="w"> </span><span class="s2">"RetrieveGasPrice"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"firstOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:22.714774Z"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"lastOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:22.714774Z"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"action"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SubmitTransaction"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"firstOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:22.715269Z"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"lastOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:22.715269Z"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"action"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ReceiveReceipt"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"firstOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:29.244396Z"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"lastOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:29.244396Z"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"action"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Confirm"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"firstOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:29.244762Z"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"lastOccurrence"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:29.244762Z"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">],</span><span class="w">
+        </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default:0c3810c7-baed-4077-9d2c-af316a4a567f"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"lastSubmit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:22.714493Z"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"nonce"</span><span class="p">:</span><span class="w"> </span><span class="s2">"23094946"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"policyInfo"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+        </span><span class="nl">"receipt"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"blockHash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"BLvWL4t8GbaufGcQwiv3hHCsvgD6qwXfAXofyvojSMoFeGMXMR1"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"blockNumber"</span><span class="p">:</span><span class="w"> </span><span class="s2">"5868268"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"contractLocation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1CkTPsgTUQxR3CCpvtrcuQFV5Jf7cJgHFg"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="nl">"extraInfo"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"consumedGas"</span><span class="p">:</span><span class="w"> </span><span class="s2">"584"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"contractAddress"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KT1CkTPsgTUQxR3CCpvtrcuQFV5Jf7cJgHFg"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"counter"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"errorMessage"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"fee"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"from"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"gasLimit"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"paidStorageSizeDiff"</span><span class="p">:</span><span class="w"> </span><span class="s2">"75"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"applied"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"storage"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"storageLimit"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"storageSize"</span><span class="p">:</span><span class="w"> </span><span class="s2">"75"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"protocolId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ProxfordYmVfjWnRcgjWH36fW6PArwqykTFzotUxRs6gmTcZDuH"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"transactionIndex"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"sequenceId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"018e9a08-582a-01ec-9209-9d79ef742c9b"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Succeeded"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"transactionData"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c37274b662d68da8fdae2a02ad6c460a79933c70c6fa7500dc98a9ade6822f026d00673bb6e6298063f97940953de23d441ab20bf757f602a3cd810bad05b003000000000041020000003c0500045b00000004257365740501035b050202000000080316053d036d03420991000000130100000003676574036c035b020000000203170000000000000002000c"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"transactionHash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ootDut4xxR2yeYz6JuySuyTVZnXgda2t8SYrk3iuJpm531TZuCj"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"transactionHeaders"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tz1V3spuktTP2wuEZP7D2hJruLZ5uJTuJk31"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"nonce"</span><span class="p">:</span><span class="w"> </span><span class="s2">"23094946"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"updated"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2024-04-01T14:20:29.245172Z"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
       <h2 id="the-firefly-interface-format">
         
         
