@@ -942,6 +942,28 @@ func TestCancelBatchInvalidType(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestCancelBatchNotFound(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+
+	bm.RegisterDispatcher("utdispatcher", true, []core.MessageType{core.MessageTypePrivate},
+		func(c context.Context, state *DispatchPayload) error {
+			return nil
+		},
+		DispatcherOptions{BatchType: core.BatchTypePrivate},
+	)
+
+	batchID := fftypes.NewUUID()
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, nil)
+
+	err := bm.CancelBatch(context.Background(), batchID.String())
+	assert.Regexp(t, "FF10109", err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestCancelBatch(t *testing.T) {
 	bm, cancel := newTestBatchManager(t)
 	defer cancel()

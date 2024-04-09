@@ -53,6 +53,7 @@ func newTestBatchProcessor(t *testing.T, dispatch DispatchHandler) (func(), *dat
 		author:   "did:firefly:org/abcd",
 		dispatch: dispatch,
 		DispatcherOptions: DispatcherOptions{
+			BatchType:      core.BatchTypePrivate,
 			BatchMaxSize:   10,
 			BatchMaxBytes:  1024 * 1024,
 			BatchTimeout:   100 * time.Millisecond,
@@ -900,6 +901,7 @@ func TestCancelBatchPrivate(t *testing.T) {
 	dispatched := make(chan *DispatchPayload)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
 		if first {
+			// Request cancel of the first batch, then return an error to trigger the cancellation logic
 			first = false
 			err := bp.cancelFlush(c, state.Batch.ID)
 			assert.NoError(t, err)
@@ -921,8 +923,8 @@ func TestCancelBatchPrivate(t *testing.T) {
 		return dbNonce.Nonce == 12346
 	})).Return(nil)
 	mdi.On("UpdateMessage", mock.Anything, "ns1", msg1, mock.Anything).Return(nil).Once()
-	mdi.On("UpdateMessage", mock.Anything, "ns1", msg2, mock.Anything).Return(nil).Once()
-	mdi.On("InsertOrGetBatch", mock.Anything, mock.Anything).Return(nil, nil).Twice()
+	mdi.On("InsertOrGetBatch", mock.Anything, mock.Anything).Return(nil, nil).Times(3)
+
 	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.MatchedBy(func(filter ffapi.AndFilter) bool {
 		info, err := filter.Finalize()
 		assert.NoError(t, err)
@@ -938,11 +940,12 @@ func TestCancelBatchPrivate(t *testing.T) {
 		val, _ := info.SetOperations[2].Value.Value()
 		return val == "cancelled"
 	})).Return(nil).Once()
+
 	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.MatchedBy(func(filter ffapi.AndFilter) bool {
 		info, err := filter.Finalize()
 		assert.NoError(t, err)
 		assert.Len(t, info.Children, 2)
-		return info.Children[0].String() == "id IN ['"+msg2.String()+"']" && info.Children[1].String() == "state == 'ready'"
+		return info.Children[1].String() == "state == 'staged'"
 	}), mock.MatchedBy(func(update ffapi.Update) bool {
 		info, err := update.Finalize()
 		assert.NoError(t, err)
@@ -952,13 +955,23 @@ func TestCancelBatchPrivate(t *testing.T) {
 		assert.Equal(t, "state", info.SetOperations[2].Field)
 		val, _ := info.SetOperations[2].Value.Value()
 		return val == "sent"
-	})).Return(nil).Maybe() // race condition - may or may not finish this second message
+	})).Return(nil).Once()
+
+	// Race condition - may or may not finish this second message
+	mdi.On("UpdateMessage", mock.Anything, "ns1", msg2, mock.Anything).Return(nil).Maybe()
+	mdi.On("UpdateMessages", mock.Anything, "ns1", mock.MatchedBy(func(filter ffapi.AndFilter) bool {
+		info, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Len(t, info.Children, 2)
+		return info.Children[0].String() == "id IN ['"+msg2.String()+"']" && info.Children[1].String() == "state == 'ready'"
+	}), mock.Anything).Return(nil).Maybe()
 
 	mim := bp.bm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalNode", mock.Anything).Return(&core.Identity{}, nil)
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
 	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvokePin, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeBatchPin, core.IdempotencyKey("")).Return(fftypes.NewUUID(), nil)
 
 	mdm := bp.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
@@ -983,6 +996,7 @@ func TestCancelBatchPrivate(t *testing.T) {
 		}}}
 	}()
 	<-dispatched
+	<-dispatched
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -1005,6 +1019,8 @@ func TestCancelBatchBroadcast(t *testing.T) {
 		return nil
 	})
 	defer cancel()
+
+	bp.conf.DispatcherOptions.BatchType = core.BatchTypeBroadcast
 
 	msg1 := fftypes.NewUUID() // cancelled
 	msg2 := fftypes.NewUUID() // dispatched
@@ -1081,4 +1097,41 @@ func TestCancelBatchNotFlushing(t *testing.T) {
 
 	err := bp.cancelFlush(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10468", err)
+}
+
+func TestGapFillMessageFail(t *testing.T) {
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
+		return nil
+	})
+	defer cancel()
+
+	msg1 := &core.Message{
+		Header: core.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	payload := &DispatchPayload{
+		Batch: core.BatchPersisted{
+			BatchHeader: core.BatchHeader{
+				Type: core.BatchTypePrivate,
+			},
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeContractInvokePin,
+			},
+		},
+		Messages: []*core.Message{msg1},
+	}
+
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("InsertOrGetBatch", mock.Anything, mock.Anything).Return(nil, nil)
+
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("WriteNewMessage", mock.Anything, mock.MatchedBy(func(msg *data.NewMessage) bool {
+		return msg.Message.Header.CID.Equals(msg1.Header.ID) && msg.Message.Header.Tag == core.SystemTagGapFill
+	})).Return(fmt.Errorf("pop"))
+
+	_, err := bp.prepareGapFill(context.Background(), payload)
+	assert.EqualError(t, err, "pop")
+
+	mdm.AssertExpectations(t)
 }

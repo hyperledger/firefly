@@ -101,12 +101,31 @@ type dispatchState struct {
 	noncesAssigned map[fftypes.Bytes32]*nonceState
 }
 
+type MessageUpdate struct {
+	messages  []*core.Message
+	fromState core.MessageState
+	toState   core.MessageState
+}
+
 type DispatchPayload struct {
-	Batch    core.BatchPersisted
-	Messages []*core.Message
-	Data     core.DataArray
-	Pins     []*fftypes.Bytes32
-	State    core.MessageState
+	Batch          core.BatchPersisted
+	Messages       []*core.Message
+	Data           core.DataArray
+	Pins           []*fftypes.Bytes32
+	MessageUpdates map[string]*MessageUpdate
+}
+
+func (dp *DispatchPayload) addMessageUpdate(messages []*core.Message, fromState core.MessageState, toState core.MessageState) {
+	key := string(fromState + ":" + toState)
+	if dp.MessageUpdates == nil {
+		dp.MessageUpdates = make(map[string]*MessageUpdate)
+	}
+	entry, found := dp.MessageUpdates[key]
+	if !found {
+		entry = &MessageUpdate{fromState: fromState, toState: toState}
+		dp.MessageUpdates[key] = entry
+	}
+	entry.messages = append(entry.messages, messages...)
 }
 
 const batchSizeEstimateBase = int64(512)
@@ -604,20 +623,21 @@ func (bp *batchProcessor) dispatchBatch(payload *DispatchPayload) error {
 			err = bp.conf.dispatch(ctx, payload)
 			if err != nil {
 				if bp.isCancelled() {
-					err = nil
-					log.L(ctx).Warnf("Batch %s was cancelled - replacing with gap fill", payload.Batch.ID)
-					for _, msg := range payload.Messages {
-						if err == nil {
-							err = bp.writeGapFill(ctx, msg)
+					var gapFillPayload *DispatchPayload
+					gapFillPayload, err = bp.prepareGapFill(ctx, payload)
+					if err == nil {
+						payload.addMessageUpdate(payload.Messages, core.MessageStateReady, core.MessageStateCancelled)
+						if gapFillPayload != nil {
+							payload.addMessageUpdate(gapFillPayload.Messages, core.MessageStateStaged, core.MessageStateSent)
+							err = bp.dispatchBatch(gapFillPayload)
 						}
 					}
-					payload.State = core.MessageStateCancelled
 				}
 			} else {
 				if core.IsPinned(payload.Batch.TX.Type) {
-					payload.State = core.MessageStateSent
+					payload.addMessageUpdate(payload.Messages, core.MessageStateReady, core.MessageStateSent)
 				} else {
-					payload.State = core.MessageStateConfirmed
+					payload.addMessageUpdate(payload.Messages, core.MessageStateReady, core.MessageStateConfirmed)
 				}
 			}
 			return true, err
@@ -625,72 +645,101 @@ func (bp *batchProcessor) dispatchBatch(payload *DispatchPayload) error {
 	})
 }
 
-func (bp *batchProcessor) writeGapFill(ctx context.Context, msg *core.Message) error {
-	// Gap fill is only needed for private messages
-	if msg.Header.Type != core.MessageTypePrivate {
-		return nil
+func (bp *batchProcessor) prepareGapFill(ctx context.Context, payload *DispatchPayload) (*DispatchPayload, error) {
+	// Gap fill is only needed for private custom pinned messages
+	if payload.Batch.Type != core.MessageTypePrivate || payload.Batch.TX.Type != core.TransactionTypeContractInvokePin {
+		return nil, nil
 	}
-	gapFill := &core.MessageInOut{
-		Message: core.Message{
-			Header:         msg.Header,
-			LocalNamespace: bp.bm.namespace,
-			State:          core.MessageStateReady,
-			Pins:           msg.Pins, // reuse any assigned pins to fill the nonce gap
+	log.L(ctx).Warnf("Batch %s was cancelled - replacing with gap fill", payload.Batch.ID)
+
+	gapFills := make([]*core.Message, len(payload.Messages))
+	for i, msg := range payload.Messages {
+		gapFill := &core.MessageInOut{
+			Message: core.Message{
+				Header:         msg.Header,
+				LocalNamespace: bp.bm.namespace,
+				State:          core.MessageStateStaged, // "staged" not "ready" to avoid the normal message dispatch loop
+				Pins:           msg.Pins,                // reuse any assigned pins to fill the nonce gap
+			},
+		}
+		gapFill.Header.ID = fftypes.NewUUID()
+		gapFill.Header.CID = msg.Header.ID
+		gapFill.Header.Tag = core.SystemTagGapFill
+		gapFill.Header.TxType = core.TransactionTypeBatchPin
+		err := gapFill.Seal(ctx)
+		if err == nil {
+			err = bp.data.WriteNewMessage(ctx, &data.NewMessage{Message: gapFill})
+		}
+		if err != nil {
+			return nil, err
+		}
+		gapFills[i] = &gapFill.Message
+	}
+
+	gapFillPayload := &DispatchPayload{
+		Batch: core.BatchPersisted{
+			BatchHeader: payload.Batch.BatchHeader,
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeBatchPin,
+			},
 		},
+		Messages: gapFills,
 	}
-	gapFill.Header.ID = fftypes.NewUUID()
-	gapFill.Header.CID = msg.Header.ID
-	gapFill.Header.Tag = core.SystemTagGapFill
-	gapFill.Header.TxType = core.TransactionTypeBatchPin
-	err := gapFill.Seal(ctx)
+	gapFillPayload.Batch.ID = fftypes.NewUUID()
+	log.L(ctx).Infof("Prepared gap fill batch %s", gapFillPayload.Batch.ID)
+
+	err := bp.sealBatch(gapFillPayload)
 	if err == nil {
-		err = bp.data.WriteNewMessage(ctx, &data.NewMessage{Message: gapFill})
+		log.L(ctx).Infof("Sealed gap fill batch %s", gapFillPayload.Batch.ID)
 	}
-	return err
+
+	return gapFillPayload, err
 }
 
 func (bp *batchProcessor) markPayloadDispatched(payload *DispatchPayload) error {
 	return bp.retry.Do(bp.ctx, "mark dispatched messages", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
-			// Update the message state in the cache
-			msgIDs := make([]driver.Value, len(payload.Messages))
 			confirmTime := fftypes.Now()
-			for i, msg := range payload.Messages {
-				msgIDs[i] = msg.Header.ID
-				msg.BatchID = payload.Batch.ID
-				msg.TransactionID = payload.Batch.TX.ID
-				if payload.State == core.MessageStateConfirmed {
-					msg.Confirmed = confirmTime
+			for _, state := range payload.MessageUpdates {
+				// Update the message state in the cache
+				msgIDs := make([]driver.Value, len(state.messages))
+				for i, msg := range state.messages {
+					msgIDs[i] = msg.Header.ID
+					msg.BatchID = payload.Batch.ID
+					msg.TransactionID = payload.Batch.TX.ID
+					if state.toState == core.MessageStateConfirmed {
+						msg.Confirmed = confirmTime
+					}
+					bp.data.UpdateMessageIfCached(ctx, msg)
 				}
-				bp.data.UpdateMessageIfCached(ctx, msg)
-			}
 
-			// Update the message state in the database
-			fb := database.MessageQueryFactory.NewFilter(ctx)
-			filter := fb.And(
-				fb.In("id", msgIDs),
-				fb.Eq("state", core.MessageStateReady), // In the outside chance the next state transition happens first (which supersedes this)
-			)
-			allMsgsUpdate := database.MessageQueryFactory.NewUpdate(ctx).
-				Set("batch", payload.Batch.ID).
-				Set("txid", payload.Batch.TX.ID).
-				Set("state", payload.State)
-			if payload.State == core.MessageStateConfirmed {
-				allMsgsUpdate.Set("confirmed", confirmTime)
-			}
-			if err = bp.database.UpdateMessages(ctx, bp.bm.namespace, filter, allMsgsUpdate); err != nil {
-				return err
-			}
+				// Update the message state in the database
+				fb := database.MessageQueryFactory.NewFilter(ctx)
+				filter := fb.And(
+					fb.In("id", msgIDs),
+					fb.Eq("state", state.fromState), // In the outside chance the next state transition happens first (which supersedes this)
+				)
+				allMsgsUpdate := database.MessageQueryFactory.NewUpdate(ctx).
+					Set("batch", payload.Batch.ID).
+					Set("txid", payload.Batch.TX.ID).
+					Set("state", state.toState)
+				if state.toState == core.MessageStateConfirmed {
+					allMsgsUpdate.Set("confirmed", confirmTime)
+				}
+				if err = bp.database.UpdateMessages(ctx, bp.bm.namespace, filter, allMsgsUpdate); err != nil {
+					return err
+				}
 
-			if payload.State == core.MessageStateConfirmed {
-				for _, msg := range payload.Messages {
-					// Emit a confirmation event locally immediately
-					for _, topic := range msg.Header.Topics {
-						// One event per topic
-						event := core.NewEvent(core.EventTypeMessageConfirmed, payload.Batch.Namespace, msg.Header.ID, payload.Batch.TX.ID, topic)
-						event.Correlator = msg.Header.CID
-						if err := bp.database.InsertEvent(ctx, event); err != nil {
-							return err
+				if state.toState == core.MessageStateConfirmed {
+					for _, msg := range state.messages {
+						// Emit a confirmation event locally immediately
+						for _, topic := range msg.Header.Topics {
+							// One event per topic
+							event := core.NewEvent(core.EventTypeMessageConfirmed, payload.Batch.Namespace, msg.Header.ID, payload.Batch.TX.ID, topic)
+							event.Correlator = msg.Header.CID
+							if err := bp.database.InsertEvent(ctx, event); err != nil {
+								return err
+							}
 						}
 					}
 				}

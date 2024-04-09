@@ -609,6 +609,9 @@ func (bm *batchManager) CancelBatch(ctx context.Context, batchID string) error {
 	if err != nil {
 		return err
 	}
+	if bp == nil {
+		return i18n.NewError(ctx, coremsgs.Msg404NotFound)
+	}
 	if bp.TX.Type != core.TransactionTypeContractInvokePin {
 		return i18n.NewError(ctx, coremsgs.MsgCannotCancelBatchType, bp.TX.Type)
 	}
