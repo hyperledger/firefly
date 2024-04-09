@@ -20,7 +20,7 @@ nav_order: 3
 
 {% include_relative _includes/subscription_description.md %}
 
-### Example Subscription
+### Example
 
 ```json
 {
