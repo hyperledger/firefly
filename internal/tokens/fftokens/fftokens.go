@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,7 +19,6 @@ package fftokens
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -59,10 +58,10 @@ type FFTokens struct {
 	callbacks       callbacks
 	configuredName  string
 	client          *resty.Client
-	wsconn          wsclient.WSClient
+	wsconn          map[string]wsclient.WSClient
+	wsConfig        *wsclient.WSConfig
 	retry           *retry.Retry
-	backgroundRetry *retry.Retry
-	backgroundStart bool
+	poolsToActivate map[string][]*core.TokenPool
 }
 
 type callbacks struct {
@@ -155,6 +154,8 @@ const (
 	messageTokenBurn     msgType = "token-burn"
 	messageTokenTransfer msgType = "token-transfer"
 	messageTokenApproval msgType = "token-approval"
+	messageStarted       msgType = "started"
+	messageActivated     msgType = "activated"
 )
 
 type tokenData struct {
@@ -165,6 +166,7 @@ type tokenData struct {
 }
 
 type createPool struct {
+	Namespace string             `json:"namespace"`
 	Type      core.TokenType     `json:"type"`
 	RequestID string             `json:"requestId"`
 	Signer    string             `json:"signer"`
@@ -175,12 +177,14 @@ type createPool struct {
 }
 
 type activatePool struct {
+	Namespace   string             `json:"namespace"`
 	PoolData    string             `json:"poolData"`
 	PoolLocator string             `json:"poolLocator"`
 	Config      fftypes.JSONObject `json:"config"`
 }
 
 type deactivatePool struct {
+	Namespace   string             `json:"namespace"`
 	PoolData    string             `json:"poolData"`
 	PoolLocator string             `json:"poolLocator"`
 	Config      fftypes.JSONObject `json:"config"`
@@ -197,6 +201,7 @@ type checkInterface struct {
 }
 
 type mintTokens struct {
+	Namespace   string             `json:"namespace"`
 	PoolLocator string             `json:"poolLocator"`
 	TokenIndex  string             `json:"tokenIndex,omitempty"`
 	To          string             `json:"to"`
@@ -210,6 +215,7 @@ type mintTokens struct {
 }
 
 type burnTokens struct {
+	Namespace   string             `json:"namespace"`
 	PoolLocator string             `json:"poolLocator"`
 	TokenIndex  string             `json:"tokenIndex,omitempty"`
 	From        string             `json:"from"`
@@ -223,6 +229,7 @@ type burnTokens struct {
 
 type transferTokens struct {
 	PoolLocator string             `json:"poolLocator"`
+	Namespace   string             `json:"namespace"`
 	TokenIndex  string             `json:"tokenIndex,omitempty"`
 	From        string             `json:"from"`
 	To          string             `json:"to"`
@@ -235,6 +242,7 @@ type transferTokens struct {
 }
 
 type tokenApproval struct {
+	Namespace   string             `json:"namespace"`
 	Signer      string             `json:"signer"`
 	Operator    string             `json:"operator"`
 	Approved    bool               `json:"approved"`
@@ -248,6 +256,11 @@ type tokenApproval struct {
 type tokenError struct {
 	Error   string `json:"error,omitempty"`
 	Message string `json:"message,omitempty"`
+}
+
+type wsAck struct {
+	core.WSActionBase
+	ID string `json:"id"`
 }
 
 func packPoolData(namespace string, id *fftypes.UUID) string {
@@ -271,6 +284,10 @@ func (ft *FFTokens) Name() string {
 	return "fftokens"
 }
 
+func (ft *FFTokens) ConnectorName() string {
+	return ft.configuredName
+}
+
 func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name string, config config.Section) (err error) {
 	ft.ctx = log.WithLogField(ctx, "proto", "fftokens")
 	ft.cancelCtx = cancelCtx
@@ -286,7 +303,7 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "tokens.fftokens")
 	}
 
-	wsConfig, err := wsclient.GenerateConfig(ctx, config)
+	ft.wsConfig, err = wsclient.GenerateConfig(ctx, config)
 	if err == nil {
 		ft.client, err = ffresty.New(ft.ctx, config)
 	}
@@ -295,14 +312,11 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 		return err
 	}
 
-	if wsConfig.WSKeyPath == "" {
-		wsConfig.WSKeyPath = "/api/ws"
+	if ft.wsConfig.WSKeyPath == "" {
+		ft.wsConfig.WSKeyPath = "/api/ws"
 	}
 
-	ft.wsconn, err = wsclient.New(ctx, wsConfig, nil, nil)
-	if err != nil {
-		return err
-	}
+	ft.wsconn = make(map[string]wsclient.WSClient)
 
 	ft.retry = &retry.Retry{
 		InitialDelay: config.GetDuration(FFTEventRetryInitialDelay),
@@ -310,18 +324,50 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 		Factor:       config.GetFloat64(FFTEventRetryFactor),
 	}
 
-	ft.backgroundStart = config.GetBool(FFTBackgroundStart)
+	return nil
+}
 
-	if ft.backgroundStart {
-		ft.backgroundRetry = &retry.Retry{
-			InitialDelay: config.GetDuration(FFTBackgroundStartInitialDelay),
-			MaximumDelay: config.GetDuration(FFTBackgroundStartMaxDelay),
-			Factor:       config.GetFloat64(FFTBackgroundStartFactor),
+func (ft *FFTokens) StartNamespace(ctx context.Context, namespace string, activePools []*core.TokenPool) (err error) {
+	if ft.wsconn[namespace] == nil {
+		ft.wsconn[namespace], err = wsclient.New(ctx, ft.wsConfig, nil, nil)
+		if err != nil {
+			return err
 		}
-		return nil
 	}
 
-	go ft.eventLoop()
+	// Keep the list of pools we need to ensure are active
+	// The handleNamespaceStarted function will ensure pools are active after the namespace has finished starting
+	if ft.poolsToActivate == nil {
+		ft.poolsToActivate = make(map[string][]*core.TokenPool)
+	}
+	ft.poolsToActivate[namespace] = activePools
+
+	err = ft.wsconn[namespace].Connect()
+	if err != nil {
+		return err
+	}
+	startCmd := core.WSStart{
+		WSActionBase: core.WSActionBase{
+			Type: core.WSClientActionStart,
+		},
+		Namespace: namespace,
+	}
+	b, _ := json.Marshal(startCmd)
+	if err := ft.wsconn[namespace].Send(ctx, b); err != nil {
+		return err
+	}
+
+	go ft.eventLoop(namespace)
+
+	return nil
+}
+
+func (ft *FFTokens) StopNamespace(ctx context.Context, namespace string) error {
+	wsconn, ok := ft.wsconn[namespace]
+	if ok {
+		wsconn.Close()
+	}
+	delete(ft.wsconn, namespace)
 
 	return nil
 }
@@ -344,27 +390,6 @@ func (ft *FFTokens) SetOperationHandler(namespace string, handler core.Operation
 	} else {
 		ft.callbacks.opHandlers[namespace] = handler
 	}
-}
-
-func (ft *FFTokens) backgroundStartLoop() {
-	_ = ft.backgroundRetry.Do(ft.ctx, fmt.Sprintf("Background start %s", ft.Name()), func(attempt int) (retry bool, err error) {
-		err = ft.wsconn.Connect()
-		if err != nil {
-			return true, err
-		}
-
-		go ft.eventLoop()
-
-		return false, nil
-	})
-}
-
-func (ft *FFTokens) Start() error {
-	if ft.backgroundStart {
-		go ft.backgroundStartLoop()
-		return nil
-	}
-	return ft.wsconn.Connect()
 }
 
 func (ft *FFTokens) Capabilities() *tokens.Capabilities {
@@ -428,6 +453,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, eventData fftypes
 
 	tokenType := eventData.GetString("type")
 	poolLocator := eventData.GetString("poolLocator")
+	alternateLocators := eventData.GetStringArray("alternateLocators")
 
 	if tokenType == "" || poolLocator == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", eventData)
@@ -463,10 +489,11 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, eventData fftypes
 	}
 
 	pool := &tokens.TokenPool{
-		ID:          poolID,
-		Type:        fftypes.FFEnum(tokenType),
-		PoolLocator: poolLocator,
-		PluginData:  poolData,
+		ID:                poolID,
+		Type:              fftypes.FFEnum(tokenType),
+		PoolLocator:       poolLocator,
+		AlternateLocators: alternateLocators,
+		PluginData:        poolData,
 		TX: core.TransactionRef{
 			ID:   txData.TX,
 			Type: txType,
@@ -617,7 +644,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, eventData fftypes.J
 	return ft.callbacks.TokensApproved(ctx, namespace, approval)
 }
 
-func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (retry bool, err error) {
+func (ft *FFTokens) handleMessage(ctx context.Context, namespace string, msgBytes []byte) (retry bool, err error) {
 	var msg *wsEvent
 	if err = json.Unmarshal(msgBytes, &msg); err != nil {
 		log.L(ctx).Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
@@ -629,7 +656,7 @@ func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (retry b
 		ft.handleReceipt(ctx, msg.Data)
 	case messageBatch:
 		for _, msg := range msg.Data.GetObjectArray("events") {
-			if retry, err = ft.handleMessage(ctx, []byte(msg.String())); err != nil {
+			if retry, err = ft.handleMessage(ctx, namespace, []byte(msg.String())); err != nil {
 				return retry, err
 			}
 		}
@@ -643,6 +670,10 @@ func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (retry b
 		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeTransfer, msg.Data)
 	case messageTokenApproval:
 		err = ft.handleTokenApproval(ctx, msg.Data)
+	case messageStarted:
+		err = ft.handleNamespaceStarted(ctx, msg.Data)
+	case messageActivated:
+		err = ft.handleTokenPoolActivated(ctx, msg.Data)
 	default:
 		log.L(ctx).Errorf("Message unexpected: %s", msg.Event)
 		// do not set error here - we will never be able to process this message so log+swallow it.
@@ -653,28 +684,51 @@ func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (retry b
 	}
 	if msg.Event != messageReceipt && msg.ID != "" {
 		log.L(ctx).Debugf("Sending ack %s", msg.ID)
-		ack, _ := json.Marshal(fftypes.JSONObject{
-			"event": "ack",
-			"data": fftypes.JSONObject{
-				"id": msg.ID,
+		ack, _ := json.Marshal(wsAck{
+			WSActionBase: core.WSActionBase{
+				Type: core.WSClientActionAck,
 			},
+			ID: msg.ID,
 		})
 		// Do not retry this
-		return false, ft.wsconn.Send(ctx, ack)
+		return false, ft.wsconn[namespace].Send(ctx, ack)
 	}
 	return false, nil
 }
 
-func (ft *FFTokens) handleMessageRetry(ctx context.Context, msgBytes []byte) (err error) {
+func (ft *FFTokens) handleMessageRetry(ctx context.Context, namespace string, msgBytes []byte) (err error) {
 	eventCtx, done := context.WithCancel(ctx)
 	defer done()
 	return ft.retry.Do(eventCtx, "fftokens event", func(attempt int) (retry bool, err error) {
-		return ft.handleMessage(eventCtx, msgBytes) // We keep retrying on error until the context ends
+		return ft.handleMessage(eventCtx, namespace, msgBytes) // We keep retrying on error until the context ends
 	})
 }
 
-func (ft *FFTokens) eventLoop() {
-	defer ft.wsconn.Close()
+func (ft *FFTokens) handleNamespaceStarted(ctx context.Context, data fftypes.JSONObject) error {
+	// Make sure any pools that are marked as active in our DB are indeed active
+	namespace := data.GetString("namespace")
+	log.L(ctx).Debugf("Token connector '%s' started namespace '%s'. Ensuring all token pools active.", ft.Name(), namespace)
+	for _, pool := range ft.poolsToActivate[namespace] {
+		if _, err := ft.EnsureTokenPoolActive(ctx, pool); err == nil {
+			log.L(ctx).Debugf("Ensured token pool active '%s'", pool.ID)
+		} else {
+			// Log the error and continue trying to activate pools
+			// At this point we've already started
+			log.L(ctx).Errorf("Error ensuring token pool active '%s': %s", pool.ID, err.Error())
+		}
+
+	}
+	return nil
+}
+
+func (ft *FFTokens) handleTokenPoolActivated(ctx context.Context, data fftypes.JSONObject) error {
+	// NOOP
+	return nil
+}
+
+func (ft *FFTokens) eventLoop(namespace string) {
+	wsconn := ft.wsconn[namespace]
+	defer wsconn.Close()
 	l := log.L(ft.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(ft.ctx, l)
 	for {
@@ -682,13 +736,13 @@ func (ft *FFTokens) eventLoop() {
 		case <-ctx.Done():
 			l.Debugf("Event loop exiting (context cancelled)")
 			return
-		case msgBytes, ok := <-ft.wsconn.Receive():
+		case msgBytes, ok := <-wsconn.Receive():
 			if !ok {
 				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
 				ft.cancelCtx()
 				return
 			}
-			if err := ft.handleMessageRetry(ctx, msgBytes); err != nil {
+			if err := ft.handleMessageRetry(ctx, namespace, msgBytes); err != nil {
 				l.Errorf("Event loop exiting (%s). Terminating server!", err)
 				ft.cancelCtx()
 				return
@@ -719,7 +773,7 @@ func wrapError(ctx context.Context, errRes *tokenError, res *resty.Response, err
 	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 }
 
-func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error) {
+func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (phase core.OpPhase, err error) {
 	tokenData := &tokenData{
 		TX:     pool.TX.ID,
 		TXType: pool.TX.Type,
@@ -728,6 +782,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *co
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&createPool{
+			Namespace: pool.Namespace,
 			Type:      pool.Type,
 			RequestID: nsOpID,
 			Signer:    pool.Key,
@@ -739,25 +794,26 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *co
 		SetError(&errRes).
 		Post("/api/v1/createpool")
 	if err != nil || !res.IsSuccess() {
-		return false, wrapError(ctx, &errRes, res, err)
+		return core.OpPhaseInitializing, wrapError(ctx, &errRes, res, err)
 	}
 	if res.StatusCode() == 200 {
 		// HTTP 200: Creation was successful, and pool details are in response body
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
-			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
+			return core.OpPhaseComplete, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
 		obj["poolData"] = packPoolData(pool.Namespace, pool.ID)
-		return true, ft.handleTokenPoolCreate(ctx, obj, tokenData)
+		return core.OpPhaseComplete, ft.handleTokenPoolCreate(ctx, obj, tokenData)
 	}
 	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
-	return false, nil
+	return core.OpPhasePending, nil
 }
 
-func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (complete bool, err error) {
+func (ft *FFTokens) EnsureTokenPoolActive(ctx context.Context, pool *core.TokenPool) (res *resty.Response, err error) {
 	var errRes tokenError
-	res, err := ft.client.R().SetContext(ctx).
+	res, err = ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
+			Namespace:   pool.Namespace,
 			PoolData:    packPoolData(pool.Namespace, pool.ID),
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
@@ -765,31 +821,40 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool)
 		SetError(&errRes).
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {
-		return false, wrapError(ctx, &errRes, res, err)
+		return res, wrapError(ctx, &errRes, res, err)
+	}
+	return res, nil
+}
+
+func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) (phase core.OpPhase, err error) {
+	res, err := ft.EnsureTokenPoolActive(ctx, pool)
+	if err != nil || !res.IsSuccess() {
+		return core.OpPhaseInitializing, err
 	}
 	if res.StatusCode() == 200 {
 		// HTTP 200: Activation was successful, and pool details are in response body
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
-			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
+			return core.OpPhaseComplete, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
-		return true, ft.handleTokenPoolCreate(ctx, obj, &tokenData{
+		return core.OpPhaseComplete, ft.handleTokenPoolCreate(ctx, obj, &tokenData{
 			TX:     pool.TX.ID,
 			TXType: pool.TX.Type,
 		})
 	} else if res.StatusCode() == 204 {
 		// HTTP 204: Activation was successful, but pool details are not available
 		// This will resolve the operation, but connector is responsible for re-delivering pool details on the websocket.
-		return true, nil
+		return core.OpPhaseComplete, nil
 	}
 	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
-	return false, nil
+	return core.OpPhasePending, nil
 }
 
 func (ft *FFTokens) DeactivateTokenPool(ctx context.Context, pool *core.TokenPool) error {
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&deactivatePool{
+			Namespace:   pool.Namespace,
 			PoolData:    pool.PluginData,
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
@@ -867,6 +932,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator s
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&mintTokens{
+			Namespace:   mint.Namespace,
 			PoolLocator: poolLocator,
 			TokenIndex:  mint.TokenIndex,
 			To:          mint.To,
@@ -902,6 +968,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator s
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&burnTokens{
+			Namespace:   burn.Namespace,
 			PoolLocator: poolLocator,
 			TokenIndex:  burn.TokenIndex,
 			From:        burn.From,
@@ -936,6 +1003,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocat
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&transferTokens{
+			Namespace:   transfer.Namespace,
 			PoolLocator: poolLocator,
 			TokenIndex:  transfer.TokenIndex,
 			From:        transfer.From,
@@ -971,6 +1039,7 @@ func (ft *FFTokens) TokensApproval(ctx context.Context, nsOpID string, poolLocat
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&tokenApproval{
+			Namespace:   approval.Namespace,
 			PoolLocator: poolLocator,
 			Signer:      approval.Key,
 			Operator:    approval.Operator,

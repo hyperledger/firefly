@@ -1,6 +1,6 @@
 components: {}
 info:
-  title: FireFly
+  title: Hyperledger FireFly
   version: "1.0"
 openapi: 3.0.2
 paths:
@@ -377,6 +377,192 @@ paths:
           type: string
       responses:
         "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id:
+                    description: The UUID of the contract API
+                    format: uuid
+                    type: string
+                  interface:
+                    description: Reference to the FireFly Interface definition associated
+                      with the contract API
+                    properties:
+                      id:
+                        description: The UUID of the FireFly interface
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the FireFly interface
+                        type: string
+                      version:
+                        description: The version of the FireFly interface
+                        type: string
+                    type: object
+                  location:
+                    description: If this API is tied to an individual instance of
+                      a smart contract, this field can include a blockchain specific
+                      contract identifier. For example an Ethereum contract address,
+                      or a Fabric chaincode name and channel
+                  message:
+                    description: The UUID of the broadcast message that was used to
+                      publish this API to the network
+                    format: uuid
+                    type: string
+                  name:
+                    description: The name that is used in the URL to access the API
+                    type: string
+                  namespace:
+                    description: The namespace of the contract API
+                    type: string
+                  networkName:
+                    description: The published name of the API within the multiparty
+                      network
+                    type: string
+                  published:
+                    description: Indicates if the API is published to other members
+                      of the multiparty network
+                    type: boolean
+                  urls:
+                    description: The URLs to use to access the API
+                    properties:
+                      openapi:
+                        description: The URL to download the OpenAPI v3 (Swagger)
+                          description for the API generated in JSON or YAML format
+                        type: string
+                      ui:
+                        description: The URL to use in a web browser to access the
+                          SwaggerUI explorer/exerciser for the API
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+    put:
+      description: The ID of the contract API
+      operationId: putContractAPI
+      parameters:
+      - description: The name of the contract API
+        in: path
+        name: id
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                interface:
+                  description: Reference to the FireFly Interface definition associated
+                    with the contract API
+                  properties:
+                    id:
+                      description: The UUID of the FireFly interface
+                      format: uuid
+                      type: string
+                    name:
+                      description: The name of the FireFly interface
+                      type: string
+                    version:
+                      description: The version of the FireFly interface
+                      type: string
+                  type: object
+                location:
+                  description: If this API is tied to an individual instance of a
+                    smart contract, this field can include a blockchain specific contract
+                    identifier. For example an Ethereum contract address, or a Fabric
+                    chaincode name and channel
+                name:
+                  description: The name that is used in the URL to access the API
+                  type: string
+                networkName:
+                  description: The published name of the API within the multiparty
+                    network
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id:
+                    description: The UUID of the contract API
+                    format: uuid
+                    type: string
+                  interface:
+                    description: Reference to the FireFly Interface definition associated
+                      with the contract API
+                    properties:
+                      id:
+                        description: The UUID of the FireFly interface
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the FireFly interface
+                        type: string
+                      version:
+                        description: The version of the FireFly interface
+                        type: string
+                    type: object
+                  location:
+                    description: If this API is tied to an individual instance of
+                      a smart contract, this field can include a blockchain specific
+                      contract identifier. For example an Ethereum contract address,
+                      or a Fabric chaincode name and channel
+                  message:
+                    description: The UUID of the broadcast message that was used to
+                      publish this API to the network
+                    format: uuid
+                    type: string
+                  name:
+                    description: The name that is used in the URL to access the API
+                    type: string
+                  namespace:
+                    description: The namespace of the contract API
+                    type: string
+                  networkName:
+                    description: The published name of the API within the multiparty
+                      network
+                    type: string
+                  published:
+                    description: Indicates if the API is published to other members
+                      of the multiparty network
+                    type: boolean
+                  urls:
+                    description: The URLs to use to access the API
+                    properties:
+                      openapi:
+                        description: The URL to download the OpenAPI v3 (Swagger)
+                          description for the API generated in JSON or YAML format
+                        type: string
+                      ui:
+                        description: The URL to use in a web browser to access the
+                          SwaggerUI explorer/exerciser for the API
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        "202":
           content:
             application/json:
               schema:
@@ -2001,193 +2187,6 @@ paths:
             application/json:
               schema:
                 additionalProperties: {}
-                type: object
-          description: Success
-        default:
-          description: ""
-      tags:
-      - Default Namespace
-  /apis/{id}:
-    put:
-      description: The ID of the contract API
-      operationId: putContractAPI
-      parameters:
-      - description: The name of the contract API
-        in: path
-        name: id
-        required: true
-        schema:
-          example: id
-          type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (milliseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 2m0s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                interface:
-                  description: Reference to the FireFly Interface definition associated
-                    with the contract API
-                  properties:
-                    id:
-                      description: The UUID of the FireFly interface
-                      format: uuid
-                      type: string
-                    name:
-                      description: The name of the FireFly interface
-                      type: string
-                    version:
-                      description: The version of the FireFly interface
-                      type: string
-                  type: object
-                location:
-                  description: If this API is tied to an individual instance of a
-                    smart contract, this field can include a blockchain specific contract
-                    identifier. For example an Ethereum contract address, or a Fabric
-                    chaincode name and channel
-                name:
-                  description: The name that is used in the URL to access the API
-                  type: string
-                networkName:
-                  description: The published name of the API within the multiparty
-                    network
-                  type: string
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  id:
-                    description: The UUID of the contract API
-                    format: uuid
-                    type: string
-                  interface:
-                    description: Reference to the FireFly Interface definition associated
-                      with the contract API
-                    properties:
-                      id:
-                        description: The UUID of the FireFly interface
-                        format: uuid
-                        type: string
-                      name:
-                        description: The name of the FireFly interface
-                        type: string
-                      version:
-                        description: The version of the FireFly interface
-                        type: string
-                    type: object
-                  location:
-                    description: If this API is tied to an individual instance of
-                      a smart contract, this field can include a blockchain specific
-                      contract identifier. For example an Ethereum contract address,
-                      or a Fabric chaincode name and channel
-                  message:
-                    description: The UUID of the broadcast message that was used to
-                      publish this API to the network
-                    format: uuid
-                    type: string
-                  name:
-                    description: The name that is used in the URL to access the API
-                    type: string
-                  namespace:
-                    description: The namespace of the contract API
-                    type: string
-                  networkName:
-                    description: The published name of the API within the multiparty
-                      network
-                    type: string
-                  published:
-                    description: Indicates if the API is published to other members
-                      of the multiparty network
-                    type: boolean
-                  urls:
-                    description: The URLs to use to access the API
-                    properties:
-                      openapi:
-                        description: The URL to download the OpenAPI v3 (Swagger)
-                          description for the API generated in JSON or YAML format
-                        type: string
-                      ui:
-                        description: The URL to use in a web browser to access the
-                          SwaggerUI explorer/exerciser for the API
-                        type: string
-                    type: object
-                type: object
-          description: Success
-        "202":
-          content:
-            application/json:
-              schema:
-                properties:
-                  id:
-                    description: The UUID of the contract API
-                    format: uuid
-                    type: string
-                  interface:
-                    description: Reference to the FireFly Interface definition associated
-                      with the contract API
-                    properties:
-                      id:
-                        description: The UUID of the FireFly interface
-                        format: uuid
-                        type: string
-                      name:
-                        description: The name of the FireFly interface
-                        type: string
-                      version:
-                        description: The version of the FireFly interface
-                        type: string
-                    type: object
-                  location:
-                    description: If this API is tied to an individual instance of
-                      a smart contract, this field can include a blockchain specific
-                      contract identifier. For example an Ethereum contract address,
-                      or a Fabric chaincode name and channel
-                  message:
-                    description: The UUID of the broadcast message that was used to
-                      publish this API to the network
-                    format: uuid
-                    type: string
-                  name:
-                    description: The name that is used in the URL to access the API
-                    type: string
-                  namespace:
-                    description: The namespace of the contract API
-                    type: string
-                  networkName:
-                    description: The published name of the API within the multiparty
-                      network
-                    type: string
-                  published:
-                    description: Indicates if the API is published to other members
-                      of the multiparty network
-                    type: boolean
-                  urls:
-                    description: The URLs to use to access the API
-                    properties:
-                      openapi:
-                        description: The URL to download the OpenAPI v3 (Swagger)
-                          description for the API generated in JSON or YAML format
-                        type: string
-                      ui:
-                        description: The URL to use in a web browser to access the
-                          SwaggerUI explorer/exerciser for the API
-                        type: string
-                    type: object
                 type: object
           description: Success
         default:
@@ -8642,6 +8641,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -8864,131 +8864,6 @@ paths:
       tags:
       - Default Namespace
   /identities/{did}:
-    get:
-      description: Gets an identity by its DID
-      operationId: getIdentityByDID
-      parameters:
-      - description: The identity DID
-        in: path
-        name: did
-        required: true
-        schema:
-          type: string
-      - description: When set, the API will return the verifier for this identity
-        in: query
-        name: fetchverifiers
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (milliseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 2m0s
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created:
-                    description: The creation time of the identity
-                    format: date-time
-                    type: string
-                  description:
-                    description: A description of the identity. Part of the updatable
-                      profile information of an identity
-                    type: string
-                  did:
-                    description: The DID of the identity. Unique across namespaces
-                      within a FireFly network
-                    type: string
-                  id:
-                    description: The UUID of the identity
-                    format: uuid
-                    type: string
-                  messages:
-                    description: References to the broadcast messages that established
-                      this identity and proved ownership of the associated verifiers
-                      (keys)
-                    properties:
-                      claim:
-                        description: The UUID of claim message
-                        format: uuid
-                        type: string
-                      update:
-                        description: The UUID of the most recently applied update
-                          message. Unset if no updates have been confirmed
-                        format: uuid
-                        type: string
-                      verification:
-                        description: The UUID of claim message. Unset for root organization
-                          identities
-                        format: uuid
-                        type: string
-                    type: object
-                  name:
-                    description: The name of the identity. The name must be unique
-                      within the type and namespace
-                    type: string
-                  namespace:
-                    description: The namespace of the identity. Organization and node
-                      identities are always defined in the ff_system namespace
-                    type: string
-                  parent:
-                    description: The UUID of the parent identity. Unset for root organization
-                      identities
-                    format: uuid
-                    type: string
-                  profile:
-                    additionalProperties:
-                      description: A set of metadata for the identity. Part of the
-                        updatable profile information of an identity
-                    description: A set of metadata for the identity. Part of the updatable
-                      profile information of an identity
-                    type: object
-                  type:
-                    description: The type of the identity
-                    enum:
-                    - org
-                    - node
-                    - custom
-                    type: string
-                  updated:
-                    description: The last update time of the identity profile
-                    format: date-time
-                    type: string
-                  verifiers:
-                    description: The verifiers, such as blockchain signing keys, that
-                      have been bound to this identity and can be used to prove data
-                      orignates from that identity
-                    items:
-                      description: The verifiers, such as blockchain signing keys,
-                        that have been bound to this identity and can be used to prove
-                        data orignates from that identity
-                      properties:
-                        type:
-                          description: The type of the verifier
-                          enum:
-                          - ethereum_address
-                          - fabric_msp_id
-                          - dx_peer_id
-                          type: string
-                        value:
-                          description: The verifier string, such as an Ethereum address,
-                            or Fabric MSP identifier
-                          type: string
-                      type: object
-                    type: array
-                type: object
-          description: Success
-        default:
-          description: ""
-      tags:
-      - Default Namespace
-  /identities/{iid}:
     get:
       description: Gets an identity by its ID
       operationId: getIdentityByID
@@ -9468,6 +9343,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -12364,6 +12240,199 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+    put:
+      description: The ID of the contract API
+      operationId: putContractAPINamespace
+      parameters:
+      - description: The name of the contract API
+        in: path
+        name: id
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                interface:
+                  description: Reference to the FireFly Interface definition associated
+                    with the contract API
+                  properties:
+                    id:
+                      description: The UUID of the FireFly interface
+                      format: uuid
+                      type: string
+                    name:
+                      description: The name of the FireFly interface
+                      type: string
+                    version:
+                      description: The version of the FireFly interface
+                      type: string
+                  type: object
+                location:
+                  description: If this API is tied to an individual instance of a
+                    smart contract, this field can include a blockchain specific contract
+                    identifier. For example an Ethereum contract address, or a Fabric
+                    chaincode name and channel
+                name:
+                  description: The name that is used in the URL to access the API
+                  type: string
+                networkName:
+                  description: The published name of the API within the multiparty
+                    network
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id:
+                    description: The UUID of the contract API
+                    format: uuid
+                    type: string
+                  interface:
+                    description: Reference to the FireFly Interface definition associated
+                      with the contract API
+                    properties:
+                      id:
+                        description: The UUID of the FireFly interface
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the FireFly interface
+                        type: string
+                      version:
+                        description: The version of the FireFly interface
+                        type: string
+                    type: object
+                  location:
+                    description: If this API is tied to an individual instance of
+                      a smart contract, this field can include a blockchain specific
+                      contract identifier. For example an Ethereum contract address,
+                      or a Fabric chaincode name and channel
+                  message:
+                    description: The UUID of the broadcast message that was used to
+                      publish this API to the network
+                    format: uuid
+                    type: string
+                  name:
+                    description: The name that is used in the URL to access the API
+                    type: string
+                  namespace:
+                    description: The namespace of the contract API
+                    type: string
+                  networkName:
+                    description: The published name of the API within the multiparty
+                      network
+                    type: string
+                  published:
+                    description: Indicates if the API is published to other members
+                      of the multiparty network
+                    type: boolean
+                  urls:
+                    description: The URLs to use to access the API
+                    properties:
+                      openapi:
+                        description: The URL to download the OpenAPI v3 (Swagger)
+                          description for the API generated in JSON or YAML format
+                        type: string
+                      ui:
+                        description: The URL to use in a web browser to access the
+                          SwaggerUI explorer/exerciser for the API
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id:
+                    description: The UUID of the contract API
+                    format: uuid
+                    type: string
+                  interface:
+                    description: Reference to the FireFly Interface definition associated
+                      with the contract API
+                    properties:
+                      id:
+                        description: The UUID of the FireFly interface
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the FireFly interface
+                        type: string
+                      version:
+                        description: The version of the FireFly interface
+                        type: string
+                    type: object
+                  location:
+                    description: If this API is tied to an individual instance of
+                      a smart contract, this field can include a blockchain specific
+                      contract identifier. For example an Ethereum contract address,
+                      or a Fabric chaincode name and channel
+                  message:
+                    description: The UUID of the broadcast message that was used to
+                      publish this API to the network
+                    format: uuid
+                    type: string
+                  name:
+                    description: The name that is used in the URL to access the API
+                    type: string
+                  namespace:
+                    description: The namespace of the contract API
+                    type: string
+                  networkName:
+                    description: The published name of the API within the multiparty
+                      network
+                    type: string
+                  published:
+                    description: Indicates if the API is published to other members
+                      of the multiparty network
+                    type: boolean
+                  urls:
+                    description: The URLs to use to access the API
+                    properties:
+                      openapi:
+                        description: The URL to download the OpenAPI v3 (Swagger)
+                          description for the API generated in JSON or YAML format
+                        type: string
+                      ui:
+                        description: The URL to use in a web browser to access the
+                          SwaggerUI explorer/exerciser for the API
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
   /namespaces/{ns}/apis/{apiName}/interface:
     get:
       description: Gets a contract interface for a contract API
@@ -14364,200 +14433,6 @@ paths:
             application/json:
               schema:
                 additionalProperties: {}
-                type: object
-          description: Success
-        default:
-          description: ""
-      tags:
-      - Non-Default Namespace
-  /namespaces/{ns}/apis/{id}:
-    put:
-      description: The ID of the contract API
-      operationId: putContractAPINamespace
-      parameters:
-      - description: The name of the contract API
-        in: path
-        name: id
-        required: true
-        schema:
-          example: id
-          type: string
-      - description: The namespace which scopes this request
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (milliseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 2m0s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                interface:
-                  description: Reference to the FireFly Interface definition associated
-                    with the contract API
-                  properties:
-                    id:
-                      description: The UUID of the FireFly interface
-                      format: uuid
-                      type: string
-                    name:
-                      description: The name of the FireFly interface
-                      type: string
-                    version:
-                      description: The version of the FireFly interface
-                      type: string
-                  type: object
-                location:
-                  description: If this API is tied to an individual instance of a
-                    smart contract, this field can include a blockchain specific contract
-                    identifier. For example an Ethereum contract address, or a Fabric
-                    chaincode name and channel
-                name:
-                  description: The name that is used in the URL to access the API
-                  type: string
-                networkName:
-                  description: The published name of the API within the multiparty
-                    network
-                  type: string
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  id:
-                    description: The UUID of the contract API
-                    format: uuid
-                    type: string
-                  interface:
-                    description: Reference to the FireFly Interface definition associated
-                      with the contract API
-                    properties:
-                      id:
-                        description: The UUID of the FireFly interface
-                        format: uuid
-                        type: string
-                      name:
-                        description: The name of the FireFly interface
-                        type: string
-                      version:
-                        description: The version of the FireFly interface
-                        type: string
-                    type: object
-                  location:
-                    description: If this API is tied to an individual instance of
-                      a smart contract, this field can include a blockchain specific
-                      contract identifier. For example an Ethereum contract address,
-                      or a Fabric chaincode name and channel
-                  message:
-                    description: The UUID of the broadcast message that was used to
-                      publish this API to the network
-                    format: uuid
-                    type: string
-                  name:
-                    description: The name that is used in the URL to access the API
-                    type: string
-                  namespace:
-                    description: The namespace of the contract API
-                    type: string
-                  networkName:
-                    description: The published name of the API within the multiparty
-                      network
-                    type: string
-                  published:
-                    description: Indicates if the API is published to other members
-                      of the multiparty network
-                    type: boolean
-                  urls:
-                    description: The URLs to use to access the API
-                    properties:
-                      openapi:
-                        description: The URL to download the OpenAPI v3 (Swagger)
-                          description for the API generated in JSON or YAML format
-                        type: string
-                      ui:
-                        description: The URL to use in a web browser to access the
-                          SwaggerUI explorer/exerciser for the API
-                        type: string
-                    type: object
-                type: object
-          description: Success
-        "202":
-          content:
-            application/json:
-              schema:
-                properties:
-                  id:
-                    description: The UUID of the contract API
-                    format: uuid
-                    type: string
-                  interface:
-                    description: Reference to the FireFly Interface definition associated
-                      with the contract API
-                    properties:
-                      id:
-                        description: The UUID of the FireFly interface
-                        format: uuid
-                        type: string
-                      name:
-                        description: The name of the FireFly interface
-                        type: string
-                      version:
-                        description: The version of the FireFly interface
-                        type: string
-                    type: object
-                  location:
-                    description: If this API is tied to an individual instance of
-                      a smart contract, this field can include a blockchain specific
-                      contract identifier. For example an Ethereum contract address,
-                      or a Fabric chaincode name and channel
-                  message:
-                    description: The UUID of the broadcast message that was used to
-                      publish this API to the network
-                    format: uuid
-                    type: string
-                  name:
-                    description: The name that is used in the URL to access the API
-                    type: string
-                  namespace:
-                    description: The namespace of the contract API
-                    type: string
-                  networkName:
-                    description: The published name of the API within the multiparty
-                      network
-                    type: string
-                  published:
-                    description: Indicates if the API is published to other members
-                      of the multiparty network
-                    type: boolean
-                  urls:
-                    description: The URLs to use to access the API
-                    properties:
-                      openapi:
-                        description: The URL to download the OpenAPI v3 (Swagger)
-                          description for the API generated in JSON or YAML format
-                        type: string
-                      ui:
-                        description: The URL to use in a web browser to access the
-                          SwaggerUI explorer/exerciser for the API
-                        type: string
-                    type: object
                 type: object
           description: Success
         default:
@@ -21417,6 +21292,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -21646,138 +21522,6 @@ paths:
       tags:
       - Non-Default Namespace
   /namespaces/{ns}/identities/{did}:
-    get:
-      description: Gets an identity by its DID
-      operationId: getIdentityByDIDNamespace
-      parameters:
-      - description: The identity DID
-        in: path
-        name: did
-        required: true
-        schema:
-          type: string
-      - description: The namespace which scopes this request
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: When set, the API will return the verifier for this identity
-        in: query
-        name: fetchverifiers
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (milliseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 2m0s
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created:
-                    description: The creation time of the identity
-                    format: date-time
-                    type: string
-                  description:
-                    description: A description of the identity. Part of the updatable
-                      profile information of an identity
-                    type: string
-                  did:
-                    description: The DID of the identity. Unique across namespaces
-                      within a FireFly network
-                    type: string
-                  id:
-                    description: The UUID of the identity
-                    format: uuid
-                    type: string
-                  messages:
-                    description: References to the broadcast messages that established
-                      this identity and proved ownership of the associated verifiers
-                      (keys)
-                    properties:
-                      claim:
-                        description: The UUID of claim message
-                        format: uuid
-                        type: string
-                      update:
-                        description: The UUID of the most recently applied update
-                          message. Unset if no updates have been confirmed
-                        format: uuid
-                        type: string
-                      verification:
-                        description: The UUID of claim message. Unset for root organization
-                          identities
-                        format: uuid
-                        type: string
-                    type: object
-                  name:
-                    description: The name of the identity. The name must be unique
-                      within the type and namespace
-                    type: string
-                  namespace:
-                    description: The namespace of the identity. Organization and node
-                      identities are always defined in the ff_system namespace
-                    type: string
-                  parent:
-                    description: The UUID of the parent identity. Unset for root organization
-                      identities
-                    format: uuid
-                    type: string
-                  profile:
-                    additionalProperties:
-                      description: A set of metadata for the identity. Part of the
-                        updatable profile information of an identity
-                    description: A set of metadata for the identity. Part of the updatable
-                      profile information of an identity
-                    type: object
-                  type:
-                    description: The type of the identity
-                    enum:
-                    - org
-                    - node
-                    - custom
-                    type: string
-                  updated:
-                    description: The last update time of the identity profile
-                    format: date-time
-                    type: string
-                  verifiers:
-                    description: The verifiers, such as blockchain signing keys, that
-                      have been bound to this identity and can be used to prove data
-                      orignates from that identity
-                    items:
-                      description: The verifiers, such as blockchain signing keys,
-                        that have been bound to this identity and can be used to prove
-                        data orignates from that identity
-                      properties:
-                        type:
-                          description: The type of the verifier
-                          enum:
-                          - ethereum_address
-                          - fabric_msp_id
-                          - dx_peer_id
-                          type: string
-                        value:
-                          description: The verifier string, such as an Ethereum address,
-                            or Fabric MSP identifier
-                          type: string
-                      type: object
-                    type: array
-                type: object
-          description: Success
-        default:
-          description: ""
-      tags:
-      - Non-Default Namespace
-  /namespaces/{ns}/identities/{iid}:
     get:
       description: Gets an identity by its ID
       operationId: getIdentityByIDNamespace
@@ -22285,6 +22029,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -25060,6 +24805,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -25194,6 +24940,7 @@ paths:
                           description: The type of the verifier
                           enum:
                           - ethereum_address
+                          - tezos_address
                           - fabric_msp_id
                           - dx_peer_id
                           type: string
@@ -26729,6 +26476,9 @@ paths:
                     description: The time the operation was created
                     format: date-time
                     type: string
+                  detail:
+                    description: Additional detailed information about an operation
+                      provided by the connector
                   error:
                     description: Any error reported back from the plugin for this
                       operation
@@ -27293,6 +27043,7 @@ paths:
                               description: The type of the verifier
                               enum:
                               - ethereum_address
+                              - tezos_address
                               - fabric_msp_id
                               - dx_peer_id
                               type: string
@@ -27705,8 +27456,9 @@ paths:
                           description: Events are delivered in batches in an ordered
                             array. The batch size is capped to the readAhead limit.
                             The event payload is always an array even if there is
-                            a single event in the batch. Commonly used with Webhooks
-                            to allow events to be delivered and acknowledged in batches.
+                            a single event in the batch, allowing client-side optimizations
+                            when processing the events in a group. Available for both
+                            Webhooks and WebSockets.
                           type: boolean
                         batchTimeout:
                           description: When batching is enabled, the optional timeout
@@ -27749,6 +27501,10 @@ paths:
                               description: The max number of idle connections to hold
                                 pooled
                               type: integer
+                            proxyURL:
+                              description: HTTP proxy URL to use for outbound requests
+                                to the webhook
+                              type: string
                             requestTimeout:
                               description: The max duration to hold a TLS handshake
                                 alive
@@ -27990,8 +27746,8 @@ paths:
                       description: Events are delivered in batches in an ordered array.
                         The batch size is capped to the readAhead limit. The event
                         payload is always an array even if there is a single event
-                        in the batch. Commonly used with Webhooks to allow events
-                        to be delivered and acknowledged in batches.
+                        in the batch, allowing client-side optimizations when processing
+                        the events in a group. Available for both Webhooks and WebSockets.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -28033,6 +27789,10 @@ paths:
                           description: The max number of idle connections to hold
                             pooled
                           type: integer
+                        proxyURL:
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
+                          type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
                           type: string
@@ -28256,8 +28016,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -28299,6 +28060,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -28537,8 +28302,8 @@ paths:
                       description: Events are delivered in batches in an ordered array.
                         The batch size is capped to the readAhead limit. The event
                         payload is always an array even if there is a single event
-                        in the batch. Commonly used with Webhooks to allow events
-                        to be delivered and acknowledged in batches.
+                        in the batch, allowing client-side optimizations when processing
+                        the events in a group. Available for both Webhooks and WebSockets.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -28580,6 +28345,10 @@ paths:
                           description: The max number of idle connections to hold
                             pooled
                           type: integer
+                        proxyURL:
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
+                          type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
                           type: string
@@ -28803,8 +28572,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -28846,6 +28616,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -29146,8 +28920,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -29189,6 +28964,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -29309,6 +29088,206 @@ paths:
                     format: date-time
                     type: string
                 type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/subscriptions/{subid}/events:
+    get:
+      description: Gets a collection of events filtered by the subscription for further
+        filtering
+      operationId: getSubscriptionEventsFilteredNamespace
+      parameters:
+      - description: The subscription ID
+        in: path
+        name: subid
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: The sequence ID in the raw event stream to start indexing through
+          events from. Leave blank to start indexing from the most recent events
+        in: query
+        name: startsequence
+        schema:
+          type: string
+      - description: The sequence ID in the raw event stream to stop indexing through
+          events at. Leave blank to start indexing from the most recent events
+        in: query
+        name: endsequence
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: correlator
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: reference
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    correlator:
+                      description: For message events, this is the 'header.cid' field
+                        from the referenced message. For certain other event types,
+                        a secondary object is referenced such as a token pool
+                      format: uuid
+                      type: string
+                    created:
+                      description: The time the event was emitted. Not guaranteed
+                        to be unique, or to increase between events in the same order
+                        as the final sequence events are delivered to your application.
+                        As such, the 'sequence' field should be used instead of the
+                        'created' field for querying events in the exact order they
+                        are delivered to applications
+                      format: date-time
+                      type: string
+                    id:
+                      description: The UUID assigned to this event by your local FireFly
+                        node
+                      format: uuid
+                      type: string
+                    namespace:
+                      description: The namespace of the event. Your application must
+                        subscribe to events within a namespace
+                      type: string
+                    reference:
+                      description: The UUID of an resource that is the subject of
+                        this event. The event type determines what type of resource
+                        is referenced, and whether this field might be unset
+                      format: uuid
+                      type: string
+                    sequence:
+                      description: A sequence indicating the order in which events
+                        are delivered to your application. Assure to be unique per
+                        event in your local FireFly database (unlike the created timestamp)
+                      format: int64
+                      type: integer
+                    topic:
+                      description: A stream of information this event relates to.
+                        For message confirmation events, a separate event is emitted
+                        for each topic in the message. For blockchain events, the
+                        listener specifies the topic. Rules exist for how the topic
+                        is set for other event types
+                      type: string
+                    tx:
+                      description: The UUID of a transaction that is event is part
+                        of. Not all events are part of a transaction
+                      format: uuid
+                      type: string
+                    type:
+                      description: All interesting activity in FireFly is emitted
+                        as a FireFly event, of a given type. The 'type' combined with
+                        the 'reference' can be used to determine how to process the
+                        event within your application
+                      enum:
+                      - transaction_submitted
+                      - message_confirmed
+                      - message_rejected
+                      - datatype_confirmed
+                      - identity_confirmed
+                      - identity_updated
+                      - token_pool_confirmed
+                      - token_pool_op_failed
+                      - token_transfer_confirmed
+                      - token_transfer_op_failed
+                      - token_approval_confirmed
+                      - token_approval_op_failed
+                      - contract_interface_confirmed
+                      - contract_api_confirmed
+                      - blockchain_event_received
+                      - blockchain_invoke_op_succeeded
+                      - blockchain_invoke_op_failed
+                      - blockchain_contract_deploy_op_succeeded
+                      - blockchain_contract_deploy_op_failed
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -31140,6 +31119,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: active
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: connector
         schema:
           type: string
@@ -31196,11 +31180,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: standard
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: state
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -31264,6 +31243,10 @@ paths:
               schema:
                 items:
                   properties:
+                    active:
+                      description: Indicates whether the pool has been successfully
+                        activated with the token connector
+                      type: boolean
                     connector:
                       description: The name of the token connector, as specified in
                         the FireFly core configuration file that is responsible for
@@ -31323,7 +31306,7 @@ paths:
                       type: string
                     message:
                       description: The UUID of the broadcast message used to inform
-                        the network to index this pool
+                        the network about this pool
                       format: uuid
                       type: string
                     methods:
@@ -31347,12 +31330,6 @@ paths:
                     standard:
                       description: The ERC standard the token pool conforms to, as
                         reported by the token connector
-                      type: string
-                    state:
-                      description: The current state of the token pool
-                      enum:
-                      - pending
-                      - confirmed
                       type: string
                     symbol:
                       description: The token symbol. If supplied on input for an existing
@@ -31483,6 +31460,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -31541,7 +31522,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -31565,12 +31546,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -31601,6 +31576,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -31659,7 +31638,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -31683,12 +31662,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -31782,6 +31755,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -31840,7 +31817,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -31864,12 +31841,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -31945,6 +31916,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -32003,7 +31978,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -32027,12 +32002,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -32063,6 +32032,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -32121,7 +32094,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -32145,12 +32118,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -33643,6 +33610,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -33711,6 +33679,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -33752,6 +33721,7 @@ paths:
                   description: The type of the verifier
                   enum:
                   - ethereum_address
+                  - tezos_address
                   - fabric_msp_id
                   - dx_peer_id
                   type: string
@@ -33770,6 +33740,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -34100,6 +34071,7 @@ paths:
                             description: The type of the verifier
                             enum:
                             - ethereum_address
+                            - tezos_address
                             - fabric_msp_id
                             - dx_peer_id
                             type: string
@@ -34227,6 +34199,7 @@ paths:
                           description: The type of the verifier
                           enum:
                           - ethereum_address
+                          - tezos_address
                           - fabric_msp_id
                           - dx_peer_id
                           type: string
@@ -35692,6 +35665,9 @@ paths:
                     description: The time the operation was created
                     format: date-time
                     type: string
+                  detail:
+                    description: Additional detailed information about an operation
+                      provided by the connector
                   error:
                     description: Any error reported back from the plugin for this
                       operation
@@ -36228,6 +36204,7 @@ paths:
                               description: The type of the verifier
                               enum:
                               - ethereum_address
+                              - tezos_address
                               - fabric_msp_id
                               - dx_peer_id
                               type: string
@@ -36626,8 +36603,9 @@ paths:
                           description: Events are delivered in batches in an ordered
                             array. The batch size is capped to the readAhead limit.
                             The event payload is always an array even if there is
-                            a single event in the batch. Commonly used with Webhooks
-                            to allow events to be delivered and acknowledged in batches.
+                            a single event in the batch, allowing client-side optimizations
+                            when processing the events in a group. Available for both
+                            Webhooks and WebSockets.
                           type: boolean
                         batchTimeout:
                           description: When batching is enabled, the optional timeout
@@ -36670,6 +36648,10 @@ paths:
                               description: The max number of idle connections to hold
                                 pooled
                               type: integer
+                            proxyURL:
+                              description: HTTP proxy URL to use for outbound requests
+                                to the webhook
+                              type: string
                             requestTimeout:
                               description: The max duration to hold a TLS handshake
                                 alive
@@ -36904,8 +36886,8 @@ paths:
                       description: Events are delivered in batches in an ordered array.
                         The batch size is capped to the readAhead limit. The event
                         payload is always an array even if there is a single event
-                        in the batch. Commonly used with Webhooks to allow events
-                        to be delivered and acknowledged in batches.
+                        in the batch, allowing client-side optimizations when processing
+                        the events in a group. Available for both Webhooks and WebSockets.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -36947,6 +36929,10 @@ paths:
                           description: The max number of idle connections to hold
                             pooled
                           type: integer
+                        proxyURL:
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
+                          type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
                           type: string
@@ -37170,8 +37156,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -37213,6 +37200,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -37444,8 +37435,8 @@ paths:
                       description: Events are delivered in batches in an ordered array.
                         The batch size is capped to the readAhead limit. The event
                         payload is always an array even if there is a single event
-                        in the batch. Commonly used with Webhooks to allow events
-                        to be delivered and acknowledged in batches.
+                        in the batch, allowing client-side optimizations when processing
+                        the events in a group. Available for both Webhooks and WebSockets.
                       type: boolean
                     batchTimeout:
                       description: When batching is enabled, the optional timeout
@@ -37487,6 +37478,10 @@ paths:
                           description: The max number of idle connections to hold
                             pooled
                           type: integer
+                        proxyURL:
+                          description: HTTP proxy URL to use for outbound requests
+                            to the webhook
+                          type: string
                         requestTimeout:
                           description: The max duration to hold a TLS handshake alive
                           type: string
@@ -37710,8 +37705,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -37753,6 +37749,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -38039,8 +38039,9 @@ paths:
                         description: Events are delivered in batches in an ordered
                           array. The batch size is capped to the readAhead limit.
                           The event payload is always an array even if there is a
-                          single event in the batch. Commonly used with Webhooks to
-                          allow events to be delivered and acknowledged in batches.
+                          single event in the batch, allowing client-side optimizations
+                          when processing the events in a group. Available for both
+                          Webhooks and WebSockets.
                         type: boolean
                       batchTimeout:
                         description: When batching is enabled, the optional timeout
@@ -38082,6 +38083,10 @@ paths:
                             description: The max number of idle connections to hold
                               pooled
                             type: integer
+                          proxyURL:
+                            description: HTTP proxy URL to use for outbound requests
+                              to the webhook
+                            type: string
                           requestTimeout:
                             description: The max duration to hold a TLS handshake
                               alive
@@ -38202,6 +38207,199 @@ paths:
                     format: date-time
                     type: string
                 type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /subscriptions/{subid}/events:
+    get:
+      description: Gets a collection of events filtered by the subscription for further
+        filtering
+      operationId: getSubscriptionEventsFiltered
+      parameters:
+      - description: The subscription ID
+        in: path
+        name: subid
+        required: true
+        schema:
+          type: string
+      - description: The sequence ID in the raw event stream to start indexing through
+          events from. Leave blank to start indexing from the most recent events
+        in: query
+        name: startsequence
+        schema:
+          type: string
+      - description: The sequence ID in the raw event stream to stop indexing through
+          events at. Leave blank to start indexing from the most recent events
+        in: query
+        name: endsequence
+        schema:
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: correlator
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: reference
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    correlator:
+                      description: For message events, this is the 'header.cid' field
+                        from the referenced message. For certain other event types,
+                        a secondary object is referenced such as a token pool
+                      format: uuid
+                      type: string
+                    created:
+                      description: The time the event was emitted. Not guaranteed
+                        to be unique, or to increase between events in the same order
+                        as the final sequence events are delivered to your application.
+                        As such, the 'sequence' field should be used instead of the
+                        'created' field for querying events in the exact order they
+                        are delivered to applications
+                      format: date-time
+                      type: string
+                    id:
+                      description: The UUID assigned to this event by your local FireFly
+                        node
+                      format: uuid
+                      type: string
+                    namespace:
+                      description: The namespace of the event. Your application must
+                        subscribe to events within a namespace
+                      type: string
+                    reference:
+                      description: The UUID of an resource that is the subject of
+                        this event. The event type determines what type of resource
+                        is referenced, and whether this field might be unset
+                      format: uuid
+                      type: string
+                    sequence:
+                      description: A sequence indicating the order in which events
+                        are delivered to your application. Assure to be unique per
+                        event in your local FireFly database (unlike the created timestamp)
+                      format: int64
+                      type: integer
+                    topic:
+                      description: A stream of information this event relates to.
+                        For message confirmation events, a separate event is emitted
+                        for each topic in the message. For blockchain events, the
+                        listener specifies the topic. Rules exist for how the topic
+                        is set for other event types
+                      type: string
+                    tx:
+                      description: The UUID of a transaction that is event is part
+                        of. Not all events are part of a transaction
+                      format: uuid
+                      type: string
+                    type:
+                      description: All interesting activity in FireFly is emitted
+                        as a FireFly event, of a given type. The 'type' combined with
+                        the 'reference' can be used to determine how to process the
+                        event within your application
+                      enum:
+                      - transaction_submitted
+                      - message_confirmed
+                      - message_rejected
+                      - datatype_confirmed
+                      - identity_confirmed
+                      - identity_updated
+                      - token_pool_confirmed
+                      - token_pool_op_failed
+                      - token_transfer_confirmed
+                      - token_transfer_op_failed
+                      - token_approval_confirmed
+                      - token_approval_op_failed
+                      - contract_interface_confirmed
+                      - contract_api_confirmed
+                      - blockchain_event_received
+                      - blockchain_invoke_op_succeeded
+                      - blockchain_invoke_op_failed
+                      - blockchain_contract_deploy_op_succeeded
+                      - blockchain_contract_deploy_op_failed
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -39962,6 +40160,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: active
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: connector
         schema:
           type: string
@@ -40018,11 +40221,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: standard
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: state
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -40086,6 +40284,10 @@ paths:
               schema:
                 items:
                   properties:
+                    active:
+                      description: Indicates whether the pool has been successfully
+                        activated with the token connector
+                      type: boolean
                     connector:
                       description: The name of the token connector, as specified in
                         the FireFly core configuration file that is responsible for
@@ -40145,7 +40347,7 @@ paths:
                       type: string
                     message:
                       description: The UUID of the broadcast message used to inform
-                        the network to index this pool
+                        the network about this pool
                       format: uuid
                       type: string
                     methods:
@@ -40169,12 +40371,6 @@ paths:
                     standard:
                       description: The ERC standard the token pool conforms to, as
                         reported by the token connector
-                      type: string
-                    state:
-                      description: The current state of the token pool
-                      enum:
-                      - pending
-                      - confirmed
                       type: string
                     symbol:
                       description: The token symbol. If supplied on input for an existing
@@ -40298,6 +40494,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -40356,7 +40556,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -40380,12 +40580,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -40416,6 +40610,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -40474,7 +40672,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -40498,12 +40696,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -40583,6 +40775,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -40641,7 +40837,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -40665,12 +40861,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -40739,6 +40929,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -40797,7 +40991,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -40821,12 +41015,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -40857,6 +41045,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates whether the pool has been successfully
+                      activated with the token connector
+                    type: boolean
                   connector:
                     description: The name of the token connector, as specified in
                       the FireFly core configuration file that is responsible for
@@ -40915,7 +41107,7 @@ paths:
                     type: string
                   message:
                     description: The UUID of the broadcast message used to inform
-                      the network to index this pool
+                      the network about this pool
                     format: uuid
                     type: string
                   methods:
@@ -40939,12 +41131,6 @@ paths:
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
                       by the token connector
-                    type: string
-                  state:
-                    description: The current state of the token pool
-                    enum:
-                    - pending
-                    - confirmed
                     type: string
                   symbol:
                     description: The token symbol. If supplied on input for an existing
@@ -42374,6 +42560,7 @@ paths:
                       description: The type of the verifier
                       enum:
                       - ethereum_address
+                      - tezos_address
                       - fabric_msp_id
                       - dx_peer_id
                       type: string
@@ -42435,6 +42622,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -42469,6 +42657,7 @@ paths:
                   description: The type of the verifier
                   enum:
                   - ethereum_address
+                  - tezos_address
                   - fabric_msp_id
                   - dx_peer_id
                   type: string
@@ -42487,6 +42676,7 @@ paths:
                     description: The type of the verifier
                     enum:
                     - ethereum_address
+                    - tezos_address
                     - fabric_msp_id
                     - dx_peer_id
                     type: string
@@ -42654,4 +42844,4 @@ paths:
       tags:
       - Global
 servers:
-- url: http://localhost:5000
+- url: http://localhost:5000/api/v1

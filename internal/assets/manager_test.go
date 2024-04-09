@@ -18,6 +18,7 @@ package assets
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -159,4 +160,87 @@ func TestGetTokenConnectors(t *testing.T) {
 	connectors := am.GetTokenConnectors(context.Background())
 	assert.Equal(t, 1, len(connectors))
 	assert.Equal(t, "magic-tokens", connectors[0].Name)
+}
+
+func TestStart(t *testing.T) {
+	coreconfig.Reset()
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mim := &identitymanagermocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mti := &tokenmocks.Plugin{}
+	mm := &metricsmocks.Manager{}
+	mom := &operationmocks.Manager{}
+	mcm := &contractmocks.Manager{}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, nil)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
+	mdi.On("GetTokenPools", mock.Anything, mock.Anything, mock.Anything).Return([]*core.TokenPool{
+		{
+			Connector: "hot_tokens",
+			Active:    true,
+		},
+	}, nil, nil)
+	mti.On("StartNamespace", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mti.On("ConnectorName").Return("hot_tokens")
+	txHelper, _ := txcommon.NewTransactionHelper(context.Background(), "ns1", mdi, mdm, cmi)
+	am, err := NewAssetManager(context.Background(), "ns1", "blockchain_plugin", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, mcm, txHelper, cmi)
+	assert.NoError(t, err)
+	err = am.Start()
+	assert.NoError(t, err)
+}
+
+func TestStartDBError(t *testing.T) {
+	coreconfig.Reset()
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mim := &identitymanagermocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mti := &tokenmocks.Plugin{}
+	mm := &metricsmocks.Manager{}
+	mom := &operationmocks.Manager{}
+	mcm := &contractmocks.Manager{}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, nil)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
+	mdi.On("GetTokenPools", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	txHelper, _ := txcommon.NewTransactionHelper(context.Background(), "ns1", mdi, mdm, cmi)
+	am, err := NewAssetManager(context.Background(), "ns1", "blockchain_plugin", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, mcm, txHelper, cmi)
+	assert.NoError(t, err)
+	err = am.Start()
+	assert.Regexp(t, "pop", err)
+}
+
+func TestStartError(t *testing.T) {
+	coreconfig.Reset()
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mim := &identitymanagermocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mti := &tokenmocks.Plugin{}
+	mm := &metricsmocks.Manager{}
+	mom := &operationmocks.Manager{}
+	mcm := &contractmocks.Manager{}
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(nil, nil)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
+	mdi.On("GetTokenPools", mock.Anything, mock.Anything, mock.Anything).Return([]*core.TokenPool{
+		{
+			Connector: "hot_tokens",
+			Active:    true,
+		},
+	}, nil, nil)
+	mti.On("StartNamespace", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mti.On("ConnectorName").Return("hot_tokens")
+	txHelper, _ := txcommon.NewTransactionHelper(context.Background(), "ns1", mdi, mdm, cmi)
+	am, err := NewAssetManager(context.Background(), "ns1", "blockchain_plugin", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, mcm, txHelper, cmi)
+	assert.NoError(t, err)
+	err = am.Start()
+	assert.Regexp(t, "pop", err)
 }

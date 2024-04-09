@@ -101,6 +101,8 @@ type BlockchainReceiptNotification struct {
 
 type BlockchainRESTError struct {
 	Error string `json:"error,omitempty"`
+	// See https://github.com/hyperledger/firefly-transaction-manager/blob/main/pkg/ffcapi/submission_error.go
+	SubmissionRejected bool `json:"submissionRejected,omitempty"`
 }
 
 type conflictError struct {
@@ -332,13 +334,24 @@ func buildBatchPin(ctx context.Context, event *blockchain.Event, params *BatchPi
 }
 
 func GetNamespaceFromSubName(subName string) string {
-	var parts = strings.Split(subName, "-")
 	// Subscription names post version 1.1 are in the format `ff-sub-<namespace>-<listener ID>`
-	if len(parts) != 4 {
-		// Assume older subscription and return empty string
-		return ""
+	// Priot to that they had the format `ff-sub-<listener ID>`
+
+	// Strip the "ff-sub-" prefix from the beginning of the name
+	withoutPrefix := strings.TrimPrefix(subName, "ff-sub-")
+	if len(withoutPrefix) < len(subName) {
+		// Strip the listener ID from the end of the name
+		const UUIDLength = 36
+		if len(withoutPrefix) > UUIDLength {
+			uuidSplit := len(withoutPrefix) - UUIDLength - 1
+			namespace := withoutPrefix[:uuidSplit]
+			listenerID := withoutPrefix[uuidSplit:]
+			if strings.HasPrefix(listenerID, "-") {
+				return namespace
+			}
+		}
 	}
-	return parts[2]
+	return ""
 }
 
 func (s *subscriptions) AddSubscription(ctx context.Context, namespace *core.Namespace, version int, subID string, extra interface{}) {

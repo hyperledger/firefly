@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -540,7 +540,7 @@ var (
 	SubscriptionCoreOptionsFirstEvent   = ffm("SubscriptionCoreOptions.firstEvent", "Whether your application would like to receive events from the 'oldest' event emitted by your FireFly node (from the beginning of time), or the 'newest' event (from now), or a specific event sequence. Default is 'newest'")
 	SubscriptionCoreOptionsReadAhead    = ffm("SubscriptionCoreOptions.readAhead", "The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts")
 	SubscriptionCoreOptionsWithData     = ffm("SubscriptionCoreOptions.withData", "Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data. May not be supported on some transports.")
-	SubscriptionCoreOptionsBatch        = ffm("SubscriptionCoreOptions.batch", "Events are delivered in batches in an ordered array. The batch size is capped to the readAhead limit. The event payload is always an array even if there is a single event in the batch. Commonly used with Webhooks to allow events to be delivered and acknowledged in batches.")
+	SubscriptionCoreOptionsBatch        = ffm("SubscriptionCoreOptions.batch", "Events are delivered in batches in an ordered array. The batch size is capped to the readAhead limit. The event payload is always an array even if there is a single event in the batch, allowing client-side optimizations when processing the events in a group. Available for both Webhooks and WebSockets.")
 	SubscriptionCoreOptionsBatchTimeout = ffm("SubscriptionCoreOptions.batchTimeout", "When batching is enabled, the optional timeout to send events even when the batch hasn't filled.")
 
 	// TokenApproval field descriptions
@@ -592,8 +592,8 @@ var (
 	TokenPoolSymbol          = ffm("TokenPool.symbol", "The token symbol. If supplied on input for an existing on-chain token, this must match the on-chain information")
 	TokenPoolDecimals        = ffm("TokenPool.decimals", "Number of decimal places that this token has")
 	TokenPoolConnector       = ffm("TokenPool.connector", "The name of the token connector, as specified in the FireFly core configuration file that is responsible for the token pool. Required on input when multiple token connectors are configured")
-	TokenPoolMessage         = ffm("TokenPool.message", "The UUID of the broadcast message used to inform the network to index this pool")
-	TokenPoolState           = ffm("TokenPool.state", "The current state of the token pool")
+	TokenPoolMessage         = ffm("TokenPool.message", "The UUID of the broadcast message used to inform the network about this pool")
+	TokenPoolActive          = ffm("TokenPool.active", "Indicates whether the pool has been successfully activated with the token connector")
 	TokenPoolCreated         = ffm("TokenPool.created", "The creation time of the pool")
 	TokenPoolConfig          = ffm("TokenPool.config", "Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details")
 	TokenPoolInfo            = ffm("TokenPool.info", "Token connector specific information about the pool. See your chosen token connector documentation for details")
@@ -662,6 +662,7 @@ var (
 	ContractCallRequestMethodPath = ffm("ContractCallRequest.methodPath", "The pathname of the method on the specified FFI")
 	ContractCallRequestErrors     = ffm("ContractCallRequest.errors", "An in-line FFI errors definition for the method to invoke. Alternative to specifying FFI")
 	ContractCallRequestInput      = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
+	ContractCallRequestOutput     = ffm("ContractCallRequest.output", "A map of named outputs")
 	ContractCallRequestOptions    = ffm("ContractCallRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
 	ContractCallMessage           = ffm("ContractCallRequest.message", "You can specify a message to correlate with the invocation, which can be of type broadcast or private. Your specified method must support on-chain/off-chain correlation by taking a data input on the call")
 	ContractCallIdempotencyKey    = ffm("ContractCallRequest.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")
@@ -711,6 +712,7 @@ var (
 	WebhookOptHTTPConnectionTimeout     = ffm("WebhookHTTPOptions.connectionTimeout", "The maximum amount of time that a connection is allowed to remain with no data transmitted.")
 	WebhookOptHTTPTLSHandshakeTimeout   = ffm("WebhookHTTPOptions.tlsHandshakeTimeout", "The max duration to hold a TLS handshake alive")
 	WebhookOptHTTPRequestTimeout        = ffm("WebhookHTTPOptions.requestTimeout", "The max duration to hold a TLS handshake alive")
+	WebhookOptHTTPProxyURL              = ffm("WebhookHTTPOptions.proxyURL", "HTTP proxy URL to use for outbound requests to the webhook")
 
 	// PublishInput field descriptions
 	PublishInputIdempotencyKey = ffm("PublishInput.idempotencyKey", "An optional identifier to allow idempotent submission of requests. Stored on the transaction uniquely within a namespace")

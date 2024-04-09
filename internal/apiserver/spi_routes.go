@@ -16,7 +16,11 @@
 
 package apiserver
 
-import "github.com/hyperledger/firefly-common/pkg/ffapi"
+import (
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+)
 
 // The Service Provider Interface (SPI) allows external microservices (such as the FireFly Transaction Manager)
 // to act as augmented components to the core.
@@ -27,7 +31,24 @@ var spiRoutes = append(globalRoutes([]*ffapi.Route{
 	spiPatchOpByID,
 	spiPostReset,
 }),
-	namespacedRoutes([]*ffapi.Route{
+	namespacedSPIRoutes([]*ffapi.Route{
 		spiGetOps,
 	})...,
 )
+
+func namespacedSPIRoutes(routes []*ffapi.Route) []*ffapi.Route {
+	newRoutes := make([]*ffapi.Route, len(routes))
+	for i, route := range routes {
+		route.Tag = routeTagDefaultNamespace
+
+		routeCopy := *route
+		routeCopy.Name += "Namespace"
+		routeCopy.Path = "namespaces/{ns}/" + route.Path
+		routeCopy.PathParams = append(routeCopy.PathParams, &ffapi.PathParam{
+			Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace,
+		})
+		routeCopy.Tag = routeTagNonDefaultNamespace
+		newRoutes[i] = &routeCopy
+	}
+	return append(routes, newRoutes...)
+}

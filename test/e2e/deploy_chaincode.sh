@@ -39,7 +39,7 @@ VOLUMES="\
 "
 
 CA_PARAMS="--tls --cafile ${ORDERER_DIR}/orderers/fabric_orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem"
-RUN="docker run --rm --network=${NETWORK} ${ENV_VARS} ${VOLUMES} hyperledger/fabric-tools:2.4"
+RUN="docker run --rm --network=${NETWORK} ${ENV_VARS} ${VOLUMES} hyperledger/fabric-tools:2.5"
 
 echo "Using name ${CHAINCODE_NAME}"
 echo "Installing chaincode from ${CHAINCODE}..."

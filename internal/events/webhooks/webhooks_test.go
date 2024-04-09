@@ -255,6 +255,7 @@ func TestValidateOptionsExtraFields(t *testing.T) {
 		MaximumDelay: "2s",
 	}
 
+	proxyURL := "http://myproxy.example.com:8888"
 	opts.HTTPOptions = core.WebhookHTTPOptions{
 		HTTPMaxIdleConns:          2,
 		HTTPTLSHandshakeTimeout:   "2s",
@@ -262,6 +263,7 @@ func TestValidateOptionsExtraFields(t *testing.T) {
 		HTTPIdleConnTimeout:       "2s",
 		HTTPConnectionTimeout:     "2s",
 		HTTPExpectContinueTimeout: "2s",
+		HTTPProxyURL:              &proxyURL,
 	}
 
 	opts.TLSConfig = &tls.Config{}
@@ -283,6 +285,11 @@ func TestValidateOptionsExtraFields(t *testing.T) {
 	assert.Equal(t, transport.TLSHandshakeTimeout, expectedDuration)
 	assert.Equal(t, transport.MaxIdleConns, 2)
 	assert.NotNil(t, transport.TLSClientConfig)
+
+	req := httptest.NewRequest(http.MethodGet, "http://testany.example.com", nil)
+	u, err := transport.Proxy(req)
+	assert.NoError(t, err)
+	assert.Equal(t, "http://myproxy.example.com:8888", u.String())
 }
 
 func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
@@ -455,8 +462,6 @@ func TestRequestWithBodyReplyEndToEndWithTLS(t *testing.T) {
 		ClientCAs:  caCertPool,
 		ClientAuth: tls.RequireAndVerifyClientCert,
 	}
-	tlsConfig.BuildNameToCertificate()
-
 	// Create a Server instance to listen on port 8443 with the TLS config
 	server := &http.Server{
 		Addr:      "127.0.0.1:8443",
@@ -492,7 +497,9 @@ func TestRequestWithBodyReplyEndToEndWithTLS(t *testing.T) {
 	groupHash := fftypes.NewRandB32()
 
 	client := ffresty.NewWithConfig(ctx, ffresty.Config{
-		TLSClientConfig: clientTLSConfig,
+		HTTPConfig: ffresty.HTTPConfig{
+			TLSClientConfig: clientTLSConfig,
+		},
 	})
 	sub := &core.Subscription{
 		SubscriptionRef: core.SubscriptionRef{

@@ -112,7 +112,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	storedPool := &core.TokenPool{
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 		Message:   fftypes.NewUUID(),
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
@@ -122,9 +122,9 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 
 	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
 	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(storedPool, nil).Once()
-	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(events []*core.BlockchainEvent) bool {
-		return len(events) == 1 && events[0].Name == chainPool.Event.Name
-	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil)
+	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+		return e.Name == chainPool.Event.Name
+	})).Return(nil, nil)
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil).Once()
@@ -167,7 +167,7 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 	storedPool := &core.TokenPool{
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   txID,
@@ -207,7 +207,7 @@ func TestTokenPoolCreatedConfirmFailBadSymbol(t *testing.T) {
 	storedPool := &core.TokenPool{
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 		Symbol:    "FFT",
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
@@ -234,7 +234,7 @@ func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
 		Key:       "0x0",
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   txID,
@@ -246,7 +246,9 @@ func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 		ProtocolID:     "tx1",
 	}
 
-	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+		return e.Name == event.Name
+	})).Return(nil, fmt.Errorf("pop"))
 
 	err := em.confirmPool(em.ctx, storedPool, event)
 	assert.EqualError(t, err, "pop")
@@ -262,7 +264,7 @@ func TestConfirmPoolTxFail(t *testing.T) {
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
 		Key:       "0x0",
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   txID,
@@ -274,9 +276,9 @@ func TestConfirmPoolTxFail(t *testing.T) {
 		ProtocolID:     "tx1",
 	}
 
-	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(events []*core.BlockchainEvent) bool {
-		return len(events) == 1 && events[0].Name == event.Name
-	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil)
+	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+		return e.Name == event.Name
+	})).Return(nil, nil)
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil)
@@ -296,7 +298,7 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
 		Key:       "0x0",
-		State:     core.TokenPoolStatePending,
+		Active:    false,
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeTokenPool,
 			ID:   txID,
@@ -308,9 +310,9 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 		ProtocolID:     "tx1",
 	}
 
-	em.mth.On("InsertNewBlockchainEvents", em.ctx, mock.MatchedBy(func(events []*core.BlockchainEvent) bool {
-		return len(events) == 1 && events[0].Name == event.Name
-	})).Return([]*core.BlockchainEvent{{ID: fftypes.NewUUID()}}, nil)
+	em.mth.On("InsertOrGetBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+		return e.Name == event.Name
+	})).Return(nil, nil)
 	em.mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil)
@@ -528,4 +530,78 @@ func TestTokenPoolCreatedPublishBadSymbol(t *testing.T) {
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
+}
+
+func TestLoadExistingAlternateLocator(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	existingPool := &core.TokenPool{
+		Type:      core.TokenTypeFungible,
+		Locator:   "123",
+		Connector: "erc1155",
+		Symbol:    "ETH",
+	}
+	updatedPool := &tokens.TokenPool{
+		Type:              core.TokenTypeFungible,
+		PoolLocator:       "456",
+		AlternateLocators: []string{"123"},
+		Connector:         "erc1155",
+		Symbol:            "ETH",
+	}
+
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "456").Return(nil, nil).Once()
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(existingPool, nil).Once()
+	em.mdi.On("UpsertTokenPool", em.ctx, existingPool, database.UpsertOptimizationExisting).Return(nil).Once()
+
+	p, err := em.loadExisting(em.ctx, updatedPool)
+	assert.NoError(t, err)
+	assert.Equal(t, p, existingPool)
+}
+
+func TestLoadExistingAlternateLocatorError(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	updatedPool := &tokens.TokenPool{
+		Type:              core.TokenTypeFungible,
+		PoolLocator:       "456",
+		AlternateLocators: []string{"123"},
+		Connector:         "erc1155",
+		Symbol:            "ETH",
+	}
+
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "456").Return(nil, nil).Once()
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
+
+	p, err := em.loadExisting(em.ctx, updatedPool)
+	assert.Equal(t, err.Error(), "pop")
+	assert.Nil(t, p)
+}
+
+func TestLoadExistingAlternateLocatorUpsertError(t *testing.T) {
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
+
+	existingPool := &core.TokenPool{
+		Type:      core.TokenTypeFungible,
+		Locator:   "123",
+		Connector: "erc1155",
+		Symbol:    "ETH",
+	}
+	updatedPool := &tokens.TokenPool{
+		Type:              core.TokenTypeFungible,
+		PoolLocator:       "456",
+		AlternateLocators: []string{"123"},
+		Connector:         "erc1155",
+		Symbol:            "ETH",
+	}
+
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "456").Return(nil, nil).Once()
+	em.mam.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(existingPool, nil).Once()
+	em.mdi.On("UpsertTokenPool", em.ctx, existingPool, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop")).Once()
+
+	p, err := em.loadExisting(em.ctx, updatedPool)
+	assert.Equal(t, err.Error(), "pop")
+	assert.Equal(t, p, existingPool)
 }

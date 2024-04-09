@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -37,7 +37,7 @@ var getOpByID = &ffapi.Route{
 	},
 	Description:     coremsgs.APIEndpointsGetOpByID,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &core.Operation{} },
+	JSONOutputValue: func() interface{} { return &core.OperationWithDetail{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {

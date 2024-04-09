@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -65,24 +65,20 @@ type eventDispatcher struct {
 	elected       bool
 	eventPoller   *eventPoller
 	inflight      map[fftypes.UUID]*core.Event
-	eventDelivery chan *core.EventDelivery
+	eventDelivery chan []*core.EventDelivery
 	mux           sync.Mutex
 	namespace     string
 	readAhead     int
 	batch         bool
-	batchTimeout  time.Duration
 	subscription  *subscription
 	txHelper      txcommon.Helper
 }
 
 func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.Plugin, di database.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, connID string, sub *subscription, en *eventNotifier, txHelper txcommon.Helper) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
-	readAhead := config.GetUint(coreconfig.SubscriptionDefaultsReadAhead)
+	readAhead := uint(0)
 	if sub.definition.Options.ReadAhead != nil {
 		readAhead = uint(*sub.definition.Options.ReadAhead)
-	}
-	if readAhead > maxReadAhead {
-		readAhead = maxReadAhead
 	}
 
 	batchTimeout := defaultBatchTimeout
@@ -108,13 +104,12 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 		subscription:  sub,
 		namespace:     sub.definition.Namespace,
 		inflight:      make(map[fftypes.UUID]*core.Event),
-		eventDelivery: make(chan *core.EventDelivery, readAhead+1),
+		eventDelivery: make(chan []*core.EventDelivery, readAhead+1),
 		readAhead:     int(readAhead),
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		txHelper:      txHelper,
 		batch:         batch,
-		batchTimeout:  batchTimeout,
 	}
 
 	pollerConf := &eventPollerConf{
@@ -136,6 +131,20 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 		newEventsHandler: ed.bufferedDelivery,
 		ephemeral:        sub.definition.Ephemeral,
 		firstEvent:       sub.definition.Options.FirstEvent,
+	}
+
+	// Users can tune the batch related settings.
+	// This is always true in batch:true cases, and optionally you can use the batchTimeout setting
+	// to tweak how we optimize ourselves for readahead / latency detection without batching
+	// (most likely users with this requirement would be best to just move to batch:true).
+	if batchTimeout > 0 {
+		pollerConf.eventBatchTimeout = batchTimeout
+		if batchTimeout > pollerConf.eventPollTimeout {
+			pollerConf.eventPollTimeout = batchTimeout
+		}
+	}
+	if batch || pollerConf.eventBatchSize < int(readAhead) {
+		pollerConf.eventBatchSize = ed.readAhead
 	}
 
 	ed.eventPoller = newEventPoller(ctx, di, en, pollerConf)
@@ -165,11 +174,8 @@ func (ed *eventDispatcher) electAndStart() {
 	ed.elected = true
 	ed.eventPoller.start()
 
-	if ed.batch {
-		go ed.deliverBatchedEvents()
-	} else {
-		go ed.deliverEvents()
-	}
+	go ed.deliverEvents()
+
 	// Wait until the event poller closes
 	<-ed.eventPoller.closed
 }
@@ -203,77 +209,9 @@ func (ed *eventDispatcher) enrichEvents(events []core.LocallySequenced) ([]*core
 func (ed *eventDispatcher) filterEvents(candidates []*core.EventDelivery) []*core.EventDelivery {
 	matchingEvents := make([]*core.EventDelivery, 0, len(candidates))
 	for _, event := range candidates {
-		filter := ed.subscription
-		if filter.eventMatcher != nil && !filter.eventMatcher.MatchString(string(event.Type)) {
-			continue
+		if ed.subscription.MatchesEvent(&event.EnrichedEvent) {
+			matchingEvents = append(matchingEvents, event)
 		}
-
-		msg := event.Message
-		tx := event.Transaction
-		be := event.BlockchainEvent
-		tag := ""
-		topic := event.Topic
-		group := ""
-		author := ""
-		txType := ""
-		beName := ""
-		beListener := ""
-
-		if msg != nil {
-			tag = msg.Header.Tag
-			author = msg.Header.Author
-			if msg.Header.Group != nil {
-				group = msg.Header.Group.String()
-			}
-		}
-
-		if tx != nil {
-			txType = tx.Type.String()
-		}
-
-		if be != nil {
-			beName = be.Name
-			beListener = be.Listener.String()
-		}
-
-		if filter.topicFilter != nil {
-			topicsMatch := false
-			if filter.topicFilter.MatchString(topic) {
-				topicsMatch = true
-			}
-			if !topicsMatch {
-				continue
-			}
-		}
-
-		if filter.messageFilter != nil {
-			if filter.messageFilter.tagFilter != nil && !filter.messageFilter.tagFilter.MatchString(tag) {
-				continue
-			}
-			if filter.messageFilter.authorFilter != nil && !filter.messageFilter.authorFilter.MatchString(author) {
-				continue
-			}
-			if filter.messageFilter.groupFilter != nil && !filter.messageFilter.groupFilter.MatchString(group) {
-				continue
-			}
-		}
-
-		if filter.transactionFilter != nil {
-			if filter.transactionFilter.typeFilter != nil && !filter.transactionFilter.typeFilter.MatchString(txType) {
-				continue
-			}
-		}
-
-		if filter.blockchainFilter != nil {
-			if filter.blockchainFilter.nameFilter != nil && !filter.blockchainFilter.nameFilter.MatchString(beName) {
-				continue
-			}
-			if filter.blockchainFilter.listenerFilter != nil && !filter.blockchainFilter.listenerFilter.MatchString(beListener) {
-				continue
-			}
-		}
-
-		matchingEvents = append(matchingEvents, event)
 	}
 	return matchingEvents
 }
@@ -326,7 +264,15 @@ func (ed *eventDispatcher) bufferedDelivery(events []core.LocallySequenced) (boo
 			ed.mux.Unlock()
 
 			dispatched++
-			ed.eventDelivery <- event
+			if !ed.batch {
+				// dispatch individually
+				ed.eventDelivery <- []*core.EventDelivery{event}
+			}
+		}
+
+		if ed.batch && len(dispatchable) > 0 {
+			// Dispatch the whole batch now marked in-flight
+			ed.eventDelivery <- dispatchable
 		}
 
 		if inflightCount == 0 {
@@ -384,88 +330,59 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) {
 	}
 }
 
-func (ed *eventDispatcher) deliverBatchedEvents() {
-	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
-
-	var events []*core.CombinedEventDataDelivery
-	var batchTimeoutContext context.Context
-	var batchTimeoutCancel func()
-	for {
-		var timeoutContext context.Context
-		var timedOut bool
-		if batchTimeoutContext != nil {
-			timeoutContext = batchTimeoutContext
-		} else {
-			timeoutContext = ed.ctx
-		}
-		select {
-		case event, ok := <-ed.eventDelivery:
-			if !ok {
-				if batchTimeoutCancel != nil {
-					batchTimeoutCancel()
-				}
-				return
-			}
-
-			if events == nil {
-				events = []*core.CombinedEventDataDelivery{}
-				batchTimeoutContext, batchTimeoutCancel = context.WithTimeout(ed.ctx, ed.batchTimeout)
-			}
-
-			log.L(ed.ctx).Debugf("Dispatching %s event in a batch: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-
-			var data []*core.Data
-			var err error
-			if withData && event.Message != nil {
-				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
-			}
-
-			events = append(events, &core.CombinedEventDataDelivery{Event: event, Data: data})
-
-			if err != nil {
-				ed.deliveryResponse(&core.EventDeliveryResponse{ID: event.ID, Rejected: true})
-			}
-
-		case <-timeoutContext.Done():
-			timedOut = true
-		case <-ed.ctx.Done():
-			if batchTimeoutCancel != nil {
-				batchTimeoutCancel()
-			}
-			return
-		}
-
-		if len(events) == ed.readAhead || (timedOut && len(events) > 0) {
-			_ = ed.transport.BatchDeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, events)
-			// If err handle all the delivery responses for all the events??
-			events = nil
-		}
-	}
-}
-
-// TODO issue here, we can't just call DeliveryRequest with one thing.
 func (ed *eventDispatcher) deliverEvents() {
 	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
 	for {
 		select {
-		case event, ok := <-ed.eventDelivery:
+		case events, ok := <-ed.eventDelivery:
 			if !ok {
 				return
 			}
 
-			log.L(ed.ctx).Debugf("Dispatching %s event: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-			var data []*core.Data
+			// As soon as we hit an error, we need to trigger into nack mode
 			var err error
-			if withData && event.Message != nil {
-				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
+
+			// Loop through the events enriching them, and dispatching individually in non-batch mode
+			eventsWithData := make([]*core.CombinedEventDataDelivery, len(events))
+			for i := 0; i < len(events); i++ {
+				e := &core.CombinedEventDataDelivery{
+					Event: events[i],
+				}
+				eventsWithData[i] = e
+				// The first error we encounter stops us attempting to enrich or dispatch any more events
+				if err == nil {
+					log.L(ed.ctx).Debugf("Dispatching %s event: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), e.Event.Sequence, e.Event.ID, e.Event.Type, e.Event.Namespace, e.Event.Reference)
+					if withData && e.Event.Message != nil {
+						e.Data, _, err = ed.data.GetMessageDataCached(ed.ctx, e.Event.Message)
+					}
+				}
+				// If we are non-batched, we have to deliver each event individually...
+				if !ed.batch {
+					// .. only attempt to deliver if we've not triggered into an error scenario for one of the events already
+					if err == nil {
+						err = ed.transport.DeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, e.Event, e.Data)
+					}
+					// ... if we've triggered into an error scenario, we need to nack immediately for this and all the rest of the events
+					if err != nil {
+						ed.deliveryResponse(&core.EventDeliveryResponse{ID: e.Event.ID, Rejected: true})
+					}
+				}
 			}
 
-			if err == nil {
-				err = ed.transport.DeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, event, data)
+			// In batch mode we do one dispatch of the whole set as one
+			if ed.batch {
+				// Only attempt to deliver if we're in a non error case (enrich might have failed above)
+				if err == nil {
+					err = ed.transport.BatchDeliveryRequest(ed.ctx, ed.connID, ed.subscription.definition, eventsWithData)
+				}
+				// If we're in an error case we have to nack everything immediately
+				if err != nil {
+					for _, e := range events {
+						ed.deliveryResponse(&core.EventDeliveryResponse{ID: e.Event.ID, Rejected: true})
+					}
+				}
 			}
-			if err != nil {
-				ed.deliveryResponse(&core.EventDeliveryResponse{ID: event.ID, Rejected: true})
-			}
+
 		case <-ed.ctx.Done():
 			return
 		}

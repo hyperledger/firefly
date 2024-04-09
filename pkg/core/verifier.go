@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2023 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -28,6 +28,8 @@ type VerifierType = fftypes.FFEnum
 var (
 	// VerifierTypeEthAddress is an Ethereum (secp256k1) address string
 	VerifierTypeEthAddress = fftypes.FFEnumValue("verifiertype", "ethereum_address")
+	// VerifierTypeTezosAddress is a Tezos (ed25519) address string
+	VerifierTypeTezosAddress = fftypes.FFEnumValue("verifiertype", "tezos_address")
 	// VerifierTypeMSPIdentity is the MSP id (X509 distinguished name) of an issued signing certificate / keypair
 	VerifierTypeMSPIdentity = fftypes.FFEnumValue("verifiertype", "fabric_msp_id")
 	// VerifierTypeFFDXPeerID is the peer identifier that FireFly Data Exchange verifies (using plugin specific tech) when receiving data

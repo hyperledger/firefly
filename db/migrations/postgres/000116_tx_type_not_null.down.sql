@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE messages ALTER COLUMN tx_parent_type DROP NOT NULL;
+COMMIT;

@@ -86,19 +86,28 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 		if err != nil {
 			// Check if we've clashed on idempotency key. There might be operations still in "Initialized" state that need
 			// submitting to their handlers.
+			resubmitWholeTX := false
 			if idemErr, ok := err.(*sqlcommon.IdempotencyError); ok {
-				resubmitted, resubmitErr = am.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
+				var total int
+				total, resubmitted, resubmitErr = am.operations.ResubmitOperations(ctx, idemErr.ExistingTXID)
 				if resubmitErr != nil {
 					// Error doing resubmit, return the new error
 					return resubmitErr
 				}
-				if len(resubmitted) > 0 {
+				if total == 0 {
+					// We didn't do anything last time - just start again
+					txid = idemErr.ExistingTXID
+					resubmitWholeTX = true
+					err = nil
+				} else if len(resubmitted) > 0 {
 					pool.TX.ID = idemErr.ExistingTXID
 					pool.TX.Type = core.TransactionTypeTokenPool
 					err = nil
 				}
 			}
-			return err
+			if !resubmitWholeTX {
+				return err
+			}
 		}
 
 		pool.TX.ID = txid
@@ -123,7 +132,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 		return nil, err
 	}
 
-	_, err = am.operations.RunOperation(ctx, opCreatePool(newOperation, &pool.TokenPool))
+	_, err = am.operations.RunOperation(ctx, opCreatePool(newOperation, &pool.TokenPool), pool.IdempotencyKey != "")
 	return &pool.TokenPool, err
 }
 
@@ -154,7 +163,10 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenP
 		return err
 	}
 
-	_, err = am.operations.RunOperation(ctx, opActivatePool(op, pool))
+	_, err = am.operations.RunOperation(ctx, opActivatePool(op, pool),
+		false, // TODO: this operation should be made idempotent, but cannot inherit this from the TX per our normal semantics
+		//              as the transaction is only on the submitting side and this is triggered on all parties.
+	)
 	return err
 }
 

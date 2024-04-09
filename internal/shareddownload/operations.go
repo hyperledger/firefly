@@ -96,25 +96,25 @@ func (dm *downloadManager) PrepareOperation(ctx context.Context, op *core.Operat
 	}
 }
 
-func (dm *downloadManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (dm *downloadManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 	switch data := op.Data.(type) {
 	case downloadBatchData:
 		return dm.downloadBatch(ctx, data)
 	case downloadBlobData:
 		return dm.downloadBlob(ctx, data)
 	default:
-		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
+		return nil, core.OpPhaseInitializing, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 
 // downloadBatch retrieves a serialized batch from public storage, then persists it and drives a rewind
 // on the messages included (just like the event driven when we receive data over DX).
-func (dm *downloadManager) downloadBatch(ctx context.Context, data downloadBatchData) (outputs fftypes.JSONObject, complete bool, err error) {
+func (dm *downloadManager) downloadBatch(ctx context.Context, data downloadBatchData) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 
 	// Download into memory for batches
 	reader, err := dm.sharedstorage.DownloadData(ctx, data.PayloadRef)
 	if err != nil {
-		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
+		return nil, core.OpPhaseInitializing, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
 	}
 	defer reader.Close()
 
@@ -123,42 +123,42 @@ func (dm *downloadManager) downloadBatch(ctx context.Context, data downloadBatch
 	limitedReader := io.LimitReader(reader, maxReadLimit)
 	batchBytes, err := io.ReadAll(limitedReader)
 	if err != nil {
-		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
+		return nil, core.OpPhasePending, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
 	}
 	if len(batchBytes) == int(maxReadLimit) {
-		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadBatchMaxBytes, data.PayloadRef)
+		return nil, core.OpPhasePending, i18n.WrapError(ctx, err, coremsgs.MsgDownloadBatchMaxBytes, data.PayloadRef)
 	}
 
 	// Parse and store the batch
 	batchID, err := dm.callbacks.SharedStorageBatchDownloaded(data.PayloadRef, batchBytes)
 	if err != nil {
-		return nil, false, err
+		return nil, core.OpPhasePending, err
 	}
-	return getDownloadBatchOutputs(batchID), true, nil
+	return getDownloadBatchOutputs(batchID), core.OpPhaseComplete, nil
 }
 
-func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobData) (outputs fftypes.JSONObject, complete bool, err error) {
+func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobData) (outputs fftypes.JSONObject, phase core.OpPhase, err error) {
 
 	// Stream from shared storage ...
 	reader, err := dm.sharedstorage.DownloadData(ctx, data.PayloadRef)
 	if err != nil {
-		return nil, false, err
+		return nil, core.OpPhasePending, err
 	}
 	defer reader.Close()
 
 	// ... to data exchange
 	dxPayloadRef, hash, blobSize, err := dm.dataexchange.UploadBlob(ctx, dm.namespace.NetworkName, *data.DataID, reader)
 	if err != nil {
-		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
+		return nil, core.OpPhasePending, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
 	}
 	log.L(ctx).Infof("Transferred blob '%s' (%s) from shared storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(blobSize), 2), data.PayloadRef, dxPayloadRef)
 
 	// then callback to store metadata
 	if err := dm.callbacks.SharedStorageBlobDownloaded(*hash, blobSize, dxPayloadRef, data.DataID); err != nil {
-		return nil, false, err
+		return nil, core.OpPhasePending, err
 	}
 
-	return getDownloadBlobOutputs(hash, blobSize, dxPayloadRef), true, nil
+	return getDownloadBlobOutputs(hash, blobSize, dxPayloadRef), core.OpPhaseComplete, nil
 }
 
 func (dm *downloadManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *core.OperationUpdate) error {

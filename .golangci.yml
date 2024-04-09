@@ -3,6 +3,7 @@ run:
   skip-dirs:
   - "mocks"
   - "ffconfig"
+  - "test/e2e"
 linters-settings:
   golint: {}
   gocritic:
@@ -12,7 +13,10 @@ linters-settings:
   revive:
     rules:
     - name: unused-parameter
-      disabled: true    
+      disabled: true
+  gosec:
+    excludes:
+    - G601 # Appears not to handle taking an address of a sub-structure, within a pointer to a structure within a loop. Which is valid and safe.
   goheader:
     values:
       regexp:

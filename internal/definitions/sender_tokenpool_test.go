@@ -152,7 +152,7 @@ func TestDefineTokenPoolkONonMultiparty(t *testing.T) {
 		Locator:   "N1",
 		Symbol:    "COIN",
 		Connector: "connector1",
-		State:     core.TokenPoolStateConfirmed,
+		Active:    true,
 		Published: false,
 	}
 
@@ -179,6 +179,27 @@ func TestDefineTokenPoolNonMultipartyTokenPoolFail(t *testing.T) {
 	}
 
 	ds.mdi.On("InsertOrGetTokenPool", mock.Anything, pool).Return(nil, fmt.Errorf("pop"))
+
+	err := ds.DefineTokenPool(context.Background(), pool, false)
+	assert.Regexp(t, "pop", err)
+}
+
+func TestDefineTokenPoolNonMultipartyTokenPoolFailInner(t *testing.T) {
+	ds := newTestDefinitionSender(t)
+	defer ds.cleanup(t)
+
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Name:      "mypool",
+		Type:      core.TokenTypeNonFungible,
+		Locator:   "N1",
+		Symbol:    "COIN",
+		Connector: "connector1",
+		Published: false,
+	}
+
+	ds.mdi.On("InsertOrGetTokenPool", mock.Anything, pool).Return(nil, fmt.Errorf("error2: [%w]", fmt.Errorf("pop")))
 
 	err := ds.DefineTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "pop", err)

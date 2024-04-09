@@ -51,6 +51,18 @@ func (t *testAuthorizer) Authorize(ctx context.Context, authReq *fftypes.AuthReq
 }
 
 func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, authorizer core.Authorizer, queryParams ...string) (ws *WebSockets, wsc wsclient.WSClient, cancel func()) {
+	return newTestWebsocketsCommon(t, cbs, authorizer, "", queryParams...)
+}
+
+type testNamespacedHandler struct {
+	ws        *WebSockets
+	namespace string
+}
+
+func (h *testNamespacedHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	h.ws.ServeHTTPNamespaced(h.namespace, res, req)
+}
+func newTestWebsocketsCommon(t *testing.T, cbs *eventsmocks.Callbacks, authorizer core.Authorizer, namespace string, queryParams ...string) (ws *WebSockets, wsc wsclient.WSClient, cancel func()) {
 	coreconfig.Reset()
 
 	ws = &WebSockets{}
@@ -63,8 +75,16 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, authorizer core
 	assert.Equal(t, "websockets", ws.Name())
 	assert.NotNil(t, ws.Capabilities())
 	cbs.On("ConnectionClosed", mock.Anything).Return(nil).Maybe()
-
-	svr := httptest.NewServer(ws)
+	var svr *httptest.Server
+	if namespace == "" {
+		svr = httptest.NewServer(ws)
+	} else {
+		namespacedHandler := &testNamespacedHandler{
+			ws:        ws,
+			namespace: namespace,
+		}
+		svr = httptest.NewServer(namespacedHandler)
+	}
 
 	clientConfig := config.RootSection("ut.wsclient")
 	wsclient.InitConfig(clientConfig)
@@ -216,6 +236,68 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 	cbs.AssertExpectations(t)
 }
 
+func TestAutoAckBatch(t *testing.T) {
+	log.SetLevel("trace")
+
+	cbs := &eventsmocks.Callbacks{}
+	ws, wsc, cancel := newTestWebsockets(t, cbs, nil, "autoack=true")
+	defer cancel()
+	var connID string
+	mes := cbs.On("EphemeralSubscription",
+		mock.MatchedBy(func(s string) bool { connID = s; return true }),
+		"ns1", mock.Anything, mock.MatchedBy(func(o *core.SubscriptionOptions) bool {
+			return *o.Batch
+		})).Return(nil)
+	ack := cbs.On("DeliveryResponse",
+		mock.MatchedBy(func(s string) bool { return s == connID }),
+		mock.Anything).Return(nil)
+
+	waitSubscribed := make(chan struct{})
+	mes.RunFn = func(a mock.Arguments) {
+		close(waitSubscribed)
+	}
+
+	waitAcked := make(chan struct{})
+	ack.RunFn = func(a mock.Arguments) {
+		close(waitAcked)
+	}
+
+	err := wsc.Send(context.Background(), []byte(`{
+		"type":"start",
+		"namespace":"ns1",
+		"ephemeral":true,
+		"autoack": true,
+		"options": {
+			"batch": true
+		}
+	}`))
+	assert.NoError(t, err)
+
+	<-waitSubscribed
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+	}
+	ws.BatchDeliveryRequest(ws.ctx, connID, sub, []*core.CombinedEventDataDelivery{
+		{Event: &core.EventDelivery{
+			EnrichedEvent: core.EnrichedEvent{
+				Event: core.Event{ID: fftypes.NewUUID()},
+			},
+			Subscription: core.SubscriptionRef{
+				ID:        fftypes.NewUUID(),
+				Namespace: "ns1",
+			},
+		}},
+	})
+
+	b := <-wsc.Receive()
+	var res core.EventDelivery
+	err = json.Unmarshal(b, &res)
+	assert.NoError(t, err)
+
+	<-waitAcked
+	cbs.AssertExpectations(t)
+}
+
 func TestStartReceiveDurable(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
 	ws, wsc, cancel := newTestWebsockets(t, cbs, nil)
@@ -223,12 +305,13 @@ func TestStartReceiveDurable(t *testing.T) {
 	var connID string
 	sub := cbs.On("RegisterConnection",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
-			return subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
-		}),
-	).Return(nil)
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		subMatch := args[1].(events.SubscriptionMatcher)
+		assert.True(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"}))
+	})
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
@@ -296,27 +379,106 @@ func TestStartReceiveDurable(t *testing.T) {
 	cbs.AssertExpectations(t)
 }
 
-func TestStartReceiveDurableWithAuth(t *testing.T) {
+func TestStartReceiveDurableBatch(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	ws, wsc, cancel := newTestWebsockets(t, cbs, &testAuthorizer{})
+	ws, wsc, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 	var connID string
-	sub := cbs.On("RegisterConnection",
+	mrg := cbs.On("RegisterConnection",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
-			return subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
-		}),
-	).Return(nil)
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		subMatch := args[1].(events.SubscriptionMatcher)
+		assert.True(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"}))
+	})
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
 
 	waitSubscribed := make(chan struct{})
-	sub.RunFn = func(a mock.Arguments) {
+	mrg.RunFn = func(a mock.Arguments) {
 		close(waitSubscribed)
 	}
+
+	acks := make(chan *core.EventDeliveryResponse)
+	ack.RunFn = func(a mock.Arguments) {
+		acks <- a[1].(*core.EventDeliveryResponse)
+	}
+
+	err := wsc.Send(context.Background(), []byte(`{"type":"start","namespace":"ns1","name":"sub1"}`))
+	assert.NoError(t, err)
+
+	<-waitSubscribed
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+	}
+	event1ID := fftypes.NewUUID()
+	event2ID := fftypes.NewUUID()
+	ws.BatchDeliveryRequest(ws.ctx, connID, sub, []*core.CombinedEventDataDelivery{
+		{
+			Event: &core.EventDelivery{
+				EnrichedEvent: core.EnrichedEvent{
+					Event: core.Event{ID: event1ID},
+				},
+				Subscription: sub.SubscriptionRef,
+			},
+		},
+		{
+			Event: &core.EventDelivery{
+				EnrichedEvent: core.EnrichedEvent{
+					Event: core.Event{ID: event2ID},
+				},
+				Subscription: sub.SubscriptionRef,
+			},
+		},
+	})
+
+	b := <-wsc.Receive()
+	var deliveredBatch core.WSEventBatch
+	err = json.Unmarshal(b, &deliveredBatch)
+	assert.NoError(t, err)
+	assert.Len(t, deliveredBatch.Events, 2)
+	assert.Equal(t, "ns1", deliveredBatch.Subscription.Namespace)
+	assert.Equal(t, "sub1", deliveredBatch.Subscription.Name)
+	err = wsc.Send(context.Background(), []byte(fmt.Sprintf(`{
+		"type":"ack",
+		"id": "%s",
+		"subscription": {
+			"namespace": "ns1",
+			"name": "sub1"
+		}
+	}`, deliveredBatch.ID)))
+	assert.NoError(t, err)
+
+	ack1 := <-acks
+	assert.Equal(t, *event1ID, *ack1.ID)
+	ack2 := <-acks
+	assert.Equal(t, *event2ID, *ack2.ID)
+
+	cbs.AssertExpectations(t)
+}
+
+func TestStartReceiveDurableWithAuth(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	ws, wsc, cancel := newTestWebsockets(t, cbs, &testAuthorizer{})
+	defer cancel()
+	var connID string
+	waitSubscribed := make(chan struct{})
+	cbs.On("RegisterConnection",
+		mock.MatchedBy(func(s string) bool { connID = s; return true }),
+		mock.Anything,
+	).Run(func(args mock.Arguments) {
+		subMatch := args[1].(events.SubscriptionMatcher)
+		assert.True(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"}))
+		close(waitSubscribed)
+	}).Return(nil)
+	ack := cbs.On("DeliveryResponse",
+		mock.MatchedBy(func(s string) bool { return s == connID }),
+		mock.Anything).Return(nil)
 
 	waitAcked := make(chan struct{})
 	ack.RunFn = func(a mock.Arguments) {
@@ -381,21 +543,19 @@ func TestStartReceiveDurableUnauthorized(t *testing.T) {
 	_, wsc, cancel := newTestWebsockets(t, cbs, &testAuthorizer{})
 	defer cancel()
 	var connID string
-	sub := cbs.On("RegisterConnection",
+	waitSubscribed := make(chan struct{})
+	cbs.On("RegisterConnection",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
-			return subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
-				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
-		}),
-	).Return(nil)
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		subMatch := args[1].(events.SubscriptionMatcher)
+		assert.True(t, subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"}))
+		close(waitSubscribed)
+	})
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
-
-	waitSubscribed := make(chan struct{})
-	sub.RunFn = func(a mock.Arguments) {
-		close(waitSubscribed)
-	}
 
 	waitAcked := make(chan struct{})
 	ack.RunFn = func(a mock.Arguments) {
@@ -415,17 +575,17 @@ func TestStartReceiveDurableUnauthorized(t *testing.T) {
 func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 	var connID string
 	cbs := &eventsmocks.Callbacks{}
-	sub := cbs.On("EphemeralSubscription",
+	waitSubscribed := make(chan struct{})
+	cbs.On("EphemeralSubscription",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		"ns1", mock.Anything, mock.Anything).Return(nil)
+		"ns1", mock.Anything, mock.Anything).
+		Return(nil).
+		Run(func(args mock.Arguments) {
+			close(waitSubscribed)
+		})
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
-
-	waitSubscribed := make(chan struct{})
-	sub.RunFn = func(a mock.Arguments) {
-		close(waitSubscribed)
-	}
 
 	waitAcked := make(chan struct{})
 	ack.RunFn = func(a mock.Arguments) {
@@ -458,6 +618,55 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 	cbs.AssertExpectations(t)
 }
 
+func TestAutoStartReceiveAckBatchEphemeral(t *testing.T) {
+	var connID string
+	cbs := &eventsmocks.Callbacks{}
+	waitSubscribed := make(chan struct{})
+	cbs.On("EphemeralSubscription",
+		mock.MatchedBy(func(s string) bool { connID = s; return true }),
+		"ns1", mock.Anything, mock.Anything).
+		Return(nil).
+		Run(func(args mock.Arguments) {
+			close(waitSubscribed)
+		})
+	ack := cbs.On("DeliveryResponse",
+		mock.MatchedBy(func(s string) bool { return s == connID }),
+		mock.Anything).Return(nil)
+
+	waitAcked := make(chan struct{})
+	ack.RunFn = func(a mock.Arguments) {
+		close(waitAcked)
+	}
+
+	ws, wsc, cancel := newTestWebsockets(t, cbs, nil, "ephemeral", "namespace=ns1", "batch")
+	defer cancel()
+
+	<-waitSubscribed
+	ws.BatchDeliveryRequest(ws.ctx, connID, nil, []*core.CombinedEventDataDelivery{
+		{Event: &core.EventDelivery{
+			EnrichedEvent: core.EnrichedEvent{
+				Event: core.Event{ID: fftypes.NewUUID()},
+			},
+			Subscription: core.SubscriptionRef{
+				ID:        fftypes.NewUUID(),
+				Namespace: "ns1",
+			},
+		}},
+	})
+
+	b := <-wsc.Receive()
+	var deliveredBatch core.WSEventBatch
+	err := json.Unmarshal(b, &deliveredBatch)
+	assert.NoError(t, err)
+	assert.Len(t, deliveredBatch.Events, 1)
+
+	err = wsc.Send(context.Background(), []byte(`{"type":"ack", "id": "`+deliveredBatch.ID.String()+`"}`))
+	assert.NoError(t, err)
+
+	<-waitAcked
+	cbs.AssertExpectations(t)
+}
+
 func TestAutoStartBadOptions(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
 	_, wsc, cancel := newTestWebsockets(t, cbs, nil, "name=missingnamespace")
@@ -469,6 +678,29 @@ func TestAutoStartBadOptions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Regexp(t, "FF10178", res.Error)
 	cbs.AssertExpectations(t)
+}
+
+func TestAutoStartCustomReadAheadBatch(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+
+	subscribedConn := make(chan string, 1)
+	cbs.On("EphemeralSubscription",
+		mock.MatchedBy(func(s string) bool {
+			subscribedConn <- s
+			return true
+		}),
+		"ns1",
+		mock.Anything,
+		mock.MatchedBy(func(o *core.SubscriptionOptions) bool {
+			return *o.ReadAhead == 42 && *o.BatchTimeout == "1s"
+		}),
+	).Return(nil)
+
+	_, _, cancel := newTestWebsockets(t, cbs, nil, "namespace=ns1", "ephemeral", "batch", "batchtimeout=1s", "readahead=42")
+	defer cancel()
+
+	<-subscribedConn
+
 }
 
 func TestAutoStartBadNamespace(t *testing.T) {
@@ -501,6 +733,30 @@ func TestHandleAckWithAutoAck(t *testing.T) {
 		ID: eventUUID,
 	})
 	assert.Regexp(t, "FF10180", err)
+}
+
+func TestHandleBatchNotMatch(t *testing.T) {
+	eventUUID := fftypes.NewUUID()
+	wsc := &websocketConnection{
+		ctx: context.Background(),
+		started: []*websocketStartedSub{{WSStart: core.WSStart{
+			Ephemeral: false, Name: "name1", Namespace: "ns1",
+		}}},
+		sendMessages: make(chan interface{}, 1),
+		inflight: []*core.EventDeliveryResponse{
+			{ID: eventUUID},
+		},
+		inflightBatches: []*core.WSEventBatch{
+			{ID: fftypes.NewUUID()},
+		},
+		autoAck: true,
+	}
+	err := wsc.handleAck(&core.WSAck{
+		ID: eventUUID,
+	})
+	assert.Regexp(t, "FF10180", err)
+	assert.Len(t, wsc.inflight, 1)
+	assert.Len(t, wsc.inflightBatches, 1)
 }
 
 func TestHandleStartFlippingAutoAck(t *testing.T) {
@@ -645,12 +901,31 @@ func TestConnectionDispatchAfterClose(t *testing.T) {
 	assert.Regexp(t, "FF00147", err)
 }
 
+func TestConnectionDispatchBatchAfterClose(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	wsc := &websocketConnection{
+		ctx: ctx,
+	}
+	err := wsc.dispatchBatch(&core.Subscription{}, []*core.CombinedEventDataDelivery{})
+	assert.Regexp(t, "FF00147", err)
+}
+
 func TestWebsocketDispatchAfterClose(t *testing.T) {
 	ws := &WebSockets{
 		ctx:         context.Background(),
 		connections: make(map[string]*websocketConnection),
 	}
 	err := ws.DeliveryRequest(ws.ctx, "gone", nil, &core.EventDelivery{}, nil)
+	assert.Regexp(t, "FF10173", err)
+}
+
+func TestWebsocketBatchDispatchAfterClose(t *testing.T) {
+	ws := &WebSockets{
+		ctx:         context.Background(),
+		connections: make(map[string]*websocketConnection),
+	}
+	err := ws.BatchDeliveryRequest(ws.ctx, "gone", nil, []*core.CombinedEventDataDelivery{})
 	assert.Regexp(t, "FF10173", err)
 }
 
@@ -806,17 +1081,142 @@ func TestNamespaceRestartedFailClose(t *testing.T) {
 	mcb.AssertExpectations(t)
 }
 
-func TestEventDeliveryBatchReturnsUnsupported(t *testing.T) {
+func TestNamespaceScopedSendWrongNamespaceStartAction(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	ws, _, cancel := newTestWebsockets(t, cbs, nil)
+	_, wsc, cancel := newTestWebsocketsCommon(t, cbs, nil, "ns1")
+	defer cancel()
+	cbs.On("ConnectionClosed", mock.Anything).Return(nil)
+
+	err := wsc.Send(context.Background(), []byte(`{"type":"start","namespace":"ns2"}`))
+	assert.NoError(t, err)
+	b := <-wsc.Receive()
+	var res core.WSError
+	err = json.Unmarshal(b, &res)
+	assert.NoError(t, err)
+	assert.Equal(t, core.WSProtocolErrorEventType, res.Type)
+	assert.Regexp(t, "FF10462", res.Error)
+}
+
+func TestNamespaceScopedSendWrongNamespaceQueryParameter(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	_, wsc, cancel := newTestWebsocketsCommon(t, cbs, nil, "ns1", "namespace=ns2")
+	defer cancel()
+	cbs.On("ConnectionClosed", mock.Anything).Return(nil)
+
+	b := <-wsc.Receive()
+	var res core.WSError
+	err := json.Unmarshal(b, &res)
+	assert.NoError(t, err)
+	assert.Equal(t, core.WSProtocolErrorEventType, res.Type)
+	assert.Regexp(t, "FF10462", res.Error)
+}
+
+func TestNamespaceScopedUpgradeFail(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	_, wsc, cancel := newTestWebsocketsCommon(t, cbs, nil, "ns1")
 	defer cancel()
 
-	sub := &core.Subscription{
-		SubscriptionRef: core.SubscriptionRef{
-			Namespace: "ns1",
-		},
+	u, _ := url.Parse(wsc.URL())
+	u.Scheme = "http"
+	res, err := http.Get(u.String())
+	assert.NoError(t, err)
+	assert.Equal(t, 400, res.StatusCode)
+
+}
+
+func TestNamespaceScopedSuccess(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	ws, wsc, cancel := newTestWebsocketsCommon(t, cbs, nil, "ns1")
+	defer cancel()
+	var connID string
+	waitSubscribed := make(chan struct{})
+
+	cbs.On("RegisterConnection",
+		mock.MatchedBy(func(s string) bool { connID = s; return true }),
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		subMatch := args[1].(events.SubscriptionMatcher)
+		assert.True(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}))
+		assert.False(t, subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"}))
+		close(waitSubscribed)
+	})
+	ack := cbs.On("DeliveryResponse",
+		mock.MatchedBy(func(s string) bool { return s == connID }),
+		mock.Anything).Return(nil)
+
+	waitAcked := make(chan struct{})
+	ack.RunFn = func(a mock.Arguments) {
+		close(waitAcked)
 	}
 
-	err := ws.BatchDeliveryRequest(ws.ctx, "id", sub, []*core.CombinedEventDataDelivery{})
-	assert.Regexp(t, "FF10461", err)
+	err := wsc.Send(context.Background(), []byte(`{"type":"start","name":"sub1"}`))
+	assert.NoError(t, err)
+
+	<-waitSubscribed
+	ws.DeliveryRequest(ws.ctx, connID, nil, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{ID: fftypes.NewUUID()},
+		},
+		Subscription: core.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+	}, nil)
+	// Put a second in flight
+	ws.DeliveryRequest(ws.ctx, connID, nil, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{ID: fftypes.NewUUID()},
+		},
+		Subscription: core.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub2",
+		},
+	}, nil)
+
+	b := <-wsc.Receive()
+	var res core.EventDelivery
+	err = json.Unmarshal(b, &res)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "ns1", res.Subscription.Namespace)
+	assert.Equal(t, "sub1", res.Subscription.Name)
+	err = wsc.Send(context.Background(), []byte(fmt.Sprintf(`{
+		"type":"ack",
+		"id": "%s",
+		"subscription": {
+			"namespace": "ns1",
+			"name": "sub1"
+		}
+	}`, res.ID)))
+	assert.NoError(t, err)
+
+	<-waitAcked
+
+	// Check we left the right one behind
+	conn := ws.connections[connID]
+	assert.Equal(t, 1, len(conn.inflight))
+	assert.Equal(t, "sub2", conn.inflight[0].Subscription.Name)
+
+	cbs.AssertExpectations(t)
+}
+
+func TestHandleStartWrongNamespace(t *testing.T) {
+
+	// it is not currently possible through exported functions to get to handleStart with the wrong namespace
+	// but we like to have a final assertion in there as a safety net for accidentaly data leakage across namespaces
+	// so to prove that safety net, we need to drive the private function handleStart directly.
+	wc := &websocketConnection{
+		ctx:             context.Background(),
+		namespaceScoped: true,
+		namespace:       "ns1",
+	}
+	startMessage := &core.WSStart{
+		Namespace: "ns2",
+	}
+	err := wc.handleStart(startMessage)
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10462", err)
 }

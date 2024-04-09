@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -212,7 +212,7 @@ func (s *SQLCommon) GetTokenTransfers(ctx context.Context, namespace string, fil
 		transfers = append(transfers, d)
 	}
 
-	return transfers, s.QueryRes(ctx, tokentransferTable, tx, fop, fi), err
+	return transfers, s.QueryRes(ctx, tokentransferTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) DeleteTokenTransfers(ctx context.Context, namespace string, poolID *fftypes.UUID) error {

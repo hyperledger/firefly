@@ -39,8 +39,8 @@ type Manager interface {
 	Start() error
 	WaitStop()
 
-	InitiateDownloadBatch(ctx context.Context, tx *fftypes.UUID, payloadRef string) error
-	InitiateDownloadBlob(ctx context.Context, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string) error
+	InitiateDownloadBatch(ctx context.Context, tx *fftypes.UUID, payloadRef string, idempotentSubmit bool) error
+	InitiateDownloadBlob(ctx context.Context, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string, idempotentSubmit bool) error
 }
 
 // downloadManager operates a number of workers that can perform downloads/retries. Each download
@@ -69,9 +69,10 @@ type downloadManager struct {
 }
 
 type downloadWork struct {
-	dispatchedAt time.Time
-	preparedOp   *core.PreparedOperation
-	attempts     int
+	dispatchedAt     time.Time
+	preparedOp       *core.PreparedOperation
+	attempts         int
+	idempotentSubmit bool
 }
 
 type Callbacks interface {
@@ -224,25 +225,26 @@ func (dm *downloadManager) waitAndRetryDownload(work *downloadWork) {
 	dm.dispatchWork(work)
 }
 
-func (dm *downloadManager) InitiateDownloadBatch(ctx context.Context, tx *fftypes.UUID, payloadRef string) error {
+func (dm *downloadManager) InitiateDownloadBatch(ctx context.Context, tx *fftypes.UUID, payloadRef string, idempotentSubmit bool) error {
 	op := core.NewOperation(dm.sharedstorage, dm.namespace.Name, tx, core.OpTypeSharedStorageDownloadBatch)
 	addDownloadBatchInputs(op, payloadRef)
-	return dm.createAndDispatchOp(ctx, op, opDownloadBatch(op, payloadRef))
+	return dm.createAndDispatchOp(ctx, op, opDownloadBatch(op, payloadRef), idempotentSubmit)
 }
 
-func (dm *downloadManager) InitiateDownloadBlob(ctx context.Context, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string) error {
+func (dm *downloadManager) InitiateDownloadBlob(ctx context.Context, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string, idempotentSubmit bool) error {
 	op := core.NewOperation(dm.sharedstorage, dm.namespace.Name, tx, core.OpTypeSharedStorageDownloadBlob)
 	addDownloadBlobInputs(op, dataID, payloadRef)
-	return dm.createAndDispatchOp(ctx, op, opDownloadBlob(op, dataID, payloadRef))
+	return dm.createAndDispatchOp(ctx, op, opDownloadBlob(op, dataID, payloadRef), idempotentSubmit)
 }
 
-func (dm *downloadManager) createAndDispatchOp(ctx context.Context, op *core.Operation, preparedOp *core.PreparedOperation) error {
+func (dm *downloadManager) createAndDispatchOp(ctx context.Context, op *core.Operation, preparedOp *core.PreparedOperation, idempotentSubmit bool) error {
 	err := dm.operations.AddOrReuseOperation(ctx, op, func() {
 		// Use a closure hook to dispatch the work once the operation is successfully in the DB.
 		// Note we have crash recovery of pending operations on startup.
 		dm.dispatchWork(&downloadWork{
-			dispatchedAt: time.Now(),
-			preparedOp:   preparedOp,
+			dispatchedAt:     time.Now(),
+			preparedOp:       preparedOp,
+			idempotentSubmit: idempotentSubmit,
 		})
 	})
 	if err != nil {

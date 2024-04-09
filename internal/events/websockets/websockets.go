@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -31,6 +31,10 @@ import (
 	"github.com/hyperledger/firefly/pkg/events"
 )
 
+type WebSocketsNamespaced interface {
+	ServeHTTPNamespaced(namespace string, res http.ResponseWriter, req *http.Request)
+}
+
 type WebSockets struct {
 	ctx          context.Context
 	capabilities *events.Capabilities
@@ -50,9 +54,11 @@ func (ws *WebSockets) Name() string { return "websockets" }
 
 func (ws *WebSockets) Init(ctx context.Context, config config.Section) error {
 	*ws = WebSockets{
-		ctx:          ctx,
-		connections:  make(map[string]*websocketConnection),
-		capabilities: &events.Capabilities{},
+		ctx:         ctx,
+		connections: make(map[string]*websocketConnection),
+		capabilities: &events.Capabilities{
+			BatchDelivery: true,
+		},
 		callbacks: callbacks{
 			handlers: make(map[string]events.Callbacks),
 		},
@@ -120,6 +126,25 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	ws.connMux.Unlock()
 
 	wc.processAutoStart(req)
+}
+
+func (ws *WebSockets) ServeHTTPNamespaced(namespace string, res http.ResponseWriter, req *http.Request) {
+
+	wsConn, err := ws.upgrader.Upgrade(res, req, nil)
+	if err != nil {
+		log.L(ws.ctx).Errorf("WebSocket upgrade failed: %s", err)
+		return
+	}
+
+	ws.connMux.Lock()
+	wc := newConnection(ws.ctx, ws, wsConn, req, ws.auth)
+	wc.namespaceScoped = true
+	wc.namespace = namespace
+	ws.connections[wc.connID] = wc
+	ws.connMux.Unlock()
+
+	wc.processAutoStart(req)
+
 }
 
 func (ws *WebSockets) ack(connID string, inflight *core.EventDeliveryResponse) {
@@ -219,6 +244,11 @@ func (ws *WebSockets) GetStatus() *core.WebSocketStatus {
 }
 
 func (ws *WebSockets) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
-	// We should have rejected creation of the subscription, due to us not supporting this in our capabilities
-	return i18n.NewError(ctx, coremsgs.MsgBatchDeliveryNotSupported, ws.Name())
+	ws.connMux.Lock()
+	conn, ok := ws.connections[connID]
+	ws.connMux.Unlock()
+	if !ok {
+		return i18n.NewError(ctx, coremsgs.MsgWSConnectionNotActive, connID)
+	}
+	return conn.dispatchBatch(sub, events)
 }

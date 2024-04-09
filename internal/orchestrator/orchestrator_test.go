@@ -171,6 +171,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.defhandler = tor.mdh
 	tor.orchestrator.defsender = tor.mds
 	tor.orchestrator.config.Multiparty.Enabled = true
+	tor.orchestrator.config.MaxHistoricalEventScanLimit = 1000
 	tor.orchestrator.plugins = &Plugins{
 		Blockchain: BlockchainPlugin{
 			Plugin: tor.mbi,
@@ -230,6 +231,7 @@ func TestInitOK(t *testing.T) {
 	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
 	or.mbi.On("SetHandler", "ns", mock.Anything).Return()
 	or.mbi.On("SetOperationHandler", "ns", mock.Anything).Return()
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{node}, nil, nil)
 	or.mdx.On("SetHandler", "ns2", "node1", mock.Anything).Return()
 	or.mdx.On("SetOperationHandler", "ns", mock.Anything).Return()
@@ -297,6 +299,7 @@ func TestInitMessagingComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.messaging = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -307,9 +310,20 @@ func TestInitEventsComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.events = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitEventsComponentStartNamespaceFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.plugins.Database.Plugin = nil
+	or.events = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(fmt.Errorf("pop"))
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestInitNetworkMapComponentFail(t *testing.T) {
@@ -317,6 +331,7 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.networkmap = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -325,6 +340,7 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 func TestInitMultipartyComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.plugins.Database.Plugin = nil
 	or.multiparty = nil
 	err := or.initComponents(context.Background())
@@ -334,6 +350,7 @@ func TestInitMultipartyComponentFail(t *testing.T) {
 func TestInitMultipartyComponentConfigureFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	err := or.initComponents(context.Background())
 	assert.EqualError(t, err, "pop")
@@ -344,6 +361,7 @@ func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.sharedDownload = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -354,6 +372,7 @@ func TestInitBatchComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.batch = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -364,6 +383,7 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.broadcast = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -384,6 +404,7 @@ func TestInitDataComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.data = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -393,6 +414,7 @@ func TestInitIdentityComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.identity = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -403,6 +425,7 @@ func TestInitAssetsComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.assets = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -413,6 +436,7 @@ func TestInitContractsComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.contracts = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -424,6 +448,7 @@ func TestInitOperationsComponentFail(t *testing.T) {
 	or.plugins.Database.Plugin = nil
 	or.operations = nil
 	or.txHelper = nil
+	or.mbi.On("StartNamespace", mock.Anything, "ns").Return(nil)
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -459,6 +484,7 @@ func TestStartStopOk(t *testing.T) {
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
 	or.mtw.On("Start").Return()
+	or.mam.On("Start").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mbm.On("WaitStop").Return(nil)
 	or.mdm.On("WaitStop").Return(nil)
@@ -466,13 +492,72 @@ func TestStartStopOk(t *testing.T) {
 	or.mom.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
 	or.mtw.On("Close").Return(nil)
+	or.mbi.On("StopNamespace", mock.Anything, "ns").Return(nil)
+	or.mti.On("StopNamespace", mock.Anything, "ns").Return(nil)
 	err := or.Start()
+	assert.NoError(t, err)
+	or.WaitStop()
+	or.WaitStop() // swallows dups
+
+	or = newTestOrchestrator()
+	or.mdm.On("Start").Return(nil)
+	or.mba.On("Start").Return(nil)
+	or.mem.On("Start").Return(nil)
+	or.mbm.On("Start").Return(nil)
+	or.msd.On("Start").Return(nil)
+	or.mom.On("Start").Return(nil)
+	or.mtw.On("Start").Return()
+	or.mam.On("Start").Return(nil)
+	or.mba.On("WaitStop").Return(nil)
+	or.mbm.On("WaitStop").Return(nil)
+	or.mdm.On("WaitStop").Return(nil)
+	or.msd.On("WaitStop").Return(nil)
+	or.mom.On("WaitStop").Return(nil)
+	or.mem.On("WaitStop").Return(nil)
+	or.mtw.On("Close").Return(nil)
+	or.mbi.On("StopNamespace", mock.Anything, "ns").Return(fmt.Errorf("pop"))
+	or.mti.On("StopNamespace", mock.Anything, "ns").Return(fmt.Errorf("pop"))
+	err = or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
 	or.WaitStop() // swallows dups
 }
 
 func TestPurge(t *testing.T) {
+	coreconfig.Reset()
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	// Note additional testing of this happens in namespace manager
+	or.mdi.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	// or.mbi.On("StopNamespace", mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("SetHandler", mock.Anything, "Test1", mock.Anything).Return(nil)
+	or.mdx.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mti.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mti.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	// or.mti.On("StopNamespace", mock.Anything, "ns").Return(nil)
+	Purge(context.Background(), or.namespace, or.plugins, "Test1")
+}
+
+func TestPurgeBlockchainError(t *testing.T) {
+	coreconfig.Reset()
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	// Note additional testing of this happens in namespace manager
+	or.mdi.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("SetHandler", mock.Anything, "Test1", mock.Anything).Return(nil)
+	or.mdx.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mti.On("SetHandler", mock.Anything, mock.Anything).Return(nil)
+	or.mti.On("SetOperationHandler", mock.Anything, mock.Anything).Return(nil)
+	Purge(context.Background(), or.namespace, or.plugins, "Test1")
+}
+
+func TestPurgeTokenError(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
@@ -493,7 +578,7 @@ func TestNetworkAction(t *testing.T) {
 	or.namespace.Name = core.LegacySystemNamespace
 	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("ResolveInputSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
-	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action).Return(nil)
+	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action, false).Return(nil)
 	err := or.SubmitNetworkAction(context.Background(), action)
 	assert.NoError(t, err)
 }

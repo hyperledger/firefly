@@ -1,7 +1,7 @@
-go 1.18
+go 1.21
 
 use (
 	.
-	./smart_contracts/fabric/firefly-go
 	./smart_contracts/fabric/custompin-sample
+	./smart_contracts/fabric/firefly-go
 )

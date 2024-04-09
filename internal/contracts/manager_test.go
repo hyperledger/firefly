@@ -18,6 +18,8 @@ package contracts
 
 import (
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -786,6 +788,46 @@ func TestAddContractListenerInline(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestAddContractListenerInlineNilLocation(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+						},
+					},
+				},
+			},
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
+	mbi.On("AddContractListener", context.Background(), mock.MatchedBy(func(cl *core.ContractListener) bool {
+		// Normalize is not called for this case
+		return cl.Location == nil
+	})).Return(nil)
+	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
+
+	result, err := cm.AddContractListener(context.Background(), sub)
+	assert.NoError(t, err)
+	assert.NotNil(t, result.ID)
+	assert.NotNil(t, result.Event)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestAddContractListenerNoLocationOK(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
@@ -1022,8 +1064,8 @@ func TestAddContractListenerVerifyOk(t *testing.T) {
 		fi, _ := f.Finalize()
 		return fi.Skip == 0 && fi.Limit == 50
 	})).Return([]*core.ContractListener{
-		{ID: fftypes.NewUUID(), BackendID: "12345"},
-		{ID: fftypes.NewUUID(), BackendID: "23456"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
 	}, nil, nil).Once()
 	mdi.On("GetContractListeners", mock.Anything, "ns1", mock.MatchedBy(func(f ffapi.Filter) bool {
 		fi, _ := f.Finalize()
@@ -1031,8 +1073,8 @@ func TestAddContractListenerVerifyOk(t *testing.T) {
 	})).Return([]*core.ContractListener{}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "12345", true).Return(true, struct{}{}, nil)
-	mbi.On("GetContractListenerStatus", ctx, "23456", true).Return(false, nil, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
@@ -1061,13 +1103,13 @@ func TestAddContractListenerVerifyUpdateFail(t *testing.T) {
 		fi, _ := f.Finalize()
 		return fi.Skip == 0 && fi.Limit == 50
 	})).Return([]*core.ContractListener{
-		{ID: fftypes.NewUUID(), BackendID: "12345"},
-		{ID: fftypes.NewUUID(), BackendID: "23456"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
 	}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "12345", true).Return(true, struct{}{}, nil)
-	mbi.On("GetContractListenerStatus", ctx, "23456", true).Return(false, nil, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
@@ -1096,13 +1138,13 @@ func TestAddContractListenerVerifyAddFail(t *testing.T) {
 		fi, _ := f.Finalize()
 		return fi.Skip == 0 && fi.Limit == 50
 	})).Return([]*core.ContractListener{
-		{ID: fftypes.NewUUID(), BackendID: "12345"},
-		{ID: fftypes.NewUUID(), BackendID: "23456"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
 	}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "12345", true).Return(true, struct{}{}, nil)
-	mbi.On("GetContractListenerStatus", ctx, "23456", true).Return(false, nil, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
@@ -1126,12 +1168,12 @@ func TestAddContractListenerVerifyGetFail(t *testing.T) {
 		fi, _ := f.Finalize()
 		return fi.Skip == 0 && fi.Limit == 50
 	})).Return([]*core.ContractListener{
-		{ID: fftypes.NewUUID(), BackendID: "12345"},
-		{ID: fftypes.NewUUID(), BackendID: "23456"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
 	}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "12345", true).Return(false, nil, fmt.Errorf("pop"))
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(false, nil, fmt.Errorf("pop"))
 
 	err := cm.verifyListeners(ctx)
 	assert.Regexp(t, "pop", err)
@@ -1684,7 +1726,7 @@ func TestDeployContract(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(blockchainContractDeployData)
 		return op.Type == core.OpTypeBlockchainContractDeploy && data.Request == req
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 
 	_, err := cm.DeployContract(context.Background(), req, false)
 
@@ -1717,7 +1759,7 @@ func TestDeployContractIdempotentResubmitOperation(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{{}}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{{}}, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
 	// If ResubmitOperations returns an operation it's because it found one to resubmit, so we return 2xx not 409, and don't expect an error
@@ -1750,7 +1792,7 @@ func TestDeployContractIdempotentNoOperationToResubmit(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* total */, nil /* to resubmit */, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
 	// If ResubmitOperations returns nil it's because there was no operation in initialized state, so we expect the regular 409 error back
@@ -1784,7 +1826,7 @@ func TestDeployContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningKey", mock.Anything, signingKey, identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
 	_, err := cm.DeployContract(context.Background(), req, false)
@@ -1915,7 +1957,7 @@ func TestInvokeContract(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 	opaqueData := "anything"
 	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
@@ -1962,7 +2004,7 @@ func TestInvokeContractViaFFI(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 	opaqueData := "anything"
 	mbi.On("ParseInterface", context.Background(), method, errors).Return(opaqueData, nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
@@ -2368,7 +2410,7 @@ func TestInvokeContractIdempotentResubmitOperation(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return([]*core.Operation{{}}, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1, []*core.Operation{{}}, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	opaqueData := "anything"
 	mbm.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
@@ -2412,7 +2454,7 @@ func TestInvokeContractIdempotentNoOperationToResubmit(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, nil)
+	mom.On("ResubmitOperations", context.Background(), id).Return(1 /* total */, nil /* to resubmit */, nil)
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	opaqueData := "anything"
 	mbm.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
@@ -2456,7 +2498,7 @@ func TestInvokeContractIdempotentErrorOnOperationResubmit(t *testing.T) {
 	})).Return(nil, &sqlcommon.IdempotencyError{
 		ExistingTXID:  id,
 		OriginalError: i18n.NewError(context.Background(), coremsgs.MsgIdempotencyKeyDuplicateTransaction, "idem1", id)})
-	mom.On("ResubmitOperations", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mom.On("ResubmitOperations", context.Background(), id).Return(-1, nil, fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	opaqueData := "anything"
 	mbm.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
@@ -2503,7 +2545,7 @@ func TestInvokeContractConfirm(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 	msa.On("WaitForInvokeOperation", mock.Anything, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[2].(syncasync.SendFunction)
@@ -2555,7 +2597,7 @@ func TestInvokeContractFail(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil, fmt.Errorf("pop"))
+	}), true).Return(nil, fmt.Errorf("pop"))
 	opaqueData := "anything"
 	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
@@ -2836,8 +2878,8 @@ func TestGetContractListenerByNameOrIDWithStatus(t *testing.T) {
 
 	id := fftypes.NewUUID()
 	backendID := "testID"
-	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{BackendID: backendID}, nil)
-	mbi.On("GetContractListenerStatus", context.Background(), backendID, false).Return(true, fftypes.JSONAnyPtr(fftypes.JSONObject{}.String()), nil)
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{Namespace: "ns1", BackendID: backendID}, nil)
+	mbi.On("GetContractListenerStatus", context.Background(), "ns1", backendID, false).Return(true, fftypes.JSONAnyPtr(fftypes.JSONObject{}.String()), nil)
 
 	_, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
 	assert.NoError(t, err)
@@ -2861,8 +2903,8 @@ func TestGetContractListenerByNameOrIDWithStatusPluginFail(t *testing.T) {
 
 	id := fftypes.NewUUID()
 	backendID := "testID"
-	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{BackendID: backendID}, nil)
-	mbi.On("GetContractListenerStatus", context.Background(), backendID, false).Return(false, nil, fmt.Errorf("pop"))
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{Namespace: "ns1", BackendID: backendID}, nil)
+	mbi.On("GetContractListenerStatus", context.Background(), "ns1", backendID, false).Return(false, nil, fmt.Errorf("pop"))
 
 	listener, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
 
@@ -3098,7 +3140,7 @@ func TestInvokeContractAPI(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BlockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil, nil)
+	}), true).Return(nil, nil)
 	opaqueData := "anything"
 	mbi.On("ParseInterface", context.Background(), req.Method, req.Errors).Return(opaqueData, nil)
 	mbi.On("ValidateInvokeRequest", mock.Anything, opaqueData, req.Input, false).Return(nil)
@@ -3167,11 +3209,11 @@ func TestGetContractAPI(t *testing.T) {
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
 
-	result, err := cm.GetContractAPI(context.Background(), "http://localhost/api", "banana")
+	result, err := cm.GetContractAPI(context.Background(), "http://localhost/api/v1/namespaces/ns1", "banana")
 
 	assert.NoError(t, err)
-	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api/swagger.json", result.URLs.OpenAPI)
-	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api", result.URLs.UI)
+	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api/swagger.json", result.URLs.OpenAPI)
+	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api", result.URLs.UI)
 }
 
 func TestGetContractAPIs(t *testing.T) {
@@ -3187,12 +3229,12 @@ func TestGetContractAPIs(t *testing.T) {
 	filter := database.ContractAPIQueryFactory.NewFilter(context.Background()).And()
 	mdb.On("GetContractAPIs", mock.Anything, "ns1", filter).Return(apis, &ffapi.FilterResult{}, nil)
 
-	results, _, err := cm.GetContractAPIs(context.Background(), "http://localhost/api", filter)
+	results, _, err := cm.GetContractAPIs(context.Background(), "http://localhost/api/v1/namespaces/ns1", filter)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
-	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api/swagger.json", results[0].URLs.OpenAPI)
-	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api", results[0].URLs.UI)
+	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api/swagger.json", results[0].URLs.OpenAPI)
+	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api", results[0].URLs.UI)
 }
 
 func TestGetContractAPIInterface(t *testing.T) {
@@ -3551,13 +3593,32 @@ func TestAddJSONSchemaExtension(t *testing.T) {
 func TestGenerateFFI(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateFFI", mock.Anything, mock.Anything).Return(&fftypes.FFI{
-		Name: "generated",
-	}, nil)
+	gfi := mbi.On("GenerateFFI", mock.Anything, mock.Anything)
+	gfi.Run(func(args mock.Arguments) {
+		gf := args[1].(*fftypes.FFIGenerationRequest)
+		gfi.Return(&fftypes.FFI{
+			Name:    gf.Name,
+			Version: gf.Version,
+			Methods: []*fftypes.FFIMethod{
+				{
+					Name: "method1",
+				},
+				{
+					Name: "method1",
+				},
+			},
+		}, nil)
+	})
+
 	ffi, err := cm.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{})
 	assert.NoError(t, err)
 	assert.NotNil(t, ffi)
 	assert.Equal(t, "generated", ffi.Name)
+	assert.Equal(t, "0.0.1", ffi.Version)
+	assert.Equal(t, "method1", ffi.Methods[0].Name)
+	assert.Equal(t, "method1", ffi.Methods[0].Pathname)
+	assert.Equal(t, "method1", ffi.Methods[1].Name)
+	assert.Equal(t, "method1_1", ffi.Methods[1].Pathname)
 }
 
 type MockFFIParamValidator struct{}
@@ -3739,4 +3800,55 @@ func TestResolveInvokeContractRequestCache(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mom.AssertExpectations(t)
 	mbi.AssertExpectations(t)
+}
+
+func TestEnsureParamNamesIncludedInCacheKeys(t *testing.T) {
+	method1 := `{
+        "name": "myFunction",
+        "params": [
+            {
+                "name": "param_name_1",
+                "schema": {
+                    "details": {
+                        "internalType": "address",
+                        "type": "address"
+                    },
+                    "type": "string"
+                }
+            }
+        ],
+        "returns": []
+    }`
+	var method1FFI *fftypes.FFIMethod
+	err := json.Unmarshal([]byte(method1), &method1FFI)
+	assert.NoError(t, err)
+
+	method2 := `{
+        "name": "myFunction",
+        "params": [
+            {
+                "name": "param_name_2",
+                "schema": {
+                    "details": {
+                        "internalType": "address",
+                        "type": "address"
+                    },
+                    "type": "string"
+                }
+            }
+        ],
+        "returns": []
+    }`
+	var method2FFI *fftypes.FFIMethod
+	err = json.Unmarshal([]byte(method2), &method2FFI)
+	assert.NoError(t, err)
+
+	cm := newTestContractManager()
+	paramUniqueHash1, _, err := cm.validateFFIMethod(context.Background(), method1FFI)
+	assert.NoError(t, err)
+	paramUniqueHash2, _, err := cm.validateFFIMethod(context.Background(), method2FFI)
+	assert.NoError(t, err)
+
+	assert.NotEqual(t, hex.EncodeToString(paramUniqueHash1.Sum(nil)), hex.EncodeToString(paramUniqueHash2.Sum(nil)))
+
 }

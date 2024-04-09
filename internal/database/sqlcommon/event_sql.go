@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -196,12 +196,9 @@ func (s *SQLCommon) GetEventByID(ctx context.Context, namespace string, id *ffty
 	return event, nil
 }
 
-func (s *SQLCommon) GetEvents(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Event, res *ffapi.FilterResult, err error) {
-
-	cols := append([]string{}, eventColumns...)
-	cols = append(cols, s.SequenceColumn())
+func (s *SQLCommon) getEventsGeneric(ctx context.Context, namespace string, sql sq.SelectBuilder, filter ffapi.Filter) (message []*core.Event, res *ffapi.FilterResult, err error) {
 	query, fop, fi, err := s.FilterSelect(
-		ctx, "", sq.Select(cols...).From(eventsTable),
+		ctx, "", sql,
 		filter, eventFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
@@ -222,6 +219,30 @@ func (s *SQLCommon) GetEvents(ctx context.Context, namespace string, filter ffap
 		events = append(events, event)
 	}
 
-	return events, s.QueryRes(ctx, eventsTable, tx, fop, fi), err
+	return events, s.QueryRes(ctx, eventsTable, tx, fop, nil, fi), err
+}
 
+func (s *SQLCommon) GetEvents(ctx context.Context, namespace string, filter ffapi.Filter) (message []*core.Event, res *ffapi.FilterResult, err error) {
+
+	cols := append([]string{}, eventColumns...)
+	cols = append(cols, s.SequenceColumn())
+
+	query := sq.Select(cols...).From(eventsTable)
+
+	return s.getEventsGeneric(ctx, namespace, query, filter)
+}
+
+func (s *SQLCommon) GetEventsInSequenceRange(ctx context.Context, namespace string, filter ffapi.Filter, startSequence int, endSequence int) (message []*core.Event, res *ffapi.FilterResult, err error) {
+	cols := append([]string{}, eventColumns...)
+	cols = append(cols, s.SequenceColumn())
+
+	filter.Limit(0)
+
+	query := sq.Select(cols...).From(eventsTable).Where(sq.GtOrEq{
+		"seq": startSequence,
+	}).Where(sq.Lt{
+		"seq": endSequence,
+	})
+
+	return s.getEventsGeneric(ctx, namespace, query, filter)
 }

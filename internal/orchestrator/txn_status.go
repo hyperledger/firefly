@@ -135,7 +135,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 		case len(pools) == 0:
 			result.Details = append(result.Details, pendingPlaceholder(core.TransactionStatusTypeTokenPool))
 			updateStatus(result, core.OpStatusPending)
-		case pools[0].State != core.TokenPoolStateConfirmed:
+		case !pools[0].Active:
 			result.Details = append(result.Details, &core.TransactionStatusDetails{
 				Status:  core.OpStatusPending,
 				Type:    core.TransactionStatusTypeTokenPool,

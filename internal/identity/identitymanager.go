@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -51,6 +51,7 @@ type Manager interface {
 	CachedIdentityLookupMustExist(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
 	CachedIdentityLookupNilOK(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
 	GetLocalNode(ctx context.Context) (node *core.Identity, err error)
+	GetRootOrgDID(ctx context.Context) (string, error)
 	GetRootOrg(ctx context.Context) (org *core.Identity, err error)
 	VerifyIdentityChain(ctx context.Context, identity *core.Identity) (immediateParent *core.Identity, retryable bool, err error)
 	ValidateNodeOwner(ctx context.Context, node *core.Identity, identity *core.Identity) (valid bool, err error)
@@ -104,24 +105,28 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 
 func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identity, err error) {
 	nodeName := im.multiparty.LocalNode().Name
-	if nodeName != "" {
-		nodeDID := fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, nodeName)
-		node, _, err = im.CachedIdentityLookupNilOK(ctx, nodeDID)
-	}
-	if err == nil && node == nil {
+	if nodeName == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgLocalNodeNotSet)
 	}
+
+	nodeDID := fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, nodeName)
+	node, _, err = im.CachedIdentityLookupNilOK(ctx, nodeDID)
 	return node, err
 }
 
-func (im *identityManager) GetRootOrg(ctx context.Context) (org *core.Identity, err error) {
+func (im *identityManager) GetRootOrgDID(ctx context.Context) (string, error) {
 	orgName := im.multiparty.RootOrg().Name
 	if orgName != "" {
 		orgDID := fmt.Sprintf("%s%s", core.FireFlyOrgDIDPrefix, orgName)
-		org, _, err = im.CachedIdentityLookupNilOK(ctx, orgDID)
+		return orgDID, nil
 	}
-	if err == nil && org == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgNotSet)
+	return "", i18n.NewError(ctx, coremsgs.MsgLocalOrgNotSet)
+}
+
+func (im *identityManager) GetRootOrg(ctx context.Context) (org *core.Identity, err error) {
+	orgDID, err := im.GetRootOrgDID(ctx)
+	if err == nil {
+		org, _, err = im.CachedIdentityLookupMustExist(ctx, orgDID)
 	}
 	return org, err
 }

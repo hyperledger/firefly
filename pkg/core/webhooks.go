@@ -48,12 +48,13 @@ type WebhookRetryOptions struct {
 }
 
 type WebhookHTTPOptions struct {
-	HTTPTLSHandshakeTimeout   string `ffstruct:"WebhookHTTPOptions" json:"tlsHandshakeTimeout,omitempty"`
-	HTTPRequestTimeout        string `ffstruct:"WebhookHTTPOptions" json:"requestTimeout,omitempty"`
-	HTTPMaxIdleConns          int    `ffstruct:"WebhookHTTPOptions" json:"maxIdleConns,omitempty"`
-	HTTPIdleConnTimeout       string `ffstruct:"WebhookHTTPOptions" json:"idleTimeout,omitempty"`
-	HTTPConnectionTimeout     string `ffstruct:"WebhookHTTPOptions" json:"connectionTimeout,omitempty"`
-	HTTPExpectContinueTimeout string `ffstruct:"WebhookHTTPOptions" json:"expectContinueTimeout,omitempty"`
+	HTTPProxyURL              *string `ffstruct:"WebhookHTTPOptions" json:"proxyURL,omitempty"`
+	HTTPTLSHandshakeTimeout   string  `ffstruct:"WebhookHTTPOptions" json:"tlsHandshakeTimeout,omitempty"`
+	HTTPRequestTimeout        string  `ffstruct:"WebhookHTTPOptions" json:"requestTimeout,omitempty"`
+	HTTPMaxIdleConns          int     `ffstruct:"WebhookHTTPOptions" json:"maxIdleConns,omitempty"`
+	HTTPIdleConnTimeout       string  `ffstruct:"WebhookHTTPOptions" json:"idleTimeout,omitempty"`
+	HTTPConnectionTimeout     string  `ffstruct:"WebhookHTTPOptions" json:"connectionTimeout,omitempty"`
+	HTTPExpectContinueTimeout string  `ffstruct:"WebhookHTTPOptions" json:"expectContinueTimeout,omitempty"`
 }
 
 type WebhookInputOptions struct {

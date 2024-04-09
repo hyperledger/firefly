@@ -43,6 +43,15 @@ func TestDIDGenerationOK(t *testing.T) {
 		},
 		Created: fftypes.Now(),
 	}).Seal()
+	verifierTezos := (&core.Verifier{
+		Identity:  org1.ID,
+		Namespace: org1.Namespace,
+		VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeTezosAddress,
+			Value: "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN",
+		},
+		Created: fftypes.Now(),
+	}).Seal()
 	verifierMSP := (&core.Verifier{
 		Identity:  org1.ID,
 		Namespace: org1.Namespace,
@@ -75,6 +84,7 @@ func TestDIDGenerationOK(t *testing.T) {
 	mdi.On("GetIdentityByID", nm.ctx, "ns1", mock.Anything).Return(org1, nil)
 	mdi.On("GetVerifiers", nm.ctx, "ns1", mock.Anything).Return([]*core.Verifier{
 		verifierEth,
+		verifierTezos,
 		verifierMSP,
 		verifierDX,
 		verifierUnknown,
@@ -96,6 +106,12 @@ func TestDIDGenerationOK(t *testing.T) {
 				BlockchainAccountID: verifierEth.Value,
 			},
 			{
+				ID:                  verifierTezos.Hash.String(),
+				Type:                "Ed25519VerificationKey2020",
+				Controller:          org1.DID,
+				BlockchainAccountID: verifierTezos.Value,
+			},
+			{
 				ID:                verifierMSP.Hash.String(),
 				Type:              "HyperledgerFabricMSPIdentity",
 				Controller:        org1.DID,
@@ -110,6 +126,7 @@ func TestDIDGenerationOK(t *testing.T) {
 		},
 		Authentication: []string{
 			fmt.Sprintf("#%s", verifierEth.Hash.String()),
+			fmt.Sprintf("#%s", verifierTezos.Hash.String()),
 			fmt.Sprintf("#%s", verifierMSP.Hash.String()),
 			fmt.Sprintf("#%s", verifierDX.Hash.String()),
 		},
