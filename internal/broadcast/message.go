@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -34,6 +34,9 @@ func (bm *broadcastManager) NewBroadcast(in *core.MessageInOut) syncasync.Sender
 		msg: &data.NewMessage{
 			Message: in,
 		},
+	}
+	if bm.metrics.IsMetricsEnabled() {
+		bm.metrics.MessageSubmitted(&in.Message)
 	}
 	broadcast.setDefaults()
 	return broadcast
