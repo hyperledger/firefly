@@ -312,7 +312,10 @@
           <li><a href="#ephemeral-websocket-subscriptions" id="markdown-toc-ephemeral-websocket-subscriptions">Ephemeral WebSocket subscriptions</a></li>
         </ol>
       </li>
-      <li><a href="#webhooks" id="markdown-toc-webhooks">Webhooks</a></li>
+      <li><a href="#webhooks" id="markdown-toc-webhooks">Webhooks</a>        <ol>
+          <li><a href="#batching-events" id="markdown-toc-batching-events">Batching events</a></li>
+        </ol>
+      </li>
       <li><a href="#example" id="markdown-toc-example">Example</a></li>
       <li><a href="#field-descriptions" id="markdown-toc-field-descriptions">Field Descriptions</a></li>
     </ol>
@@ -586,8 +589,8 @@ allowing you to customize your HTTP requests as follows:</p>
   <li>Wait for a invocation of the back-end service, before acknowledging
     <ul>
       <li>To retry requests to your Webhook on a non-<code class="language-plaintext highlighter-rouge">2xx</code> HTTP status code
-or other error, then you should enable and configure
-<a href="../../config.html#eventswebhooksretry">events.webhooks.retry</a></li>
+or other error, you should enable and configure
+<a href="../subscription.html#webhookretryoptions">options.retry</a></li>
       <li>The event is acknowledged once the request (with any retries), is
 completed - regardless of whether the outcome was a success or failure.</li>
     </ul>
@@ -610,6 +613,40 @@ based on a field in the input request data.</li>
     </ul>
   </li>
 </ul>
+      <h4 id="batching-events">
+        
+        
+          <a href="#batching-events" class="anchor-heading" aria-labelledby="batching-events"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Batching events
+        
+        
+      </h4>
+    
+
+<p>Webhooks have the ability to batch events into a single HTTP request instead of sending an event per HTTP request. The interface will be a JSON array of events instead of a top level JSON object with a single event. The size of the batch will be set by the <code class="language-plaintext highlighter-rouge">readAhead</code> limit and an optional timeout can be specified to send the events when the batch hasn’t filled.</p>
+
+<p>To enable this set the following configuration under <a href="../subscription.html#subscriptionoptions">SubscriptionOptions</a></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">batch</code></td>
+      <td>Events are delivered in batches in an ordered array. The batch size is capped to the readAhead limit. The event payload is always an array even if there is a single event in the batch. Commonly used with Webhooks to allow events to be delivered and acknowledged in batches.</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">batchTimeout</code></td>
+      <td>When batching is enabled, the optional timeout to send events even when the batch hasn’t filled. Defaults to 2 seconds</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>NOTE</strong>: When batch is enabled, <code class="language-plaintext highlighter-rouge">withData</code> cannot be used as these may alter the HTTP request based on a single event and in batching it does not make sense for now.</p>
       <h3 id="example">
         
         
