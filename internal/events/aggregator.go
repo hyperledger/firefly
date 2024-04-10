@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -190,7 +190,7 @@ func (ag *aggregator) rewindOffchainBatches() (bool, int64) {
 		return false, 0
 	}
 
-	// Retry idefinitely for database errors (until the context closes)
+	// Retry indefinitely for database errors (until the context closes)
 	var rewindBatch *fftypes.UUID
 	var offset int64
 	_ = ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
@@ -525,7 +525,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 
 		if action == core.ActionConfirm {
 			l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
-			action, correlator, err = ag.readyForDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
+			action, correlator, err = ag.readyForDispatch(ctx, msg, data, manifest.TX.ID, state)
 		}
 	}
 
@@ -551,6 +551,15 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		np.IncrementNextPin(ctx, ag.namespace)
 	}
 	state.markMessageDispatched(manifest.ID, msg, msgBaseIndex, newState)
+
+	// For gap fill messages, mark the original message cancelled
+	// This is only applicable if the original message was already received
+	// (only for private messages where batch content was delivered via data exchange)
+	if msg.Header.Tag == core.SystemTagGapFill {
+		state.markMessageDispatched(manifest.ID, &core.Message{
+			Header: core.MessageHeader{ID: msg.Header.CID},
+		}, 0, core.MessageStateCancelled)
+	}
 	return nil
 }
 
@@ -566,7 +575,7 @@ func needsTokenApproval(msg *core.Message) bool {
 		msg.Header.Type == core.MessageTypeDeprecatedApprovalPrivate
 }
 
-func (ag *aggregator) readyForDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState, pin *core.Pin) (action core.MessageAction, correlator *fftypes.UUID, err error) {
+func (ag *aggregator) readyForDispatch(ctx context.Context, msg *core.Message, data core.DataArray, tx *fftypes.UUID, state *batchState) (action core.MessageAction, correlator *fftypes.UUID, err error) {
 	// Verify we have all the blobs for the data
 	if resolved, err := ag.resolveBlobs(ctx, data); err != nil {
 		return core.ActionRetry, nil, err
@@ -638,6 +647,9 @@ func (ag *aggregator) readyForDispatch(ctx context.Context, msg *core.Message, d
 		} else if valid {
 			action = core.ActionConfirm
 		}
+
+	default:
+		action = core.ActionConfirm
 	}
 
 	return action, correlator, err

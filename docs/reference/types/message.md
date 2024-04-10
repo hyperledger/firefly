@@ -61,7 +61,7 @@ nav_order: 16
 | `hash` | The hash of the message. Derived from the header, which includes the data hash | `Bytes32` |
 | `batch` | The UUID of the batch in which the message was pinned/transferred | [`UUID`](simpletypes#uuid) |
 | `txid` | The ID of the transaction used to order/deliver this message | [`UUID`](simpletypes#uuid) |
-| `state` | The current state of the message | `FFEnum`:<br/>`"staged"`<br/>`"ready"`<br/>`"sent"`<br/>`"pending"`<br/>`"confirmed"`<br/>`"rejected"` |
+| `state` | The current state of the message | `FFEnum`:<br/>`"staged"`<br/>`"ready"`<br/>`"sent"`<br/>`"pending"`<br/>`"confirmed"`<br/>`"rejected"`<br/>`"cancelled"` |
 | `confirmed` | The timestamp of when the message was confirmed/rejected | [`FFTime`](simpletypes#fftime) |
 | `rejectReason` | If a message was rejected, provides details on the rejection reason | `string` |
 | `data` | The list of data elements attached to the message | [`DataRef[]`](#dataref) |

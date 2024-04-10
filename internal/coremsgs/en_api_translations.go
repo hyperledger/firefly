@@ -152,6 +152,7 @@ var (
 	APIEndpointsGetVerifierByHash               = ffm("api.endpoints.getVerifierByHash", "Gets a verifier by its hash")
 	APIEndpointsGetVerifiers                    = ffm("api.endpoints.getVerifiers", "Gets a list of verifiers")
 	APIEndpointsPatchUpdateIdentity             = ffm("api.endpoints.patchUpdateIdentity", "Updates an identity")
+	APIEndpointsPostBatchCancel                 = ffm("api.endpoints.postBatchCancel", "Cancel a batch that has failed to dispatch")
 	APIEndpointsPostContractDeploy              = ffm("api.endpoints.postContractDeploy", "Deploy a new smart contract")
 	APIEndpointsPostContractAPIInvoke           = ffm("api.endpoints.postContractAPIInvoke", "Invokes a method on a smart contract API. Performs a blockchain transaction.")
 	APIEndpointsPostContractAPIPublish          = ffm("api.endpoints.postContractAPIPublish", "Publish a contract API to all other members of the multiparty network")

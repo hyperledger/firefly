@@ -32,7 +32,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHandler, rewinder func() (bool, int64)) (ep *eventPoller, cancel func()) {
+func newTestEventPoller(mdi *databasemocks.Plugin, neh newEventsHandler, rewinder func() (bool, int64)) (ep *eventPoller, cancel func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	ep = newEventPoller(ctx, mdi, newEventNotifier(ctx, "ut"), &eventPollerConf{
 		eventBatchSize:             10,
@@ -65,7 +65,7 @@ func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHa
 
 func TestStartStopEventPoller(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(&core.Offset{
 		Type:    core.OffsetTypeAggregator,
 		Name:    aggregatorOffsetName,
@@ -82,7 +82,7 @@ func TestStartStopEventPoller(t *testing.T) {
 
 func TestRestoreOffsetNewestOK(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(nil, nil).Once()
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(&core.Offset{Current: 12345}, nil, nil).Once()
@@ -98,7 +98,7 @@ func TestRestoreOffsetNewestOK(t *testing.T) {
 
 func TestRestoreOffsetNewestNoEvents(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(nil, nil).Once()
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(&core.Offset{Current: -1}, nil).Once()
@@ -114,7 +114,7 @@ func TestRestoreOffsetNewestNoEvents(t *testing.T) {
 
 func TestRestoreOffsetNewestFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(nil, nil)
 	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
@@ -126,7 +126,7 @@ func TestRestoreOffsetNewestFail(t *testing.T) {
 
 func TestRestoreOffsetOldest(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	firstEvent := core.SubOptsFirstEventOldest
 	ep.conf.firstEvent = &firstEvent
 	defer cancel()
@@ -143,7 +143,7 @@ func TestRestoreOffsetOldest(t *testing.T) {
 
 func TestRestoreOffsetSpecific(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	firstEvent := core.SubOptsFirstEvent("123456")
 	ep.conf.firstEvent = &firstEvent
 	defer cancel()
@@ -160,7 +160,7 @@ func TestRestoreOffsetSpecific(t *testing.T) {
 
 func TestRestoreOffsetFailRead(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	cancel() // to avoid infinite retry
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(nil, fmt.Errorf("pop"))
 	ep.start()
@@ -169,7 +169,7 @@ func TestRestoreOffsetFailRead(t *testing.T) {
 
 func TestRestoreOffsetFailWrite(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	firstEvent := core.SubOptsFirstEventOldest
 	ep.conf.firstEvent = &firstEvent
 	defer cancel()
@@ -182,7 +182,7 @@ func TestRestoreOffsetFailWrite(t *testing.T) {
 
 func TestRestoreOffsetEphemeral(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	firstEvent := core.SubOptsFirstEventOldest
 	ep.conf.firstEvent = &firstEvent
 	ep.conf.ephemeral = true
@@ -194,7 +194,7 @@ func TestRestoreOffsetEphemeral(t *testing.T) {
 
 func TestReadPageExit(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	cancel()
 	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	ep.eventLoop()
@@ -204,7 +204,7 @@ func TestReadPageExit(t *testing.T) {
 func TestReadPageSingleCommitEvent(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	processEventCalled := make(chan core.LocallySequenced, 1)
-	ep, cancel := newTestEventPoller(t, mdi, func(events []core.LocallySequenced) (bool, error) {
+	ep, cancel := newTestEventPoller(mdi, func(events []core.LocallySequenced) (bool, error) {
 		processEventCalled <- events[0]
 		return false, nil
 	}, nil)
@@ -222,7 +222,7 @@ func TestReadPageSingleCommitEvent(t *testing.T) {
 func TestReadPageBatchTimeoutNotFull(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	processEventCalled := make(chan []core.LocallySequenced, 1)
-	ep, cancel := newTestEventPoller(t, mdi, func(events []core.LocallySequenced) (bool, error) {
+	ep, cancel := newTestEventPoller(mdi, func(events []core.LocallySequenced) (bool, error) {
 		processEventCalled <- events
 		return false, nil
 	}, nil)
@@ -248,7 +248,7 @@ func TestReadPageBatchTimeoutNotFull(t *testing.T) {
 func TestReadPageBatchFull(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	processEventCalled := make(chan []core.LocallySequenced, 1)
-	ep, cancel := newTestEventPoller(t, mdi, func(events []core.LocallySequenced) (bool, error) {
+	ep, cancel := newTestEventPoller(mdi, func(events []core.LocallySequenced) (bool, error) {
 		processEventCalled <- events
 		return false, nil
 	}, nil)
@@ -273,7 +273,7 @@ func TestReadPageBatchFull(t *testing.T) {
 func TestReadPageRewind(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	processEventCalled := make(chan core.LocallySequenced, 1)
-	ep, cancel := newTestEventPoller(t, mdi, func(events []core.LocallySequenced) (bool, error) {
+	ep, cancel := newTestEventPoller(mdi, func(events []core.LocallySequenced) (bool, error) {
 		processEventCalled <- events[0]
 		return false, nil
 	}, func() (bool, int64) {
@@ -300,7 +300,7 @@ func TestReadPageRewind(t *testing.T) {
 
 func TestReadPageProcessEventsRetryExit(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, func(events []core.LocallySequenced) (bool, error) { return false, fmt.Errorf("pop") }, nil)
+	ep, cancel := newTestEventPoller(mdi, func(events []core.LocallySequenced) (bool, error) { return false, fmt.Errorf("pop") }, nil)
 	cancel()
 	ev1 := core.NewEvent(core.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
 	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return([]*core.Event{ev1}, nil, nil).Once()
@@ -311,7 +311,7 @@ func TestReadPageProcessEventsRetryExit(t *testing.T) {
 
 func TestProcessEventsFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, func(events []core.LocallySequenced) (bool, error) {
+	ep, cancel := newTestEventPoller(mdi, func(events []core.LocallySequenced) (bool, error) {
 		return false, fmt.Errorf("pop")
 	}, nil)
 	defer cancel()
@@ -324,7 +324,7 @@ func TestProcessEventsFail(t *testing.T) {
 
 func TestWaitForShoulderTapOrExitCloseBatch(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	cancel()
 	ep.conf.eventBatchTimeout = 1 * time.Minute
 	ep.conf.eventBatchSize = 50
@@ -333,7 +333,7 @@ func TestWaitForShoulderTapOrExitCloseBatch(t *testing.T) {
 
 func TestWaitForShoulderTapImmediateRepollOnFullBatch(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	cancel()
 	ep.conf.eventBatchTimeout = 1 * time.Minute
 	ep.conf.eventBatchSize = 1
@@ -342,7 +342,7 @@ func TestWaitForShoulderTapImmediateRepollOnFullBatch(t *testing.T) {
 
 func TestWaitForShoulderTapOrExitClosePoll(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	cancel()
 	ep.conf.eventBatchTimeout = 1 * time.Minute
 	ep.conf.eventBatchSize = 2
@@ -351,7 +351,7 @@ func TestWaitForShoulderTapOrExitClosePoll(t *testing.T) {
 
 func TestWaitForShoulderTapOrPollTimeoutBatchAndPoll(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	defer cancel()
 	ep.conf.eventBatchTimeout = 1 * time.Microsecond
 	ep.conf.eventPollTimeout = 1 * time.Microsecond
@@ -361,7 +361,7 @@ func TestWaitForShoulderTapOrPollTimeoutBatchAndPoll(t *testing.T) {
 
 func TestWaitForShoulderTapOrPollTimeoutTap(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	defer cancel()
 	ep.conf.eventPollTimeout = 10 * time.Second
 	ep.shoulderTap()
@@ -370,7 +370,7 @@ func TestWaitForShoulderTapOrPollTimeoutTap(t *testing.T) {
 
 func TestDoubleTap(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	defer cancel()
 	ep.shoulderTap()
 	ep.shoulderTap() // this should not block
@@ -378,7 +378,7 @@ func TestDoubleTap(t *testing.T) {
 
 func TestWaitForBatchTimeoutClosedContext(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	ep.conf.eventBatchTimeout = 1 * time.Minute
 	cancel()
 	ep.waitForBatchTimeout()
@@ -386,7 +386,7 @@ func TestWaitForBatchTimeoutClosedContext(t *testing.T) {
 
 func TestDoubleConfirm(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	defer cancel()
 	ep.commitOffset(12345)
 	ep.commitOffset(12346) // this should not block
@@ -395,7 +395,7 @@ func TestDoubleConfirm(t *testing.T) {
 func TestOffsetCommitLoopOk(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	cancel()
 
 	mdi.On("UpdateOffset", mock.Anything, ep.offsetID, mock.Anything).Return(nil)
@@ -410,7 +410,7 @@ func TestOffsetCommitLoopOk(t *testing.T) {
 func TestOffsetCommitLoopFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 
-	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	ep, cancel := newTestEventPoller(mdi, nil, nil)
 	cancel()
 
 	mdi.On("UpdateOffset", mock.Anything, ep.offsetID, mock.Anything).Return(fmt.Errorf("pop"))

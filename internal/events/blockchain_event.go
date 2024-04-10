@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -57,7 +57,7 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 }
 
 func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, protocolID string, bc *eventBatchContext) (*core.ContractListener, error) {
-	// Event a negative result is cached in te scope of the event batch (so we don't spam the DB hundreds of times in one tight loop to get not-found)
+	// Even a negative result is cached in the scope of the event batch (so we don't spam the DB hundreds of times in one tight loop to get not-found)
 	if l, batchResult := bc.contractListenerResults[protocolID]; batchResult {
 		return l, nil
 	}
@@ -105,7 +105,7 @@ func (em *eventManager) getTopicForChainListener(listener *core.ContractListener
 		return core.SystemBatchPinTopic
 	}
 	var topic string
-	if listener != nil && listener.Topic != "" {
+	if listener.Topic != "" {
 		topic = listener.Topic
 	} else {
 		topic = listener.ID.String()

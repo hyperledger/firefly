@@ -30,37 +30,29 @@ const (
 )
 
 const (
-
 	// SystemTagDefineDatatype is the tag for messages that broadcast data definitions
 	SystemTagDefineDatatype = "ff_define_datatype"
-
 	// DeprecatedSystemTagDefineOrganization is the tag for messages that broadcast organization definitions
 	DeprecatedSystemTagDefineOrganization = "ff_define_organization"
-
 	// DeprecatedSystemTagDefineNode is the tag for messages that broadcast node definitions
 	DeprecatedSystemTagDefineNode = "ff_define_node"
-
 	// SystemTagDefineGroup is the tag for messages that send the definition of a group, to all parties in that group
 	SystemTagDefineGroup = "ff_define_group"
-
 	// SystemTagDefinePool is the tag for messages that broadcast data definitions
 	SystemTagDefinePool = "ff_define_pool"
-
 	// SystemTagDefineFFI is the tag for messages that broadcast contract FFIs
 	SystemTagDefineFFI = "ff_define_ffi"
-
 	// SystemTagDefineContractAPI is the tag for messages that broadcast contract APIs
 	SystemTagDefineContractAPI = "ff_define_contract_api"
-
 	// SystemTagIdentityClaim is the tag for messages that broadcast an identity claim
 	SystemTagIdentityClaim = "ff_identity_claim"
-
 	//nolint:gosec
 	// SystemTagIdentityVerification is the tag for messages that broadcast an identity verification
 	SystemTagIdentityVerification = "ff_identity_verification"
-
 	// SystemTagIdentityUpdate is the tag for messages that broadcast an identity update
 	SystemTagIdentityUpdate = "ff_identity_update"
+	// SystemTagGapFill is the tag for messages that provide a nonce gap fill for a message that failed to send
+	SystemTagGapFill = "ff_gap_fill"
 )
 
 const (

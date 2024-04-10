@@ -17,6 +17,24 @@ type Manager struct {
 	mock.Mock
 }
 
+// CancelBatch provides a mock function with given fields: ctx, batchID
+func (_m *Manager) CancelBatch(ctx context.Context, batchID string) error {
+	ret := _m.Called(ctx, batchID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CancelBatch")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, batchID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Close provides a mock function with given fields:
 func (_m *Manager) Close() {
 	_m.Called()
@@ -60,9 +78,9 @@ func (_m *Manager) NewMessages() chan<- int64 {
 	return r0
 }
 
-// RegisterDispatcher provides a mock function with given fields: name, txType, msgTypes, handler, batchOptions
-func (_m *Manager) RegisterDispatcher(name string, txType fftypes.FFEnum, msgTypes []fftypes.FFEnum, handler batch.DispatchHandler, batchOptions batch.DispatcherOptions) {
-	_m.Called(name, txType, msgTypes, handler, batchOptions)
+// RegisterDispatcher provides a mock function with given fields: name, pinned, msgTypes, handler, batchOptions
+func (_m *Manager) RegisterDispatcher(name string, pinned bool, msgTypes []fftypes.FFEnum, handler batch.DispatchHandler, batchOptions batch.DispatcherOptions) {
+	_m.Called(name, pinned, msgTypes, handler, batchOptions)
 }
 
 // Start provides a mock function with given fields:
