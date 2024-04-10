@@ -296,7 +296,7 @@
 
 <blockquote>
   <p><strong>NOTE:</strong> This is an advanced FireFly feature. Before following any of the steps in this guide, you should be very familiar
-and comfortable with the basic features of how <a href="../broadcast_data.html">broadcast messages</a> and <a href="../private_send.html">private messages</a>
+and comfortable with the basic features of how <a href="/firefly/head/tutorials/broadcast_data.html">broadcast messages</a> and <a href="/firefly/head/tutorials/private_send.html">private messages</a>
 work, be proficient at custom contract development on your blockchain of choice, and understand the
 fundamentals of how FireFly interacts with <a href="../">custom contracts</a>.</p>
 </blockquote>
@@ -437,7 +437,7 @@ form of a JSON-encoded <code class="language-plaintext highlighter-rouge">string
       </h2>
     
 
-<p>Once you have a contract designed, you can <a href="../../gettingstarted/setup_env.html">initialize your environment</a>
+<p>Once you have a contract designed, you can <a href="/firefly/head/gettingstarted/setup_env.html">initialize your environment</a>
 using the blockchain of your choice.</p>
 
 <p>No special initialization arguments are needed for Ethereum.</p>
@@ -455,7 +455,7 @@ deployed on the default channel, instead of only listening to events from the pr
     
 
 <p>You can follow the normal steps for <a href="/firefly/head/tutorials/custom_contracts/ethereum.html">Ethereum</a> or <a href="/firefly/head/tutorials/custom_contracts/fabric.html">Fabric</a> to define your contract
-interface and API in FireFly. When invoking the contract, you can include a <a href="../../reference/types/message.html">message payload</a>
+interface and API in FireFly. When invoking the contract, you can include a <a href="/firefly/head/reference/types/message.html">message payload</a>
 alongside the other parameters.</p>
 
 <p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis/custom-pin/invoke/sayHello</code></p>
@@ -480,12 +480,12 @@ alongside the other parameters.</p>
       </h2>
     
 
-<p>All parties that receive the message will receive a <code class="language-plaintext highlighter-rouge">message_confirmed</code> on their <a href="../events.html">event listeners</a>.
+<p>All parties that receive the message will receive a <code class="language-plaintext highlighter-rouge">message_confirmed</code> on their <a href="/firefly/head/tutorials/events.html">event listeners</a>.
 This event confirms that the off-chain payload has been received (via data exchange or shared storage) <em>and</em>
 that the blockchain transaction has been received and sequenced. It is guaranteed that these <code class="language-plaintext highlighter-rouge">message_confirmed</code>
 events will be ordered based on the sequence of the on-chain transactions, regardless of when the off-chain
 payload becomes available. This means that all parties will order messages on a given topic in exactly the
-same order, allowing for deterministic but decentralized <a href="../../reference/events.html">event-driven architecture</a>.</p>
+same order, allowing for deterministic but decentralized <a href="/firefly/head/reference/events.html">event-driven architecture</a>.</p>
 
         
 
