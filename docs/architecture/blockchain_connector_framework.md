@@ -192,3 +192,84 @@ Some high architectural principals that informed the code:
   - Determines the final order based on order of confirmation on the blockchain
 
 [![FireFly Connector Toolkit Event Streams](../images/firefly_connector_toolkit_event_streams.jpg)](../images/firefly_connector_toolkit_event_streams.jpg)
+
+## Transaction error messages
+
+The receipt for a FireFly blockchain operation contains an `extraInfo` section that records additional information about the transaction. For example:
+
+```
+"receipt": {
+  ...
+  "extraInfo": [
+    {
+      {
+        "contractAddress":"0x87ae94ab290932c4e6269648bb47c86978af4436",
+        "cumulativeGasUsed":"33812",
+        "from":"0x2b1c769ef5ad304a4889f2a07a6617cd935849ae",
+        "to":"0x302259069aaa5b10dc6f29a9a3f72a8e52837cc3",
+        "gasUsed":"33812",
+        "status":"0",
+        "errorMessage":"Not enough tokens", 
+      }
+    }
+  ],
+  ...
+},
+```
+
+The `errorMessage` field can be used to understand the reason why a transaction failed. The value stored in the `errorMessage` field will vary depending on the type of error, the configuration of the EVM client the connector is using, and the smart contract logic. 
+
+### Format of an error message
+
+The `errorMessage` field may contain one of the following:
+
+1. An error message from the FireFly blockchain connector
+  - For example `"FF23054", "Error return value unavailable"`
+2. A decoded error string from the blockchain transaction
+  - For example `Not enough tokens`
+  - This could be an error string from a smart contract e.g. `require(requestedTokens <= allowance, "Not enough tokens");`
+3. An un-decoded byte string from the blockchain transaction
+  - For example 
+```
+FF23053: Error return value for custom error: 0x1320fa6a00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000010
+```
+  - This could be a custom error from a smart contract e.g.
+```
+error AllowanceTooSmall(uint256 requested, uint256 allowance);
+...
+revert AllowanceTooSmall({ requested: 100, allowance: 20 });
+```
+  - If an error reason cannot be decoded the `returnValue` of the `extraInfo` will be set to the raw byte string. For example:
+```
+"receipt": {
+  ...
+  "extraInfo": [
+     {
+       {
+         "contractAddress":"0x87ae94ab290932c4e6269648bb47c86978af4436",
+         "cumulativeGasUsed":"33812",
+         "from":"0x2b1c769ef5ad304a4889f2a07a6617cd935849ae",
+         "to":"0x302259069aaa5b10dc6f29a9a3f72a8e52837cc3",
+         "gasUsed":"33812",
+         "status":"0",
+         "errorMessage":"FF23053: Error return value for custom error: 0x1320fa6a00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000010", 
+         "returnValue":"0x1320fa6a00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000010"
+       }
+     }
+  ],
+  ...
+},
+```
+
+### Retrieving blockchain transaction errors
+
+For an EVM blockchain the error reason for a failed blockchain transaction is recorded through the `REVERT` op code, with a `REASON` set to the reason for the failure. By default, most EVM clients do not store this reason in the transaction receipt. This is typically to reduce resource consumption such as memory usage in the client. It is usually possible to configure an EVM client to store the revert reason in the transaction receipt. For example Hyperledger Besu provides the `--revert-reason-enabled` configuration option. If the transaction receipt does not contain the revert reason it is possible to request that an EVM client re-run the transaction and return a trace of all of the op-codes, including the final `REVERT` `REASON`. This can be a resource intensive request to submit to an EVM client, and is only available on archive nodes or for very recent blocks.
+
+The `firefly-evmconnect` blockchain connector attempts to obtain the reason for a transaction revert and include it in the `extraInfo` field. It uses the following mechanisms, in this order:
+
+1. Checks if the blockchain transaction receipt contains the revert reason.
+2. If the revert reason is not in the receipt, and the `connector.traceTXForRevertReason` configuration option is set to `true`, calls `debug_traceTransaction` to obtain a full trace of the transaction and extract the revert reason. By default, `connector.traceTXForRevertReason` is set to `false` to avoid submitting high-resource requests to the EVM client.
+
+If the revert reason can be obtained using either mechanism above, the revert reason bytes are decoded in the following way:
+  - Attempts to decode the bytes as the standard `Error(string)` signature format and includes the decoded string in the `errorMessage`
+  - If the reason is not a standard `Error(String)` error, sets the `errorMessage` to `FF23053: Error return value for custom error: <raw hex string>` and includes the raw byte string in the `returnValue` field.
