@@ -193,7 +193,7 @@ Some high architectural principals that informed the code:
 
 [![FireFly Connector Toolkit Event Streams](../images/firefly_connector_toolkit_event_streams.jpg)](../images/firefly_connector_toolkit_event_streams.jpg)
 
-## Transaction error messages
+## Blockchain error messages
 
 The receipt for a FireFly blockchain operation contains an `extraInfo` section that records additional information about the transaction. For example:
 
@@ -217,11 +217,13 @@ The receipt for a FireFly blockchain operation contains an `extraInfo` section t
 },
 ```
 
-The `errorMessage` field can be used to understand the reason why a transaction failed. The value stored in the `errorMessage` field will vary depending on the type of error, the configuration of the EVM client the connector is using, and the smart contract logic. 
+The `errorMessage` field can be be set by a blockchain connector to provide FireFly and the end-user with more information about the reason why a tranasction failed. The blockchain connector can choose what information to include in `errorMessage` field. It may be set to an error message relating to the blockchain connector itself or an error message passed back from the blockchain or smart contract that was invoked.
 
-### Format of an error message
+### Format of a `firefly-evmconnect` error message
 
-The `errorMessage` field may contain one of the following:
+The following section describes the way that the `firefly-evmconnect` plugin uses the `errorMessage` field. This serves both as an explanation of how EVM-based transaction errors will be formatted, and as a guide that other blockchain connectors may decide to follow.
+
+The `errorMessage` field for a `firefly-evmconnect` transaction may contain one of the following:
 
 1. An error message from the FireFly blockchain connector
   - For example `"FF23054", "Error return value unavailable"`
@@ -261,9 +263,9 @@ revert AllowanceTooSmall({ requested: 100, allowance: 20 });
 },
 ```
 
-### Retrieving blockchain transaction errors
+### Retrieving EVM blockchain transaction errors
 
-For an EVM blockchain the error reason for a failed blockchain transaction is recorded through the `REVERT` op code, with a `REASON` set to the reason for the failure. By default, most EVM clients do not store this reason in the transaction receipt. This is typically to reduce resource consumption such as memory usage in the client. It is usually possible to configure an EVM client to store the revert reason in the transaction receipt. For example Hyperledger Besu provides the `--revert-reason-enabled` configuration option. If the transaction receipt does not contain the revert reason it is possible to request that an EVM client re-run the transaction and return a trace of all of the op-codes, including the final `REVERT` `REASON`. This can be a resource intensive request to submit to an EVM client, and is only available on archive nodes or for very recent blocks.
+The ability of a blockchain connector such as `firefly-evmconnect` to retrieve the reason for a transaction failure, is dependent on by the configuration of the blockchain it is connected to. For an EVM blockchain the reason why a transaction failed is recorded with the `REVERT` op code, with a `REASON` set to the reason for the failure. By default, most EVM clients do not store this reason in the transaction receipt. This is typically to reduce resource consumption such as memory usage in the client. It is usually possible to configure an EVM client to store the revert reason in the transaction receipt. For example Hyperledger Besu™ provides the `--revert-reason-enabled` configuration option. If the transaction receipt does not contain the revert reason it is possible to request that an EVM client re-run the transaction and return a trace of all of the op-codes, including the final `REVERT` `REASON`. This can be a resource intensive request to submit to an EVM client, and is only available on archive nodes or for very recent blocks.
 
 The `firefly-evmconnect` blockchain connector attempts to obtain the reason for a transaction revert and include it in the `extraInfo` field. It uses the following mechanisms, in this order:
 
