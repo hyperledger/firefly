@@ -78,19 +78,28 @@ func (mm *metricsManager) MessageSubmitted(msg *core.Message) {
 }
 
 func (mm *metricsManager) MessageConfirmed(msg *core.Message, eventType fftypes.FFEnum) {
-	timeElapsed := time.Since(mm.GetTime(msg.Header.ID.String())).Seconds()
+	eventTime := mm.GetTime(msg.Header.ID.String())
+	timeElapsed := time.Since(eventTime).Seconds()
 	mm.DeleteTime(msg.Header.ID.String())
 
 	switch msg.Header.Type {
 	case core.MessageTypeBroadcast:
-		BroadcastHistogram.Observe(timeElapsed)
+		if !eventTime.IsZero() {
+			// Check that we recorded the submission
+			// as we might not be the party submitting
+			BroadcastHistogram.Observe(timeElapsed)
+		}
 		if eventType == core.EventTypeMessageConfirmed { // Broadcast Confirmed
 			BroadcastConfirmedCounter.Inc()
 		} else if eventType == core.EventTypeMessageRejected { // Broadcast Rejected
 			BroadcastRejectedCounter.Inc()
 		}
 	case core.MessageTypePrivate:
-		PrivateMsgHistogram.Observe(timeElapsed)
+		if !eventTime.IsZero() {
+			// Check that we recorded the submission
+			// as we might not be the party submitting
+			PrivateMsgHistogram.Observe(timeElapsed)
+		}
 		if eventType == core.EventTypeMessageConfirmed { // Private Msg Confirmed
 			PrivateMsgConfirmedCounter.Inc()
 		} else if eventType == core.EventTypeMessageRejected { // Private Msg Rejected
@@ -114,18 +123,25 @@ func (mm *metricsManager) TransferSubmitted(transfer *core.TokenTransfer) {
 }
 
 func (mm *metricsManager) TransferConfirmed(transfer *core.TokenTransfer) {
-	timeElapsed := time.Since(mm.GetTime(transfer.LocalID.String())).Seconds()
+	transferEvent := mm.GetTime(transfer.LocalID.String())
+	timeElapsed := time.Since(transferEvent).Seconds()
 	mm.DeleteTime(transfer.LocalID.String())
 
 	switch transfer.Type {
 	case core.TokenTransferTypeMint: // Mint confirmed
-		MintHistogram.Observe(timeElapsed)
+		if !transferEvent.IsZero() {
+			MintHistogram.Observe(timeElapsed)
+		}
 		MintConfirmedCounter.Inc()
 	case core.TokenTransferTypeTransfer: // Transfer confirmed
-		TransferHistogram.Observe(timeElapsed)
+		if !transferEvent.IsZero() {
+			TransferHistogram.Observe(timeElapsed)
+		}
 		TransferConfirmedCounter.Inc()
 	case core.TokenTransferTypeBurn: // Burn confirmed
-		BurnHistogram.Observe(timeElapsed)
+		if !transferEvent.IsZero() {
+			BurnHistogram.Observe(timeElapsed)
+		}
 		BurnConfirmedCounter.Inc()
 	}
 }
