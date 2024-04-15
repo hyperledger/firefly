@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -483,7 +483,7 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req
 		}
 		req.Method, err = cm.database.GetFFIMethod(ctx, cm.namespace, req.Interface, req.MethodPath)
 		if err != nil || req.Method == nil {
-			return i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
+			return i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, req.MethodPath, err)
 		}
 		fb := database.FFIErrorQueryFactory.NewFilter(ctx)
 		req.Errors, _, err = cm.database.GetFFIErrors(ctx, cm.namespace, fb.Eq("interface", req.Interface))
@@ -794,7 +794,7 @@ func (cm *contractManager) resolveEvent(ctx context.Context, ffi *fftypes.FFIRef
 }
 
 func (cm *contractManager) checkContractListenerExists(ctx context.Context, listener *core.ContractListener) error {
-	found, _, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID, true)
+	found, _, err := cm.blockchain.GetContractListenerStatus(ctx, listener.Namespace, listener.BackendID, true)
 	if err != nil {
 		log.L(ctx).Errorf("Validating listener %s:%s (BackendID=%s) failed: %s", listener.Signature, listener.ID, listener.BackendID, err)
 		return err
@@ -939,7 +939,7 @@ func (cm *contractManager) GetContractListenerByNameOrIDWithStatus(ctx context.C
 	if err != nil {
 		return nil, err
 	}
-	_, status, err := cm.blockchain.GetContractListenerStatus(ctx, listener.BackendID, false)
+	_, status, err := cm.blockchain.GetContractListenerStatus(ctx, listener.Namespace, listener.BackendID, false)
 	if err != nil {
 		status = core.ListenerStatusError{
 			StatusError: err.Error(),

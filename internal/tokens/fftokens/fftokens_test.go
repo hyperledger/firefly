@@ -21,9 +21,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"testing"
 
@@ -104,10 +103,13 @@ func TestInitBadURL(t *testing.T) {
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
+	assert.NoError(t, err)
+
+	err = h.StartNamespace(ctx, "ns1", []*core.TokenPool{})
 	assert.Regexp(t, "FF00149", err)
 }
 
-func TestInitBackgroundStart1(t *testing.T) {
+func TestStartNamespaceConnectFail(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFTokens{}
 	h.InitConfig(ffTokensConfig)
@@ -118,7 +120,22 @@ func TestInitBackgroundStart1(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
 	assert.NoError(t, err)
-	assert.NotNil(t, h.backgroundRetry)
+
+	err = h.StartNamespace(ctx, "ns1", []*core.TokenPool{})
+	assert.Error(t, err)
+}
+
+func TestStopNamespace(t *testing.T) {
+	wsm := &wsmocks.WSClient{}
+	ctx, cancel := context.WithCancel(context.Background())
+	wsm.On("Close").Return(nil)
+	cancel()
+	h := &FFTokens{
+		ctx:    ctx,
+		wsconn: map[string]wsclient.WSClient{"ns1": wsm},
+	}
+	h.StopNamespace(ctx, "ns1")
+	assert.Nil(t, h.wsconn["ns1"])
 }
 
 func TestInitBadTLS(t *testing.T) {
@@ -174,6 +191,7 @@ func TestCreateTokenPool(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace": "ns1",
 				"requestId": "ns1:" + opID.String(),
 				"signer":    "0x123",
 				"type":      "fungible",
@@ -189,7 +207,7 @@ func TestCreateTokenPool(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -300,7 +318,7 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 			assert.NoError(t, err)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+				Body: io.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
 					"type":        "fungible",
 					"poolLocator": "F1",
 					"signer":      "0x0",
@@ -358,7 +376,7 @@ func TestCreateTokenPoolSynchronousBadResponse(t *testing.T) {
 			assert.NoError(t, err)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte("bad"))),
+				Body: io.NopCloser(bytes.NewReader([]byte("bad"))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -391,13 +409,14 @@ func TestActivateTokenPool(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"poolData":    "ns1",
 				"poolLocator": "N1",
 				"config":      poolConfig,
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -450,13 +469,14 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"poolData":    "ns1",
 				"poolLocator": "N1",
 				"config":      poolConfig,
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+				Body: io.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
 					"type":        "fungible",
 					"poolLocator": "F1",
 					"signer":      "0x0",
@@ -499,13 +519,14 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"poolData":    "ns1",
 				"poolLocator": "N1",
 				"config":      poolConfig,
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte("bad"))),
+				Body: io.NopCloser(bytes.NewReader([]byte("bad"))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -545,6 +566,7 @@ func TestActivateTokenPoolNoContent(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"poolData":    "ns1|" + pool.ID.String(),
 				"poolLocator": "N1",
 				"config":      poolConfig,
@@ -577,6 +599,7 @@ func TestDeactivateTokenPool(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"poolData":    "ns1|pool1",
 				"poolLocator": "N1",
 				"config":      nil,
@@ -614,10 +637,11 @@ func TestMintTokens(t *testing.T) {
 	defer done()
 
 	mint := &core.TokenTransfer{
-		LocalID: fftypes.NewUUID(),
-		To:      "user1",
-		Key:     "0x123",
-		Amount:  *fftypes.NewFFBigInt(10),
+		Namespace: "ns1",
+		LocalID:   fftypes.NewUUID(),
+		To:        "user1",
+		Key:       "0x123",
+		Amount:    *fftypes.NewFFBigInt(10),
 		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
@@ -636,6 +660,7 @@ func TestMintTokens(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"poolLocator": "123",
 				"to":          "user1",
 				"amount":      "10",
@@ -652,7 +677,7 @@ func TestMintTokens(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -670,10 +695,11 @@ func TestMintTokensWithInterface(t *testing.T) {
 	defer done()
 
 	mint := &core.TokenTransfer{
-		LocalID: fftypes.NewUUID(),
-		To:      "user1",
-		Key:     "0x123",
-		Amount:  *fftypes.NewFFBigInt(10),
+		Namespace: "ns1",
+		LocalID:   fftypes.NewUUID(),
+		To:        "user1",
+		Key:       "0x123",
+		Amount:    *fftypes.NewFFBigInt(10),
 		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
@@ -693,6 +719,7 @@ func TestMintTokensWithInterface(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"poolLocator": "123",
 				"to":          "user1",
 				"amount":      "10",
@@ -710,7 +737,7 @@ func TestMintTokensWithInterface(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -728,10 +755,11 @@ func TestTokenApproval(t *testing.T) {
 	defer done()
 
 	approval := &core.TokenApproval{
-		LocalID:  fftypes.NewUUID(),
-		Operator: "0x02",
-		Key:      "0x123",
-		Approved: true,
+		Namespace: "ns1",
+		LocalID:   fftypes.NewUUID(),
+		Operator:  "0x02",
+		Key:       "0x123",
+		Approved:  true,
 		Config: fftypes.JSONObject{
 			"foo": "bar",
 		},
@@ -749,6 +777,7 @@ func TestTokenApproval(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"poolLocator": "123",
 				"operator":    "0x02",
 				"approved":    true,
@@ -764,7 +793,7 @@ func TestTokenApproval(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -811,6 +840,7 @@ func TestBurnTokens(t *testing.T) {
 	defer done()
 
 	burn := &core.TokenTransfer{
+		Namespace:  "ns1",
 		LocalID:    fftypes.NewUUID(),
 		TokenIndex: "1",
 		From:       "user1",
@@ -833,6 +863,7 @@ func TestBurnTokens(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"poolLocator": "123",
 				"tokenIndex":  "1",
 				"from":        "user1",
@@ -849,7 +880,7 @@ func TestBurnTokens(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -882,6 +913,7 @@ func TestTransferTokens(t *testing.T) {
 	defer done()
 
 	transfer := &core.TokenTransfer{
+		Namespace:  "ns1",
 		LocalID:    fftypes.NewUUID(),
 		TokenIndex: "1",
 		From:       "user1",
@@ -905,6 +937,7 @@ func TestTransferTokens(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"poolLocator": "123",
 				"tokenIndex":  "1",
 				"from":        "user1",
@@ -922,7 +955,7 @@ func TestTransferTokens(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Body: io.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
 				},
@@ -954,160 +987,32 @@ func TestIgnoredEvents(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
-	err := h.Start()
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.NoError(t, err)
 
 	fromServer <- `!}`         // ignored
 	fromServer <- `{}`         // ignored
 	fromServer <- `{"id":"1"}` // ignored but acked
+
 	msg := <-toServer
-	assert.Equal(t, `{"data":{"id":"1"},"event":"ack"}`, string(msg))
+	assert.Equal(t, "{\"type\":\"start\",\"autoack\":null,\"namespace\":\"ns1\",\"name\":\"\",\"ephemeral\":false,\"filter\":{\"message\":{},\"transaction\":{},\"blockchainevent\":{}},\"options\":{}}", string(msg))
+
+	msg = <-toServer
+	assert.JSONEq(t, `{"id":"1","type":"ack"}`, string(msg))
 
 	fromServer <- fftypes.JSONObject{
-		"id":    "2",
-		"event": "receipt",
-		"data":  fftypes.JSONObject{},
+		"namespace": "ns1",
+		"id":        "2",
+		"event":     "receipt",
+		"data":      fftypes.JSONObject{},
 	}.String()
 }
 
-func TestBackgroundStartFailWS(t *testing.T) {
-	h := &FFTokens{}
-	h.InitConfig(ffTokensConfig)
-
-	// Create a listener and close it - to grab a port we know is not in use
-	badListener := httptest.NewServer(&http.ServeMux{})
-	badURL := badListener.URL
-	badListener.Close()
-
-	// Bad url for WS should fail and retry
-	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, badURL)
-	ffTokensConfig.Set(FFTBackgroundStart, true)
-	ffTokensConfig.Set(wsclient.WSConfigKeyInitialConnectAttempts, 1)
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancelCtx, "testtokens", ffTokensConfig)
-	assert.NoError(t, err)
-	assert.NotNil(t, h.backgroundRetry)
-
-	capturedErr := make(chan error)
-	h.backgroundRetry = &retry.Retry{
-		ErrCallback: func(err error) {
-			capturedErr <- err
-		},
-	}
-
-	err = h.Start()
-	assert.NoError(t, err)
-
-	err = <-capturedErr
-	assert.Regexp(t, "FF00148", err)
-}
-
-func TestReceiptEventsBackgroundStart(t *testing.T) {
-
-	h, _, fromServer, _, done := newTestFFTokens(t)
-	defer done()
-
-	ffTokensConfig.Set(FFTBackgroundStart, true)
-
-	err := h.Init(h.ctx, h.cancelCtx, "testtokens", ffTokensConfig)
-	assert.NoError(t, err)
-
-	// Reset the retry to be quicker
-	h.backgroundRetry = &retry.Retry{}
-
-	err = h.Start()
-	assert.NoError(t, err)
-
-	mcb := &coremocks.OperationCallbacks{}
-	h.SetOperationHandler("ns1", mcb)
-	opID := fftypes.NewUUID()
-	mockCalled := make(chan bool)
-
-	// receipt: bad ID - passed through
-	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
-		return update.NamespacedOpID == "ns1:wrong" &&
-			update.Status == core.OpStatusPending &&
-			update.Plugin == "fftokens"
-	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
-	fromServer <- fftypes.JSONObject{
-		"id":    "3",
-		"event": "receipt",
-		"data": fftypes.JSONObject{
-			"headers": fftypes.JSONObject{
-				"requestId": "ns1:wrong", // passed through to OperationUpdate to ignore
-				"type":      "TransactionUpdate",
-			},
-		},
-	}.String()
-	<-mockCalled
-
-	// receipt: success
-	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
-		return update.NamespacedOpID == "ns1:"+opID.String() &&
-			update.Status == core.OpStatusSucceeded &&
-			update.BlockchainTXID == "0xffffeeee" &&
-			update.Plugin == "fftokens"
-	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
-	fromServer <- fftypes.JSONObject{
-		"id":    "4",
-		"event": "receipt",
-		"data": fftypes.JSONObject{
-			"headers": fftypes.JSONObject{
-				"requestId": "ns1:" + opID.String(),
-				"type":      "TransactionSuccess",
-			},
-			"transactionHash": "0xffffeeee",
-		},
-	}.String()
-	<-mockCalled
-
-	// receipt: update
-	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
-		return update.NamespacedOpID == "ns1:"+opID.String() &&
-			update.Status == core.OpStatusPending &&
-			update.BlockchainTXID == "0xffffeeee"
-	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
-	fromServer <- fftypes.JSONObject{
-		"id":    "5",
-		"event": "receipt",
-		"data": fftypes.JSONObject{
-			"headers": fftypes.JSONObject{
-				"requestId": "ns1:" + opID.String(),
-				"type":      "TransactionUpdate",
-			},
-			"transactionHash": "0xffffeeee",
-		},
-	}.String()
-	<-mockCalled
-
-	// receipt: failure
-	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
-		return update.NamespacedOpID == "ns1:"+opID.String() &&
-			update.Status == core.OpStatusFailed &&
-			update.BlockchainTXID == "0xffffeeee" &&
-			update.Plugin == "fftokens"
-	})).Return(nil).Once().Run(func(args mock.Arguments) { mockCalled <- true })
-	fromServer <- fftypes.JSONObject{
-		"id":    "5",
-		"event": "receipt",
-		"data": fftypes.JSONObject{
-			"headers": fftypes.JSONObject{
-				"requestId": "ns1:" + opID.String(),
-				"type":      "TransactionFailed",
-			},
-			"transactionHash": "0xffffeeee",
-		},
-	}.String()
-	<-mockCalled
-
-	mcb.AssertExpectations(t)
-}
 func TestReceiptEvents(t *testing.T) {
 	h, _, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
-	err := h.Start()
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.NoError(t, err)
 
 	mcb := &coremocks.OperationCallbacks{}
@@ -1199,7 +1104,7 @@ func TestPoolEvents(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
-	err := h.Start()
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
@@ -1211,8 +1116,12 @@ func TestPoolEvents(t *testing.T) {
 		"id":    "6",
 		"event": "token-pool",
 	}.String()
+
 	msg := <-toServer
-	assert.Equal(t, `{"data":{"id":"6"},"event":"ack"}`, string(msg))
+	assert.Equal(t, "{\"type\":\"start\",\"autoack\":null,\"namespace\":\"ns1\",\"name\":\"\",\"ephemeral\":false,\"filter\":{\"message\":{},\"transaction\":{},\"blockchainevent\":{}},\"options\":{}}", string(msg))
+
+	msg = <-toServer
+	assert.JSONEq(t, `{"id":"6","type":"ack"}`, string(msg))
 
 	// token-pool: invalid uuid (success)
 	mcb.On("TokenPoolCreated", mock.Anything, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
@@ -1222,6 +1131,7 @@ func TestPoolEvents(t *testing.T) {
 		"id":    "7",
 		"event": "token-pool",
 		"data": fftypes.JSONObject{
+			"namespace":   "ns1",
 			"id":          "000000000010/000020/000030/000040",
 			"type":        "fungible",
 			"poolLocator": "F1",
@@ -1236,7 +1146,7 @@ func TestPoolEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"7"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"7","type":"ack"}`, string(msg))
 
 	// token-pool: success
 	mcb.On("TokenPoolCreated", mock.Anything, h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
@@ -1261,7 +1171,7 @@ func TestPoolEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"8","type":"ack"}`, string(msg))
 
 	// token-pool: no handler
 	fromServer <- fftypes.JSONObject{
@@ -1315,7 +1225,7 @@ func TestTransferEvents(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
-	err := h.Start()
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
@@ -1327,8 +1237,12 @@ func TestTransferEvents(t *testing.T) {
 		"id":    "9",
 		"event": "token-mint",
 	}.String()
+
 	msg := <-toServer
-	assert.Equal(t, `{"data":{"id":"9"},"event":"ack"}`, string(msg))
+	assert.Equal(t, "{\"type\":\"start\",\"autoack\":null,\"namespace\":\"ns1\",\"name\":\"\",\"ephemeral\":false,\"filter\":{\"message\":{},\"transaction\":{},\"blockchainevent\":{}},\"options\":{}}", string(msg))
+
+	msg = <-toServer
+	assert.JSONEq(t, `{"id":"9","type":"ack"}`, string(msg))
 
 	// token-mint: invalid amount
 	fromServer <- fftypes.JSONObject{
@@ -1351,7 +1265,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"10"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"10","type":"ack"}`, string(msg))
 
 	// token-mint: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
@@ -1377,7 +1291,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"11"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"11","type":"ack"}`, string(msg))
 
 	// token-mint: invalid uuid (success)
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
@@ -1403,7 +1317,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"12"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"12","type":"ack"}`, string(msg))
 
 	// token-transfer: missing from
 	fromServer <- fftypes.JSONObject{
@@ -1425,7 +1339,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"13"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"13","type":"ack"}`, string(msg))
 
 	// token-transfer: bad message hash (success)
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
@@ -1451,7 +1365,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"14"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"14","type":"ack"}`, string(msg))
 
 	// token-transfer: success
 	messageID := fftypes.NewUUID()
@@ -1478,7 +1392,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"15"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"15","type":"ack"}`, string(msg))
 
 	// token-burn: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
@@ -1504,7 +1418,7 @@ func TestTransferEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"16"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"16","type":"ack"}`, string(msg))
 
 	// token-transfer: callback fail
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
@@ -1535,7 +1449,7 @@ func TestApprovalEvents(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
-	err := h.Start()
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
@@ -1570,8 +1484,12 @@ func TestApprovalEvents(t *testing.T) {
 			},
 		},
 	}.String()
+
 	msg := <-toServer
-	assert.Equal(t, `{"data":{"id":"17"},"event":"ack"}`, string(msg))
+	assert.Equal(t, "{\"type\":\"start\",\"autoack\":null,\"namespace\":\"ns1\",\"name\":\"\",\"ephemeral\":false,\"filter\":{\"message\":{},\"transaction\":{},\"blockchainevent\":{}},\"options\":{}}", string(msg))
+
+	msg = <-toServer
+	assert.JSONEq(t, `{"id":"17","type":"ack"}`, string(msg))
 
 	// token-approval: success (no data)
 	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
@@ -1597,7 +1515,7 @@ func TestApprovalEvents(t *testing.T) {
 		},
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"18"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"18","type":"ack"}`, string(msg))
 
 	// token-approval: missing data
 	fromServer <- fftypes.JSONObject{
@@ -1605,7 +1523,7 @@ func TestApprovalEvents(t *testing.T) {
 		"event": "token-approval",
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"19"},"event":"ack"}`, string(msg))
+	assert.JSONEq(t, `{"id":"19","type":"ack"}`, string(msg))
 
 	// token-approval: callback fail
 	errProcessed := make(chan struct{})
@@ -1646,13 +1564,13 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	h := &FFTokens{
 		ctx:       context.Background(),
 		cancelCtx: func() { called = true },
-		wsconn:    wsm,
+		wsconn:    map[string]wsclient.WSClient{"ns1": wsm},
 	}
 	r := make(chan []byte)
 	close(r)
 	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
-	h.eventLoop()
+	h.eventLoop("ns1")
 	assert.True(t, called)
 }
 
@@ -1662,7 +1580,7 @@ func TestEventLoopSendClosed(t *testing.T) {
 	h := &FFTokens{
 		ctx:       context.Background(),
 		cancelCtx: func() { called = true },
-		wsconn:    wsm,
+		wsconn:    map[string]wsclient.WSClient{"ns1": wsm},
 		retry:     &retry.Retry{},
 	}
 	r := make(chan []byte, 1)
@@ -1670,8 +1588,21 @@ func TestEventLoopSendClosed(t *testing.T) {
 	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	h.eventLoop()
+	h.eventLoop("ns1")
 	assert.True(t, called)
+}
+
+func TestStartNamespaceSendClosed(t *testing.T) {
+	wsm := &wsmocks.WSClient{}
+	h := &FFTokens{
+		ctx:    context.Background(),
+		wsconn: map[string]wsclient.WSClient{"ns1": wsm},
+		retry:  &retry.Retry{},
+	}
+	wsm.On("Connect").Return(nil)
+	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
+	assert.Regexp(t, "pop", err)
 }
 
 func TestEventLoopClosedContext(t *testing.T) {
@@ -1680,13 +1611,13 @@ func TestEventLoopClosedContext(t *testing.T) {
 	cancel()
 	h := &FFTokens{
 		ctx:    ctx,
-		wsconn: wsm,
+		wsconn: map[string]wsclient.WSClient{"ns1": wsm},
 		retry:  &retry.Retry{},
 	}
 	r := make(chan []byte, 1)
 	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
-	h.eventLoop() // we're simply looking for it exiting
+	h.eventLoop("ns1") // we're simply looking for it exiting
 }
 
 func TestCallbacksWrongNamespace(t *testing.T) {
@@ -1741,7 +1672,7 @@ func TestCheckInterfaceABI(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+				Body: io.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
 					"approval": fftypes.JSONAny(`[]`),
 					"burn":     fftypes.JSONAny(`[]`),
 					"mint":     fftypes.JSONAny(`[]`),
@@ -1807,7 +1738,7 @@ func TestCheckInterfaceFFI(t *testing.T) {
 			}, body)
 
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+				Body: io.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
 					"approval": fftypes.JSONAny(`[]`),
 					"burn":     fftypes.JSONAny(`[]`),
 					"mint":     fftypes.JSONAny(`[]`),
@@ -1859,7 +1790,7 @@ func TestCheckInterfaceFFIBadResponse(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/checkinterface", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
+				Body: io.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
 					"approval": map[bool]bool{true: false},
 				}.String()))),
 				Header: http.Header{
@@ -1883,7 +1814,7 @@ func TestHandleEventRetryableFailure(t *testing.T) {
 	ft.callbacks.handlers = map[string]tokens.Callbacks{
 		"ns1": mcb,
 	}
-	retry, err := ft.handleMessage(context.Background(), []byte(`{
+	retry, err := ft.handleMessage(context.Background(), "ns1", []byte(`{
 		"event": "batch",
 		"data": {
 			"events": [{
@@ -1925,4 +1856,44 @@ func TestErrorWrappingBodyErr(t *testing.T) {
 	errInterface, ok := err.(operations.ConflictError)
 	assert.True(t, ok)
 	assert.True(t, errInterface.IsConflictError())
+}
+
+func TestHandleNamespaceStartedEnsureActive(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+	h.poolsToActivate = map[string][]*core.TokenPool{
+		"ns1": {{Active: true}},
+	}
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
+
+	_, err := h.handleMessage(context.Background(), "ns1", []byte(`{"event":"started","data":{"namespace": "ns1"}}`))
+	assert.NoError(t, err)
+}
+
+func TestHandleNamespaceStartedEnsureActiveError(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+	h.poolsToActivate = map[string][]*core.TokenPool{
+		"ns1": {{Active: true}},
+	}
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
+
+	_, err := h.handleMessage(context.Background(), "ns1", []byte(`{"event":"started","data":{"namespace": "ns1"}}`))
+	assert.NoError(t, err)
+}
+
+func TestHandlePoolActivated(t *testing.T) {
+	h, _, _, _, done := newTestFFTokens(t)
+	defer done()
+	_, err := h.handleMessage(context.Background(), "ns1", []byte(`{"event":"activated","dat":{"namespace": "ns1"}}`))
+	assert.NoError(t, err)
+}
+
+func TestConnectorName(t *testing.T) {
+	h := &FFTokens{
+		configuredName: "bob",
+	}
+	assert.Equal(t, h.ConnectorName(), "bob")
 }

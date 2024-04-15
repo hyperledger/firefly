@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -210,7 +210,7 @@ func (s *SQLCommon) GetOperations(ctx context.Context, namespace string, filter 
 		ops = append(ops, op)
 	}
 
-	return ops, s.QueryRes(ctx, operationsTable, tx, fop, fi), err
+	return ops, s.QueryRes(ctx, operationsTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, filter ffapi.Filter, update ffapi.Update) (updated bool, err error) {

@@ -67,7 +67,7 @@ This is deliberately a simple flow, and all kinds of additional layers might wel
 
 ## Authorize & Transfer Data (Member 1)
 
-- Inpsect the request data
+- Inspect the request data
 - Retrieve data asset by hash
 - Send the private data in a private message
   - No blockchain in this flow

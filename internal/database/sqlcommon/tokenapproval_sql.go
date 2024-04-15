@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -232,7 +232,7 @@ func (s *SQLCommon) GetTokenApprovals(ctx context.Context, namespace string, fil
 		approvals = append(approvals, d)
 	}
 
-	return approvals, s.QueryRes(ctx, tokenapprovalTable, tx, fop, fi), err
+	return approvals, s.QueryRes(ctx, tokenapprovalTable, tx, fop, nil, fi), err
 }
 
 func (s *SQLCommon) UpdateTokenApprovals(ctx context.Context, filter ffapi.Filter, update ffapi.Update) (err error) {

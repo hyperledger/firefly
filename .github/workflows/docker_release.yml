@@ -49,7 +49,7 @@ jobs:
       - name: Set build tag
         id: build_tag_generator
         run: |
-          RELEASE_TAG=$(curl https://api.github.com/repos/${{ github.repository }}/releases/latest -s | jq .tag_name -r)
+          RELEASE_TAG=${{ github.ref_name }}
           BUILD_TAG=$RELEASE_TAG-$(date +"%Y%m%d")-$GITHUB_RUN_NUMBER
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           echo "BUILD_TAG=$BUILD_TAG" >> $GITHUB_OUTPUT
@@ -76,7 +76,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }},ghcr.io/${{ github.repository }}:head,${{ env.DOCKER_TAGS }}
+          tags: ghcr.io/${{ github.repository }}:${{ steps.build_tag_generator.outputs.RELEASE_TAG }},ghcr.io/${{ github.repository }}:head,${{ env.DOCKER_TAGS }}
           labels: |
             commit=${{ github.sha }}
             build_date=${{ steps.build_tag_generator.outputs.BUILD_DATE }}

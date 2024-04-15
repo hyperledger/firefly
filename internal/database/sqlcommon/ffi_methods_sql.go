@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -169,7 +169,7 @@ func (s *SQLCommon) GetFFIMethods(ctx context.Context, namespace string, filter 
 		methods = append(methods, ci)
 	}
 
-	return methods, s.QueryRes(ctx, ffimethodsTable, tx, fop, fi), err
+	return methods, s.QueryRes(ctx, ffimethodsTable, tx, fop, nil, fi), err
 
 }
 

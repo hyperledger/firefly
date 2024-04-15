@@ -3,7 +3,7 @@ layout: default
 title: Pinning Data
 parent: pages.custom_smart_contracts
 grand_parent: pages.tutorials
-nav_order: 3
+nav_order: 4
 ---
 
 # Pin off-chain data to a custom blockchain transaction
@@ -13,7 +13,7 @@ nav_order: 3
 This guide describes how to associate an arbitrary off-chain payload with a blockchain transaction on a contract of your own design. A hash of the payload will be recorded as part of the blockchain transaction, and on the receiving side, FireFly will ensure that both the on-chain and off-chain pieces are received and aggregated together.
 
 > **NOTE:** This is an advanced FireFly feature. Before following any of the steps in this guide, you should be very familiar
-> and comfortable with the basic features of how [broadcast messages](../broadcast_data.html) and [private messages](../private_send.html)
+> and comfortable with the basic features of how [broadcast messages](../broadcast_data.md) and [private messages](../private_send.md)
 > work, be proficient at custom contract development on your blockchain of choice, and understand the
 > fundamentals of how FireFly interacts with [custom contracts](../).
 
@@ -113,7 +113,7 @@ func (s *SmartContract) MyCustomPin(ctx contractapi.TransactionContextInterface,
 
 ## Initializing FireFly
 
-Once you have a contract designed, you can [initialize your environment](../../gettingstarted/setup_env.html)
+Once you have a contract designed, you can [initialize your environment](../../gettingstarted/setup_env.md)
 using the blockchain of your choice.
 
 No special initialization arguments are needed for Ethereum.
@@ -125,7 +125,7 @@ deployed on the default channel, instead of only listening to events from the pr
 ## Invoking the contract
 
 You can follow the normal steps for [Ethereum](./ethereum.md) or [Fabric](./fabric.md) to define your contract
-interface and API in FireFly. When invoking the contract, you can include a [message payload](../../reference/types/message.html)
+interface and API in FireFly. When invoking the contract, you can include a [message payload](../../reference/types/message.md)
 alongside the other parameters.
 
 `POST` `http://localhost:5000/api/v1/namespaces/default/apis/custom-pin/invoke/sayHello`
@@ -145,9 +145,9 @@ alongside the other parameters.
 
 ## Listening for events
 
-All parties that receive the message will receive a `message_confirmed` on their [event listeners](../events.html).
+All parties that receive the message will receive a `message_confirmed` on their [event listeners](../events.md).
 This event confirms that the off-chain payload has been received (via data exchange or shared storage) _and_
 that the blockchain transaction has been received and sequenced. It is guaranteed that these `message_confirmed`
 events will be ordered based on the sequence of the on-chain transactions, regardless of when the off-chain
 payload becomes available. This means that all parties will order messages on a given topic in exactly the
-same order, allowing for deterministic but decentralized [event-driven architecture](../../reference/events.html).
+same order, allowing for deterministic but decentralized [event-driven architecture](../../reference/events.md).

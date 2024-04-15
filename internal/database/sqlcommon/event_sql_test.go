@@ -89,6 +89,56 @@ func TestEventE2EWithDB(t *testing.T) {
 	s.callbacks.AssertExpectations(t)
 }
 
+func TestGetEventsInSequenceRangeE2EWithDB(t *testing.T) {
+
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionEvents, core.ChangeEventTypeCreated, "ns1", mock.Anything, mock.Anything).Return()
+
+	numberOfEvents := 1000
+	var eventID *fftypes.UUID
+	for i := 0; i < numberOfEvents; i++ {
+		eventID = fftypes.NewUUID()
+		event := &core.Event{
+			ID:         eventID,
+			Namespace:  "ns1",
+			Type:       core.EventTypeMessageConfirmed,
+			Reference:  fftypes.NewUUID(),
+			Correlator: fftypes.NewUUID(),
+			Topic:      fmt.Sprintf("topic%d", i % 2),
+			Created:    fftypes.Now(),
+		}
+		err := s.InsertEvent(ctx, event)
+		assert.NoError(t, err)
+	}
+
+	fb := database.EventQueryFactory.NewFilter(ctx)
+	fb.Limit(1000)
+
+	// Check we can get back some events given a start and end
+	events, _, err := s.GetEventsInSequenceRange(ctx, "ns1", fb.And(), 1, 1001)
+	assert.Nil(t, err)
+	assert.Equal(t, 1000, len(events))
+
+	// Do some basic filtering to show that works
+	fb2 := database.EventQueryFactory.NewFilter(ctx)
+	fb2.Limit(1000)
+
+	events, _, err = s.GetEventsInSequenceRange(ctx, "ns1", fb2.And(fb2.Eq("topic", "topic1")), 1, 1001)
+	assert.Nil(t, err)
+	assert.Equal(t, 500, len(events))
+
+	// And get a single record from a range (EventID right now contains the last event ID created)
+	fb3 := database.EventQueryFactory.NewFilter(ctx)
+	fb3.Limit(1000)
+
+	events, _, err = s.GetEventsInSequenceRange(ctx, "ns1", fb3.And(fb3.Eq("id", eventID.String())), 1, 1001)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(events))
+}
+
 func TestInsertEventFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
@@ -253,3 +303,29 @@ func TestGettEventsReadMessageFail(t *testing.T) {
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
+
+func TestGetEventsInSequenceRangeQueryFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, _, err := s.GetEventsInSequenceRange(context.Background(), "ns1", f, 0, 100)
+	assert.Regexp(t, "FF00176", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetEventsInSequenceRangeBuildQueryFail(t *testing.T) {
+	s, _ := newMockProvider().init()
+	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, _, err := s.GetEventsInSequenceRange(context.Background(), "ns1", f, 0, 100)
+	assert.Regexp(t, "FF00143.*id", err)
+}
+
+func TestGetEventsInSequenceRangeShouldCallGetEventsWhenNoSequencedProvidedAndThrowAnError(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id", }).AddRow("only one"))
+	f := database.EventQueryFactory.NewFilter(context.Background()).And()
+	_, _, err := s.GetEventsInSequenceRange(context.Background(), "ns1", f, -1, -1)
+	assert.NotNil(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+

@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,7 +40,7 @@ func TestPostContractDeploy(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("DeployContract", mock.Anything, mock.MatchedBy(func(req *core.ContractDeployRequest) bool {
+	mcm.On(core.DeployContract, mock.Anything, mock.MatchedBy(func(req *core.ContractDeployRequest) bool {
 		return true
 	}), false).Return("banana", nil)
 	r.ServeHTTP(res, req)

@@ -503,6 +503,48 @@ func Test_processArgsOk(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "valid map input param",
+			processSchemaReq: map[string]interface{}{
+				"type": "array",
+				"prefixItems": []interface{}{
+					map[string]interface{}{
+						"name": "varMap",
+						"type": "object",
+						"details": map[string]interface{}{
+							"type": "schema",
+							"internalSchema": map[string]interface{}{
+								"type": "map",
+								"args": []interface{}{
+									map[string]interface{}{
+										"name": "key",
+										"type": "integer",
+									},
+									map[string]interface{}{
+										"name": "value",
+										"type": "string",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			input: map[string]interface{}{
+				"varMap": map[string]interface{}{
+					"mapEntries": []interface{}{
+						map[string]interface{}{
+							"key":   float64(1),
+							"value": "val1",
+						},
+						map[string]interface{}{
+							"key":   float64(3),
+							"value": "val3",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -943,6 +985,177 @@ func Test_processArgsErr(t *testing.T) {
 				},
 			},
 			expectedError: "invalid object passed",
+		},
+		{
+			name: "no mapEntries for map input param",
+			processSchemaReq: map[string]interface{}{
+				"type": "array",
+				"prefixItems": []interface{}{
+					map[string]interface{}{
+						"name": "varMap",
+						"type": "object",
+						"details": map[string]interface{}{
+							"type": "schema",
+							"internalSchema": map[string]interface{}{
+								"type": "map",
+								"args": []interface{}{
+									map[string]interface{}{
+										"name": "key",
+										"type": "integer",
+									},
+									map[string]interface{}{
+										"name": "value",
+										"type": "string",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			input: map[string]interface{}{
+				"varMap": map[string]interface{}{
+					"invalid": []interface{}{
+						map[string]interface{}{
+							"key":   float64(1),
+							"value": "val1",
+						},
+						map[string]interface{}{
+							"key":   float64(3),
+							"value": "val3",
+						},
+					},
+				},
+			},
+			expectedError: "mapEntries schema property must be present",
+		},
+		{
+			name: "value missing for map input param",
+			processSchemaReq: map[string]interface{}{
+				"type": "array",
+				"prefixItems": []interface{}{
+					map[string]interface{}{
+						"name": "varMap",
+						"type": "object",
+						"details": map[string]interface{}{
+							"type": "schema",
+							"internalSchema": map[string]interface{}{
+								"type": "map",
+								"args": []interface{}{
+									map[string]interface{}{
+										"name": "key",
+										"type": "integer",
+									},
+									map[string]interface{}{
+										"name": "value",
+										"type": "string",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			input: map[string]interface{}{
+				"varMap": map[string]interface{}{
+					"mapEntries": []interface{}{
+						map[string]interface{}{
+							"key": float64(1),
+						},
+						map[string]interface{}{
+							"key":   float64(3),
+							"value": "val3",
+						},
+					},
+				},
+			},
+			expectedError: "Schema field 'value' wasn't found",
+		},
+		{
+			name: "key missing for map input param",
+			processSchemaReq: map[string]interface{}{
+				"type": "array",
+				"prefixItems": []interface{}{
+					map[string]interface{}{
+						"name": "varMap",
+						"type": "object",
+						"details": map[string]interface{}{
+							"type": "schema",
+							"internalSchema": map[string]interface{}{
+								"type": "map",
+								"args": []interface{}{
+									map[string]interface{}{
+										"name": "key",
+										"type": "integer",
+									},
+									map[string]interface{}{
+										"name": "value",
+										"type": "string",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			input: map[string]interface{}{
+				"varMap": map[string]interface{}{
+					"mapEntries": []interface{}{
+						map[string]interface{}{
+							"value": "val1",
+						},
+						map[string]interface{}{
+							"key":   float64(3),
+							"value": "val3",
+						},
+					},
+				},
+			},
+			expectedError: "Schema field 'key' wasn't found",
+		},
+		{
+			name: "unknown field for map input param",
+			processSchemaReq: map[string]interface{}{
+				"type": "array",
+				"prefixItems": []interface{}{
+					map[string]interface{}{
+						"name": "varMap",
+						"type": "object",
+						"details": map[string]interface{}{
+							"type": "schema",
+							"internalSchema": map[string]interface{}{
+								"type": "map",
+								"args": []interface{}{
+									map[string]interface{}{
+										"name": "key",
+										"type": "integer",
+									},
+									map[string]interface{}{
+										"name": "value",
+										"type": "string",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			input: map[string]interface{}{
+				"varMap": map[string]interface{}{
+					"mapEntries": []interface{}{
+						map[string]interface{}{
+							"key":     float64(1),
+							"value":   "val1",
+							"unknown": float64(1),
+						},
+						map[string]interface{}{
+							"key":   float64(3),
+							"value": "val3",
+						},
+					},
+				},
+			},
+			expectedError: "Unknown schema field 'unknown' in map entry",
 		},
 	}
 

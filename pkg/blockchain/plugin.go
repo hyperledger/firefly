@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -45,6 +45,12 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section, metrics metrics.Manager, cacheManager cache.Manager) error
 
+	// StartNamespace starts a specific namespace within the plugin
+	StartNamespace(ctx context.Context, namespace string) error
+
+	// StopNamespace removes a namespace from use within the plugin
+	StopNamespace(ctx context.Context, namespace string) error
+
 	// SetHandler registers a handler to receive callbacks
 	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace
 	SetHandler(namespace string, handler Callbacks)
@@ -52,9 +58,6 @@ type Plugin interface {
 	// SetOperationHandler registers a handler to receive async operation status
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
 	SetOperationHandler(namespace string, handler core.OperationCallbacks)
-
-	// Blockchain interface must not deliver any events until start is called
-	Start() error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
@@ -100,7 +103,7 @@ type Plugin interface {
 	DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error
 
 	// GetContractListenerStatus gets the status of a contract listener from the backend connector. Returns false if not found
-	GetContractListenerStatus(ctx context.Context, subID string, okNotFound bool) (bool, interface{}, error)
+	GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (bool, interface{}, error)
 
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
 	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)

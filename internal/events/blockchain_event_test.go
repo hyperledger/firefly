@@ -100,12 +100,16 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 		},
 	}
 
-	em.mdi.On("GetContractListenerByBackendID", mock.Anything, "ns1", "sb-1").Return(nil, nil)
+	em.mdi.On("GetContractListenerByBackendID", mock.Anything, "ns1", "sb-1").Once().Return(nil, nil)
 
 	err := em.BlockchainEventBatch([]*blockchain.EventToDispatch{
 		{
 			Type:        blockchain.EventTypeForListener,
 			ForListener: ev,
+		},
+		{
+			Type:        blockchain.EventTypeForListener,
+			ForListener: ev, // second event should read from cache (even though listener is not found)
 		},
 	})
 	assert.NoError(t, err)
