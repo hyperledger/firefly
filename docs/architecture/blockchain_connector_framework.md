@@ -41,7 +41,6 @@ called [FireFly Transaction Manager](https://github.com/hyperledger/firefly-tran
 FFTM is responsible for:
 
 - Submission of transactions to blockchains of all types
-  - Nonce management - idempotent submission of transactions, and assignment of nonces 
   - Protocol connectivity decoupled with additional lightweight API connector
   - Easy to add additional protocols that conform to normal patterns of TX submission / events
 
@@ -49,9 +48,11 @@ FFTM is responsible for:
   - Receipts
   - Confirmations
 
-- Gas calculation and rescue of stalled transactions
-  - Extensible policy engine
-  - Gas station API integration
+- Extensible transaction handler with capabilities such as:
+  - Nonce management: idempotent submission of transactions, and assignment of nonces 
+  - Transaction management: pre-signing transactions, resubmission, customizable policy engine
+  - Gas management: Gas Gas station API integration
+  - Transaction process history
 
 - Event streaming
   - Protocol agnostic event polling/streaming support
@@ -75,7 +76,7 @@ The framework is currently constrained to blockchains that adhere to certain bas
 4. Has finality for transactions & events that can be expressed as a level of confidence over time
   - Confirmations: A number of sequential blocks in the canonical chain that contain the transaction
 
-## Nonce management
+## Nonce management in the simple transaction handler
 
 The nonces for transactions is assigned as early as possible in the flow:
 - Before the REST API for submission of the transaction occurs
@@ -124,15 +125,12 @@ However, "at target" comes with two compromises that mean FFTM chose the "at sou
 - In crash recovery scenarios the assurance is at-least-once delivery for "at target" ordering (rather than "exactly once"),
   although the window can be made very small through various optimizations included in the EthConnect codebase.
 
-## Policy Manager
+## Transaction Handler
 
-The policy manager is a pluggable component that allows rich policy to be applied to the
+The transaction Handler is a pluggable component that allows customized logic to be applied to the
 gas pricing, signing, submission and re-submission of transactions to the blockchain.
 
-It is executed at regular intervals against transactions in-flight, and is responsible for
-evaluating what actions are required to cause those transactions to be executed successfully.
-
-The policy manager can store custom state in the state store of the FFTM code, which is also
+The transaction Handler can store custom state in the state store of the FFTM code, which is also
 reported in status within the FireFly API/Explorer on the operation.
 
 A reference implementation is provided that:
@@ -142,11 +140,10 @@ A reference implementation is provided that:
   - Connector: The FFCAPI is used to estimate the gas price (e.g. `eth_gasPrice` for EVM JSON/RPC)
   - Gas Oracle: A REST API is called the the result mapped via a Go template
 - Re-submits transactions after a configurable stale time
+- Record detailed information about [transaction sub-status and actions](../reference/blockchain_operation_status.html)
+- Emit customized metrics for transaction processing
 
-The reference implementation is available [here](https://github.com/hyperledger/firefly-transaction-manager/blob/main/pkg/policyengines/simple/simple_policy_engine.go)
-
-FireFly 1.2 introduced a specification for policy engines to record more detailed information about transaction sub-status and lower-level actions it performs
-as part of progressing a transaction onto the chain. A policy engine might for example have a sub-status of `Received` and another sub-status of `Tracking`. For more information see [Blockchain Operation Status](../reference/blockchain_operation_status.html)
+The reference implementation is available [here](https://github.com/hyperledger/firefly-transaction-manager/blob/main/pkg/txhandler/simple/simple_transaction_handler.go)
 
 
 ## Event Streams
