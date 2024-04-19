@@ -303,12 +303,12 @@
   <li><a href="#blockchain-connector-framework" id="markdown-toc-blockchain-connector-framework">Blockchain Connector Framework</a></li>
   <li><a href="#connector-toolkit-architecture" id="markdown-toc-connector-toolkit-architecture">Connector Toolkit Architecture</a></li>
   <li><a href="#assumptions--requirements" id="markdown-toc-assumptions--requirements">Assumptions / Requirements</a></li>
-  <li><a href="#nonce-management" id="markdown-toc-nonce-management">Nonce management</a>    <ol>
+  <li><a href="#nonce-management-in-the-simple-transaction-handler" id="markdown-toc-nonce-management-in-the-simple-transaction-handler">Nonce management in the simple transaction handler</a>    <ol>
       <li><a href="#avoid-multiple-nonce-management-systems-against-the-same-signing-key" id="markdown-toc-avoid-multiple-nonce-management-systems-against-the-same-signing-key">Avoid multiple nonce management systems against the same signing key</a></li>
       <li><a href="#why-at-source-nonce-management-was-chosen-vs-at-target" id="markdown-toc-why-at-source-nonce-management-was-chosen-vs-at-target">Why “at source” nonce management was chosen vs. “at target”</a></li>
     </ol>
   </li>
-  <li><a href="#policy-manager" id="markdown-toc-policy-manager">Policy Manager</a></li>
+  <li><a href="#transaction-handler" id="markdown-toc-transaction-handler">Transaction Handler</a></li>
   <li><a href="#event-streams" id="markdown-toc-event-streams">Event Streams</a></li>
   <li><a href="#blockchain-error-messages" id="markdown-toc-blockchain-error-messages">Blockchain error messages</a>    <ol>
       <li><a href="#format-of-a-firefly-evmconnect-error-message" id="markdown-toc-format-of-a-firefly-evmconnect-error-message">Format of a <code class="language-plaintext highlighter-rouge">firefly-evmconnect</code> error message</a></li>
@@ -358,7 +358,6 @@ called <a href="https://github.com/hyperledger/firefly-transaction-manager">Fire
 <ul>
   <li>Submission of transactions to blockchains of all types
     <ul>
-      <li>Nonce management - idempotent submission of transactions, and assignment of nonces</li>
       <li>Protocol connectivity decoupled with additional lightweight API connector</li>
       <li>Easy to add additional protocols that conform to normal patterns of TX submission / events</li>
     </ul>
@@ -369,10 +368,12 @@ called <a href="https://github.com/hyperledger/firefly-transaction-manager">Fire
       <li>Confirmations</li>
     </ul>
   </li>
-  <li>Gas calculation and rescue of stalled transactions
+  <li>Extensible transaction handler with capabilities such as:
     <ul>
-      <li>Extensible policy engine</li>
-      <li>Gas station API integration</li>
+      <li>Nonce management: idempotent submission of transactions, and assignment of nonces</li>
+      <li>Transaction management: pre-signing transactions, resubmission, customizable policy engine</li>
+      <li>Gas management: Gas Gas station API integration</li>
+      <li>Transaction process history</li>
     </ul>
   </li>
   <li>Event streaming
@@ -420,10 +421,10 @@ called <a href="https://github.com/hyperledger/firefly-transaction-manager">Fire
     </ul>
   </li>
 </ol>
-      <h2 id="nonce-management">
+      <h2 id="nonce-management-in-the-simple-transaction-handler">
         
         
-          <a href="#nonce-management" class="anchor-heading" aria-labelledby="nonce-management"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Nonce management
+          <a href="#nonce-management-in-the-simple-transaction-handler" class="anchor-heading" aria-labelledby="nonce-management-in-the-simple-transaction-handler"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Nonce management in the simple transaction handler
         
         
       </h2>
@@ -496,22 +497,19 @@ While desirable for automation and throughput, this reduces the ordering guarant
 although the window can be made very small through various optimizations included in the EthConnect codebase.</p>
   </li>
 </ul>
-      <h2 id="policy-manager">
+      <h2 id="transaction-handler">
         
         
-          <a href="#policy-manager" class="anchor-heading" aria-labelledby="policy-manager"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Policy Manager
+          <a href="#transaction-handler" class="anchor-heading" aria-labelledby="transaction-handler"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Transaction Handler
         
         
       </h2>
     
 
-<p>The policy manager is a pluggable component that allows rich policy to be applied to the
+<p>The transaction Handler is a pluggable component that allows customized logic to be applied to the
 gas pricing, signing, submission and re-submission of transactions to the blockchain.</p>
 
-<p>It is executed at regular intervals against transactions in-flight, and is responsible for
-evaluating what actions are required to cause those transactions to be executed successfully.</p>
-
-<p>The policy manager can store custom state in the state store of the FFTM code, which is also
+<p>The transaction Handler can store custom state in the state store of the FFTM code, which is also
 reported in status within the FireFly API/Explorer on the operation.</p>
 
 <p>A reference implementation is provided that:</p>
@@ -525,12 +523,11 @@ reported in status within the FireFly API/Explorer on the operation.</p>
     </ul>
   </li>
   <li>Re-submits transactions after a configurable stale time</li>
+  <li>Record detailed information about <a href="../reference/blockchain_operation_status.html">transaction sub-status and actions</a></li>
+  <li>Emit customized metrics for transaction processing</li>
 </ul>
 
-<p>The reference implementation is available <a href="https://github.com/hyperledger/firefly-transaction-manager/blob/main/pkg/policyengines/simple/simple_policy_engine.go">here</a></p>
-
-<p>FireFly 1.2 introduced a specification for policy engines to record more detailed information about transaction sub-status and lower-level actions it performs
-as part of progressing a transaction onto the chain. A policy engine might for example have a sub-status of <code class="language-plaintext highlighter-rouge">Received</code> and another sub-status of <code class="language-plaintext highlighter-rouge">Tracking</code>. For more information see <a href="../reference/blockchain_operation_status.html">Blockchain Operation Status</a></p>
+<p>The reference implementation is available <a href="https://github.com/hyperledger/firefly-transaction-manager/blob/main/pkg/txhandler/simple/simple_transaction_handler.go">here</a></p>
       <h2 id="event-streams">
         
         
