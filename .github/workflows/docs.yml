@@ -35,7 +35,7 @@ jobs:
 
       - name: Install docs dependencies
         working-directory: doc-site
-        run: pip install -r requirements
+        run: pip install -r requirements.txt
 
       - name: Update doc site for release
         if: ${{ github.event_name == 'release' && env.IS_LATEST_RELEASE != 'true' }}
