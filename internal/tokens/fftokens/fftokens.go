@@ -327,9 +327,26 @@ func (ft *FFTokens) Init(ctx context.Context, cancelCtx context.CancelFunc, name
 	return nil
 }
 
+func (ft *FFTokens) sendWSStartMsg(ctx context.Context, namespace string) error {
+	startCmd := core.WSStart{
+		WSActionBase: core.WSActionBase{
+			Type: core.WSClientActionStart,
+		},
+		Namespace: namespace,
+	}
+	b, _ := json.Marshal(startCmd)
+	if err := ft.wsconn[namespace].Send(ctx, b); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (ft *FFTokens) StartNamespace(ctx context.Context, namespace string, activePools []*core.TokenPool) (err error) {
 	if ft.wsconn[namespace] == nil {
-		ft.wsconn[namespace], err = wsclient.New(ctx, ft.wsConfig, nil, nil)
+		ft.wsconn[namespace], err = wsclient.New(ctx, ft.wsConfig, nil, func(ctx context.Context, w wsclient.WSClient) error {
+			// On Reconnect send start namespace message
+			return ft.sendWSStartMsg(ctx, namespace)
+		})
 		if err != nil {
 			return err
 		}
@@ -346,14 +363,9 @@ func (ft *FFTokens) StartNamespace(ctx context.Context, namespace string, active
 	if err != nil {
 		return err
 	}
-	startCmd := core.WSStart{
-		WSActionBase: core.WSActionBase{
-			Type: core.WSClientActionStart,
-		},
-		Namespace: namespace,
-	}
-	b, _ := json.Marshal(startCmd)
-	if err := ft.wsconn[namespace].Send(ctx, b); err != nil {
+
+	err = ft.sendWSStartMsg(ctx, namespace)
+	if err != nil {
 		return err
 	}
 
