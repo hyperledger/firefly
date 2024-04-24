@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -659,7 +659,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 		fftypes.JSONObject{},
 	}
 
-	return generateMarkdownPages(ctx, types, simpleTypes, filepath.Join("..", "..", "docs", "reference", "types"))
+	return generateMarkdownPages(ctx, types, simpleTypes, filepath.Join("..", "..", "doc-site", "docs", "reference", "types"))
 }
 
 func getType(v interface{}) reflect.Type {
@@ -682,7 +682,7 @@ func generateMarkdownPages(ctx context.Context, types []interface{}, simpleTypes
 	for i, o := range types {
 		pageTitle := getType(types[i]).Name()
 		// Page index starts at 1. Simple types will be the first page. Everything else comes after that.
-		pageHeader := generatePageHeader(pageTitle, i+2)
+		pageHeader := generatePageHeader(pageTitle)
 		b := bytes.NewBuffer([]byte(pageHeader))
 		markdown, _, err := generateObjectReferenceMarkdown(ctx, true, o, reflect.TypeOf(o), rootPageNames, simpleTypesNames, []string{}, outputPath)
 		if err != nil {
@@ -700,10 +700,11 @@ func generateSimpleTypesMarkdown(ctx context.Context, simpleTypes []interface{},
 		simpleTypeNames[i] = strings.ToLower(getType(v).Name())
 	}
 
-	pageHeader := generatePageHeader("Simple Types", 1)
+	pageHeader := generatePageHeader("Simple Types")
 
 	b := bytes.NewBuffer([]byte(pageHeader))
 	for _, simpleType := range simpleTypes {
+		b.WriteString(fmt.Sprintf("## %s\n\n", reflect.TypeOf(simpleType).Name()))
 		markdown, _, _ := generateObjectReferenceMarkdown(ctx, true, nil, reflect.TypeOf(simpleType), []string{}, simpleTypeNames, []string{}, outputPath)
 		b.Write(markdown)
 	}
@@ -728,7 +729,7 @@ func generateObjectReferenceMarkdown(ctx context.Context, descRequired bool, exa
 			return nil, nil, i18n.NewError(ctx, coremsgs.MsgReferenceMarkdownMissing, filename)
 		}
 	} else {
-		typeReferenceDoc.Description = []byte(fmt.Sprintf("{%% include_relative _includes/%s_description.md %%}\n\n", strings.ToLower(t.Name())))
+		typeReferenceDoc.Description = []byte(fmt.Sprintf("{%% include-markdown \"./_includes/%s_description.md\" %%}\n\n", strings.ToLower(t.Name())))
 	}
 
 	// Include an example JSON representation if we have one available
@@ -747,7 +748,6 @@ func generateObjectReferenceMarkdown(ctx context.Context, descRequired bool, exa
 
 	// buff is the main buffer where we will write the markdown for this page
 	buff := bytes.NewBuffer([]byte{})
-	buff.WriteString(fmt.Sprintf("## %s\n\n", t.Name()))
 
 	// If we only have one section, we will not write H3 headers
 	sectionCount := 0
@@ -884,9 +884,9 @@ func writeStructFields(ctx context.Context, t reflect.Type, rootPageNames, simpl
 		case isEnum:
 			fireflyType = generateEnumList(field)
 		case fieldInRootPages:
-			link = fmt.Sprintf("%s#%s", strings.ToLower(fieldType.Name()), strings.ToLower(fieldType.Name()))
+			link = fmt.Sprintf("%s.md#%s", strings.ToLower(fieldType.Name()), strings.ToLower(fieldType.Name()))
 		case fieldInSimpleTypes:
-			link = fmt.Sprintf("simpletypes#%s", strings.ToLower(fieldType.Name()))
+			link = fmt.Sprintf("simpletypes.md#%s", strings.ToLower(fieldType.Name()))
 		case isStruct:
 			link = fmt.Sprintf("#%s", strings.ToLower(fieldType.Name()))
 		}
@@ -902,6 +902,7 @@ func writeStructFields(ctx context.Context, t reflect.Type, rootPageNames, simpl
 				}
 			}
 			if isStruct && !tableAlreadyGenerated && !fieldInRootPages && !fieldInSimpleTypes {
+				subFieldBuff.WriteString(fmt.Sprintf("## %s\n\n", fieldType.Name()))
 				subFieldMarkdown, newTableNames, _ := generateObjectReferenceMarkdown(ctx, false, nil, fieldType, rootPageNames, simpleTypeNames, generatedTableNames, outputPath)
 				generatedTableNames = newTableNames
 				subFieldBuff.Write(subFieldMarkdown)
@@ -915,24 +916,9 @@ func writeStructFields(ctx context.Context, t reflect.Type, rootPageNames, simpl
 	return tableRowCount
 }
 
-func generatePageHeader(pageTitle string, navOrder int) string {
+func generatePageHeader(pageTitle string) string {
 	return fmt.Sprintf(`---
-layout: default
 title: %s
-parent: Core Resources
-grand_parent: pages.reference
-nav_order: %v
 ---
-
-# %s
-{: .no_toc }
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
----
-`, pageTitle, navOrder, pageTitle)
+`, pageTitle)
 }

@@ -62,7 +62,7 @@ func TestDiffSwaggerYAML(t *testing.T) {
 	actualSwaggerHash.Write(b)
 
 	var existingSwaggerBytes []byte
-	existingSwaggerBytes, err = os.ReadFile(filepath.Join("..", "..", "docs", "swagger", "swagger.yaml"))
+	existingSwaggerBytes, err = os.ReadFile(filepath.Join("..", "..", "doc-site", "docs", "swagger", "swagger.yaml"))
 	assert.NoError(t, err)
 
 	expectedSwaggerHash := sha1.New()

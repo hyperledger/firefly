@@ -1,0 +1,36 @@
+- name: bug
+  description: Something isn't working
+  color: b60205
+- name: documentation
+  description: Improvements or additions to documentation
+  color: 0052cc
+- name: duplicate
+  description: This issue or pull request already exists
+  color: 9c99a3
+- name: enhancement
+  description: New feature or request
+  color: 1dbfcf
+- name: good first issue
+  description: Good for newcomers
+  color: 8141f0
+- name: help wanted
+  description: Extra attention is needed
+  color: 0ac492
+- name: invalid
+  description: This doesn't seem right
+  color: e6da05
+- name: needs triage
+  description: New issue that has not yet been looked at
+  color: 69a6d1
+- name: question
+  description: Further information is requested
+  color: 8a23b0
+- name: wontfix
+  description: This will not be worked on
+  color: ccb5ab
+- name: stale
+  description: no commits in last 30 days
+  color: 382c0d
+- name: awaiting response
+  description: Waiting for user response
+  color: d1821b

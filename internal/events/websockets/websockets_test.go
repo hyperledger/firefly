@@ -1220,3 +1220,10 @@ func TestHandleStartWrongNamespace(t *testing.T) {
 	assert.Error(t, err)
 	assert.Regexp(t, "FF10462", err)
 }
+
+func TestIsBoolQuerySet(t *testing.T) {
+	assert.True(t, isBoolQuerySet(url.Values{"batch": []string{"true"}}, "batch"))
+	assert.True(t, isBoolQuerySet(url.Values{"batch": []string{}}, "batch"))
+	assert.False(t, isBoolQuerySet(url.Values{}, "batch"))
+	assert.False(t, isBoolQuerySet(url.Values{"batch": []string{"false"}}, "batch"))
+}

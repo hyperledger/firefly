@@ -14,7 +14,7 @@ GOGC=30
 
 all: build test go-mod-tidy
 test: deps lint
-		$(VGO) test ./internal/... ./pkg/... ./cmd/... ./docs ./ffconfig/... -cover -coverprofile=coverage.txt -covermode=atomic -timeout=30s ${TEST_ARGS}
+		$(VGO) test ./internal/... ./pkg/... ./cmd/... ./doc-site ./ffconfig/... -cover -coverprofile=coverage.txt -covermode=atomic -timeout=30s ${TEST_ARGS}
 coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
@@ -99,7 +99,7 @@ clean:
 deps:
 		$(VGO) get
 reference:
-		$(VGO) test ./internal/apiserver ./internal/reference ./docs -timeout=10s -tags reference
+		$(VGO) test ./internal/apiserver ./internal/reference ./doc-site -timeout=10s -tags reference
 manifest:
 		./manifestgen.sh
 docker:
@@ -107,4 +107,4 @@ docker:
 docker-multiarch:
 		./docker_build.sh --platform linux/amd64,linux/arm64 $(DOCKER_ARGS) 
 docs: .ALWAYS
-		cd docs && bundle install && bundle exec jekyll build && bundle exec htmlproofer --disable-external --allow-hash-href --allow_missing_href true --swap-urls '^/firefly/:/' --ignore-urls /127.0.0.1/,/localhost/ ./_site
+		cd doc-site && mkdocs

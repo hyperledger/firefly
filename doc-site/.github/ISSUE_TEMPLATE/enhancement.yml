@@ -1,0 +1,27 @@
+name: Enhancement Tracking Issue
+description: Provide supporting details for an enhancement
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        _The more information you share, the faster we can help you._
+        Prior to opening the issue, please make sure that you:
+        - Use English (EN/US) to communicate.
+        - Search the [open issues](https://github.com/hyperledger-labs/documentation-template/issues) to avoid duplicating the issue.
+
+  - type: textarea
+    id: enhancement
+    attributes:
+      label: What would you like to be added?
+      description: |
+        A clear and concise description of what you want to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Why is this needed?
+    validations:
+      required: true
