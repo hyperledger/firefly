@@ -36,7 +36,8 @@ nav_order: 4
     "message": "b09d9f77-7b16-4760-a8d7-0e3c319b2a16",
     "urls": {
         "openapi": "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api/swagger.json",
-        "ui": "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api"
+        "ui": "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api",
+        "api": "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api"
     },
     "published": false
 }
@@ -71,5 +72,6 @@ nav_order: 4
 |------------|-------------|------|
 | `openapi` | The URL to download the OpenAPI v3 (Swagger) description for the API generated in JSON or YAML format | `string` |
 | `ui` | The URL to use in a web browser to access the SwaggerUI explorer/exerciser for the API | `string` |
+| `api` | The URL to use to invoke the API | `string` |
 
 
