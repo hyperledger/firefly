@@ -64,8 +64,7 @@ plugins:
       rewrite_relative_urls: false
   - literate-nav
   - search
-  - mike:
-      deploy_prefix: "firefly"
+  - mike
 extra:
   analytics:
     provider: google
