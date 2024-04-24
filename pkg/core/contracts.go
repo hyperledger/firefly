@@ -55,9 +55,9 @@ type ContractDeployRequest struct {
 }
 
 type ContractURLs struct {
+	API     string `ffstruct:"ContractURLs" json:"api"`
 	OpenAPI string `ffstruct:"ContractURLs" json:"openapi"`
 	UI      string `ffstruct:"ContractURLs" json:"ui"`
-	API     string `ffstruct:"ContractURLs" json:"api"`
 }
 
 type ContractAPI struct {

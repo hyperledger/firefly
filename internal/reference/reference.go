@@ -100,9 +100,9 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			}`),
 			Message: fftypes.MustParseUUID("b09d9f77-7b16-4760-a8d7-0e3c319b2a16"),
 			URLs: core.ContractURLs{
+				API:     "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api",
 				OpenAPI: "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api/swagger.json",
 				UI:      "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api",
-				API:     "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api",
 			},
 		},
 
