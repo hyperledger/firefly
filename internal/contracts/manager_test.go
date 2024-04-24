@@ -3214,6 +3214,7 @@ func TestGetContractAPI(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api/swagger.json", result.URLs.OpenAPI)
 	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api", result.URLs.UI)
+	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana", result.URLs.API)
 }
 
 func TestGetContractAPIs(t *testing.T) {
@@ -3235,6 +3236,7 @@ func TestGetContractAPIs(t *testing.T) {
 	assert.Equal(t, 1, len(results))
 	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api/swagger.json", results[0].URLs.OpenAPI)
 	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana/api", results[0].URLs.UI)
+	assert.Equal(t, "http://localhost/api/v1/namespaces/ns1/apis/banana", results[0].URLs.API)
 }
 
 func TestGetContractAPIInterface(t *testing.T) {
