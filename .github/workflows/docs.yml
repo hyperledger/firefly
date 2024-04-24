@@ -18,6 +18,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Docs Deploy
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "noreply@github.com"
+
       - name: Check if this is the latest release
         run: |
           LATEST_TAG=$(
@@ -48,6 +53,11 @@ jobs:
         run: mike deploy ${{ github.event.release.tag_name }} latest --push
 
       - name: Update doc site for `main` branch
-        if: ${{ github.event_name != 'release' }}
+        if: ${{ github.event_name == 'push' }}
         working-directory: doc-site
         run: mike deploy head --push
+
+      - name: Test building the doc site but do not deploy it
+        if: ${{ github.event_name == 'pull_request' }}
+        working-directory: doc-site
+        run: mkdocs build

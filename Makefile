@@ -107,4 +107,4 @@ docker:
 docker-multiarch:
 		./docker_build.sh --platform linux/amd64,linux/arm64 $(DOCKER_ARGS) 
 docs: .ALWAYS
-		cd doc-site && mkdocs
+		cd doc-site && mkdocs build
