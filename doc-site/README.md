@@ -1,6 +1,6 @@
-# Welcome to the documentation template
+# Hyperledger FireFly Documentation Site
 
-This repository serves as a template for creating documentation for Hyperledger projects. The template utilizes MkDocs (documentation at [mkdocs.org](https://www.mkdocs.org)) and the theme Material for MkDocs (documentation at [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/)). Material adds a number of extra features to MkDocs, and Hyperledger repositories can take advantage of the theme's [Insiders](https://squidfunk.github.io/mkdocs-material/insiders/) capabilities.
+This directory is based on the [Hyperledger documentation template](https://github.com/hyperledger-labs/documentation-template). The template utilizes MkDocs (documentation at [mkdocs.org](https://www.mkdocs.org)) and the theme Material for MkDocs (documentation at [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/)). Material adds a number of extra features to MkDocs, and Hyperledger repositories can take advantage of the theme's [Insiders](https://squidfunk.github.io/mkdocs-material/insiders/) capabilities.
 
 [Material for MkDocs]: https://squidfunk.github.io/mkdocs-material/
 [Mike]: https://github.com/jimporter/mike
@@ -18,10 +18,22 @@ To test the documents and update the published site, the following tools are nee
     deploying the site to gh-pages.
 
 ### git
+
 `git` can be installed locally, as described in the [Install Git Guide from GitHub](https://github.com/git-guides/install-git).
 
 ### Python 3
+
 `Python 3` can be installed locally, as described in the [Python Getting Started guide](https://www.python.org/about/gettingstarted/).
+
+### Virtual environment
+
+It is recommended to install your Python dependencies in a virtual environment in case you have other conflicting Python installations on your machine. This also removes the need to install these packages globally on your computer.
+
+```bash
+cd doc-site
+python3 -m venv venv
+source venv/bin/activate
+```
 
 ### Mkdocs
 
@@ -41,9 +53,9 @@ To verify your setup, check that you can run `mkdocs` by running the command `mk
 
 The commands you will usually use with `mkdocs` are:
 
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+- `mkdocs serve` - Start the live-reloading docs server.
+- `mkdocs build` - Build the documentation site.
+- `mkdocs -h` - Print help message and exit.
 
 ## Adding Content
 
