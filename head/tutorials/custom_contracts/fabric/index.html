@@ -3494,6 +3494,8 @@
       
         
       
+        
+      
     
     
     
@@ -3565,6 +3567,27 @@
   
   <span class="md-ellipsis">
     v1.2.0 Migration Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../releasenotes/1.3_migration_guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    v1.3.0 Migration Guide
   </span>
   
 
@@ -4098,7 +4121,10 @@
 <p>Now that we have a FireFly Interface representation of our chaincode, we want to broadcast that to the entire network. This broadcast will be pinned to the blockchain, so we can always refer to this specific name and version, and everyone in the network will know exactly which contract interface we are talking about.</p>
 <p>We will use the FFI JSON constructed above and <code>POST</code> that to the <code>/contracts/interfaces</code> API endpoint.</p>
 <h3 id="request">Request<a class="headerlink" href="#request" title="Permanent link">&para;</a></h3>
-<p><code>POST</code> <code>http://localhost:5000/api/v1/namespaces/default/contracts/interfaces</code></p>
+<p><code>POST</code> <code>http://localhost:5000/api/v1/namespaces/default/contracts/interfaces?publish=true</code></p>
+<blockquote>
+<p><em>NOTE</em>: Without passing the query parameter <code>publish=true</code> when the interface is created, it will initially be unpublished and not broadcasted to other members of the network (if configured in multi-party). To publish the interface, a subsequent API call would need to be made to <code>/contracts/interfaces/{name}/{version}/publish</code></p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;namespace&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;asset_transfer&quot;</span><span class="p">,</span>
@@ -4277,7 +4303,10 @@
 <p><strong>NOTE</strong>: The <code>location</code> field is optional here, but if it is omitted, it will be required in every request to invoke or query the chaincode. This can be useful if you have multiple instances of the same chaincode deployed to different channels.</p>
 </blockquote>
 <h3 id="request_1">Request<a class="headerlink" href="#request_1" title="Permanent link">&para;</a></h3>
-<p><code>POST</code> <code>http://localhost:5000/api/v1/namespaces/default/apis</code></p>
+<p><code>POST</code> <code>http://localhost:5000/api/v1/namespaces/default/apis?publish=true</code></p>
+<blockquote>
+<p><em>NOTE</em>: Without passing the query parameter <code>publish=true</code> when the API is created, it will initially be unpublished and not broadcasted to other members of the network (if configured in multi-party). To publish the API, a subsequent API call would need to be made to <code>/apis/{apiName}/publish</code></p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;asset_transfer&quot;</span><span class="p">,</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">&quot;interface&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>

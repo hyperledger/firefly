@@ -3593,6 +3593,8 @@
       
         
       
+        
+      
     
     
     
@@ -3664,6 +3666,27 @@
   
   <span class="md-ellipsis">
     v1.2.0 Migration Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../releasenotes/1.3_migration_guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    v1.3.0 Migration Guide
   </span>
   
 
@@ -4474,7 +4497,10 @@
 <p>Now that we have a FireFly Interface representation of our smart contract, we want to broadcast that to the entire network. This broadcast will be pinned to the blockchain, so we can always refer to this specific name and version, and everyone in the network will know exactly which contract interface we are talking about.</p>
 <p>We will take the output from the previous HTTP response above, <strong>fill in the name and version</strong> and then <code>POST</code> that to the <code>/contracts/interfaces</code> API endpoint.</p>
 <h3 id="request_2">Request<a class="headerlink" href="#request_2" title="Permanent link">&para;</a></h3>
-<p><code>POST</code> <code>http://localhost:5000/api/v1/namespaces/default/contracts/interfaces</code></p>
+<p><code>POST</code> <code>http://localhost:5000/api/v1/namespaces/default/contracts/interfaces?publish=true</code></p>
+<blockquote>
+<p><em>NOTE</em>: Without passing the query parameter <code>publish=true</code> when the interface is created, it will initially be unpublished and not broadcasted to other members of the network (if configured in multi-party). To publish the interface, a subsequent API call would need to be made to <code>/contracts/interfaces/{name}/{version}/publish</code></p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">&quot;namespace&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SimpleStorage&quot;</span><span class="p">,</span>
@@ -4633,8 +4659,9 @@
 <a id="__codelineno-6-81" name="__codelineno-6-81" href="#__codelineno-6-81"></a><span class="w">        </span><span class="p">}</span>
 <a id="__codelineno-6-82" name="__codelineno-6-82" href="#__codelineno-6-82"></a><span class="w">      </span><span class="p">]</span>
 <a id="__codelineno-6-83" name="__codelineno-6-83" href="#__codelineno-6-83"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-6-84" name="__codelineno-6-84" href="#__codelineno-6-84"></a><span class="w">  </span><span class="p">]</span>
-<a id="__codelineno-6-85" name="__codelineno-6-85" href="#__codelineno-6-85"></a><span class="p">}</span>
+<a id="__codelineno-6-84" name="__codelineno-6-84" href="#__codelineno-6-84"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-6-85" name="__codelineno-6-85" href="#__codelineno-6-85"></a><span class="w">  </span><span class="nt">&quot;published&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-6-86" name="__codelineno-6-86" href="#__codelineno-6-86"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="create-an-http-api-for-the-contract">Create an HTTP API for the contract<a class="headerlink" href="#create-an-http-api-for-the-contract" title="Permanent link">&para;</a></h2>
 <p>Now comes the fun part where we see some of the powerful, developer-friendly features of FireFly. The next thing we're going to do is tell FireFly to build an HTTP API for this smart contract, complete with an OpenAPI Specification and Swagger UI. As part of this, we'll also tell FireFly where the contract is on the blockchain. Like the interface broadcast above, this will also generate a broadcast which will be pinned to the blockchain so all the members of the network will be aware of and able to interact with this API.</p>
@@ -4643,7 +4670,10 @@
 <p><strong>NOTE</strong>: The <code>location</code> field is optional here, but if it is omitted, it will be required in every request to invoke or query the contract. This can be useful if you have multiple instances of the same contract deployed to different addresses.</p>
 </blockquote>
 <h3 id="request_3">Request<a class="headerlink" href="#request_3" title="Permanent link">&para;</a></h3>
-<p><code>POST</code> <code>http://localhost:5000/api/v1/namespaces/default/apis</code></p>
+<p><code>POST</code> <code>http://localhost:5000/api/v1/namespaces/default/apis?publish=true</code></p>
+<blockquote>
+<p><em>NOTE</em>: Without passing the query parameter <code>publish=true</code> when the API is created, it will initially be unpublished and not broadcasted to other members of the network (if configured in multi-party). To publish the API, a subsequent API call would need to be made to <code>/apis/{apiName}/publish</code></p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;simple-storage&quot;</span><span class="p">,</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">&quot;interface&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
@@ -4669,8 +4699,9 @@
 <a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">  </span><span class="nt">&quot;urls&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">    </span><span class="nt">&quot;openapi&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://127.0.0.1:5000/api/v1/namespaces/default/apis/simple-storage/api/swagger.json&quot;</span><span class="p">,</span>
 <a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">    </span><span class="nt">&quot;ui&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://127.0.0.1:5000/api/v1/namespaces/default/apis/simple-storage/api&quot;</span>
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="p">}</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">  </span><span class="nt">&quot;published&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="view-openapi-spec-for-the-contract">View OpenAPI spec for the contract<a class="headerlink" href="#view-openapi-spec-for-the-contract" title="Permanent link">&para;</a></h2>
 <p>You'll notice in the response body that there are a couple of URLs near the bottom. If you navigate to the one labeled <code>ui</code> in your browser, you should see the Swagger UI for your smart contract.</p>

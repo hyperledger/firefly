@@ -3341,6 +3341,8 @@
       
         
       
+        
+      
     
     
     
@@ -3412,6 +3414,27 @@
   
   <span class="md-ellipsis">
     v1.2.0 Migration Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../releasenotes/1.3_migration_guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    v1.3.0 Migration Guide
   </span>
   
 
@@ -3658,7 +3681,10 @@
 <p>After your stack is up and running, the first thing you need to do is create a token pool. Every application will need at least one token pool. At a minimum, you must always specify a <code>name</code> and <code>type</code> for the pool.</p>
 <p>If you're using the default ERC-20 / ERC-721 token connector and its sample token factory, it will automatically deploy a new ERC-721 contract instance.</p>
 <h4 id="request">Request<a class="headerlink" href="#request" title="Permanent link">&para;</a></h4>
-<p><code>POST</code> <code>http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools</code></p>
+<p><code>POST</code> <code>http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools?publish=true</code></p>
+<blockquote>
+<p><em>NOTE</em>: Without passing the query parameter <code>publish=true</code> when the token pool is created, it will initially be unpublished and not broadcasted to other members of the network (if configured in multi-party). To publish the token pool, a subsequent API call would need to be made to <code>/tokens/pools/{nameOrId}/publish</code></p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nonfungible&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nfts&quot;</span>
@@ -3675,8 +3701,9 @@
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="nt">&quot;tx&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;token_pool&quot;</span><span class="p">,</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00678116-89d2-4295-990c-bd5ffa6e2434&quot;</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="p">}</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="nt">&quot;published&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="p">}</span>
 </code></pre></div>
 <p>Other parameters:</p>
 <ul>
@@ -3716,7 +3743,10 @@
 <p>See the <a href="https://github.com/hyperledger/firefly-tokens-erc20-erc721/blob/main/README.md">README</a> of the token connector for details on what contract variants can currently be understood.</p>
 <p>You can pass a <code>config</code> object with an <code>address</code> and <code>blockNumber</code> when you make the request to create the token pool, and if you created a contract interface, you can include the <code>interface</code> ID as well.</p>
 <h4 id="request_2">Request<a class="headerlink" href="#request_2" title="Permanent link">&para;</a></h4>
-<p><code>POST</code> <code>http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools</code></p>
+<p><code>POST</code> <code>http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools?publish=true</code></p>
+<blockquote>
+<p><em>NOTE</em>: Without passing the query parameter <code>publish=true</code> when the token pool is created, it will initially be unpublished and not broadcasted to other members of the network (if configured in multi-party). To publish the token pool, a subsequent API call would need to be made to <code>/tokens/pools/{nameOrId}/publish</code></p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;testpool&quot;</span><span class="p">,</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nonfungible&quot;</span><span class="p">,</span>

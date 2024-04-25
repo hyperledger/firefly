@@ -3132,18 +3132,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-content" class="md-nav__link">
+  <a href="#directory-layout" class="md-nav__link">
     <span class="md-ellipsis">
-      Adding Content
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#repository-layout" class="md-nav__link">
-    <span class="md-ellipsis">
-      Repository layout
+      Directory layout
     </span>
   </a>
   
@@ -3264,6 +3255,8 @@
       
         
       
+        
+      
     
     
     
@@ -3335,6 +3328,27 @@
   
   <span class="md-ellipsis">
     v1.2.0 Migration Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releasenotes/1.3_migration_guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    v1.3.0 Migration Guide
   </span>
   
 
@@ -3456,18 +3470,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-content" class="md-nav__link">
+  <a href="#directory-layout" class="md-nav__link">
     <span class="md-ellipsis">
-      Adding Content
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#repository-layout" class="md-nav__link">
-    <span class="md-ellipsis">
-      Repository layout
+      Directory layout
     </span>
   </a>
   
@@ -3545,18 +3550,12 @@ instructions follow:</p>
 <li><code>mkdocs build</code> - Build the documentation site.</li>
 <li><code>mkdocs -h</code> - Print help message and exit.</li>
 </ul>
-<h2 id="adding-content">Adding Content<a class="headerlink" href="#adding-content" title="Permanent link">&para;</a></h2>
-<p>The basic process for adding content to the site is:</p>
-<ul>
-<li>Create a new markdown file under the <code>docs</code> folder</li>
-<li>Add the new file to the table of contents (<code>nav</code> section in the <code>mkdocs.yml</code> file)</li>
-</ul>
-<p>If you are using this as a template for creating your own documentation, please see <a href="./docs/index.md">the instructions for customization</a>.</p>
-<h2 id="repository-layout">Repository layout<a class="headerlink" href="#repository-layout" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>mkdocs.yml    # The configuration file.
+<h2 id="directory-layout">Directory layout<a class="headerlink" href="#directory-layout" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>mkdocs.yml     # The configuration file.
 docs/
-    index.md  # The documentation homepage.
-    ...       # Other markdown pages, images and other files.
+    index.md   # The documentation homepage.
+    SUMMARY.md # The main left nav
+    ...        # Other markdown pages, images and other files.
 </code></pre></div>
 
 

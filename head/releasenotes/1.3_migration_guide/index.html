@@ -9,10 +9,8 @@
       
       
       
-        <link rel="prev" href="../code_repositories/">
+        <link rel="prev" href="../1.2_migration_guide/">
       
-      
-        <link rel="next" href="../docs_setup/">
       
       
       <link rel="icon" href="../../assets/favicon.ico">
@@ -20,7 +18,7 @@
     
     
       
-        <title>Setting up a FireFly Core Development Environment - Hyperledger FireFly</title>
+        <title>v1.3.0 Migration Guide - Hyperledger FireFly</title>
       
     
     
@@ -82,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#setting-up-a-firefly-core-development-environment" class="md-skip">
+        <a href="#overview" class="md-skip">
           Skip to content
         </a>
       
@@ -133,7 +131,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Setting up a FireFly Core Development Environment
+              v1.3.0 Migration Guide
             
           </span>
         </div>
@@ -2831,8 +2829,6 @@
       
   
   
-    
-  
   
   
     
@@ -2861,16 +2857,16 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../contributors/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -2887,7 +2883,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             Contributors
@@ -2903,7 +2899,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../advanced_cli_usage/" class="md-nav__link">
+      <a href="../../contributors/advanced_cli_usage/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2924,7 +2920,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../code_hierarchy/" class="md-nav__link">
+      <a href="../../contributors/code_hierarchy/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2945,7 +2941,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../code_overview/" class="md-nav__link">
+      <a href="../../contributors/code_overview/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2966,7 +2962,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../code_repositories/" class="md-nav__link">
+      <a href="../../contributors/code_repositories/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2984,30 +2980,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Setting up a FireFly Core Development Environment
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../contributors/dev_environment_setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3016,128 +2992,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#dependencies" class="md-nav__link">
-    <span class="md-ellipsis">
-      Dependencies
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Dependencies">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#install-the-firefly-cli" class="md-nav__link">
-    <span class="md-ellipsis">
-      Install the FireFly CLI
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#installing-go-and-setting-up-your-gopath" class="md-nav__link">
-    <span class="md-ellipsis">
-      Installing Go and setting up your GOPATH
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#building-firefly" class="md-nav__link">
-    <span class="md-ellipsis">
-      Building FireFly
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#install-the-cli" class="md-nav__link">
-    <span class="md-ellipsis">
-      Install the CLI
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#set-up-a-development-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      Set up a development stack
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Set up a development stack">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#start-the-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      Start the stack
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#1-from-another-terminal" class="md-nav__link">
-    <span class="md-ellipsis">
-      1) From another terminal
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-using-an-ide" class="md-nav__link">
-    <span class="md-ellipsis">
-      2) Using an IDE
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#set-up-dev-environment-for-other-components" class="md-nav__link">
-    <span class="md-ellipsis">
-      Set up dev environment for other components
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3150,7 +3004,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../docs_setup/" class="md-nav__link">
+      <a href="../../contributors/docs_setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3171,7 +3025,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../release_guide/" class="md-nav__link">
+      <a href="../../contributors/release_guide/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3192,7 +3046,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../version_scheme/" class="md-nav__link">
+      <a href="../../contributors/version_scheme/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3257,6 +3111,8 @@
       
   
   
+    
+  
   
   
     
@@ -3275,16 +3131,16 @@
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../releasenotes/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -3301,7 +3157,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             Release Notes
@@ -3317,7 +3173,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../releasenotes/1.1_migration_guide/" class="md-nav__link">
+      <a href="../1.1_migration_guide/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3338,7 +3194,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../releasenotes/1.2_migration_guide/" class="md-nav__link">
+      <a href="../1.2_migration_guide/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3356,10 +3212,28 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../releasenotes/1.3_migration_guide/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    v1.3.0 Migration Guide
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -3368,6 +3242,204 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker-image-file-permission-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker image file permission considerations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-definitionpublication-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      API definition/publication considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API definition/publication considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#contract-interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contract interfaces
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contract-apis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contract APIs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-pools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Token pools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-stream-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Event stream considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Event stream considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#single-event-stream-per-namespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      Single event stream per namespace
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deprecated configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#token-pool-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Token pool considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Token pool considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#activity-indicator-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Activity indicator changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fabconnect-event-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      FabConnect event considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="FabConnect event considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fabconnect-protocol-id-format-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      FabConnect Protocol ID format changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-development-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Local development considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Local development considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#go-version-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      Go version upgrade
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -3397,8 +3469,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -3407,28 +3477,55 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#dependencies" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
-      Dependencies
+      Overview
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Dependencies">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker-image-file-permission-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker image file permission considerations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-definitionpublication-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      API definition/publication considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API definition/publication considerations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#install-the-firefly-cli" class="md-nav__link">
+  <a href="#contract-interfaces" class="md-nav__link">
     <span class="md-ellipsis">
-      Install the FireFly CLI
+      Contract interfaces
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#installing-go-and-setting-up-your-gopath" class="md-nav__link">
+  <a href="#contract-apis" class="md-nav__link">
     <span class="md-ellipsis">
-      Installing Go and setting up your GOPATH
+      Contract APIs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-pools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Token pools
     </span>
   </a>
   
@@ -3440,55 +3537,19 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#building-firefly" class="md-nav__link">
+  <a href="#event-stream-considerations" class="md-nav__link">
     <span class="md-ellipsis">
-      Building FireFly
+      Event stream considerations
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#install-the-cli" class="md-nav__link">
-    <span class="md-ellipsis">
-      Install the CLI
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#set-up-a-development-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      Set up a development stack
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Set up a development stack">
+    <nav class="md-nav" aria-label="Event stream considerations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#start-the-stack" class="md-nav__link">
+  <a href="#single-event-stream-per-namespace" class="md-nav__link">
     <span class="md-ellipsis">
-      Start the stack
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#1-from-another-terminal" class="md-nav__link">
-    <span class="md-ellipsis">
-      1) From another terminal
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-using-an-ide" class="md-nav__link">
-    <span class="md-ellipsis">
-      2) Using an IDE
+      Single event stream per namespace
     </span>
   </a>
   
@@ -3500,11 +3561,98 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#set-up-dev-environment-for-other-components" class="md-nav__link">
+  <a href="#configuration-considerations" class="md-nav__link">
     <span class="md-ellipsis">
-      Set up dev environment for other components
+      Configuration considerations
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Configuration considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deprecated configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#token-pool-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Token pool considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Token pool considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#activity-indicator-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Activity indicator changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fabconnect-event-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      FabConnect event considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="FabConnect event considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fabconnect-protocol-id-format-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      FabConnect Protocol ID format changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-development-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Local development considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Local development considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#go-version-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      Go version upgrade
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3526,68 +3674,68 @@
   
 
 
-<h1 id="setting-up-a-firefly-core-development-environment">Setting up a FireFly Core Development Environment<a class="headerlink" href="#setting-up-a-firefly-core-development-environment" title="Permanent link">&para;</a></h1>
-<p>This guide will walk you through setting up your machine for contributing to FireFly, specifically the FireFly core.</p>
-<hr />
-<h2 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h2>
-<p>You will need a few prerequisites set up on your machine before you can build FireFly from source. We recommend doing development on macOS, Linux, or WSL 2.0.</p>
+  <h1>v1.3.0 Migration Guide</h1>
+
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Hyperledger FireFly v1.3.0 is a feature release that includes changes around event streaming, contract listeners, define/publish APIs as well as a range of general fixes.</p>
+<p>For the most part, upgrading from v1.2.x to v1.3.0 should be a seamless experience, but there are several important things to note about changes between the two versions, which are described in detail on this page.</p>
+<h2 id="docker-image-file-permission-considerations">Docker image file permission considerations<a class="headerlink" href="#docker-image-file-permission-considerations" title="Permanent link">&para;</a></h2>
+<p>Following security best practices, the official published Docker images for FireFly Core and all of its microservices now run as a non-root user by default. If you are running a FireFly release prior to v1.3.0, depending on how you were running your containers, you may need to adjust file permissions inside volumes that these containers write to. If you have overridden the default user for your containers (for example though a Kubernetes deployment) you may safely ignore this section.</p>
+<blockquote>
+<p>⚠️ <strong>Warning</strong>: If you have been using the default root user and upgrade to FireFly v1.3.0 without changing these file permissions your services may fail to start.</p>
+</blockquote>
+<p>The new default user is <code>1001</code>. If you are not overriding the user for your container, this user or group needs to have write permissions in several places. The list of services and directories you should specifically check are:</p>
 <ul>
-<li><a href="https://golang.org/dl/">Go 1.21</a></li>
-<li>make</li>
-<li>GCC</li>
-<li>openssl</li>
+<li><strong>firefly-evmconnect</strong></li>
+<li><code>persistence.leveldb.path</code> directory set in the config file</li>
+<li><strong>firefly-ethconnect</strong></li>
+<li><code>rest.rest-gateway.openapi.storagePath</code> directory in the config file</li>
+<li><code>rest.rest-gateway.openapi.eventsDB</code> directory in the config file</li>
+<li><strong>firefly-fabconnect</strong></li>
+<li><code>receipts.leveldb.path</code> directory in the config file</li>
+<li><code>events.leveldb.path</code> directory in the config file</li>
+<li><strong>firefly-dataexchange-https</strong></li>
+<li>Data directory set by the <code>DATA_DIRECTORY</code> environment variable (default <code>/data</code>)</li>
 </ul>
-<h3 id="install-the-firefly-cli">Install the FireFly CLI<a class="headerlink" href="#install-the-firefly-cli" title="Permanent link">&para;</a></h3>
-<p>The first step to setting up a local development environment is to install the FireFly CLI. Please section of the <a href="../../gettingstarted/firefly_cli/">Getting Started Guide to install The FireFly CLI</a>.</p>
-<h3 id="installing-go-and-setting-up-your-gopath">Installing Go and setting up your <code>GOPATH</code><a class="headerlink" href="#installing-go-and-setting-up-your-gopath" title="Permanent link">&para;</a></h3>
-<p>We recommend following the <a href="https://golang.org/doc/install">instructions on golang.org</a> to install Go, rather than installing Go from another package magager such as <code>brew</code>. Although it is possible to install Go any way you'd like, setting up your <code>GOPATH</code> may differ from the following instructions.</p>
-<p>After installing Go, you will need to add a few environment variables to your shell run commands file. This is usually a hidden file in your home directory called <code>.bashrc</code> or <code>.zshrc</code>, depending on which shell you're using.</p>
-<p>Add the following lines to your <code>.bashrc</code> or <code>.zshrc</code> file:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>export GOPATH=$HOME/go
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>export GOROOT=&quot;/usr/local/go&quot;
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>export PATH=&quot;$PATH:${GOPATH}/bin:${GOROOT}/bin&quot;
-</code></pre></div>
-<h2 id="building-firefly">Building FireFly<a class="headerlink" href="#building-firefly" title="Permanent link">&para;</a></h2>
-<p>After installing dependencies, building FireFly from source is very easy. Just clone the repo:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git clone git@github.com:hyperledger/firefly.git &amp;&amp; cd firefly
-</code></pre></div>
-<p>And run the <code>Makefile</code> to run tests, and compile the app</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>make
-</code></pre></div>
-<p>If you want to install the binary on your path (assuming your Go Home is already on your path), from inside the project directory you can simply run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>go install
-</code></pre></div>
-<h2 id="install-the-cli">Install the CLI<a class="headerlink" href="#install-the-cli" title="Permanent link">&para;</a></h2>
-<p>Please check the CLI Installation instructions for the best way to install the CLI on your machine:
-<a href="https://github.com/hyperledger/firefly-cli#install-the-cli">https://github.com/hyperledger/firefly-cli#install-the-cli</a></p>
-<h2 id="set-up-a-development-stack">Set up a development stack<a class="headerlink" href="#set-up-a-development-stack" title="Permanent link">&para;</a></h2>
-<p>Now that you have both FireFly and the FireFly CLI installed, it's time to create a development stack. The CLI can be used to create a docker-compose environment that runs the entirety of a FireFly network. This will include several different processes for each member of the network. This is very useful for people that want to build apps that use FireFly's API. It can also be useful if you want to make changes to FireFly itself, however we need to set up the stack slightly differently in that case.</p>
-<p>Essentially what we are going to do is have docker-compose run everything in the FireFly network <em>except</em> one FireFly core process. We'll run this FireFly core process on our host machine, and configure it to connect to the rest of the microservices running in docker-compose. This means we could launch FireFly from Visual Studio Code or some other IDE and use a debugger to see what's going on inside FireFly as it's running.</p>
-<p>We'll call this stack <code>dev</code>. We're also going to add <code>--external 1</code> to the end of our command to create the new stack:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ff init dev --external 1
-</code></pre></div>
-<p>This tells the CLI that we want to manage one of the FireFly core processes outside the docker-compose stack. For convenience, the CLI will still generate a config file for this process though.</p>
-<h3 id="start-the-stack">Start the stack<a class="headerlink" href="#start-the-stack" title="Permanent link">&para;</a></h3>
-<p>To start your new stack simply run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ff start dev
-</code></pre></div>
-<p>At a certain point in the startup process, the CLI will pause and wait for up to two minutes for you to start the other FireFly node. There are two different ways you can run the external FireFly core process.</p>
-<h3 id="1-from-another-terminal">1) From another terminal<a class="headerlink" href="#1-from-another-terminal" title="Permanent link">&para;</a></h3>
-<p>The CLI will print out the command line which can be copied and pasted into another terminal window to run FireFly. <em>This command should be run from the <code>firefly</code> core project directory.</em> Here is an example of the command that the CLI will tell you to run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>firefly -f ~/.firefly/stacks/dev/runtime/config/firefly_core_0.yml
-</code></pre></div>
-<blockquote>
-<p><strong>NOTE</strong>: The first time you run FireFly with a fresh database, it will need a directory of database migrations to apply to the empty database. If you run FireFly from the <code>firefly</code> project directory you cloned from GitHub, it will automatically find these and apply them. If you run it from some other directory, you will have to point FireFly to the migrations on your own.</p>
-</blockquote>
-<h3 id="2-using-an-ide">2) Using an IDE<a class="headerlink" href="#2-using-an-ide" title="Permanent link">&para;</a></h3>
-<p>If you named your stack <code>dev</code> there is a <code>launch.json</code> file for Visual Studio code already in the project directory. If you have the project open in Visual Studio Code, you can either press the F5 key to run it, or go to the "Run and Debug" view in Visual Studio code, and click "Run FireFly Core".</p>
-<p><img alt="Launch config" src="../../images/launch_config.png" title="Launch config" /></p>
-<p>Now you should have a full FireFly stack up and running, and be able to debug FireFly using your IDE. Happy hacking!</p>
-<blockquote>
-<p><strong>NOTE</strong>: Because <code>firefly-ui</code> is a separate repo, unless you also start a UI dev server for the external FireFly core, the default UI path will not load. This is expected, and if you're just working on FireFly core itself, you don't need to worry about it.`</p>
-</blockquote>
-<h2 id="set-up-dev-environment-for-other-components">Set up dev environment for other components<a class="headerlink" href="#set-up-dev-environment-for-other-components" title="Permanent link">&para;</a></h2>
-<p>Refer to <a href="../advanced_cli_usage/">Advanced CLI Usage</a>.</p>
+<h2 id="api-definitionpublication-considerations">API definition/publication considerations<a class="headerlink" href="#api-definitionpublication-considerations" title="Permanent link">&para;</a></h2>
+<p><strong>As of FireFly v1.3.0 in multi-party namespaces, by default, contract interfaces, contracts APIs, and token pools have distinct steps in their creation flow and by default they are unpublished.</strong></p>
+<p>These following described changes impact contract interfaces, contract APIs, and token pools.</p>
+<p>Previously, when creating one of the affected resources in a multi-party network, if successful, the resource would be automatically broadcasted to other namespaces. In FireFly v1.3.0, this behaviour has changed, now when one of the resources is created there are 2 distinct states for the resource, <em>published</em> and <em>unpublished</em>. The default state for a resource (provided FireFly is not told otherwise) after creation is <em>unpublished</em>.</p>
+<p>When a resource is <em>unpublished</em> it is not broadcasted to other namespaces in the multi-party network, and it is not pinned to the blockchain. In this state, it is possible to call the <code>DELETE</code> APIs to remove the resource (such as in the case where configuration needs to be changed) and reclaim the name that has been provided to it, so that it can be recreated.</p>
+<p>When a resource is <em>published</em> it is broadcasted to other namespaces in the multi-party network, and it is pinned to the blockchain. In this state, it is no longer possible to call the <code>DELETE</code> APIs to remove the resource.</p>
+<p>In FireFly v1.2.0 to create one of the affected resources and publish it to other parties, a <code>POST</code> call would be made to its respective API route and the broadcast would happen immediately. To achieve the same behaviour in FireFly v1.3.0, there are 2 options for all impacted resources, either providing a query parameter at creation to signal immediate publish, or a subsequent API call to publish the resources.</p>
+<h3 id="contract-interfaces">Contract interfaces<a class="headerlink" href="#contract-interfaces" title="Permanent link">&para;</a></h3>
+<p>Previously, to create a contract interface a <code>POST</code> call would be made to <code>/contracts/interfaces</code> and the interface would be broadcasted to all other namepsaces. In FireFly v1.3.0, this same call can be made with the <code>publish=true</code> query parameter, or a subsequent API call can be made on an unpublished interface on <code>POST /contracts/interfaces/{name}/{version}/publish</code> specifying the name and version of the interface.</p>
+<p><a href="https://github.com/hyperledger/firefly/pull/1279">For an exact view of the changes to contract interfaces, see PR #1279.</a></p>
+<h3 id="contract-apis">Contract APIs<a class="headerlink" href="#contract-apis" title="Permanent link">&para;</a></h3>
+<p>Previously, to create a contract API a <code>POST</code> call would be made to <code>/apis</code> and the API would be broadcasted to all other namepsaces. In FireFly v1.3.0, this same call can be made with the <code>publish=true</code> query parameter, or a subsequent API call can be made on an unpublished API on <code>/apis/{apiName}/publish</code> specifying the name of the API.</p>
+<p><a href="https://github.com/hyperledger/firefly/pull/1322">For an exact view of the changes to contract APIs, see PR #1322.</a></p>
+<h3 id="token-pools">Token pools<a class="headerlink" href="#token-pools" title="Permanent link">&para;</a></h3>
+<p>Previously, to create a token pool a <code>POST</code> call would be made to <code>/tokens/pools</code> and the token pool would be broadcasted to all other namepsaces. In FireFly v1.3.0, this same call can be made with the <code>publish=true</code> query parameter, or a subsequent API call can be made on an unpublished token pool on <code>/tokens/pools/{nameOrId}/publish</code> specifying the name or ID of the token pool.</p>
+<p><a href="https://github.com/hyperledger/firefly/pull/1261">For an exact view of the changes to token pools, see PR #1261.</a></p>
+<h2 id="event-stream-considerations">Event stream considerations<a class="headerlink" href="#event-stream-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="single-event-stream-per-namespace">Single event stream per namespace<a class="headerlink" href="#single-event-stream-per-namespace" title="Permanent link">&para;</a></h3>
+<p>In this release, the model for event streams in a multi-party network has fundamentally changed. Previously, there was a single event stream for each blockchain plugin, even if this plugin served multiple namespaces. In FireFly v1.3.0 there is now a single event stream per namespace in the network.</p>
+<p>When migrating from FireFly v1.2.X to v1.3.0, due to these changes, existing event streams will be rebuilt. This means that connectors will replay past events to FireFly, but FireFly will automatically de-duplicate them by design so this is a safe operation.</p>
+<p>The migration to individual event streams promotes high-availability capability but is not itself a breaking change, however the ID format for event streams has changed. Event streams now follow the format <code>&lt;plugin_topic_name&gt;/&lt;namespace_name&gt;</code>. For example, an event stream for the default namespace with a plugin topic of 0 would now be: <code>0/default</code>.</p>
+<p>Summarily, these changes <em>should not</em> impact end-users of FireFly, but they're noted here as they are significant architectural changes to the relationships between namespaces, plugins, and connectors.</p>
+<p><a href="https://github.com/hyperledger/firefly/pull/1388">For an exact view of the changes, see PR #1388.</a></p>
+<h2 id="configuration-considerations">Configuration considerations<a class="headerlink" href="#configuration-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="deprecated-configuration">Deprecated configuration<a class="headerlink" href="#deprecated-configuration" title="Permanent link">&para;</a></h3>
+<p>In FireFly v1.3.0 deprecated configuration options for the <code>blockchain</code>, <code>database</code>, <code>dataexchange</code>, <code>sharedstorage</code> and <code>tokens</code> plugins have been removed, and can no longer be provided.</p>
+<p><a href="https://github.com/hyperledger/firefly/pull/1289">For an exact view of the changes, see PR #1289</a>.</p>
+<h2 id="token-pool-considerations">Token pool considerations<a class="headerlink" href="#token-pool-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="activity-indicator-changes">Activity indicator changes<a class="headerlink" href="#activity-indicator-changes" title="Permanent link">&para;</a></h3>
+<p>Token pools have a status, when creating a token pool previously, it would go into a pending state immediately following creation, and then into a confirmed state when it has been confirmed on the chain. This behaviour is still consistent in FireFly v1.3.0, but the representation of the data has changed.</p>
+<p>Previously, token pools had a <code>state</code> field with an enumerated value which was either <code>pending</code>, or <code>confirmed</code>, this has been replaced with an <code>active</code> boolean field, where <code>true</code> indicates the token pool has been committed onto chain, and <code>false</code> indicated the transaction has not yet been confirmed.</p>
+<p><a href="https://github.com/hyperledger/firefly/pull/1305">For an exact view of the changes, see PR #1305</a>.</p>
+<h2 id="fabconnect-event-considerations">FabConnect event considerations<a class="headerlink" href="#fabconnect-event-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="fabconnect-protocol-id-format-changes">FabConnect Protocol ID format changes<a class="headerlink" href="#fabconnect-protocol-id-format-changes" title="Permanent link">&para;</a></h3>
+<p>Prior to FireFly v1.3.0, when the FabConnect client indexed events submitted by the Fabric SDK, FireFly would deduplicate events into a single event because the protocol ID of the events compiled into a single block would evaluate to be the same. In this release, we have changed the format of the calculated protocol ID so that is unique across events even if they are located within the same block. Crucially, <strong>the new format includes the transaction hash, so events are no longer alphanumerically sortable.</strong></p>
+<p><a href="https://github.com/hyperledger/firefly/pull/1345">For an exact view of the changes, see PR #1345</a>.</p>
+<h2 id="local-development-considerations">Local development considerations<a class="headerlink" href="#local-development-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="go-version-upgrade">Go version upgrade<a class="headerlink" href="#go-version-upgrade" title="Permanent link">&para;</a></h3>
+<p>FireFly v1.3.0 now uses Go 1.21 across all modules.</p>
 
 
 
@@ -3628,7 +3776,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../code_repositories/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Code Repositories">
+          <a href="../1.2_migration_guide/" class="md-footer__link md-footer__link--prev" aria-label="Previous: v1.2.0 Migration Guide">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -3638,27 +3786,11 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Code Repositories
+                v1.2.0 Migration Guide
               </div>
             </div>
           </a>
         
-        
-          
-          <a href="../docs_setup/" class="md-footer__link md-footer__link--next" aria-label="Next: Contributing to Documentation">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Contributing to Documentation
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-            </div>
-          </a>
         
       </nav>
     
