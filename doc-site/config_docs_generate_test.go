@@ -48,20 +48,6 @@ func TestGenerateConfigDocs(t *testing.T) {
 }
 
 const configDocHeader = `---
-layout: default
 title: Configuration Reference
-parent: pages.reference
-nav_order: 2
----
-
-# Configuration Reference
-{: .no_toc }
-
-<!-- ## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc} -->
-
 ---
 `
