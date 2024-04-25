@@ -1008,6 +1008,17 @@ func TestIgnoredEvents(t *testing.T) {
 	}.String()
 }
 
+func TestWSStartEvent(t *testing.T) {
+	h, toServer, _, _, done := newTestFFTokens(t)
+	defer done()
+
+	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
+	assert.NoError(t, err)
+
+	msg := <-toServer
+	assert.Equal(t, "{\"type\":\"start\",\"autoack\":null,\"namespace\":\"ns1\",\"name\":\"\",\"ephemeral\":false,\"filter\":{\"message\":{},\"transaction\":{},\"blockchainevent\":{}},\"options\":{}}", string(msg))
+}
+
 func TestReceiptEvents(t *testing.T) {
 	h, _, fromServer, _, done := newTestFFTokens(t)
 	defer done()
@@ -1592,15 +1603,14 @@ func TestEventLoopSendClosed(t *testing.T) {
 	assert.True(t, called)
 }
 
-func TestStartNamespaceSendClosed(t *testing.T) {
+func TestStartNamespaceWSConnectFail(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
 	h := &FFTokens{
 		ctx:    context.Background(),
 		wsconn: map[string]wsclient.WSClient{"ns1": wsm},
 		retry:  &retry.Retry{},
 	}
-	wsm.On("Connect").Return(nil)
-	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	wsm.On("Connect").Return(fmt.Errorf("pop"))
 	err := h.StartNamespace(context.Background(), "ns1", []*core.TokenPool{})
 	assert.Regexp(t, "pop", err)
 }
@@ -1627,6 +1637,16 @@ func TestCallbacksWrongNamespace(t *testing.T) {
 	h.callbacks.OperationUpdate(context.Background(), nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
 	h.callbacks.TokensTransferred(context.Background(), "ns1", nil)
 	h.callbacks.TokensApproved(context.Background(), "ns1", nil)
+}
+
+func TestSendWSFail(t *testing.T) {
+	h, _, _, _, done := newTestFFTokens(t)
+	defer done()
+	namespace := "ns1"
+	wsm := &wsmocks.WSClient{}
+	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	err := h.sendWSStartMsg(context.Background(), wsm, namespace)
+	assert.Regexp(t, "pop", err)
 }
 
 func TestCheckInterfaceBadFormat(t *testing.T) {
