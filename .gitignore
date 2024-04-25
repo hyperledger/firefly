@@ -13,3 +13,4 @@ __debug*
 containerlogs
 .vscode/*.log
 .idea
+doc-site/site

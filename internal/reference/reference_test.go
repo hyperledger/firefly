@@ -40,7 +40,7 @@ func TestCheckGeneratedMarkdownPages(t *testing.T) {
 	assert.NotNil(t, markdownMap)
 
 	for pageName, markdown := range markdownMap {
-		b, err := os.ReadFile(filepath.Join("..", "..", "docs", "reference", "types", fmt.Sprintf("%s.md", pageName)))
+		b, err := os.ReadFile(filepath.Join("..", "..", "doc-site", "docs", "reference", "types", fmt.Sprintf("%s.md", pageName)))
 		assert.NoError(t, err)
 		expectedPageHash := sha1.New()
 		expectedPageHash.Write(b)

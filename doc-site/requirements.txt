@@ -1,0 +1,4 @@
+mkdocs-material
+mkdocs-literate-nav
+mkdocs-include-markdown-plugin
+mike
