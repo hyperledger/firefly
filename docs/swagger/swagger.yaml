@@ -129,6 +129,9 @@ paths:
                     urls:
                       description: The URLs to use to access the API
                       properties:
+                        api:
+                          description: The URL to use to invoke the API
+                          type: string
                         openapi:
                           description: The URL to download the OpenAPI v3 (Swagger)
                             description for the API generated in JSON or YAML format
@@ -253,6 +256,9 @@ paths:
                   urls:
                     description: The URLs to use to access the API
                     properties:
+                      api:
+                        description: The URL to use to invoke the API
+                        type: string
                       openapi:
                         description: The URL to download the OpenAPI v3 (Swagger)
                           description for the API generated in JSON or YAML format
@@ -315,6 +321,9 @@ paths:
                   urls:
                     description: The URLs to use to access the API
                     properties:
+                      api:
+                        description: The URL to use to invoke the API
+                        type: string
                       openapi:
                         description: The URL to download the OpenAPI v3 (Swagger)
                           description for the API generated in JSON or YAML format
@@ -427,6 +436,9 @@ paths:
                   urls:
                     description: The URLs to use to access the API
                     properties:
+                      api:
+                        description: The URL to use to invoke the API
+                        type: string
                       openapi:
                         description: The URL to download the OpenAPI v3 (Swagger)
                           description for the API generated in JSON or YAML format
@@ -551,6 +563,9 @@ paths:
                   urls:
                     description: The URLs to use to access the API
                     properties:
+                      api:
+                        description: The URL to use to invoke the API
+                        type: string
                       openapi:
                         description: The URL to download the OpenAPI v3 (Swagger)
                           description for the API generated in JSON or YAML format
@@ -613,6 +628,9 @@ paths:
                   urls:
                     description: The URLs to use to access the API
                     properties:
+                      api:
+                        description: The URL to use to invoke the API
+                        type: string
                       openapi:
                         description: The URL to download the OpenAPI v3 (Swagger)
                           description for the API generated in JSON or YAML format
@@ -11944,6 +11962,9 @@ paths:
                     urls:
                       description: The URLs to use to access the API
                       properties:
+                        api:
+                          description: The URL to use to invoke the API
+                          type: string
                         openapi:
                           description: The URL to download the OpenAPI v3 (Swagger)
                             description for the API generated in JSON or YAML format
@@ -12075,6 +12096,9 @@ paths:
                   urls:
                     description: The URLs to use to access the API
                     properties:
+                      api:
+                        description: The URL to use to invoke the API
+                        type: string
                       openapi:
                         description: The URL to download the OpenAPI v3 (Swagger)
                           description for the API generated in JSON or YAML format
@@ -12137,6 +12161,9 @@ paths:
                   urls:
                     description: The URLs to use to access the API
                     properties:
+                      api:
+                        description: The URL to use to invoke the API
+                        type: string
                       openapi:
                         description: The URL to download the OpenAPI v3 (Swagger)
                           description for the API generated in JSON or YAML format
@@ -12263,6 +12290,9 @@ paths:
                   urls:
                     description: The URLs to use to access the API
                     properties:
+                      api:
+                        description: The URL to use to invoke the API
+                        type: string
                       openapi:
                         description: The URL to download the OpenAPI v3 (Swagger)
                           description for the API generated in JSON or YAML format
@@ -12394,6 +12424,9 @@ paths:
                   urls:
                     description: The URLs to use to access the API
                     properties:
+                      api:
+                        description: The URL to use to invoke the API
+                        type: string
                       openapi:
                         description: The URL to download the OpenAPI v3 (Swagger)
                           description for the API generated in JSON or YAML format
@@ -12456,6 +12489,9 @@ paths:
                   urls:
                     description: The URLs to use to access the API
                     properties:
+                      api:
+                        description: The URL to use to invoke the API
+                        type: string
                       openapi:
                         description: The URL to download the OpenAPI v3 (Swagger)
                           description for the API generated in JSON or YAML format
