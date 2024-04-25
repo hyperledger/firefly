@@ -435,6 +435,7 @@ be downloaded from:</p>
     </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my_contract_api"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"b09d9f77-7b16-4760-a8d7-0e3c319b2a16"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"urls"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"api"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api"</span><span class="p">,</span><span class="w">
         </span><span class="nl">"openapi"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api/swagger.json"</span><span class="p">,</span><span class="w">
         </span><span class="nl">"ui"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api"</span><span class="w">
     </span><span class="p">},</span><span class="w">
@@ -559,6 +560,11 @@ be downloaded from:</p>
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">api</code></td>
+      <td>The URL to use to invoke the API</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">openapi</code></td>
       <td>The URL to download the OpenAPI v3 (Swagger) description for the API generated in JSON or YAML format</td>
