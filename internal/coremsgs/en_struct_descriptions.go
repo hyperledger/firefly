@@ -234,6 +234,7 @@ var (
 	ContractAPIPublished   = ffm("ContractAPI.published", "Indicates if the API is published to other members of the multiparty network")
 
 	// ContractURLs field descriptions
+	ContractURLsAPI     = ffm("ContractURLs.api", "The URL to use to invoke the API")
 	ContractURLsOpenAPI = ffm("ContractURLs.openapi", "The URL to download the OpenAPI v3 (Swagger) description for the API generated in JSON or YAML format")
 	ContractURLsUI      = ffm("ContractURLs.ui", "The URL to use in a web browser to access the SwaggerUI explorer/exerciser for the API")
 
