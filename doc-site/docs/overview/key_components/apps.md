@@ -30,7 +30,7 @@ FireFly provides APIs that:
 - Conform as closely as possible to the principles of REST
 - Do not pretend to be RESTful in cases when it is impossible to be
 
-> Learn more about **deploying APIs for custom smart contracts** in [this tutorial](../../tutorials/custom_contracts/)
+> Learn more about **deploying APIs for custom smart contracts** in [this tutorial](../../tutorials/custom_contracts/index.md)
 
 ### Event Streams
 

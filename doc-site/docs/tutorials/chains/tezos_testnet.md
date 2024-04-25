@@ -88,4 +88,4 @@ On the **Transfers** tab from you account page you will see the actual transfer 
 
 ## Use the public testnet
 
-Now that you have everything set up, you can follow one of the other FireFly guides such as [Custom Smart Contracts](../custom_contracts/tezos.md). For detailed instructions on deploying a custom smart contract to Tezos, please see the [Tezos docs](https://docs.tezos.com/smart-contracts/deploying) for instructions using various tools.
+Now that you have everything set up, you can follow one of the other FireFly guides such as [Custom Smart Contracts](../custom_contracts/index.md). For detailed instructions on deploying a custom smart contract to Tezos, please see the [Tezos docs](https://docs.tezos.com/smart-contracts/deploying) for instructions using various tools.

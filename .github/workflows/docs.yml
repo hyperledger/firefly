@@ -50,7 +50,7 @@ jobs:
       - name: Update doc site for latest release
         if: ${{ github.event_name == 'release' && env.IS_LATEST_RELEASE == 'true' }}
         working-directory: doc-site
-        run: mike deploy ${{ github.event.release.tag_name }} latest --push
+        run: mike deploy ${{ github.event.release.tag_name }} latest -u --push
 
       - name: Update doc site for `main` branch
         if: ${{ github.event_name == 'push' }}

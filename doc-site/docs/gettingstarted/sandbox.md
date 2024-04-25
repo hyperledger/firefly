@@ -89,7 +89,7 @@ The Messages tab is where we can send broadcast and private messages to other me
 
 ## Tokens
 
-The Tokens tab is where you can create token pools, and mint, burn, or transfer tokens. This works with both fungible and non-fungible tokens (NFTs). For more details, please see the [Tokens tutorials](../tutorials/tokens).
+The Tokens tab is where you can create token pools, and mint, burn, or transfer tokens. This works with both fungible and non-fungible tokens (NFTs). For more details, please see the [Tokens tutorials](../tutorials/tokens/index.md).
 
 ### Things to try out
 

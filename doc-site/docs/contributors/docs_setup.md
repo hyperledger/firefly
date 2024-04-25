@@ -82,18 +82,10 @@ The commands you will usually use with `mkdocs` are:
 - `mkdocs build` - Build the documentation site.
 - `mkdocs -h` - Print help message and exit.
 
-## Adding Content
+## Directory layout
 
-The basic process for adding content to the site is:
-
-- Create a new markdown file under the `docs` folder
-- Add the new file to the table of contents (`nav` section in the `mkdocs.yml` file)
-
-If you are using this as a template for creating your own documentation, please see [the instructions for customization](./docs/index.md).
-
-## Repository layout
-
-    mkdocs.yml    # The configuration file.
+    mkdocs.yml     # The configuration file.
     docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+        index.md   # The documentation homepage.
+        SUMMARY.md # The main left nav
+        ...        # Other markdown pages, images and other files.
