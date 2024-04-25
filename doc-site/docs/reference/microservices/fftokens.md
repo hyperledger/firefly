@@ -58,7 +58,7 @@ FireFly will store a "pending" token pool after a successful creation, but will 
 
 HTTP 200: pool creation was successful, and the pool details are returned in the response.
 
-_See [Response Types: Token Pool](#token-pool-1)_
+_See [Response Types: Token Pool](#token-pool_1)_
 
 HTTP 202: request was accepted, but pool will be created asynchronously, with "receipt" and "token-pool" events sent later on the websocket.
 
@@ -92,7 +92,7 @@ In a multiparty network, this step will be performed by every member after a suc
 
 HTTP 200: pool activation was successful, and the pool details are returned in the response.
 
-_See [Response Types: Token Pool](#token-pool-1)_
+_See [Response Types: Token Pool](#token-pool_1)_
 
 HTTP 202: request was accepted, but pool will be activated asynchronously, with "receipt" and "token-pool" events sent later on the websocket.
 
@@ -137,7 +137,7 @@ _No body_
 ### `POST /checkinterface`
 
 This is an optional (but recommended) API for token connectors. If implemented, support will be indicated by
-the presence of the `interfaceFormat` field in all [Token Pool](#token-pool-1) responses.
+the presence of the `interfaceFormat` field in all [Token Pool](#token-pool_1) responses.
 
 In the case that a connector supports multiple variants of a given token standard (such as many different ways to
 structure "mint" or "burn" calls on an underlying smart contract), this API allows the connector to be provided with a full
@@ -431,37 +431,37 @@ Batched messages must be acked all at once using the ID of the batch.
 
 An asynchronous operation has completed.
 
-_See [Response Types: Receipt](#receipt-1)_
+_See [Response Types: Receipt](#receipt_1)_
 
 ### `token-pool`
 
 A new token pool has been created or activated.
 
-_See [Response Types: Token Pool](#token-pool-1)_
+_See [Response Types: Token Pool](#token-pool_1)_
 
 ### `token-mint`
 
 Tokens have been minted.
 
-_See [Response Types: Token Transfer](#token-transfer-1)_
+_See [Response Types: Token Transfer](#token-transfer_1)_
 
 ### `token-burn`
 
 Tokens have been burned.
 
-_See [Response Types: Token Transfer](#token-transfer-1)_
+_See [Response Types: Token Transfer](#token-transfer_1)_
 
 ### `token-transfer`
 
 Tokens have been transferred.
 
-_See [Response Types: Token Transfer](#token-transfer-1)_
+_See [Response Types: Token Transfer](#token-transfer_1)_
 
 ### `token-approval`
 
 Token approvals have changed.
 
-_See [Response Types: Token Approval](#token-approval-1)_
+_See [Response Types: Token Approval](#token-approval_1)_
 
 ## Response Types
 
