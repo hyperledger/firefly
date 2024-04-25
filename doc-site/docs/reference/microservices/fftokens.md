@@ -34,6 +34,7 @@ FireFly will store a "pending" token pool after a successful creation, but will 
 {
   "type": "fungible",
   "signer": "0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A",
+  "namespace": "default",
   "name": "FFCoin",
   "symbol": "FFC",
   "data": "pool-metadata",
@@ -46,6 +47,7 @@ FireFly will store a "pending" token pool after a successful creation, but will 
 | --------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | type      | string enum | The type of pool to create. Currently supported types are "fungible" and "nonfungible". It is recommended (but not required) that token connectors support both. Unrecognized/unsupported types should be rejected with HTTP 400. |
 | signer    | string      | The signing identity to be used for the blockchain transaction, in a format understood by this connector.                                                                                                                         |
+| namespace | string      | The namespace of the token pool                                                                                                                                                                                                   |
 | name      | string      | (OPTIONAL) If supported by this token contract, this is a requested name for the token pool. May be ignored at the connector's discretion.                                                                                        |
 | symbol    | string      | (OPTIONAL) If supported by this token contract, this is a requested symbol for the token pool. May be ignored at the connector's discretion.                                                                                      |
 | requestId | string      | (OPTIONAL) A unique identifier for this request. Will be included in the "receipt" websocket event to match receipts to requests.                                                                                                 |
@@ -72,6 +74,7 @@ In a multiparty network, this step will be performed by every member after a suc
 
 ```
 {
+  "namespace": "default",
   "poolLocator": "id=F1",
   "poolData": "extra-pool-info",
   "config": {}
@@ -80,6 +83,7 @@ In a multiparty network, this step will be performed by every member after a suc
 
 | Parameter   | Type   | Description                                                                                                                                                                             |
 | ----------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| namespace   | string | The namespace of the token pool                                                                                                                                                         |
 | poolLocator | string | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                |
 | poolData    | string | (OPTIONAL) A data string that should be permanently attached to this pool and returned in all events.                                                                                   |
 | config      | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. This should be the same `config` object that was passed when the pool was created. |
@@ -106,6 +110,7 @@ Deactivate a token pool to stop receiving events and delete all blockchain liste
 
 ```
 {
+  "namespace": "default",
   "poolLocator": "id=F1",
   "poolData": "extra-pool-info",
   "config": {}
@@ -114,6 +119,7 @@ Deactivate a token pool to stop receiving events and delete all blockchain liste
 
 | Parameter   | Type   | Description                                                                                          |
 | ----------- | ------ | ---------------------------------------------------------------------------------------------------- |
+| namespace   | string | The namespace of the token pool                                                                      |
 | poolLocator | string | The locator of the pool, as supplied by the output of the pool creation.                             |
 | poolData    | string | (OPTIONAL) The data string that was attached to this pool at activation.                             |
 | config      | object | (OPTIONAL) An arbitrary JSON object where the connector may accept additional parameters if desired. |
@@ -211,6 +217,7 @@ Mint new tokens.
 
 ```
 {
+  "namespace": "default",
   "poolLocator": "id=F1",
   "signer": "0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A",
   "to": "0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A",
@@ -226,6 +233,7 @@ Mint new tokens.
 
 | Parameter   | Type          | Description                                                                                                                                                                                    |
 | ----------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| namespace   | string        | The namespace of the token pool                                                                                                                                                                |
 | poolLocator | string        | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                       |
 | signer      | string        | The signing identity to be used for the blockchain transaction, in a format understood by this connector.                                                                                      |
 | to          | string        | The identity to receive the minted tokens, in a format understood by this connector.                                                                                                           |
@@ -251,6 +259,7 @@ Burn tokens.
 
 ```
 {
+  "namespace": "default",
   "poolLocator": "id=F1",
   "signer": "0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A",
   "from": "0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A",
@@ -265,6 +274,7 @@ Burn tokens.
 
 | Parameter   | Type          | Description                                                                                                                                                                                    |
 | ----------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| namespace   | string        | The namespace of the token pool                                                                                                                                                                |
 | poolLocator | string        | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                       |
 | signer      | string        | The signing identity to be used for the blockchain transaction, in a format understood by this connector.                                                                                      |
 | from        | string        | The identity that currently owns the tokens to be burned, in a format understood by this connector.                                                                                            |
@@ -289,6 +299,7 @@ Transfer tokens from one address to another.
 
 ```
 {
+  "namespace": "default",
   "poolLocator": "id=F1",
   "signer": "0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A",
   "from": "0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A",
@@ -304,6 +315,7 @@ Transfer tokens from one address to another.
 
 | Parameter   | Type          | Description                                                                                                                                                                                        |
 | ----------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| namespace   | string        | The namespace of the token pool                                                                                                                                                                    |
 | poolLocator | string        | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                           |
 | signer      | string        | The signing identity to be used for the blockchain transaction, in a format understood by this connector.                                                                                          |
 | from        | string        | The identity to be used for the source of the transfer, in a format understood by this connector.                                                                                                  |
@@ -329,6 +341,7 @@ Approve another identity to manage tokens.
 
 ```
 {
+  "namespace": "default",
   "poolLocator": "id=F1",
   "signer": "0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A",
   "operator": "0xb107ed9caa1323b7bc36e81995a4658ec2251951",
@@ -342,6 +355,7 @@ Approve another identity to manage tokens.
 
 | Parameter   | Type    | Description                                                                                                                                                                                        |
 | ----------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| namespace   | string  | The namespace of the token pool                                                                                                                                                                    |
 | poolLocator | string  | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                           |
 | signer      | string  | The signing identity to be used for the blockchain transaction, in a format understood by this connector.                                                                                          |
 | operator    | string  | The identity to be approved (or unapproved) for managing the signer's tokens.                                                                                                                      |
@@ -356,6 +370,17 @@ Approve another identity to manage tokens.
 HTTP 202: request was accepted, but approval will occur asynchronously, with "receipt" and "token-approval" events sent later on the websocket.
 
 _See [Response Types: Async Request](#async-request)_
+
+## Websocket Commands
+
+In order to start listening for events on a certain namespace, the client needs to send the `start` command. Clients should send this command every time they connect, or after an automatic reconnect.
+
+```
+{
+  "type": "start",
+  "namespace": "default"
+}
+```
 
 ## Websocket Events
 
@@ -473,6 +498,7 @@ Many operations may happen asynchronously in the background, and will return onl
 
 ```
 {
+  "namespace": "default",
   "type": "fungible",
   "data": "pool-metadata",
   "poolLocator": "id=F1",
@@ -488,6 +514,7 @@ Many operations may happen asynchronously in the background, and will return onl
 
 | Parameter       | Type        | Description                                                                                                                                                                                                                                                                                 |
 | --------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| namespace       | string      | The namespace of the token pool                                                                                                                                                                                                                                                             |
 | type            | string enum | The type of pool that was created.                                                                                                                                                                                                                                                          |
 | data            | string      | A copy of the data that was passed in on the creation request.                                                                                                                                                                                                                              |
 | poolLocator     | string      | A string to identify this pool, generated by the connector. Must be unique for each pool created by this connector. Will be passed back on all operations within this pool, and may be packed with relevant data about the pool for later usage (such as the address and type of the pool). |
@@ -506,6 +533,7 @@ while a burn will omit the "to" field.
 
 ```
 {
+  "namespace": "default",
   "id": "1",
   "data": "transfer-metadata",
   "poolLocator": "id=F1",
@@ -522,6 +550,7 @@ while a burn will omit the "to" field.
 
 | Parameter   | Type          | Description                                                                                                                                                                                                                                                          |
 | ----------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| namespace   | string        | The namespace of the token pool                                                                                                                                                                                                                                      |
 | id          | string        | An identifier for this transfer. Must be unique for every transfer within this pool.                                                                                                                                                                                 |
 | data        | string        | A copy of the data that was passed in on the mint/burn/transfer request. May be omitted if the token contract does not support a method of attaching extra data (will result in reduced ability for FireFly to correlate the inputs and outputs of the transaction). |
 | poolLocator | string        | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                                                                                             |
@@ -538,6 +567,7 @@ while a burn will omit the "to" field.
 
 ```
 {
+  "namespace": "default",
   "id": "1",
   "data": "transfer-metadata",
   "poolLocator": "id=F1",
@@ -553,6 +583,7 @@ while a burn will omit the "to" field.
 
 | Parameter   | Type    | Description                                                                                                                                                                                                                                                                                 |
 | ----------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| namespace   | string  | The namespace of the token pool                                                                                                                                                                                                                                                             |
 | id          | string  | An identifier for this approval. Must be unique for every approval within this pool.                                                                                                                                                                                                        |
 | data        | string  | A copy of the data that was passed in on the approval request. May be omitted if the token contract does not support a method of attaching extra data (will result in reduced ability for FireFly to correlate the inputs and outputs of the transaction).                                  |
 | poolLocator | string  | The locator of the pool, as supplied by the output of the pool creation.                                                                                                                                                                                                                    |
